@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Toast from '@/components/Toast';
 
 type ToastType = {
@@ -10,12 +11,14 @@ type ToastType = {
 };
 
 export default function DemoPage() {
+  const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    category: '',
     description: ''
   });
   const [uploading, setUploading] = useState(false);
@@ -106,16 +109,37 @@ export default function DemoPage() {
     setUploading(true);
     showToast('Uploading your request...', 'info');
     
-    console.log('Form data:', formData);
-    console.log('Files:', files);
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    showToast('Request submitted successfully!', 'success');
-    setUploading(false);
-    
-    setFormData({ name: '', email: '', phone: '', description: '' });
-    setFiles([]);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('description', formData.description);
+      
+      files.forEach(file => {
+        formDataToSend.append('files', file);
+      });
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error('Upload failed');
+      }
+
+      router.push('/demo/success');
+      
+    } catch (error) {
+      console.error('Submission error:', error);
+      showToast('Failed to submit. Please try again.', 'error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -129,7 +153,6 @@ export default function DemoPage() {
         />
       ))}
 
-      {/* Header */}
       <header className="header">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <a href="/" className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition">
@@ -141,7 +164,6 @@ export default function DemoPage() {
         </div>
       </header>
 
-      {/* Hero Banner */}
       <div className="hero-gradient text-white py-12 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-3">Get Your Free Quote</h1>
@@ -151,10 +173,8 @@ export default function DemoPage() {
         </div>
       </div>
 
-      {/* Form Section */}
       <div className="max-w-3xl mx-auto px-6 py-12">
         <form onSubmit={handleSubmit} className="card">
-          {/* Contact Info */}
           <div className="space-y-5 mb-8">
             <div>
               <label className="form-label">Name *</label>
@@ -191,9 +211,29 @@ export default function DemoPage() {
                 placeholder="(631) 555-0123"
               />
             </div>
+
+            <div>
+              <label className="form-label">Project Type *</label>
+              <select
+                required
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                className="form-input"
+              >
+                <option value="">Select project type...</option>
+                <option value="roofing">🏠 Roofing</option>
+                <option value="hvac">❄️ HVAC</option>
+                <option value="plumbing">🔧 Plumbing</option>
+                <option value="electrical">⚡ Electrical</option>
+                <option value="construction">🏗️ Construction/Renovation</option>
+                <option value="painting">🎨 Painting</option>
+                <option value="flooring">🪵 Flooring</option>
+                <option value="landscaping">🌳 Landscaping</option>
+                <option value="other">📋 Other</option>
+              </select>
+            </div>
           </div>
 
-          {/* Description */}
           <div className="mb-8">
             <label className="form-label">Describe your project *</label>
             <textarea
@@ -206,7 +246,6 @@ export default function DemoPage() {
             />
           </div>
 
-          {/* File Upload */}
           <div className="mb-8">
             <label className="form-label">Upload Photos or Videos</label>
             <div 
@@ -237,7 +276,6 @@ export default function DemoPage() {
               </label>
             </div>
 
-            {/* File Preview */}
             {files.length > 0 && (
               <div className="mt-6">
                 <p className="text-sm font-semibold text-gray-700 mb-3">
@@ -288,7 +326,6 @@ export default function DemoPage() {
             )}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={uploading}
@@ -296,7 +333,7 @@ export default function DemoPage() {
           >
             {uploading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin">⏳</span> Submitting...
+                <span className="animate-spin">⏳</span> Uploading...
               </span>
             ) : (
               'Submit Request →'
