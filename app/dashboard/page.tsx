@@ -2,45 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import AIAnalysis from '@/components/dashboard/AIAnalysis';
+import CardsView from '@/components/dashboard/views/CardsView';
+import TableView from '@/components/dashboard/views/TableView';
+import ViewSwitcher from '@/components/dashboard/ViewSwitcher';
+import { safeJSONParse, parseNotes } from '@/lib/utils';
 import styles from './dashboard.module.css';
-
-function safeJSONParse(data: any) {
-  if (!data) return null;
-  if (typeof data === 'object') return data;
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    console.error('Failed to parse JSON:', data);
-    return null;
-  }
-}
-
-function parseNotes(notesData: any) {
-  if (!notesData) return [];
-  
-  // If it's already an array, return it
-  if (Array.isArray(notesData)) return notesData;
-  
-  // If it's a string, try to parse it
-  if (typeof notesData === 'string') {
-    try {
-      const parsed = JSON.parse(notesData);
-      if (Array.isArray(parsed)) return parsed;
-      // If it's just a plain string, convert to array format
-      return [{ text: notesData, timestamp: new Date().toISOString() }];
-    } catch (e) {
-      // If parsing fails, treat as plain text
-      return [{ text: notesData, timestamp: new Date().toISOString() }];
-    }
-  }
-  
-  return [];
-}
 
 export default function DashboardPage() {
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'cards' | 'table'>('cards');
   const [showPreviousDays, setShowPreviousDays] = useState(7);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -84,12 +56,10 @@ export default function DashboardPage() {
         }
         return true;
       } else {
-        console.error('Failed to update lead:', result.error);
         alert('Failed to save changes. Please try again.');
         return false;
       }
     } catch (error) {
-      console.error('Failed to update lead:', error);
       alert('Failed to save changes. Please try again.');
       return false;
     }
@@ -106,23 +76,22 @@ export default function DashboardPage() {
       const result = await response.json();
       
       if (response.ok && result.success) {
-        // Refetch the lead to get updated notes
         await fetchLeads();
         
-        // Update selected lead
-        const updatedLead = allLeads.find(l => l.id === id);
+        const updatedLeads = await fetch('/api/leads?limit=500').then(r => r.json());
+        const updatedLead = updatedLeads.leads?.find((l: any) => l.id === id);
+        
         if (updatedLead) {
           setSelectedLead(updatedLead);
+          setAllLeads(updatedLeads.leads || []);
         }
         
         return true;
       } else {
-        console.error('Failed to add note:', result.error);
         alert('Failed to add note. Please try again.');
         return false;
       }
     } catch (error) {
-      console.error('Failed to add note:', error);
       alert('Failed to add note. Please try again.');
       return false;
     }
@@ -165,6 +134,7 @@ export default function DashboardPage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesDateRange;
   });
 
+  // Sort leads
   filteredLeads.sort((a, b) => {
     if (sortBy === 'date') {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -195,6 +165,7 @@ export default function DashboardPage() {
     return date <= yesterday && date >= cutoffDate;
   });
 
+  // Calculate stats
   const emergencyLeads = allLeads.filter(l => {
     const analysis = safeJSONParse(l.ai_analysis);
     return analysis?.urgency === 'Emergency';
@@ -219,135 +190,21 @@ export default function DashboardPage() {
     setDateTo('');
   };
 
-  const renderLeadCard = (lead: any) => {
-    const fileUrls = safeJSONParse(lead.file_urls);
-    const aiAnalysis = safeJSONParse(lead.ai_analysis);
-    const leadStatus = lead.status || 'new';
-    const notesArray = parseNotes(lead.notes);
-    
-    const images = fileUrls?.filter((f: any) => 
-      f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-    ) || [];
-    
-    const videos = fileUrls?.filter((f: any) => 
-      f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
-    ) || [];
-
-    const statusColors: any = {
-      new: 'bg-blue-500',
-      contacted: 'bg-yellow-500',
-      quoted: 'bg-purple-500',
-      'in-progress': 'bg-orange-500',
-      completed: 'bg-green-500',
-      lost: 'bg-gray-500',
-    };
-
-    return (
-      <div
-        key={lead.id}
-        onClick={() => setSelectedLead(lead)}
-        className={styles.card}
-      >
-        <div className="absolute top-3 right-3 z-10">
-          <span className={`${statusColors[leadStatus]} text-white text-xs px-2 py-1 rounded-full font-semibold uppercase`}>
-            {leadStatus}
-          </span>
-        </div>
-
-        {notesArray.length > 0 && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded-full font-semibold">
-              📝 {notesArray.length} note{notesArray.length > 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
-
-        <div className={styles.cardIconHeader}>
-          {images.length > 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">📸</span>
-              <span className={styles.mediaCount}>{images.length} photo{images.length > 1 ? 's' : ''}</span>
-            </div>
-          )}
-          {videos.length > 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">🎥</span>
-              <span className={styles.mediaCount}>{videos.length} video{videos.length > 1 ? 's' : ''}</span>
-            </div>
-          )}
-          {images.length === 0 && videos.length === 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">📝</span>
-              <span className={styles.mediaCount}>No media</span>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.cardContent}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardName}>{lead.name}</h3>
-            <span className={styles.categoryBadge}>
-              {lead.category}
-            </span>
-          </div>
-
-          <p className={styles.cardEmail}>📧 {lead.email}</p>
-          <p className={styles.cardPhone}>📞 {lead.phone}</p>
-
-          {lead.description && (
-            <p className={styles.cardDescription}>
-              {lead.description.substring(0, 80)}{lead.description.length > 80 ? '...' : ''}
-            </p>
-          )}
-
-          {aiAnalysis ? (
-            <div className={styles.badges}>
-              <span className={`${styles.badge} ${
-                aiAnalysis.urgency === 'Emergency' ? styles.urgencyEmergency :
-                aiAnalysis.urgency === 'High Priority' ? styles.urgencyHigh :
-                aiAnalysis.urgency === 'Low Priority' ? styles.urgencyLow :
-                styles.urgencyNormal
-              }`}>
-                {aiAnalysis.urgency}
-              </span>
-              <span className={`${styles.badge} ${
-                aiAnalysis.complexity === 'Simple' ? styles.complexitySimple :
-                aiAnalysis.complexity === 'Complex' ? styles.complexityComplex :
-                styles.complexityModerate
-              }`}>
-                {aiAnalysis.complexity}
-              </span>
-            </div>
-          ) : videos.length > 0 && images.length === 0 ? (
-            <div className={styles.badges}>
-              <span className={`${styles.badge} ${styles.urgencyNormal}`}>
-                📹 Manual Review
-              </span>
-            </div>
-          ) : null}
-
-          <p className={styles.cardDate}>
-            🕒 {new Date(lead.created_at).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit'
-            })}
-          </p>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.innerContainer}>
+        {/* Header with View Switcher */}
         <div className={styles.header}>
-          <h1 className={styles.title}>Contractor Dashboard</h1>
-          <p className={styles.subtitle}>Manage your leads and AI-powered insights</p>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <h1 className={styles.title}>Contractor Dashboard</h1>
+              <p className={styles.subtitle}>Manage your leads and AI-powered insights</p>
+            </div>
+            <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
+          </div>
         </div>
 
+        {/* Stats Bar */}
         <div className={styles.statsBar}>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>New (24h)</p>
@@ -371,8 +228,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Filters & Search */}
         <div className="bg-white/10 backdrop-blur rounded-lg p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            {/* Search */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Search</label>
               <input
@@ -384,6 +243,7 @@ export default function DashboardPage() {
               />
             </div>
 
+            {/* Category Filter */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Category</label>
               <select
@@ -398,6 +258,7 @@ export default function DashboardPage() {
               </select>
             </div>
 
+            {/* Status Filter */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Status</label>
               <select
@@ -413,6 +274,7 @@ export default function DashboardPage() {
               </select>
             </div>
 
+            {/* Sort */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Sort By</label>
               <select
@@ -426,6 +288,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Date Range Filter */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-white text-sm font-semibold mb-2">From Date</label>
@@ -462,6 +325,7 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* NEW LEADS SECTION */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -472,9 +336,11 @@ export default function DashboardPage() {
           </div>
 
           {newLeads.length > 0 ? (
-            <div className={styles.cardsGrid}>
-              {newLeads.map(lead => renderLeadCard(lead))}
-            </div>
+            currentView === 'cards' ? (
+              <CardsView leads={newLeads} onSelectLead={setSelectedLead} />
+            ) : (
+              <TableView leads={newLeads} onSelectLead={setSelectedLead} />
+            )
           ) : (
             <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
               <p className="text-white/80">No new leads matching filters</p>
@@ -482,6 +348,7 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* PREVIOUS LEADS SECTION */}
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -532,17 +399,30 @@ export default function DashboardPage() {
           </div>
 
           {previousLeads.length > 0 ? (
-            <div className={styles.cardsGrid}>
-              {previousLeads.map(lead => renderLeadCard(lead))}
-            </div>
+            currentView === 'cards' ? (
+              <CardsView leads={previousLeads} onSelectLead={setSelectedLead} />
+            ) : (
+              <TableView leads={previousLeads} onSelectLead={setSelectedLead} />
+            )
           ) : (
             <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
               <p className="text-white/80">No leads matching filters</p>
             </div>
           )}
         </div>
+
+        {allLeads.length === 0 && (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📋</div>
+            <p className={styles.emptyTitle}>No leads yet</p>
+            <p className={styles.emptyText}>
+              Leads will appear here when customers submit photos
+            </p>
+          </div>
+        )}
       </div>
 
+      {/* Modal */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead}
@@ -556,6 +436,7 @@ export default function DashboardPage() {
   );
 }
 
+// Lead Modal Component
 function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
   const [status, setStatus] = useState(lead.status || 'new');
   const [newNote, setNewNote] = useState('');
@@ -583,7 +464,6 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
     
     if (success) {
       setNewNote('');
-      await onRefresh();
     }
   };
 
@@ -680,7 +560,7 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
             {/* Notes List */}
             {notesArray.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {notesArray.reverse().map((note: any, idx: number) => (
+                {[...notesArray].reverse().map((note: any, idx: number) => (
                   <div key={idx} className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
                     <p className="text-gray-800 mb-2">{note.text}</p>
                     <p className="text-xs text-gray-500">
@@ -702,60 +582,60 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
             )}
           </div>
 
-{/* Contact Information */}
-<div className={styles.section}>
-  <h3 className={styles.sectionTitle}>Contact Information</h3>
-  
-  {/* Quick Contact Buttons */}
-  <div className="flex gap-2 mb-4">
-    <button
-      onClick={() => {
-        const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
-        const body = encodeURIComponent(
-          `Hi ${lead.name},\n\nThank you for reaching out! I've reviewed your photos and would love to discuss your project.\n\nWhen would be a good time for a quick call?\n\nBest regards`
-        );
-        window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
-      }}
-      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
-    >
-      📧 Email
-    </button>
-    <button
-      onClick={() => window.location.href = `tel:${lead.phone}`}
-      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
-    >
-      📞 Call
-    </button>
-    <button
-      onClick={() => {
-        const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your ${lead.category} project photos and would love to discuss. When's a good time to talk?`);
-        window.location.href = `sms:${lead.phone}?body=${message}`;
-      }}
-      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
-    >
-      💬 Text
-    </button>
-  </div>
+          {/* Contact Information */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Contact Information</h3>
+            
+            {/* Quick Contact Buttons */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => {
+                  const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
+                  const body = encodeURIComponent(
+                    `Hi ${lead.name},\n\nThank you for reaching out! I've reviewed your photos and would love to discuss your project.\n\nWhen would be a good time for a quick call?\n\nBest regards`
+                  );
+                  window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                📧 Email
+              </button>
+              <button
+                onClick={() => window.location.href = `tel:${lead.phone}`}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                📞 Call
+              </button>
+              <button
+                onClick={() => {
+                  const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your ${lead.category} project photos and would love to discuss. When's a good time to talk?`);
+                  window.location.href = `sms:${lead.phone}?body=${message}`;
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                💬 Text
+              </button>
+            </div>
 
-  <div className={styles.contactGrid}>
-    <div className={styles.contactItem}>
-      <span className={styles.contactLabel}>Email</span>
-      <a href={`mailto:${lead.email}`} className={styles.contactValue + ' hover:underline'}>
-        {lead.email}
-      </a>
-    </div>
-    <div className={styles.contactItem}>
-      <span className={styles.contactLabel}>Phone</span>
-      <a href={`tel:${lead.phone}`} className={styles.contactValue + ' hover:underline'}>
-        {lead.phone}
-      </a>
-    </div>
-    <div className={styles.contactItem}>
-      <span className={styles.contactLabel}>Category</span>
-      <span className={styles.contactValue}>{lead.category}</span>
-    </div>
-  </div>
-</div>
+            <div className={styles.contactGrid}>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Email</span>
+                <a href={`mailto:${lead.email}`} className={styles.contactValue + ' hover:underline'}>
+                  {lead.email}
+                </a>
+              </div>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Phone</span>
+                <a href={`tel:${lead.phone}`} className={styles.contactValue + ' hover:underline'}>
+                  {lead.phone}
+                </a>
+              </div>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Category</span>
+                <span className={styles.contactValue}>{lead.category}</span>
+              </div>
+            </div>
+          </div>
 
           {lead.description && (
             <div className={styles.section}>
