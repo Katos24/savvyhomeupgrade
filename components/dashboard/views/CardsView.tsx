@@ -21,7 +21,17 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
       f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
     ) || [];
 
-    const statusColors: any = {
+    // Status colors for the entire card
+    const statusCardColors: any = {
+      new: 'bg-white border-l-4 border-blue-500',
+      contacted: 'bg-yellow-50 border-l-4 border-yellow-500',
+      quoted: 'bg-purple-50 border-l-4 border-purple-500',
+      'in-progress': 'bg-orange-50 border-l-4 border-orange-500',
+      completed: 'bg-green-50 border-l-4 border-green-500',
+      lost: 'bg-gray-100 border-l-4 border-gray-400',
+    };
+
+    const statusBadgeColors: any = {
       new: 'bg-blue-500',
       contacted: 'bg-yellow-500',
       quoted: 'bg-purple-500',
@@ -34,41 +44,46 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
       <div
         key={lead.id}
         onClick={() => onSelectLead(lead)}
-        className={styles.card}
+        className={`${styles.card} ${statusCardColors[leadStatus]}`}
       >
+        {/* Status Badge - Top Right */}
         <div className="absolute top-3 right-3 z-10">
-          <span className={`${statusColors[leadStatus]} text-white text-xs px-2 py-1 rounded-full font-semibold uppercase`}>
+          <span className={`${statusBadgeColors[leadStatus]} text-white text-xs px-2 py-1 rounded-full font-semibold uppercase`}>
             {leadStatus}
           </span>
         </div>
 
+        {/* Notes Badge - Top Left */}
         {notesArray.length > 0 && (
           <div className="absolute top-3 left-3 z-10">
             <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded-full font-semibold">
-              📝 {notesArray.length} note{notesArray.length > 1 ? 's' : ''}
+              📝 {notesArray.length}
             </span>
           </div>
         )}
 
+        {/* Media Count Header - Cleaner Design */}
         <div className={styles.cardIconHeader}>
-          {images.length > 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">📸</span>
-              <span className={styles.mediaCount}>{images.length} photo{images.length > 1 ? 's' : ''}</span>
-            </div>
-          )}
-          {videos.length > 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">🎥</span>
-              <span className={styles.mediaCount}>{videos.length} video{videos.length > 1 ? 's' : ''}</span>
-            </div>
-          )}
-          {images.length === 0 && videos.length === 0 && (
-            <div className={styles.mediaIcon}>
-              <span className="text-4xl">📝</span>
-              <span className={styles.mediaCount}>No media</span>
-            </div>
-          )}
+          <div className="flex items-center justify-center gap-6">
+            {images.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">📸</span>
+                <span className="text-2xl font-bold text-gray-700">{images.length}</span>
+              </div>
+            )}
+            {videos.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🎥</span>
+                <span className="text-2xl font-bold text-gray-700">{videos.length}</span>
+              </div>
+            )}
+            {images.length === 0 && videos.length === 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">📝</span>
+                <span className="text-sm text-gray-500">Text only</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.cardContent}>
