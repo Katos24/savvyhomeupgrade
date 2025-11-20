@@ -30,15 +30,18 @@ export async function POST(request: Request) {
       });
     }
 
-    // Get image URLs for AI analysis
+    // Get image URLs for AI analysis - INCLUDE HEIC FILES
     const imageUrls = uploadedUrls
-      .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+      .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i))
       .map(file => file.url);
+
+    console.log('Image URLs for AI:', imageUrls);
 
     // Run AI analysis if there are images
     let aiAnalysis = null;
     if (imageUrls.length > 0) {
       try {
+        console.log('Attempting AI analysis...');
         const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ai/analyze-photos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,6 +53,8 @@ export async function POST(request: Request) {
         });
         
         const analysisData = await analysisResponse.json();
+        console.log('AI Analysis response:', analysisData);
+        
         if (analysisData.success) {
           aiAnalysis = analysisData.analysis;
         }
@@ -57,12 +62,13 @@ export async function POST(request: Request) {
         console.error('AI analysis failed:', error);
         // Continue without AI analysis
       }
+    } else {
+      console.log('No images found for AI analysis');
     }
 
     // Save lead to database
     const sql = neon(process.env.DATABASE_URL!);
     
-    // FIXED: Don't double-stringify the AI analysis
     const result = await sql`
       INSERT INTO leads (name, email, phone, category, description, file_urls, company_id, ai_analysis)
       VALUES (

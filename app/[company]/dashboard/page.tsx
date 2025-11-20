@@ -1,34 +1,40 @@
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
-import CompanyDashboardClient from './CompanyDashboardClient';
 import { neon } from '@neondatabase/serverless';
+import { notFound } from 'next/navigation';
+import CompanyDashboardClient from './CompanyDashboardClient';
 
-type Props = {
-  params: Promise<{ company: string }>
-};
+interface Company {
+  id: number;
+  name: string;
+  slug: string;
+  email: string;
+  phone: string;
+  logo_url: string | null;
+  created_at: Date;
+}
 
-export default async function CompanyDashboard({ params }: Props) {
-  const { company: companySlug } = await params;
-  
-  // Check if user is logged in
-  const session = await getSession();
-  
-  if (!session) {
-    redirect('/login');
-  }
-  
-  // Check if user has access to this company
-  if (session.role !== 'admin' && session.companySlug !== companySlug) {
-    redirect('/login');
-  }
-  
-  // Get company details
+async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
-  const companies = await sql`SELECT * FROM companies WHERE slug = ${companySlug}`;
+  const companies = await sql`
+    SELECT * FROM companies WHERE slug = ${slug}
+  `;
   
   if (companies.length === 0) {
-    redirect('/');
+    return null;
   }
   
-  return <CompanyDashboardClient company={companies[0]} />;
+  return companies[0] as Company;
+}
+
+export default async function CompanyDashboardPage({ 
+  params 
+}: { 
+  params: { company: string } 
+}) {
+  const company = await getCompany(params.company);
+  
+  if (!company) {
+    notFound();
+  }
+
+  return <CompanyDashboardClient company={company} />;
 }

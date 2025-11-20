@@ -116,6 +116,7 @@ export default function DemoPage() {
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('description', formData.description);
+      formDataToSend.append('company_id', '1'); // Demo company ID
       
       files.forEach(file => {
         formDataToSend.append('files', file);
@@ -168,7 +169,7 @@ export default function DemoPage() {
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-3">Get Your Free Quote</h1>
           <p className="text-xl opacity-90">
-            Upload photos of your project and we'll get back to you within 24 hours
+            Upload photos of your project and we'll analyze it with AI instantly
           </p>
         </div>
       </div>
@@ -333,15 +334,15 @@ export default function DemoPage() {
           >
             {uploading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin">⏳</span> Uploading...
+                <span className="animate-spin">⏳</span> Analyzing with AI...
               </span>
             ) : (
-              'Submit Request →'
+              'Submit & Get AI Analysis →'
             )}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            ✓ Free quote • ✓ No obligations • ✓ 24-hour response
+            ✓ Free AI analysis • ✓ Instant insights • ✓ No obligations
           </p>
         </form>
       </div>
