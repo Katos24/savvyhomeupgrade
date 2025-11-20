@@ -121,7 +121,7 @@ export default function CompanyContactForm({ company }: { company: Company }) {
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('company_id', company.id.toString());
+      formDataToSend.append('company_slug', company.slug); // CHANGED: Send slug instead of id
       
       files.forEach(file => {
         formDataToSend.append('files', file);

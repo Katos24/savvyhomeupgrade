@@ -25,12 +25,14 @@ async function getCompany(slug: string): Promise<Company | null> {
   return companies[0] as Company;
 }
 
-export default async function CompanyDashboardPage({ 
-  params 
-}: { 
-  params: { company: string } 
+export default async function CompanyDashboardPage({
+  params
+}: {
+  params: Promise<{ company: string }>
 }) {
-  const company = await getCompany(params.company);
+  // Await params first!
+  const { company: companySlug } = await params;
+  const company = await getCompany(companySlug);
   
   if (!company) {
     notFound();

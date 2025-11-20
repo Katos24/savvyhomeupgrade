@@ -15,11 +15,9 @@ interface Company {
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   
-  console.log('Looking for company:', slug);
   const companies = await sql`
     SELECT * FROM companies WHERE slug = ${slug}
   `;
-  console.log('Found companies:', companies);
 
   if (companies.length === 0) {
     return null;
@@ -28,8 +26,14 @@ async function getCompany(slug: string): Promise<Company | null> {
   return companies[0] as Company;
 }
 
-export default async function CompanyPage({ params }: { params: { company: string } }) {
-  const company = await getCompany(params.company);
+export default async function CompanyPage({ 
+  params 
+}: { 
+  params: Promise<{ company: string }> 
+}) {
+  // Await params first!
+  const { company: companySlug } = await params;
+  const company = await getCompany(companySlug);
 
   if (!company) {
     notFound();

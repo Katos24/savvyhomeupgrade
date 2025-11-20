@@ -1,12 +1,6 @@
 import Link from 'next/link';
 
-export default async function SuccessPage({
-  params
-}: {
-  params: Promise<{ company: string }>
-}) {
-  const { company } = await params;
-
+export default function SuccessPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -26,10 +20,10 @@ export default async function SuccessPage({
           Check your email for confirmation.
         </p>
         <Link 
-          href={`/${company}`}
+          href="/"
           className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
         >
-          Submit Another Request
+          Back to Home
         </Link>
       </div>
     </div>

@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import AIAnalysis from '@/components/dashboard/AIAnalysis';
+import CardsView from '@/components/dashboard/views/CardsView';
+import TableView from '@/components/dashboard/views/TableView';
+import ViewSwitcher from '@/components/dashboard/ViewSwitcher';
+import { safeJSONParse, parseNotes } from '@/lib/utils';
+import styles from '@/app/dashboard/dashboard.module.css';
 
 type Company = {
   id: number;
@@ -9,375 +14,624 @@ type Company = {
   slug: string;
 };
 
-type Lead = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  description: string;
-  category: string;
-  file_urls: any;
-  status: string;
-  created_at: string;
-};
-
 export default function CompanyDashboardClient({ company }: { company: Company }) {
-  const router = useRouter();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [allLeads, setAllLeads] = useState<any[]>([]);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'cards' | 'table'>('cards');
+  const [showPreviousDays, setShowPreviousDays] = useState(7);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     fetchLeads();
   }, []);
 
-  useEffect(() => {
-    filterLeads();
-  }, [statusFilter, categoryFilter, dateFilter, searchQuery, leads]);
-
-  const fetchLeads = async () => {
+  async function fetchLeads() {
     try {
       const response = await fetch(`/api/company/${company.slug}/leads`);
       const data = await response.json();
-      setLeads(data.leads || []);
+      setAllLeads(data.leads || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Failed to fetch leads:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const filterLeads = () => {
-    let filtered = leads;
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(lead => lead.status === statusFilter);
-    }
-
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(lead => lead.category === categoryFilter);
-    }
-
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      filtered = filtered.filter(lead => {
-        const leadDate = new Date(lead.created_at);
-        switch (dateFilter) {
-          case 'today': return leadDate >= today;
-          case 'week':
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            return leadDate >= weekAgo;
-          case 'month':
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            return leadDate >= monthAgo;
-          default: return true;
-        }
-      });
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(lead =>
-        lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.phone?.includes(searchQuery)
-      );
-    }
-
-    setFilteredLeads(filtered);
-  };
-
-  const updateStatus = async (leadId: number, newStatus: string) => {
+  async function updateLeadStatus(id: number, status: string) {
     try {
-      await fetch('/api/leads', {
-        method: 'PATCH',
+      const response = await fetch('/api/leads/update', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId, status: newStatus })
+        body: JSON.stringify({ id, status })
       });
       
-      setLeads(leads.map(lead =>
-        lead.id === leadId ? { ...lead, status: newStatus } : lead
-      ));
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setAllLeads(leads => leads.map(l => 
+          l.id === id ? { ...l, status } : l
+        ));
+        if (selectedLead?.id === id) {
+          setSelectedLead({ ...selectedLead, status });
+        }
+        return true;
+      } else {
+        alert('Failed to save changes.');
+        return false;
+      }
     } catch (error) {
-      console.error('Error:', error);
+      alert('Failed to save changes.');
+      return false;
     }
-  };
+  }
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  };
-
-  const statusConfig = {
-    new: { color: 'bg-gradient-to-r from-red-500 to-pink-500', lightColor: 'bg-red-50', icon: '🆕' },
-    contacted: { color: 'bg-gradient-to-r from-yellow-500 to-orange-500', lightColor: 'bg-yellow-50', icon: '📞' },
-    quoted: { color: 'bg-gradient-to-r from-blue-500 to-cyan-500', lightColor: 'bg-blue-50', icon: '💰' },
-    won: { color: 'bg-gradient-to-r from-green-500 to-emerald-500', lightColor: 'bg-green-50', icon: '✅' },
-    lost: { color: 'bg-gradient-to-r from-gray-400 to-gray-500', lightColor: 'bg-gray-50', icon: '❌' }
-  };
-
-  const categoryIcons: Record<string, string> = {
-    roofing: '🏠', hvac: '❄️', plumbing: '🔧', electrical: '⚡',
-    construction: '🏗️', painting: '🎨', flooring: '🪵', landscaping: '🌳', other: '📋'
-  };
-
-  const stats = {
-    total: leads.length,
-    new: leads.filter(l => l.status === 'new').length,
-    contacted: leads.filter(l => l.status === 'contacted').length,
-    won: leads.filter(l => l.status === 'won').length
-  };
+  async function addNote(id: number, noteText: string) {
+    try {
+      const response = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, notes: noteText, action: 'add_note' })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        await fetchLeads();
+        const updatedLead = allLeads.find(l => l.id === id);
+        if (updatedLead) {
+          setSelectedLead(updatedLead);
+        }
+        return true;
+      } else {
+        alert('Failed to add note.');
+        return false;
+      }
+    } catch (error) {
+      alert('Failed to add note.');
+      return false;
+    }
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
-          <p className="text-xl text-gray-600">Loading...</p>
-        </div>
+      <div className={styles.loading}>
+        <div className="animate-spin text-6xl mb-4">⏳</div>
+        <p className={styles.loadingText}>Loading dashboard...</p>
       </div>
     );
   }
 
+  let filteredLeads = allLeads.filter(lead => {
+    const matchesSearch = searchQuery === '' || 
+      lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.phone?.includes(searchQuery);
+    
+    const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
+    const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
+    
+    let matchesDateRange = true;
+    if (dateFrom || dateTo) {
+      const leadDate = new Date(lead.created_at);
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDateRange = matchesDateRange && leadDate >= fromDate;
+      }
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDateRange = matchesDateRange && leadDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesDateRange;
+  });
+
+  filteredLeads.sort((a, b) => {
+    if (sortBy === 'date') {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (sortBy === 'urgency') {
+      const urgencyOrder = { 'Emergency': 0, 'High Priority': 1, 'Normal': 2, 'Low Priority': 3 };
+      const aAnalysis = safeJSONParse(a.ai_analysis);
+      const bAnalysis = safeJSONParse(b.ai_analysis);
+      const aUrgency = urgencyOrder[aAnalysis?.urgency as keyof typeof urgencyOrder] ?? 2;
+      const bUrgency = urgencyOrder[bAnalysis?.urgency as keyof typeof urgencyOrder] ?? 2;
+      return aUrgency - bUrgency;
+    }
+    return 0;
+  });
+
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const cutoffDate = showPreviousDays === 7 ? startOfWeek : 
+                     new Date(now.getTime() - showPreviousDays * 24 * 60 * 60 * 1000);
+
+  const newLeads = filteredLeads.filter(l => new Date(l.created_at) > yesterday);
+  const previousLeads = filteredLeads.filter(l => {
+    const date = new Date(l.created_at);
+    return date <= yesterday && date >= cutoffDate;
+  });
+
+  const emergencyLeads = allLeads.filter(l => {
+    const analysis = safeJSONParse(l.ai_analysis);
+    return analysis?.urgency === 'Emergency';
+  }).length;
+  
+  const highPriorityLeads = allLeads.filter(l => {
+    const analysis = safeJSONParse(l.ai_analysis);
+    return analysis?.urgency === 'High Priority';
+  }).length;
+
+  const statusCounts = {
+    new: allLeads.filter(l => (l.status || 'new') === 'new').length,
+    contacted: allLeads.filter(l => l.status === 'contacted').length,
+    quoted: allLeads.filter(l => l.status === 'quoted').length,
+    completed: allLeads.filter(l => l.status === 'completed').length,
+  };
+
+  const categories = [...new Set(allLeads.map(l => l.category))];
+
+  const clearDateFilter = () => {
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const renderLeads = (leads: any[]) => {
+    if (leads.length === 0) {
+      return (
+        <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
+          <p className="text-white/80">No leads matching filters</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="lg:hidden">
+          <CardsView leads={leads} onSelectLead={setSelectedLead} />
+        </div>
+        <div className="hidden lg:block">
+          {currentView === 'cards' ? (
+            <CardsView leads={leads} onSelectLead={setSelectedLead} />
+          ) : (
+            <TableView leads={leads} onSelectLead={setSelectedLead} />
+          )}
+        </div>
+      </>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      <header className="glass border-b sticky top-0 z-40 backdrop-blur-xl bg-white/70">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-              {company.name.substring(0, 2).toUpperCase()}
+    <div className={styles.container}>
+      <div className={styles.innerContainer}>
+        <div className={styles.header}>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between w-full gap-4">
+            <div>
+              <h1 className={styles.title}>{company.name}</h1>
+              <p className={styles.subtitle}>Lead Dashboard</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <a 
+                href={`/${company.slug}`} 
+                className="text-white/80 hover:text-white text-sm transition"
+              >
+                📋 View Form
+              </a>
+              <div className="hidden lg:block">
+                <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.statsBar}>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>New (24h)</p>
+            <p className={styles.statValue}>{newLeads.length}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>🚨 Emergency</p>
+            <p className={styles.statValue}>{emergencyLeads}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>⚠️ High Priority</p>
+            <p className={styles.statValue}>{highPriorityLeads}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>✅ Completed</p>
+            <p className={styles.statValue}>{statusCounts.completed}</p>
+          </div>
+          <div className={styles.statCard}>
+            <p className={styles.statLabel}>Total</p>
+            <p className={styles.statValue}>{allLeads.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-white text-sm font-semibold mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Name, email, phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-white text-sm font-semibold mb-2">Category</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <option value="all">All</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-white text-sm font-semibold mb-2">Status</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <option value="all">All</option>
+                <option value="new">New ({statusCounts.new})</option>
+                <option value="contacted">Contacted ({statusCounts.contacted})</option>
+                <option value="quoted">Quoted ({statusCounts.quoted})</option>
+                <option value="completed">Completed ({statusCounts.completed})</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-white text-sm font-semibold mb-2">Sort</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <option value="date">Recent</option>
+                <option value="urgency">Urgency</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-white text-sm font-semibold mb-2">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold gradient-text">{company.name}</h1>
-              <p className="text-xs text-gray-500">Lead Dashboard</p>
+              <label className="block text-white text-sm font-semibold mb-2">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              />
             </div>
-          </div>
-          <div className="flex gap-4 items-center">
-            <a href={`/${company.slug}`} className="text-sm text-gray-600 hover:text-gray-900">View Form</a>
-            <button onClick={handleLogout} className="text-sm text-red-600 hover:text-red-700 font-medium">Logout</button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-4xl">📊</span>
-              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{stats.total}</p>
+            <div className="flex items-end">
+              <button
+                onClick={clearDateFilter}
+                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 font-semibold transition"
+              >
+                Clear
+              </button>
             </div>
-            <p className="text-sm font-medium text-gray-600">Total Leads</p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-red-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-4xl">🆕</span>
-              <p className="text-3xl font-bold text-red-600">{stats.new}</p>
-            </div>
-            <p className="text-sm font-medium text-gray-600">New</p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-yellow-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-4xl">📞</span>
-              <p className="text-3xl font-bold text-yellow-600">{stats.contacted}</p>
-            </div>
-            <p className="text-sm font-medium text-gray-600">Contacted</p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-green-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-4xl">✅</span>
-              <p className="text-3xl font-bold text-green-600">{stats.won}</p>
-            </div>
-            <p className="text-sm font-medium text-gray-600">Won</p>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg mb-6 border border-gray-100 space-y-4">
-          <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">📊 Status</p>
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'new', 'contacted', 'quoted', 'won', 'lost'].map(status => (
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">NEW</span>
+              Last 24 Hours
+            </h2>
+            <p className="text-white/80">{newLeads.length}</p>
+          </div>
+          {renderLeads(newLeads)}
+        </div>
+
+        <div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              📂 Previous
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {[7, 30, 90, 365].map(days => (
                 <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={`px-4 py-2 rounded-xl font-medium capitalize transition-all duration-300 ${
-                    statusFilter === status
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  key={days}
+                  onClick={() => setShowPreviousDays(days)}
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm ${
+                    showPreviousDays === days ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
-                  {status}
+                  {days === 7 ? 'Week' : days === 30 ? '30d' : days === 90 ? '90d' : 'All'}
                 </button>
               ))}
             </div>
           </div>
+          {renderLeads(previousLeads)}
+        </div>
 
+        {allLeads.length === 0 && (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📋</div>
+            <p className={styles.emptyTitle}>No leads yet</p>
+          </div>
+        )}
+      </div>
+
+      {selectedLead && (
+        <LeadModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus}
+          onAddNote={addNote}
+          onRefresh={fetchLeads}
+        />
+      )}
+    </div>
+  );
+}
+
+// Import the SAME modal from global dashboard
+function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
+  const [status, setStatus] = useState(lead.status || 'new');
+  const [newNote, setNewNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const notesArray = parseNotes(lead.notes);
+
+  const handleStatusChange = async () => {
+    if (status === (lead.status || 'new')) return;
+    
+    setSaving(true);
+    const success = await onUpdateStatus(lead.id, status);
+    setSaving(false);
+    if (success) alert('✅ Status updated!');
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    setSaving(true);
+    const success = await onAddNote(lead.id, newNote);
+    setSaving(false);
+    
+    if (success) setNewNote('');
+  };
+
+  const fileUrls = safeJSONParse(lead.file_urls);
+  const aiAnalysis = safeJSONParse(lead.ai_analysis);
+  
+  const images = fileUrls?.filter((f: any) => 
+    f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  ) || [];
+  
+  const videos = fileUrls?.filter((f: any) => 
+    f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
+  ) || [];
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">📅 Date Range</p>
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { value: 'all', label: 'All Time' },
-                { value: 'today', label: 'Today' },
-                { value: 'week', label: 'This Week' },
-                { value: 'month', label: 'This Month' }
-              ].map(date => (
-                <button
-                  key={date.value}
-                  onClick={() => setDateFilter(date.value)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                    dateFilter === date.value
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {date.label}
-                </button>
-              ))}
+            <h2 className={styles.modalTitle}>{lead.name}</h2>
+            <p className={styles.modalDate}>
+              {new Date(lead.created_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
+            </p>
+          </div>
+          <button onClick={onClose} className={styles.closeButton}>×</button>
+        </div>
+
+        <div className={styles.modalContent}>
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Status</h3>
+            <div className="flex gap-3 items-center">
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="new">🆕 New</option>
+                <option value="contacted">📞 Contacted</option>
+                <option value="quoted">💰 Quoted</option>
+                <option value="in-progress">🔨 In Progress</option>
+                <option value="completed">✅ Completed</option>
+                <option value="lost">❌ Lost</option>
+              </select>
+              <button
+                onClick={handleStatusChange}
+                disabled={saving || status === (lead.status || 'new')}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
+              >
+                {saving ? '...' : 'Update'}
+              </button>
             </div>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">🏷️ Category</p>
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { value: 'all', label: 'All', icon: '📋' },
-                { value: 'roofing', label: 'Roofing', icon: '🏠' },
-                { value: 'hvac', label: 'HVAC', icon: '❄️' },
-                { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
-                { value: 'electrical', label: 'Electrical', icon: '⚡' },
-                { value: 'construction', label: 'Construction', icon: '🏗️' }
-              ].map(cat => (
-                <button
-                  key={cat.value}
-                  onClick={() => setCategoryFilter(cat.value)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                    categoryFilter === cat.value
-                      ? 'bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {cat.icon} {cat.label}
-                </button>
-              ))}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Notes ({notesArray.length})</h3>
+            
+            <div className="mb-4">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Add a note..."
+                rows={3}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={saving || !newNote.trim()}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
+              >
+                {saving ? '💾 Adding...' : '➕ Add Note'}
+              </button>
             </div>
-          </div>
 
-          <input
-            type="text"
-            placeholder="🔍 Search by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input w-full"
-          />
-        </div>
-
-        <div className="mb-4">
-          <p className="text-gray-600">
-            Showing <span className="font-bold text-blue-600">{filteredLeads.length}</span> of <span className="font-bold">{leads.length}</span> leads
-          </p>
-        </div>
-
-        {/* Leads List */}
-        <div className="space-y-4">
-          {filteredLeads.length === 0 ? (
-            <div className="bg-white rounded-2xl p-16 text-center shadow-lg border border-gray-100">
-              <div className="text-6xl mb-4">📭</div>
-              <p className="text-xl font-semibold text-gray-700">No leads found</p>
-              <p className="text-gray-500 mt-2">Try adjusting your filters</p>
-            </div>
-          ) : (
-            filteredLeads.map((lead) => {
-              const fileUrls = typeof lead.file_urls === 'string' ? JSON.parse(lead.file_urls) : lead.file_urls;
-              const config = statusConfig[lead.status as keyof typeof statusConfig];
-              const categoryIcon = categoryIcons[lead.category] || '📋';
-
-              return (
-                <div key={lead.id} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3 flex-wrap">
-                        <h3 className="text-2xl font-bold text-gray-900">{lead.name}</h3>
-                        <span className={`${config?.color} text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md flex items-center gap-1`}>
-                          <span>{config?.icon}</span>
-                          <span className="capitalize">{lead.status}</span>
-                        </span>
-                        {lead.category && (
-                          <span className="bg-gradient-to-r from-green-100 to-teal-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1">
-                            <span>{categoryIcon}</span>
-                            <span className="capitalize">{lead.category}</span>
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        <span className="flex items-center gap-1.5 text-gray-600">
-                          <span>📧</span> {lead.email}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-gray-600">
-                          <span>📱</span> {lead.phone}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>🕒</span>
-                      {new Date(lead.created_at).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
+            {notesArray.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {[...notesArray].reverse().map((note: any, idx: number) => (
+                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-gray-800 mb-2">{note.text}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(note.timestamp).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
                         year: 'numeric',
-                        hour: '2-digit',
+                        hour: 'numeric',
                         minute: '2-digit'
                       })}
-                    </div>
+                    </p>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">
+                No notes yet
+              </div>
+            )}
+          </div>
 
-                  <div className={`${config?.lightColor} rounded-xl p-4 mb-4`}>
-                    <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <span>📝</span> Description
-                    </h4>
-                    <p className="text-gray-700 leading-relaxed">{lead.description}</p>
-                  </div>
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Contact</h3>
+            
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <button
+                onClick={() => {
+                  const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
+                  const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
+                  window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                📧 Email
+              </button>
+              <button
+                onClick={() => window.location.href = `tel:${lead.phone}`}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                📞 Call
+              </button>
+              <button
+                onClick={() => {
+                  const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project photos.`);
+                  window.location.href = `sms:${lead.phone}?body=${message}`;
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                💬 Text
+              </button>
+            </div>
 
-                  {fileUrls && fileUrls.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <span>📸</span> Photos ({fileUrls.length})
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {fileUrls.map((file: any, index: number) => (
-                          <a key={index} href={file.url} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-xl">
-                            <img src={file.url} alt={file.name} className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-110" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                              <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl">🔍</span>
-                            </div>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            <div className={styles.contactGrid}>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Email</span>
+                <a href={`mailto:${lead.email}`} className={styles.contactValue + ' hover:underline'}>
+                  {lead.email}
+                </a>
+              </div>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Phone</span>
+                <a href={`tel:${lead.phone}`} className={styles.contactValue + ' hover:underline'}>
+                  {lead.phone}
+                </a>
+              </div>
+              <div className={styles.contactItem}>
+                <span className={styles.contactLabel}>Category</span>
+                <span className={styles.contactValue}>{lead.category}</span>
+              </div>
+            </div>
+          </div>
 
-                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <span>🏷️</span> Update Status:
-                    </label>
-                    <select value={lead.status} onChange={(e) => updateStatus(lead.id, e.target.value)} className="form-input rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-all font-medium w-auto">
-                      <option value="new">🆕 New</option>
-                      <option value="contacted">📞 Contacted</option>
-                      <option value="quoted">💰 Quoted</option>
-                      <option value="won">✅ Won</option>
-                      <option value="lost">❌ Lost</option>
-                    </select>
-                  </div>
-                </div>
-              );
-            })
+          {lead.description && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Description</h3>
+              <div className={styles.description}>{lead.description}</div>
+            </div>
           )}
+
+          {images.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Photos ({images.length})</h3>
+              <div className={styles.photosGrid}>
+                {images.map((file: any, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={file.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.photoLink}
+                  >
+                    <img src={file.url} alt={`Photo ${idx + 1}`} className={styles.photo} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {videos.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Videos ({videos.length})</h3>
+              <div className={styles.photosGrid}>
+                {videos.map((file: any, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={file.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.photoLink}
+                  >
+                    <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex flex-col items-center justify-center border-2 border-blue-200">
+                      <div className="text-6xl mb-2">🎥</div>
+                      <p className="text-sm font-medium text-gray-700">Video {idx + 1}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>AI Analysis</h3>
+            {aiAnalysis ? (
+              <AIAnalysis analysis={aiAnalysis} />
+            ) : (
+              <div className={styles.noAnalysis}>No AI analysis</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

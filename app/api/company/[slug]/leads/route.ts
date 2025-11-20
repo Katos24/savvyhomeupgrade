@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: Props) {
     
     // Get leads for this company
     const leads = await sql`
-      SELECT * FROM leads 
+      SELECT * FROM leads
       WHERE company_id = ${companyId}
       ORDER BY created_at DESC
     `;
