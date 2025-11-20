@@ -106,7 +106,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Filter leads
   let filteredLeads = allLeads.filter(lead => {
     const matchesSearch = searchQuery === '' || 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -134,7 +133,6 @@ export default function DashboardPage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesDateRange;
   });
 
-  // Sort leads
   filteredLeads.sort((a, b) => {
     if (sortBy === 'date') {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -165,7 +163,6 @@ export default function DashboardPage() {
     return date <= yesterday && date >= cutoffDate;
   });
 
-  // Calculate stats
   const emergencyLeads = allLeads.filter(l => {
     const analysis = safeJSONParse(l.ai_analysis);
     return analysis?.urgency === 'Emergency';
@@ -190,21 +187,46 @@ export default function DashboardPage() {
     setDateTo('');
   };
 
+  const renderLeads = (leads: any[]) => {
+    if (leads.length === 0) {
+      return (
+        <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
+          <p className="text-white/80">No leads matching filters</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="lg:hidden">
+          <CardsView leads={leads} onSelectLead={setSelectedLead} />
+        </div>
+        <div className="hidden lg:block">
+          {currentView === 'cards' ? (
+            <CardsView leads={leads} onSelectLead={setSelectedLead} />
+          ) : (
+            <TableView leads={leads} onSelectLead={setSelectedLead} />
+          )}
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.innerContainer}>
-        {/* Header with View Switcher */}
         <div className={styles.header}>
-          <div className="flex items-center justify-between w-full">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between w-full gap-4">
             <div>
               <h1 className={styles.title}>Contractor Dashboard</h1>
               <p className={styles.subtitle}>Manage your leads and AI-powered insights</p>
             </div>
-            <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
+            <div className="hidden lg:block">
+              <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
+            </div>
           </div>
         </div>
 
-        {/* Stats Bar */}
         <div className={styles.statsBar}>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>New (24h)</p>
@@ -228,10 +250,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Filters & Search */}
-        <div className="bg-white/10 backdrop-blur rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-            {/* Search */}
+        <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Search</label>
               <input
@@ -243,7 +263,6 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Category Filter */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Category</label>
               <select
@@ -258,7 +277,6 @@ export default function DashboardPage() {
               </select>
             </div>
 
-            {/* Status Filter */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Status</label>
               <select
@@ -274,7 +292,6 @@ export default function DashboardPage() {
               </select>
             </div>
 
-            {/* Sort */}
             <div>
               <label className="block text-white text-sm font-semibold mb-2">Sort By</label>
               <select
@@ -288,8 +305,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Date Range Filter */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-white text-sm font-semibold mb-2">From Date</label>
               <input
@@ -325,7 +341,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* NEW LEADS SECTION */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -334,81 +349,50 @@ export default function DashboardPage() {
             </h2>
             <p className="text-white/80">{newLeads.length} lead{newLeads.length !== 1 ? 's' : ''}</p>
           </div>
-
-          {newLeads.length > 0 ? (
-            currentView === 'cards' ? (
-              <CardsView leads={newLeads} onSelectLead={setSelectedLead} />
-            ) : (
-              <TableView leads={newLeads} onSelectLead={setSelectedLead} />
-            )
-          ) : (
-            <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
-              <p className="text-white/80">No new leads matching filters</p>
-            </div>
-          )}
+          {renderLeads(newLeads)}
         </div>
 
-        {/* PREVIOUS LEADS SECTION */}
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               📂 Previous Leads
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowPreviousDays(7)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  showPreviousDays === 7 
-                    ? 'bg-white text-blue-600' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm sm:text-base ${
+                  showPreviousDays === 7 ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
               >
                 This Week
               </button>
               <button
                 onClick={() => setShowPreviousDays(30)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  showPreviousDays === 30 
-                    ? 'bg-white text-blue-600' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm sm:text-base ${
+                  showPreviousDays === 30 ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
               >
                 Last 30 Days
               </button>
               <button
                 onClick={() => setShowPreviousDays(90)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  showPreviousDays === 90 
-                    ? 'bg-white text-blue-600' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm sm:text-base ${
+                  showPreviousDays === 90 ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
               >
                 Last 90 Days
               </button>
               <button
                 onClick={() => setShowPreviousDays(365)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  showPreviousDays === 365 
-                    ? 'bg-white text-blue-600' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm sm:text-base ${
+                  showPreviousDays === 365 ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
               >
                 All Time
               </button>
             </div>
           </div>
-
-          {previousLeads.length > 0 ? (
-            currentView === 'cards' ? (
-              <CardsView leads={previousLeads} onSelectLead={setSelectedLead} />
-            ) : (
-              <TableView leads={previousLeads} onSelectLead={setSelectedLead} />
-            )
-          ) : (
-            <div className="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
-              <p className="text-white/80">No leads matching filters</p>
-            </div>
-          )}
+          {renderLeads(previousLeads)}
         </div>
 
         {allLeads.length === 0 && (
@@ -422,7 +406,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Modal */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead}
@@ -436,7 +419,6 @@ export default function DashboardPage() {
   );
 }
 
-// Lead Modal Component
 function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
   const [status, setStatus] = useState(lead.status || 'new');
   const [newNote, setNewNote] = useState('');
@@ -479,14 +461,8 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
   ) || [];
 
   return (
-    <div
-      className={styles.modalOverlay}
-      onClick={onClose}
-    >
-      <div
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div>
             <h2 className={styles.modalTitle}>{lead.name}</h2>
@@ -500,16 +476,12 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
               })}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className={styles.closeButton}
-          >
+          <button onClick={onClose} className={styles.closeButton}>
             ×
           </button>
         </div>
 
         <div className={styles.modalContent}>
-          {/* Status Management */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Status</h3>
             <div className="flex gap-3 items-center">
@@ -535,11 +507,9 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
             </div>
           </div>
 
-          {/* Notes Thread */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Notes ({notesArray.length})</h3>
             
-            {/* Add Note */}
             <div className="mb-4">
               <textarea
                 value={newNote}
@@ -557,7 +527,6 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
               </button>
             </div>
 
-            {/* Notes List */}
             {notesArray.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {[...notesArray].reverse().map((note: any, idx: number) => (
@@ -582,12 +551,10 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
             )}
           </div>
 
-          {/* Contact Information */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Contact Information</h3>
             
-            {/* Quick Contact Buttons */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <button
                 onClick={() => {
                   const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
