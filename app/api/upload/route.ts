@@ -26,22 +26,36 @@ export async function POST(request: Request) {
       uploadedUrls.push({
         name: file.name,
         url: blob.url,
-        size: file.size
+        size: file.size,
+        type: file.type
       });
     }
 
-    // Get image URLs for AI analysis - INCLUDE HEIC FILES
+    // Get ONLY image URLs for AI analysis (no videos)
     const imageUrls = uploadedUrls
-      .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i))
+      .filter(file => 
+        file.type?.startsWith('image/') && 
+        file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+      )
       .map(file => file.url);
 
     console.log('Image URLs for AI:', imageUrls);
+    
+    // Count videos separately
+    const videoCount = uploadedUrls.filter(file => 
+      file.type?.startsWith('video/') || 
+      file.name.match(/\.(mp4|mov|avi|webm)$/i)
+    ).length;
 
-    // Run AI analysis if there are images
+    console.log(`Files uploaded: ${uploadedUrls.length} total (${imageUrls.length} images, ${videoCount} videos)`);
+
+    // Run AI analysis ONLY if there are images
     let aiAnalysis = null;
+    let analysisNote = null;
+
     if (imageUrls.length > 0) {
       try {
-        console.log('Attempting AI analysis...');
+        console.log('Attempting AI analysis on images...');
         const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ai/analyze-photos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -57,13 +71,21 @@ export async function POST(request: Request) {
         
         if (analysisData.success) {
           aiAnalysis = analysisData.analysis;
+          
+          if (videoCount > 0) {
+            analysisNote = `AI analysis based on ${imageUrls.length} photo(s). ${videoCount} video(s) uploaded for manual review.`;
+          }
         }
       } catch (error) {
         console.error('AI analysis failed:', error);
         // Continue without AI analysis
       }
+    } else if (videoCount > 0) {
+      // Only videos uploaded, no images
+      analysisNote = `${videoCount} video(s) uploaded. Videos require manual contractor review - AI analysis works on photos only.`;
+      console.log('No images for AI analysis - videos only');
     } else {
-      console.log('No images found for AI analysis');
+      console.log('No compatible media found for AI analysis');
     }
 
     // Save lead to database
@@ -88,7 +110,13 @@ export async function POST(request: Request) {
       success: true,
       files: uploadedUrls,
       leadId: result[0].id,
-      aiAnalysis
+      aiAnalysis,
+      analysisNote,
+      stats: {
+        totalFiles: uploadedUrls.length,
+        images: imageUrls.length,
+        videos: videoCount
+      }
     });
   } catch (error) {
     console.error('Upload error:', error);

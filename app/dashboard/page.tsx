@@ -97,9 +97,16 @@ export default function DashboardPage() {
           {leads.map((lead: any) => {
             const fileUrls = safeJSONParse(lead.file_urls);
             const aiAnalysis = safeJSONParse(lead.ai_analysis);
-            const firstImage = fileUrls?.find((f: any) => 
-              f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-            );
+            
+            const images = fileUrls?.filter((f: any) => 
+              f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+            ) || [];
+            
+            const videos = fileUrls?.filter((f: any) => 
+              f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
+            ) || [];
+            
+            const firstImage = images[0];
 
             return (
               <div
@@ -114,15 +121,24 @@ export default function DashboardPage() {
                       src={firstImage.url}
                       alt="Project preview"
                     />
-                    {fileUrls && fileUrls.length > 1 && (
+                    {(images.length > 1 || videos.length > 0) && (
                       <span className={styles.imageCount}>
-                        +{fileUrls.length - 1} photos
+                        {images.length > 1 && `+${images.length - 1} photos`}
+                        {images.length > 1 && videos.length > 0 && ' • '}
+                        {videos.length > 0 && `${videos.length} video${videos.length > 1 ? 's' : ''}`}
                       </span>
                     )}
                   </div>
+                ) : videos.length > 0 ? (
+                  <div className={styles.noImage}>
+                    <div className="text-center">
+                      <div className="text-5xl mb-2">🎥</div>
+                      <p className="text-sm">{videos.length} video{videos.length > 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
                 ) : (
                   <div className={styles.noImage}>
-                    <span>📷 No image</span>
+                    <span>📷 No media</span>
                   </div>
                 )}
 
@@ -149,7 +165,7 @@ export default function DashboardPage() {
                   )}
 
                   {/* AI Quick Stats */}
-                  {aiAnalysis && (
+                  {aiAnalysis ? (
                     <div className={styles.badges}>
                       <span className={`${styles.badge} ${
                         aiAnalysis.urgency === 'Emergency' ? styles.urgencyEmergency :
@@ -167,7 +183,13 @@ export default function DashboardPage() {
                         {aiAnalysis.complexity}
                       </span>
                     </div>
-                  )}
+                  ) : videos.length > 0 && images.length === 0 ? (
+                    <div className={styles.badges}>
+                      <span className={`${styles.badge} ${styles.urgencyNormal}`}>
+                        📹 Manual Review
+                      </span>
+                    </div>
+                  ) : null}
 
                   <p className={styles.cardDate}>
                     🕒 {new Date(lead.created_at).toLocaleDateString('en-US', {
@@ -234,6 +256,14 @@ export default function DashboardPage() {
               {(() => {
                 const fileUrls = safeJSONParse(selectedLead.file_urls);
                 const aiAnalysis = safeJSONParse(selectedLead.ai_analysis);
+                
+                const images = fileUrls?.filter((f: any) => 
+                  f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+                ) || [];
+                
+                const videos = fileUrls?.filter((f: any) => 
+                  f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
+                ) || [];
 
                 return (
                   <>
@@ -267,26 +297,53 @@ export default function DashboardPage() {
                     )}
 
                     {/* Photos */}
-                    {fileUrls && Array.isArray(fileUrls) && fileUrls.length > 0 && (
+                    {images.length > 0 && (
                       <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>Photos ({fileUrls.length})</h3>
+                        <h3 className={styles.sectionTitle}>Photos ({images.length})</h3>
                         <div className={styles.photosGrid}>
-                          {fileUrls.map((file: any, idx: number) => (
-                            file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
-                              <a 
-                                key={idx}
-                                href={file.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className={styles.photoLink}
-                              >
-                                <img 
-                                  src={file.url} 
-                                  alt={`Upload ${idx + 1}`}
-                                  className={styles.photo}
-                                />
-                              </a>
-                            )
+                          {images.map((file: any, idx: number) => (
+                            <a 
+                              key={idx}
+                              href={file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={styles.photoLink}
+                            >
+                              <img 
+                                src={file.url} 
+                                alt={`Upload ${idx + 1}`}
+                                className={styles.photo}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Videos */}
+                    {videos.length > 0 && (
+                      <div className={styles.section}>
+                        <h3 className={styles.sectionTitle}>Videos ({videos.length}) - Manual Review Required</h3>
+                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+                          <p className="text-yellow-800 text-sm">
+                            📹 Videos require manual review. AI analysis works on photos only.
+                          </p>
+                        </div>
+                        <div className={styles.photosGrid}>
+                          {videos.map((file: any, idx: number) => (
+                            <a 
+                              key={idx}
+                              href={file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={styles.photoLink}
+                            >
+                              <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex flex-col items-center justify-center border-2 border-blue-200">
+                                <div className="text-6xl mb-2">🎥</div>
+                                <p className="text-sm font-medium text-gray-700">Video {idx + 1}</p>
+                                <p className="text-xs text-gray-500">Click to view</p>
+                              </div>
+                            </a>
                           ))}
                         </div>
                       </div>
@@ -296,7 +353,24 @@ export default function DashboardPage() {
                     <div className={styles.section}>
                       <h3 className={styles.sectionTitle}>AI Analysis</h3>
                       {aiAnalysis ? (
-                        <AIAnalysis analysis={aiAnalysis} />
+                        <>
+                          {videos.length > 0 && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                              <p className="text-blue-800 text-sm">
+                                ℹ️ AI analysis based on {images.length} photo(s). {videos.length} video(s) available for manual review above.
+                              </p>
+                            </div>
+                          )}
+                          <AIAnalysis analysis={aiAnalysis} />
+                        </>
+                      ) : videos.length > 0 && images.length === 0 ? (
+                        <div className={styles.noAnalysis}>
+                          <div className="text-5xl mb-3">🎥</div>
+                          <p className="font-semibold text-gray-700 mb-2">Videos Only - Manual Review Required</p>
+                          <p className="text-gray-600 text-sm">
+                            AI analysis works on photos. Please review the {videos.length} video(s) manually above.
+                          </p>
+                        </div>
                       ) : (
                         <div className={styles.noAnalysis}>
                           No AI analysis available for this lead
