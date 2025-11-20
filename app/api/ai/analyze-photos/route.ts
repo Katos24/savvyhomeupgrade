@@ -38,9 +38,11 @@ export async function POST(request: Request) {
           const arrayBuffer = await response.arrayBuffer();
           let buffer = Buffer.from(arrayBuffer);
           
+          // Always compress/resize images to ensure they're under 5MB
           console.log(`Processing image from: ${url} (${buffer.length} bytes)`);
           
-          buffer = await sharp(buffer)
+          // Resize and compress to ensure < 5MB
+          const compressedBuffer = await sharp(buffer)
             .resize(2000, 2000, {
               fit: 'inside',
               withoutEnlargement: true
@@ -51,9 +53,9 @@ export async function POST(request: Request) {
             })
             .toBuffer();
           
-          console.log(`Compressed to: ${buffer.length} bytes`);
+          console.log(`Compressed to: ${compressedBuffer.length} bytes`);
           
-          const base64 = buffer.toString('base64');
+          const base64 = compressedBuffer.toString('base64');
           
           return {
             type: "image" as const,
