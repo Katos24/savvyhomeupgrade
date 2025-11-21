@@ -28,8 +28,8 @@
 
 .statsBar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  gap: 1rem;
   margin-bottom: 3rem;
 }
 
@@ -394,7 +394,7 @@
   }
 
   .statsBar {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
 
@@ -459,7 +459,7 @@
   }
 
   .statsBar {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .cardIconHeader {
@@ -508,3 +508,17 @@
 }
 
 /* Remove old mediaIcon and mediaCount styles - using inline styles now */
+
+
+
+@media (min-width: 640px) {
+  .statsBar {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns on tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  .statsBar {
+    grid-template-columns: repeat(5, 1fr); /* 5 columns on desktop */
+  }
+}
