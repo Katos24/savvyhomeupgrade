@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { compressImages } from '@/lib/compressImage';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState('');
   const [showNoImageConfirm, setShowNoImageConfirm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,7 +39,6 @@ export default function UploadPage() {
     'Other',
   ];
 
-  // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
     const phoneNumber = value.replace(/\D/g, '');
     const limitedNumber = phoneNumber.slice(0, 10);
@@ -63,10 +64,15 @@ export default function UploadPage() {
     };
   }, [files]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      setCompressing(true);
       const newFiles = Array.from(e.target.files);
-      setFiles([...files, ...newFiles]);
+      
+      // Compress images before adding
+      const compressed = await compressImages(newFiles);
+      setFiles([...files, ...compressed]);
+      setCompressing(false);
     }
   };
 
@@ -87,16 +93,21 @@ export default function UploadPage() {
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    
     const droppedFiles = Array.from(e.dataTransfer.files);
     const imageAndVideoFiles = droppedFiles.filter(
       file => file.type.startsWith('image/') || file.type.startsWith('video/')
     );
+    
     if (imageAndVideoFiles.length > 0) {
-      setFiles([...files, ...imageAndVideoFiles]);
+      setCompressing(true);
+      const compressed = await compressImages(imageAndVideoFiles);
+      setFiles([...files, ...compressed]);
+      setCompressing(false);
     }
   };
 
@@ -113,14 +124,12 @@ export default function UploadPage() {
       return;
     }
 
-    // Validate phone number has 10 digits
     const rawPhone = formData.phone.replace(/\D/g, '');
     if (rawPhone.length !== 10) {
       setError('Please enter a valid 10-digit phone number');
       return;
     }
 
-    // If no images, show confirmation
     if (files.length === 0) {
       setShowNoImageConfirm(true);
       return;
@@ -166,7 +175,6 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
-      {/* No Image Confirmation Modal */}
       {showNoImageConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
@@ -196,7 +204,6 @@ export default function UploadPage() {
       )}
 
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">
             Submit Your Project
@@ -206,7 +213,6 @@ export default function UploadPage() {
           </p>
         </div>
 
-        {/* Form */}
         <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm sm:text-base">
@@ -215,7 +221,6 @@ export default function UploadPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Your Name *
@@ -230,7 +235,6 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address *
@@ -245,7 +249,6 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number *
@@ -264,7 +267,6 @@ export default function UploadPage() {
               </p>
             </div>
 
-            {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Category *
@@ -284,7 +286,6 @@ export default function UploadPage() {
               </select>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Describe Your Project *
@@ -299,7 +300,6 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* File Upload - MATCHING EXACT STYLE */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Upload Photos or Videos (Optional - but recommended)
@@ -323,16 +323,17 @@ export default function UploadPage() {
                   accept="image/*,video/*"
                   onChange={handleFileChange}
                   className="hidden"
+                  disabled={compressing}
                 />
                 <label htmlFor="file-upload" className="cursor-pointer block">
                   <div className="text-5xl sm:text-6xl mb-4">
-                    {isDragging ? '📥' : '📸'}
+                    {compressing ? '⏳' : isDragging ? '📥' : '📸'}
                   </div>
                   <p className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
-                    {isDragging ? 'Drop your files here!' : 'Click to upload or drag and drop'}
+                    {compressing ? 'Compressing images...' : isDragging ? 'Drop your files here!' : 'Click to upload or drag and drop'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Images or videos
+                    Images will be automatically compressed
                   </p>
                 </label>
               </div>
@@ -340,12 +341,11 @@ export default function UploadPage() {
               {files.length > 0 && (
                 <div className="mt-6">
                   <p className="text-sm font-semibold text-gray-700 mb-3">
-                    {files.length} file{files.length > 1 ? 's' : ''} uploaded
+                    {files.length} file{files.length > 1 ? 's' : ''} ready to upload
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {files.map((file, index) => (
                       <div key={index} className="relative rounded-lg overflow-hidden shadow-md group">
-                        {/* Image or Video Preview */}
                         {file.type.startsWith('image/') ? (
                           <img
                             src={filePreviews[index]}
@@ -361,12 +361,11 @@ export default function UploadPage() {
                           </div>
                         )}
                         
-                        {/* Overlay with filename */}
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                           <p className="text-white text-xs font-medium truncate">{file.name}</p>
+                          <p className="text-white/80 text-xs">{(file.size / 1024 / 1024).toFixed(2)}MB</p>
                         </div>
                         
-                        {/* Remove button */}
                         <button
                           type="button"
                           onClick={() => removeFile(index)}
@@ -385,16 +384,20 @@ export default function UploadPage() {
               </p>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
-              disabled={uploading}
+              disabled={uploading || compressing}
               className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-base sm:text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin">⏳</span>
                   Uploading...
+                </span>
+              ) : compressing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  Compressing...
                 </span>
               ) : (
                 '📸 Submit Project'
@@ -403,7 +406,6 @@ export default function UploadPage() {
           </form>
         </div>
 
-        {/* Help Text */}
         <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-600 px-4">
           <p>
             We'll review your submission and get back to you within 24 hours with an assessment.
