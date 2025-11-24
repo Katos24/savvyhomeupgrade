@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { put } from '@vercel/blob';
 
+// ADD THIS - Increase body size limit
+export const maxDuration = 60; // 60 seconds for processing
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -88,7 +92,7 @@ async function processFilesInBackground(leadId: number, files: File[], category:
       
       fileUrls.push({
         url: blob.url,
-        name: file.name, // Keep original name for display
+        name: file.name,
         type: file.type,
         size: file.size,
       });
@@ -98,7 +102,6 @@ async function processFilesInBackground(leadId: number, files: File[], category:
 
     console.log(`✅ All files uploaded. Updating database...`);
 
-    // Update lead with file URLs
     await sql`
       UPDATE leads 
       SET file_urls = ${JSON.stringify(fileUrls)}
@@ -107,7 +110,6 @@ async function processFilesInBackground(leadId: number, files: File[], category:
 
     console.log(`✅ Database updated with file URLs`);
 
-    // Call Claude AI for analysis (only on images)
     const images = fileUrls.filter(f => 
       f.type.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
     );
@@ -134,7 +136,6 @@ async function processFilesInBackground(leadId: number, files: File[], category:
   } catch (error) {
     console.error('❌ Background processing error:', error);
     
-    // Update lead with error status
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
       UPDATE leads 
@@ -149,19 +150,16 @@ async function processFilesInBackground(leadId: number, files: File[], category:
   }
 }
 
-// Claude AI analysis function with DETAILED prompt
 async function analyzeWithClaude(leadId: number, images: any[], category: string, description: string) {
   console.log(`🤖 Starting Claude analysis for lead ${leadId}`);
   
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    // Get lead details
     const [lead] = await sql`SELECT * FROM leads WHERE id = ${leadId}`;
     
     console.log(`📊 Analyzing ${images.length} images for ${lead.category} project`);
 
-    // Prepare image content for Claude
     const imageContents = images.map(img => ({
       type: 'image' as const,
       source: {
@@ -284,7 +282,6 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
 
     console.log(`🤖 Calling Claude API...`);
 
-    // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -322,7 +319,6 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
     const analysisText = data.content[0].text;
     console.log('Claude response:', analysisText);
     
-    // Parse JSON from Claude's response
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
       error: 'Could not parse analysis',
@@ -331,7 +327,6 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
 
     console.log('Parsed analysis:', analysis);
 
-    // Update lead with AI analysis and change status to "new"
     await sql`
       UPDATE leads 
       SET 
