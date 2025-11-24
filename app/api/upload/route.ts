@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { put } from '@vercel/blob';
 
-// ADD THIS - Increase body size limit
-export const maxDuration = 60; // 60 seconds for processing
+export const maxDuration = 60;
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
@@ -45,11 +44,16 @@ export async function POST(request: Request) {
 
     console.log('✅ Lead created with ID:', leadId);
     console.log('📸 Files to process:', files.length);
+    
+    // Log file details
+    files.forEach((file, i) => {
+      console.log(`  File ${i+1}: ${file.name} (${file.type}, ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    });
 
     // STEP 2: Return SUCCESS immediately to user
     // STEP 3: Process files in background - DON'T AWAIT!
     processFilesInBackground(leadId, files, category, description).catch(err => {
-      console.error('Background processing failed:', err);
+      console.error(`❌ [Lead ${leadId}] Background processing CRASHED:`, err);
     });
 
     return NextResponse.json({ 
@@ -69,17 +73,17 @@ export async function POST(request: Request) {
 
 // Background processing function
 async function processFilesInBackground(leadId: number, files: File[], category: string, description: string) {
-  console.log(`🔄 Starting background processing for lead ${leadId}`);
+  console.log(`🔄 [Lead ${leadId}] Starting background processing`);
   
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    console.log(`📤 Uploading ${files.length} files to blob storage...`);
+    console.log(`📤 [Lead ${leadId}] Uploading ${files.length} files to blob storage...`);
     
     // Upload files to Vercel Blob
     const fileUrls = [];
     for (const file of files) {
-      console.log(`  Uploading ${file.name}...`);
+      console.log(`  [Lead ${leadId}] Uploading ${file.name}...`);
       
       // Add timestamp to filename to make it unique
       const timestamp = Date.now();
@@ -97,29 +101,37 @@ async function processFilesInBackground(leadId: number, files: File[], category:
         size: file.size,
       });
       
-      console.log(`  ✅ Uploaded: ${blob.url}`);
+      console.log(`  ✅ [Lead ${leadId}] Uploaded: ${blob.url}`);
     }
 
-    console.log(`✅ All files uploaded. Updating database...`);
+    console.log(`✅ [Lead ${leadId}] All files uploaded. Updating database...`);
 
+    // Update lead with file URLs
     await sql`
       UPDATE leads 
       SET file_urls = ${JSON.stringify(fileUrls)}
       WHERE id = ${leadId}
     `;
 
-    console.log(`✅ Database updated with file URLs`);
+    console.log(`✅ [Lead ${leadId}] Database updated with file URLs`);
 
+    // Call Claude AI for analysis (only on images)
     const images = fileUrls.filter(f => 
       f.type.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
     );
 
-    console.log(`🤖 Found ${images.length} images for Claude analysis`);
+    console.log(`🖼️ [Lead ${leadId}] Found ${images.length} images for Claude analysis out of ${fileUrls.length} total files`);
+    
+    images.forEach((img, i) => {
+      console.log(`  Image ${i+1}: ${img.name} - ${img.url}`);
+    });
 
     if (images.length > 0) {
+      console.log(`🤖 [Lead ${leadId}] Calling analyzeWithClaude...`);
       await analyzeWithClaude(leadId, images, category, description);
+      console.log(`✅ [Lead ${leadId}] analyzeWithClaude completed`);
     } else {
-      console.log(`⚠️ No images to analyze`);
+      console.log(`⚠️ [Lead ${leadId}] No images to analyze`);
       await sql`
         UPDATE leads 
         SET 
@@ -131,11 +143,13 @@ async function processFilesInBackground(leadId: number, files: File[], category:
       `;
     }
 
-    console.log(`✅ Background processing complete for lead ${leadId}`);
+    console.log(`✅ [Lead ${leadId}] Background processing complete!`);
 
   } catch (error) {
-    console.error('❌ Background processing error:', error);
+    console.error(`❌ [Lead ${leadId}] Background processing error:`, error);
+    console.error(`❌ [Lead ${leadId}] Error stack:`, error instanceof Error ? error.stack : 'No stack');
     
+    // Update lead with error status
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
       UPDATE leads 
@@ -150,16 +164,23 @@ async function processFilesInBackground(leadId: number, files: File[], category:
   }
 }
 
+// Claude AI analysis function with DETAILED prompt
 async function analyzeWithClaude(leadId: number, images: any[], category: string, description: string) {
-  console.log(`🤖 Starting Claude analysis for lead ${leadId}`);
+  console.log(`🤖 [Lead ${leadId}] Starting Claude analysis`);
   
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
+    // Get lead details
+    console.log(`📋 [Lead ${leadId}] Fetching lead details from database...`);
     const [lead] = await sql`SELECT * FROM leads WHERE id = ${leadId}`;
+    console.log(`📋 [Lead ${leadId}] Got lead: ${lead.name}, category: ${lead.category}`);
     
-    console.log(`📊 Analyzing ${images.length} images for ${lead.category} project`);
+    console.log(`📊 [Lead ${leadId}] Analyzing ${images.length} images for ${lead.category} project`);
+    console.log(`🔑 [Lead ${leadId}] API Key exists: ${!!process.env.ANTHROPIC_API_KEY}`);
+    console.log(`🔑 [Lead ${leadId}] API Key length: ${process.env.ANTHROPIC_API_KEY?.length || 0}`);
 
+    // Prepare image content for Claude
     const imageContents = images.map(img => ({
       type: 'image' as const,
       source: {
@@ -280,8 +301,9 @@ Format as JSON with this structure:
 
 Be thorough, specific, and realistic. Help the contractor give an accurate quote and the homeowner understand what's involved.`;
 
-    console.log(`🤖 Calling Claude API...`);
+    console.log(`📡 [Lead ${leadId}] Calling Claude API now...`);
 
+    // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -307,26 +329,30 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
       }),
     });
 
+    console.log(`📬 [Lead ${leadId}] Claude API responded with status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Claude API error:', response.status, errorText);
+      console.error(`❌ [Lead ${leadId}] Claude API error ${response.status}:`, errorText);
       throw new Error(`Claude API failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ Received response from Claude`);
+    console.log(`✅ [Lead ${leadId}] Received response from Claude`);
     
     const analysisText = data.content[0].text;
-    console.log('Claude response:', analysisText);
+    console.log(`📝 [Lead ${leadId}] Claude response (first 200 chars):`, analysisText.substring(0, 200));
     
+    // Parse JSON from Claude's response
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
       error: 'Could not parse analysis',
       raw: analysisText 
     };
 
-    console.log('Parsed analysis:', analysis);
+    console.log(`💾 [Lead ${leadId}] Parsed analysis successfully`);
 
+    // Update lead with AI analysis and change status to "new"
     await sql`
       UPDATE leads 
       SET 
@@ -335,10 +361,12 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
       WHERE id = ${leadId}
     `;
 
-    console.log(`✅ Lead ${leadId} updated with AI analysis and marked as 'new'`);
+    console.log(`✅ [Lead ${leadId}] Updated database with AI analysis and marked as 'new'`);
 
   } catch (error) {
-    console.error('❌ Claude analysis error:', error);
+    console.error(`❌ [Lead ${leadId}] Claude analysis error:`, error);
+    console.error(`❌ [Lead ${leadId}] Error type:`, error instanceof Error ? error.constructor.name : typeof error);
+    console.error(`❌ [Lead ${leadId}] Error message:`, error instanceof Error ? error.message : String(error));
     
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
@@ -351,5 +379,7 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
         })}
       WHERE id = ${leadId}
     `;
+    
+    console.log(`💾 [Lead ${leadId}] Updated database with error status`);
   }
 }
