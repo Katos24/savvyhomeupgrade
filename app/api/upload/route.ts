@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // STEP 1: Create lead in database
     const sql = neon(process.env.DATABASE_URL!);
     const [lead] = await sql`
       INSERT INTO leads (
@@ -33,25 +34,72 @@ export async function POST(request: Request) {
         company_id, status, ai_analysis
       ) VALUES (
         ${name}, ${email}, ${phone}, ${category}, ${description},
-        ${companyId}, 'processing', ${JSON.stringify({ status: 'Processing photos and analyzing...' })}
+        ${companyId}, 'processing', ${JSON.stringify({ status: 'Processing photos...' })}
       )
       RETURNING id
     `;
 
     const leadId = lead.id;
-
     console.log('✅ Lead created with ID:', leadId);
     console.log('📸 Files to process:', files.length);
 
-    // Customer gets instant success - AI happens in background
-    processFilesInBackground(leadId, files, category, description).catch(err => {
-      console.error('Background processing failed:', err);
+    // STEP 2: Upload files to blob BEFORE returning (so they actually save!)
+    const fileUrls = [];
+    
+    if (files.length > 0) {
+      console.log(`📤 [Lead ${leadId}] Uploading ${files.length} files...`);
+      
+      for (const file of files) {
+        console.log(`  [Lead ${leadId}] Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+        
+        const timestamp = Date.now();
+        const uniqueFilename = `${timestamp}-${file.name}`;
+        
+        try {
+          const blob = await put(uniqueFilename, file, {
+            access: 'public',
+            token: process.env.BLOB_READ_WRITE_TOKEN,
+          });
+          
+          fileUrls.push({
+            url: blob.url,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+          });
+          
+          console.log(`  ✅ [Lead ${leadId}] Uploaded: ${blob.url}`);
+        } catch (uploadError) {
+          console.error(`  ❌ [Lead ${leadId}] Failed to upload ${file.name}:`, uploadError);
+          // Continue with other files even if one fails
+        }
+      }
+
+      // STEP 3: Save file URLs to database
+      if (fileUrls.length > 0) {
+        console.log(`💾 [Lead ${leadId}] Saving ${fileUrls.length} file URLs to database...`);
+        
+        await sql`
+          UPDATE leads 
+          SET file_urls = ${JSON.stringify(fileUrls)}
+          WHERE id = ${leadId}
+        `;
+        
+        console.log(`✅ [Lead ${leadId}] File URLs saved to database`);
+      }
+    }
+
+    // STEP 4: Start AI analysis in background (after files are saved)
+    analyzeInBackground(leadId, fileUrls, category, description).catch(err => {
+      console.error(`❌ [Lead ${leadId}] Background AI analysis failed:`, err);
     });
 
+    // STEP 5: Return success to user (files are already uploaded and saved!)
     return NextResponse.json({ 
       success: true,
       message: 'Lead received! We will review your photos and contact you soon.',
-      leadId 
+      leadId,
+      filesUploaded: fileUrls.length
     });
 
   } catch (error) {
@@ -63,81 +111,49 @@ export async function POST(request: Request) {
   }
 }
 
-async function processFilesInBackground(leadId: number, files: File[], category: string, description: string) {
-  console.log(`🔄 [Lead ${leadId}] Starting background processing`);
+// Background AI analysis function (runs after response is sent)
+async function analyzeInBackground(
+  leadId: number, 
+  fileUrls: any[], 
+  category: string, 
+  description: string
+) {
+  console.log(`🤖 [Lead ${leadId}] Starting AI analysis in background`);
   
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    console.log(`📤 [Lead ${leadId}] Uploading ${files.length} files to blob storage...`);
-    
-    const fileUrls = [];
-    for (const file of files) {
-      console.log(`  [Lead ${leadId}] Uploading ${file.name}...`);
-      
-      const timestamp = Date.now();
-      const uniqueFilename = `${timestamp}-${file.name}`;
-      
-      const blob = await put(uniqueFilename, file, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-      
-      fileUrls.push({
-        url: blob.url,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      });
-      
-      console.log(`  ✅ [Lead ${leadId}] Uploaded: ${blob.url}`);
-    }
-
-    console.log(`✅ [Lead ${leadId}] All files uploaded. Updating database...`);
-
-    await sql`
-      UPDATE leads 
-      SET file_urls = ${JSON.stringify(fileUrls)}
-      WHERE id = ${leadId}
-    `;
-
-    console.log(`✅ [Lead ${leadId}] Database updated with file URLs`);
-
+    // Filter for images only
     const images = fileUrls.filter(f => 
-      f.type.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+      f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
     );
 
-    console.log(`🖼️ [Lead ${leadId}] Found ${images.length} images for Claude analysis`);
+    console.log(`🖼️ [Lead ${leadId}] Found ${images.length} images for analysis`);
 
-    if (images.length > 0) {
-      // PROCESS ONE IMAGE AT A TIME to avoid timeout
-      console.log(`🤖 [Lead ${leadId}] Processing ${images.length} images sequentially...`);
-      
-      if (images.length === 1) {
-        // Single image - analyze normally
-        await analyzeWithClaude(leadId, images, category, description);
-      } else {
-        // Multiple images - analyze first image only, note there are more
-        console.log(`📸 [Lead ${leadId}] Analyzing first image (of ${images.length} total)`);
-        await analyzeWithClaude(leadId, [images[0]], category, description, images.length);
-      }
-    } else {
+    if (images.length === 0) {
       console.log(`⚠️ [Lead ${leadId}] No images to analyze`);
       await sql`
         UPDATE leads 
         SET 
           status = 'new',
-          ai_analysis = ${JSON.stringify({ 
-            message: 'No images to analyze. Manual review required.' 
-          })}
+          ai_analysis = ${JSON.stringify({ message: 'No images to analyze. Manual review required.' })}
         WHERE id = ${leadId}
       `;
+      return;
     }
 
-    console.log(`✅ [Lead ${leadId}] Background processing complete!`);
+    // Analyze first image only (to avoid timeout)
+    const totalImages = images.length;
+    const imagesToAnalyze = [images[0]]; // Just first image
+    
+    console.log(`🤖 [Lead ${leadId}] Analyzing first image (of ${totalImages} total)`);
+    
+    await analyzeWithClaude(leadId, imagesToAnalyze, category, description, totalImages);
+    
+    console.log(`✅ [Lead ${leadId}] AI analysis complete`);
 
   } catch (error) {
-    console.error(`❌ [Lead ${leadId}] Background processing error:`, error);
+    console.error(`❌ [Lead ${leadId}] AI analysis error:`, error);
     
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
@@ -145,7 +161,7 @@ async function processFilesInBackground(leadId: number, files: File[], category:
       SET 
         status = 'new',
         ai_analysis = ${JSON.stringify({ 
-          error: 'Analysis failed. Manual review required.',
+          error: 'AI analysis failed. Manual review required.',
           details: String(error)
         })}
       WHERE id = ${leadId}
@@ -153,7 +169,7 @@ async function processFilesInBackground(leadId: number, files: File[], category:
   }
 }
 
-// Analyze with Claude - now with total image count parameter
+// Claude AI analysis
 async function analyzeWithClaude(
   leadId: number, 
   images: any[], 
@@ -166,10 +182,6 @@ async function analyzeWithClaude(
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    console.log(`📋 [Lead ${leadId}] Fetching lead details...`);
-    const [lead] = await sql`SELECT * FROM leads WHERE id = ${leadId}`;
-    
-    console.log(`📊 [Lead ${leadId}] Analyzing ${images.length} of ${totalImages} total images`);
     console.log(`🔑 [Lead ${leadId}] API Key exists: ${!!process.env.ANTHROPIC_API_KEY}`);
 
     const imageContents = images.map(img => ({
@@ -181,7 +193,7 @@ async function analyzeWithClaude(
     }));
 
     const multiImageNote = totalImages > 1 
-      ? `\n\nNOTE: Customer uploaded ${totalImages} total images. This analysis is based on the first image. Contractor should review all ${totalImages} images before quoting.`
+      ? `\n\nIMPORTANT: Customer uploaded ${totalImages} total images. This analysis is based on the first image. Review all ${totalImages} images in the dashboard before providing a final quote.`
       : '';
 
     const prompt = `You are an expert contractor providing a comprehensive analysis. Be thorough, specific, and realistic.
@@ -312,39 +324,28 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
         messages: [
           {
             role: 'user',
-            content: [
-              ...imageContents,
-              {
-                type: 'text',
-                text: prompt,
-              },
-            ],
+            content: [...imageContents, { type: 'text', text: prompt }],
           },
         ],
       }),
     });
 
-    console.log(`📬 [Lead ${leadId}] Claude API responded with status: ${response.status}`);
+    console.log(`📬 [Lead ${leadId}] Claude responded: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ [Lead ${leadId}] Claude API error:`, response.status, errorText);
+      console.error(`❌ [Lead ${leadId}] Claude error:`, response.status, errorText);
       throw new Error(`Claude API failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ [Lead ${leadId}] Received response from Claude`);
-    
     const analysisText = data.content[0].text;
-    console.log(`📝 [Lead ${leadId}] Claude response (first 200 chars):`, analysisText.substring(0, 200));
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
       error: 'Could not parse analysis',
-      raw: analysisText 
+      raw: analysisText.substring(0, 500)
     };
-
-    console.log(`💾 [Lead ${leadId}] Parsed analysis successfully`);
 
     await sql`
       UPDATE leads 
@@ -354,10 +355,10 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
       WHERE id = ${leadId}
     `;
 
-    console.log(`✅ [Lead ${leadId}] Updated database with AI analysis and marked as 'new'`);
+    console.log(`✅ [Lead ${leadId}] AI analysis saved`);
 
   } catch (error) {
-    console.error(`❌ [Lead ${leadId}] Claude analysis error:`, error);
+    console.error(`❌ [Lead ${leadId}] Claude error:`, error);
     
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
