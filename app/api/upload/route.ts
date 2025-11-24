@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       
       console.log('📥 JSON upload with', fileUrls.length, 'files');
     } else {
-      // Old FormData method
+      // Old FormData method (deprecated)
       const formData = await request.formData();
       name = formData.get('name') as string;
       email = formData.get('email') as string;
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Save lead with status="processing" - cron will handle AI analysis
+    // Save lead
     const sql = neon(process.env.DATABASE_URL!);
     const [lead] = await sql`
       INSERT INTO leads (
@@ -53,19 +53,52 @@ export async function POST(request: Request) {
       ) VALUES (
         ${name}, ${email}, ${phone}, ${category}, ${description},
         ${companyId}, 'processing', 
-        ${JSON.stringify({ status: 'Processing photos and analyzing...' })},
+        ${JSON.stringify({ status: 'Analyzing...' })},
         ${JSON.stringify(fileUrls)}
       )
       RETURNING id
     `;
 
-    console.log('✅ Lead created with ID:', lead.id, '- Cron will process AI analysis');
+    const leadId = lead.id;
+    console.log('✅ Lead created with ID:', leadId);
 
-    // Return success immediately - cron handles the rest!
+    // Process AI analysis NOW (user waits for this)
+    const images = fileUrls.filter((f: any) => 
+      f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    );
+
+    if (images.length > 0) {
+      console.log(`🤖 [Lead ${leadId}] Analyzing ${images.length} images...`);
+      
+      try {
+        // Analyze first image only
+        await analyzeWithClaude(leadId, [images[0]], category, description, images.length);
+        console.log(`✅ [Lead ${leadId}] Analysis complete`);
+      } catch (aiError) {
+        console.error(`❌ [Lead ${leadId}] AI failed:`, aiError);
+        await sql`
+          UPDATE leads 
+          SET status = 'new', ai_analysis = ${JSON.stringify({ 
+            error: 'AI analysis failed. Manual review required.' 
+          })}
+          WHERE id = ${leadId}
+        `;
+      }
+    } else {
+      await sql`
+        UPDATE leads 
+        SET status = 'new', ai_analysis = ${JSON.stringify({ 
+          message: 'No images to analyze. Manual review required.' 
+        })}
+        WHERE id = ${leadId}
+      `;
+    }
+
+    // Return success AFTER analysis is complete
     return NextResponse.json({ 
       success: true,
-      message: 'Lead received! We will review your photos and contact you soon.',
-      leadId: lead.id,
+      message: 'Analysis complete! We will contact you soon.',
+      leadId,
       filesUploaded: fileUrls.length
     });
 
@@ -76,4 +109,178 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function analyzeWithClaude(
+  leadId: number, 
+  images: any[], 
+  category: string, 
+  description: string,
+  totalImages: number = 1
+) {
+  const sql = neon(process.env.DATABASE_URL!);
+  
+  console.log(`🤖 [Lead ${leadId}] Starting Claude analysis`);
+
+  const imageContents = images.map((img: any) => ({
+    type: 'image' as const,
+    source: { type: 'url' as const, url: img.url },
+  }));
+
+  const multiImageNote = totalImages > 1 
+    ? `\n\nIMPORTANT: Customer uploaded ${totalImages} total images. This analysis is based on the first image only. Review all ${totalImages} images in the dashboard before providing a final quote.`
+    : '';
+
+  const prompt = `You are an expert contractor providing a comprehensive analysis. Be thorough, specific, and realistic.
+
+Project Category: ${category || 'General'}
+Customer Description: ${description || 'Not provided'}${multiImageNote}
+
+Provide an IN-DEPTH analysis covering ALL these areas:
+
+## 1. VISUAL ASSESSMENT
+- What exactly do you see in the photos?
+- Current condition of materials, surfaces, and systems
+- Any visible damage, wear, or deterioration
+- Age/condition indicators
+
+## 2. SCOPE OF WORK
+- Detailed breakdown of what needs to be done
+- Estimated square footage or quantities
+- Number of units/items affected
+- Access challenges or special considerations
+
+## 3. MATERIALS NEEDED
+- List all materials required (be specific: brands, types, grades)
+- Estimated quantities
+- Any specialty items or hard-to-find materials
+- Recommended vs. budget alternatives
+
+## 4. LABOR & TIME
+- Estimated work hours
+- Number of workers needed
+- Timeline (hours/days/weeks)
+- Any permits or inspections required
+
+## 5. COST BREAKDOWN
+- Materials cost estimate
+- Labor cost estimate  
+- Equipment/tool rental if needed
+- Permit costs (if applicable)
+- Total project range (low/mid/high estimates)
+
+## 6. PRIORITY & URGENCY
+Use realistic assessment:
+- **Emergency**: Immediate safety risk or active damage NOW
+- **High Priority**: Will worsen significantly within days/weeks
+- **Normal**: Should be addressed soon, standard repair timeline
+- **Low Priority**: Cosmetic, preventive, or optional improvement
+
+## 7. COMPLEXITY & RISK
+- Technical difficulty (Simple/Moderate/Complex)
+- Required skill level (DIY/Handyman/Licensed Pro/Specialist)
+- Safety considerations
+- Potential complications or unknowns
+
+## 8. RECOMMENDATIONS
+- Best approach to fix the issue
+- Alternative solutions (if any)
+- Preventive measures for the future
+- Red flags the contractor should investigate further
+
+## 9. ADDITIONAL OBSERVATIONS
+- Related systems that may be affected
+- Code compliance considerations
+- Warranty implications
+- Seasonal timing considerations
+
+Format as JSON with this structure:
+{
+  "summary": "2-3 sentence executive summary",
+  "whatYouSee": "Detailed visual description of current state",
+  "condition": "Excellent/Good/Fair/Poor/Critical",
+  "urgency": "Emergency/High Priority/Normal/Low Priority",
+  "totalImages": ${totalImages},
+  "scope": {
+    "description": "Detailed scope breakdown",
+    "squareFootage": "Estimated area (or N/A)",
+    "quantity": "Number of units/items",
+    "accessibilityNotes": "Any access challenges"
+  },
+  "materials": {
+    "required": ["Material 1 (quantity)", "Material 2 (quantity)"],
+    "specialty": ["Any specialty items"],
+    "alternatives": "Budget-friendly alternatives if applicable"
+  },
+  "laborAndTime": {
+    "estimatedHours": "X-Y hours",
+    "workers": "Number needed",
+    "timeline": "X days/weeks",
+    "permits": "Required permits or None"
+  },
+  "costBreakdown": {
+    "materials": "$X - $Y",
+    "labor": "$X - $Y",
+    "equipment": "$X - $Y or N/A",
+    "permits": "$X or N/A",
+    "totalLow": "$X",
+    "totalMid": "$X",
+    "totalHigh": "$X"
+  },
+  "complexity": "Simple/Moderate/Complex",
+  "skillLevelRequired": "DIY/Handyman/Licensed Contractor/Specialist",
+  "safetyConsiderations": ["Safety issue 1", "Safety issue 2"],
+  "recommendations": {
+    "primaryApproach": "Best way to fix this",
+    "alternatives": ["Alternative option 1", "Alternative option 2"],
+    "preventiveMeasures": ["Prevention tip 1", "Prevention tip 2"],
+    "redFlags": ["Things contractor should investigate"]
+  },
+  "observations": ["Key observation 1", "Key observation 2", "Key observation 3"],
+  "relatedSystems": ["Other systems that may be affected"],
+  "codeCompliance": "Any code considerations or N/A",
+  "seasonalTiming": "Best time to do this work or N/A"
+}
+
+Be thorough, specific, and realistic. Help the contractor give an accurate quote and the homeowner understand what's involved.`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY!,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      messages: [{
+        role: 'user',
+        content: [...imageContents, { type: 'text', text: prompt }],
+      }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ Claude error:`, errorText);
+    throw new Error(`Claude API failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const analysisText = data.content[0].text;
+  
+  const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+  const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
+    error: 'Could not parse analysis',
+    raw: analysisText.substring(0, 500)
+  };
+
+  await sql`
+    UPDATE leads 
+    SET ai_analysis = ${JSON.stringify(analysis)}, status = 'new'
+    WHERE id = ${leadId}
+  `;
+
+  console.log(`✅ [Lead ${leadId}] Analysis saved`);
 }
