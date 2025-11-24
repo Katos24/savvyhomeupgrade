@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Toast from '@/components/Toast';
@@ -24,6 +23,7 @@ export default function DemoPage() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
+  const [showNoImageConfirm, setShowNoImageConfirm] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const id = Date.now();
@@ -34,6 +34,17 @@ export default function DemoPage() {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
+  // Phone number formatting function
+  const formatPhoneNumber = (value: string): string => {
+    const phoneNumber = value.replace(/\D/g, '');
+    const limitedNumber = phoneNumber.slice(0, 10);
+    
+    if (limitedNumber.length === 0) return '';
+    if (limitedNumber.length <= 3) return `(${limitedNumber}`;
+    if (limitedNumber.length <= 6) return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
+    return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6)}`;
+  };
+
   useEffect(() => {
     const newPreviews = files.map(file => {
       if (file.type.startsWith('image/')) {
@@ -42,7 +53,6 @@ export default function DemoPage() {
       return '';
     });
     setFilePreviews(newPreviews);
-
     return () => {
       newPreviews.forEach(url => {
         if (url) URL.revokeObjectURL(url);
@@ -79,12 +89,10 @@ export default function DemoPage() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
     const droppedFiles = Array.from(e.dataTransfer.files);
     const imageAndVideoFiles = droppedFiles.filter(
       file => file.type.startsWith('image/') || file.type.startsWith('video/')
     );
-    
     if (imageAndVideoFiles.length > 0) {
       setFiles([...files, ...imageAndVideoFiles]);
       showToast(`${imageAndVideoFiles.length} file(s) added`, 'success');
@@ -100,24 +108,38 @@ export default function DemoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (files.length === 0) {
-      showToast('Please upload at least one photo or video', 'error');
+
+    // Validate phone number has 10 digits
+    const rawPhone = formData.phone.replace(/\D/g, '');
+    if (rawPhone.length !== 10) {
+      showToast('Please enter a valid 10-digit phone number', 'error');
       return;
     }
 
+    // If no images, show confirmation
+    if (files.length === 0) {
+      setShowNoImageConfirm(true);
+      return;
+    }
+
+    await submitForm();
+  };
+
+  const submitForm = async () => {
     setUploading(true);
+    setShowNoImageConfirm(false);
     showToast('Uploading your request...', 'info');
-    
+
     try {
+      const rawPhone = formData.phone.replace(/\D/g, '');
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('email', formData.email);
-      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('phone', rawPhone);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('company_id', '1'); // Demo company ID
-      
+      formDataToSend.append('company_id', '1');
+
       files.forEach(file => {
         formDataToSend.append('files', file);
       });
@@ -128,13 +150,11 @@ export default function DemoPage() {
       });
 
       const uploadResult = await uploadResponse.json();
-
       if (!uploadResult.success) {
         throw new Error('Upload failed');
       }
 
       router.push('/demo/success');
-      
     } catch (error) {
       console.error('Submission error:', error);
       showToast('Failed to submit. Please try again.', 'error');
@@ -153,6 +173,35 @@ export default function DemoPage() {
           onClose={() => removeToast(toast.id)}
         />
       ))}
+
+      {/* No Image Confirmation Modal */}
+      {showNoImageConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-3">📸</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No photos uploaded</h3>
+              <p className="text-gray-600 mb-4">
+                Adding photos helps us provide a more accurate assessment. Are you sure you want to continue without photos?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNoImageConfirm(false)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition"
+              >
+                ← Add Photos
+              </button>
+              <button
+                onClick={submitForm}
+                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition"
+              >
+                Continue Without →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <header className="header">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -207,10 +256,14 @@ export default function DemoPage() {
                 type="tel"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => setFormData({...formData, phone: formatPhoneNumber(e.target.value)})}
                 className="form-input"
                 placeholder="(631) 555-0123"
+                maxLength={14}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.phone.replace(/\D/g, '').length}/10 digits
+              </p>
             </div>
 
             <div>
@@ -248,7 +301,7 @@ export default function DemoPage() {
           </div>
 
           <div className="mb-8">
-            <label className="form-label">Upload Photos or Videos</label>
+            <label className="form-label">Upload Photos or Videos (Optional - but recommended)</label>
             <div 
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
@@ -305,14 +358,12 @@ export default function DemoPage() {
                           </div>
                         </div>
                       )}
-                      
                       <div className="file-preview-overlay">
                         <p className="font-medium truncate">{file.name}</p>
                         <p className="opacity-75">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
-
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
@@ -342,7 +393,7 @@ export default function DemoPage() {
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            ✓ Free AI analysis • ✓ Instant insights • ✓ No obligations
+            💡 Tip: Photos help us provide more accurate quotes faster
           </p>
         </form>
       </div>
