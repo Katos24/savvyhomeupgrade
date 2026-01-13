@@ -33,6 +33,18 @@ interface UploadFormProps {
 
 // DYNAMIC CATEGORIES BY BUSINESS TYPE
 const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: string}>> = {
+  hvac: [
+  { value: 'ac_repair', label: 'AC Repair', emoji: '❄️' },
+  { value: 'ac_installation', label: 'AC Installation', emoji: '🆕' },
+  { value: 'furnace_repair', label: 'Furnace Repair', emoji: '🔥' },
+  { value: 'furnace_installation', label: 'Furnace Installation', emoji: '🏠' },
+  { value: 'heat_pump', label: 'Heat Pump Service', emoji: '♨️' },
+  { value: 'ductwork', label: 'Ductwork/Vents', emoji: '🌬️' },
+  { value: 'maintenance', label: 'Maintenance/Tune-up', emoji: '🔧' },
+  { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
+  { value: 'other', label: 'Other', emoji: '📋' },
+],
+
   home_services: [
     { value: 'roofing', label: 'Roofing', emoji: '🏠' },
     { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
