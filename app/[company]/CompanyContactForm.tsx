@@ -9,12 +9,82 @@ type Company = {
   slug: string;
   email: string;
   phone: string;
+  business_type?: string;
 };
 
 type ToastType = {
   message: string;
   type: 'success' | 'error' | 'info';
   id: number;
+};
+
+// DYNAMIC CATEGORIES BY BUSINESS TYPE
+const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: string}>> = {
+  home_services: [
+    { value: 'roofing', label: 'Roofing', emoji: '🏠' },
+    { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
+    { value: 'hvac', label: 'HVAC', emoji: '❄️' },
+    { value: 'electrical', label: 'Electrical', emoji: '⚡' },
+    { value: 'painting', label: 'Painting', emoji: '🎨' },
+    { value: 'flooring', label: 'Flooring', emoji: '🪵' },
+    { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  construction: [
+    { value: 'new_build', label: 'New Construction', emoji: '🏗️' },
+    { value: 'renovation', label: 'Renovation', emoji: '🔨' },
+    { value: 'addition', label: 'Addition/Extension', emoji: '📐' },
+    { value: 'demolition', label: 'Demolition', emoji: '💥' },
+    { value: 'foundation', label: 'Foundation Work', emoji: '🧱' },
+    { value: 'framing', label: 'Framing', emoji: '🪚' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  auto_services: [
+    { value: 'oil_change', label: 'Oil Change', emoji: '🛢️' },
+    { value: 'brake_repair', label: 'Brake Repair', emoji: '🛑' },
+    { value: 'body_work', label: 'Body Work', emoji: '🚗' },
+    { value: 'detailing', label: 'Detailing', emoji: '✨' },
+    { value: 'tire_service', label: 'Tire Service', emoji: '⚫' },
+    { value: 'engine_repair', label: 'Engine Repair', emoji: '⚙️' },
+    { value: 'inspection', label: 'Inspection', emoji: '🔍' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  beauty_services: [
+    { value: 'haircut', label: 'Haircut', emoji: '✂️' },
+    { value: 'hair_color', label: 'Hair Color', emoji: '🎨' },
+    { value: 'styling', label: 'Styling', emoji: '💇' },
+    { value: 'extensions', label: 'Extensions', emoji: '💁' },
+    { value: 'nails', label: 'Nails', emoji: '💅' },
+    { value: 'facial', label: 'Facial', emoji: '✨' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  pet_services: [
+    { value: 'grooming', label: 'Grooming', emoji: '🐕' },
+    { value: 'bathing', label: 'Bathing', emoji: '🛁' },
+    { value: 'nail_trim', label: 'Nail Trim', emoji: '✂️' },
+    { value: 'training', label: 'Training', emoji: '🎓' },
+    { value: 'sitting', label: 'Pet Sitting', emoji: '🏠' },
+    { value: 'walking', label: 'Dog Walking', emoji: '🚶' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  video_production: [
+    { value: 'commercial', label: 'Commercial', emoji: '📺' },
+    { value: 'wedding', label: 'Wedding Video', emoji: '💒' },
+    { value: 'event', label: 'Event Coverage', emoji: '🎉' },
+    { value: 'corporate', label: 'Corporate Video', emoji: '🏢' },
+    { value: 'real_estate', label: 'Real Estate Tour', emoji: '🏠' },
+    { value: 'editing', label: 'Video Editing', emoji: '✂️' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  general: [
+    { value: 'consultation', label: 'Consultation', emoji: '💬' },
+    { value: 'repair', label: 'Repair', emoji: '🔧' },
+    { value: 'installation', label: 'Installation', emoji: '⚙️' },
+    { value: 'maintenance', label: 'Maintenance', emoji: '🛠️' },
+    { value: 'inspection', label: 'Inspection', emoji: '🔍' },
+    { value: 'quote_request', label: 'Quote Request', emoji: '💰' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
 };
 
 export default function CompanyContactForm({ company }: { company: Company }) {
@@ -32,6 +102,10 @@ export default function CompanyContactForm({ company }: { company: Company }) {
   const [isDragging, setIsDragging] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
   const [showNoImageConfirm, setShowNoImageConfirm] = useState(false);
+
+  // Get categories for this company's business type
+  const businessType = company.business_type || 'general';
+  const categories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const id = Date.now();
@@ -57,7 +131,6 @@ export default function CompanyContactForm({ company }: { company: Company }) {
     };
   }, [files]);
 
-  // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
     const phoneNumber = value.replace(/\D/g, '');
     const limitedNumber = phoneNumber.slice(0, 10);
@@ -115,20 +188,17 @@ export default function CompanyContactForm({ company }: { company: Company }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate phone number has 10 digits
     const rawPhone = formData.phone.replace(/\D/g, '');
     if (rawPhone.length !== 10) {
       showToast('Please enter a valid 10-digit phone number', 'error');
       return;
     }
 
-    // If no images, show confirmation dialog
     if (files.length === 0) {
       setShowNoImageConfirm(true);
       return;
     }
 
-    // Proceed with submission
     await submitForm();
   };
 
@@ -175,7 +245,6 @@ export default function CompanyContactForm({ company }: { company: Company }) {
         <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
       ))}
 
-      {/* No Image Confirmation Modal */}
       {showNoImageConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
@@ -267,20 +336,19 @@ export default function CompanyContactForm({ company }: { company: Company }) {
             </div>
 
             <div>
-              <label className="form-label">Project Type *</label>
+              <label className="form-label">Service Type *</label>
               <select 
                 required 
                 value={formData.category} 
                 onChange={(e) => setFormData({...formData, category: e.target.value})} 
                 className="form-input"
               >
-                <option value="">Select...</option>
-                <option value="roofing">🏠 Roofing</option>
-                <option value="hvac">❄️ HVAC</option>
-                <option value="plumbing">🔧 Plumbing</option>
-                <option value="electrical">⚡ Electrical</option>
-                <option value="construction">🏗️ Construction</option>
-                <option value="other">📋 Other</option>
+                <option value="">Select a service...</option>
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.emoji} {cat.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

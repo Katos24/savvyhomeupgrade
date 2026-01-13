@@ -8,6 +8,7 @@ type Company = {
   slug: string;
   email: string;
   phone: string;
+  business_type?: string;
 };
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -19,7 +20,7 @@ async function getCompany(slug: string): Promise<Company | null> {
 export default async function CompanyPage({ params }: { params: Promise<{ company: string }> }) {
   const { company: companySlug } = await params;
   const company = await getCompany(companySlug);
-
+  
   if (!company) {
     notFound();
   }
@@ -47,8 +48,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ compan
 
       <div className="py-12 px-6">
         <UploadForm 
-          companySlug={company.slug}
-          companyId={company.id}
+          company={company}
           successRoute={`/${company.slug}/success`}
           showHeader={false}
         />

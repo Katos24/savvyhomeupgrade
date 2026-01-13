@@ -12,7 +12,17 @@ type ToastType = {
   id: number;
 };
 
+type Company = {
+  id: number;
+  name: string;
+  slug: string;
+  email: string;
+  phone: string;
+  business_type?: string;
+};
+
 interface UploadFormProps {
+  company?: Company;
   companySlug?: string;
   companyId?: number;
   successRoute: string;
@@ -21,7 +31,85 @@ interface UploadFormProps {
   headerSubtitle?: string;
 }
 
+// DYNAMIC CATEGORIES BY BUSINESS TYPE
+const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: string}>> = {
+  home_services: [
+    { value: 'roofing', label: 'Roofing', emoji: '🏠' },
+    { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
+    { value: 'hvac', label: 'HVAC', emoji: '❄️' },
+    { value: 'electrical', label: 'Electrical', emoji: '⚡' },
+    { value: 'painting', label: 'Painting', emoji: '🎨' },
+    { value: 'flooring', label: 'Flooring', emoji: '🪵' },
+    { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  construction: [
+    { value: 'new_build', label: 'New Construction', emoji: '🏗️' },
+    { value: 'renovation', label: 'Renovation', emoji: '🔨' },
+    { value: 'addition', label: 'Addition/Extension', emoji: '📐' },
+    { value: 'demolition', label: 'Demolition', emoji: '💥' },
+    { value: 'foundation', label: 'Foundation Work', emoji: '🧱' },
+    { value: 'framing', label: 'Framing', emoji: '🪚' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  auto_services: [
+    { value: 'oil_change', label: 'Oil Change', emoji: '🛢️' },
+    { value: 'brake_repair', label: 'Brake Repair', emoji: '🛑' },
+    { value: 'body_work', label: 'Body Work', emoji: '🚗' },
+    { value: 'detailing', label: 'Detailing', emoji: '✨' },
+    { value: 'tire_service', label: 'Tire Service', emoji: '⚫' },
+    { value: 'engine_repair', label: 'Engine Repair', emoji: '⚙️' },
+    { value: 'inspection', label: 'Inspection', emoji: '🔍' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  beauty_services: [
+    { value: 'haircut', label: 'Haircut', emoji: '✂️' },
+    { value: 'hair_color', label: 'Hair Color', emoji: '🎨' },
+    { value: 'styling', label: 'Styling', emoji: '💇' },
+    { value: 'extensions', label: 'Extensions', emoji: '💁' },
+    { value: 'nails', label: 'Nails', emoji: '💅' },
+    { value: 'facial', label: 'Facial', emoji: '✨' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  pet_services: [
+    { value: 'grooming', label: 'Grooming', emoji: '🐕' },
+    { value: 'bathing', label: 'Bathing', emoji: '🛁' },
+    { value: 'nail_trim', label: 'Nail Trim', emoji: '✂️' },
+    { value: 'training', label: 'Training', emoji: '🎓' },
+    { value: 'sitting', label: 'Pet Sitting', emoji: '🏠' },
+    { value: 'walking', label: 'Dog Walking', emoji: '🚶' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  video_production: [
+    { value: 'commercial', label: 'Commercial', emoji: '📺' },
+    { value: 'wedding', label: 'Wedding Video', emoji: '💒' },
+    { value: 'event', label: 'Event Coverage', emoji: '🎉' },
+    { value: 'corporate', label: 'Corporate Video', emoji: '🏢' },
+    { value: 'real_estate', label: 'Real Estate Tour', emoji: '🏠' },
+    { value: 'editing', label: 'Video Editing', emoji: '✂️' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+  general: [
+    { value: 'roofing', label: 'Roofing', emoji: '🏠' },
+    { value: 'kitchen_remodel', label: 'Kitchen Remodel', emoji: '🍳' },
+    { value: 'bathroom_remodel', label: 'Bathroom Remodel', emoji: '🚿' },
+    { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
+    { value: 'electrical', label: 'Electrical', emoji: '⚡' },
+    { value: 'hvac', label: 'HVAC', emoji: '❄️' },
+    { value: 'flooring', label: 'Flooring', emoji: '🪵' },
+    { value: 'painting', label: 'Painting', emoji: '🎨' },
+    { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
+    { value: 'foundation_repair', label: 'Foundation Repair', emoji: '🧱' },
+    { value: 'water_damage', label: 'Water Damage', emoji: '💧' },
+    { value: 'general_repair', label: 'General Repair', emoji: '🔨' },
+    { value: 'auto_body', label: 'Auto Body', emoji: '🚗' },
+    { value: 'auto_mechanical', label: 'Auto Mechanical', emoji: '⚙️' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+};
+
 export default function UploadForm({ 
+  company,
   companySlug, 
   companyId, 
   successRoute, 
@@ -47,12 +135,13 @@ export default function UploadForm({
   const [isDragging, setIsDragging] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
-  const categories = [
-    'Roofing', 'Kitchen Remodel', 'Bathroom Remodel', 'Plumbing', 
-    'Electrical', 'HVAC', 'Flooring', 'Painting', 'Landscaping', 
-    'Foundation Repair', 'Water Damage', 'General Repair', 
-    'Auto Body', 'Auto Mechanical', 'Other',
-  ];
+  // Get dynamic categories based on business type
+  const businessType = company?.business_type || 'general';
+  const categories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
+
+  // Use company object values if available, otherwise fall back to separate props
+  const finalCompanySlug = company?.slug || companySlug;
+  const finalCompanyId = company?.id || companyId;
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const id = Date.now();
@@ -217,8 +306,8 @@ export default function UploadForm({
           category: formData.category,
           description: formData.description,
           file_urls: uploadedFiles,
-          company_slug: companySlug,
-          company_id: companyId,
+          company_slug: finalCompanySlug,
+          company_id: finalCompanyId,
         }),
       });
 
@@ -341,16 +430,18 @@ export default function UploadForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Service Type *</label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select a category</option>
+                <option value="">Select a service...</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.value} value={cat.value}>
+                    {cat.emoji} {cat.label}
+                  </option>
                 ))}
               </select>
             </div>

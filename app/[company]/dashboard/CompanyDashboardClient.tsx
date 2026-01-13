@@ -26,6 +26,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sortBy, setSortBy] = useState('date');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -40,6 +41,33 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       console.error('Failed to fetch leads:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function createLead(leadData: any) {
+    try {
+      const response = await fetch('/api/leads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...leadData,
+          company_id: company.id,
+          company_slug: company.slug
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        await fetchLeads();
+        return true;
+      } else {
+        alert('Failed to create lead.');
+        return false;
+      }
+    } catch (error) {
+      alert('Failed to create lead.');
+      return false;
     }
   }
 
@@ -223,12 +251,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               <p className={styles.subtitle}>Lead Dashboard</p>
             </div>
             <div className="flex items-center gap-4">
-              <a 
-                href={`/${company.slug}`} 
-                className="text-white/80 hover:text-white text-sm transition"
-              >
-                📋 View Form
-              </a>
+             <a
+  href={`/${company.slug}`}
+  target="_blank"
+  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
+>
+  ➕ Create Lead
+</a>
+          
               <div className="hidden lg:block">
                 <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
               </div>
@@ -394,11 +424,152 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onRefresh={fetchLeads}
         />
       )}
+
+      {showCreateModal && (
+        <CreateLeadModal
+          onClose={() => setShowCreateModal(false)}
+          onCreateLead={createLead}
+          companyName={company.name}
+        />
+      )}
     </div>
   );
 }
 
-// Import the SAME modal from global dashboard
+// CREATE LEAD MODAL
+function CreateLeadModal({ onClose, onCreateLead, companyName }: any) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    category: '',
+    description: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.phone) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setSaving(true);
+    const success = await onCreateLead(formData);
+    setSaving(false);
+    
+    if (success) {
+      alert('✅ Lead created!');
+      onClose();
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{maxWidth: '600px'}}>
+        <div className={styles.modalHeader}>
+          <div>
+            <h2 className={styles.modalTitle}>Create New Lead</h2>
+            <p className={styles.modalDate}>{companyName}</p>
+          </div>
+          <button onClick={onClose} className={styles.closeButton}>×</button>
+        </div>
+
+        <div className={styles.modalContent}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Customer Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="John Smith"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                placeholder="john@example.com"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                placeholder="(555) 123-4567"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Service Category
+              </label>
+              <input
+                type="text"
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                placeholder="e.g., Plumbing, Haircut, Car Repair"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description / Notes
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="What does the customer need?"
+                rows={4}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? '💾 Creating...' : '✅ Create Lead'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// LEAD MODAL (existing code - keeping it the same)
 function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
   const [status, setStatus] = useState(lead.status || 'new');
   const [newNote, setNewNote] = useState('');
