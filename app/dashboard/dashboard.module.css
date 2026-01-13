@@ -522,3 +522,180 @@
     grid-template-columns: repeat(5, 1fr); /* 5 columns on desktop */
   }
 }
+
+
+
+/* Replace the filter styles in your dashboard.module.css with these */
+
+.filterToggle {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s;
+  margin-bottom: 2rem;
+}
+
+.filterToggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.filterToggleLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.filterIcon {
+  font-size: 1.75rem;
+}
+
+.filterInfo {
+  text-align: left;
+}
+
+.filterTitle {
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.filterStatus {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.filterArrow {
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.filterPanel {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filterTitle{
+  display: block;
+  color: white !important; /* Force white */
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filterInput,
+.filterSelect {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9) !important; /* Brighter background */
+  color: #1f2937 !important; /* Dark text */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.filterInput::placeholder {
+  color: rgba(31, 41, 55, 0.5) !important; /* Dark placeholder */
+}
+
+.filterInput:focus,
+.filterSelect:focus {
+  outline: none;
+  background: white !important;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.filterSelect option {
+  background: white;
+  color: #1f2937;
+}
+
+.clearDateButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.clearDateButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.clearAllButton {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
+  color: white;
+  font-weight: 700;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clearAllButton:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.5), rgba(220, 38, 38, 0.5));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .filterToggle {
+    padding: 1rem;
+  }
+
+  .filterTitle {
+    font-size: 1rem;
+  }
+
+  .filterIcon {
+    font-size: 1.5rem;
+  }
+
+  .filterPanel {
+    padding: 1.25rem;
+  }
+}

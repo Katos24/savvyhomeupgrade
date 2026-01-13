@@ -12,6 +12,7 @@ type Company = {
   id: number;
   name: string;
   slug: string;
+  logo_url?: string | null;
 };
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
@@ -27,6 +28,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -244,21 +246,38 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   return (
     <div className={styles.container}>
       <div className={styles.innerContainer}>
+        {/* HEADER WITH LOGO */}
         <div className={styles.header}>
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between w-full gap-4">
-            <div>
-              <h1 className={styles.title}>{company.name}</h1>
-              <p className={styles.subtitle}>Lead Dashboard</p>
-            </div>
             <div className="flex items-center gap-4">
-             <a
-  href={`/${company.slug}`}
-  target="_blank"
-  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
->
-  ➕ Create Lead
-</a>
-          
+              {/* LOGO */}
+              {company.logo_url ? (
+                <img 
+                  src={company.logo_url} 
+                  alt={`${company.name} logo`}
+                  className="h-12 w-auto object-contain"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                  {company.name.charAt(0)}
+                </div>
+              )}
+              
+              <div>
+                <h1 className={styles.title}>{company.name}</h1>
+                <p className={styles.subtitle}>Lead Dashboard</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <a
+                href={`/${company.slug}`}
+                target="_blank"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
+              >
+                ➕ Create Lead
+              </a>
+              
               <div className="hidden lg:block">
                 <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
               </div>
@@ -266,6 +285,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
+        {/* STATS BAR */}
         <div className={styles.statsBar}>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>New (24h)</p>
@@ -289,91 +309,131 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-        <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">Search</label>
-              <input
-                type="text"
-                placeholder="Name, email, phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-            </div>
+{/* COLLAPSIBLE FILTERS - Replace your filter section with this */}
+<div>
+  <button 
+    className={styles.filterToggle}
+    onClick={() => setShowFilters(!showFilters)}
+  >
+    <div className={styles.filterToggleLeft}>
+      <span className={styles.filterIcon}>🔍</span>
+      <div className={styles.filterInfo}>
+        <h3 className={styles.filterTitle}>Search & Filters</h3>
+        <p className={styles.filterStatus}>
+          {searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo
+            ? 'Active filters applied'
+            : 'Click to search and filter leads'}
+        </p>
+      </div>
+    </div>
+    <span className={styles.filterArrow}>{showFilters ? '▲' : '▼'}</span>
+  </button>
 
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">Category</label>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <option value="all">All</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <option value="all">All</option>
-                <option value="new">New ({statusCounts.new})</option>
-                <option value="contacted">Contacted ({statusCounts.contacted})</option>
-                <option value="quoted">Quoted ({statusCounts.quoted})</option>
-                <option value="completed">Completed ({statusCounts.completed})</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">Sort</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <option value="date">Recent</option>
-                <option value="urgency">Urgency</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-            </div>
-            <div>
-              <label className="block text-white text-sm font-semibold mb-2">To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={clearDateFilter}
-                className="w-full px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 font-semibold transition"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
+  {showFilters && (
+    <div className={styles.filterPanel}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label className={styles.filterLabel}>Search</label>
+          <input
+            type="text"
+            placeholder="Name, email, phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.filterInput}
+          />
         </div>
 
+        <div>
+          <label className={styles.filterLabel}>Category</label>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className={styles.filterSelect}
+          >
+            <option value="all">All</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={styles.filterLabel}>Status</label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className={styles.filterSelect}
+          >
+            <option value="all">All</option>
+            <option value="new">New ({statusCounts.new})</option>
+            <option value="contacted">Contacted ({statusCounts.contacted})</option>
+            <option value="quoted">Quoted ({statusCounts.quoted})</option>
+            <option value="completed">Completed ({statusCounts.completed})</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={styles.filterLabel}>Sort</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className={styles.filterSelect}
+          >
+            <option value="date">Recent</option>
+            <option value="urgency">Urgency</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label className={styles.filterLabel}>From</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className={styles.filterInput}
+          />
+        </div>
+        <div>
+          <label className={styles.filterLabel}>To</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className={styles.filterInput}
+          />
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={clearDateFilter}
+            className={styles.clearDateButton}
+          >
+            Clear Dates
+          </button>
+        </div>
+      </div>
+
+      {/* Clear All Filters Button */}
+      {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo) && (
+        <button
+          onClick={() => {
+            setSearchQuery('');
+            setFilterCategory('all');
+            setFilterStatus('all');
+            setDateFrom('');
+            setDateTo('');
+          }}
+          className={styles.clearAllButton}
+        >
+          🗑️ Clear All Filters
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+        {/* NEW LEADS SECTION */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -385,6 +445,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           {renderLeads(newLeads)}
         </div>
 
+        {/* PREVIOUS LEADS SECTION */}
         <div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -407,6 +468,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           {renderLeads(previousLeads)}
         </div>
 
+        {/* EMPTY STATE */}
         {allLeads.length === 0 && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📋</div>
@@ -415,6 +477,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         )}
       </div>
 
+      {/* LEAD MODAL */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead}
@@ -425,6 +488,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         />
       )}
 
+      {/* CREATE LEAD MODAL */}
       {showCreateModal && (
         <CreateLeadModal
           onClose={() => setShowCreateModal(false)}
@@ -569,7 +633,7 @@ function CreateLeadModal({ onClose, onCreateLead, companyName }: any) {
   );
 }
 
-// LEAD MODAL (existing code - keeping it the same)
+// LEAD MODAL
 function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
   const [status, setStatus] = useState(lead.status || 'new');
   const [newNote, setNewNote] = useState('');
