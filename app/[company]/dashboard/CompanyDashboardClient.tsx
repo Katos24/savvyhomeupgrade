@@ -7,6 +7,8 @@ import TableView from '@/components/dashboard/views/TableView';
 import ViewSwitcher from '@/components/dashboard/ViewSwitcher';
 import { safeJSONParse, parseNotes } from '@/lib/utils';
 import styles from '@/app/dashboard/dashboard.module.css';
+import { Toaster, toast } from 'sonner';
+
 
 type Company = {
   id: number;
@@ -29,9 +31,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [dateTo, setDateTo] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     fetchLeads();
+    fetchCurrentUser();
   }, []);
 
   async function fetchLeads() {
@@ -44,6 +48,23 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchCurrentUser() {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
   }
 
   async function createLead(leadData: any) {
@@ -73,29 +94,43 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     }
   }
 
-  async function updateLeadStatus(id: number, status: string) {
+  async function updateLeadStatus(id: number, status: string, oldStatus: string) {
     try {
       const response = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status })
+        body: JSON.stringify({ 
+          id, 
+          status,
+          action: 'update_status',
+          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+          user_email: currentUser?.email || '',
+          old_status: oldStatus
+        })
       });
       
       const result = await response.json();
       
       if (response.ok && result.success) {
-        setAllLeads(leads => leads.map(l => 
-          l.id === id ? { ...l, status } : l
-        ));
-        if (selectedLead?.id === id) {
-          setSelectedLead({ ...selectedLead, status });
+        // Refresh ALL leads to get updated data
+        await fetchLeads();
+        
+        // Get fresh lead data to update modal
+        const updatedResponse = await fetch(`/api/company/${company.slug}/leads`);
+        const updatedData = await updatedResponse.json();
+        const updatedLead = updatedData.leads.find((l: any) => l.id === id);
+        
+        if (updatedLead && selectedLead?.id === id) {
+          setSelectedLead(updatedLead); // Refresh modal with new data
         }
+        
         return true;
       } else {
         alert('Failed to save changes.');
         return false;
       }
     } catch (error) {
+      console.error('Update status error:', error);
       alert('Failed to save changes.');
       return false;
     }
@@ -106,23 +141,37 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       const response = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, notes: noteText, action: 'add_note' })
+        body: JSON.stringify({ 
+          id, 
+          notes: noteText, 
+          action: 'add_note',
+          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+          user_email: currentUser?.email || ''
+        })
       });
       
       const result = await response.json();
       
       if (response.ok && result.success) {
+        // Refresh ALL leads
         await fetchLeads();
-        const updatedLead = allLeads.find(l => l.id === id);
+        
+        // Get fresh lead data to update modal
+        const updatedResponse = await fetch(`/api/company/${company.slug}/leads`);
+        const updatedData = await updatedResponse.json();
+        const updatedLead = updatedData.leads.find((l: any) => l.id === id);
+        
         if (updatedLead) {
-          setSelectedLead(updatedLead);
+          setSelectedLead(updatedLead); // Refresh modal with new data
         }
+        
         return true;
       } else {
         alert('Failed to add note.');
         return false;
       }
     } catch (error) {
+      console.error('Add note error:', error);
       alert('Failed to add note.');
       return false;
     }
@@ -245,6 +294,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   return (
     <div className={styles.container}>
+          <Toaster position="top-right" />  {/* ADD THIS */}
       <div className={styles.innerContainer}>
         {/* HEADER WITH LOGO */}
         <div className={styles.header}>
@@ -277,6 +327,29 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               >
                 ➕ Create Lead
               </a>
+              <a
+                href={`/api/company/${company.slug}/export-csv`}
+                download
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
+              >
+                📊 Export CSV
+  </a>
+              
+
+              {currentUser && (
+                <div className="flex items-center gap-3">
+                  <div className="text-right hidden md:block">
+                    <p className="text-sm font-semibold text-white">{currentUser.name}</p>
+                    <p className="text-xs text-white/70">{currentUser.email}</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg font-semibold transition border border-red-500/30"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
               
               <div className="hidden lg:block">
                 <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
@@ -309,129 +382,129 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-{/* COLLAPSIBLE FILTERS - Replace your filter section with this */}
-<div>
-  <button 
-    className={styles.filterToggle}
-    onClick={() => setShowFilters(!showFilters)}
-  >
-    <div className={styles.filterToggleLeft}>
-      <span className={styles.filterIcon}>🔍</span>
-      <div className={styles.filterInfo}>
-        <h3 className={styles.filterTitle}>Search & Filters</h3>
-        <p className={styles.filterStatus}>
-          {searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo
-            ? 'Active filters applied'
-            : 'Click to search and filter leads'}
-        </p>
-      </div>
-    </div>
-    <span className={styles.filterArrow}>{showFilters ? '▲' : '▼'}</span>
-  </button>
-
-  {showFilters && (
-    <div className={styles.filterPanel}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {/* COLLAPSIBLE FILTERS */}
         <div>
-          <label className={styles.filterLabel}>Search</label>
-          <input
-            type="text"
-            placeholder="Name, email, phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.filterInput}
-          />
-        </div>
-
-        <div>
-          <label className={styles.filterLabel}>Category</label>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className={styles.filterSelect}
+          <button 
+            className={styles.filterToggle}
+            onClick={() => setShowFilters(!showFilters)}
           >
-            <option value="all">All</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={styles.filterLabel}>Status</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="all">All</option>
-            <option value="new">New ({statusCounts.new})</option>
-            <option value="contacted">Contacted ({statusCounts.contacted})</option>
-            <option value="quoted">Quoted ({statusCounts.quoted})</option>
-            <option value="completed">Completed ({statusCounts.completed})</option>
-          </select>
-        </div>
-
-        <div>
-          <label className={styles.filterLabel}>Sort</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="date">Recent</option>
-            <option value="urgency">Urgency</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label className={styles.filterLabel}>From</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className={styles.filterInput}
-          />
-        </div>
-        <div>
-          <label className={styles.filterLabel}>To</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className={styles.filterInput}
-          />
-        </div>
-        <div className="flex items-end">
-          <button
-            onClick={clearDateFilter}
-            className={styles.clearDateButton}
-          >
-            Clear Dates
+            <div className={styles.filterToggleLeft}>
+              <span className={styles.filterIcon}>🔍</span>
+              <div className={styles.filterInfo}>
+                <h3 className={styles.filterTitle}>Search & Filters</h3>
+                <p className={styles.filterStatus}>
+                  {searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo
+                    ? 'Active filters applied'
+                    : 'Click to search and filter leads'}
+                </p>
+              </div>
+            </div>
+            <span className={styles.filterArrow}>{showFilters ? '▲' : '▼'}</span>
           </button>
-        </div>
-      </div>
 
-      {/* Clear All Filters Button */}
-      {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo) && (
-        <button
-          onClick={() => {
-            setSearchQuery('');
-            setFilterCategory('all');
-            setFilterStatus('all');
-            setDateFrom('');
-            setDateTo('');
-          }}
-          className={styles.clearAllButton}
-        >
-          🗑️ Clear All Filters
-        </button>
-      )}
-    </div>
-  )}
-</div>
+          {showFilters && (
+            <div className={styles.filterPanel}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className={styles.filterLabel}>Search</label>
+                  <input
+                    type="text"
+                    placeholder="Name, email, phone..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={styles.filterInput}
+                  />
+                </div>
+
+                <div>
+                  <label className={styles.filterLabel}>Category</label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className={styles.filterSelect}
+                  >
+                    <option value="all">All</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={styles.filterLabel}>Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className={styles.filterSelect}
+                  >
+                    <option value="all">All</option>
+                    <option value="new">New ({statusCounts.new})</option>
+                    <option value="contacted">Contacted ({statusCounts.contacted})</option>
+                    <option value="quoted">Quoted ({statusCounts.quoted})</option>
+                    <option value="completed">Completed ({statusCounts.completed})</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={styles.filterLabel}>Sort</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className={styles.filterSelect}
+                  >
+                    <option value="date">Recent</option>
+                    <option value="urgency">Urgency</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={styles.filterLabel}>From</label>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className={styles.filterInput}
+                  />
+                </div>
+                <div>
+                  <label className={styles.filterLabel}>To</label>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className={styles.filterInput}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={clearDateFilter}
+                    className={styles.clearDateButton}
+                  >
+                    Clear Dates
+                  </button>
+                </div>
+              </div>
+
+              {/* Clear All Filters Button */}
+              {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setFilterCategory('all');
+                    setFilterStatus('all');
+                    setDateFrom('');
+                    setDateTo('');
+                  }}
+                  className={styles.clearAllButton}
+                >
+                  🗑️ Clear All Filters
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* NEW LEADS SECTION */}
         <div className="mb-12">
@@ -474,8 +547,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <div className={styles.emptyIcon}>📋</div>
             <p className={styles.emptyTitle}>No leads yet</p>
           </div>
+
+          
         )}
       </div>
+      
 
       {/* LEAD MODAL */}
       {selectedLead && (
@@ -485,6 +561,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onUpdateStatus={updateLeadStatus}
           onAddNote={addNote}
           onRefresh={fetchLeads}
+          currentUser={currentUser}
         />
       )}
 
@@ -633,8 +710,9 @@ function CreateLeadModal({ onClose, onCreateLead, companyName }: any) {
   );
 }
 
-// LEAD MODAL
-function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any) {
+// LEAD MODAL  
+
+function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, currentUser }: any) {
   const [status, setStatus] = useState(lead.status || 'new');
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -642,12 +720,18 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
   const notesArray = parseNotes(lead.notes);
 
   const handleStatusChange = async () => {
-    if (status === (lead.status || 'new')) return;
+    const oldStatus = lead.status || 'new';
+    if (status === oldStatus) return;
     
     setSaving(true);
-    const success = await onUpdateStatus(lead.id, status);
+    const success = await onUpdateStatus(lead.id, status, oldStatus);
     setSaving(false);
-    if (success) alert('✅ Status updated!');
+    
+    if (success) {
+      toast.success('Status updated!');
+    } else {
+      toast.error('Failed to update status');
+    }
   };
 
   const handleAddNote = async () => {
@@ -657,7 +741,12 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
     const success = await onAddNote(lead.id, newNote);
     setSaving(false);
     
-    if (success) setNewNote('');
+    if (success) {
+      setNewNote('');
+      toast.success('Note added!');
+    } else {
+      toast.error('Failed to add note');
+    }
   };
 
   const fileUrls = safeJSONParse(lead.file_urls);
@@ -693,31 +782,60 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
         <div className={styles.modalContent}>
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Status</h3>
-            <div className="flex gap-3 items-center">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="new">🆕 New</option>
-                <option value="contacted">📞 Contacted</option>
-                <option value="quoted">💰 Quoted</option>
-                <option value="in-progress">🔨 In Progress</option>
-                <option value="completed">✅ Completed</option>
-                <option value="lost">❌ Lost</option>
-              </select>
-              <button
-                onClick={handleStatusChange}
-                disabled={saving || status === (lead.status || 'new')}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
-              >
-                {saving ? '...' : 'Update'}
-              </button>
+            
+            <div className="space-y-4">
+              {/* Current Status Display */}
+              <div>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Current</span>
+                <div className={`inline-flex items-center px-4 py-2 rounded-lg font-semibold ${
+                  (lead.status || 'new') === 'new' ? 'bg-gray-100 text-gray-800' :
+                  (lead.status || 'new') === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                  (lead.status || 'new') === 'quoted' ? 'bg-purple-100 text-purple-800' :
+                  (lead.status || 'new') === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                  (lead.status || 'new') === 'completed' ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {(lead.status || 'new') === 'new' && '🆕 New'}
+                  {(lead.status || 'new') === 'contacted' && '📞 Contacted'}
+                  {(lead.status || 'new') === 'quoted' && '💰 Quoted'}
+                  {(lead.status || 'new') === 'in-progress' && '🔨 In Progress'}
+                  {(lead.status || 'new') === 'completed' && '✅ Completed'}
+                  {(lead.status || 'new') === 'lost' && '❌ Lost'}
+                </div>
+              </div>
+
+              {/* Update Status */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                  Change to
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all"
+                  >
+                    <option value="new">🆕 New</option>
+                    <option value="contacted">📞 Contacted</option>
+                    <option value="quoted">💰 Quoted</option>
+                    <option value="in-progress">🔨 In Progress</option>
+                    <option value="completed">✅ Completed</option>
+                    <option value="lost">❌ Lost</option>
+                  </select>
+                  <button
+                    onClick={handleStatusChange}
+                    disabled={saving || status === (lead.status || 'new')}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:shadow-none"
+                  >
+                    {saving ? 'Saving...' : 'Update'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Notes ({notesArray.length})</h3>
+            <h3 className={styles.sectionTitle}>Activity Timeline ({notesArray.length})</h3>
             
             <div className="mb-4">
               <textarea
@@ -725,7 +843,7 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Add a note..."
                 rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
               />
               <button
                 onClick={handleAddNote}
@@ -738,24 +856,73 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
 
             {notesArray.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {[...notesArray].reverse().map((note: any, idx: number) => (
-                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
-                    <p className="text-gray-800 mb-2">{note.text}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(note.timestamp).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                ))}
+                {[...notesArray].reverse().map((note: any, idx: number) => {
+                  // Handle both old format (string) and new format (object)
+                  const isOldFormat = typeof note === 'string';
+                  const noteText = isOldFormat ? note : note.text;
+                  const noteType = isOldFormat ? 'note' : note.type;
+                  const userName = isOldFormat ? 'Unknown' : (note.user_name || 'System');
+                  const timestamp = isOldFormat ? lead.created_at : note.timestamp;
+
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`p-4 rounded-lg border-l-4 ${
+                        noteType === 'status_change' 
+                          ? 'bg-blue-50 border-blue-500' 
+                          : 'bg-gray-50 border-gray-400'
+                      }`}
+                    >
+                      {noteType === 'status_change' ? (
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">📊</span>
+                          <div className="flex-1">
+                            <p className="text-gray-900 font-semibold text-sm">Status Changed</p>
+                            <p className="text-gray-700 mt-1">
+                              <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs mr-2">
+                                {note.old_status}
+                              </span>
+                              →
+                              <span className="inline-block px-2 py-0.5 bg-blue-200 rounded text-xs ml-2">
+                                {note.new_status}
+                              </span>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                              <span className="font-semibold">👤 {userName}</span>
+                              <span>•</span>
+                              <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}</span>
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-gray-800 mb-2 whitespace-pre-wrap">{noteText}</p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="font-semibold">👤 {userName}</span>
+                            <span>•</span>
+                            <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">
-                No notes yet
+                No activity yet
               </div>
             )}
           </div>
@@ -782,7 +949,7 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh }: any)
               </button>
               <button
                 onClick={() => {
-                  const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project photos.`);
+                  const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
                   window.location.href = `sms:${lead.phone}?body=${message}`;
                 }}
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"

@@ -1,50 +1,100 @@
-import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { id, status, notes, action } = body;
+    
+    const { 
+      id, 
+      status, 
+      notes, 
+      action,
+      user_name,
+      user_email,
+      old_status 
+    } = body;
 
     const sql = neon(process.env.DATABASE_URL!);
-    
-    if (action === 'add_note') {
+
+    if (action === 'update_status') {
       // Get existing notes
-      const [lead] = await sql`SELECT notes FROM leads WHERE id = ${id}`;
-      
-      let notesArray = [];
-      if (lead.notes) {
-        try {
-          notesArray = JSON.parse(lead.notes);
-        } catch (e) {
-          // If notes is a string, convert it to an array entry
-          notesArray = lead.notes ? [{ text: lead.notes, timestamp: new Date().toISOString() }] : [];
-        }
+      const lead = await sql`
+        SELECT notes FROM leads WHERE id = ${id}
+      `;
+
+      let existingNotes = [];
+      try {
+        existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
+      } catch {
+        existingNotes = [];
       }
-      
-      // Add new note
-      notesArray.push({
-        text: notes,
+
+      // Add status change entry
+      const statusChangeEntry = {
+        type: 'status_change',
+        old_status: old_status,
+        new_status: status,
+        user_name: user_name,
+        user_email: user_email,
         timestamp: new Date().toISOString()
-      });
-      
+      };
+
+      existingNotes.push(statusChangeEntry);
+
       await sql`
         UPDATE leads 
-        SET notes = ${JSON.stringify(notesArray)}
+        SET status = ${status},
+            notes = ${JSON.stringify(existingNotes)}
         WHERE id = ${id}
       `;
+
+      return NextResponse.json({ success: true });
+
+    } else if (action === 'add_note') {
+      // Get existing notes
+      const lead = await sql`
+        SELECT notes FROM leads WHERE id = ${id}
+      `;
+
+      let existingNotes = [];
+      try {
+        existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
+      } catch {
+        existingNotes = [];
+      }
+
+      const newNote = {
+        type: 'note',
+        text: notes,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      existingNotes.push(newNote);
+
+      await sql`
+        UPDATE leads 
+        SET notes = ${JSON.stringify(existingNotes)}
+        WHERE id = ${id}
+      `;
+
+      return NextResponse.json({ success: true });
+
     } else {
-      // Just update status
+      // Legacy: just update status without tracking
       await sql`
         UPDATE leads 
         SET status = ${status}
         WHERE id = ${id}
       `;
+
+      return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating lead:', error);
+    console.error('Failed to update lead:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update lead' },
       { status: 500 }

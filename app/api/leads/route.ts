@@ -1,23 +1,103 @@
-import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
-    
-    const sql = neon(process.env.DATABASE_URL!);
-    const leads = await sql`
-      SELECT * FROM leads 
-      ORDER BY created_at DESC
-      LIMIT ${limit}
-    `;
+    const { 
+      id, 
+      status, 
+      notes, 
+      action,
+      user_name,
+      user_email,
+      old_status 
+    } = await request.json();
 
-    return NextResponse.json({ success: true, leads });
+    const sql = neon(process.env.DATABASE_URL!);
+
+    if (action === 'update_status') {
+      // Update status AND add status change to notes
+      const lead = await sql`
+        SELECT notes FROM leads WHERE id = ${id}
+      `;
+
+      let existingNotes = [];
+      try {
+        existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
+      } catch {
+        existingNotes = [];
+      }
+
+      // Add status change entry
+      const statusChangeEntry = {
+        type: 'status_change',
+        old_status: old_status,
+        new_status: status,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      existingNotes.push(statusChangeEntry);
+
+      await sql`
+        UPDATE leads 
+        SET status = ${status},
+            notes = ${JSON.stringify(existingNotes)},
+            updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      return NextResponse.json({ success: true });
+
+    } else if (action === 'add_note') {
+      // Add note with user info
+      const lead = await sql`
+        SELECT notes FROM leads WHERE id = ${id}
+      `;
+
+      let existingNotes = [];
+      try {
+        existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
+      } catch {
+        existingNotes = [];
+      }
+
+      const newNote = {
+        type: 'note',
+        text: notes,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      existingNotes.push(newNote);
+
+      await sql`
+        UPDATE leads 
+        SET notes = ${JSON.stringify(existingNotes)},
+            updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      return NextResponse.json({ success: true });
+
+    } else {
+      // Legacy: just update status without tracking
+      await sql`
+        UPDATE leads 
+        SET status = ${status},
+            updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      return NextResponse.json({ success: true });
+    }
+
   } catch (error) {
-    console.error('Error fetching leads:', error);
+    console.error('Failed to update lead:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch leads' },
+      { success: false, error: 'Failed to update lead' },
       { status: 500 }
     );
   }

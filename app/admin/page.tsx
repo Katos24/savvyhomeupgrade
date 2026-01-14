@@ -440,7 +440,7 @@ export default function AdminPage() {
                     View Form →
                   </a>
                   <a 
-                    href={`/dashboard/${company.slug}`} 
+                    href={`/${company.slug}/dashboard`} 
                     className="text-purple-600 text-sm hover:underline"
                   >
                     Dashboard →

@@ -57,7 +57,7 @@
 
 .cardsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
@@ -117,7 +117,7 @@
 }
 
 .categoryBadge {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(165deg, #0b0d16, #764ba2);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
@@ -602,8 +602,16 @@
   }
 }
 
-.filterTitle{
+.filterLabel {
   display: block;
+  color: white !important; /* Force white */
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.filterTitle {
   color: white !important; /* Force white */
   font-size: 0.875rem;
   font-weight: 700;
