@@ -1,0 +1,401 @@
+'use client';
+
+import { useState } from 'react';
+import { toast } from 'sonner';
+import ProjectSection from '@/components/dashboard/ProjectSection';
+import { safeJSONParse, parseNotes } from '@/lib/utils';
+import styles from '@/app/dashboard/dashboard.module.css';
+
+type LeadModalProps = {
+  lead: any;
+  onClose: () => void;
+  onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
+  onAddNote: (id: number, noteText: string) => Promise<boolean>;
+  onDeleteLead: (id: number) => Promise<boolean>;
+  onRefresh: () => Promise<void>;
+  currentUser: any;
+  statusOptions: any[];
+};
+
+export default function LeadModal({
+  lead,
+  onClose,
+  onUpdateStatus,
+  onAddNote,
+  onDeleteLead,
+  onRefresh,
+  currentUser,
+  statusOptions
+}: LeadModalProps) {
+  const [status, setStatus] = useState(lead.status || statusOptions[0].value);
+  const [newNote, setNewNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCustomerInfo, setShowCustomerInfo] = useState(false); // Changed to false - starts collapsed
+
+  const notesArray = parseNotes(lead.notes);
+
+  const handleStatusChange = async () => {
+    const oldStatus = lead.status || statusOptions[0].value;
+    
+    if (status === oldStatus) return;
+    
+    setSaving(true);
+    const success = await onUpdateStatus(lead.id, status, oldStatus);
+    setSaving(false);
+    
+    if (success) {
+      toast.success('Status updated!');
+      setStatus(status);
+    } else {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const getStatusConfig = (statusValue: string) => {
+    return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
+  };
+
+  const currentStatusConfig = getStatusConfig(lead.status || statusOptions[0].value);
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    setSaving(true);
+    const success = await onAddNote(lead.id, newNote);
+    setSaving(false);
+    
+    if (success) {
+      setNewNote('');
+      toast.success('Note added!');
+    } else {
+      toast.error('Failed to add note');
+    }
+  };
+
+  const handleDelete = async () => {
+    setSaving(true);
+    const success = await onDeleteLead(lead.id);
+    setSaving(false);
+    
+    if (success) {
+      toast.success('Lead deleted!');
+      onClose();
+    } else {
+      toast.error('Failed to delete lead');
+    }
+  };
+
+  const fileUrls = safeJSONParse(lead.file_urls);
+  
+  const images = fileUrls?.filter((f: any) => 
+    f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  ) || [];
+  
+  const videos = fileUrls?.filter((f: any) => 
+    f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
+  ) || [];
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <div>
+            <h2 className={styles.modalTitle}>{lead.name}</h2>
+            <p className={styles.modalDate}>
+              {new Date(lead.created_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
+            </p>
+          </div>
+          <button onClick={onClose} className={styles.closeButton}>×</button>
+        </div>
+
+        <div className={styles.modalContent}>
+          
+          {/* ==================== CUSTOMER INFO (EXPANDABLE) ==================== */}
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
+            {/* Header - Always Visible */}
+            <button
+              onClick={() => setShowCustomerInfo(!showCustomerInfo)}
+              className="w-full flex items-center justify-between p-6 hover:bg-blue-50/50 transition rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <h3 className="text-xl font-bold text-gray-900">👤 Customer Information</h3>
+                <span className="text-sm text-gray-600">({lead.name})</span>
+              </div>
+              <span className={`text-2xl transition-transform ${showCustomerInfo ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+
+            {/* Expandable Content */}
+            {showCustomerInfo && (
+              <div className="px-6 pb-6 space-y-4">
+                {/* Contact Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Email</span>
+                    <a href={`mailto:${lead.email}`} className="text-gray-900 font-medium hover:underline">
+                      {lead.email}
+                    </a>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Phone</span>
+                    <a href={`tel:${lead.phone}`} className="text-gray-900 font-medium hover:underline">
+                      {lead.phone}
+                    </a>
+                  </div>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={() => {
+                        const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
+                        const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
+                        window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      📧 Email
+                    </button>
+                    <button
+                      onClick={() => window.location.href = `tel:${lead.phone}`}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      📞 Call
+                    </button>
+                    <button
+                      onClick={() => {
+                        const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
+                        window.location.href = `sms:${lead.phone}?body=${message}`;
+                      }}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      💬 Text
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ==================== CATEGORY & DESCRIPTION (OUTSIDE EXPANDABLE) ==================== */}
+          {lead.category && (
+            <div className="mb-6">
+              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
+                {lead.category}
+              </span>
+            </div>
+          )}
+
+          {lead.description && (
+            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+              <p className="text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+            </div>
+          )}
+
+          {/* ==================== PROJECT SECTION (COMPONENT) ==================== */}
+          <ProjectSection 
+            lead={lead}
+            currentUser={currentUser}
+            onRefresh={onRefresh}
+            statusOptions={statusOptions}
+            onUpdateStatus={onUpdateStatus}
+          />
+
+          {/* ==================== ACTIVITY TIMELINE ==================== */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Activity Timeline ({notesArray.length})</h3>
+            
+            <div className="mb-4">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Add a note..."
+                rows={3}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={saving || !newNote.trim()}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
+              >
+                {saving ? '💾 Adding...' : '➕ Add Note'}
+              </button>
+            </div>
+
+            {notesArray.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {[...notesArray].reverse().map((note: any, idx: number) => {
+                  const isOldFormat = typeof note === 'string';
+                  const noteText = isOldFormat ? note : note.text;
+                  const noteType = isOldFormat ? 'note' : note.type;
+                  const userName = isOldFormat ? 'Unknown' : (note.user_name || 'System');
+                  const timestamp = isOldFormat ? lead.created_at : note.timestamp;
+
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`p-4 rounded-lg border-l-4 ${
+                        noteType === 'status_change' 
+                          ? 'bg-blue-50 border-blue-500' 
+                          : noteType === 'project_created' || noteType === 'project_updated'
+                          ? 'bg-purple-50 border-purple-500'
+                          : noteType === 'quote_created' || noteType === 'quote_sent'
+                          ? 'bg-green-50 border-green-500'
+                          : noteType === 'payment_updated'
+                          ? 'bg-orange-50 border-orange-500'
+                          : 'bg-gray-50 border-gray-400'
+                      }`}
+                    >
+                      {noteType === 'status_change' ? (
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">📊</span>
+                          <div className="flex-1">
+                            <p className="text-gray-900 font-semibold text-sm">Status Changed</p>
+                            <p className="text-gray-700 mt-1">
+                              <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs mr-2">
+                                {note.old_status}
+                              </span>
+                              →
+                              <span className="inline-block px-2 py-0.5 bg-blue-200 rounded text-xs ml-2">
+                                {note.new_status}
+                              </span>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                              <span className="font-semibold">👤 {userName}</span>
+                              <span>•</span>
+                              <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })}</span>
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-gray-800 mb-2 whitespace-pre-wrap">{noteText}</p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="font-semibold">👤 {userName}</span>
+                            <span>•</span>
+                            <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">
+                No activity yet
+              </div>
+            )}
+          </div>
+
+          {/* ==================== PHOTOS & VIDEOS ==================== */}
+          {images.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Photos ({images.length})</h3>
+              <div className={styles.photosGrid}>
+                {images.map((file: any, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={file.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.photoLink}
+                  >
+                    <img src={file.url} alt={`Photo ${idx + 1}`} className={styles.photo} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {videos.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Videos ({videos.length})</h3>
+              <div className={styles.photosGrid}>
+                {videos.map((file: any, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={file.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.photoLink}
+                  >
+                    <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex flex-col items-center justify-center border-2 border-blue-200">
+                      <div className="text-6xl mb-2">🎥</div>
+                      <p className="text-sm font-medium text-gray-700">Video {idx + 1}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ==================== DANGER ZONE ==================== */}
+          <div className="mt-8 pt-6 border-t-2 border-red-100">
+            <h3 className="text-lg font-bold text-red-600 mb-2">🚨 Danger Zone</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Deleting this lead is permanent and cannot be undone.
+            </p>
+            
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-3 px-4 rounded-lg transition border-2 border-red-200 hover:border-red-300"
+              >
+                🗑️ Delete Lead
+              </button>
+            ) : (
+              <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                <p className="font-bold text-red-800 mb-3">
+                  Are you absolutely sure?
+                </p>
+                <p className="text-sm text-red-700 mb-4">
+                  This will permanently delete <strong>{lead.name}</strong> and all associated data. This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleDelete}
+                    disabled={saving}
+                    className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition"
+                  >
+                    {saving ? 'Deleting...' : 'Yes, Delete Forever'}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={saving}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
