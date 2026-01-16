@@ -9,7 +9,6 @@ interface CardsViewProps {
 export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
   const renderLeadCard = (lead: any) => {
     const fileUrls = safeJSONParse(lead.file_urls);
-    const aiAnalysis = safeJSONParse(lead.ai_analysis);
     const leadStatus = lead.status || 'new';
     const notesArray = parseNotes(lead.notes);
     
@@ -100,32 +99,6 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
               {lead.description.substring(0, 80)}{lead.description.length > 80 ? '...' : ''}
             </p>
           )}
-
-          {aiAnalysis ? (
-            <div className={styles.badges}>
-              <span className={`${styles.badge} ${
-                aiAnalysis.urgency === 'Emergency' ? styles.urgencyEmergency :
-                aiAnalysis.urgency === 'High Priority' ? styles.urgencyHigh :
-                aiAnalysis.urgency === 'Low Priority' ? styles.urgencyLow :
-                styles.urgencyNormal
-              }`}>
-                {aiAnalysis.urgency}
-              </span>
-              <span className={`${styles.badge} ${
-                aiAnalysis.complexity === 'Simple' ? styles.complexitySimple :
-                aiAnalysis.complexity === 'Complex' ? styles.complexityComplex :
-                styles.complexityModerate
-              }`}>
-                {aiAnalysis.complexity}
-              </span>
-            </div>
-          ) : videos.length > 0 && images.length === 0 ? (
-            <div className={styles.badges}>
-              <span className={`${styles.badge} ${styles.urgencyNormal}`}>
-                📹 Manual Review
-              </span>
-            </div>
-          ) : null}
 
           <p className={styles.cardDate}>
             🕒 {new Date(lead.created_at).toLocaleDateString('en-US', {

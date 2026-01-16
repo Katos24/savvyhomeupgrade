@@ -28,8 +28,13 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'painting', label: 'Painting', emoji: '🎨' },
     { value: 'flooring', label: 'Flooring', emoji: '🪵' },
     { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
+    { value: 'cleaning', label: 'Cleaning', emoji: '🧹' },
+    { value: 'pest_control', label: 'Pest Control', emoji: '🐜' },
+    { value: 'window_washing', label: 'Window Washing', emoji: '🪟' },
+    { value: 'gutter_cleaning', label: 'Gutter Cleaning', emoji: '🌧️' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+  
   construction: [
     { value: 'new_build', label: 'New Construction', emoji: '🏗️' },
     { value: 'renovation', label: 'Renovation', emoji: '🔨' },
@@ -37,8 +42,12 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'demolition', label: 'Demolition', emoji: '💥' },
     { value: 'foundation', label: 'Foundation Work', emoji: '🧱' },
     { value: 'framing', label: 'Framing', emoji: '🪚' },
+    { value: 'drywall', label: 'Drywall', emoji: '🔲' },
+    { value: 'siding', label: 'Siding', emoji: '🏘️' },
+    { value: 'deck_patio', label: 'Deck/Patio', emoji: '🪵' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+  
   auto_services: [
     { value: 'oil_change', label: 'Oil Change', emoji: '🛢️' },
     { value: 'brake_repair', label: 'Brake Repair', emoji: '🛑' },
@@ -47,8 +56,12 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'tire_service', label: 'Tire Service', emoji: '⚫' },
     { value: 'engine_repair', label: 'Engine Repair', emoji: '⚙️' },
     { value: 'inspection', label: 'Inspection', emoji: '🔍' },
+    { value: 'transmission', label: 'Transmission', emoji: '⚙️' },
+    { value: 'ac_repair', label: 'AC Repair', emoji: '❄️' },
+    { value: 'alignment', label: 'Wheel Alignment', emoji: '🎯' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+  
   beauty_services: [
     { value: 'haircut', label: 'Haircut', emoji: '✂️' },
     { value: 'hair_color', label: 'Hair Color', emoji: '🎨' },
@@ -56,8 +69,13 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'extensions', label: 'Extensions', emoji: '💁' },
     { value: 'nails', label: 'Nails', emoji: '💅' },
     { value: 'facial', label: 'Facial', emoji: '✨' },
+    { value: 'massage', label: 'Massage', emoji: '💆' },
+    { value: 'waxing', label: 'Waxing', emoji: '🪒' },
+    { value: 'makeup', label: 'Makeup', emoji: '💄' },
+    { value: 'lashes', label: 'Lashes/Brows', emoji: '👁️' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+  
   pet_services: [
     { value: 'grooming', label: 'Grooming', emoji: '🐕' },
     { value: 'bathing', label: 'Bathing', emoji: '🛁' },
@@ -65,8 +83,12 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'training', label: 'Training', emoji: '🎓' },
     { value: 'sitting', label: 'Pet Sitting', emoji: '🏠' },
     { value: 'walking', label: 'Dog Walking', emoji: '🚶' },
+    { value: 'boarding', label: 'Boarding', emoji: '🏨' },
+    { value: 'daycare', label: 'Daycare', emoji: '☀️' },
+    { value: 'vet', label: 'Veterinary', emoji: '🏥' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+  
   video_production: [
     { value: 'commercial', label: 'Commercial', emoji: '📺' },
     { value: 'wedding', label: 'Wedding Video', emoji: '💒' },
@@ -74,8 +96,114 @@ const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: s
     { value: 'corporate', label: 'Corporate Video', emoji: '🏢' },
     { value: 'real_estate', label: 'Real Estate Tour', emoji: '🏠' },
     { value: 'editing', label: 'Video Editing', emoji: '✂️' },
+    { value: 'drone', label: 'Drone Footage', emoji: '🚁' },
+    { value: 'photography', label: 'Photography', emoji: '📸' },
+    { value: 'animation', label: 'Animation', emoji: '🎬' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+
+  // NEW BUSINESS TYPES BELOW 👇
+
+  legal_services: [
+    { value: 'consultation', label: 'Consultation', emoji: '⚖️' },
+    { value: 'contract_review', label: 'Contract Review', emoji: '📄' },
+    { value: 'business_formation', label: 'Business Formation', emoji: '🏢' },
+    { value: 'estate_planning', label: 'Estate Planning', emoji: '📋' },
+    { value: 'family_law', label: 'Family Law', emoji: '👨‍👩‍👧' },
+    { value: 'real_estate_law', label: 'Real Estate Law', emoji: '🏠' },
+    { value: 'personal_injury', label: 'Personal Injury', emoji: '🩹' },
+    { value: 'other', label: 'Other', emoji: '⚖️' },
+  ],
+
+  medical_services: [
+    { value: 'checkup', label: 'General Checkup', emoji: '🩺' },
+    { value: 'dental', label: 'Dental', emoji: '🦷' },
+    { value: 'physical_therapy', label: 'Physical Therapy', emoji: '🏋️' },
+    { value: 'chiropractic', label: 'Chiropractic', emoji: '💆' },
+    { value: 'mental_health', label: 'Mental Health', emoji: '🧠' },
+    { value: 'nutrition', label: 'Nutrition', emoji: '🥗' },
+    { value: 'acupuncture', label: 'Acupuncture', emoji: '💉' },
+    { value: 'other', label: 'Other', emoji: '🏥' },
+  ],
+
+  fitness_services: [
+    { value: 'personal_training', label: 'Personal Training', emoji: '💪' },
+    { value: 'yoga', label: 'Yoga Class', emoji: '🧘' },
+    { value: 'pilates', label: 'Pilates', emoji: '🤸' },
+    { value: 'crossfit', label: 'CrossFit', emoji: '🏋️' },
+    { value: 'boxing', label: 'Boxing', emoji: '🥊' },
+    { value: 'dance', label: 'Dance Class', emoji: '💃' },
+    { value: 'nutrition_coaching', label: 'Nutrition Coaching', emoji: '🥗' },
+    { value: 'other', label: 'Other', emoji: '🏃' },
+  ],
+
+  cleaning_services: [
+    { value: 'house_cleaning', label: 'House Cleaning', emoji: '🏠' },
+    { value: 'deep_cleaning', label: 'Deep Cleaning', emoji: '🧹' },
+    { value: 'carpet_cleaning', label: 'Carpet Cleaning', emoji: '🧽' },
+    { value: 'window_cleaning', label: 'Window Cleaning', emoji: '🪟' },
+    { value: 'move_in_out', label: 'Move In/Out', emoji: '📦' },
+    { value: 'office_cleaning', label: 'Office Cleaning', emoji: '🏢' },
+    { value: 'pressure_washing', label: 'Pressure Washing', emoji: '💦' },
+    { value: 'other', label: 'Other', emoji: '🧹' },
+  ],
+
+  event_services: [
+    { value: 'wedding', label: 'Wedding', emoji: '💒' },
+    { value: 'birthday', label: 'Birthday Party', emoji: '🎂' },
+    { value: 'corporate_event', label: 'Corporate Event', emoji: '🏢' },
+    { value: 'catering', label: 'Catering', emoji: '🍽️' },
+    { value: 'dj', label: 'DJ Services', emoji: '🎧' },
+    { value: 'photography', label: 'Photography', emoji: '📸' },
+    { value: 'decoration', label: 'Decoration', emoji: '🎈' },
+    { value: 'venue', label: 'Venue Rental', emoji: '🏛️' },
+    { value: 'other', label: 'Other', emoji: '🎉' },
+  ],
+
+  tech_services: [
+    { value: 'computer_repair', label: 'Computer Repair', emoji: '💻' },
+    { value: 'phone_repair', label: 'Phone Repair', emoji: '📱' },
+    { value: 'web_design', label: 'Web Design', emoji: '🌐' },
+    { value: 'app_development', label: 'App Development', emoji: '📲' },
+    { value: 'it_support', label: 'IT Support', emoji: '🖥️' },
+    { value: 'data_recovery', label: 'Data Recovery', emoji: '💾' },
+    { value: 'security', label: 'Cybersecurity', emoji: '🔒' },
+    { value: 'other', label: 'Other', emoji: '⚙️' },
+  ],
+
+  real_estate: [
+    { value: 'buying', label: 'Buying Property', emoji: '🏠' },
+    { value: 'selling', label: 'Selling Property', emoji: '💰' },
+    { value: 'renting', label: 'Renting', emoji: '🔑' },
+    { value: 'property_management', label: 'Property Management', emoji: '🏢' },
+    { value: 'appraisal', label: 'Property Appraisal', emoji: '📊' },
+    { value: 'inspection', label: 'Home Inspection', emoji: '🔍' },
+    { value: 'staging', label: 'Home Staging', emoji: '🛋️' },
+    { value: 'other', label: 'Other', emoji: '🏘️' },
+  ],
+
+  education_services: [
+    { value: 'tutoring', label: 'Tutoring', emoji: '📚' },
+    { value: 'music_lessons', label: 'Music Lessons', emoji: '🎵' },
+    { value: 'art_lessons', label: 'Art Lessons', emoji: '🎨' },
+    { value: 'language', label: 'Language Lessons', emoji: '🗣️' },
+    { value: 'test_prep', label: 'Test Prep', emoji: '✍️' },
+    { value: 'coaching', label: 'Life Coaching', emoji: '🎯' },
+    { value: 'consulting', label: 'Business Consulting', emoji: '💼' },
+    { value: 'other', label: 'Other', emoji: '🎓' },
+  ],
+
+  food_services: [
+    { value: 'catering', label: 'Catering', emoji: '🍽️' },
+    { value: 'meal_prep', label: 'Meal Prep', emoji: '🥗' },
+    { value: 'private_chef', label: 'Private Chef', emoji: '👨‍🍳' },
+    { value: 'baking', label: 'Custom Baking', emoji: '🎂' },
+    { value: 'bartending', label: 'Bartending', emoji: '🍹' },
+    { value: 'food_truck', label: 'Food Truck', emoji: '🚚' },
+    { value: 'delivery', label: 'Delivery Service', emoji: '🛵' },
+    { value: 'other', label: 'Other', emoji: '🍴' },
+  ],
+  
   general: [
     { value: 'consultation', label: 'Consultation', emoji: '💬' },
     { value: 'repair', label: 'Repair', emoji: '🔧' },

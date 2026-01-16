@@ -10,12 +10,29 @@ import styles from '@/app/dashboard/dashboard.module.css';
 import { Toaster, toast } from 'sonner';
 
 
+type StatusOption = {
+  value: string;
+  label: string;
+  color: string;
+  emoji?: string;
+};
+
 type Company = {
   id: number;
   name: string;
   slug: string;
   logo_url?: string | null;
+  status_options?: StatusOption[];
 };
+
+// Default statuses if company doesn't have custom ones
+const DEFAULT_STATUSES: StatusOption[] = [
+  { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
+  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
+  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
+  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
+  { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
+];
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const [allLeads, setAllLeads] = useState<any[]>([]);
@@ -33,6 +50,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [showFilters, setShowFilters] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // Get status options from company or use defaults
+  const statusOptions = company.status_options && company.status_options.length > 0 
+    ? company.status_options 
+    : DEFAULT_STATUSES;
+
   useEffect(() => {
     fetchLeads();
     fetchCurrentUser();
@@ -42,7 +64,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     try {
       const response = await fetch(`/api/company/${company.slug}/leads`);
       const data = await response.json();
-      setAllLeads(data.leads || []);
+      // Filter out deleted leads (only show active leads)
+      setAllLeads((data.leads || []).filter((l: any) => !l.deleted));
     } catch (error) {
       console.error('Failed to fetch leads:', error);
     } finally {
@@ -177,6 +200,34 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     }
   }
 
+  async function deleteLead(id: number) {
+    try {
+      const response = await fetch('/api/leads/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id,
+          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+          user_email: currentUser?.email || ''
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        await fetchLeads();
+        return true;
+      } else {
+        alert('Failed to delete lead.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Delete lead error:', error);
+      alert('Failed to delete lead.');
+      return false;
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -216,13 +267,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   filteredLeads.sort((a, b) => {
     if (sortBy === 'date') {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    } else if (sortBy === 'urgency') {
-      const urgencyOrder = { 'Emergency': 0, 'High Priority': 1, 'Normal': 2, 'Low Priority': 3 };
-      const aAnalysis = safeJSONParse(a.ai_analysis);
-      const bAnalysis = safeJSONParse(b.ai_analysis);
-      const aUrgency = urgencyOrder[aAnalysis?.urgency as keyof typeof urgencyOrder] ?? 2;
-      const bUrgency = urgencyOrder[bAnalysis?.urgency as keyof typeof urgencyOrder] ?? 2;
-      return aUrgency - bUrgency;
     }
     return 0;
   });
@@ -243,22 +287,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     return date <= yesterday && date >= cutoffDate;
   });
 
-  const emergencyLeads = allLeads.filter(l => {
-    const analysis = safeJSONParse(l.ai_analysis);
-    return analysis?.urgency === 'Emergency';
-  }).length;
-  
-  const highPriorityLeads = allLeads.filter(l => {
-    const analysis = safeJSONParse(l.ai_analysis);
-    return analysis?.urgency === 'High Priority';
-  }).length;
-
-  const statusCounts = {
-    new: allLeads.filter(l => (l.status || 'new') === 'new').length,
-    contacted: allLeads.filter(l => l.status === 'contacted').length,
-    quoted: allLeads.filter(l => l.status === 'quoted').length,
-    completed: allLeads.filter(l => l.status === 'completed').length,
-  };
+  const statusCounts = statusOptions.reduce((acc, status) => {
+    acc[status.value] = allLeads.filter(l => (l.status || statusOptions[0].value) === status.value).length;
+    return acc;
+  }, {} as Record<string, number>);
 
   const categories = [...new Set(allLeads.map(l => l.category))];
 
@@ -294,13 +326,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   return (
     <div className={styles.container}>
-          <Toaster position="top-right" />  {/* ADD THIS */}
+      <Toaster position="top-right" />
       <div className={styles.innerContainer}>
         {/* HEADER WITH LOGO */}
         <div className={styles.header}>
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between w-full gap-4">
+          <div className="flex items-center justify-between w-full">
+            {/* LEFT: Logo + Company Name */}
             <div className="flex items-center gap-4">
-              {/* LOGO */}
               {company.logo_url ? (
                 <img 
                   src={company.logo_url} 
@@ -312,233 +344,218 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   {company.name.charAt(0)}
                 </div>
               )}
-              
-              <div>
-                <h1 className={styles.title}>{company.name}</h1>
-                <p className={styles.subtitle}>Lead Dashboard</p>
-              </div>
+              <h1 className={styles.title}>{company.name}</h1>
             </div>
             
-            <div className="flex items-center gap-4">
+            {/* RIGHT: Create Lead + User Info Box */}
+            <div className="flex items-center gap-3">
+              <a
+                href={`/${company.slug}/dashboard/deleted-leads`}
+                className="bg-red-500/20 hover:bg-red-500/30 text-white px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
+              >
+                🗑️ Deleted
+              </a>
+              
               <a
                 href={`/${company.slug}`}
-                target="_blank"
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
               >
                 ➕ Create Lead
               </a>
+              
+              {currentUser && (
+                <div className="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20">
+                  <p className="text-sm font-semibold text-white mb-1">{currentUser.name}</p>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-white rounded text-sm font-semibold transition border border-red-500/30"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* COMBINED SEARCH + STATS BAR */}
+        <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-8">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            {/* Quick Search - FIRST */}
+            <div className="flex-1 lg:max-w-md w-full">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="🔍 Quick search by name, email, or phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/90 backdrop-blur border-2 border-white/50 focus:border-white focus:outline-none text-gray-900 placeholder-gray-500"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Stats - Condensed */}
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg">
+                <p className="text-xs text-white/70">New (24h)</p>
+                <p className="text-xl font-bold text-white">{newLeads.length}</p>
+              </div>
+            </div>
+
+            {/* Advanced Filters Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-white/20 hover:bg-white/30 backdrop-blur text-white px-4 py-3 rounded-lg font-semibold transition flex items-center gap-2 border border-white/30"
+            >
+              <span>🎛️</span>
+              <span className="hidden sm:inline">Filters</span>
+              <span className={`transition-transform ${showFilters ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+          </div>
+        </div>
+
+        {/* COLLAPSIBLE ADVANCED FILTERS */}
+        {showFilters && (
+          <div className="bg-white/10 backdrop-blur rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Advanced Filters</h3>
               <a
                 href={`/api/company/${company.slug}/export-csv`}
                 download
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
               >
                 📊 Export CSV
-  </a>
-              
-
-              {currentUser && (
-                <div className="flex items-center gap-3">
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-white">{currentUser.name}</p>
-                    <p className="text-xs text-white/70">{currentUser.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg font-semibold transition border border-red-500/30"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-              
-              <div className="hidden lg:block">
-                <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
-              </div>
+              </a>
             </div>
-          </div>
-        </div>
-
-        {/* STATS BAR */}
-        <div className={styles.statsBar}>
-          <div className={styles.statCard}>
-            <p className={styles.statLabel}>New (24h)</p>
-            <p className={styles.statValue}>{newLeads.length}</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statLabel}>🚨 Emergency</p>
-            <p className={styles.statValue}>{emergencyLeads}</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statLabel}>⚠️ High Priority</p>
-            <p className={styles.statValue}>{highPriorityLeads}</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statLabel}>✅ Completed</p>
-            <p className={styles.statValue}>{statusCounts.completed}</p>
-          </div>
-          <div className={styles.statCard}>
-            <p className={styles.statLabel}>Total</p>
-            <p className={styles.statValue}>{allLeads.length}</p>
-          </div>
-        </div>
-
-        {/* COLLAPSIBLE FILTERS */}
-        <div>
-          <button 
-            className={styles.filterToggle}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <div className={styles.filterToggleLeft}>
-              <span className={styles.filterIcon}>🔍</span>
-              <div className={styles.filterInfo}>
-                <h3 className={styles.filterTitle}>Search & Filters</h3>
-                <p className={styles.filterStatus}>
-                  {searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo
-                    ? 'Active filters applied'
-                    : 'Click to search and filter leads'}
-                </p>
-              </div>
-            </div>
-            <span className={styles.filterArrow}>{showFilters ? '▲' : '▼'}</span>
-          </button>
-
-          {showFilters && (
-            <div className={styles.filterPanel}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <label className={styles.filterLabel}>Search</label>
-                  <input
-                    type="text"
-                    placeholder="Name, email, phone..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={styles.filterInput}
-                  />
-                </div>
-
-                <div>
-                  <label className={styles.filterLabel}>Category</label>
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className={styles.filterSelect}
-                  >
-                    <option value="all">All</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className={styles.filterLabel}>Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className={styles.filterSelect}
-                  >
-                    <option value="all">All</option>
-                    <option value="new">New ({statusCounts.new})</option>
-                    <option value="contacted">Contacted ({statusCounts.contacted})</option>
-                    <option value="quoted">Quoted ({statusCounts.quoted})</option>
-                    <option value="completed">Completed ({statusCounts.completed})</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className={styles.filterLabel}>Sort</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className={styles.filterSelect}
-                  >
-                    <option value="date">Recent</option>
-                    <option value="urgency">Urgency</option>
-                  </select>
-                </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className={styles.filterLabel}>Category</label>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className={styles.filterLabel}>From</label>
+              <div>
+                <label className={styles.filterLabel}>Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="all">All Statuses</option>
+                  {statusOptions.map(status => (
+                    <option key={status.value} value={status.value}>
+                      {status.emoji} {status.label} ({statusCounts[status.value] || 0})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={styles.filterLabel}>Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="date">Most Recent</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={styles.filterLabel}>Date Range</label>
+                <div className="flex gap-2">
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
                     className={styles.filterInput}
+                    placeholder="From"
                   />
-                </div>
-                <div>
-                  <label className={styles.filterLabel}>To</label>
                   <input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                     className={styles.filterInput}
+                    placeholder="To"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={clearDateFilter}
-                    className={styles.clearDateButton}
-                  >
-                    Clear Dates
-                  </button>
-                </div>
               </div>
-
-              {/* Clear All Filters Button */}
-              {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo) && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setFilterCategory('all');
-                    setFilterStatus('all');
-                    setDateFrom('');
-                    setDateTo('');
-                  }}
-                  className={styles.clearAllButton}
-                >
-                  🗑️ Clear All Filters
-                </button>
-              )}
             </div>
-          )}
-        </div>
 
-        {/* NEW LEADS SECTION */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">NEW</span>
-              Last 24 Hours
-            </h2>
-            <p className="text-white/80">{newLeads.length}</p>
+            {/* Clear Filters */}
+            {(searchQuery || filterCategory !== 'all' || filterStatus !== 'all' || dateFrom || dateTo || sortBy !== 'date') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterCategory('all');
+                  setFilterStatus('all');
+                  setDateFrom('');
+                  setDateTo('');
+                  setSortBy('date');
+                }}
+                className="bg-red-500/20 hover:bg-red-500/30 text-white px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
+              >
+                🗑️ Clear All Filters
+              </button>
+            )}
           </div>
-          {renderLeads(newLeads)}
-        </div>
+        )}
 
-        {/* PREVIOUS LEADS SECTION */}
+        {/* LEADS SECTION - UNIFIED */}
         <div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <div className="flex items-start justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              📂 Previous
+              📂 All Leads
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {[7, 30, 90, 365].map(days => (
-                <button
-                  key={days}
-                  onClick={() => setShowPreviousDays(days)}
-                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm ${
-                    showPreviousDays === days ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
-                >
-                  {days === 7 ? 'Week' : days === 30 ? '30d' : days === 90 ? '90d' : 'All'}
-                </button>
-              ))}
+            
+            {/* Right side: Duration filters with View Switcher below */}
+            <div className="flex flex-col items-end gap-2">
+              {/* Duration Filters */}
+              <div className="flex flex-wrap gap-2">
+                {[1, 7, 30, 90, 365].map(days => (
+                  <button
+                    key={days}
+                    onClick={() => setShowPreviousDays(days)}
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm ${
+                      showPreviousDays === days ? 'bg-white text-blue-600' : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
+                  >
+                    {days === 1 ? 'Today' : days === 7 ? 'Week' : days === 30 ? '30d' : days === 90 ? '90d' : 'All'}
+                  </button>
+                ))}
+              </div>
+              
+              {/* View Switcher - Condensed Row */}
+              <div className="hidden lg:block">
+                <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
+              </div>
             </div>
           </div>
-          {renderLeads(previousLeads)}
+          
+          {renderLeads(filteredLeads.filter(l => {
+            const date = new Date(l.created_at);
+            const cutoff = showPreviousDays === 365 
+              ? new Date(0) // Show all
+              : new Date(now.getTime() - showPreviousDays * 24 * 60 * 60 * 1000);
+            return date >= cutoff;
+          }))}
         </div>
 
         {/* EMPTY STATE */}
@@ -547,11 +564,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <div className={styles.emptyIcon}>📋</div>
             <p className={styles.emptyTitle}>No leads yet</p>
           </div>
-
-          
         )}
       </div>
-      
 
       {/* LEAD MODAL */}
       {selectedLead && (
@@ -560,8 +574,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus}
           onAddNote={addNote}
+          onDeleteLead={deleteLead}
           onRefresh={fetchLeads}
           currentUser={currentUser}
+          statusOptions={statusOptions}
         />
       )}
 
@@ -712,15 +728,17 @@ function CreateLeadModal({ onClose, onCreateLead, companyName }: any) {
 
 // LEAD MODAL  
 
-function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, currentUser }: any) {
-  const [status, setStatus] = useState(lead.status || 'new');
+function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onDeleteLead, onRefresh, currentUser, statusOptions }: any) {
+  const [status, setStatus] = useState(lead.status || statusOptions[0].value);
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const notesArray = parseNotes(lead.notes);
 
   const handleStatusChange = async () => {
-    const oldStatus = lead.status || 'new';
+    const oldStatus = lead.status || statusOptions[0].value;
+    
     if (status === oldStatus) return;
     
     setSaving(true);
@@ -729,10 +747,18 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, curren
     
     if (success) {
       toast.success('Status updated!');
+      setStatus(status);
     } else {
       toast.error('Failed to update status');
     }
   };
+
+  // Helper to get status config
+  const getStatusConfig = (statusValue: string) => {
+    return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
+  };
+
+  const currentStatusConfig = getStatusConfig(lead.status || statusOptions[0].value);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
@@ -746,6 +772,19 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, curren
       toast.success('Note added!');
     } else {
       toast.error('Failed to add note');
+    }
+  };
+
+  const handleDelete = async () => {
+    setSaving(true);
+    const success = await onDeleteLead(lead.id);
+    setSaving(false);
+    
+    if (success) {
+      toast.success('Lead deleted!');
+      onClose(); // Close modal after deletion
+    } else {
+      toast.error('Failed to delete lead');
     }
   };
 
@@ -787,20 +826,8 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, curren
               {/* Current Status Display */}
               <div>
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Current</span>
-                <div className={`inline-flex items-center px-4 py-2 rounded-lg font-semibold ${
-                  (lead.status || 'new') === 'new' ? 'bg-gray-100 text-gray-800' :
-                  (lead.status || 'new') === 'contacted' ? 'bg-blue-100 text-blue-800' :
-                  (lead.status || 'new') === 'quoted' ? 'bg-purple-100 text-purple-800' :
-                  (lead.status || 'new') === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                  (lead.status || 'new') === 'completed' ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {(lead.status || 'new') === 'new' && '🆕 New'}
-                  {(lead.status || 'new') === 'contacted' && '📞 Contacted'}
-                  {(lead.status || 'new') === 'quoted' && '💰 Quoted'}
-                  {(lead.status || 'new') === 'in-progress' && '🔨 In Progress'}
-                  {(lead.status || 'new') === 'completed' && '✅ Completed'}
-                  {(lead.status || 'new') === 'lost' && '❌ Lost'}
+                <div className={`inline-flex items-center px-4 py-2 rounded-lg font-semibold bg-${currentStatusConfig.color}-100 text-${currentStatusConfig.color}-800`}>
+                  {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
                 </div>
               </div>
 
@@ -809,25 +836,26 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, curren
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
                   Change to
                 </label>
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3">
+                  {/* Company's Configured Statuses Only */}
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all"
                   >
-                    <option value="new">🆕 New</option>
-                    <option value="contacted">📞 Contacted</option>
-                    <option value="quoted">💰 Quoted</option>
-                    <option value="in-progress">🔨 In Progress</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="lost">❌ Lost</option>
+                    {statusOptions.map((statusOption: any) => (
+                      <option key={statusOption.value} value={statusOption.value}>
+                        {statusOption.emoji && `${statusOption.emoji} `}{statusOption.label}
+                      </option>
+                    ))}
                   </select>
+                  
                   <button
                     onClick={handleStatusChange}
-                    disabled={saving || status === (lead.status || 'new')}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:shadow-none"
+                    disabled={saving || status === (lead.status || statusOptions[0].value)}
+                    className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:shadow-none"
                   >
-                    {saving ? 'Saving...' : 'Update'}
+                    {saving ? 'Saving...' : 'Update Status'}
                   </button>
                 </div>
               </div>
@@ -1026,14 +1054,48 @@ function LeadModal({ lead, onClose, onUpdateStatus, onAddNote, onRefresh, curren
             </div>
           )}
 
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>AI Analysis</h3>
-            {aiAnalysis ? (
-              <AIAnalysis analysis={aiAnalysis} />
+          {/* DANGER ZONE */}
+          <div className="mt-8 pt-6 border-t-2 border-red-100">
+            <h3 className="text-lg font-bold text-red-600 mb-2">🚨 Danger Zone</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Deleting this lead is permanent and cannot be undone.
+            </p>
+            
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-3 px-4 rounded-lg transition border-2 border-red-200 hover:border-red-300"
+              >
+                🗑️ Delete Lead
+              </button>
             ) : (
-              <div className={styles.noAnalysis}>No AI analysis</div>
+              <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                <p className="font-bold text-red-800 mb-3">
+                  Are you absolutely sure?
+                </p>
+                <p className="text-sm text-red-700 mb-4">
+                  This will permanently delete <strong>{lead.name}</strong> and all associated data. This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleDelete}
+                    disabled={saving}
+                    className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition"
+                  >
+                    {saving ? 'Deleting...' : 'Yes, Delete Forever'}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={saving}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
+
         </div>
       </div>
     </div>

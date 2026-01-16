@@ -10,20 +10,56 @@ type Company = {
   phone: string;
   business_type?: string;
   logo_url?: string;
+  status_options?: StatusOption[];
   created_at: string;
   lead_count?: number;
   last_lead_at?: string;
 };
 
+type StatusOption = {
+  value: string;
+  label: string;
+  color: string;
+  emoji: string;
+};
+
+const DEFAULT_STATUSES: StatusOption[] = [
+  { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
+  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
+  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
+  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
+  { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
+];
+
+const COLOR_OPTIONS = [
+  { value: 'blue', label: 'Blue', class: 'bg-blue-500' },
+  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500' },
+  { value: 'purple', label: 'Purple', class: 'bg-purple-500' },
+  { value: 'orange', label: 'Orange', class: 'bg-orange-500' },
+  { value: 'green', label: 'Green', class: 'bg-green-500' },
+  { value: 'red', label: 'Red', class: 'bg-red-500' },
+  { value: 'gray', label: 'Gray', class: 'bg-gray-500' },
+  { value: 'indigo', label: 'Indigo', class: 'bg-indigo-500' },
+  { value: 'pink', label: 'Pink', class: 'bg-pink-500' },
+];
+
 const BUSINESS_TYPES = [
   { value: 'general', label: 'General Services', emoji: '📋' },
   { value: 'home_services', label: 'Home Services', emoji: '🏠' },
   { value: 'construction', label: 'Construction', emoji: '🏗️' },
-  { value: 'hvac', label: 'HVAC', emoji: '❄️' },
   { value: 'auto_services', label: 'Auto Services', emoji: '🚗' },
   { value: 'beauty_services', label: 'Beauty Services', emoji: '💇' },
   { value: 'pet_services', label: 'Pet Services', emoji: '🐕' },
   { value: 'video_production', label: 'Video Production', emoji: '🎥' },
+  { value: 'legal_services', label: 'Legal Services', emoji: '⚖️' },
+  { value: 'medical_services', label: 'Medical Services', emoji: '🏥' },
+  { value: 'fitness_services', label: 'Fitness & Wellness', emoji: '💪' },
+  { value: 'cleaning_services', label: 'Cleaning Services', emoji: '🧹' },
+  { value: 'event_services', label: 'Event Services', emoji: '🎉' },
+  { value: 'tech_services', label: 'Tech Services', emoji: '💻' },
+  { value: 'real_estate', label: 'Real Estate', emoji: '🏘️' },
+  { value: 'education_services', label: 'Education & Tutoring', emoji: '📚' },
+  { value: 'food_services', label: 'Food Services', emoji: '🍽️' },
 ];
 
 export default function AdminPage() {
@@ -40,6 +76,9 @@ export default function AdminPage() {
     business_type: 'general',
     logo_url: ''
   });
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>(DEFAULT_STATUSES);
+  const [showAddStatus, setShowAddStatus] = useState(false);
+  const [newStatus, setNewStatus] = useState({ label: '', color: 'blue', emoji: '📌' });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [error, setError] = useState('');
@@ -102,11 +141,42 @@ export default function AdminPage() {
     }
   };
 
+  const removeStatus = (index: number) => {
+    setStatusOptions(statusOptions.filter((_, i) => i !== index));
+  };
+
+  const addCustomStatus = () => {
+    if (!newStatus.label.trim()) {
+      alert('Please enter a status label');
+      return;
+    }
+
+    if (statusOptions.length >= 5) {
+      alert('Maximum 5 statuses allowed');
+      return;
+    }
+
+    const value = newStatus.label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    setStatusOptions([...statusOptions, { ...newStatus, value }]);
+    setNewStatus({ label: '', color: 'blue', emoji: '📌' });
+    setShowAddStatus(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     
+    if (statusOptions.length < 2) {
+      setError('Please have at least 2 statuses');
+      return;
+    }
+
+    if (statusOptions.length > 5) {
+      setError('Maximum 5 statuses allowed');
+      return;
+    }
+
     try {
       // Upload logo first if provided
       let logoUrl = formData.logo_url;
@@ -123,6 +193,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           ...formData,
           logo_url: logoUrl,
+          status_options: statusOptions,
           id: editingCompany?.id
         })
       });
@@ -134,6 +205,7 @@ export default function AdminPage() {
         setShowAddForm(false);
         setEditingCompany(null);
         setFormData({ name: '', slug: '', email: '', phone: '', password: '', business_type: 'general', logo_url: '' });
+        setStatusOptions(DEFAULT_STATUSES);
         setLogoFile(null);
         setLogoPreview('');
         fetchCompanies();
@@ -159,6 +231,7 @@ export default function AdminPage() {
       business_type: company.business_type || 'general',
       logo_url: company.logo_url || ''
     });
+    setStatusOptions(company.status_options || DEFAULT_STATUSES);
     setLogoPreview(company.logo_url || '');
     setShowAddForm(true);
   };
@@ -191,8 +264,10 @@ export default function AdminPage() {
     setEditingCompany(null);
     setShowAddForm(false);
     setFormData({ name: '', slug: '', email: '', phone: '', password: '', business_type: 'general', logo_url: '' });
+    setStatusOptions(DEFAULT_STATUSES);
     setLogoFile(null);
     setLogoPreview('');
+    setShowAddStatus(false);
   };
 
   if (loading) {
@@ -360,6 +435,109 @@ export default function AdminPage() {
               )}
             </div>
 
+            {/* STATUS OPTIONS SECTION */}
+            <div className="mb-6 p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <h4 className="text-lg font-bold mb-2">Lead Statuses (Max 5)</h4>
+              <p className="text-sm text-gray-600 mb-4">
+                Customize the workflow statuses for this company. Remove defaults or add custom ones.
+              </p>
+
+              <div className="space-y-2 mb-4">
+                {statusOptions.map((status, index) => (
+                  <div key={index} className="flex items-center gap-3 bg-white p-3 rounded-lg border">
+                    <span className="text-2xl">{status.emoji}</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold bg-${status.color}-500 text-white`}>
+                      {status.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeStatus(index)}
+                      className="ml-auto text-red-600 hover:text-red-800 font-bold text-lg"
+                      title="Remove this status"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {statusOptions.length < 5 && !showAddStatus && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddStatus(true)}
+                  className="w-full py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-semibold"
+                >
+                  + Add Custom Status
+                </button>
+              )}
+
+              {showAddStatus && (
+                <div className="bg-white p-4 rounded-lg border-2 border-blue-300">
+                  <h5 className="font-bold mb-3">Add Custom Status</h5>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Status Label *</label>
+                      <input
+                        type="text"
+                        value={newStatus.label}
+                        onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}
+                        placeholder="e.g., Waiting for Approval"
+                        className="form-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Emoji</label>
+                      <input
+                        type="text"
+                        value={newStatus.emoji}
+                        onChange={(e) => setNewStatus({ ...newStatus, emoji: e.target.value })}
+                        placeholder="📌"
+                        className="form-input"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Color</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {COLOR_OPTIONS.map(color => (
+                          <button
+                            key={color.value}
+                            type="button"
+                            onClick={() => setNewStatus({ ...newStatus, color: color.value })}
+                            className={`h-10 rounded-lg ${color.class} ${newStatus.color === color.value ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
+                            title={color.label}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={addCustomStatus}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold"
+                      >
+                        Add Status
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddStatus(false);
+                          setNewStatus({ label: '', color: 'blue', emoji: '📌' });
+                        }}
+                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-semibold"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 mt-3">
+                {statusOptions.length} of 5 statuses used
+              </p>
+            </div>
+
             <div className="flex gap-3">
               <button 
                 type="submit" 
@@ -405,6 +583,20 @@ export default function AdminPage() {
                   <span className="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-medium mb-3">
                     {businessType.emoji} {businessType.label}
                   </span>
+                )}
+
+                {/* Show custom statuses if available */}
+                {company.status_options && company.status_options.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Lead Statuses:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {company.status_options.map((status, idx) => (
+                        <span key={idx} className="text-xs px-2 py-0.5 bg-gray-100 rounded">
+                          {status.emoji} {status.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 <div className="space-y-2 text-sm mb-4">

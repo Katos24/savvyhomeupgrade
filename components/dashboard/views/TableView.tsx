@@ -1,3 +1,5 @@
+'use client';
+import { useState } from 'react';
 import { safeJSONParse } from '@/lib/utils';
 
 interface TableViewProps {
@@ -5,14 +7,82 @@ interface TableViewProps {
   onSelectLead: (lead: any) => void;
 }
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+} | null;
+
 export default function TableView({ leads, onSelectLead }: TableViewProps) {
-  const getUrgencyEmoji = (urgency: string) => {
-    switch (urgency) {
-      case 'Emergency': return '🚨';
-      case 'High Priority': return '⚠️';
-      case 'Low Priority': return '🟢';
-      default: return '🔵';
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    
+    if (sortConfig?.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
+    
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedLeads = () => {
+    if (!sortConfig) return leads;
+
+    const sorted = [...leads].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortConfig.key) {
+        case 'name':
+          aValue = a.name?.toLowerCase() || '';
+          bValue = b.name?.toLowerCase() || '';
+          break;
+        case 'phone':
+          aValue = a.phone || '';
+          bValue = b.phone || '';
+          break;
+        case 'email':
+          aValue = a.email?.toLowerCase() || '';
+          bValue = b.email?.toLowerCase() || '';
+          break;
+        case 'category':
+          aValue = a.category?.toLowerCase() || '';
+          bValue = b.category?.toLowerCase() || '';
+          break;
+        case 'status':
+          const statusOrder = { 'new': 0, 'contacted': 1, 'quoted': 2, 'in-progress': 3, 'completed': 4, 'lost': 5 };
+          aValue = statusOrder[(a.status || 'new') as keyof typeof statusOrder];
+          bValue = statusOrder[(b.status || 'new') as keyof typeof statusOrder];
+          break;
+        case 'media':
+          const aFiles = safeJSONParse(a.file_urls) || [];
+          const bFiles = safeJSONParse(b.file_urls) || [];
+          aValue = aFiles.length;
+          bValue = bFiles.length;
+          break;
+        case 'date':
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  };
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) {
+      return <span className="text-gray-400 ml-1 opacity-50">⇅</span>;
+    }
+    return sortConfig.direction === 'asc' ? 
+      <span className="text-blue-600 ml-1">↑</span> : 
+      <span className="text-blue-600 ml-1">↓</span>;
   };
 
   const getStatusColor = (status: string) => {
@@ -27,32 +97,49 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
     return colors[status] || colors.new;
   };
 
+  const sortedLeads = getSortedLeads();
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('name')}
+              >
+                Name <SortIcon columnKey="name" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('phone')}
+              >
+                Contact <SortIcon columnKey="phone" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('category')}
+              >
+                Category <SortIcon columnKey="category" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('status')}
+              >
+                Status <SortIcon columnKey="status" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Urgency
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('media')}
+              >
+                Media <SortIcon columnKey="media" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Media
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('date')}
+              >
+                Date <SortIcon columnKey="date" />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -60,9 +147,8 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {leads.map((lead) => {
+            {sortedLeads.map((lead) => {
               const fileUrls = safeJSONParse(lead.file_urls);
-              const aiAnalysis = safeJSONParse(lead.ai_analysis);
               const leadStatus = lead.status || 'new';
               
               const images = fileUrls?.filter((f: any) => 
@@ -95,15 +181,6 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(leadStatus)}`}>
                       {leadStatus}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {aiAnalysis ? (
-                      <span>
-                        {getUrgencyEmoji(aiAnalysis.urgency)} {aiAnalysis.urgency}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {images.length > 0 && <span>📸 {images.length}</span>}
