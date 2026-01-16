@@ -44,9 +44,21 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
       const data = await response.json();
       
       // Filter leads that have scheduled dates and are not deleted
-      const scheduledLeads = (data.leads || []).filter((lead: any) => 
-        lead.scheduled_date && !lead.deleted && lead.job_status
-      );
+      const scheduledLeads = (data.leads || []).filter((lead: any) => {
+        const hasScheduledDate = lead.scheduled_date && lead.scheduled_date.trim() !== '';
+        const notDeleted = !lead.deleted;
+        const hasStatus = lead.job_status && lead.job_status.trim() !== '';
+        
+        return hasScheduledDate && notDeleted && hasStatus;
+      });
+      
+      console.log('Total leads:', data.leads?.length || 0);
+      console.log('Scheduled leads found:', scheduledLeads.length);
+      console.log('Scheduled leads:', scheduledLeads.map((l: any) => ({ 
+        name: l.name, 
+        date: l.scheduled_date, 
+        status: l.job_status 
+      })));
       
       setEvents(scheduledLeads);
     } catch (error) {
@@ -83,8 +95,17 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => event.scheduled_date === dateStr);
+    // Format date as YYYY-MM-DD in local timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    return events.filter(event => {
+      // Handle both full datetime strings and date-only strings
+      const eventDate = event.scheduled_date ? event.scheduled_date.split('T')[0] : null;
+      return eventDate === dateStr;
+    });
   };
 
   const goToPreviousMonth = () => {
@@ -133,29 +154,29 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className="bg-white rounded-xl shadow-lg p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-gray-900">
-            📅 {view === 'month' ? 'Calendar' : 'Week View'}
+          <h2 className="text-3xl font-bold text-gray-900">
+            📅 {view === 'month' ? 'Monthly Calendar' : 'Weekly Calendar'}
           </h2>
           <button
             onClick={goToToday}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-sm"
           >
             Today
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* View Switcher */}
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-2 bg-gray-100 rounded-lg p-1.5">
             <button
               onClick={() => setView('month')}
-              className={`px-4 py-2 rounded font-semibold transition ${
+              className={`px-5 py-2 rounded-md font-semibold transition ${
                 view === 'month' 
-                  ? 'bg-white text-blue-600 shadow' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -163,9 +184,9 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
             </button>
             <button
               onClick={() => setView('week')}
-              className={`px-4 py-2 rounded font-semibold transition ${
+              className={`px-5 py-2 rounded-md font-semibold transition ${
                 view === 'week' 
-                  ? 'bg-white text-blue-600 shadow' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -174,14 +195,14 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={view === 'month' ? goToPreviousMonth : goToPreviousWeek}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              className="p-2.5 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
             >
               ←
             </button>
-            <span className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
+            <span className="text-xl font-bold text-gray-900 min-w-[220px] text-center">
               {currentDate.toLocaleDateString('en-US', { 
                 month: 'long', 
                 year: 'numeric',
@@ -190,7 +211,7 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
             </span>
             <button
               onClick={view === 'month' ? goToNextMonth : goToNextWeek}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              className="p-2.5 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
             >
               →
             </button>
@@ -199,18 +220,26 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-4 pb-4 border-b">
+      <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b-2">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-          <span className="text-sm text-gray-600">Scheduled</span>
+          <div className="w-5 h-5 rounded bg-gray-200 border-2 border-gray-300"></div>
+          <span className="text-sm font-medium text-gray-700">Not Started</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
-          <span className="text-sm text-gray-600">In Progress</span>
+          <div className="w-5 h-5 rounded bg-blue-100 border-2 border-blue-300"></div>
+          <span className="text-sm font-medium text-gray-700">Scheduled</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-          <span className="text-sm text-gray-600">Completed</span>
+          <div className="w-5 h-5 rounded bg-orange-100 border-2 border-orange-300"></div>
+          <span className="text-sm font-medium text-gray-700">In Progress</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded bg-green-100 border-2 border-green-300"></div>
+          <span className="text-sm font-medium text-gray-700">Completed</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded bg-red-100 border-2 border-red-300"></div>
+          <span className="text-sm font-medium text-gray-700">Cancelled</span>
         </div>
       </div>
 
@@ -238,85 +267,154 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
 }
 
 // Month View Component
-function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, formatTime, onSelectLead }: any) {
+type MonthViewProps = {
+  currentDate: Date;
+  events: CalendarEvent[];
+  getEventsForDate: (date: Date) => CalendarEvent[];
+  getDaysInMonth: (date: Date) => { daysInMonth: number; startingDayOfWeek: number; firstDay: Date; lastDay: Date };
+  formatTime: (time: string) => string;
+  onSelectLead: (lead: any) => void;
+};
+
+function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, formatTime, onSelectLead }: MonthViewProps) {
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Format today's date consistently
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  // Create a complete 6-week calendar grid (42 cells)
+  const calendarCells = [];
+  
+  // Add empty cells before the month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarCells.push({ type: 'empty', key: `empty-${i}` });
+  }
+  
+  // Add all days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarCells.push({ type: 'day', day, key: `day-${day}` });
+  }
+  
+  // Add empty cells after the month ends to complete the grid
+  const remainingCells = 42 - calendarCells.length;
+  for (let i = 0; i < remainingCells; i++) {
+    calendarCells.push({ type: 'empty', key: `empty-end-${i}` });
+  }
 
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {/* Day headers */}
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-        <div key={day} className="text-center font-semibold text-gray-600 py-2">
-          {day}
-        </div>
-      ))}
-
-      {/* Empty cells for days before month starts */}
-      {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-        <div key={`empty-${i}`} className="min-h-[120px] bg-gray-50 rounded-lg"></div>
-      ))}
-
-      {/* Days of the month */}
-      {Array.from({ length: daysInMonth }).map((_, i) => {
-        const day = i + 1;
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayEvents = getEventsForDate(date);
-        const isToday = dateStr === today;
-
-        return (
-          <div
-            key={day}
-            className={`min-h-[120px] rounded-lg border-2 p-2 ${
-              isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
-            }`}
+    <div className="space-y-3">
+      {/* Day headers - Full width row */}
+      <div className="grid grid-cols-7 gap-2">
+        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+          <div 
+            key={day} 
+            className="text-center font-bold text-sm text-gray-700 py-3 bg-gray-100 rounded-lg border border-gray-200"
           >
-            <div className={`text-sm font-semibold mb-2 ${
-              isToday ? 'text-blue-600' : 'text-gray-600'
-            }`}>
-              {day}
-            </div>
-            
-            <div className="space-y-1">
-              {dayEvents.slice(0, 3).map((event: any) => (
-                <button
-                  key={event.id}
-                  onClick={() => onSelectLead(event)}
-                  className={`w-full text-left px-2 py-1 rounded text-xs font-medium border ${
-                    JOB_STATUS_COLORS[event.job_status] || 'bg-gray-100 text-gray-800'
-                  } hover:opacity-80 transition`}
-                >
-                  <div className="truncate">{event.name}</div>
-                  {event.scheduled_time && (
-                    <div className="text-[10px] opacity-75">
-                      {formatTime(event.scheduled_time)}
-                    </div>
-                  )}
-                </button>
-              ))}
-              
-              {dayEvents.length > 3 && (
-                <div className="text-xs text-gray-500 text-center">
-                  +{dayEvents.length - 3} more
-                </div>
-              )}
-            </div>
+            {day}
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* Calendar grid - 6 rows of 7 days */}
+      <div className="grid grid-cols-7 gap-2">
+        {calendarCells.map((cell) => {
+          if (cell.type === 'empty') {
+            return (
+              <div 
+                key={cell.key} 
+                className="aspect-square min-h-[140px] bg-gray-50 rounded-lg border border-gray-200"
+              />
+            );
+          }
+
+          const day = cell.day!;
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+          
+          // Format date consistently
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const dayStr = String(date.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${dayStr}`;
+          
+          const dayEvents = getEventsForDate(date);
+          const isToday = dateStr === today;
+
+          return (
+            <div
+              key={cell.key}
+              className={`aspect-square min-h-[140px] rounded-lg border-2 p-3 transition-all flex flex-col ${
+                isToday 
+                  ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                  : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-md'
+              }`}
+            >
+              {/* Day number */}
+              <div className={`text-lg font-bold mb-2 ${
+                isToday ? 'text-blue-600' : 'text-gray-700'
+              }`}>
+                {day}
+              </div>
+              
+              {/* Events */}
+              <div className="flex-1 space-y-1 overflow-y-auto">
+                {dayEvents.slice(0, 4).map((event: CalendarEvent) => (
+                  <button
+                    key={event.id}
+                    onClick={() => onSelectLead(event)}
+                    className={`w-full text-left px-2 py-1 rounded text-xs font-medium border ${
+                      JOB_STATUS_COLORS[event.job_status] || 'bg-gray-100 text-gray-800 border-gray-300'
+                    } hover:opacity-80 hover:shadow transition`}
+                  >
+                    <div className="truncate font-semibold">{event.name}</div>
+                    {event.scheduled_time && (
+                      <div className="text-[10px] opacity-75 mt-0.5">
+                        ⏰ {formatTime(event.scheduled_time)}
+                      </div>
+                    )}
+                  </button>
+                ))}
+                
+                {dayEvents.length > 4 && (
+                  <div className="text-xs text-gray-500 text-center pt-1 font-medium">
+                    +{dayEvents.length - 4} more
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // Week View Component
-function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTime, onSelectLead }: any) {
+type WeekViewProps = {
+  currentDate: Date;
+  events: CalendarEvent[];
+  getEventsForDate: (date: Date) => CalendarEvent[];
+  getWeekDays: (date: Date) => Date[];
+  formatTime: (time: string) => string;
+  onSelectLead: (lead: any) => void;
+};
+
+function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTime, onSelectLead }: WeekViewProps) {
   const weekDays = getWeekDays(currentDate);
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Format today's date consistently
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   return (
     <div className="grid grid-cols-7 gap-3">
-      {weekDays.map((date, i) => {
-        const dateStr = date.toISOString().split('T')[0];
+      {weekDays.map((date: Date, i: number) => {
+        // Format date consistently
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
         const dayEvents = getEventsForDate(date);
         const isToday = dateStr === today;
 
@@ -339,7 +437,7 @@ function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTi
                   No jobs
                 </div>
               ) : (
-                dayEvents.map((event: any) => (
+                dayEvents.map((event: CalendarEvent) => (
                   <button
                     key={event.id}
                     onClick={() => onSelectLead(event)}
