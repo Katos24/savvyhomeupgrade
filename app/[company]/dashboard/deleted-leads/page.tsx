@@ -2,6 +2,13 @@ import { neon } from '@neondatabase/serverless';
 import { redirect } from 'next/navigation';
 import DeletedLeadsClient from './DeletedLeadsClient';
 
+type Company = {
+  id: number;
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+};
+
 type PageProps = {
   params: Promise<{
     company: string;
@@ -21,7 +28,7 @@ export default async function DeletedLeadsPage({ params }: PageProps) {
     redirect('/');
   }
 
-  const company = companies[0];
+  const company = companies[0] as Company;
 
   return <DeletedLeadsClient company={company} />;
 }
