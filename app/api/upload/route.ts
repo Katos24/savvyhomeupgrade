@@ -7,9 +7,8 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-    
     let name, email, phone, category, description, fileUrls, companySlug, companyId;
-    
+
     if (contentType.includes('application/json')) {
       const body = await request.json();
       name = body.name;
@@ -20,7 +19,6 @@ export async function POST(request: Request) {
       fileUrls = body.file_urls || [];
       companySlug = body.company_slug;
       companyId = body.company_id;
-      
       console.log('📥 JSON upload with', fileUrls.length, 'files');
     } else {
       const formData = await request.formData();
@@ -42,34 +40,21 @@ export async function POST(request: Request) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    
     console.log(`🔄 Creating lead for ${name}...`);
-    
-    // Count images
-    const images = fileUrls.filter((f: any) => 
-      f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-    );
-    
+
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, category, description, 
-        company_id, status, ai_analysis, file_urls
+        company_id, status, file_urls
       ) VALUES (
         ${name}, ${email}, ${phone}, ${category}, ${description},
-        ${companyId}, 'new',
-        ${JSON.stringify({ 
-          message: 'Lead submitted successfully. Awaiting contractor review.',
-          images: images.length,
-          category: category,
-          description: description
-        })},
-        ${JSON.stringify(fileUrls)}
+        ${companyId}, 'new', ${JSON.stringify(fileUrls)}
       )
       RETURNING id
     `;
 
     const leadId = lead.id;
-    console.log(`✅ Lead created with ID: ${leadId} (${images.length} images)`);
+    console.log(`✅ Lead created with ID: ${leadId}`);
 
     return NextResponse.json({ 
       success: true,
@@ -77,7 +62,6 @@ export async function POST(request: Request) {
       leadId,
       filesUploaded: fileUrls.length
     });
-
   } catch (error) {
     console.error('❌ Upload error:', error);
     return NextResponse.json(

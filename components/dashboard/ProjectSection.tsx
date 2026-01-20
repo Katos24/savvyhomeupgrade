@@ -19,36 +19,50 @@ const JOB_STATUSES = [
   { value: 'cancelled', label: 'Cancelled', color: 'red', emoji: '❌' },
 ];
 
+// Helper function to get full Tailwind classes (fixes dynamic class issue)
+const getStatusClasses = (color: string) => {
+  const colorMap: Record<string, string> = {
+    blue: 'bg-blue-100 text-blue-800',
+    yellow: 'bg-yellow-100 text-yellow-800',
+    purple: 'bg-purple-100 text-purple-800',
+    orange: 'bg-orange-100 text-orange-800',
+    green: 'bg-green-100 text-green-800',
+    red: 'bg-red-100 text-red-800',
+    gray: 'bg-gray-100 text-gray-800',
+  };
+  return colorMap[color] || 'bg-gray-100 text-gray-800';
+};
+
 export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus }: ProjectSectionProps) {
   const [saving, setSaving] = useState(false);
   
   // STATUS STATE (using lead status, not job_status)
-  const [status, setStatus] = useState(lead.status || statusOptions[0]?.value || 'new');
+  const [status, setStatus] = useState(lead?.status || statusOptions?.[0]?.value || 'new');
   
   // PROJECT STATE
   const [scheduledDate, setScheduledDate] = useState(
-    lead.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : ''
+    lead?.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : ''
   );
-  const [scheduledTime, setScheduledTime] = useState(lead.scheduled_time || '');
-  const [assignedTo, setAssignedTo] = useState(lead.assigned_to || '');
-  const [estimatedHours, setEstimatedHours] = useState(lead.estimated_hours || '');
-  const [actualHours, setActualHours] = useState(lead.actual_hours || '');
+  const [scheduledTime, setScheduledTime] = useState(lead?.scheduled_time || '');
+  const [assignedTo, setAssignedTo] = useState(lead?.assigned_to || '');
+  const [estimatedHours, setEstimatedHours] = useState(lead?.estimated_hours || '');
+  const [actualHours, setActualHours] = useState(lead?.actual_hours || '');
   
   // QUOTE STATE
-  const [quoteData, setQuoteData] = useState(lead.quote_data || []);
+  const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [showQuoteBuilder, setShowQuoteBuilder] = useState(false);
   const [newLineItem, setNewLineItem] = useState({ description: '', amount: '' });
   
   // PAYMENT STATE
-  const [paymentStatus, setPaymentStatus] = useState(lead.payment_status || 'unpaid');
-  const [paymentAmount, setPaymentAmount] = useState(lead.payment_amount || '');
+  const [paymentStatus, setPaymentStatus] = useState(lead?.payment_status || 'unpaid');
+  const [paymentAmount, setPaymentAmount] = useState(lead?.payment_amount || '');
 
   // Helper to get status config
   const getStatusConfig = (statusValue: string) => {
-    return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
+    return statusOptions?.find((s: any) => s.value === statusValue) || statusOptions?.[0] || { value: 'new', label: 'New', color: 'blue', emoji: '🆕' };
   };
 
-  const currentStatusConfig = getStatusConfig(lead.status || statusOptions[0].value);
+  const currentStatusConfig = getStatusConfig(lead?.status || statusOptions?.[0]?.value || 'new');
 
   // Determine if we should show project fields based on status
   const showProjectFields = ['quoted', 'in-progress', 'completed'].includes(status);
@@ -58,18 +72,24 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
   // ============================================
   
   const handleStatusChange = async () => {
-    const oldStatus = lead.status || statusOptions[0].value;
+    const oldStatus = lead?.status || statusOptions?.[0]?.value || 'new';
     
     if (status === oldStatus) return;
     
     setSaving(true);
-    const success = await onUpdateStatus(lead.id, status, oldStatus);
-    setSaving(false);
-    
-    if (success) {
-      toast.success('Status updated!');
-    } else {
+    try {
+      const success = await onUpdateStatus(lead.id, status, oldStatus);
+      
+      if (success) {
+        toast.success('Status updated!');
+      } else {
+        toast.error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Status update error:', error);
       toast.error('Failed to update status');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -106,9 +126,11 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
         toast.error('Failed to update project');
       }
     } catch (error) {
+      console.error('Project update error:', error);
       toast.error('Failed to update project');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   // ============================================
@@ -166,13 +188,15 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
         toast.error('Failed to save quote');
       }
     } catch (error) {
+      console.error('Save quote error:', error);
       toast.error('Failed to save quote');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleSendQuote = async () => {
-    if (!lead.quote_data || lead.quote_data.length === 0) {
+    if (!lead?.quote_data || lead.quote_data.length === 0) {
       toast.error('Create a quote first');
       return;
     }
@@ -199,9 +223,11 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
         toast.error('Failed to send quote');
       }
     } catch (error) {
+      console.error('Send quote error:', error);
       toast.error('Failed to send quote');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const calculateQuoteTotal = () => {
@@ -244,10 +270,21 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
         toast.error('Failed to update payment');
       }
     } catch (error) {
+      console.error('Payment update error:', error);
       toast.error('Failed to update payment');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
+
+  // Safety check for lead
+  if (!lead) {
+    return (
+      <div className="border-t-4 border-blue-200 mt-8 pt-6">
+        <p className="text-gray-500">Loading project information...</p>
+      </div>
+    );
+  }
 
   // ============================================
   // RENDER
@@ -267,7 +304,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
           {/* Current Status Display */}
           <div>
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Current</span>
-            <div className={`inline-flex items-center px-4 py-2 rounded-lg font-semibold bg-${currentStatusConfig.color}-100 text-${currentStatusConfig.color}-800`}>
+            <div className={`inline-flex items-center px-4 py-2 rounded-lg font-semibold ${getStatusClasses(currentStatusConfig.color)}`}>
               {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
             </div>
           </div>
@@ -283,7 +320,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                 onChange={(e) => setStatus(e.target.value)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all"
               >
-                {statusOptions.map((statusOption: any) => (
+                {statusOptions?.map((statusOption: any) => (
                   <option key={statusOption.value} value={statusOption.value}>
                     {statusOption.emoji && `${statusOption.emoji} `}{statusOption.label}
                   </option>
@@ -292,7 +329,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
               
               <button
                 onClick={handleStatusChange}
-                disabled={saving || status === (lead.status || statusOptions[0].value)}
+                disabled={saving || status === (lead?.status || statusOptions?.[0]?.value)}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:shadow-none"
               >
                 {saving ? 'Saving...' : 'Update'}
@@ -445,7 +482,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                   </button>
                 </div>
 
-                {lead.quote_sent_at && (
+                {lead?.quote_sent_at && (
                   <p className="text-sm text-green-600 font-semibold">
                     ✅ Quote sent on {new Date(lead.quote_sent_at).toLocaleDateString()}
                   </p>
@@ -585,7 +622,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
               {saving ? '💾 Saving...' : '💾 Update Payment Status'}
             </button>
 
-            {lead.paid_at && (
+            {lead?.paid_at && (
               <p className="text-sm text-green-600 font-semibold mt-3">
                 ✅ Payment received on {new Date(lead.paid_at).toLocaleDateString()}
               </p>

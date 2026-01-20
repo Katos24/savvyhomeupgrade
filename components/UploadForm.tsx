@@ -127,7 +127,7 @@ export default function UploadForm({
   successRoute, 
   showHeader = true,
   headerTitle = "Submit Your Project",
-  headerSubtitle = "Upload photos and get a fast, accurate assessment"
+  headerSubtitle = "Upload photos or videos and get a fast, accurate assessment"
 }: UploadFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -174,6 +174,21 @@ export default function UploadForm({
     return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6)}`;
   };
 
+  const validateFile = (file: File): { valid: boolean; error?: string } => {
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    
+    if (file.size > maxSize) {
+      return { valid: false, error: `${file.name} is too large (max 50MB)` };
+    }
+    
+    // For videos, check size as proxy for length (10 sec video ~15-30MB at decent quality)
+    if (file.type.startsWith('video/') && file.size > 30 * 1024 * 1024) {
+      return { valid: false, error: `${file.name} video is too large - keep videos under 10 seconds` };
+    }
+    
+    return { valid: true };
+  };
+
   useEffect(() => {
     const newPreviews = files.map(file => {
       if (file.type.startsWith('image/')) {
@@ -191,12 +206,26 @@ export default function UploadForm({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setCompressing(true);
       const newFiles = Array.from(e.target.files);
-      const compressed = await compressImages(newFiles);
-      setFiles([...files, ...compressed]);
-      showToast(`${compressed.length} file(s) added`, 'success');
-      setCompressing(false);
+      const validFiles: File[] = [];
+      
+      // Validate each file
+      newFiles.forEach(file => {
+        const validation = validateFile(file);
+        if (validation.valid) {
+          validFiles.push(file);
+        } else {
+          showToast(validation.error!, 'error');
+        }
+      });
+
+      if (validFiles.length > 0) {
+        setCompressing(true);
+        const compressed = await compressImages(validFiles);
+        setFiles([...files, ...compressed]);
+        showToast(`${compressed.length} file(s) added`, 'success');
+        setCompressing(false);
+      }
     }
   };
 
@@ -227,9 +256,19 @@ export default function UploadForm({
       file => file.type.startsWith('image/') || file.type.startsWith('video/')
     );
     
-    if (imageAndVideoFiles.length > 0) {
+    const validFiles: File[] = [];
+    imageAndVideoFiles.forEach(file => {
+      const validation = validateFile(file);
+      if (validation.valid) {
+        validFiles.push(file);
+      } else {
+        showToast(validation.error!, 'error');
+      }
+    });
+    
+    if (validFiles.length > 0) {
       setCompressing(true);
-      const compressed = await compressImages(imageAndVideoFiles);
+      const compressed = await compressImages(validFiles);
       setFiles([...files, ...compressed]);
       showToast(`${compressed.length} file(s) added`, 'success');
       setCompressing(false);
@@ -358,9 +397,9 @@ export default function UploadForm({
           <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
             <div className="text-center mb-4">
               <div className="text-5xl mb-3">📸</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No photos uploaded</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No photos or videos uploaded</h3>
               <p className="text-gray-600 mb-4">
-                Adding photos helps us provide a more accurate assessment. Continue without photos?
+                Adding photos or videos helps us provide a more accurate assessment. Continue without any media?
               </p>
             </div>
             <div className="flex gap-3">
@@ -368,7 +407,7 @@ export default function UploadForm({
                 onClick={() => setShowNoImageConfirm(false)}
                 className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition"
               >
-                ← Add Photos
+                ← Add Media
               </button>
               <button
                 onClick={submitForm}
@@ -472,7 +511,7 @@ export default function UploadForm({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Photos (Optional - recommended)
+                Upload Photos or Videos (Optional - recommended)
               </label>
               
               <div
@@ -501,7 +540,7 @@ export default function UploadForm({
                     {compressing ? 'Compressing...' : isDragging ? 'Drop files here!' : 'Click or drag to upload'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Images auto-compress • No size limits!
+                    Photos or short videos (max 10 seconds, 50MB per file)
                   </p>
                 </label>
               </div>
@@ -560,7 +599,7 @@ export default function UploadForm({
             </button>
             
             <p className="text-center text-xs text-gray-500">
-              💡 Tip: Photos help us provide more accurate quotes
+              💡 Tip: Photos and videos help us provide more accurate quotes
             </p>
           </form>
         </div>

@@ -199,6 +199,12 @@ export default function TeamAdminPage({
           </div>
           
           <div className="flex gap-4 items-center">
+            <a
+              href={`/${companySlug}/dashboard/deleted-leads`}
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-700 px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
+            >
+              🗑️ Deleted Leads
+            </a>
             <a href={`/${companySlug}/dashboard`} className="text-gray-600 hover:text-gray-900">
               ← Dashboard
             </a>

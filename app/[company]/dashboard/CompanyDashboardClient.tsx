@@ -371,18 +371,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             
             {/* RIGHT: Create Lead + User Info Box */}
             <div className="flex items-center gap-3">
-              <a
-                href={`/${company.slug}/dashboard/deleted-leads`}
-                className="bg-red-500/20 hover:bg-red-500/30 text-white px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
-              >
-                🗑️ Deleted
-              </a>
+            
               
               <a
                 href={`/${company.slug}`}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
               >
-                ➕ Create Lead
+                ➕ Create
               </a>
               
               {currentUser && (
