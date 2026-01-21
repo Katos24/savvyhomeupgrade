@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { compressImages } from '@/lib/compressImage';
 import Toast from '@/components/Toast';
-import { CATEGORY_MAP, type Category } from '@/lib/formCategories';
+import { CATEGORY_MAP, ADDRESS_CONFIG, type Category } from '@/lib/formCategories';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const libraries: ("places")[] = ["places"];
 
 type ToastType = {
   message: string;
@@ -20,7 +23,9 @@ type Company = {
   email: string;
   phone: string;
   business_type?: string;
-  form_categories?: Category[]; // Custom categories from database
+  form_categories?: Category[];
+  address_enabled?: boolean | null;
+  address_required?: boolean;
 };
 
 interface UploadFormProps {
@@ -47,6 +52,9 @@ export default function UploadForm({
     name: '',
     email: '',
     phone: '',
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
     category: '',
     description: '',
   });
@@ -60,6 +68,13 @@ export default function UploadForm({
   const [isDragging, setIsDragging] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
+  // Google Places Autocomplete
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
   // Get dynamic categories: use company's custom categories if available, otherwise fallback to defaults
   const businessType = company?.business_type || 'general';
   const categories: Category[] = 
@@ -70,6 +85,23 @@ export default function UploadForm({
   // Use company object values if available, otherwise fall back to separate props
   const finalCompanySlug = company?.slug || companySlug;
   const finalCompanyId = company?.id || companyId;
+
+  // Get address configuration
+  const getAddressConfig = () => {
+    // Company override takes priority
+    if (company?.address_enabled !== null && company?.address_enabled !== undefined) {
+      return {
+        show: company.address_enabled,
+        required: company.address_required || false
+      };
+    }
+    
+    // Fallback to business type default
+    const defaultConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
+    return defaultConfig;
+  };
+
+  const addressConfig = getAddressConfig();
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const id = Date.now();
@@ -103,6 +135,55 @@ export default function UploadForm({
     }
     
     return { valid: true };
+  };
+
+  // Google Places Autocomplete handlers
+  const onLoadAutocomplete = (autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete;
+    
+    // Restrict to US addresses only
+    autocomplete.setComponentRestrictions({ country: 'us' });
+  };
+
+  const onPlaceChanged = () => {
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      
+      if (place.formatted_address) {
+        // Extract city from address components
+        let city = '';
+        
+        if (place.address_components) {
+          // Try to find locality (city) first
+          const localityComponent = place.address_components.find(
+            (component) => component.types.includes('locality')
+          );
+          
+          // If no locality, try sublocality (neighborhood/district)
+          const sublocalityComponent = place.address_components.find(
+            (component) => component.types.includes('sublocality') || component.types.includes('sublocality_level_1')
+          );
+          
+          // If no locality or sublocality, try administrative_area_level_3 (township)
+          const adminArea3Component = place.address_components.find(
+            (component) => component.types.includes('administrative_area_level_3')
+          );
+          
+          city = localityComponent?.long_name || 
+                 sublocalityComponent?.long_name || 
+                 adminArea3Component?.long_name || 
+                 '';
+        }
+        
+        setFormData({ 
+          ...formData, 
+          address_line_1: place.formatted_address,
+          city: city 
+        });
+        
+        showToast(city ? `Address selected in ${city}!` : 'Address selected!', 'success');
+      }
+    }
   };
 
   useEffect(() => {
@@ -206,6 +287,13 @@ export default function UploadForm({
       return;
     }
 
+    // Validate address if required
+    if (addressConfig.show && addressConfig.required && !formData.address_line_1.trim()) {
+      setError('Address is required');
+      showToast('Address is required', 'error');
+      return;
+    }
+
     const rawPhone = formData.phone.replace(/\D/g, '');
     if (rawPhone.length !== 10) {
       setError('Please enter a valid 10-digit phone number');
@@ -270,6 +358,9 @@ export default function UploadForm({
           name: formData.name,
           email: formData.email,
           phone: rawPhone,
+          address_line_1: formData.address_line_1 || null,
+          address_line_2: formData.address_line_2 || null,
+          city: formData.city || null,
           category: formData.category,
           description: formData.description,
           file_urls: uploadedFiles,
@@ -296,6 +387,34 @@ export default function UploadForm({
       setUploadProgress('');
     }
   };
+
+  // Loading state for Google Maps
+  if (addressConfig.show && !isLoaded) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
+          <div className="text-center py-8">
+            <div className="text-4xl mb-2">⏳</div>
+            <p className="text-gray-600">Loading form...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state for Google Maps
+  if (addressConfig.show && loadError) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
+          <div className="text-center py-8">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p className="text-red-600">Failed to load address autocomplete</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -395,6 +514,55 @@ export default function UploadForm({
                 {formData.phone.replace(/\D/g, '').length}/10 digits
               </p>
             </div>
+
+            {/* ADDRESS FIELD with Google Places Autocomplete */}
+            {addressConfig.show && isLoaded && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address {addressConfig.required ? '*' : '(Optional)'}
+                  </label>
+                  <Autocomplete
+                    onLoad={onLoadAutocomplete}
+                    onPlaceChanged={onPlaceChanged}
+                  >
+                    <input
+                      type="text"
+                      required={addressConfig.required}
+                      value={formData.address_line_1}
+                      onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Start typing your address..."
+                    />
+                  </Autocomplete>
+                  {!addressConfig.required && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      💡 Providing an address helps us give you a more accurate estimate
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-green-600">
+                    ✨ Address autocomplete enabled - start typing to see suggestions
+                  </p>
+                </div>
+
+                {/* ADDRESS LINE 2 - Unit/Apt/Suite */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit / Apt / Suite (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address_line_2}
+                    onChange={(e) => setFormData({ ...formData, address_line_2: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Apt 4B, Suite 200, Unit 5"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    🏢 Add apartment, suite, or unit number if applicable
+                  </p>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Service Type *</label>

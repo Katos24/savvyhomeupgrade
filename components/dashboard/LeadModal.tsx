@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import { safeJSONParse, parseNotes } from '@/lib/utils';
 import styles from '@/app/dashboard/dashboard.module.css';
+import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
+
+const libraries: ("places")[] = ["places"];
 
 type LeadModalProps = {
   lead: any;
@@ -31,7 +34,15 @@ export default function LeadModal({
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showCustomerInfo, setShowCustomerInfo] = useState(false); // Changed to false - starts collapsed
+  const [showCustomerInfo, setShowCustomerInfo] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
+
+  // Google Maps
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
 
   const notesArray = parseNotes(lead.notes);
 
@@ -98,15 +109,71 @@ export default function LeadModal({
 
   // Helper function to format category for display
   const formatCategory = (category: string) => {
-    // If we have category_label from the database, use it
     if (lead.category_label) {
       return lead.category_label;
     }
-    // Otherwise, format the value nicely: "emergency_repair" -> "Emergency Repair"
     return category
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  // Geocode address to get coordinates for map
+  const geocodeAddress = async (address: string) => {
+    if (!isLoaded || !address || mapCenter) return;
+    
+    setIsGeocodingAddress(true);
+    try {
+      const geocoder = new google.maps.Geocoder();
+      const result = await geocoder.geocode({ address });
+      
+      if (result.results && result.results[0]) {
+        const location = result.results[0].geometry.location;
+        setMapCenter({
+          lat: location.lat(),
+          lng: location.lng()
+        });
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    } finally {
+      setIsGeocodingAddress(false);
+    }
+  };
+
+  // Get full address (combining address_line_1 and address_line_2)
+  const getFullAddress = () => {
+    if (!lead.address_line_1) return null;
+    if (lead.address_line_2) {
+      return `${lead.address_line_1}, ${lead.address_line_2}`;
+    }
+    return lead.address_line_1;
+  };
+
+  const fullAddress = getFullAddress();
+
+  // Geocode address when customer info is expanded and we have an address
+  const handleToggleCustomerInfo = () => {
+    const newState = !showCustomerInfo;
+    setShowCustomerInfo(newState);
+    
+    if (newState && fullAddress && !mapCenter) {
+      geocodeAddress(lead.address_line_1); // Use base address for geocoding, not including unit
+    }
+  };
+
+  const mapContainerStyle = {
+    width: '100%',
+    height: '300px',
+    borderRadius: '12px'
+  };
+
+  const mapOptions = {
+    disableDefaultUI: false,
+    zoomControl: true,
+    mapTypeControl: false,
+    streetViewControl: true,
+    fullscreenControl: true,
   };
 
   return (
@@ -164,7 +231,7 @@ export default function LeadModal({
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
             {/* Header - Always Visible */}
             <button
-              onClick={() => setShowCustomerInfo(!showCustomerInfo)}
+              onClick={handleToggleCustomerInfo}
               className="w-full flex items-center justify-between p-6 hover:bg-blue-50/50 transition rounded-xl"
             >
               <div className="flex items-center gap-3">
@@ -194,6 +261,68 @@ export default function LeadModal({
                     </a>
                   </div>
                 </div>
+
+                {/* Address Section */}
+                {fullAddress && (
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
+                          Service Address
+                        </span>
+                        <p className="text-gray-900 font-medium">
+                          {lead.address_line_1}
+                        </p>
+                        {lead.address_line_2 && (
+                          <p className="text-gray-700 text-sm">
+                            {lead.address_line_2}
+                          </p>
+                        )}
+                        {lead.city && (
+                          <p className="text-gray-600 text-sm mt-1">
+                            📍 {lead.city}
+                          </p>
+                        )}
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-1"
+                      >
+                        🗺️ Directions
+                      </a>
+                    </div>
+
+                    {/* Google Map */}
+                    {isLoaded && mapCenter && (
+                      <div className="mt-3">
+                        <GoogleMap
+                          mapContainerStyle={mapContainerStyle}
+                          center={mapCenter}
+                          zoom={15}
+                          options={mapOptions}
+                        >
+                          <Marker position={mapCenter} />
+                        </GoogleMap>
+                      </div>
+                    )}
+
+                    {/* Loading state for geocoding */}
+                    {isGeocodingAddress && (
+                      <div className="mt-3 bg-gray-50 rounded-lg p-4 text-center">
+                        <p className="text-gray-600 text-sm">📍 Loading map...</p>
+                      </div>
+                    )}
+
+                    {/* No map available */}
+                    {isLoaded && !mapCenter && !isGeocodingAddress && (
+                      <div className="mt-3 bg-gray-50 rounded-lg p-4 text-center">
+                        <p className="text-gray-500 text-sm">Map unavailable for this address</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Quick Action Buttons */}
                 <div className="pt-2">

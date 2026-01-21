@@ -4,6 +4,33 @@ export type Category = {
   emoji: string;
 };
 
+// Address configuration by business type (defaults)
+export const ADDRESS_CONFIG: Record<string, { show: boolean; required: boolean }> = {
+  // REQUIRED - On-site work
+  hvac: { show: true, required: true },
+  home_services: { show: true, required: true },
+  construction: { show: true, required: true },
+  cleaning_services: { show: true, required: true },
+  real_estate: { show: true, required: true },
+  
+  // OPTIONAL - Sometimes on-site
+  auto_services: { show: true, required: false },
+  beauty_services: { show: true, required: false },
+  pet_services: { show: true, required: false },
+  event_services: { show: true, required: false },
+  fitness_services: { show: true, required: false },
+  food_services: { show: true, required: false },
+  
+  // HIDDEN - Remote/office-based
+  video_production: { show: false, required: false },
+  legal_services: { show: false, required: false },
+  medical_services: { show: false, required: false },
+  tech_services: { show: false, required: false },
+  education_services: { show: false, required: false },
+  general: { show: false, required: false },
+  admin: { show: false, required: false },
+};
+
 // DEFAULT CATEGORIES BY BUSINESS TYPE (Fallback if company hasn't customized)
 export const CATEGORY_MAP: Record<string, Category[]> = {
   hvac: [
