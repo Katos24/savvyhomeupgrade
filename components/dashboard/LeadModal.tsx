@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import { safeJSONParse, parseNotes } from '@/lib/utils';
@@ -38,6 +38,9 @@ export default function LeadModal({
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
 
+  // Track if there are unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Google Maps
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -45,6 +48,13 @@ export default function LeadModal({
   });
 
   const notesArray = parseNotes(lead.notes);
+
+  // Watch for changes to detect unsaved data
+  useEffect(() => {
+    const statusChanged = status !== (lead.status || statusOptions[0].value);
+    const noteAdded = newNote.trim().length > 0;
+    setHasUnsavedChanges(statusChanged || noteAdded);
+  }, [status, newNote, lead.status, statusOptions]);
 
   const handleStatusChange = async () => {
     const oldStatus = lead.status || statusOptions[0].value;
@@ -94,6 +104,49 @@ export default function LeadModal({
       onClose();
     } else {
       toast.error('Failed to delete lead');
+    }
+  };
+
+  // Save All Changes function
+  const handleSaveAllAndClose = async () => {
+    if (!hasUnsavedChanges) {
+      onClose();
+      return;
+    }
+
+    setSaving(true);
+    let allSuccess = true;
+
+    try {
+      // Save status change
+      const oldStatus = lead.status || statusOptions[0].value;
+      if (status !== oldStatus) {
+        const success = await onUpdateStatus(lead.id, status, oldStatus);
+        if (!success) allSuccess = false;
+      }
+
+      // Save note
+      if (newNote.trim()) {
+        const success = await onAddNote(lead.id, newNote);
+        if (success) {
+          setNewNote('');
+        } else {
+          allSuccess = false;
+        }
+      }
+
+      if (allSuccess) {
+        toast.success('✅ All changes saved!');
+        await onRefresh();
+        onClose();
+      } else {
+        toast.error('Some changes failed to save');
+      }
+    } catch (error) {
+      console.error('Save all error:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -199,6 +252,12 @@ export default function LeadModal({
                   minute: '2-digit'
                 })}
               </p>
+              {hasUnsavedChanges && (
+                <p className="text-xs text-orange-600 font-semibold mt-1 flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
+                  Unsaved changes
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Discreet Delete Button */}
@@ -537,24 +596,29 @@ export default function LeadModal({
               </div>
             </div>
           )}
-
-          {/* ==================== FOOTER ACTIONS ==================== */}
-          <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
-            >
-              Close
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
-            >
-              ✅ Save & Close
-            </button>
-          </div>
-
         </div>
+
+        {/* ==================== FOOTER ACTIONS ==================== */}
+        <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
+          >
+            {hasUnsavedChanges ? '✕ Close Without Saving' : 'Close'}
+          </button>
+          <button
+            onClick={handleSaveAllAndClose}
+            disabled={saving}
+            className={`flex-1 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base ${
+              hasUnsavedChanges 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            } disabled:bg-gray-400`}
+          >
+            {saving ? '💾 Saving...' : hasUnsavedChanges ? '💾 Save All & Close' : '✅ Save & Close'}
+          </button>
+        </div>
+
       </div>
     </div>
   );

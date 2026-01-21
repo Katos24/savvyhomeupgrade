@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
-import Calendar from '@/components/dashboard/Calendar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster } from 'sonner';
 import styles from '@/app/dashboard/dashboard.module.css';
@@ -36,7 +35,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'cards' | 'table'>('cards');
-  const [dashboardView, setDashboardView] = useState<'leads' | 'calendar'>('leads');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month' | 'all'>('week');
@@ -356,30 +354,49 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-        {/* VIEW TABS + QUICK FILTERS */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
-          {/* Left: View Tabs */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setDashboardView('leads')}
-              className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-lg font-semibold transition ${
-                dashboardView === 'leads'
-                  ? 'bg-white text-blue-600 shadow-lg'
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
+        {/* VIEW TABS + VIEW SWITCHER + QUICK FILTERS */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6">
+          {/* Left: View Switcher */}
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur rounded-lg border border-white/20">
+              <span className="text-white/70 text-sm font-medium">View:</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    console.log('Switching to cards view');
+                    setCurrentView('cards');
+                  }}
+                  className={`px-3 py-1.5 rounded font-semibold transition text-sm ${
+                    currentView === 'cards'
+                      ? 'bg-white text-gray-900'
+                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  ⬜ Cards
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('Switching to table view');
+                    setCurrentView('table');
+                  }}
+                  className={`px-3 py-1.5 rounded font-semibold transition text-sm ${
+                    currentView === 'table'
+                      ? 'bg-white text-gray-900'
+                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  📊 Table
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Link */}
+            <a
+              href={`/${company.slug}/dashboard/calendar`}
+              className="px-4 sm:px-6 py-3 rounded-lg font-semibold transition bg-white/20 text-white hover:bg-white/30 border border-white/30 flex items-center gap-2"
             >
-              📋 Leads
-            </button>
-            <button
-              onClick={() => setDashboardView('calendar')}
-              className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-lg font-semibold transition ${
-                dashboardView === 'calendar'
-                  ? 'bg-white text-blue-600 shadow-lg'
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
-            >
-              📅 Calendar
-            </button>
+              📅 Calendar View
+            </a>
           </div>
 
           {/* Right: Quick Filters */}
@@ -418,36 +435,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               🎛️ More
               <span className={`transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`}>▼</span>
             </button>
-
-            {/* View Switcher - SUPER VISIBLE */}
-            <div className="flex gap-2 border-2 border-yellow-400 rounded-lg p-1 bg-yellow-500/20">
-              <button
-                onClick={() => {
-                  console.log('Switching to cards view');
-                  setCurrentView('cards');
-                }}
-                className={`px-4 sm:px-6 py-2 rounded-md font-bold transition text-xs sm:text-sm ${
-                  currentView === 'cards'
-                    ? 'bg-white text-blue-600 shadow-lg'
-                    : 'bg-white/50 text-gray-900 hover:bg-white'
-                }`}
-              >
-                ⬜ Cards
-              </button>
-              <button
-                onClick={() => {
-                  console.log('Switching to table view');
-                  setCurrentView('table');
-                }}
-                className={`px-4 sm:px-6 py-2 rounded-md font-bold transition text-xs sm:text-sm ${
-                  currentView === 'table'
-                    ? 'bg-white text-blue-600 shadow-lg'
-                    : 'bg-white/50 text-gray-900 hover:bg-white'
-                }`}
-              >
-                📊 Table
-              </button>
-            </div>
           </div>
         </div>
 
@@ -496,38 +483,28 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         )}
 
         {/* LEADS VIEW */}
-        {dashboardView === 'leads' && (
-          <div>
-            {filteredLeads.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur rounded-xl p-12 text-center">
-                <div className="text-6xl mb-4">📋</div>
-                <h3 className="text-2xl font-bold text-white mb-2">No leads yet</h3>
-                <p className="text-white/70 mb-6">Share your form link to start receiving leads</p>
-                <a
-                  href={`/${company.slug}`}
-                  className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition shadow-lg"
-                >
-                  ➕ Create Your First Lead
-                </a>
-              </div>
-            ) : (
-              <>
-                {renderLeadGroup(todayLeads, '🌟 Today')}
-                {renderLeadGroup(yesterdayLeads, '📅 Yesterday')}
-                {renderLeadGroup(thisWeekLeads, '📆 Earlier This Week')}
-                {renderLeadGroup(olderLeads, '📂 Older')}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* CALENDAR VIEW */}
-        {dashboardView === 'calendar' && (
-          <Calendar 
-            companySlug={company.slug}
-            onSelectLead={setSelectedLead}
-          />
-        )}
+        <div>
+          {filteredLeads.length === 0 ? (
+            <div className="bg-white/10 backdrop-blur rounded-xl p-12 text-center">
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-2xl font-bold text-white mb-2">No leads yet</h3>
+              <p className="text-white/70 mb-6">Share your form link to start receiving leads</p>
+              <a
+                href={`/${company.slug}`}
+                className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition shadow-lg"
+              >
+                ➕ Create Your First Lead
+              </a>
+            </div>
+          ) : (
+            <>
+              {renderLeadGroup(todayLeads, '🌟 Today')}
+              {renderLeadGroup(yesterdayLeads, '📅 Yesterday')}
+              {renderLeadGroup(thisWeekLeads, '📆 Earlier This Week')}
+              {renderLeadGroup(olderLeads, '📂 Older')}
+            </>
+          )}
+        </div>
       </div>
 
       {/* LEAD MODAL */}
