@@ -178,12 +178,12 @@ export default function LeadModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto overscroll-contain" 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4" 
       onClick={onClose}
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch' }}
     >
       <div 
-        className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl max-h-screen sm:max-h-[90vh] overflow-y-auto flex flex-col" 
+        className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col" 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 z-10">
@@ -239,7 +239,7 @@ export default function LeadModal({
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           
           {/* ==================== CUSTOMER INFO (EXPANDABLE) ==================== */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">

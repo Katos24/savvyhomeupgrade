@@ -385,7 +385,11 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                      style={{ position: 'relative', zIndex: 9999 }}
+                      style={{ 
+                        position: 'relative', 
+                        zIndex: 9999,
+                        isolation: 'isolate'
+                      }}
                     />
                   </div>
 
@@ -399,7 +403,11 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                       value={scheduledTime}
                       onChange={(e) => setScheduledTime(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                      style={{ position: 'relative', zIndex: 9999 }}
+                      style={{ 
+                        position: 'relative', 
+                        zIndex: 9999,
+                        isolation: 'isolate'
+                      }}
                     />
                   </div>
 
