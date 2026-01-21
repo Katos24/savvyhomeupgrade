@@ -39,7 +39,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { name, slug, email, phone, password, business_type, logo_url, status_options } = await request.json();
+    const { name, slug, email, phone, password, business_type, logo_url, status_options, form_categories } = await request.json();
     const sql = neon(process.env.DATABASE_URL!);
     
     // Check if slug already exists
@@ -48,9 +48,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Company slug already exists' }, { status: 400 });
     }
     
-    // Create company with status_options
+    // Create company with status_options AND form_categories
     const company = await sql`
-      INSERT INTO companies (name, slug, email, phone, business_type, logo_url, status_options, created_at)
+      INSERT INTO companies (name, slug, email, phone, business_type, logo_url, status_options, form_categories, created_at)
       VALUES (
         ${name}, 
         ${slug}, 
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
         ${business_type || 'general'}, 
         ${logo_url || null}, 
         ${status_options ? JSON.stringify(status_options) : null}::jsonb,
+        ${form_categories ? JSON.stringify(form_categories) : null}::jsonb,
         NOW()
       )
       RETURNING *
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const { id, name, email, phone, business_type, logo_url, password, status_options } = await request.json();
+    const { id, name, email, phone, business_type, logo_url, password, status_options, form_categories } = await request.json();
     
     if (!id) {
       return NextResponse.json({ success: false, error: 'Company ID required' }, { status: 400 });
@@ -93,7 +94,7 @@ export async function PUT(request: Request) {
     
     const sql = neon(process.env.DATABASE_URL!);
     
-    // Update company INCLUDING status_options
+    // Update company INCLUDING status_options AND form_categories
     const company = await sql`
       UPDATE companies 
       SET 
@@ -102,7 +103,8 @@ export async function PUT(request: Request) {
         phone = ${phone || null},
         business_type = ${business_type || 'general'},
         logo_url = ${logo_url || null},
-        status_options = ${status_options ? JSON.stringify(status_options) : null}::jsonb
+        status_options = ${status_options ? JSON.stringify(status_options) : null}::jsonb,
+        form_categories = ${form_categories ? JSON.stringify(form_categories) : null}::jsonb
       WHERE id = ${id}
       RETURNING *
     `;

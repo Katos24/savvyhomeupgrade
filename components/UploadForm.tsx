@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { compressImages } from '@/lib/compressImage';
 import Toast from '@/components/Toast';
+import { CATEGORY_MAP, type Category } from '@/lib/formCategories';
 
 type ToastType = {
   message: string;
@@ -19,6 +20,7 @@ type Company = {
   email: string;
   phone: string;
   business_type?: string;
+  form_categories?: Category[]; // Custom categories from database
 };
 
 interface UploadFormProps {
@@ -30,95 +32,6 @@ interface UploadFormProps {
   headerTitle?: string;
   headerSubtitle?: string;
 }
-
-// DYNAMIC CATEGORIES BY BUSINESS TYPE
-const CATEGORY_MAP: Record<string, Array<{value: string, label: string, emoji: string}>> = {
-  hvac: [
-  { value: 'ac_repair', label: 'AC Repair', emoji: '❄️' },
-  { value: 'ac_installation', label: 'AC Installation', emoji: '🆕' },
-  { value: 'furnace_repair', label: 'Furnace Repair', emoji: '🔥' },
-  { value: 'furnace_installation', label: 'Furnace Installation', emoji: '🏠' },
-  { value: 'heat_pump', label: 'Heat Pump Service', emoji: '♨️' },
-  { value: 'ductwork', label: 'Ductwork/Vents', emoji: '🌬️' },
-  { value: 'maintenance', label: 'Maintenance/Tune-up', emoji: '🔧' },
-  { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
-  { value: 'other', label: 'Other', emoji: '📋' },
-],
-
-  home_services: [
-    { value: 'roofing', label: 'Roofing', emoji: '🏠' },
-    { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
-    { value: 'hvac', label: 'HVAC', emoji: '❄️' },
-    { value: 'electrical', label: 'Electrical', emoji: '⚡' },
-    { value: 'painting', label: 'Painting', emoji: '🎨' },
-    { value: 'flooring', label: 'Flooring', emoji: '🪵' },
-    { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  construction: [
-    { value: 'new_build', label: 'New Construction', emoji: '🏗️' },
-    { value: 'renovation', label: 'Renovation', emoji: '🔨' },
-    { value: 'addition', label: 'Addition/Extension', emoji: '📐' },
-    { value: 'demolition', label: 'Demolition', emoji: '💥' },
-    { value: 'foundation', label: 'Foundation Work', emoji: '🧱' },
-    { value: 'framing', label: 'Framing', emoji: '🪚' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  auto_services: [
-    { value: 'oil_change', label: 'Oil Change', emoji: '🛢️' },
-    { value: 'brake_repair', label: 'Brake Repair', emoji: '🛑' },
-    { value: 'body_work', label: 'Body Work', emoji: '🚗' },
-    { value: 'detailing', label: 'Detailing', emoji: '✨' },
-    { value: 'tire_service', label: 'Tire Service', emoji: '⚫' },
-    { value: 'engine_repair', label: 'Engine Repair', emoji: '⚙️' },
-    { value: 'inspection', label: 'Inspection', emoji: '🔍' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  beauty_services: [
-    { value: 'haircut', label: 'Haircut', emoji: '✂️' },
-    { value: 'hair_color', label: 'Hair Color', emoji: '🎨' },
-    { value: 'styling', label: 'Styling', emoji: '💇' },
-    { value: 'extensions', label: 'Extensions', emoji: '💁' },
-    { value: 'nails', label: 'Nails', emoji: '💅' },
-    { value: 'facial', label: 'Facial', emoji: '✨' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  pet_services: [
-    { value: 'grooming', label: 'Grooming', emoji: '🐕' },
-    { value: 'bathing', label: 'Bathing', emoji: '🛁' },
-    { value: 'nail_trim', label: 'Nail Trim', emoji: '✂️' },
-    { value: 'training', label: 'Training', emoji: '🎓' },
-    { value: 'sitting', label: 'Pet Sitting', emoji: '🏠' },
-    { value: 'walking', label: 'Dog Walking', emoji: '🚶' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  video_production: [
-    { value: 'commercial', label: 'Commercial', emoji: '📺' },
-    { value: 'wedding', label: 'Wedding Video', emoji: '💒' },
-    { value: 'event', label: 'Event Coverage', emoji: '🎉' },
-    { value: 'corporate', label: 'Corporate Video', emoji: '🏢' },
-    { value: 'real_estate', label: 'Real Estate Tour', emoji: '🏠' },
-    { value: 'editing', label: 'Video Editing', emoji: '✂️' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-  general: [
-    { value: 'roofing', label: 'Roofing', emoji: '🏠' },
-    { value: 'kitchen_remodel', label: 'Kitchen Remodel', emoji: '🍳' },
-    { value: 'bathroom_remodel', label: 'Bathroom Remodel', emoji: '🚿' },
-    { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },
-    { value: 'electrical', label: 'Electrical', emoji: '⚡' },
-    { value: 'hvac', label: 'HVAC', emoji: '❄️' },
-    { value: 'flooring', label: 'Flooring', emoji: '🪵' },
-    { value: 'painting', label: 'Painting', emoji: '🎨' },
-    { value: 'landscaping', label: 'Landscaping', emoji: '🌳' },
-    { value: 'foundation_repair', label: 'Foundation Repair', emoji: '🧱' },
-    { value: 'water_damage', label: 'Water Damage', emoji: '💧' },
-    { value: 'general_repair', label: 'General Repair', emoji: '🔨' },
-    { value: 'auto_body', label: 'Auto Body', emoji: '🚗' },
-    { value: 'auto_mechanical', label: 'Auto Mechanical', emoji: '⚙️' },
-    { value: 'other', label: 'Other', emoji: '📋' },
-  ],
-};
 
 export default function UploadForm({ 
   company,
@@ -147,9 +60,12 @@ export default function UploadForm({
   const [isDragging, setIsDragging] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
-  // Get dynamic categories based on business type
+  // Get dynamic categories: use company's custom categories if available, otherwise fallback to defaults
   const businessType = company?.business_type || 'general';
-  const categories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
+  const categories: Category[] = 
+    company?.form_categories && company.form_categories.length > 0
+      ? company.form_categories
+      : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
   // Use company object values if available, otherwise fall back to separate props
   const finalCompanySlug = company?.slug || companySlug;

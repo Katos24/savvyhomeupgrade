@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CATEGORY_MAP, type Category } from '@/lib/formCategories';
 
 type Company = {
   id: number;
@@ -11,6 +12,7 @@ type Company = {
   business_type?: string;
   logo_url?: string;
   status_options?: StatusOption[];
+  form_categories?: Category[];
   created_at: string;
   lead_count?: number;
   last_lead_at?: string;
@@ -60,6 +62,7 @@ const BUSINESS_TYPES = [
   { value: 'real_estate', label: 'Real Estate', emoji: '🏘️' },
   { value: 'education_services', label: 'Education & Tutoring', emoji: '📚' },
   { value: 'food_services', label: 'Food Services', emoji: '🍽️' },
+  { value: 'hvac', label: 'HVAC', emoji: '❄️' },
 ];
 
 export default function AdminPage() {
@@ -79,6 +82,13 @@ export default function AdminPage() {
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>(DEFAULT_STATUSES);
   const [showAddStatus, setShowAddStatus] = useState(false);
   const [newStatus, setNewStatus] = useState({ label: '', color: 'blue', emoji: '📌' });
+  
+  // Form Categories State
+  const [formCategories, setFormCategories] = useState<Category[]>([]);
+  const [useDefaultCategories, setUseDefaultCategories] = useState(true);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({ label: '', emoji: '📋' });
+  
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [error, setError] = useState('');
@@ -88,6 +98,14 @@ export default function AdminPage() {
   useEffect(() => {
     fetchCompanies();
   }, []);
+
+  // Load default categories when business type changes
+  useEffect(() => {
+    if (useDefaultCategories && formData.business_type) {
+      const defaultCats = CATEGORY_MAP[formData.business_type] || CATEGORY_MAP.general;
+      setFormCategories(defaultCats);
+    }
+  }, [formData.business_type, useDefaultCategories]);
 
   const fetchCompanies = async () => {
     try {
@@ -162,6 +180,41 @@ export default function AdminPage() {
     setShowAddStatus(false);
   };
 
+  // Form Categories Functions
+  const removeCategory = (index: number) => {
+    setFormCategories(formCategories.filter((_, i) => i !== index));
+    setUseDefaultCategories(false);
+  };
+
+  const addCustomCategory = () => {
+    if (!newCategory.label.trim()) {
+      alert('Please enter a category label');
+      return;
+    }
+
+    if (formCategories.length >= 20) {
+      alert('Maximum 20 categories allowed');
+      return;
+    }
+
+    // Keep label as-is (human readable), slugify only the value
+    const value = newCategory.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    setFormCategories([...formCategories, { 
+      value, 
+      label: newCategory.label.trim(), // Keep original label formatting
+      emoji: newCategory.emoji 
+    }]);
+    setNewCategory({ label: '', emoji: '📋' });
+    setShowAddCategory(false);
+    setUseDefaultCategories(false);
+  };
+
+  const restoreDefaultCategories = () => {
+    const defaultCats = CATEGORY_MAP[formData.business_type] || CATEGORY_MAP.general;
+    setFormCategories(defaultCats);
+    setUseDefaultCategories(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -174,6 +227,16 @@ export default function AdminPage() {
 
     if (statusOptions.length > 5) {
       setError('Maximum 5 statuses allowed');
+      return;
+    }
+
+    if (formCategories.length < 3) {
+      setError('Please have at least 3 service categories');
+      return;
+    }
+
+    if (formCategories.length > 20) {
+      setError('Maximum 20 categories allowed');
       return;
     }
 
@@ -194,6 +257,7 @@ export default function AdminPage() {
           ...formData,
           logo_url: logoUrl,
           status_options: statusOptions,
+          form_categories: useDefaultCategories ? null : formCategories, // null = use defaults
           id: editingCompany?.id
         })
       });
@@ -206,6 +270,8 @@ export default function AdminPage() {
         setEditingCompany(null);
         setFormData({ name: '', slug: '', email: '', phone: '', password: '', business_type: 'general', logo_url: '' });
         setStatusOptions(DEFAULT_STATUSES);
+        setFormCategories([]);
+        setUseDefaultCategories(true);
         setLogoFile(null);
         setLogoPreview('');
         fetchCompanies();
@@ -232,6 +298,17 @@ export default function AdminPage() {
       logo_url: company.logo_url || ''
     });
     setStatusOptions(company.status_options || DEFAULT_STATUSES);
+    
+    // Set form categories
+    if (company.form_categories && company.form_categories.length > 0) {
+      setFormCategories(company.form_categories);
+      setUseDefaultCategories(false);
+    } else {
+      const defaultCats = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
+      setFormCategories(defaultCats);
+      setUseDefaultCategories(true);
+    }
+    
     setLogoPreview(company.logo_url || '');
     setShowAddForm(true);
   };
@@ -265,9 +342,12 @@ export default function AdminPage() {
     setShowAddForm(false);
     setFormData({ name: '', slug: '', email: '', phone: '', password: '', business_type: 'general', logo_url: '' });
     setStatusOptions(DEFAULT_STATUSES);
+    setFormCategories([]);
+    setUseDefaultCategories(true);
     setLogoFile(null);
     setLogoPreview('');
     setShowAddStatus(false);
+    setShowAddCategory(false);
   };
 
   if (loading) {
@@ -373,7 +453,7 @@ export default function AdminPage() {
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Determines which service categories show on the form
+                  Determines default service categories for the form
                 </p>
               </div>
 
@@ -538,6 +618,106 @@ export default function AdminPage() {
               </p>
             </div>
 
+            {/* FORM CATEGORIES SECTION */}
+            <div className="mb-6 p-6 bg-purple-50 rounded-lg border-2 border-purple-200">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-lg font-bold">Service Categories (3-20)</h4>
+                {!useDefaultCategories && (
+                  <button
+                    type="button"
+                    onClick={restoreDefaultCategories}
+                    className="text-sm text-purple-600 hover:text-purple-800 font-semibold"
+                  >
+                    ↻ Restore Defaults
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                {useDefaultCategories 
+                  ? `Using default categories for ${BUSINESS_TYPES.find(t => t.value === formData.business_type)?.label}. Customize below if needed.`
+                  : 'Using custom categories. Click "Restore Defaults" to reset.'}
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                {formCategories.map((category, index) => (
+                  <div key={index} className="flex items-center gap-2 bg-white p-2 rounded-lg border group">
+                    <span className="text-xl">{category.emoji}</span>
+                    <span className="text-sm font-medium flex-1 truncate">{category.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeCategory(index)}
+                      className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 font-bold text-sm transition-opacity"
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {formCategories.length < 20 && !showAddCategory && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategory(true)}
+                  className="w-full py-2 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 font-semibold"
+                >
+                  + Add Custom Category
+                </button>
+              )}
+
+              {showAddCategory && (
+                <div className="bg-white p-4 rounded-lg border-2 border-purple-300">
+                  <h5 className="font-bold mb-3">Add Custom Category</h5>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Category Label *</label>
+                      <input
+                        type="text"
+                        value={newCategory.label}
+                        onChange={(e) => setNewCategory({ ...newCategory, label: e.target.value })}
+                        placeholder="e.g., Emergency Repair"
+                        className="form-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Emoji</label>
+                      <input
+                        type="text"
+                        value={newCategory.emoji}
+                        onChange={(e) => setNewCategory({ ...newCategory, emoji: e.target.value })}
+                        placeholder="📋"
+                        className="form-input"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={addCustomCategory}
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-semibold"
+                      >
+                        Add Category
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddCategory(false);
+                          setNewCategory({ label: '', emoji: '📋' });
+                        }}
+                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-semibold"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 mt-3">
+                {formCategories.length} categories • Min: 3, Max: 20
+              </p>
+            </div>
+
             <div className="flex gap-3">
               <button 
                 type="submit" 
@@ -596,6 +776,15 @@ export default function AdminPage() {
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Show if using custom categories */}
+                {company.form_categories && company.form_categories.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-500 mb-1">
+                      Custom Categories ({company.form_categories.length})
+                    </p>
                   </div>
                 )}
 

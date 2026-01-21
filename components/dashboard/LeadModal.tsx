@@ -96,6 +96,19 @@ export default function LeadModal({
     f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
   ) || [];
 
+  // Helper function to format category for display
+  const formatCategory = (category: string) => {
+    // If we have category_label from the database, use it
+    if (lead.category_label) {
+      return lead.category_label;
+    }
+    // Otherwise, format the value nicely: "emergency_repair" -> "Emergency Repair"
+    return category
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -112,7 +125,37 @@ export default function LeadModal({
               })}
             </p>
           </div>
-          <button onClick={onClose} className={styles.closeButton}>×</button>
+          <div className="flex items-center gap-2">
+            {/* Discreet Delete Button */}
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-gray-400 hover:text-red-600 transition text-sm px-3 py-1 rounded hover:bg-red-50"
+                title="Delete lead"
+              >
+                🗑️
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded border border-red-200">
+                <span className="text-sm text-red-700 font-medium">Delete?</span>
+                <button
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-1 rounded"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={saving}
+                  className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-1 rounded"
+                >
+                  No
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} className={styles.closeButton}>×</button>
+          </div>
         </div>
 
         <div className={styles.modalContent}>
@@ -157,7 +200,7 @@ export default function LeadModal({
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={() => {
-                        const subject = encodeURIComponent(`Re: Your ${lead.category} Project`);
+                        const subject = encodeURIComponent(`Re: Your ${formatCategory(lead.category)} Project`);
                         const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
                         window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
                       }}
@@ -190,7 +233,7 @@ export default function LeadModal({
           {lead.category && (
             <div className="mb-6">
               <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
-                {lead.category}
+                {formatCategory(lead.category)}
               </span>
             </div>
           )}
@@ -352,46 +395,20 @@ export default function LeadModal({
             </div>
           )}
 
-          {/* ==================== DANGER ZONE ==================== */}
-          <div className="mt-8 pt-6 border-t-2 border-red-100">
-            <h3 className="text-lg font-bold text-red-600 mb-2">🚨 Danger Zone</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Deleting this lead is permanent and cannot be undone.
-            </p>
-            
-            {!showDeleteConfirm ? (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-3 px-4 rounded-lg transition border-2 border-red-200 hover:border-red-300"
-              >
-                🗑️ Delete Lead
-              </button>
-            ) : (
-              <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
-                <p className="font-bold text-red-800 mb-3">
-                  Are you absolutely sure?
-                </p>
-                <p className="text-sm text-red-700 mb-4">
-                  This will permanently delete <strong>{lead.name}</strong> and all associated data. This action cannot be undone.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleDelete}
-                    disabled={saving}
-                    className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition"
-                  >
-                    {saving ? 'Deleting...' : 'Yes, Delete Forever'}
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={saving}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* ==================== FOOTER ACTIONS ==================== */}
+          <div className="mt-8 pt-6 border-t-2 border-gray-200 flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
+            >
+              Close
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
+            >
+              ✅ Save & Close
+            </button>
           </div>
 
         </div>
