@@ -177,55 +177,69 @@ export default function LeadModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <div>
-            <h2 className={styles.modalTitle}>{lead.name}</h2>
-            <p className={styles.modalDate}>
-              {new Date(lead.created_at).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Discreet Delete Button */}
-            {!showDeleteConfirm ? (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-gray-400 hover:text-red-600 transition text-sm px-3 py-1 rounded hover:bg-red-50"
-                title="Delete lead"
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto overscroll-contain" 
+      onClick={onClose}
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      <div 
+        className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl max-h-screen sm:max-h-[90vh] overflow-y-auto flex flex-col" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 z-10">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{lead.name}</h2>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                {new Date(lead.created_at).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Discreet Delete Button */}
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-gray-400 hover:text-red-600 transition text-sm px-2 sm:px-3 py-1 rounded hover:bg-red-50"
+                  title="Delete lead"
+                >
+                  🗑️
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 bg-red-50 px-2 sm:px-3 py-1 rounded border border-red-200">
+                  <span className="text-xs sm:text-sm text-red-700 font-medium">Delete?</span>
+                  <button
+                    onClick={handleDelete}
+                    disabled={saving}
+                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-1 rounded"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={saving}
+                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-1 rounded"
+                  >
+                    No
+                  </button>
+                </div>
+              )}
+              <button 
+                onClick={onClose} 
+                className="text-3xl text-gray-400 hover:text-gray-600 transition leading-none"
               >
-                🗑️
+                ×
               </button>
-            ) : (
-              <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded border border-red-200">
-                <span className="text-sm text-red-700 font-medium">Delete?</span>
-                <button
-                  onClick={handleDelete}
-                  disabled={saving}
-                  className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-1 rounded"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={saving}
-                  className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-1 rounded"
-                >
-                  No
-                </button>
-              </div>
-            )}
-            <button onClick={onClose} className={styles.closeButton}>×</button>
+            </div>
           </div>
         </div>
 
-        <div className={styles.modalContent}>
+        <div className="p-4 sm:p-6 space-y-6">
           
           {/* ==================== CUSTOMER INFO (EXPANDABLE) ==================== */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
@@ -384,8 +398,8 @@ export default function LeadModal({
           />
 
           {/* ==================== ACTIVITY TIMELINE ==================== */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Activity Timeline ({notesArray.length})</h3>
+          <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Activity Timeline ({notesArray.length})</h3>
             
             <div className="mb-4">
               <textarea
@@ -484,18 +498,18 @@ export default function LeadModal({
 
           {/* ==================== PHOTOS & VIDEOS ==================== */}
           {images.length > 0 && (
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Photos ({images.length})</h3>
-              <div className={styles.photosGrid}>
+            <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Photos ({images.length})</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                 {images.map((file: any, idx: number) => (
                   <a 
                     key={idx}
                     href={file.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={styles.photoLink}
+                    className="block rounded-lg overflow-hidden shadow-md hover:shadow-lg transition"
                   >
-                    <img src={file.url} alt={`Photo ${idx + 1}`} className={styles.photo} />
+                    <img src={file.url} alt={`Photo ${idx + 1}`} className="w-full h-32 sm:h-48 object-cover" />
                   </a>
                 ))}
               </div>
@@ -503,16 +517,16 @@ export default function LeadModal({
           )}
 
           {videos.length > 0 && (
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Videos ({videos.length})</h3>
-              <div className={styles.photosGrid}>
+            <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Videos ({videos.length})</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                 {videos.map((file: any, idx: number) => (
                   <a 
                     key={idx}
                     href={file.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={styles.photoLink}
+                    className="block"
                   >
                     <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex flex-col items-center justify-center border-2 border-blue-200">
                       <div className="text-6xl mb-2">🎥</div>
@@ -525,16 +539,16 @@ export default function LeadModal({
           )}
 
           {/* ==================== FOOTER ACTIONS ==================== */}
-          <div className="mt-8 pt-6 border-t-2 border-gray-200 flex gap-3">
+          <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
             <button
               onClick={onClose}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
             >
               Close
             </button>
             <button
               onClick={onClose}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
             >
               ✅ Save & Close
             </button>
