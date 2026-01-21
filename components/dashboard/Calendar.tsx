@@ -13,7 +13,8 @@ type CalendarEvent = {
   name: string;
   scheduled_date: string;
   scheduled_time: string;
-  job_status: string;
+  status: string; // Lead status (new, contacted, quoted, in-progress, completed)
+  job_status: string; // Project status (not_started, scheduled, in_progress, completed, cancelled)
   assigned_to: string;
   category: string;
   phone: string;
@@ -21,10 +22,16 @@ type CalendarEvent = {
 };
 
 const JOB_STATUS_COLORS: Record<string, string> = {
+  // Default statuses
+  'new': 'bg-blue-100 text-blue-800 border-blue-300',
+  'contacted': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  'quoted': 'bg-purple-100 text-purple-800 border-purple-300',
+  'in-progress': 'bg-orange-100 text-orange-800 border-orange-300',
+  'completed': 'bg-green-100 text-green-800 border-green-300',
+  // Project statuses
   'not_started': 'bg-gray-200 text-gray-800 border-gray-300',
   'scheduled': 'bg-blue-100 text-blue-800 border-blue-300',
   'in_progress': 'bg-orange-100 text-orange-800 border-orange-300',
-  'completed': 'bg-green-100 text-green-800 border-green-300',
   'cancelled': 'bg-red-100 text-red-800 border-red-300',
 };
 
@@ -46,10 +53,16 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
       const scheduledLeads = (data.leads || []).filter((lead: any) => {
         const hasScheduledDate = lead.scheduled_date && lead.scheduled_date.trim() !== '';
         const notDeleted = !lead.deleted;
-        const hasStatus = lead.job_status && lead.job_status.trim() !== '';
         
-        return hasScheduledDate && notDeleted && hasStatus;
+        return hasScheduledDate && notDeleted;
       });
+      
+      console.log('Scheduled leads:', scheduledLeads.map((l: any) => ({ 
+        name: l.name, 
+        date: l.scheduled_date, 
+        status: l.status,
+        job_status: l.job_status
+      })));
       
       setEvents(scheduledLeads);
     } catch (error) {
@@ -143,6 +156,16 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+      {/* Back to Leads Button */}
+      <div className="mb-4">
+        <a
+          href={`/${companySlug}/dashboard`}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-semibold transition border border-gray-300"
+        >
+          ← Back to Leads
+        </a>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
         {/* Title + Today Button */}
@@ -298,38 +321,43 @@ function ListView({ currentDate, events, formatTime, onSelectLead }: ListViewPro
 
   return (
     <div className="space-y-3">
-      {monthEvents.map((event: CalendarEvent) => (
-        <button
-          key={event.id}
-          onClick={() => onSelectLead(event)}
-          className={`w-full text-left p-4 rounded-lg border-2 ${
-            JOB_STATUS_COLORS[event.job_status] || 'bg-gray-100 text-gray-800'
-          } hover:shadow-md transition`}
-        >
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div className="flex-1">
-              <div className="font-bold text-base sm:text-lg mb-1">{event.name}</div>
-              <div className="text-sm opacity-75">
-                📅 {new Date(event.scheduled_date).toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
+      {monthEvents.map((event: CalendarEvent) => {
+        // Use job_status if available, otherwise fall back to status
+        const statusToUse = event.job_status || event.status || 'new';
+        
+        return (
+          <button
+            key={event.id}
+            onClick={() => onSelectLead(event)}
+            className={`w-full text-left p-4 rounded-lg border-2 ${
+              JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800 border-gray-300'
+            } hover:shadow-md transition`}
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex-1">
+                <div className="font-bold text-base sm:text-lg mb-1">{event.name}</div>
+                <div className="text-sm opacity-75">
+                  📅 {new Date(event.scheduled_date).toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </div>
               </div>
+              {event.scheduled_time && (
+                <div className="text-sm font-semibold opacity-75 whitespace-nowrap">
+                  ⏰ {formatTime(event.scheduled_time)}
+                </div>
+              )}
             </div>
-            {event.scheduled_time && (
-              <div className="text-sm font-semibold opacity-75 whitespace-nowrap">
-                ⏰ {formatTime(event.scheduled_time)}
+            {event.assigned_to && (
+              <div className="text-sm opacity-75">
+                👤 {event.assigned_to}
               </div>
             )}
-          </div>
-          {event.assigned_to && (
-            <div className="text-sm opacity-75">
-              👤 {event.assigned_to}
-            </div>
-          )}
-        </button>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -425,40 +453,51 @@ function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, form
               <div className="flex-1 overflow-hidden">
                 {/* Mobile: Show colored dots */}
                 <div className="sm:hidden flex flex-wrap gap-0.5">
-                  {dayEvents.slice(0, 6).map((event: CalendarEvent) => (
-                    <button
-                      key={event.id}
-                      onClick={() => onSelectLead(event)}
-                      className={`w-2 h-2 rounded-full ${
-                        event.job_status === 'not_started' ? 'bg-gray-400' :
-                        event.job_status === 'scheduled' ? 'bg-blue-500' :
-                        event.job_status === 'in_progress' ? 'bg-orange-500' :
-                        event.job_status === 'completed' ? 'bg-green-500' :
-                        event.job_status === 'cancelled' ? 'bg-red-500' : 'bg-gray-400'
-                      }`}
-                      title={event.name}
-                    />
-                  ))}
+                  {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
+                    const statusToUse = event.job_status || event.status || 'new';
+                    const dotColor = 
+                      statusToUse === 'new' ? 'bg-blue-500' :
+                      statusToUse === 'contacted' ? 'bg-yellow-500' :
+                      statusToUse === 'quoted' ? 'bg-purple-500' :
+                      statusToUse === 'in-progress' || statusToUse === 'in_progress' ? 'bg-orange-500' :
+                      statusToUse === 'completed' ? 'bg-green-500' :
+                      statusToUse === 'cancelled' ? 'bg-red-500' :
+                      statusToUse === 'not_started' ? 'bg-gray-400' :
+                      statusToUse === 'scheduled' ? 'bg-blue-500' : 'bg-gray-400';
+                    
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => onSelectLead(event)}
+                        className={`w-2 h-2 rounded-full ${dotColor}`}
+                        title={event.name}
+                      />
+                    );
+                  })}
                 </div>
                 
                 {/* Desktop: Show event cards */}
                 <div className="hidden sm:block space-y-1">
-                  {dayEvents.slice(0, 3).map((event: CalendarEvent) => (
-                    <button
-                      key={event.id}
-                      onClick={() => onSelectLead(event)}
-                      className={`w-full text-left px-2 py-1 rounded text-xs font-medium border ${
-                        JOB_STATUS_COLORS[event.job_status] || 'bg-gray-100 text-gray-800 border-gray-300'
-                      } hover:opacity-80 hover:shadow transition`}
-                    >
-                      <div className="truncate font-semibold">{event.name}</div>
-                      {event.scheduled_time && (
-                        <div className="text-[10px] opacity-75 mt-0.5">
-                          ⏰ {formatTime(event.scheduled_time)}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                  {dayEvents.slice(0, 3).map((event: CalendarEvent) => {
+                    const statusToUse = event.job_status || event.status || 'new';
+                    
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => onSelectLead(event)}
+                        className={`w-full text-left px-2 py-1 rounded text-xs font-medium border ${
+                          JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800 border-gray-300'
+                        } hover:opacity-80 hover:shadow transition`}
+                      >
+                        <div className="truncate font-semibold">{event.name}</div>
+                        {event.scheduled_time && (
+                          <div className="text-[10px] opacity-75 mt-0.5">
+                            ⏰ {formatTime(event.scheduled_time)}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                   
                   {dayEvents.length > 3 && (
                     <div className="text-xs text-gray-500 text-center pt-1 font-medium">
@@ -521,29 +560,33 @@ function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTi
                   No jobs
                 </div>
               ) : (
-                dayEvents.map((event: CalendarEvent) => (
-                  <button
-                    key={event.id}
-                    onClick={() => onSelectLead(event)}
-                    className={`w-full text-left p-1 sm:p-3 rounded-lg border-2 ${
-                      JOB_STATUS_COLORS[event.job_status] || 'bg-gray-100 text-gray-800'
-                    } hover:shadow-md transition`}
-                  >
-                    <div className="font-semibold text-xs sm:text-sm mb-1 truncate">
-                      {event.name}
-                    </div>
-                    {event.scheduled_time && (
-                      <div className="text-[10px] sm:text-xs opacity-75 mb-1">
-                        ⏰ {formatTime(event.scheduled_time)}
+                dayEvents.map((event: CalendarEvent) => {
+                  const statusToUse = event.job_status || event.status || 'new';
+                  
+                  return (
+                    <button
+                      key={event.id}
+                      onClick={() => onSelectLead(event)}
+                      className={`w-full text-left p-1 sm:p-3 rounded-lg border-2 ${
+                        JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800'
+                      } hover:shadow-md transition`}
+                    >
+                      <div className="font-semibold text-xs sm:text-sm mb-1 truncate">
+                        {event.name}
                       </div>
-                    )}
-                    {event.assigned_to && (
-                      <div className="hidden sm:block text-xs opacity-75">
-                        👤 {event.assigned_to}
-                      </div>
-                    )}
-                  </button>
-                ))
+                      {event.scheduled_time && (
+                        <div className="text-[10px] sm:text-xs opacity-75 mb-1">
+                          ⏰ {formatTime(event.scheduled_time)}
+                        </div>
+                      )}
+                      {event.assigned_to && (
+                        <div className="hidden sm:block text-xs opacity-75">
+                          👤 {event.assigned_to}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
