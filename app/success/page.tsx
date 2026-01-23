@@ -92,7 +92,7 @@ export default async function SuccessPage({ params }: PageProps) {
           
           {company.business_type !== 'restaurant' && company.phone && (
             
-              href={`tel:${company.phone}`}
+<a href={`tel:${company.phone}`}
               className="flex-1 inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
             >
               📞 Call Us
