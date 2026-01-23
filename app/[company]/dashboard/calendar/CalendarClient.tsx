@@ -19,6 +19,7 @@ export default function CalendarClient({ company }: { company: Company }) {
   const router = useRouter();
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0); // 🔥 NEW: Trigger calendar refresh
 
   // Fetch current user
   useEffect(() => {
@@ -122,18 +123,31 @@ export default function CalendarClient({ company }: { company: Company }) {
     }
   }
 
+  // 🔥 FIXED: Refresh with no-cache and trigger calendar refresh
   async function refreshModalLead() {
-    if (selectedLead) {
-      try {
-        const response = await fetch(`/api/company/${company.slug}/leads`);
-        const data = await response.json();
+    try {
+      // Fetch fresh data with no-cache
+      const response = await fetch(`/api/company/${company.slug}/leads`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      const data = await response.json();
+      
+      // Update modal if open
+      if (selectedLead) {
         const updatedLead = data.leads.find((l: any) => l.id === selectedLead.id);
         if (updatedLead) {
           setSelectedLead(updatedLead);
         }
-      } catch (error) {
-        console.error('Failed to refresh modal lead:', error);
       }
+      
+      // 🔥 Trigger calendar to refresh its events list
+      setCalendarRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to refresh:', error);
     }
   }
 
@@ -205,10 +219,11 @@ export default function CalendarClient({ company }: { company: Company }) {
           </div>
         </div>
 
-        {/* CALENDAR */}
+        {/* 🔥 CALENDAR - Pass refreshKey to trigger re-fetch */}
         <Calendar 
           companySlug={company.slug}
           onSelectLead={setSelectedLead}
+          key={calendarRefreshKey}
         />
       </div>
 

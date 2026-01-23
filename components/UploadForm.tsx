@@ -23,9 +23,13 @@ type Company = {
   email: string;
   phone: string;
   business_type?: string;
+  logo_url?: string | null;
   form_categories?: Category[];
   address_enabled?: boolean | null;
   address_required?: boolean;
+  cta_heading?: string | null;
+  cta_button_text?: string | null;
+  cta_success_message?: string | null;
 };
 
 interface UploadFormProps {
@@ -75,33 +79,63 @@ export default function UploadForm({
     libraries,
   });
 
-  // Get dynamic categories: use company's custom categories if available, otherwise fallback to defaults
+  // Get dynamic categories
   const businessType = company?.business_type || 'general';
   const categories: Category[] = 
     company?.form_categories && company.form_categories.length > 0
       ? company.form_categories
       : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
-  // Use company object values if available, otherwise fall back to separate props
   const finalCompanySlug = company?.slug || companySlug;
   const finalCompanyId = company?.id || companyId;
 
   // Get address configuration
   const getAddressConfig = () => {
-    // Company override takes priority
     if (company?.address_enabled !== null && company?.address_enabled !== undefined) {
       return {
         show: company.address_enabled,
         required: company.address_required || false
       };
     }
-    
-    // Fallback to business type default
     const defaultConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
     return defaultConfig;
   };
 
   const addressConfig = getAddressConfig();
+
+  // 🔥 NEW: Get dynamic CTA text
+  const getCtaHeading = () => {
+    if (company?.cta_heading) return company.cta_heading;
+    
+    switch (businessType) {
+      case 'restaurant':
+        return 'Order Your Custom Meal';
+      case 'salon':
+        return 'Book Your Appointment';
+      case 'photography':
+        return 'Request a Photo Session';
+      default:
+        return headerTitle;
+    }
+  };
+
+  const getCtaButtonText = () => {
+    if (company?.cta_button_text) return company.cta_button_text;
+    
+    switch (businessType) {
+      case 'restaurant':
+        return '🍽️ Place Order';
+      case 'salon':
+        return '💇 Book Appointment';
+      case 'photography':
+        return '📸 Request Session';
+      default:
+        return '📸 Submit Project';
+    }
+  };
+
+  const ctaHeading = getCtaHeading();
+  const ctaButtonText = getCtaButtonText();
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const id = Date.now();
@@ -129,7 +163,6 @@ export default function UploadForm({
       return { valid: false, error: `${file.name} is too large (max 50MB)` };
     }
     
-    // For videos, check size as proxy for length (10 sec video ~15-30MB at decent quality)
     if (file.type.startsWith('video/') && file.size > 30 * 1024 * 1024) {
       return { valid: false, error: `${file.name} video is too large - keep videos under 10 seconds` };
     }
@@ -140,8 +173,6 @@ export default function UploadForm({
   // Google Places Autocomplete handlers
   const onLoadAutocomplete = (autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
-    
-    // Restrict to US addresses only
     autocomplete.setComponentRestrictions({ country: 'us' });
   };
 
@@ -150,21 +181,15 @@ export default function UploadForm({
       const place = autocompleteRef.current.getPlace();
       
       if (place.formatted_address) {
-        // Extract city from address components
         let city = '';
         
         if (place.address_components) {
-          // Try to find locality (city) first
           const localityComponent = place.address_components.find(
             (component) => component.types.includes('locality')
           );
-          
-          // If no locality, try sublocality (neighborhood/district)
           const sublocalityComponent = place.address_components.find(
             (component) => component.types.includes('sublocality') || component.types.includes('sublocality_level_1')
           );
-          
-          // If no locality or sublocality, try administrative_area_level_3 (township)
           const adminArea3Component = place.address_components.find(
             (component) => component.types.includes('administrative_area_level_3')
           );
@@ -206,7 +231,6 @@ export default function UploadForm({
       const newFiles = Array.from(e.target.files);
       const validFiles: File[] = [];
       
-      // Validate each file
       newFiles.forEach(file => {
         const validation = validateFile(file);
         if (validation.valid) {
@@ -218,10 +242,16 @@ export default function UploadForm({
 
       if (validFiles.length > 0) {
         setCompressing(true);
-        const compressed = await compressImages(validFiles);
-        setFiles([...files, ...compressed]);
-        showToast(`${compressed.length} file(s) added`, 'success');
-        setCompressing(false);
+        try {
+          const compressed = await compressImages(validFiles);
+          setFiles([...files, ...compressed]);
+          showToast(`${compressed.length} file(s) added`, 'success');
+        } catch (error) {
+          console.error('Compression error:', error);
+          showToast('Failed to process files. Please try again.', 'error');
+        } finally {
+          setCompressing(false);
+        }
       }
     }
   };
@@ -265,10 +295,16 @@ export default function UploadForm({
     
     if (validFiles.length > 0) {
       setCompressing(true);
-      const compressed = await compressImages(validFiles);
-      setFiles([...files, ...compressed]);
-      showToast(`${compressed.length} file(s) added`, 'success');
-      setCompressing(false);
+      try {
+        const compressed = await compressImages(validFiles);
+        setFiles([...files, ...compressed]);
+        showToast(`${compressed.length} file(s) added`, 'success');
+      } catch (error) {
+        console.error('Compression error:', error);
+        showToast('Failed to process files. Please try again.', 'error');
+      } finally {
+        setCompressing(false);
+      }
     }
   };
 
@@ -284,6 +320,7 @@ export default function UploadForm({
     if (!formData.name || !formData.email || !formData.phone || !formData.category) {
       setError('Please fill in all required fields');
       showToast('Please fill in all required fields', 'error');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -291,6 +328,7 @@ export default function UploadForm({
     if (addressConfig.show && addressConfig.required && !formData.address_line_1.trim()) {
       setError('Address is required');
       showToast('Address is required', 'error');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -298,6 +336,7 @@ export default function UploadForm({
     if (rawPhone.length !== 10) {
       setError('Please enter a valid 10-digit phone number');
       showToast('Please enter a valid 10-digit phone number', 'error');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -312,11 +351,12 @@ export default function UploadForm({
   const submitForm = async () => {
     setUploading(true);
     setShowNoImageConfirm(false);
+    setError('');
 
     try {
       const rawPhone = formData.phone.replace(/\D/g, '');
       
-      // Upload files directly to blob
+      // Upload files
       const uploadedFiles = [];
       
       if (files.length > 0) {
@@ -327,27 +367,37 @@ export default function UploadForm({
           const file = files[i];
           setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
           
-          const timestamp = Date.now();
-          const uniqueFilename = `${timestamp}-${file.name}`;
-          
-          const blob = await upload(uniqueFilename, file, {
-            access: 'public',
-            handleUploadUrl: '/api/blob-upload',
-          });
-          
-          uploadedFiles.push({
-            url: blob.url,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          });
+          try {
+            const timestamp = Date.now();
+            const uniqueFilename = `${timestamp}-${file.name}`;
+            
+            const blob = await upload(uniqueFilename, file, {
+              access: 'public',
+              handleUploadUrl: '/api/blob-upload',
+            });
+            
+            uploadedFiles.push({
+              url: blob.url,
+              name: file.name,
+              type: file.type,
+              size: file.size,
+            });
+          } catch (uploadError) {
+            console.error(`Failed to upload ${file.name}:`, uploadError);
+            throw new Error(`Failed to upload ${file.name}. Please try again.`);
+          }
         }
         
         showToast('Files uploaded successfully!', 'success');
       }
 
-      // Send form data + blob URLs to API
-      setUploadProgress('Analyzing your project...');
+      // Validate company info
+      if (!finalCompanySlug || !finalCompanyId) {
+        throw new Error('Company information is missing. Please refresh the page and try again.');
+      }
+
+      // Submit to API
+      setUploadProgress('Saving your project...');
       
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -369,26 +419,57 @@ export default function UploadForm({
         }),
       });
 
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error('Invalid submission. Please check your information and try again.');
+        } else if (response.status === 404) {
+          throw new Error('Company not found. Please check the URL and try again.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again in a few moments.');
+        } else {
+          throw new Error(`Upload failed (Error ${response.status}). Please try again.`);
+        }
+      }
+
       const result = await response.json();
       
       if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error(result.error || 'Upload failed. Please try again.');
       }
 
-      showToast('Submission successful!', 'success');
-      router.push(successRoute);
+      showToast('✅ Submission successful! Redirecting...', 'success');
+      
+      setTimeout(() => {
+        router.push(successRoute);
+      }, 800);
       
     } catch (err) {
       console.error('Submit error:', err);
-      setError('Failed to submit. Please try again.');
-      showToast('Failed to submit. Please try again.', 'error');
+      
+      let errorMessage = 'Failed to submit. Please try again.';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      if (errorMessage.toLowerCase().includes('fetch') || 
+          errorMessage.toLowerCase().includes('network') ||
+          errorMessage.toLowerCase().includes('failed to fetch')) {
+        errorMessage = '📡 Network error. Please check your internet connection and try again.';
+      }
+      
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setUploading(false);
       setUploadProgress('');
     }
   };
 
-  // Loading state for Google Maps
+  // Loading/error states for Google Maps
   if (addressConfig.show && !isLoaded) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -402,7 +483,6 @@ export default function UploadForm({
     );
   }
 
-  // Error state for Google Maps
   if (addressConfig.show && loadError) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -410,6 +490,7 @@ export default function UploadForm({
           <div className="text-center py-8">
             <div className="text-4xl mb-2">⚠️</div>
             <p className="text-red-600">Failed to load address autocomplete</p>
+            <p className="text-sm text-gray-500 mt-2">Please refresh the page and try again</p>
           </div>
         </div>
       </div>
@@ -458,8 +539,19 @@ export default function UploadForm({
       <div className="max-w-3xl mx-auto">
         {showHeader && (
           <div className="text-center mb-6 sm:mb-8">
+            {/* 🔥 NEW: Show company logo if available */}
+            {company?.logo_url && (
+              <div className="mb-4 flex justify-center">
+                <img 
+                  src={company.logo_url} 
+                  alt={company.name}
+                  className="h-16 w-auto object-contain"
+                />
+              </div>
+            )}
+            
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">
-              {headerTitle}
+              {ctaHeading}
             </h1>
             <p className="text-base sm:text-lg text-gray-600 px-4">
               {headerSubtitle}
@@ -469,8 +561,12 @@ export default function UploadForm({
 
         <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="mb-6 bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">⚠️</span>
+              <div className="flex-1">
+                <p className="font-semibold">Error</p>
+                <p className="text-sm">{error}</p>
+              </div>
             </div>
           )}
 
@@ -484,6 +580,7 @@ export default function UploadForm({
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="John Smith"
+                disabled={uploading}
               />
             </div>
 
@@ -496,6 +593,7 @@ export default function UploadForm({
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="john@example.com"
+                disabled={uploading}
               />
             </div>
 
@@ -509,13 +607,13 @@ export default function UploadForm({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="(555) 123-4567"
                 maxLength={14}
+                disabled={uploading}
               />
               <p className="mt-1 text-xs text-gray-500">
                 {formData.phone.replace(/\D/g, '').length}/10 digits
               </p>
             </div>
 
-            {/* ADDRESS FIELD with Google Places Autocomplete */}
             {addressConfig.show && isLoaded && (
               <>
                 <div>
@@ -533,6 +631,7 @@ export default function UploadForm({
                       onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Start typing your address..."
+                      disabled={uploading}
                     />
                   </Autocomplete>
                   {!addressConfig.required && (
@@ -545,7 +644,6 @@ export default function UploadForm({
                   </p>
                 </div>
 
-                {/* ADDRESS LINE 2 - Unit/Apt/Suite */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Unit / Apt / Suite (Optional)
@@ -556,10 +654,8 @@ export default function UploadForm({
                     onChange={(e) => setFormData({ ...formData, address_line_2: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Apt 4B, Suite 200, Unit 5"
+                    disabled={uploading}
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    🏢 Add apartment, suite, or unit number if applicable
-                  </p>
                 </div>
               </>
             )}
@@ -571,6 +667,7 @@ export default function UploadForm({
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={uploading}
               >
                 <option value="">Select a service...</option>
                 {categories.map((cat) => (
@@ -590,6 +687,7 @@ export default function UploadForm({
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Describe your project..."
+                disabled={uploading}
               />
             </div>
 
@@ -616,7 +714,7 @@ export default function UploadForm({
                   className="hidden"
                   disabled={compressing || uploading}
                 />
-                <label htmlFor="file-upload" className="cursor-pointer block">
+                <label htmlFor="file-upload" className={`${compressing || uploading ? 'cursor-not-allowed' : 'cursor-pointer'} block`}>
                   <div className="text-6xl mb-4">
                     {compressing ? '⏳' : isDragging ? '📥' : '📸'}
                   </div>
@@ -654,7 +752,7 @@ export default function UploadForm({
                           type="button"
                           onClick={() => removeFile(index)}
                           disabled={uploading}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           ✕
                         </button>
@@ -676,9 +774,9 @@ export default function UploadForm({
                   {uploadProgress || 'Uploading...'}
                 </span>
               ) : compressing ? (
-                'Compressing...'
+                'Compressing files...'
               ) : (
-                '📸 Submit Project'
+                ctaButtonText
               )}
             </button>
             

@@ -27,6 +27,7 @@ const getStatusClasses = (color: string) => {
 
 export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus }: ProjectSectionProps) {
   const [saving, setSaving] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // 🔥 NEW: Prevent double-clicks
   
   // EXPANDABLE SECTION STATE
   const [showJobDetails, setShowJobDetails] = useState(false);
@@ -61,32 +62,54 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
 
   const currentStatusConfig = getStatusConfig(lead?.status || statusOptions?.[0]?.value || 'new');
 
-  // Determine if we should show advanced project fields based on status
-  const showAdvancedFields = ['quoted', 'in-progress', 'completed'].includes(status);
+  // 🔥 UPDATED: Show advanced fields for most statuses (not just quoted/in-progress/completed)
+  // This way people can see job details, quotes, payments even after finished
+  const showAdvancedFields = !['new', 'contacted'].includes(status);
 
   // ============================================
-  // STATUS HANDLER
+  // 🔥 STATUS HANDLER - FIXED WITH DEBOUNCING
   // ============================================
   
   const handleStatusChange = async () => {
     const oldStatus = lead?.status || statusOptions?.[0]?.value || 'new';
     
-    if (status === oldStatus) return;
+    // Prevent if already updating
+    if (isUpdatingStatus) {
+      console.log('⚠️ Status update already in progress, ignoring click');
+      return;
+    }
     
+    if (status === oldStatus) {
+      console.log('⚠️ Status unchanged, no update needed');
+      return;
+    }
+    
+    console.log(`🔄 Starting status update: ${oldStatus} → ${status}`);
+    
+    setIsUpdatingStatus(true);
     setSaving(true);
+    
     try {
       const success = await onUpdateStatus(lead.id, status, oldStatus);
       
       if (success) {
-        toast.success('Status updated!');
+        toast.success(`Status updated to ${status}!`);
+        await onRefresh();
       } else {
         toast.error('Failed to update status');
+        setStatus(oldStatus); // Revert on failure
       }
     } catch (error) {
-      console.error('Status update error:', error);
+      console.error('❌ Status update error:', error);
       toast.error('Failed to update status');
+      setStatus(oldStatus); // Revert on error
     } finally {
       setSaving(false);
+      // Keep disabled for 1 second to prevent rapid clicks
+      setTimeout(() => {
+        setIsUpdatingStatus(false);
+        console.log('✅ Status update complete, button re-enabled');
+      }, 1000);
     }
   };
 
@@ -305,7 +328,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
             </div>
           </div>
 
-          {/* Update Status */}
+          {/* 🔥 Update Status - WITH DEBOUNCE PROTECTION */}
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
               Change Status To
@@ -314,7 +337,8 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all text-sm sm:text-base"
+                disabled={isUpdatingStatus}
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {statusOptions?.map((statusOption: any) => (
                   <option key={statusOption.value} value={statusOption.value}>
@@ -325,12 +349,20 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
               
               <button
                 onClick={handleStatusChange}
-                disabled={saving || status === (lead?.status || statusOptions?.[0]?.value)}
+                disabled={isUpdatingStatus || status === (lead?.status || statusOptions?.[0]?.value)}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
               >
-                {saving ? 'Saving...' : 'Update'}
+                {isUpdatingStatus ? '⏳ Updating...' : 'Update'}
               </button>
             </div>
+            
+            {/* Status update indicator */}
+            {isUpdatingStatus && (
+              <p className="text-xs text-orange-600 font-semibold mt-2 flex items-center gap-1">
+                <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
+                Saving status change...
+              </p>
+            )}
           </div>
         </div>
       </div>

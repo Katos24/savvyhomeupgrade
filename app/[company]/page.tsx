@@ -1,6 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { notFound } from 'next/navigation';
 import UploadForm from '@/components/UploadForm';
+import { getCTAConfig } from '@/lib/ctaConfig';
+import type { Category } from '@/lib/formCategories';
 
 type Company = {
   id: number;
@@ -9,12 +11,35 @@ type Company = {
   email: string;
   phone: string;
   business_type?: string;
-  logo_url?: string;
+  logo_url?: string | null;
+  form_categories?: Category[];
+  address_enabled?: boolean | null;
+  address_required?: boolean;
+  cta_heading?: string | null;
+  cta_button_text?: string | null;
+  cta_success_message?: string | null;
 };
 
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
-  const companies = await sql`SELECT * FROM companies WHERE slug = ${slug}`;
+  const companies = await sql`
+    SELECT 
+      id, 
+      name, 
+      slug, 
+      email, 
+      phone, 
+      business_type, 
+      logo_url,
+      form_categories, 
+      address_enabled, 
+      address_required,
+      cta_heading,
+      cta_button_text,
+      cta_success_message
+    FROM companies 
+    WHERE slug = ${slug}
+  `;
   return companies.length > 0 ? (companies[0] as Company) : null;
 }
 
@@ -25,10 +50,13 @@ export default async function CompanyPage({
 }) {
   const { company: companySlug } = await params;
   const company = await getCompany(companySlug);
-  
+
   if (!company) {
     notFound();
   }
+
+  // Get dynamic CTA config
+  const cta = getCTAConfig(company);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -48,13 +76,11 @@ export default async function CompanyPage({
                 {company.name.charAt(0)}
               </div>
             )}
-            
             <div>
               <h1 className="text-2xl font-bold text-blue-600">{company.name}</h1>
               <p className="text-sm text-gray-600">Get your free quote</p>
             </div>
           </div>
-          
           <a 
             href="/" 
             className="text-gray-600 hover:text-gray-900 text-sm transition"
@@ -64,14 +90,20 @@ export default async function CompanyPage({
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Dynamic CTA Heading */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-3">
-            Get Your Free Quote
+            {cta.heading}
           </h1>
           <p className="text-xl opacity-90">
-            Upload photos and we'll get back to you within 24 hours
+            {company.business_type === 'construction' 
+              ? 'Upload photos and details to get a fast, accurate quote'
+              : company.business_type === 'hvac'
+              ? 'Describe your issue and upload photos for faster service'
+              : company.business_type === 'food_services'
+              ? 'Tell us what you need and we\'ll create something special'
+              : 'Upload photos and we\'ll get back to you within 24 hours'}
           </p>
         </div>
       </div>

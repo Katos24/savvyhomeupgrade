@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import { safeJSONParse, parseNotes } from '@/lib/utils';
@@ -30,7 +30,6 @@ export default function LeadModal({
   currentUser,
   statusOptions
 }: LeadModalProps) {
-  const [status, setStatus] = useState(lead.status || statusOptions[0].value);
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -40,6 +39,11 @@ export default function LeadModal({
 
   // Track if there are unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Photo upload states
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoType, setPhotoType] = useState<'before' | 'after'>('before');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Google Maps
   const { isLoaded } = useLoadScript({
@@ -51,27 +55,9 @@ export default function LeadModal({
 
   // Watch for changes to detect unsaved data
   useEffect(() => {
-    const statusChanged = status !== (lead.status || statusOptions[0].value);
     const noteAdded = newNote.trim().length > 0;
-    setHasUnsavedChanges(statusChanged || noteAdded);
-  }, [status, newNote, lead.status, statusOptions]);
-
-  const handleStatusChange = async () => {
-    const oldStatus = lead.status || statusOptions[0].value;
-    
-    if (status === oldStatus) return;
-    
-    setSaving(true);
-    const success = await onUpdateStatus(lead.id, status, oldStatus);
-    setSaving(false);
-    
-    if (success) {
-      toast.success('Status updated!');
-      setStatus(status);
-    } else {
-      toast.error('Failed to update status');
-    }
-  };
+    setHasUnsavedChanges(noteAdded);
+  }, [newNote]);
 
   const getStatusConfig = (statusValue: string) => {
     return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
@@ -107,7 +93,6 @@ export default function LeadModal({
     }
   };
 
-  // Save All Changes function
   const handleSaveAllAndClose = async () => {
     if (!hasUnsavedChanges) {
       onClose();
@@ -115,50 +100,72 @@ export default function LeadModal({
     }
 
     setSaving(true);
-    let allSuccess = true;
 
     try {
-      // Save status change
-      const oldStatus = lead.status || statusOptions[0].value;
-      if (status !== oldStatus) {
-        const success = await onUpdateStatus(lead.id, status, oldStatus);
-        if (!success) allSuccess = false;
-      }
-
-      // Save note
       if (newNote.trim()) {
         const success = await onAddNote(lead.id, newNote);
         if (success) {
           setNewNote('');
+          toast.success('✅ Note saved!');
+          await onRefresh();
+          onClose();
         } else {
-          allSuccess = false;
+          toast.error('Failed to save note');
         }
       }
-
-      if (allSuccess) {
-        toast.success('✅ All changes saved!');
-        await onRefresh();
-        onClose();
-      } else {
-        toast.error('Some changes failed to save');
-      }
     } catch (error) {
-      console.error('Save all error:', error);
+      console.error('Save error:', error);
       toast.error('Failed to save changes');
     } finally {
       setSaving(false);
     }
   };
 
-  const fileUrls = safeJSONParse(lead.file_urls);
-  
-  const images = fileUrls?.filter((f: any) => 
-    f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  ) || [];
-  
-  const videos = fileUrls?.filter((f: any) => 
-    f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
-  ) || [];
+  // Handle photo uploads
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingPhotos(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('leadId', lead.id.toString());
+      formData.append('photoType', photoType);
+      formData.append('userName', currentUser?.name || currentUser?.email || 'Unknown User');
+      
+      for (let i = 0; i < files.length; i++) {
+        formData.append('photos', files[i]);
+      }
+
+      const response = await fetch('/api/leads/upload-photos', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success(`✅ ${files.length} ${photoType} photo${files.length > 1 ? 's' : ''} uploaded!`);
+        await onRefresh();
+      } else {
+        toast.error('Failed to upload photos');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      toast.error('Failed to upload photos');
+    } finally {
+      setUploadingPhotos(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Parse photo URLs from JSON arrays
+  const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
+  const beforePhotos = lead.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
+  const afterPhotos = lead.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
 
   // Helper function to format category for display
   const formatCategory = (category: string) => {
@@ -194,7 +201,7 @@ export default function LeadModal({
     }
   };
 
-  // Get full address (combining address_line_1 and address_line_2)
+  // Get full address
   const getFullAddress = () => {
     if (!lead.address_line_1) return null;
     if (lead.address_line_2) {
@@ -205,13 +212,12 @@ export default function LeadModal({
 
   const fullAddress = getFullAddress();
 
-  // Geocode address when customer info is expanded and we have an address
   const handleToggleCustomerInfo = () => {
     const newState = !showCustomerInfo;
     setShowCustomerInfo(newState);
     
     if (newState && fullAddress && !mapCenter) {
-      geocodeAddress(lead.address_line_1); // Use base address for geocoding, not including unit
+      geocodeAddress(lead.address_line_1);
     }
   };
 
@@ -255,12 +261,11 @@ export default function LeadModal({
               {hasUnsavedChanges && (
                 <p className="text-xs text-orange-600 font-semibold mt-1 flex items-center gap-1">
                   <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
-                  Unsaved changes
+                  Unsaved note
                 </p>
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Discreet Delete Button */}
               {!showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
@@ -300,9 +305,8 @@ export default function LeadModal({
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           
-          {/* ==================== CUSTOMER INFO (EXPANDABLE) ==================== */}
+          {/* Customer Info section */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
-            {/* Header - Always Visible */}
             <button
               onClick={handleToggleCustomerInfo}
               className="w-full flex items-center justify-between p-6 hover:bg-blue-50/50 transition rounded-xl"
@@ -316,10 +320,8 @@ export default function LeadModal({
               </span>
             </button>
 
-            {/* Expandable Content */}
             {showCustomerInfo && (
               <div className="px-6 pb-6 space-y-4">
-                {/* Contact Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Email</span>
@@ -335,7 +337,6 @@ export default function LeadModal({
                   </div>
                 </div>
 
-                {/* Address Section */}
                 {fullAddress && (
                   <div className="bg-white rounded-lg p-4 border border-gray-200">
                     <div className="flex items-start justify-between mb-3">
@@ -343,61 +344,30 @@ export default function LeadModal({
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
                           Service Address
                         </span>
-                        <p className="text-gray-900 font-medium">
-                          {lead.address_line_1}
-                        </p>
-                        {lead.address_line_2 && (
-                          <p className="text-gray-700 text-sm">
-                            {lead.address_line_2}
-                          </p>
-                        )}
-                        {lead.city && (
-                          <p className="text-gray-600 text-sm mt-1">
-                            📍 {lead.city}
-                          </p>
-                        )}
+                        <p className="text-gray-900 font-medium">{lead.address_line_1}</p>
+                        {lead.address_line_2 && <p className="text-gray-700 text-sm">{lead.address_line_2}</p>}
+                        {lead.city && <p className="text-gray-600 text-sm mt-1">📍 {lead.city}</p>}
                       </div>
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-1"
+                        className="ml-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
                       >
                         🗺️ Directions
                       </a>
                     </div>
 
-                    {/* Google Map */}
                     {isLoaded && mapCenter && (
                       <div className="mt-3">
-                        <GoogleMap
-                          mapContainerStyle={mapContainerStyle}
-                          center={mapCenter}
-                          zoom={15}
-                          options={mapOptions}
-                        >
+                        <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15} options={mapOptions}>
                           <Marker position={mapCenter} />
                         </GoogleMap>
-                      </div>
-                    )}
-
-                    {/* Loading state for geocoding */}
-                    {isGeocodingAddress && (
-                      <div className="mt-3 bg-gray-50 rounded-lg p-4 text-center">
-                        <p className="text-gray-600 text-sm">📍 Loading map...</p>
-                      </div>
-                    )}
-
-                    {/* No map available */}
-                    {isLoaded && !mapCenter && !isGeocodingAddress && (
-                      <div className="mt-3 bg-gray-50 rounded-lg p-4 text-center">
-                        <p className="text-gray-500 text-sm">Map unavailable for this address</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Quick Action Buttons */}
                 <div className="pt-2">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
@@ -406,13 +376,13 @@ export default function LeadModal({
                         const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
                         window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition"
                     >
                       📧 Email
                     </button>
                     <button
                       onClick={() => window.location.href = `tel:${lead.phone}`}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition"
                     >
                       📞 Call
                     </button>
@@ -421,7 +391,7 @@ export default function LeadModal({
                         const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
                         window.location.href = `sms:${lead.phone}?body=${message}`;
                       }}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition"
                     >
                       💬 Text
                     </button>
@@ -431,7 +401,6 @@ export default function LeadModal({
             )}
           </div>
 
-          {/* ==================== CATEGORY & DESCRIPTION (OUTSIDE EXPANDABLE) ==================== */}
           {lead.category && (
             <div className="mb-6">
               <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
@@ -447,7 +416,6 @@ export default function LeadModal({
             </div>
           )}
 
-          {/* ==================== PROJECT SECTION (COMPONENT) ==================== */}
           <ProjectSection 
             lead={lead}
             currentUser={currentUser}
@@ -456,7 +424,7 @@ export default function LeadModal({
             onUpdateStatus={onUpdateStatus}
           />
 
-          {/* ==================== ACTIVITY TIMELINE ==================== */}
+          {/* Activity Timeline */}
           <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Activity Timeline ({notesArray.length})</h3>
             
@@ -498,6 +466,8 @@ export default function LeadModal({
                           ? 'bg-green-50 border-green-500'
                           : noteType === 'payment_updated'
                           ? 'bg-orange-50 border-orange-500'
+                          : noteType === 'photo_upload'
+                          ? 'bg-pink-50 border-pink-500'
                           : 'bg-gray-50 border-gray-400'
                       }`}
                     >
@@ -515,32 +485,28 @@ export default function LeadModal({
                                 {note.new_status}
                               </span>
                             </p>
-                            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                              <span className="font-semibold">👤 {userName}</span>
-                              <span>•</span>
-                              <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                            <p className="text-xs text-gray-500 mt-2">
+                              👤 {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric',
                                 hour: 'numeric',
                                 minute: '2-digit'
-                              })}</span>
+                              })}
                             </p>
                           </div>
                         </div>
                       ) : (
                         <div>
                           <p className="text-gray-800 mb-2 whitespace-pre-wrap">{noteText}</p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <span className="font-semibold">👤 {userName}</span>
-                            <span>•</span>
-                            <span>{new Date(timestamp).toLocaleDateString('en-US', {
+                          <p className="text-xs text-gray-500">
+                            👤 {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',
                               hour: 'numeric',
                               minute: '2-digit'
-                            })}</span>
+                            })}
                           </p>
                         </div>
                       )}
@@ -555,12 +521,60 @@ export default function LeadModal({
             )}
           </div>
 
-          {/* ==================== PHOTOS & VIDEOS ==================== */}
-          {images.length > 0 && (
+          {/* 🔥 NEW: Company Photo Upload Section */}
+          <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">📸 Add Job Photos</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Photo Type
+                </label>
+                <select
+                  value={photoType}
+                  onChange={(e) => setPhotoType(e.target.value as 'before' | 'after')}
+                  className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900"
+                >
+                  <option value="before">📸 Before Photos</option>
+                  <option value="after">✨ After Photos</option>
+                </select>
+              </div>
+
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhotos}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 transition cursor-pointer ${
+                    uploadingPhotos ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <span className="text-2xl">{photoType === 'before' ? '📸' : '✨'}</span>
+                  <span className="font-semibold text-gray-700">
+                    {uploadingPhotos ? 'Uploading...' : `Upload ${photoType === 'before' ? 'Before' : 'After'} Photos`}
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Click to select multiple photos • Max 10MB each
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Photos (from form) */}
+          {customerPhotos.length > 0 && (
             <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Photos ({images.length})</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">📷 Customer Photos ({customerPhotos.length})</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                {images.map((file: any, idx: number) => (
+                {customerPhotos.map((file: any, idx: number) => (
                   <a 
                     key={idx}
                     href={file.url} 
@@ -568,28 +582,52 @@ export default function LeadModal({
                     rel="noopener noreferrer"
                     className="block rounded-lg overflow-hidden shadow-md hover:shadow-lg transition"
                   >
-                    <img src={file.url} alt={`Photo ${idx + 1}`} className="w-full h-32 sm:h-48 object-cover" />
+                    <img src={file.url} alt={`Customer photo ${idx + 1}`} className="w-full h-32 sm:h-48 object-cover" />
                   </a>
                 ))}
               </div>
             </div>
           )}
 
-          {videos.length > 0 && (
+          {/* Before Photos */}
+          {beforePhotos.length > 0 && (
             <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Videos ({videos.length})</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">📸 Before Photos ({beforePhotos.length})</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                {videos.map((file: any, idx: number) => (
+                {beforePhotos.map((url: string, idx: number) => (
                   <a 
                     key={idx}
-                    href={file.url} 
+                    href={url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="block"
+                    className="block rounded-lg overflow-hidden shadow-md hover:shadow-lg transition relative group"
                   >
-                    <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex flex-col items-center justify-center border-2 border-blue-200">
-                      <div className="text-6xl mb-2">🎥</div>
-                      <p className="text-sm font-medium text-gray-700">Video {idx + 1}</p>
+                    <img src={url} alt={`Before photo ${idx + 1}`} className="w-full h-32 sm:h-48 object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition">
+                      Before #{idx + 1}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* After Photos */}
+          {afterPhotos.length > 0 && (
+            <div className="bg-white rounded-xl border-2 border-green-200 p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">✨ After Photos ({afterPhotos.length})</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {afterPhotos.map((url: string, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block rounded-lg overflow-hidden shadow-md hover:shadow-lg transition relative group"
+                  >
+                    <img src={url} alt={`After photo ${idx + 1}`} className="w-full h-32 sm:h-48 object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition">
+                      After #{idx + 1}
                     </div>
                   </a>
                 ))}
@@ -598,25 +636,23 @@ export default function LeadModal({
           )}
         </div>
 
-        {/* ==================== FOOTER ACTIONS ==================== */}
+        {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
           >
-            {hasUnsavedChanges ? '✕ Close Without Saving' : 'Close'}
+            Close
           </button>
-          <button
-            onClick={handleSaveAllAndClose}
-            disabled={saving}
-            className={`flex-1 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base ${
-              hasUnsavedChanges 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            } disabled:bg-gray-400`}
-          >
-            {saving ? '💾 Saving...' : hasUnsavedChanges ? '💾 Save All & Close' : '✅ Save & Close'}
-          </button>
+          {hasUnsavedChanges && (
+            <button
+              onClick={handleSaveAllAndClose}
+              disabled={saving}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:bg-gray-400"
+            >
+              {saving ? '💾 Saving Note...' : '💾 Save Note'}
+            </button>
+          )}
         </div>
 
       </div>

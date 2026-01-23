@@ -41,6 +41,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const statusOptions = company.status_options && company.status_options.length > 0 
     ? company.status_options 
@@ -53,9 +54,16 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   async function fetchLeads() {
     try {
-      const response = await fetch(`/api/company/${company.slug}/leads`);
+      const response = await fetch(`/api/company/${company.slug}/leads`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
       setAllLeads((data.leads || []).filter((l: any) => !l.deleted));
+      setRefreshKey(prev => prev + 1); // Force re-render
     } catch (error) {
       console.error('Failed to fetch leads:', error);
     } finally {
@@ -82,6 +90,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   async function updateLeadStatus(id: number, status: string, oldStatus: string) {
     try {
+      console.log('🔄 updateLeadStatus called:', { id, status, oldStatus });
+      
       const response = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,21 +106,43 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       });
       
       const result = await response.json();
+      console.log('📥 Update response:', result);
       
       if (response.ok && result.success) {
-        await fetchLeads();
-        const updatedResponse = await fetch(`/api/company/${company.slug}/leads`);
-        const updatedData = await updatedResponse.json();
-        const updatedLead = updatedData.leads.find((l: any) => l.id === id);
-        if (updatedLead && selectedLead?.id === id) {
-          setSelectedLead(updatedLead);
+        console.log('✅ Update successful, fetching fresh data...');
+        
+        // Fetch fresh data from API
+        const freshResponse = await fetch(`/api/company/${company.slug}/leads`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        const freshData = await freshResponse.json();
+        const freshLeads = (freshData.leads || []).filter((l: any) => !l.deleted);
+        
+        // Update state
+        setAllLeads(freshLeads);
+        setRefreshKey(prev => prev + 1);
+        
+        // Update selected lead if modal is open
+        if (selectedLead?.id === id) {
+          const updatedLead = freshLeads.find((l: any) => l.id === id);
+          if (updatedLead) {
+            console.log('🔄 Updating modal with fresh lead data');
+            setSelectedLead(updatedLead);
+          }
         }
+        
+        console.log('✅ Status update complete');
         return true;
       } else {
+        console.error('❌ Update failed:', result);
         return false;
       }
     } catch (error) {
-      console.error('Update status error:', error);
+      console.error('❌ Update status error:', error);
       return false;
     }
   }
@@ -263,19 +295,19 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     if (leads.length === 0) return null;
     
     return (
-      <div className="mb-8">
+      <div className="mb-8" key={`${title}-${currentView}-${refreshKey}`}>
         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
           {title}
           <span className="text-white/60 text-base">({leads.length})</span>
         </h3>
         
         {/* Mobile: Always Cards */}
-        <div className="lg:hidden">
+        <div className="lg:hidden" key={`${title}-mobile-${refreshKey}`}>
           <CardsView leads={leads} onSelectLead={setSelectedLead} />
         </div>
         
         {/* Desktop: Switchable Cards/Table */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:block" key={`${title}-desktop-${currentView}-${refreshKey}`}>
           {currentView === 'cards' ? (
             <CardsView leads={leads} onSelectLead={setSelectedLead} />
           ) : (
