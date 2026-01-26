@@ -129,6 +129,9 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
               >
                 Status <SortIcon columnKey="status" />
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('media')}
@@ -150,6 +153,7 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
             {sortedLeads.map((lead) => {
               const fileUrls = safeJSONParse(lead.file_urls);
               const leadStatus = lead.status || 'new';
+              const isProject = !!lead.project_id;
               
               const images = fileUrls?.filter((f: any) => 
                 f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
@@ -159,10 +163,13 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                 f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
               ) || [];
 
+              // Row background color based on lead vs project
+              const rowBgColor = isProject ? 'bg-emerald-50 hover:bg-emerald-100' : 'hover:bg-blue-50';
+
               return (
                 <tr 
                   key={lead.id} 
-                  className="hover:bg-gray-50 cursor-pointer transition"
+                  className={`${rowBgColor} cursor-pointer transition`}
                   onClick={() => onSelectLead(lead)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -181,6 +188,17 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(leadStatus)}`}>
                       {leadStatus}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {isProject ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                        🚀 Project
+                      </span>
+                    ) : (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        📧 Lead
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {images.length > 0 && <span>📸 {images.length}</span>}

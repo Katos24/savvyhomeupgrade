@@ -19,30 +19,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch existing lead data
-    const leadResult = await sql`
-      SELECT before_photos, after_photos, notes 
-      FROM leads 
-      WHERE id = ${leadId}
+    // 🔥 Check if lead has a project
+    const leadCheck = await sql`
+      SELECT project_id FROM leads WHERE id = ${leadId}
     `;
 
-    if (!leadResult || leadResult.length === 0) {
+    if (!leadCheck || leadCheck.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Lead not found' },
         { status: 404 }
       );
     }
 
-    const lead = leadResult[0];
+    const projectId = leadCheck[0]?.project_id;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { success: false, error: 'No project exists. Please convert to project first.' },
+        { status: 400 }
+      );
+    }
+
+    // 🔥 Fetch from PROJECTS table
+    const projectResult = await sql`
+      SELECT before_photos, after_photos, notes 
+      FROM projects 
+      WHERE id = ${projectId}
+    `;
+
+    if (!projectResult || projectResult.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    const project = projectResult[0];
     const uploadedUrls: string[] = [];
-    
+
     // Upload each photo to Vercel Blob
     for (const photo of photos) {
       try {
         const blob = await put(`leads/${leadId}/${Date.now()}-${photo.name}`, photo, {
           access: 'public',
         });
-        
         uploadedUrls.push(blob.url);
       } catch (uploadError) {
         console.error('Upload error:', uploadError);
@@ -60,9 +80,8 @@ export async function POST(request: NextRequest) {
     // Get existing photos from the correct column
     const columnName = photoType === 'before' ? 'before_photos' : 'after_photos';
     let existingPhotos: string[] = [];
-    
     try {
-      const existingData = lead[columnName];
+      const existingData = project[columnName];
       if (existingData) {
         existingPhotos = typeof existingData === 'string' 
           ? JSON.parse(existingData) 
@@ -75,12 +94,12 @@ export async function POST(request: NextRequest) {
     // Merge with new photos
     const updatedPhotos = [...existingPhotos, ...uploadedUrls];
 
-    // Parse existing notes
+    // Parse existing notes from PROJECT
     let notesArray = [];
     try {
-      notesArray = typeof lead.notes === 'string' 
-        ? JSON.parse(lead.notes) 
-        : (Array.isArray(lead.notes) ? lead.notes : []);
+      notesArray = typeof project.notes === 'string' 
+        ? JSON.parse(project.notes) 
+        : (Array.isArray(project.notes) ? project.notes : []);
     } catch {
       notesArray = [];
     }
@@ -92,27 +111,26 @@ export async function POST(request: NextRequest) {
       user_name: userName,
       timestamp: new Date().toISOString()
     };
-
     notesArray.push(newNote);
 
-    // Update database with Neon SQL
+    // 🔥 Update PROJECTS table
     if (photoType === 'before') {
       await sql`
-        UPDATE leads 
+        UPDATE projects 
         SET 
           before_photos = ${JSON.stringify(updatedPhotos)},
           notes = ${JSON.stringify(notesArray)},
           updated_at = NOW()
-        WHERE id = ${leadId}
+        WHERE id = ${projectId}
       `;
     } else {
       await sql`
-        UPDATE leads 
+        UPDATE projects 
         SET 
           after_photos = ${JSON.stringify(updatedPhotos)},
           notes = ${JSON.stringify(notesArray)},
           updated_at = NOW()
-        WHERE id = ${leadId}
+        WHERE id = ${projectId}
       `;
     }
 
@@ -122,7 +140,6 @@ export async function POST(request: NextRequest) {
       photoType,
       urls: uploadedUrls
     });
-
   } catch (error) {
     console.error('Photo upload error:', error);
     return NextResponse.json(
