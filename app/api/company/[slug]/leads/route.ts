@@ -5,6 +5,12 @@ type Props = {
   params: Promise<{ slug: string }>
 };
 
+// Flexible note type so TS stays happy even if notes vary in shape
+type Note = {
+  timestamp?: string | number;
+  [key: string]: any;
+};
+
 export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
@@ -14,12 +20,15 @@ export async function GET(request: Request, { params }: Props) {
     const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
     
     if (companies.length === 0) {
-      return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Company not found' },
+        { status: 404 }
+      );
     }
 
     const companyId = companies[0].id;
 
-    // 🔥 LEFT JOIN with projects to get scheduled_date, job_status, etc.
+    // LEFT JOIN with projects to get scheduled_date, job_status, etc.
     const leads = await sql`
       SELECT 
         l.*,
@@ -52,11 +61,13 @@ export async function GET(request: Request, { params }: Props) {
 
     // Merge lead notes and project notes
     const processedLeads = leads.map(lead => {
-      let combinedNotes = [];
+      let combinedNotes: Note[] = [];
       
       // Parse lead notes
       try {
-        const leadNotes = lead.notes ? (typeof lead.notes === 'string' ? JSON.parse(lead.notes) : lead.notes) : [];
+        const leadNotes = lead.notes
+          ? (typeof lead.notes === 'string' ? JSON.parse(lead.notes) : lead.notes)
+          : [];
         combinedNotes = [...leadNotes];
       } catch (e) {
         console.warn('Failed to parse lead notes:', e);
@@ -65,7 +76,9 @@ export async function GET(request: Request, { params }: Props) {
       // Parse and merge project notes
       if (lead.project_notes) {
         try {
-          const projectNotes = typeof lead.project_notes === 'string' ? JSON.parse(lead.project_notes) : lead.project_notes;
+          const projectNotes = typeof lead.project_notes === 'string'
+            ? JSON.parse(lead.project_notes)
+            : lead.project_notes;
           combinedNotes = [...combinedNotes, ...projectNotes];
         } catch (e) {
           console.warn('Failed to parse project notes:', e);
@@ -89,8 +102,12 @@ export async function GET(request: Request, { params }: Props) {
     });
 
     return NextResponse.json({ success: true, leads: processedLeads });
+
   } catch (error) {
     console.error('Error fetching leads:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch leads' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch leads' },
+      { status: 500 }
+    );
   }
 }
