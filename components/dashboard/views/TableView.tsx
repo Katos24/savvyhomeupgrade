@@ -49,6 +49,10 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
           aValue = a.category?.toLowerCase() || '';
           bValue = b.category?.toLowerCase() || '';
           break;
+        case 'city':
+          aValue = a.city?.toLowerCase() || '';
+          bValue = b.city?.toLowerCase() || '';
+          break;
         case 'status':
           const statusOrder = { 
             'new': 0, 
@@ -154,6 +158,12 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
               </th>
               <th 
                 className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('city')}
+              >
+                City <SortIcon columnKey="city" />
+              </th>
+              <th 
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('category')}
               >
                 Category <SortIcon columnKey="category" />
@@ -239,14 +249,29 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                     <div className="text-xs text-gray-500">{lead.email}</div>
                   </td>
 
-                  {/* Address */}
+                  {/* Address - Street only */}
                   <td className="px-4 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {lead.address_line_1 || '—'}
-                    </div>
-                    {lead.city && (
-                      <div className="text-xs text-gray-500">{lead.city}</div>
+                    {lead.address_line_1 ? (
+                      <div className="text-sm max-w-xs">
+                        <div className="text-gray-900 truncate font-medium">
+                          {lead.address_line_1}
+                        </div>
+                        {lead.address_line_2 && (
+                          <div className="text-gray-600 text-xs truncate">
+                            {lead.address_line_2}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
                     )}
+                  </td>
+
+                  {/* City - Separate column */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {lead.city || <span className="text-gray-400">—</span>}
+                    </div>
                   </td>
 
                   {/* Category */}

@@ -247,10 +247,10 @@ export default function TeamAdminPage({
             <div key={member.id} className="card relative">
               {/* Member Avatar */}
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mb-3">
-                {member.name.charAt(0).toUpperCase()}
+          {member.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
 
-              <h3 className="text-xl font-bold mb-1">{member.name}</h3>
+<h3 className="text-xl font-bold mb-1">{member.name || 'Unknown User'}</h3>
               <p className="text-gray-600 text-sm mb-2">{member.email}</p>
               
               {/* Role Badge */}

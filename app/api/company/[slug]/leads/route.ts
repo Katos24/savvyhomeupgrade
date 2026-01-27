@@ -5,19 +5,13 @@ type Props = {
   params: Promise<{ slug: string }>
 };
 
-// Flexible note type so TS stays happy even if notes vary in shape
-type Note = {
-  timestamp?: string | number;
-  [key: string]: any;
-};
-
 export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
     const sql = neon(process.env.DATABASE_URL!);
 
     // Get company ID from slug
-    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
+    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`; // 🔥 FIXED: sq → sql
     if (companies.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Company not found' },
@@ -27,7 +21,7 @@ export async function GET(request: Request, { params }: Props) {
 
     const companyId = companies[0].id;
 
-    // LEFT JOIN with projects to get scheduled_date, job_status, etc.
+    // LEFT JOIN with projects to get all project data
     const leads = await sql`
       SELECT 
         l.*,
@@ -58,34 +52,24 @@ export async function GET(request: Request, { params }: Props) {
       ORDER BY l.created_at DESC
     `;
 
-    // Merge lead notes and project notes
+    // 🔥 Use project_notes ONLY - no more merging!
     const processedLeads = leads.map(lead => {
-      let combinedNotes: Note[] = [];
-
-      // Parse lead notes
-      try {
-        const leadNotes = lead.notes
-          ? (typeof lead.notes === 'string' ? JSON.parse(lead.notes) : lead.notes)
-          : [];
-        combinedNotes = [...leadNotes];
-      } catch (e) {
-        console.warn('Failed to parse lead notes:', e);
-      }
-
-      // Parse and merge project notes
+      let notes = [];
+      
+      // Only use project notes if they exist
       if (lead.project_notes) {
         try {
-          const projectNotes = typeof lead.project_notes === 'string'
-            ? JSON.parse(lead.project_notes)
+          notes = typeof lead.project_notes === 'string' 
+            ? JSON.parse(lead.project_notes) 
             : lead.project_notes;
-          combinedNotes = [...combinedNotes, ...projectNotes];
         } catch (e) {
           console.warn('Failed to parse project notes:', e);
+          notes = [];
         }
       }
 
-      // Sort notes by timestamp
-      combinedNotes.sort((a, b) => {
+      // Sort notes by timestamp (oldest first)
+      notes.sort((a: any, b: any) => {
         const timeA = new Date(a.timestamp || 0).getTime();
         const timeB = new Date(b.timestamp || 0).getTime();
         return timeA - timeB;
@@ -96,7 +80,7 @@ export async function GET(request: Request, { params }: Props) {
 
       return {
         ...leadWithoutProjectNotes,
-        notes: JSON.stringify(combinedNotes)
+        notes: JSON.stringify(notes)
       };
     });
 

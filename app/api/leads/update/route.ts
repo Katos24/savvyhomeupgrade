@@ -28,16 +28,74 @@ export async function POST(request: Request) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
-    // ==================== UPDATE STATUS ====================
-    if (action === 'update_status') {
-      const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
+    // 🔥 Helper function to add activity to projects.notes
+    const addActivityToProject = async (leadId: number, activityEntry: any) => {
+      const lead = await sql`SELECT project_id FROM leads WHERE id = ${leadId}`;
+      
+      if (!lead[0]?.project_id) {
+        console.warn('⚠️ No project found for lead', leadId);
+        return;
+      }
+
+      const projectId = lead[0].project_id;
+      console.log('📌 Project ID:', projectId);
+
+      // Get existing notes from projects table
+      const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
+      
+      console.log('📖 Raw notes from DB:', project[0]?.notes);
+      console.log('📖 Notes type:', typeof project[0]?.notes);
+      
       let existingNotes = [];
       try {
-        existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
-      } catch {
+        const rawNotes = project[0]?.notes;
+        
+        // 🔥 Handle both string and already-parsed object
+        if (!rawNotes) {
+          existingNotes = [];
+        } else if (typeof rawNotes === 'string') {
+          existingNotes = JSON.parse(rawNotes);
+        } else if (Array.isArray(rawNotes)) {
+          existingNotes = rawNotes;
+        } else {
+          console.warn('⚠️ Unexpected notes format:', typeof rawNotes);
+          existingNotes = [];
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse existing notes:', e);
         existingNotes = [];
       }
 
+      console.log('📝 Existing notes count:', existingNotes.length);
+      console.log('➕ Adding new entry:', activityEntry.type);
+      
+      existingNotes.push(activityEntry);
+      
+      console.log('📊 Total notes after push:', existingNotes.length);
+
+      // Update projects.notes
+      await sql`
+        UPDATE projects 
+        SET notes = ${JSON.stringify(existingNotes)},
+            updated_at = NOW()
+        WHERE id = ${projectId}
+      `;
+      
+      console.log('✅ Activity added to project notes');
+    };
+
+    // ==================== UPDATE STATUS ====================
+    if (action === 'update_status') {
+      console.log('🔄 Updating status');
+      
+      await sql`
+        UPDATE leads 
+        SET status = ${status},
+            updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      // 🔥 Add to projects.notes (if project exists)
       const statusChangeEntry = {
         type: 'status_change',
         old_status: old_status,
@@ -47,15 +105,7 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString()
       };
 
-      existingNotes.push(statusChangeEntry);
-
-      await sql`
-        UPDATE leads 
-        SET status = ${status},
-            notes = ${JSON.stringify(existingNotes)},
-            updated_at = NOW()
-        WHERE id = ${id}
-      `;
+      await addActivityToProject(id, statusChangeEntry);
 
       console.log('✅ Status updated');
       return NextResponse.json({ success: true });
@@ -63,78 +113,29 @@ export async function POST(request: Request) {
     
     // ==================== ADD NOTE ====================
     else if (action === 'add_note') {
-      // Check if lead has a project
-      const leadCheck = await sql`
-        SELECT project_id FROM leads WHERE id = ${id}
-      `;
-      const projectId = leadCheck[0]?.project_id;
+      console.log('📝 Adding note');
+      
+      // 🔥 Always add to projects.notes (if project exists)
+      const newNote = {
+        type: 'note',
+        text: notes,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
 
-      if (projectId) {
-        // Add note to project
-        const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
-        let existingNotes = [];
-        try {
-          existingNotes = project[0]?.notes ? JSON.parse(project[0].notes) : [];
-        } catch {
-          existingNotes = [];
-        }
-
-        const newNote = {
-          type: 'note',
-          text: notes,
-          user_name: user_name,
-          user_email: user_email,
-          timestamp: new Date().toISOString()
-        };
-
-        existingNotes.push(newNote);
-
-        await sql`
-          UPDATE projects 
-          SET notes = ${JSON.stringify(existingNotes)},
-              updated_at = NOW()
-          WHERE id = ${projectId}
-        `;
-      } else {
-        // Add note to lead
-        const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
-        let existingNotes = [];
-        try {
-          existingNotes = lead[0]?.notes ? JSON.parse(lead[0].notes) : [];
-        } catch {
-          existingNotes = [];
-        }
-
-        const newNote = {
-          type: 'note',
-          text: notes,
-          user_name: user_name,
-          user_email: user_email,
-          timestamp: new Date().toISOString()
-        };
-
-        existingNotes.push(newNote);
-
-        await sql`
-          UPDATE leads 
-          SET notes = ${JSON.stringify(existingNotes)},
-              updated_at = NOW()
-          WHERE id = ${id}
-        `;
-      }
+      await addActivityToProject(id, newNote);
 
       console.log('✅ Note added');
       return NextResponse.json({ success: true });
     }
 
-    // ==================== 🆕 CREATE PROJECT (EXPLICIT) - WITH FULL DATA MIGRATION ====================
+    // ==================== CREATE PROJECT ====================
     else if (action === 'create_project') {
-      console.log('🎯 EXPLICIT PROJECT CREATION');
+      console.log('🎯 Creating project');
       
-      // Get complete lead data including description, category, photos, notes
-      const leadCheck = await sql`
-        SELECT * FROM leads WHERE id = ${id}
-      `;
+      // Get complete lead data
+      const leadCheck = await sql`SELECT * FROM leads WHERE id = ${id}`;
 
       if (!leadCheck[0]) {
         throw new Error('Lead not found');
@@ -159,7 +160,7 @@ export async function POST(request: Request) {
         leadNotes = [];
       }
 
-      // Create comprehensive project with ALL lead data
+      // Create project with lead data (including address_line_2)
       const projectResult = await sql`
         INSERT INTO projects (
           lead_id,
@@ -167,6 +168,7 @@ export async function POST(request: Request) {
           customer_email,
           customer_phone,
           service_address,
+          address_line_2,
           city,
           status,
           company_id,
@@ -181,6 +183,7 @@ export async function POST(request: Request) {
           ${leadData.email},
           ${leadData.phone},
           ${leadData.address_line_1 || null},
+          ${leadData.address_line_2 || null},
           ${leadData.city || null},
           'scheduled',
           ${leadData.company_id || null},
@@ -205,21 +208,6 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      // Add conversion note to lead notes
-      leadNotes.push({
-        type: 'project_created',
-        text: `✅ Converted to Project #${projectId}`,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      });
-
-      await sql`
-        UPDATE leads 
-        SET notes = ${JSON.stringify(leadNotes)}
-        WHERE id = ${id}
-      `;
-
       // Add creation note to project
       const projectNotes = [...leadNotes, {
         type: 'project_created',
@@ -235,7 +223,7 @@ export async function POST(request: Request) {
         WHERE id = ${projectId}
       `;
 
-      console.log(`✅ Created project ${projectId} for lead ${id} with full data migration`);
+      console.log(`✅ Created project ${projectId} for lead ${id}`);
       
       return NextResponse.json({ 
         success: true, 
@@ -248,7 +236,6 @@ export async function POST(request: Request) {
     else if (action === 'update_project') {
       console.log('📋 Updating project');
       
-      // Check for existing project
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
 
@@ -258,27 +245,8 @@ export async function POST(request: Request) {
           error: 'No project exists for this lead. Please create a project first.' 
         }, { status: 400 });
       }
-      
-      const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
-      let existingNotes = [];
-      try {
-        existingNotes = project[0]?.notes ? JSON.parse(project[0].notes) : [];
-      } catch {
-        existingNotes = [];
-      }
 
-      let noteText = 'Project updated';
-      if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
-      if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
-
-      existingNotes.push({
-        type: 'project_updated',
-        text: noteText,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      });
-
+      // Update project fields
       await sql`
         UPDATE projects 
         SET 
@@ -287,10 +255,24 @@ export async function POST(request: Request) {
           assigned_to = ${assigned_to || null},
           estimated_hours = ${estimated_hours || null},
           actual_hours = ${actual_hours || null},
-          notes = ${JSON.stringify(existingNotes)},
           updated_at = NOW()
         WHERE id = ${projectId}
       `;
+
+      // 🔥 Add activity log
+      let noteText = 'Project updated';
+      if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
+      if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
+
+      const projectUpdateEntry = {
+        type: 'project_updated',
+        text: noteText,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      await addActivityToProject(id, projectUpdateEntry);
 
       console.log('✅ Project updated');
       return NextResponse.json({ success: true });
@@ -309,32 +291,27 @@ export async function POST(request: Request) {
           error: 'No project exists. Please create a project first.' 
         }, { status: 400 });
       }
-      
-      const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
-      let existingNotes = [];
-      try {
-        existingNotes = project[0]?.notes ? JSON.parse(project[0].notes) : [];
-      } catch {
-        existingNotes = [];
-      }
 
-      existingNotes.push({
-        type: 'quote_created',
-        text: `Quote created - Total: $${quote_total}`,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      });
-
+      // Save quote
       await sql`
         UPDATE projects 
         SET 
           quote_data = ${JSON.stringify(quote_data)},
           quote_total = ${quote_total},
-          notes = ${JSON.stringify(existingNotes)},
           updated_at = NOW()
         WHERE id = ${projectId}
       `;
+
+      // 🔥 Add activity log
+      const quoteEntry = {
+        type: 'quote_created',
+        text: `Quote created - Total: $${quote_total}`,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      await addActivityToProject(id, quoteEntry);
 
       console.log('✅ Quote saved');
       return NextResponse.json({ success: true });
@@ -353,37 +330,32 @@ export async function POST(request: Request) {
           error: 'No project exists. Please create a project first.' 
         }, { status: 400 });
       }
-      
-      const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
-      let existingNotes = [];
-      try {
-        existingNotes = project[0]?.notes ? JSON.parse(project[0].notes) : [];
-      } catch {
-        existingNotes = [];
-      }
 
-      existingNotes.push({
+      // Mark quote as sent
+      await sql`
+        UPDATE projects 
+        SET 
+          quote_sent_at = NOW(),
+          updated_at = NOW()
+        WHERE id = ${projectId}
+      `;
+
+      // 🔥 Add activity log
+      const quoteSentEntry = {
         type: 'quote_sent',
         text: 'Quote sent to customer',
         user_name: user_name,
         user_email: user_email,
         timestamp: new Date().toISOString()
-      });
+      };
 
-      await sql`
-        UPDATE projects 
-        SET 
-          quote_sent_at = NOW(),
-          notes = ${JSON.stringify(existingNotes)},
-          updated_at = NOW()
-        WHERE id = ${projectId}
-      `;
+      await addActivityToProject(id, quoteSentEntry);
 
       console.log('✅ Quote sent');
       return NextResponse.json({ success: true });
     }
 
-    // ==================== UPDATE PAYMENT ====================
+    // ==================== UPDATE PAYMENT 🔥 ====================
     else if (action === 'update_payment') {
       console.log('💳 Updating payment');
       
@@ -396,35 +368,30 @@ export async function POST(request: Request) {
           error: 'No project exists. Please create a project first.' 
         }, { status: 400 });
       }
-      
-      const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
-      let existingNotes = [];
-      try {
-        existingNotes = project[0]?.notes ? JSON.parse(project[0].notes) : [];
-      } catch {
-        existingNotes = [];
-      }
-
-      existingNotes.push({
-        type: 'payment_updated',
-        text: `Payment status: ${payment_status}${payment_amount ? ` - Amount: $${payment_amount}` : ''}`,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      });
 
       const paidAt = payment_status === 'paid' ? new Date().toISOString() : null;
 
+      // Update payment
       await sql`
         UPDATE projects 
         SET 
           payment_status = ${payment_status},
           payment_amount = ${payment_amount || null},
           paid_at = ${paidAt},
-          notes = ${JSON.stringify(existingNotes)},
           updated_at = NOW()
         WHERE id = ${projectId}
       `;
+
+      // 🔥 Add activity log (THIS WAS MISSING IN YOUR VERSION)
+      const paymentEntry = {
+        type: 'payment_updated',
+        text: `Payment status: ${payment_status}${payment_amount ? ` - Amount: $${payment_amount}` : ''}`,
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      await addActivityToProject(id, paymentEntry);
 
       console.log('✅ Payment updated');
       return NextResponse.json({ success: true });
