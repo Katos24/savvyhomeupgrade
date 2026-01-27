@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token');
   const pathname = request.nextUrl.pathname;
-
+  
   console.log('Middleware checking:', { pathname, hasToken: !!token });
 
   // Public routes that don't need auth
@@ -16,10 +16,11 @@ export function middleware(request: NextRequest) {
 
   // Check if it's an API route
   const isApiRoute = pathname.startsWith('/api/');
-  
-  // Public API routes (login, etc.)
+
+  // Public API routes (login, logout, etc.)
   const publicApiRoutes = [
     '/api/auth/login',
+    '/api/auth/logout',  // 🔥 IMPORTANT: Allow logout without auth check
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
   ];
@@ -55,11 +56,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If logged in and trying to access login page, redirect to dashboard
-  if (pathname === '/login' && token) {
-    console.log('Has token on login page, redirecting to dashboard');
-    return NextResponse.redirect(new URL('/dashboard/contractor', request.url));
-  }
+  // 🔥 REMOVED: Don't redirect logged-in users away from login
+  // This allows the logout button to work properly
+  // Users can manually navigate to /login if they want
 
   return NextResponse.next();
 }

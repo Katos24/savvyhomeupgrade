@@ -18,7 +18,6 @@ export async function GET(request: Request, { params }: Props) {
 
     // Get company ID from slug
     const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
-    
     if (companies.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Company not found' },
@@ -62,7 +61,7 @@ export async function GET(request: Request, { params }: Props) {
     // Merge lead notes and project notes
     const processedLeads = leads.map(lead => {
       let combinedNotes: Note[] = [];
-      
+
       // Parse lead notes
       try {
         const leadNotes = lead.notes
@@ -102,7 +101,6 @@ export async function GET(request: Request, { params }: Props) {
     });
 
     return NextResponse.json({ success: true, leads: processedLeads });
-
   } catch (error) {
     console.error('Error fetching leads:', error);
     return NextResponse.json(

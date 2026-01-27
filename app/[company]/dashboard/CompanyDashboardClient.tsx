@@ -26,8 +26,11 @@ const DEFAULT_STATUSES: StatusOption[] = [
   { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
   { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
   { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
+  { value: 'scheduled', label: 'Scheduled', color: 'blue', emoji: '📅' },
   { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
   { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
+  { value: 'cancelled', label: 'Cancelled', color: 'red', emoji: '❌' },
+  { value: 'lost', label: 'Lost', color: 'gray', emoji: '🗑️' },
 ];
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
@@ -63,7 +66,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       });
       const data = await response.json();
       setAllLeads((data.leads || []).filter((l: any) => !l.deleted));
-      setRefreshKey(prev => prev + 1); // Force re-render
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to fetch leads:', error);
     } finally {
@@ -111,7 +114,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       if (response.ok && result.success) {
         console.log('✅ Update successful, fetching fresh data...');
         
-        // Fetch fresh data from API
         const freshResponse = await fetch(`/api/company/${company.slug}/leads`, {
           cache: 'no-store',
           headers: {
@@ -122,11 +124,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         const freshData = await freshResponse.json();
         const freshLeads = (freshData.leads || []).filter((l: any) => !l.deleted);
         
-        // Update state
         setAllLeads(freshLeads);
         setRefreshKey(prev => prev + 1);
         
-        // Update selected lead if modal is open
         if (selectedLead?.id === id) {
           const updatedLead = freshLeads.find((l: any) => l.id === id);
           if (updatedLead) {
@@ -266,7 +266,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   // Sort by date (newest first)
   filteredLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  // Group leads by time
+  // 🔥 Group leads by time for CARDS view only
   const now = new Date();
   const todayStart = new Date(now.setHours(0, 0, 0, 0));
   const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
@@ -291,29 +291,17 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     return acc;
   }, {} as Record<string, number>);
 
-  const renderLeadGroup = (leads: any[], title: string) => {
+  // 🔥 Render function for CARDS - with grouping
+  const renderLeadGroupCards = (leads: any[], title: string) => {
     if (leads.length === 0) return null;
     
     return (
-      <div className="mb-8" key={`${title}-${currentView}-${refreshKey}`}>
+      <div className="mb-8" key={`${title}-cards-${refreshKey}`}>
         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
           {title}
           <span className="text-white/60 text-base">({leads.length})</span>
         </h3>
-        
-        {/* Mobile: Always Cards */}
-        <div className="lg:hidden" key={`${title}-mobile-${refreshKey}`}>
-          <CardsView leads={leads} onSelectLead={setSelectedLead} />
-        </div>
-        
-        {/* Desktop: Switchable Cards/Table */}
-        <div className="hidden lg:block" key={`${title}-desktop-${currentView}-${refreshKey}`}>
-          {currentView === 'cards' ? (
-            <CardsView leads={leads} onSelectLead={setSelectedLead} />
-          ) : (
-            <TableView leads={leads} onSelectLead={setSelectedLead} />
-          )}
-        </div>
+        <CardsView leads={leads} onSelectLead={setSelectedLead} />
       </div>
     );
   };
@@ -323,10 +311,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       <Toaster position="top-right" />
       <div className={styles.innerContainer}>
         
-        {/* SIMPLIFIED HEADER */}
+        {/* HEADER */}
         <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Left: Logo + Company Name */}
             <div className="flex items-center gap-3">
               {company.logo_url ? (
                 <img 
@@ -342,7 +329,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               <h1 className="text-xl sm:text-2xl font-bold text-white">{company.name}</h1>
             </div>
             
-            {/* Right: Create Button + User Menu */}
             {currentUser && (
               <div className="flex items-center gap-3">
                 <a
@@ -365,7 +351,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-        {/* SEARCH BAR - PROMINENT */}
+        {/* SEARCH BAR */}
         <div className="mb-6">
           <div className="relative">
             <input
@@ -386,18 +372,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-        {/* VIEW TABS + VIEW SWITCHER + QUICK FILTERS */}
+        {/* VIEW TABS + FILTERS */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6">
-          {/* Left: View Switcher */}
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur rounded-lg border border-white/20">
               <span className="text-white/70 text-sm font-medium">View:</span>
               <div className="flex gap-1">
                 <button
-                  onClick={() => {
-                    console.log('Switching to cards view');
-                    setCurrentView('cards');
-                  }}
+                  onClick={() => setCurrentView('cards')}
                   className={`px-3 py-1.5 rounded font-semibold transition text-sm ${
                     currentView === 'cards'
                       ? 'bg-white text-gray-900'
@@ -407,10 +389,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   ⬜ Cards
                 </button>
                 <button
-                  onClick={() => {
-                    console.log('Switching to table view');
-                    setCurrentView('table');
-                  }}
+                  onClick={() => setCurrentView('table')}
                   className={`px-3 py-1.5 rounded font-semibold transition text-sm ${
                     currentView === 'table'
                       ? 'bg-white text-gray-900'
@@ -422,7 +401,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               </div>
             </div>
 
-            {/* Calendar Link */}
             <a
               href={`/${company.slug}/dashboard/calendar`}
               className="px-4 sm:px-6 py-3 rounded-lg font-semibold transition bg-white/20 text-white hover:bg-white/30 border border-white/30 flex items-center gap-2"
@@ -431,9 +409,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </a>
           </div>
 
-          {/* Right: Quick Filters */}
           <div className="flex flex-wrap gap-2">
-            {/* Time Filter */}
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
@@ -445,7 +421,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               <option value="all" className="text-gray-900">📅 All Time</option>
             </select>
 
-            {/* Status Filter */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -459,7 +434,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               ))}
             </select>
 
-            {/* More Filters */}
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur text-white border border-white/30 font-semibold transition flex items-center gap-2"
@@ -470,7 +444,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-        {/* ADVANCED FILTERS (COLLAPSIBLE) */}
+        {/* ADVANCED FILTERS */}
         {showAdvancedFilters && (
           <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
             <h3 className="text-lg font-bold text-white mb-4">Advanced Filters</h3>
@@ -530,10 +504,50 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
           ) : (
             <>
-              {renderLeadGroup(todayLeads, '🌟 Today')}
-              {renderLeadGroup(yesterdayLeads, '📅 Yesterday')}
-              {renderLeadGroup(thisWeekLeads, '📆 Earlier This Week')}
-              {renderLeadGroup(olderLeads, '📂 Older')}
+              {/* 🔥 CARDS VIEW - Show grouped by time */}
+              {currentView === 'cards' && (
+                <div className="lg:block">
+                  {renderLeadGroupCards(todayLeads, '🌟 Today')}
+                  {renderLeadGroupCards(yesterdayLeads, '📅 Yesterday')}
+                  {renderLeadGroupCards(thisWeekLeads, '📆 Earlier This Week')}
+                  {renderLeadGroupCards(olderLeads, '📂 Older')}
+                </div>
+              )}
+
+              {/* 🔥 TABLE VIEW - Show ALL in one table, no grouping */}
+              {currentView === 'table' && (
+                <div className="hidden lg:block" key={`table-${refreshKey}`}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      All Leads
+                      <span className="text-white/60 text-base">({filteredLeads.length})</span>
+                    </h3>
+                    
+                    {/* 🔥 CSV Export Button */}
+                    <a
+                      href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({
+                        status: filterStatus,
+                        time: timeFilter,
+                        category: filterCategory,
+                        search: searchQuery
+                      }).toString()}`}
+                      download={`${company.slug}_${new Date().toISOString().split('T')[0]}.csv`}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition border border-white/30"
+                    >
+                      📊 Export CSV
+                    </a>
+                  </div>
+                  <TableView leads={filteredLeads} onSelectLead={setSelectedLead} />
+                </div>
+              )}
+
+              {/* 🔥 MOBILE - Always show cards view */}
+              <div className="lg:hidden">
+                {renderLeadGroupCards(todayLeads, '🌟 Today')}
+                {renderLeadGroupCards(yesterdayLeads, '📅 Yesterday')}
+                {renderLeadGroupCards(thisWeekLeads, '📆 Earlier This Week')}
+                {renderLeadGroupCards(olderLeads, '📂 Older')}
+              </div>
             </>
           )}
         </div>

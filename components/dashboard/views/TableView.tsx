@@ -50,9 +50,30 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
           bValue = b.category?.toLowerCase() || '';
           break;
         case 'status':
-          const statusOrder = { 'new': 0, 'contacted': 1, 'quoted': 2, 'in-progress': 3, 'completed': 4, 'lost': 5 };
+          const statusOrder = { 
+            'new': 0, 
+            'contacted': 1, 
+            'quoted': 2, 
+            'scheduled': 3,
+            'in-progress': 4, 
+            'completed': 5,
+            'cancelled': 6,
+            'lost': 7 
+          };
           aValue = statusOrder[(a.status || 'new') as keyof typeof statusOrder];
           bValue = statusOrder[(b.status || 'new') as keyof typeof statusOrder];
+          break;
+        case 'scheduled_date':
+          aValue = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0;
+          bValue = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0;
+          break;
+        case 'quote_total':
+          aValue = a.quote_total || 0;
+          bValue = b.quote_total || 0;
+          break;
+        case 'payment_amount':
+          aValue = a.payment_amount || 0;
+          bValue = b.payment_amount || 0;
           break;
         case 'media':
           const aFiles = safeJSONParse(a.file_urls) || [];
@@ -90,11 +111,22 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
       new: 'bg-blue-100 text-blue-800',
       contacted: 'bg-yellow-100 text-yellow-800',
       quoted: 'bg-purple-100 text-purple-800',
+      scheduled: 'bg-blue-100 text-blue-800',
       'in-progress': 'bg-orange-100 text-orange-800',
       completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
       lost: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || colors.new;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const sortedLeads = getSortedLeads();
@@ -106,45 +138,69 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
           <thead className="bg-gray-50">
             <tr>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('name')}
               >
                 Name <SortIcon columnKey="name" />
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('phone')}
               >
                 Contact <SortIcon columnKey="phone" />
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Address
+              </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('category')}
               >
                 Category <SortIcon columnKey="category" />
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('status')}
               >
                 Status <SortIcon columnKey="status" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('scheduled_date')}
+              >
+                Scheduled <SortIcon columnKey="scheduled_date" />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Assigned
+              </th>
+              <th 
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('quote_total')}
+              >
+                Quote <SortIcon columnKey="quote_total" />
+              </th>
+              <th 
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                onClick={() => handleSort('payment_amount')}
+              >
+                Payment <SortIcon columnKey="payment_amount" />
+              </th>
+              <th 
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('media')}
               >
                 Media <SortIcon columnKey="media" />
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
                 onClick={() => handleSort('date')}
               >
-                Date <SortIcon columnKey="date" />
+                Created <SortIcon columnKey="date" />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -172,24 +228,43 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                   className={`${rowBgColor} cursor-pointer transition`}
                   onClick={() => onSelectLead(lead)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* Name */}
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{lead.name}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Contact */}
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{lead.phone}</div>
-                    <div className="text-sm text-gray-500">{lead.email}</div>
+                    <div className="text-xs text-gray-500">{lead.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Address */}
+                  <td className="px-4 py-4">
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {lead.address_line_1 || '—'}
+                    </div>
+                    {lead.city && (
+                      <div className="text-xs text-gray-500">{lead.city}</div>
+                    )}
+                  </td>
+
+                  {/* Category */}
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                       {lead.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Status */}
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(leadStatus)}`}>
                       {leadStatus}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Type (Lead/Project) */}
+                  <td className="px-4 py-4 whitespace-nowrap">
                     {isProject ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
                         🚀 Project
@@ -200,13 +275,76 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+
+                  {/* Scheduled Date */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.scheduled_date ? (
+                      <div>
+                        <div className="font-medium">
+                          {new Date(lead.scheduled_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        {lead.scheduled_time && (
+                          <div className="text-xs text-gray-500">{lead.scheduled_time}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* Assigned To */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.assigned_to ? (
+                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                        {lead.assigned_to}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* Quote Total */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    {lead.quote_total ? (
+                      <div className="font-semibold text-green-700">
+                        {formatCurrency(lead.quote_total)}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* Payment */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    {lead.payment_amount ? (
+                      <div>
+                        <div className="font-semibold text-blue-700">
+                          {formatCurrency(lead.payment_amount)}
+                        </div>
+                        {lead.payment_status && (
+                          <div className="text-xs text-gray-500 capitalize">{lead.payment_status}</div>
+                        )}
+                      </div>
+                    ) : lead.payment_status ? (
+                      <span className="text-xs text-gray-500 capitalize">{lead.payment_status}</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* Media */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {images.length > 0 && <span>📸 {images.length}</span>}
                     {images.length > 0 && videos.length > 0 && <span> • </span>}
                     {videos.length > 0 && <span>🎥 {videos.length}</span>}
                     {images.length === 0 && videos.length === 0 && <span className="text-gray-400">—</span>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+
+                  {/* Created Date */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(lead.created_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -214,7 +352,9 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                       minute: '2-digit'
                     })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+
+                  {/* Actions */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       // Project fields
       payment_status,
       payment_amount,
-      job_status,
       scheduled_date,
       scheduled_time,
       assigned_to,
@@ -128,7 +127,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-  // ==================== 🆕 CREATE PROJECT (EXPLICIT) - WITH FULL DATA MIGRATION ====================
+    // ==================== 🆕 CREATE PROJECT (EXPLICIT) - WITH FULL DATA MIGRATION ====================
     else if (action === 'create_project') {
       console.log('🎯 EXPLICIT PROJECT CREATION');
       
@@ -185,9 +184,9 @@ export async function POST(request: Request) {
           ${leadData.city || null},
           'scheduled',
           ${leadData.company_id || null},
-          ${JSON.stringify(leadNotes)}, -- Copy all lead notes to project
-          '[]'::jsonb, -- Empty before photos array
-          '[]'::jsonb, -- Empty after photos array
+          ${JSON.stringify(leadNotes)},
+          '[]'::jsonb,
+          '[]'::jsonb,
           NOW(),
           NOW()
         )
@@ -196,13 +195,12 @@ export async function POST(request: Request) {
 
       const projectId = projectResult[0].id;
 
-      // Update lead with project_id and compact lead data
-      // Keep only essential lead info, rest is now in project
+      // Update lead with project_id
       await sql`
         UPDATE leads 
         SET 
           project_id = ${projectId},
-          status = 'in_progress',
+          status = 'scheduled',
           updated_at = NOW()
         WHERE id = ${id}
       `;
@@ -245,6 +243,7 @@ export async function POST(request: Request) {
         message: 'Project created successfully'
       });
     }
+
     // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {
       console.log('📋 Updating project');
@@ -269,8 +268,7 @@ export async function POST(request: Request) {
       }
 
       let noteText = 'Project updated';
-      if (job_status) noteText += ` - Status: ${job_status}`;
-      if (scheduled_date) noteText += `, Scheduled: ${scheduled_date}`;
+      if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
       if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
 
       existingNotes.push({
@@ -284,7 +282,6 @@ export async function POST(request: Request) {
       await sql`
         UPDATE projects 
         SET 
-          status = ${job_status || null},
           scheduled_date = ${scheduled_date || null},
           scheduled_time = ${scheduled_time || null},
           assigned_to = ${assigned_to || null},

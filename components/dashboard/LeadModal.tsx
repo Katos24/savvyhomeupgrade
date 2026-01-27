@@ -23,6 +23,88 @@ type LeadModalProps = {
   statusOptions: any[];
 };
 
+// ============================================
+// STATUS UPDATE COMPONENT
+// ============================================
+function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }: any) {
+  const [selectedStatus, setSelectedStatus] = useState(lead.status || statusOptions[0]?.value);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatusChange = async () => {
+    const oldStatus = lead.status || statusOptions[0]?.value;
+    
+    if (isUpdating) {
+      console.log('⚠️ Status update already in progress');
+      return;
+    }
+    
+    if (selectedStatus === oldStatus) {
+      toast.info('Status is already set to this value');
+      return;
+    }
+    
+    setIsUpdating(true);
+    
+    try {
+      const success = await onUpdateStatus(lead.id, selectedStatus, oldStatus);
+      
+      if (success) {
+        toast.success(`Status updated to ${selectedStatus}!`);
+        await onRefresh();
+      } else {
+        toast.error('Failed to update status');
+        setSelectedStatus(oldStatus); // Revert
+      }
+    } catch (error) {
+      console.error('❌ Status update error:', error);
+      toast.error('Failed to update status');
+      setSelectedStatus(oldStatus); // Revert
+    } finally {
+      setTimeout(() => setIsUpdating(false), 1000);
+    }
+  };
+
+  return (
+    <div>
+      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+        Change Status To
+      </label>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          disabled={isUpdating}
+          className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {statusOptions.map((option: any) => (
+            <option key={option.value} value={option.value}>
+              {option.emoji && `${option.emoji} `}{option.label}
+            </option>
+          ))}
+        </select>
+        
+        <button
+          onClick={handleStatusChange}
+          disabled={isUpdating || selectedStatus === lead.status}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
+        >
+          {isUpdating ? '⏳ Updating...' : 'Update'}
+        </button>
+      </div>
+      
+      {isUpdating && (
+        <p className="text-xs text-orange-600 font-semibold mt-2 flex items-center gap-1">
+          <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
+          Saving status change...
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// MAIN LEAD MODAL
+// ============================================
 export default function LeadModal({
   lead,
   onClose,
@@ -361,19 +443,28 @@ export default function LeadModal({
             onRefresh={onRefresh}
           />
 
-          {/* 🔥 Lead Status Section - BLUE for leads, GREEN for projects */}
+          {/* 🔥 Lead/Project Status Section - BLUE for leads, GREEN for projects */}
           <div className={`rounded-xl border-2 p-4 sm:p-6 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               📊 {isProject ? 'Project Status' : 'Lead Status'}
             </h3>
             
             <div className="space-y-4">
+              {/* Current Status Display */}
               <div>
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Current Status</span>
                 <div className={`inline-flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm sm:text-base ${isProject ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
                   {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
                 </div>
               </div>
+
+              {/* 🔥 Update Status Section */}
+              <StatusUpdateSection 
+                lead={lead}
+                statusOptions={statusOptions}
+                onUpdateStatus={onUpdateStatus}
+                onRefresh={onRefresh}
+              />
             </div>
           </div>
 
