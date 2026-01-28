@@ -371,21 +371,25 @@ export async function POST(request: Request) {
 
       const paidAt = payment_status === 'paid' ? new Date().toISOString() : null;
 
-      // Update payment
+      // 🔥 NEW: Update payment with additional tracking fields
       await sql`
         UPDATE projects 
         SET 
           payment_status = ${payment_status},
           payment_amount = ${payment_amount || null},
+          payment_method = ${body.payment_method || null},
+          payment_date = ${body.payment_date || null},
+          payment_notes = ${body.payment_notes || null},
           paid_at = ${paidAt},
           updated_at = NOW()
         WHERE id = ${projectId}
       `;
 
-      // 🔥 Add activity log (THIS WAS MISSING IN YOUR VERSION)
+      // 🔥 Add activity log with payment method
+      const paymentMethodText = body.payment_method ? ` via ${body.payment_method}` : '';
       const paymentEntry = {
         type: 'payment_updated',
-        text: `Payment status: ${payment_status}${payment_amount ? ` - Amount: $${payment_amount}` : ''}`,
+        text: `Payment: ${payment_status}${payment_amount ? ` - $${payment_amount}` : ''}${paymentMethodText}`,
         user_name: user_name,
         user_email: user_email,
         timestamp: new Date().toISOString()

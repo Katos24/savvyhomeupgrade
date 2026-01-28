@@ -40,6 +40,11 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
   
   // PAYMENT STATE
   const [paymentAmount, setPaymentAmount] = useState(lead?.payment_amount || '');
+  const [paymentMethod, setPaymentMethod] = useState(lead?.payment_method || '');
+  const [paymentDate, setPaymentDate] = useState(
+    lead?.payment_date ? new Date(lead.payment_date).toISOString().split('T')[0] : ''
+  );
+  const [paymentNotes, setPaymentNotes] = useState(lead?.payment_notes || '');
 
   // 🔥 DOCUMENT STATE
   const [uploadingDocs, setUploadingDocs] = useState(false);
@@ -347,6 +352,9 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
           action: 'update_payment',
           payment_status: paymentStatus,
           payment_amount: paymentAmount || null,
+          payment_method: paymentMethod || null,
+          payment_date: paymentDate || null,
+          payment_notes: paymentNotes || null,
           user_name: currentUser?.name || 'Unknown User',
           user_email: currentUser?.email || ''
         })
@@ -692,6 +700,35 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-orange-500 focus:outline-none bg-white text-gray-900 text-sm sm:text-base"
+                  >
+                    <option value="">Select method...</option>
+                    <option value="cash">💵 Cash</option>
+                    <option value="check">📝 Check</option>
+                    <option value="venmo">💜 Venmo</option>
+                    <option value="zelle">🟦 Zelle</option>
+                    <option value="square">⬛ Square</option>
+                    <option value="stripe">💳 Credit Card (Stripe)</option>
+                    <option value="paypal">💙 PayPal</option>
+                    <option value="other">📎 Other</option>
+                  </select>
+                </div>
+
+                <div className="relative z-10">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Date</label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Status</label>
                   <div className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-gray-50 text-sm sm:text-base flex items-center">
                     <span className={`font-semibold ${
@@ -708,6 +745,18 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                     Auto-calculated based on amount paid
                   </p>
                 </div>
+              </div>
+
+              {/* Payment Notes */}
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Notes (Optional)</label>
+                <textarea
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  placeholder="e.g., Check #1234, Transaction ID, etc."
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
+                />
               </div>
 
               {lead?.quote_total && paymentAmount && (
