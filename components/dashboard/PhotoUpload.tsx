@@ -3,12 +3,14 @@
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 
+type Photo = string | { url: string; thumbnail: string };
+
 type PhotoUploadProps = {
   leadId: number;
   currentUser: any;
   onUploadComplete: () => Promise<void>;
-  beforePhotos?: string[];
-  afterPhotos?: string[];
+  beforePhotos?: Photo[];
+  afterPhotos?: Photo[];
   hasProject: boolean;
 };
 
@@ -198,7 +200,7 @@ export default function PhotoUpload({
                 📸 Before Photos ({beforePhotos.length})
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {beforePhotos.map((photo, index) => {
+                {beforePhotos.map((photo: Photo, index) => {
                   // Support both old format (string) and new format (object with thumbnail)
                   const photoUrl = typeof photo === 'string' ? photo : photo.url;
                   const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
@@ -236,7 +238,7 @@ export default function PhotoUpload({
                 ✨ After Photos ({afterPhotos.length})
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {afterPhotos.map((photo, index) => {
+                {afterPhotos.map((photo: Photo, index) => {
                   // Support both old format (string) and new format (object with thumbnail)
                   const photoUrl = typeof photo === 'string' ? photo : photo.url;
                   const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
