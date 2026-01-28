@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { neon } from '@neondatabase/serverless';
+import sharp from 'sharp';
 
 const sql = neon(process.env.DATABASE_URL!);
+
+// 🔥 Helper: Generate thumbnail for images
+async function generateThumbnail(file: File): Promise<Buffer> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  
+  // Create 300x300 thumbnail (good balance of quality and size)
+  const thumbnail = await sharp(buffer)
+    .resize(300, 300, {
+      fit: 'cover',
+      position: 'center'
+    })
+    .jpeg({ quality: 80 }) // Convert to JPEG for smaller size
+    .toBuffer();
+  
+  return thumbnail;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const leadId = formData.get('leadId') as string;
-    const photoType = formData.get('photoType') as 'before' | 'after';
+    const uploadType = formData.get('uploadType') as 'photo' | 'document';
     const userName = formData.get('userName') as string;
-    const photos = formData.getAll('photos') as File[];
 
-    if (!leadId || photos.length === 0) {
+    if (!leadId) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
+        { success: false, error: 'Missing leadId' },
         { status: 400 }
       );
     }
@@ -40,111 +56,211 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🔥 Fetch from PROJECTS table
-    const projectResult = await sql`
-      SELECT before_photos, after_photos, notes 
-      FROM projects 
-      WHERE id = ${projectId}
-    `;
+    // Handle PHOTO UPLOAD with THUMBNAILS
+    if (uploadType === 'photo') {
+      const photoType = formData.get('photoType') as 'before' | 'after';
+      const photos = formData.getAll('photos') as File[];
 
-    if (!projectResult || projectResult.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Project not found' },
-        { status: 404 }
-      );
-    }
+      if (photos.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'No photos provided' },
+          { status: 400 }
+        );
+      }
 
-    const project = projectResult[0];
-    const uploadedUrls: string[] = [];
+      const uploadedPhotos: { url: string; thumbnail: string }[] = [];
 
-    // Upload each photo to Vercel Blob
-    for (const photo of photos) {
-      try {
-        const blob = await put(`leads/${leadId}/${Date.now()}-${photo.name}`, photo, {
-          access: 'public',
+      for (const photo of photos) {
+        // 🔥 Upload full-size photo
+        const fullBlob = await put(
+          `leads/${leadId}/photos/${photoType}/${Date.now()}-${photo.name}`,
+          photo,
+          { access: 'public' }
+        );
+
+        // 🔥 Generate and upload thumbnail
+        const thumbnailBuffer = await generateThumbnail(photo);
+        const thumbnailBlob = await put(
+          `leads/${leadId}/photos/${photoType}/thumb-${Date.now()}-${photo.name}`,
+          thumbnailBuffer,
+          { access: 'public', contentType: 'image/jpeg' }
+        );
+
+        uploadedPhotos.push({
+          url: fullBlob.url,
+          thumbnail: thumbnailBlob.url
         });
-        uploadedUrls.push(blob.url);
-      } catch (uploadError) {
-        console.error('Upload error:', uploadError);
-        continue;
       }
-    }
 
-    if (uploadedUrls.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to upload any photos' },
-        { status: 500 }
-      );
-    }
+      // Get existing photos
+      const project = await sql`
+        SELECT before_photos, after_photos FROM projects WHERE id = ${projectId}
+      `;
 
-    // Get existing photos from the correct column
-    const columnName = photoType === 'before' ? 'before_photos' : 'after_photos';
-    let existingPhotos: string[] = [];
-    try {
-      const existingData = project[columnName];
-      if (existingData) {
-        existingPhotos = typeof existingData === 'string' 
-          ? JSON.parse(existingData) 
-          : (Array.isArray(existingData) ? existingData : []);
+      let existingBeforePhotos: any[] = [];
+      let existingAfterPhotos: any[] = [];
+
+      try {
+        existingBeforePhotos = project[0]?.before_photos 
+          ? (typeof project[0].before_photos === 'string' 
+              ? JSON.parse(project[0].before_photos) 
+              : project[0].before_photos)
+          : [];
+        
+        existingAfterPhotos = project[0]?.after_photos 
+          ? (typeof project[0].after_photos === 'string' 
+              ? JSON.parse(project[0].after_photos) 
+              : project[0].after_photos)
+          : [];
+      } catch (e) {
+        console.error('Error parsing photos:', e);
       }
-    } catch {
-      existingPhotos = [];
-    }
 
-    // Merge with new photos
-    const updatedPhotos = [...existingPhotos, ...uploadedUrls];
+      // Update photos array
+      if (photoType === 'before') {
+        existingBeforePhotos.push(...uploadedPhotos);
+        await sql`
+          UPDATE projects 
+          SET before_photos = ${JSON.stringify(existingBeforePhotos)},
+              updated_at = NOW()
+          WHERE id = ${projectId}
+        `;
+      } else {
+        existingAfterPhotos.push(...uploadedPhotos);
+        await sql`
+          UPDATE projects 
+          SET after_photos = ${JSON.stringify(existingAfterPhotos)},
+              updated_at = NOW()
+          WHERE id = ${projectId}
+        `;
+      }
 
-    // Parse existing notes from PROJECT
-    let notesArray = [];
-    try {
-      notesArray = typeof project.notes === 'string' 
-        ? JSON.parse(project.notes) 
-        : (Array.isArray(project.notes) ? project.notes : []);
-    } catch {
-      notesArray = [];
-    }
-
-    // Add activity note
-    const newNote = {
-      type: 'photo_upload',
-      text: `📸 ${userName} uploaded ${uploadedUrls.length} ${photoType} photo${uploadedUrls.length > 1 ? 's' : ''}`,
-      user_name: userName,
-      timestamp: new Date().toISOString()
-    };
-    notesArray.push(newNote);
-
-    // 🔥 Update PROJECTS table
-    if (photoType === 'before') {
+      // Add activity note
       await sql`
         UPDATE projects 
-        SET 
-          before_photos = ${JSON.stringify(updatedPhotos)},
-          notes = ${JSON.stringify(notesArray)},
-          updated_at = NOW()
+        SET notes = jsonb_insert(
+          COALESCE(notes, '[]'::jsonb),
+          '{0}',
+          ${JSON.stringify({
+            type: 'photo_upload',
+            text: `${uploadedPhotos.length} ${photoType} photo${uploadedPhotos.length > 1 ? 's' : ''} uploaded`,
+            user_name: userName,
+            timestamp: new Date().toISOString()
+          })}::jsonb
+        )
         WHERE id = ${projectId}
       `;
-    } else {
-      await sql`
-        UPDATE projects 
-        SET 
-          after_photos = ${JSON.stringify(updatedPhotos)},
-          notes = ${JSON.stringify(notesArray)},
-          updated_at = NOW()
-        WHERE id = ${projectId}
-      `;
+
+      return NextResponse.json({
+        success: true,
+        uploadedCount: uploadedPhotos.length,
+        photoType,
+        photos: uploadedPhotos
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      uploadedCount: uploadedUrls.length,
-      photoType,
-      urls: uploadedUrls
-    });
-  } catch (error) {
-    console.error('Photo upload error:', error);
+    // Handle DOCUMENT UPLOAD (Optimized)
+    if (uploadType === 'document') {
+      const docType = formData.get('docType') as 'contract' | 'invoice' | 'permit' | 'other';
+      const documents = formData.getAll('documents') as File[];
+
+      if (documents.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'No documents provided' },
+          { status: 400 }
+        );
+      }
+
+      const uploadedDocs: any[] = [];
+
+      // 🔥 Upload documents with optimized settings
+      for (const doc of documents) {
+        const blob = await put(
+          `leads/${leadId}/documents/${Date.now()}-${doc.name}`,
+          doc,
+          { 
+            access: 'public',
+            // Don't cache large files unnecessarily
+            addRandomSuffix: false
+          }
+        );
+
+        uploadedDocs.push({
+          url: blob.url,
+          name: doc.name,
+          type: docType,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: userName,
+          size: doc.size // Track file size for future optimizations
+        });
+      }
+
+      // Get existing documents
+      const project = await sql`
+        SELECT documents FROM projects WHERE id = ${projectId}
+      `;
+
+      let existingDocuments: any[] = [];
+      try {
+        existingDocuments = project[0]?.documents 
+          ? (typeof project[0].documents === 'string' 
+              ? JSON.parse(project[0].documents) 
+              : project[0].documents)
+          : [];
+      } catch (e) {
+        console.error('Error parsing documents:', e);
+      }
+
+      existingDocuments.push(...uploadedDocs);
+
+      // Update documents
+      await sql`
+        UPDATE projects 
+        SET documents = ${JSON.stringify(existingDocuments)},
+            updated_at = NOW()
+        WHERE id = ${projectId}
+      `;
+
+      // Add activity note
+      await sql`
+        UPDATE projects 
+        SET notes = jsonb_insert(
+          COALESCE(notes, '[]'::jsonb),
+          '{0}',
+          ${JSON.stringify({
+            type: 'document_upload',
+            text: `${uploadedDocs.length} document${uploadedDocs.length > 1 ? 's' : ''} uploaded (${docType})`,
+            user_name: userName,
+            timestamp: new Date().toISOString()
+          })}::jsonb
+        )
+        WHERE id = ${projectId}
+      `;
+
+      return NextResponse.json({
+        success: true,
+        uploadedCount: uploadedDocs.length,
+        docType,
+        documents: uploadedDocs
+      });
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Invalid upload type' },
+      { status: 400 }
+    );
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to upload files' },
       { status: 500 }
     );
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

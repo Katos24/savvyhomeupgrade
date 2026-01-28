@@ -479,7 +479,19 @@ export default function LeadModal({
             />
           )}
 
-          {/* Activity Timeline */}
+{/* 🔥 Unified Photo Upload & Display */}
+          {lead.project_id && (
+            <PhotoUpload 
+              leadId={lead.id}
+              currentUser={currentUser}
+              onUploadComplete={onRefresh}
+              beforePhotos={beforePhotos}
+              afterPhotos={afterPhotos}
+              hasProject={!!lead.project_id}
+            />
+          )}
+
+          {/* Activity Timeline - MOVED TO BOTTOM */}
           <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Activity Timeline ({notesArray.length})</h3>
             
@@ -556,32 +568,6 @@ export default function LeadModal({
               <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">No activity yet</div>
             )}
           </div>
-
-          {/* 🔥 Photo Upload Component */}
-          <PhotoUpload 
-            leadId={lead.id}
-            currentUser={currentUser}
-            onUploadComplete={onRefresh}
-          />
-
-          {/* 🔥 Before/After Photos (Only for projects) */}
-          {lead.project_id && (
-            <>
-              <PhotoGallery 
-                title="Before Photos" 
-                photos={beforePhotos}
-                emoji="📸"
-                borderColor="border-blue-200"
-              />
-
-              <PhotoGallery 
-                title="After Photos" 
-                photos={afterPhotos}
-                emoji="✨"
-                borderColor="border-green-200"
-              />
-            </>
-          )}
         </div>
 
         {/* Footer */}

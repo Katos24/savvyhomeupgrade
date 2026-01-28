@@ -11,7 +11,8 @@ export async function GET(request: Request, { params }: Props) {
     const sql = neon(process.env.DATABASE_URL!);
 
     // Get company ID from slug
-    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`; // 🔥 FIXED: sq → sql
+    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
+    
     if (companies.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Company not found' },
@@ -43,6 +44,7 @@ export async function GET(request: Request, { params }: Props) {
         p.invoice_sent_at,
         p.before_photos,
         p.after_photos,
+        p.documents,
         p.completed_at as job_completed_at,
         p.notes as project_notes
       FROM leads l

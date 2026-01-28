@@ -315,6 +315,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
+
+              
               {company.logo_url ? (
                 <img 
                   src={company.logo_url} 
@@ -331,6 +333,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             
             {currentUser && (
               <div className="flex items-center gap-3">
+                 <a
+      href={`/${company.slug}/admin/team`}
+      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
+                >
+                  ⚙️ Admin
+                </a>
                 <a
                   href={`/${company.slug}`}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
