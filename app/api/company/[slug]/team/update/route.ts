@@ -1,5 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { canChangeRoles, PERMISSION_ERRORS } from '@/lib/permissions';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -10,6 +13,27 @@ export async function POST(request: Request, { params }: Props) {
     const { slug } = await params;
     const body = await request.json();
     const { userId, role } = body;
+
+    // 🔒 CHECK PERMISSION
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    const userRole = decoded.role || 'member';
+
+    if (!canChangeRoles(userRole)) {
+      return NextResponse.json(
+        { success: false, error: PERMISSION_ERRORS.CANNOT_CHANGE_ROLES },
+        { status: 403 }
+      );
+    }
 
     // Validate inputs
     if (!userId || !role) {
@@ -44,7 +68,7 @@ export async function POST(request: Request, { params }: Props) {
 
     // Verify user belongs to this company and is not owner
     const users = await sql`
-      SELECT id, role FROM users 
+      SELECT id, role FROM users
       WHERE id = ${userId} AND company_id = ${companyId}
     `;
 
@@ -64,10 +88,12 @@ export async function POST(request: Request, { params }: Props) {
 
     // Update role
     await sql`
-      UPDATE users 
+      UPDATE users
       SET role = ${role}
       WHERE id = ${userId}
     `;
+
+    console.log(`✅ Role updated for user ${userId} to ${role} by ${userRole}`);
 
     return NextResponse.json({
       success: true,

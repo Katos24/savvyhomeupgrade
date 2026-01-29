@@ -9,6 +9,7 @@ import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButto
 import { safeJSONParse, parseNotes } from '@/lib/utils';
 import styles from '@/app/dashboard/dashboard.module.css';
 import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
+import { canDeleteLead } from '@/lib/permissions';
 
 const libraries: ("places")[] = ["places"];
 
@@ -135,7 +136,9 @@ export default function LeadModal({
     const noteAdded = newNote.trim().length > 0;
     setHasUnsavedChanges(noteAdded);
   }, [newNote]);
-
+  
+  const userRole = currentUser?.role || 'member';
+const canDelete = canDeleteLead(userRole);
   const getStatusConfig = (statusValue: string) => {
     return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
   };
@@ -281,7 +284,7 @@ export default function LeadModal({
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {!showDeleteConfirm ? (
+              {canDelete && !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="text-gray-400 hover:text-red-600 transition text-sm px-2 sm:px-3 py-1 rounded hover:bg-red-50"
@@ -289,7 +292,7 @@ export default function LeadModal({
                 >
                   🗑️
                 </button>
-              ) : (
+              ) : canDelete && showDeleteConfirm ? (
                 <div className="flex items-center gap-2 bg-red-50 px-2 sm:px-3 py-1 rounded border border-red-200">
                   <span className="text-xs sm:text-sm text-red-700 font-medium">Delete?</span>
                   <button
@@ -307,7 +310,7 @@ export default function LeadModal({
                     No
                   </button>
                 </div>
-              )}
+              ) : null}
               <button 
                 onClick={onClose} 
                 className="text-3xl text-gray-400 hover:text-gray-600 transition leading-none"
@@ -320,7 +323,7 @@ export default function LeadModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          
+
           {/* Customer Info - STAYS BLUE ALWAYS */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
             <button

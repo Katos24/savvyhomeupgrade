@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { canAccessTeamPage } from '@/lib/permissions';
 import TeamAdminPage from './TeamAdminPage';
 
 export default function TeamAdminPageRoute() {
   const params = useParams();
-  const companySlug = params?.company as string; // Changed from company_slug to company
+  const router = useRouter();
+  const companySlug = params?.company as string;
   
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<any>(null);
@@ -16,13 +18,12 @@ export default function TeamAdminPageRoute() {
   useEffect(() => {
     console.log('useEffect triggered, companySlug:', companySlug);
     
-    // Don't fetch if we don't have the company slug yet
     if (!companySlug) {
       console.log('No companySlug, returning');
       setLoading(false);
       return;
     }
-    
+
     async function loadData() {
       console.log('Starting to load data...');
       try {
@@ -31,27 +32,35 @@ export default function TeamAdminPageRoute() {
         const userRes = await fetch('/api/auth/me');
         const userData = await userRes.json();
         console.log('User data:', userData);
-        
+
         if (!userData.success || !userData.user) {
           console.log('No user, redirecting to login');
           window.location.href = `/${companySlug}/login`;
           return;
         }
-        
+
+        // 🔒 CHECK PERMISSION
+        const userRole = userData.user.role || 'member';
+        if (!canAccessTeamPage(userRole)) {
+          console.log('⛔ User does not have permission to access team page');
+          setError('You do not have permission to access team management. Only admins and owners can manage team members.');
+          setLoading(false);
+          return;
+        }
+
         setCurrentUser(userData.user);
-        
+
         // Fetch company info
         console.log('Fetching company info...');
         const companyRes = await fetch(`/api/company/${companySlug}/info`);
         const companyData = await companyRes.json();
         console.log('Company data:', companyData);
-        
+
         if (companyData.success && companyData.company) {
           setCompany(companyData.company);
         } else {
           setError('Failed to load company data');
         }
-        
       } catch (error) {
         console.error('Error loading data:', error);
         setError('An error occurred loading data');
@@ -60,7 +69,7 @@ export default function TeamAdminPageRoute() {
         setLoading(false);
       }
     }
-    
+
     loadData();
   }, [companySlug]);
 
@@ -68,12 +77,19 @@ export default function TeamAdminPageRoute() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-xl">{error}</p>
-          <a href={`/${companySlug}/dashboard`} className="text-blue-600 hover:underline mt-4 inline-block">
-            ← Back to Dashboard
-          </a>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-6">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-6xl mb-4">⛔</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h1>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <a 
+              href={`/${companySlug}/dashboard`} 
+              className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+            >
+              ← Back to Dashboard
+            </a>
+          </div>
         </div>
       </div>
     );

@@ -1,5 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { canRemoveMembers, PERMISSION_ERRORS } from '@/lib/permissions';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -11,6 +14,27 @@ export async function POST(request: Request, { params }: Props) {
     const body = await request.json();
     const { userId } = body;
 
+    // 🔒 CHECK PERMISSION
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    const userRole = decoded.role || 'member';
+
+    if (!canRemoveMembers(userRole)) {
+      return NextResponse.json(
+        { success: false, error: PERMISSION_ERRORS.CANNOT_REMOVE },
+        { status: 403 }
+      );
+    }
+
     // Validate input
     if (!userId) {
       return NextResponse.json(
@@ -20,7 +44,7 @@ export async function POST(request: Request, { params }: Props) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    
+
     // Get company ID
     const companies = await sql`
       SELECT id FROM companies WHERE slug = ${slug}
@@ -61,11 +85,12 @@ export async function POST(request: Request, { params }: Props) {
       WHERE id = ${userId}
     `;
 
+    console.log(`✅ Team member ${userId} removed by ${userRole}`);
+
     return NextResponse.json({
       success: true,
       message: 'Team member removed successfully'
     });
-
   } catch (error) {
     console.error('Error removing team member:', error);
     return NextResponse.json(
