@@ -12,6 +12,16 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 } | null;
 
+// Add this helper function at the top of your TableView component:
+
+const formatCategory = (cat: string) => {
+  if (!cat) return '';
+  return cat
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export default function TableView({ leads, onSelectLead }: TableViewProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
@@ -274,12 +284,12 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                     </div>
                   </td>
 
-                  {/* Category */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {lead.category}
-                    </span>
-                  </td>
+             {/* Category */}
+<td className="px-4 py-4 whitespace-nowrap">
+  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+    {formatCategory(lead.category)}
+  </span>
+</td>
 
                   {/* Status */}
                   <td className="px-4 py-4 whitespace-nowrap">

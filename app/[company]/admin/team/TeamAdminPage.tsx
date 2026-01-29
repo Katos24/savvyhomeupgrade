@@ -25,11 +25,9 @@ export default function TeamAdminPage({
 }) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    name: '',
-    password: '',
     role: 'member' as 'admin' | 'member'
   });
   const [saving, setSaving] = useState(false);
@@ -56,17 +54,13 @@ export default function TeamAdminPage({
     }
   }
 
-  async function handleCreateMember() {
-    if (!formData.email || !formData.name || !formData.password) {
-      setError('All fields are required');
+  async function handleSendInvite() {
+    if (!formData.email) {
+      setError('Email is required');
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
+    // Check if email already exists
     const emailExists = teamMembers.some(m => m.email.toLowerCase() === formData.email.toLowerCase());
     if (emailExists) {
       setError('This email is already a team member');
@@ -77,7 +71,7 @@ export default function TeamAdminPage({
     setError('');
     
     try {
-      const response = await fetch(`/api/company/${companySlug}/team/create`, {
+      const response = await fetch(`/api/company/${companySlug}/team/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -86,17 +80,16 @@ export default function TeamAdminPage({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccess(`✅ ${formData.name} added to team!`);
-        setFormData({ email: '', name: '', password: '', role: 'member' });
-        setShowCreateModal(false);
-        await fetchTeamData();
-        setTimeout(() => setSuccess(''), 3000);
+        setSuccess(`✅ Invitation sent to ${formData.email}!`);
+        setFormData({ email: '', role: 'member' });
+        setShowInviteModal(false);
+        setTimeout(() => setSuccess(''), 5000);
       } else {
-        setError(result.error || 'Failed to create team member');
+        setError(result.error || 'Failed to send invitation');
       }
     } catch (error) {
-      console.error('Create error:', error);
-      setError('Failed to create team member');
+      console.error('Invite error:', error);
+      setError('Failed to send invitation');
     } finally {
       setSaving(false);
     }
@@ -227,17 +220,17 @@ export default function TeamAdminPage({
           </div>
         )}
 
-        {/* Header with Add Button */}
+        {/* Header with Invite Button */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-3xl font-bold">Team Members</h2>
             <p className="text-gray-600 mt-1">{teamMembers.length} active members</p>
           </div>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowInviteModal(true)}
             className="btn btn-primary"
           >
-            + Add Team Member
+            📧 Invite Team Member
           </button>
         </div>
 
@@ -247,10 +240,10 @@ export default function TeamAdminPage({
             <div key={member.id} className="card relative">
               {/* Member Avatar */}
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mb-3">
-          {member.name?.charAt(0)?.toUpperCase() || '?'}
+                {member.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
 
-<h3 className="text-xl font-bold mb-1">{member.name || 'Unknown User'}</h3>
+              <h3 className="text-xl font-bold mb-1">{member.name || 'Unknown User'}</h3>
               <p className="text-gray-600 text-sm mb-2">{member.email}</p>
               
               {/* Role Badge */}
@@ -304,23 +297,23 @@ export default function TeamAdminPage({
             <div className="text-6xl mb-4">👥</div>
             <p className="text-gray-500 text-lg mb-4">No team members yet</p>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => setShowInviteModal(true)}
               className="btn btn-primary"
             >
-              + Add Your First Team Member
+              📧 Invite Your First Team Member
             </button>
           </div>
         )}
       </div>
 
-      {/* CREATE MODAL */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCreateModal(false)}>
+      {/* INVITE MODAL */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowInviteModal(false)}>
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold">Add Team Member</h3>
+              <h3 className="text-2xl font-bold">📧 Invite Team Member</h3>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => setShowInviteModal(false)}
                 className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
               >
                 ×
@@ -329,38 +322,18 @@ export default function TeamAdminPage({
 
             <div className="space-y-4">
               <div>
-                <label className="form-label">Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="John Smith"
-                  className="form-input"
-                  autoFocus
-                />
-              </div>
-
-              <div>
                 <label className="form-label">Email Address *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="john@example.com"
+                  placeholder="teammate@example.com"
                   className="form-input"
+                  autoFocus
                 />
-              </div>
-
-              <div>
-                <label className="form-label">Password *</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  placeholder="Minimum 6 characters"
-                  className="form-input"
-                />
-                <p className="text-xs text-gray-500 mt-1">They can change this after logging in</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  They'll receive an email to set up their account
+                </p>
               </div>
 
               <div>
@@ -375,19 +348,23 @@ export default function TeamAdminPage({
                 </select>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                💡 <strong>How it works:</strong> They'll get an email with a link to create their account and set their own password.
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => setShowInviteModal(false)}
                   className="btn btn-secondary flex-1"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateMember}
+                  onClick={handleSendInvite}
                   disabled={saving}
                   className="btn btn-primary flex-1 disabled:opacity-50"
                 >
-                  {saving ? '💾 Creating...' : '✅ Add Member'}
+                  {saving ? '📧 Sending...' : '✅ Send Invite'}
                 </button>
               </div>
             </div>

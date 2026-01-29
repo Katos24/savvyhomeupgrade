@@ -343,7 +343,9 @@ export default function LeadModal({
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Phone</span>
-                    <a href={`tel:${lead.phone}`} className="text-gray-900 font-medium hover:underline">{lead.phone}</a>
+                    <a href={`tel:${lead.phone}`} className="text-gray-900 font-medium hover:underline">
+                      {`(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
+                    </a>
                   </div>
                 </div>
 

@@ -1,13 +1,13 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
-    
     const sql = neon(process.env.DATABASE_URL!);
-    
+
     const users = await sql`
       SELECT u.*, c.slug, c.name as company_name 
       FROM users u 
@@ -20,9 +20,11 @@ export async function POST(request: Request) {
     }
 
     const user = users[0];
+
+    // 🔥 FIXED: Use bcrypt to compare hashed password
+    const isValidPassword = await bcrypt.compare(password, user.password);
     
-    // Direct password comparison
-    if (password !== user.password) {
+    if (!isValidPassword) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -71,7 +73,6 @@ export async function POST(request: Request) {
     });
 
     return response;
-
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ success: false, error: 'Login failed' }, { status: 500 });

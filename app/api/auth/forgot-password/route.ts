@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -24,34 +25,37 @@ export async function POST(request: Request) {
 
     const user = users[0];
 
-    // Generate reset token (valid for 1 hour)
+    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Save token to database
+    // 🔥 FIXED: Let PostgreSQL calculate expiration time (no timezone issues!)
     await sql`
       UPDATE users 
       SET reset_token = ${resetToken},
-          reset_token_expires = ${expiresAt}
+          reset_token_expires = NOW() + INTERVAL '1 hour'
       WHERE id = ${user.id}
     `;
 
     // Generate reset link
     const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
-    // TODO: Send email with reset link
-    // For now, log it (in production, use SendGrid/Resend/etc)
-    console.log('Password reset link:', resetLink);
-    console.log('For user:', email);
+    // Send email with reset link
+    try {
+      await sendPasswordResetEmail({
+        userEmail: email,
+        userName: user.name || 'User',
+        resetLink,
+      });
+      console.log('✅ Password reset email sent to:', email);
+    } catch (emailError) {
+      console.error('❌ Failed to send reset email:', emailError);
+      // Don't fail the request if email fails - token is still valid
+    }
 
-    // TEMPORARY: Return link in response (REMOVE IN PRODUCTION!)
     return NextResponse.json({ 
       success: true, 
-      message: 'Reset link sent to your email',
-      // Remove this in production:
-      resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined
+      message: 'If that email exists, we sent a reset link',
     });
-
   } catch (error) {
     console.error('Forgot password error:', error);
     return NextResponse.json(

@@ -1,5 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { canDeleteLead, PERMISSION_ERRORS } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
@@ -7,6 +10,28 @@ export async function POST(request: Request) {
     
     if (!id) {
       return NextResponse.json({ success: false, error: 'Lead ID is required' }, { status: 400 });
+    }
+
+    // 🔒 Get user role from token
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    const userRole = decoded.role || 'member';
+
+    // 🔒 CHECK PERMISSION
+    if (!canDeleteLead(userRole)) {
+      return NextResponse.json(
+        { success: false, error: PERMISSION_ERRORS.CANNOT_DELETE_LEAD },
+        { status: 403 }
+      );
     }
     
     const sql = neon(process.env.DATABASE_URL!);
@@ -28,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Lead not found or already deleted' }, { status: 404 });
     }
     
-    console.log(`Lead ${id} (${result[0].name}) soft-deleted by ${user_name}`);
+    console.log(`Lead ${id} (${result[0].name}) soft-deleted by ${user_name} (${userRole})`);
     
     return NextResponse.json({ 
       success: true, 

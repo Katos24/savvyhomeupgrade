@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -39,21 +40,24 @@ export async function POST(request: Request) {
 
     const user = users[0];
 
+    // 🔥 NEW: Hash password with bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Update password and clear reset token
-    // TODO: Hash password with bcrypt in production!
     await sql`
       UPDATE users 
-      SET password = ${password},
+      SET password = ${hashedPassword},
           reset_token = NULL,
           reset_token_expires = NULL
       WHERE id = ${user.id}
     `;
 
+    console.log('✅ Password reset successful for:', user.email);
+
     return NextResponse.json({ 
       success: true, 
       message: 'Password reset successful' 
     });
-
   } catch (error) {
     console.error('Reset password error:', error);
     return NextResponse.json(

@@ -17,21 +17,9 @@ export default function ConvertToProjectButton({
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Don't show button if already converted
+  // If already converted, show nothing
   if (lead.project_id) {
-    return (
-      <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">✅</span>
-          <div>
-            <h3 className="font-bold text-green-900">Active Project</h3>
-            <p className="text-sm text-green-700">
-              This lead has been converted to Project #{lead.project_id}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const handleConvert = async () => {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { sendNewLeadAlertEmail, sendLeadConfirmationEmail } from '@/lib/email';
 
 export const maxDuration = 60;
 export const runtime = 'nodejs';
@@ -8,6 +9,14 @@ export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
     let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId;
+
+    // Helper function to format category
+    const formatCategory = (cat: string) => {
+      return cat
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
 
     if (contentType.includes('application/json')) {
       const body = await request.json();
@@ -22,7 +31,7 @@ export async function POST(request: Request) {
       fileUrls = body.file_urls || [];
       companySlug = body.company_slug;
       companyId = body.company_id;
-      
+
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
         console.log('📍 Address:', address_line_1, address_line_2 ? `(${address_line_2})` : '', city ? `in ${city}` : '');
@@ -50,9 +59,8 @@ export async function POST(request: Request) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    
     console.log(`🔄 Creating lead for ${name}...`);
-    
+
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, address_line_1, address_line_2, city, category, description, 
@@ -67,13 +75,54 @@ export async function POST(request: Request) {
     const leadId = lead.id;
     console.log(`✅ Lead created with ID: ${leadId}`);
 
+    // 🔥 NEW: Send email notification to contractor
+    if (companySlug) {
+      // Get contractor email from company
+      const company = await sql`SELECT email, name FROM companies WHERE slug = ${companySlug}`;
+      
+      if (company.length > 0 && company[0].email) {
+        const contractorEmail = company[0].email;
+        const companyName = company[0].name;
+        const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${companySlug}/dashboard`;
+
+        // Send email alert to contractor (don't await - let it happen in background)
+        sendNewLeadAlertEmail({
+          contractorEmail,
+          customerName: name,
+          customerEmail: email,
+          customerPhone: phone,
+          category: formatCategory(category),
+          description: description || 'No description provided',
+          dashboardUrl,
+          address: address_line_1 || undefined,
+          city: city || undefined,
+          photosCount: fileUrls.length || 0,
+        }).catch(err => {
+          console.error('Failed to send contractor email alert:', err);
+        });
+
+        console.log(`📧 Contractor email alert queued for ${contractorEmail}`);
+
+        // 🔥 NEW: Send confirmation email to customer
+        sendLeadConfirmationEmail({
+          customerEmail: email,
+          customerName: name,
+          category: formatCategory(category),
+          companyName,
+        }).catch(err => {
+          console.error('Failed to send customer confirmation:', err);
+        });
+
+        console.log(`📧 Customer confirmation queued for ${email}`);
+      }
+    }
+
     return NextResponse.json({ 
       success: true,
       message: 'Lead submitted successfully!',
       leadId,
       filesUploaded: fileUrls.length
     });
-
   } catch (error) {
     console.error('❌ Upload error:', error);
     return NextResponse.json(

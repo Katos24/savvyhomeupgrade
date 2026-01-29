@@ -7,6 +7,15 @@ interface CardsViewProps {
 }
 
 export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
+  // Helper function to format category
+  const formatCategory = (cat: string) => {
+    if (!cat) return '';
+    return cat
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const renderLeadCard = (lead: any) => {
     const fileUrls = safeJSONParse(lead.file_urls);
     const leadStatus = lead.status || 'new';
@@ -93,7 +102,7 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
         <div className={styles.cardContent}>
           <div className={styles.cardHeader}>
             <h3 className={styles.cardName}>{lead.name}</h3>
-            <span className={styles.categoryBadge}>{lead.category}</span>
+            <span className={styles.categoryBadge}>{formatCategory(lead.category)}</span>
           </div>
 
           <p className={styles.cardEmail}>📧 {lead.email}</p>
