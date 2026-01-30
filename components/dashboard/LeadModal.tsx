@@ -25,7 +25,7 @@ type LeadModalProps = {
 };
 
 // ============================================
-// STATUS UPDATE COMPONENT
+// STATUS UPDATE COMPONENT (COMPACT)
 // ============================================
 function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }: any) {
   const [selectedStatus, setSelectedStatus] = useState(lead.status || statusOptions[0]?.value);
@@ -34,15 +34,7 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
   const handleStatusChange = async () => {
     const oldStatus = lead.status || statusOptions[0]?.value;
     
-    if (isUpdating) {
-      console.log('⚠️ Status update already in progress');
-      return;
-    }
-    
-    if (selectedStatus === oldStatus) {
-      toast.info('Status is already set to this value');
-      return;
-    }
+    if (isUpdating || selectedStatus === oldStatus) return;
     
     setIsUpdating(true);
     
@@ -54,12 +46,12 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
         await onRefresh();
       } else {
         toast.error('Failed to update status');
-        setSelectedStatus(oldStatus); // Revert
+        setSelectedStatus(oldStatus);
       }
     } catch (error) {
-      console.error('❌ Status update error:', error);
+      console.error('Status update error:', error);
       toast.error('Failed to update status');
-      setSelectedStatus(oldStatus); // Revert
+      setSelectedStatus(oldStatus);
     } finally {
       setTimeout(() => setIsUpdating(false), 1000);
     }
@@ -67,15 +59,15 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
 
   return (
     <div>
-      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-        Change Status To
+      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
+        Change Status
       </label>
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex gap-2">
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={isUpdating}
-          className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition-all text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50"
         >
           {statusOptions.map((option: any) => (
             <option key={option.value} value={option.value}>
@@ -87,24 +79,17 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
         <button
           onClick={handleStatusChange}
           disabled={isUpdating || selectedStatus === lead.status}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
+          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-lg transition"
         >
-          {isUpdating ? '⏳ Updating...' : 'Update'}
+          {isUpdating ? '⏳' : 'Update'}
         </button>
       </div>
-      
-      {isUpdating && (
-        <p className="text-xs text-orange-600 font-semibold mt-2 flex items-center gap-1">
-          <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
-          Saving status change...
-        </p>
-      )}
     </div>
   );
 }
 
 // ============================================
-// MAIN LEAD MODAL
+// MAIN LEAD MODAL (COMPACT VERSION)
 // ============================================
 export default function LeadModal({
   lead,
@@ -121,7 +106,6 @@ export default function LeadModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const { isLoaded } = useLoadScript({
@@ -133,12 +117,11 @@ export default function LeadModal({
   const isProject = !!lead.project_id;
 
   useEffect(() => {
-    const noteAdded = newNote.trim().length > 0;
-    setHasUnsavedChanges(noteAdded);
+    setHasUnsavedChanges(newNote.trim().length > 0);
   }, [newNote]);
   
   const userRole = currentUser?.role || 'member';
-const canDelete = canDeleteLead(userRole);
+  const canDelete = canDeleteLead(userRole);
   const getStatusConfig = (statusValue: string) => {
     return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
   };
@@ -173,33 +156,6 @@ const canDelete = canDeleteLead(userRole);
     }
   };
 
-  const handleSaveAllAndClose = async () => {
-    if (!hasUnsavedChanges) {
-      onClose();
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (newNote.trim()) {
-        const success = await onAddNote(lead.id, newNote);
-        if (success) {
-          setNewNote('');
-          toast.success('✅ Note saved!');
-          await onRefresh();
-          onClose();
-        } else {
-          toast.error('Failed to save note');
-        }
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Failed to save changes');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // Parse photo arrays
   const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
   const beforePhotos = lead.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
@@ -208,23 +164,6 @@ const canDelete = canDeleteLead(userRole);
   const formatCategory = (category: string) => {
     if (lead.category_label) return lead.category_label;
     return category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-  const geocodeAddress = async (address: string) => {
-    if (!isLoaded || !address || mapCenter) return;
-    setIsGeocodingAddress(true);
-    try {
-      const geocoder = new google.maps.Geocoder();
-      const result = await geocoder.geocode({ address });
-      if (result.results && result.results[0]) {
-        const location = result.results[0].geometry.location;
-        setMapCenter({ lat: location.lat(), lng: location.lng() });
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error);
-    } finally {
-      setIsGeocodingAddress(false);
-    }
   };
 
   const getFullAddress = () => {
@@ -236,14 +175,10 @@ const canDelete = canDeleteLead(userRole);
   const fullAddress = getFullAddress();
 
   const handleToggleCustomerInfo = () => {
-    const newState = !showCustomerInfo;
-    setShowCustomerInfo(newState);
-    if (newState && fullAddress && !mapCenter) {
-      geocodeAddress(lead.address_line_1);
-    }
+    setShowCustomerInfo(!showCustomerInfo);
   };
 
-  const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '12px' };
+  const mapContainerStyle = { width: '100%', height: '250px', borderRadius: '8px' };
   const mapOptions = {
     disableDefaultUI: false,
     zoomControl: true,
@@ -262,50 +197,55 @@ const canDelete = canDeleteLead(userRole);
         className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col" 
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 z-10">
-          <div className="flex items-start justify-between gap-3">
+        {/* COMPACT HEADER */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-3 z-10">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{lead.name}</h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">{lead.name}</h2>
+                {lead.category && (
+                  <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                    {formatCategory(lead.category)}
+                  </span>
+                )}
+                {isProject && (
+                  <span className="inline-block px-2 py-0.5 bg-emerald-600 text-white rounded text-xs font-semibold">
+                    PROJECT
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-600 mt-0.5">
                 {new Date(lead.created_at).toLocaleDateString('en-US', {
-                  month: 'long',
+                  month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit'
                 })}
               </p>
-              {hasUnsavedChanges && (
-                <p className="text-xs text-orange-600 font-semibold mt-1 flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
-                  Unsaved note
-                </p>
-              )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {canDelete && !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="text-gray-400 hover:text-red-600 transition text-sm px-2 sm:px-3 py-1 rounded hover:bg-red-50"
-                  title="Delete lead"
+                  className="text-gray-400 hover:text-red-600 transition text-sm px-2 py-1 rounded hover:bg-red-50"
                 >
                   🗑️
                 </button>
               ) : canDelete && showDeleteConfirm ? (
-                <div className="flex items-center gap-2 bg-red-50 px-2 sm:px-3 py-1 rounded border border-red-200">
-                  <span className="text-xs sm:text-sm text-red-700 font-medium">Delete?</span>
+                <div className="flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded border border-red-200">
+                  <span className="text-xs text-red-700 font-medium">Delete?</span>
                   <button
                     onClick={handleDelete}
                     disabled={saving}
-                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-1 rounded"
+                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-0.5 rounded"
                   >
                     Yes
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={saving}
-                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-1 rounded"
+                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-0.5 rounded"
                   >
                     No
                   </button>
@@ -313,7 +253,7 @@ const canDelete = canDeleteLead(userRole);
               ) : null}
               <button 
                 onClick={onClose} 
-                className="text-3xl text-gray-400 hover:text-gray-600 transition leading-none"
+                className="text-2xl text-gray-400 hover:text-gray-600 transition leading-none"
               >
                 ×
               </button>
@@ -321,58 +261,58 @@ const canDelete = canDeleteLead(userRole);
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        {/* COMPACT CONTENT */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
 
-          {/* Customer Info - STAYS BLUE ALWAYS */}
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 mb-6">
+          {/* Customer Info - COMPACT */}
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
             <button
               onClick={handleToggleCustomerInfo}
-              className="w-full flex items-center justify-between p-6 hover:bg-blue-50/50 transition rounded-xl"
+              className="w-full flex items-center justify-between p-3 hover:bg-blue-50/50 transition rounded-lg"
             >
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-bold text-gray-900">👤 Customer Information</h3>
-                <span className="text-sm text-gray-600">({lead.name})</span>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900">Customer Information</h3>
+                <span className="text-xs text-gray-600">({lead.name})</span>
               </div>
-              <span className={`text-2xl transition-transform ${showCustomerInfo ? 'rotate-180' : ''}`}>▼</span>
+              <span className={`text-lg transition-transform ${showCustomerInfo ? 'rotate-180' : ''}`}>▼</span>
             </button>
 
             {showCustomerInfo && (
-              <div className="px-6 pb-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Email</span>
-                    <a href={`mailto:${lead.email}`} className="text-gray-900 font-medium hover:underline">{lead.email}</a>
+              <div className="px-3 pb-3 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg p-2 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Email</span>
+                    <a href={`mailto:${lead.email}`} className="text-sm text-gray-900 font-medium hover:underline break-all">{lead.email}</a>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Phone</span>
-                    <a href={`tel:${lead.phone}`} className="text-gray-900 font-medium hover:underline">
+                  <div className="bg-white rounded-lg p-2 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Phone</span>
+                    <a href={`tel:${lead.phone}`} className="text-sm text-gray-900 font-medium hover:underline">
                       {`(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
                     </a>
                   </div>
                 </div>
 
                 {fullAddress && (
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-start justify-between mb-3">
+                  <div className="bg-white rounded-lg p-2 border border-gray-200">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Service Address</span>
-                        <p className="text-gray-900 font-medium">{lead.address_line_1}</p>
-                        {lead.address_line_2 && <p className="text-gray-700 text-sm">{lead.address_line_2}</p>}
-                        {lead.city && <p className="text-gray-600 text-sm mt-1">📍 {lead.city}</p>}
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Address</span>
+                        <p className="text-sm text-gray-900 font-medium">{lead.address_line_1}</p>
+                        {lead.address_line_2 && <p className="text-xs text-gray-700">{lead.address_line_2}</p>}
+                        {lead.city && <p className="text-xs text-gray-600 mt-0.5">{lead.city}</p>}
                       </div>
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+                        className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition"
                       >
-                        🗺️ Directions
+                        Directions
                       </a>
                     </div>
 
                     {isLoaded && mapCenter && (
-                      <div className="mt-3">
+                      <div className="mt-2">
                         <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15} options={mapOptions}>
                           <Marker position={mapCenter} />
                         </GoogleMap>
@@ -381,89 +321,76 @@ const canDelete = canDeleteLead(userRole);
                   </div>
                 )}
 
-                <div className="pt-2">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => {
-                        const subject = encodeURIComponent(`Re: Your ${formatCategory(lead.category)} Project`);
-                        const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
-                        window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition"
-                    >
-                      📧 Email
-                    </button>
-                    <button
-                      onClick={() => window.location.href = `tel:${lead.phone}`}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition"
-                    >
-                      📞 Call
-                    </button>
-                    <button
-                      onClick={() => {
-                        const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
-                        window.location.href = `sms:${lead.phone}?body=${message}`;
-                      }}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition"
-                    >
-                      💬 Text
-                    </button>
-                  </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const subject = encodeURIComponent(`Re: Your ${formatCategory(lead.category)} Project`);
+                      const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
+                      window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                  >
+                    Email
+                  </button>
+                  <button
+                    onClick={() => window.location.href = `tel:${lead.phone}`}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                  >
+                    Call
+                  </button>
+                  <button
+                    onClick={() => {
+                      const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
+                      window.location.href = `sms:${lead.phone}?body=${message}`;
+                    }}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                  >
+                    Text
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Category Badge */}
-          {lead.category && (
-            <div className="mb-6">
-              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
-                {formatCategory(lead.category)}
-              </span>
-            </div>
-          )}
-
-          {/* 🔥 MOVED UP: Description */}
+          {/* Description - COMPACT */}
           {lead.description && (
-            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">📝 What They Need</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{lead.description}</p>
             </div>
           )}
 
-          {/* 🔥 MOVED UP: Customer Photos */}
+          {/* Customer Photos - COMPACT */}
           {customerPhotos.length > 0 && (
             <PhotoGallery 
               title="Customer Photos" 
               photos={customerPhotos}
-              emoji="📷"
+              emoji=""
               borderColor="border-gray-200"
             />
           )}
 
-          {/* 🔥 Convert to Project Button - DECISION POINT */}
+          {/* Convert to Project Button */}
           <ConvertToProjectButton 
             lead={lead}
             currentUser={currentUser}
             onRefresh={onRefresh}
           />
 
-          {/* 🔥 Lead/Project Status Section - BLUE for leads, GREEN for projects */}
-          <div className={`rounded-xl border-2 p-4 sm:p-6 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              📊 {isProject ? 'Project Status' : 'Lead Status'}
-            </h3>
-            
-            <div className="space-y-4">
-              {/* Current Status Display */}
-              <div>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Current Status</span>
-                <div className={`inline-flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm sm:text-base ${isProject ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                  {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
-                </div>
+          {/* Status Section - COMPACT */}
+          <div className={`rounded-lg border p-3 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-sm font-bold text-gray-900">
+                {isProject ? 'Project Status' : 'Lead Status'}
+              </h3>
+              <div className={`inline-flex items-center px-2 py-1 rounded-lg font-semibold text-xs ${isProject ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
+                {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
               </div>
+            </div>
+            
+            <div className="space-y-2">
 
-              {/* 🔥 Update Status Section */}
+              {/* Update Status */}
               <StatusUpdateSection 
                 lead={lead}
                 statusOptions={statusOptions}
@@ -473,7 +400,7 @@ const canDelete = canDeleteLead(userRole);
             </div>
           </div>
 
-          {/* 🔥 Project Section - Only shows if converted */}
+          {/* Project Section */}
           {lead.project_id && (
             <ProjectSection 
               lead={lead}
@@ -484,41 +411,31 @@ const canDelete = canDeleteLead(userRole);
             />
           )}
 
-{/* 🔥 Unified Photo Upload & Display */}
-          {lead.project_id && (
-            <PhotoUpload 
-              leadId={lead.id}
-              currentUser={currentUser}
-              onUploadComplete={onRefresh}
-              beforePhotos={beforePhotos}
-              afterPhotos={afterPhotos}
-              hasProject={!!lead.project_id}
-            />
-          )}
 
-          {/* Activity Timeline - MOVED TO BOTTOM */}
-          <div className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Activity Timeline ({notesArray.length})</h3>
+
+          {/* Activity Timeline - COMPACT */}
+          <div className="bg-white rounded-lg border border-gray-200 p-3">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">Activity ({notesArray.length})</h3>
             
-            <div className="mb-4">
+            <div className="mb-3">
               <textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Add a note..."
-                rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
+                rows={2}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
               />
               <button
                 onClick={handleAddNote}
                 disabled={saving || !newNote.trim()}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1.5 text-sm rounded-lg transition disabled:opacity-50"
               >
-                {saving ? '💾 Adding...' : '➕ Add Note'}
+                {saving ? 'Adding...' : 'Add Note'}
               </button>
             </div>
 
             {notesArray.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-80 overflow-y-auto">
                 {[...notesArray].reverse().map((note: any, idx: number) => {
                   const isOldFormat = typeof note === 'string';
                   const noteText = isOldFormat ? note : note.text;
@@ -529,7 +446,7 @@ const canDelete = canDeleteLead(userRole);
                   return (
                     <div 
                       key={idx} 
-                      className={`p-4 rounded-lg border-l-4 ${
+                      className={`p-2 rounded-lg border-l-4 text-xs ${
                         noteType === 'status_change' ? 'bg-blue-50 border-blue-500' 
                         : noteType === 'project_created' || noteType === 'project_updated' ? 'bg-purple-50 border-purple-500'
                         : noteType === 'quote_created' || noteType === 'quote_sent' ? 'bg-green-50 border-green-500'
@@ -539,28 +456,28 @@ const canDelete = canDeleteLead(userRole);
                       }`}
                     >
                       {noteType === 'status_change' ? (
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl">📊</span>
+                        <div className="flex items-start gap-2">
+                          <span className="text-base">📊</span>
                           <div className="flex-1">
-                            <p className="text-gray-900 font-semibold text-sm">Status Changed</p>
-                            <p className="text-gray-700 mt-1">
-                              <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs mr-2">{note.old_status}</span>
+                            <p className="text-gray-900 font-semibold">Status Changed</p>
+                            <p className="text-gray-700 mt-0.5">
+                              <span className="inline-block px-1.5 py-0.5 bg-gray-200 rounded text-xs mr-1">{note.old_status}</span>
                               →
-                              <span className="inline-block px-2 py-0.5 bg-blue-200 rounded text-xs ml-2">{note.new_status}</span>
+                              <span className="inline-block px-1.5 py-0.5 bg-blue-200 rounded text-xs ml-1">{note.new_status}</span>
                             </p>
-                            <p className="text-xs text-gray-500 mt-2">
-                              👤 {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
-                                month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+                            <p className="text-xs text-gray-500 mt-1">
+                              {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
+                                month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                               })}
                             </p>
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <p className="text-gray-800 mb-2 whitespace-pre-wrap">{noteText}</p>
+                          <p className="text-gray-800 mb-1 whitespace-pre-wrap">{noteText}</p>
                           <p className="text-xs text-gray-500">
-                            👤 {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
-                              month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+                            {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
+                              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                             })}
                           </p>
                         </div>
@@ -570,26 +487,38 @@ const canDelete = canDeleteLead(userRole);
                 })}
               </div>
             ) : (
-              <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">No activity yet</div>
+              <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-sm">No activity yet</div>
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
+        {/* COMPACT FOOTER */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 text-sm rounded-lg transition"
           >
             Close
           </button>
           {hasUnsavedChanges && (
             <button
-              onClick={handleSaveAllAndClose}
+              onClick={async () => {
+                if (newNote.trim()) {
+                  setSaving(true);
+                  const success = await onAddNote(lead.id, newNote);
+                  setSaving(false);
+                  if (success) {
+                    setNewNote('');
+                    toast.success('Note saved!');
+                    await onRefresh();
+                    onClose();
+                  }
+                }
+              }}
               disabled={saving}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition disabled:bg-gray-400"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition disabled:bg-gray-400"
             >
-              {saving ? '💾 Saving Note...' : '💾 Save Note'}
+              {saving ? 'Saving...' : 'Save Note'}
             </button>
           )}
         </div>

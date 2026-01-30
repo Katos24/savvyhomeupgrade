@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { sendQuoteToCustomer, sendScheduleConfirmation } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -353,6 +354,152 @@ export async function POST(request: Request) {
 
       console.log('✅ Quote sent');
       return NextResponse.json({ success: true });
+    }
+
+    // ==================== SEND QUOTE TO CUSTOMER 📧 ====================
+    else if (action === 'send_quote_to_customer') {
+      console.log('📧 Sending quote to customer via email');
+      
+      const leadCheck = await sql`
+        SELECT l.*, p.quote_data, p.quote_total, c.name as company_name
+        FROM leads l
+        LEFT JOIN projects p ON l.project_id = p.id
+        LEFT JOIN companies c ON l.company_id = c.id
+        WHERE l.id = ${id}
+      `;
+
+      if (!leadCheck[0]) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Lead not found' 
+        }, { status: 404 });
+      }
+
+      const lead = leadCheck[0];
+
+      if (!lead.project_id || !lead.quote_data || !lead.quote_total) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'No quote exists. Please create a quote first.' 
+        }, { status: 400 });
+      }
+
+      // Parse quote data
+      let quoteItems = [];
+      try {
+        quoteItems = typeof lead.quote_data === 'string' 
+          ? JSON.parse(lead.quote_data) 
+          : lead.quote_data;
+      } catch (error) {
+        console.error('Failed to parse quote data:', error);
+        quoteItems = [];
+      }
+
+      // Send email to customer
+      try {
+        await sendQuoteToCustomer({
+          customerEmail: lead.email,
+          customerName: lead.name,
+          companyName: lead.company_name || 'Your Service Provider',
+          quoteTotal: parseFloat(lead.quote_total),
+          quoteItems: quoteItems,
+        });
+
+        // Mark quote as sent
+        await sql`
+          UPDATE projects 
+          SET quote_sent_at = NOW(),
+              updated_at = NOW()
+          WHERE id = ${lead.project_id}
+        `;
+
+        // Add activity log
+        const quoteSentEntry = {
+          type: 'quote_sent',
+          text: `Quote emailed to customer ($${lead.quote_total})`,
+          user_name: user_name,
+          user_email: user_email,
+          timestamp: new Date().toISOString()
+        };
+
+        await addActivityToProject(id, quoteSentEntry);
+
+        console.log('✅ Quote email sent to customer');
+        return NextResponse.json({ success: true, message: 'Quote sent to customer!' });
+      } catch (emailError) {
+        console.error('❌ Failed to send quote email:', emailError);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Failed to send email. Please try again.' 
+        }, { status: 500 });
+      }
+    }
+
+    // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
+    else if (action === 'send_schedule_to_customer') {
+      console.log('📅 Sending schedule confirmation to customer');
+      
+      const leadCheck = await sql`
+        SELECT l.*, p.scheduled_date, p.scheduled_time, p.assigned_to, c.name as company_name
+        FROM leads l
+        LEFT JOIN projects p ON l.project_id = p.id
+        LEFT JOIN companies c ON l.company_id = c.id
+        WHERE l.id = ${id}
+      `;
+
+      if (!leadCheck[0]) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Lead not found' 
+        }, { status: 404 });
+      }
+
+      const lead = leadCheck[0];
+
+      if (!lead.project_id || !lead.scheduled_date) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'No schedule exists. Please set a schedule date first.' 
+        }, { status: 400 });
+      }
+
+      // Build service address
+      let serviceAddress = lead.address_line_1 || '';
+      if (lead.address_line_2) serviceAddress += `, ${lead.address_line_2}`;
+      if (lead.city) serviceAddress += `, ${lead.city}`;
+
+      // Send email to customer
+      try {
+        await sendScheduleConfirmation({
+          customerEmail: lead.email,
+          customerName: lead.name,
+          companyName: lead.company_name || 'Your Service Provider',
+          scheduledDate: lead.scheduled_date,
+          scheduledTime: lead.scheduled_time,
+          serviceAddress: serviceAddress || undefined,
+          assignedTo: lead.assigned_to || undefined,
+        });
+
+        // Add activity log
+        const scheduleEntry = {
+          type: 'schedule_sent',
+          text: `Schedule confirmation emailed to customer (${lead.scheduled_date})`,
+          user_name: user_name,
+          user_email: user_email,
+          timestamp: new Date().toISOString()
+        };
+
+        await addActivityToProject(id, scheduleEntry);
+
+        console.log('✅ Schedule email sent to customer');
+        return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
+      } catch (emailError) {
+        console.error('❌ Failed to send schedule email:', emailError);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Failed to send email. Please try again.' 
+        }, { status: 500 });
+      }
     }
 
     // ==================== UPDATE PAYMENT 🔥 ====================

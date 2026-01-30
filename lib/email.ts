@@ -307,3 +307,217 @@ export async function sendTeamInviteEmail({
     throw error;
   }
 }
+
+// 💰 Send quote to customer
+export async function sendQuoteToCustomer({
+  customerEmail,
+  customerName,
+  companyName,
+  quoteTotal,
+  quoteItems,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyName: string;
+  quoteTotal: number;
+  quoteItems: Array<{ description: string; amount: number }>;
+}) {
+  try {
+    const itemsHtml = quoteItems
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${item.description}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">$${item.amount.toFixed(2)}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .quote-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+            .total-row { background-color: #f9fafb; font-weight: bold; font-size: 18px; }
+            .info-box { background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 4px; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>💰 Your Quote from ${companyName}</h1>
+            
+            <p>Hi ${customerName},</p>
+            
+            <p>Thank you for considering ${companyName}! Here's your detailed quote:</p>
+            
+            <table class="quote-table">
+              <thead>
+                <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                  <th style="padding: 12px; text-align: left;">Description</th>
+                  <th style="padding: 12px; text-align: right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                <tr class="total-row">
+                  <td style="padding: 16px;">Total</td>
+                  <td style="padding: 16px; text-align: right; color: #10b981;">$${quoteTotal.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div class="info-box">
+              <strong>✅ Next Steps:</strong><br>
+              Reply to this email with any questions or to approve the quote and schedule your service!
+            </div>
+            
+            <p>We look forward to working with you!</p>
+            
+            <div class="footer">
+              ${companyName}<br>
+              Questions? Simply reply to this email.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: `${companyName} <onboarding@resend.dev>`,
+      to: customerEmail,
+      subject: `💰 Your Quote from ${companyName}`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Quote email sent to customer:', customerEmail);
+  } catch (error) {
+    console.error('❌ Failed to send quote email:', error);
+    throw error;
+  }
+}
+
+// 📅 Send schedule confirmation to customer
+export async function sendScheduleConfirmation({
+  customerEmail,
+  customerName,
+  companyName,
+  scheduledDate,
+  scheduledTime,
+  serviceAddress,
+  assignedTo,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyName: string;
+  scheduledDate: string;
+  scheduledTime?: string;
+  serviceAddress?: string;
+  assignedTo?: string;
+}) {
+  try {
+    // Format the date nicely
+    const dateObj = new Date(scheduledDate);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .appointment-box { background-color: #f0f9ff; border: 2px solid #3b82f6; padding: 24px; margin: 24px 0; border-radius: 8px; text-align: center; }
+            .date { font-size: 24px; font-weight: bold; color: #1e40af; margin: 8px 0; }
+            .time { font-size: 18px; color: #3b82f6; }
+            .info-section { background-color: #f9fafb; padding: 16px; margin: 16px 0; border-radius: 6px; }
+            .label { font-weight: 600; color: #6b7280; font-size: 14px; }
+            .value { color: #333; font-size: 16px; margin-top: 4px; }
+            .button { background-color: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; margin: 16px 0; font-weight: bold; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>📅 Your Appointment is Confirmed!</h1>
+            
+            <p>Hi ${customerName},</p>
+            
+            <p>Great news! Your service appointment with ${companyName} has been scheduled.</p>
+            
+            <div class="appointment-box">
+              <div style="font-size: 48px; margin-bottom: 8px;">📅</div>
+              <div class="date">${formattedDate}</div>
+              ${scheduledTime ? `<div class="time">⏰ ${scheduledTime}</div>` : ''}
+            </div>
+            
+            ${serviceAddress ? `
+              <div class="info-section">
+                <div class="label">📍 Service Location:</div>
+                <div class="value">${serviceAddress}</div>
+              </div>
+            ` : ''}
+            
+            ${assignedTo ? `
+              <div class="info-section">
+                <div class="label">👷 Technician:</div>
+                <div class="value">${assignedTo}</div>
+              </div>
+            ` : ''}
+            
+            <div class="info-section">
+              <div class="label">📝 What to Expect:</div>
+              <div class="value">
+                • Our team will arrive at the scheduled time<br>
+                • Please ensure access to the work area<br>
+                • Feel free to ask any questions during the visit
+              </div>
+            </div>
+            
+            <center>
+              <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Appointment with ${companyName}`)}&dates=${dateObj.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${dateObj.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(`Service appointment with ${companyName}`)}" class="button" target="_blank">
+                📅 Add to Google Calendar
+              </a>
+            </center>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 24px;">
+              Need to reschedule? Reply to this email and we'll work with you to find a better time.
+            </p>
+            
+            <div class="footer">
+              ${companyName}<br>
+              Questions? Simply reply to this email.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: `${companyName} <onboarding@resend.dev>`,
+      to: customerEmail,
+      subject: `📅 Your appointment is confirmed - ${formattedDate}`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Schedule confirmation sent to customer:', customerEmail);
+  } catch (error) {
+    console.error('❌ Failed to send schedule confirmation:', error);
+    throw error;
+  }
+}
