@@ -24,11 +24,8 @@ export default function LoginPage() {
 
       if (data.success) {
         // Use window.location.href instead of router.push for proper cookie handling
-        if (data.user.role === 'admin') {
-          window.location.href = '/admin';
-        } else {
-          window.location.href = `/${data.user.companySlug}/dashboard`;
-        }
+   window.location.href = `/${data.user.companySlug}/dashboard`;
+
       } else {
         setError(data.error || 'Login failed');
         setLoading(false);
