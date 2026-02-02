@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { companyId, companyEmail } = await req.json();
@@ -19,7 +22,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create Stripe Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
       client_reference_id: companyId.toString(),
       customer_email: companyEmail,
       subscription_data: {
-        trial_period_days: 14, // 14-day free trial
+        trial_period_days: 14,
         metadata: {
           companyId: companyId.toString(),
         },
