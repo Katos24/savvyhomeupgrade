@@ -1,3 +1,44 @@
+export const BUSINESS_TYPES = [
+  { value: 'general', label: 'General Services', emoji: '📋' },
+  { value: 'home_services', label: 'Home Services', emoji: '🏠' },
+  { value: 'construction', label: 'Construction', emoji: '🏗️' },
+  { value: 'hvac', label: 'HVAC', emoji: '❄️' },
+  { value: 'auto_services', label: 'Auto Services', emoji: '🚗' },
+  { value: 'beauty_services', label: 'Beauty Services', emoji: '💇' },
+  { value: 'pet_services', label: 'Pet Services', emoji: '🐕' },
+  { value: 'video_production', label: 'Video Production', emoji: '🎥' },
+  { value: 'legal_services', label: 'Legal Services', emoji: '⚖️' },
+  { value: 'medical_services', label: 'Medical Services', emoji: '🏥' },
+  { value: 'fitness_services', label: 'Fitness & Wellness', emoji: '💪' },
+  { value: 'cleaning_services', label: 'Cleaning Services', emoji: '🧹' },
+  { value: 'event_services', label: 'Event Services', emoji: '🎉' },
+  { value: 'tech_services', label: 'Tech Services', emoji: '💻' },
+  { value: 'real_estate', label: 'Real Estate', emoji: '🏘️' },
+  { value: 'education_services', label: 'Education & Tutoring', emoji: '📚' },
+  { value: 'food_services', label: 'Food Services', emoji: '🍽️' },
+];
+
+export const DEFAULT_STATUSES = [
+  { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
+  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
+  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
+  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
+  { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
+];
+
+export const COLOR_OPTIONS = [
+  { value: 'blue', label: 'Blue', class: 'bg-blue-500' },
+  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500' },
+  { value: 'purple', label: 'Purple', class: 'bg-purple-500' },
+  { value: 'orange', label: 'Orange', class: 'bg-orange-500' },
+  { value: 'green', label: 'Green', class: 'bg-green-500' },
+  { value: 'red', label: 'Red', class: 'bg-red-500' },
+  { value: 'gray', label: 'Gray', class: 'bg-gray-500' },
+  { value: 'indigo', label: 'Indigo', class: 'bg-indigo-500' },
+  { value: 'pink', label: 'Pink', class: 'bg-pink-500' },
+];
+
+
 export type Category = {
   value: string;
   label: string;
@@ -244,4 +285,12 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'auto_mechanical', label: 'Auto Mechanical', emoji: '⚙️' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],
+};
+
+
+export type StatusOption = {
+  value: string;
+  label: string;
+  color: string;
+  emoji: string;
 };

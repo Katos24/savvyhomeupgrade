@@ -6,6 +6,7 @@ import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster } from 'sonner';
 import styles from '@/app/dashboard/dashboard.module.css';
+import TrialBanner from '@/components/TrialBanner';
 
 type StatusOption = {
   value: string;
@@ -20,6 +21,8 @@ type Company = {
   slug: string;
   logo_url?: string | null;
   status_options?: StatusOption[];
+  subscription_status?: string;
+  trial_ends_at?: string | null;
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
@@ -306,13 +309,21 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     );
   };
 
-  return (
-    <div className={styles.container}>
-      <Toaster position="top-right" />
-      <div className={styles.innerContainer}>
-        
-        {/* HEADER */}
-        <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
+return (
+  <div className={styles.container}>
+    <Toaster position="top-right" />
+    
+    {/* TRIAL BANNER */}
+    <TrialBanner 
+      subscriptionStatus={company.subscription_status || 'inactive'}
+      trialEndsAt={company.trial_ends_at || null}
+      companySlug={company.slug}
+    />
+    
+    <div className={styles.innerContainer}>
+      
+      {/* HEADER */}
+      <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
 
@@ -343,7 +354,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   href={`/${company.slug}`}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
                 >
-                  ➕ Create Lead
+                  ➕ Create
                 </a>
                 <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 border border-white/20">
                   <p className="text-sm font-semibold text-white">{currentUser.name}</p>
@@ -413,7 +424,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               href={`/${company.slug}/dashboard/calendar`}
               className="px-4 sm:px-6 py-3 rounded-lg font-semibold transition bg-white/20 text-white hover:bg-white/30 border border-white/30 flex items-center gap-2"
             >
-              📅 Calendar View
+              📅 Calendar
             </a>
           </div>
 

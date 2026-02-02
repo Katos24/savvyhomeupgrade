@@ -12,18 +12,32 @@ interface Company {
   phone: string;
   logo_url: string | null;
   created_at: Date;
+  subscription_status?: string;
+  trial_ends_at?: string | null;
 }
 
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const companies = await sql`
-    SELECT * FROM companies WHERE slug = ${slug}
+    SELECT 
+      id,
+      name,
+      slug,
+      email,
+      phone,
+      logo_url,
+      created_at,
+      subscription_status,
+      trial_ends_at,
+      status_options
+    FROM companies 
+    WHERE slug = ${slug}
   `;
-  
+
   if (companies.length === 0) {
     return null;
   }
-  
+
   return companies[0] as Company;
 }
 
@@ -62,10 +76,10 @@ export default async function CompanyDashboardPage({
 }) {
   // Await params first
   const { company: companySlug } = await params;
-  
+
   // Verify authentication and authorization
   await verifyAuth(companySlug);
-  
+
   // Get company data
   const company = await getCompany(companySlug);
 

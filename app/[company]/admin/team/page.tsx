@@ -39,6 +39,16 @@ export default function TeamAdminPageRoute() {
           return;
         }
 
+        // 🔒 CHECK IF USER BELONGS TO THIS COMPANY (ADD THIS)
+        const userCompanySlug = userData.user.companySlug || userData.user.company_slug;
+        console.log('🔍 Security check - userCompanySlug:', userCompanySlug, 'requestedSlug:', companySlug);
+        
+        if (userData.user.role !== 'admin' && userCompanySlug !== companySlug) {
+          console.log('⛔ User trying to access different company - redirecting');
+          window.location.href = `/${userCompanySlug}/admin/team`;
+          return;
+        }
+
         // 🔒 CHECK PERMISSION
         const userRole = userData.user.role || 'member';
         if (!canAccessTeamPage(userRole)) {

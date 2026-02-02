@@ -16,7 +16,11 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const [saving, setSaving] = useState(false);
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [showQuoteBuilder, setShowQuoteBuilder] = useState(false);
-  const [newLineItem, setNewLineItem] = useState({ description: '', amount: '' });
+  const [newLineItem, setNewLineItem] = useState({ 
+    description: '', 
+    quantity: '1', 
+    unitPrice: '' 
+  });
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const availableTemplates = getTemplatesByCategory(lead?.category || 'general');
 
@@ -29,6 +33,8 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     const templateItems = template.items.map((item, index) => ({
       id: Date.now() + index,
       description: item.description,
+      quantity: item.quantity || 1,
+      unitPrice: item.amount / (item.quantity || 1),
       amount: item.amount
     }));
     
@@ -37,18 +43,38 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     toast.success(`Template "${template.name}" loaded!`);
   };
 
-  const handleAddQuoteItem = () => {
-    if (!newLineItem.description || !newLineItem.amount) {
-      toast.error('Please fill in description and amount');
-      return;
-    }
-    
-    setQuoteData([...quoteData, {
-      id: Date.now(),
-      description: newLineItem.description,
-      amount: parseFloat(newLineItem.amount)
-    }]);
-    setNewLineItem({ description: '', amount: '' });
+ const handleAddQuoteItem = () => {
+  if (!newLineItem.description || !newLineItem.unitPrice) {
+    toast.error('Fill in description and price');
+    return;
+  }
+  
+  const qty = parseFloat(newLineItem.quantity) || 1;
+  const price = parseFloat(newLineItem.unitPrice);
+  
+  setQuoteData([...quoteData, {
+    id: Date.now(),
+    description: newLineItem.description,
+    quantity: qty,
+    unitPrice: price,
+    amount: qty * price
+  }]);
+  setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
+  toast.success('Line item added!');
+};
+
+  const handleUpdateLineItem = (id: number, field: string, value: string) => {
+    setQuoteData(quoteData.map((item: any) => {
+      if (item.id !== id) return item;
+      
+      const updated = { ...item, [field]: field === 'description' ? value : parseFloat(value) || 0 };
+      
+      if (field === 'quantity' || field === 'unitPrice') {
+        updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
+      }
+      
+      return updated;
+    }));
   };
 
   const handleRemoveQuoteItem = (itemId: number) => {
@@ -115,19 +141,33 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     <div className="p-4 space-y-3">
       {quoteData.length > 0 && !showQuoteBuilder ? (
         <div className="space-y-3">
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            {quoteData.map((item: any) => (
-              <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 gap-2">
-                <span className="text-gray-700 text-sm">{item.description}</span>
-                <span className="font-semibold text-gray-900 text-sm whitespace-nowrap">{formatCurrency(item.amount)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between items-center pt-3 mt-3 border-t-2 border-gray-300">
-              <span className="text-base font-bold text-gray-900">TOTAL</span>
-              <span className="text-lg font-bold text-emerald-600">
-                {formatCurrency(calculateQuoteTotal())}
-              </span>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs uppercase">Description</th>
+                  <th className="text-center py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-16">Qty</th>
+                  <th className="text-right py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-24">Unit Price</th>
+                  <th className="text-right py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-28">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quoteData.map((item: any) => (
+                  <tr key={item.id} className="border-b border-gray-200 last:border-0">
+                    <td className="py-2 px-3 text-gray-900">{item.description}</td>
+                    <td className="py-2 px-3 text-center text-gray-600">{item.quantity || 1}</td>
+                    <td className="py-2 px-3 text-right text-gray-600">{formatCurrency(item.unitPrice || item.amount)}</td>
+                    <td className="py-2 px-3 text-right font-semibold text-gray-900">{formatCurrency(item.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t-2 border-gray-300 bg-gray-50">
+                <tr>
+                  <td colSpan={3} className="py-3 px-3 text-right font-bold text-gray-900">TOTAL</td>
+                  <td className="py-3 px-3 text-right font-bold text-emerald-600 text-lg">{formatCurrency(calculateQuoteTotal())}</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -172,53 +212,122 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
           <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
             <h5 className="font-semibold text-gray-900 mb-2 text-sm">Line Items</h5>
             
-            {quoteData.map((item: any) => (
-              <div key={item.id} className="flex justify-between items-center py-1.5 mb-2 bg-white rounded px-2 gap-2">
-                <span className="text-gray-700 text-sm flex-1">{item.description}</span>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="font-semibold text-gray-900 text-sm">{formatCurrency(item.amount)}</span>
-                  <button
-                    onClick={() => handleRemoveQuoteItem(item.id)}
-                    className="text-red-600 hover:text-red-800 font-bold"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            <div className="grid grid-cols-[1fr_auto] gap-2 mt-2">
-              <input
-                type="text"
-                value={newLineItem.description}
-                onChange={(e) => setNewLineItem({...newLineItem, description: e.target.value})}
-                placeholder="Description"
-                className="px-3 py-2 text-sm rounded border border-gray-300 focus:border-emerald-500 focus:outline-none"
-              />
-              <input
-                type="number"
-                step="0.01"
-                value={newLineItem.amount}
-                onChange={(e) => setNewLineItem({...newLineItem, amount: e.target.value})}
-                placeholder="Amount"
-                className="w-24 px-3 py-2 text-sm rounded border border-gray-300 focus:border-emerald-500 focus:outline-none"
-              />
+            <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs uppercase">Description</th>
+                    <th className="text-center py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-20">Qty</th>
+                    <th className="text-right py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-28">Unit Price</th>
+                    <th className="text-right py-2 px-3 font-semibold text-gray-700 text-xs uppercase w-28">Total</th>
+                    <th className="w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteData.map((item: any) => (
+                    <tr key={item.id} className="border-b border-gray-200">
+                      <td className="py-2 px-3">
+                        <input
+                          type="text"
+                          value={item.description}
+                          onChange={(e) => handleUpdateLineItem(item.id, 'description', e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-emerald-500 focus:outline-none"
+                        />
+                      </td>
+                      <td className="py-2 px-3">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.quantity || 1}
+                          onChange={(e) => handleUpdateLineItem(item.id, 'quantity', e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded text-center focus:border-emerald-500 focus:outline-none"
+                        />
+                      </td>
+                      <td className="py-2 px-3">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.unitPrice || 0}
+                          onChange={(e) => handleUpdateLineItem(item.id, 'unitPrice', e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded text-right focus:border-emerald-500 focus:outline-none"
+                        />
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-gray-900">
+                        {formatCurrency(item.amount)}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <button
+                          onClick={() => handleRemoveQuoteItem(item.id)}
+                          className="text-red-600 hover:text-red-800 font-bold text-lg"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {/* New row input - inline in table */}
+                  <tr className="bg-green-50 border-t-2 border-gray-300">
+                    <td className="py-2 px-3">
+                      <input
+                        type="text"
+                        value={newLineItem.description}
+                        onChange={(e) => setNewLineItem({...newLineItem, description: e.target.value})}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddQuoteItem()}
+                        placeholder="Description"
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-emerald-500 focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={newLineItem.quantity}
+                        onChange={(e) => setNewLineItem({...newLineItem, quantity: e.target.value})}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddQuoteItem()}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded text-center focus:border-emerald-500 focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newLineItem.unitPrice}
+                        onChange={(e) => setNewLineItem({...newLineItem, unitPrice: e.target.value})}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddQuoteItem()}
+                        placeholder="0.00"
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded text-right focus:border-emerald-500 focus:outline-none"
+                      />
+                    </td>
+                    <td className="py-2 px-3 text-right text-gray-500 text-sm">
+                      {newLineItem.unitPrice ? formatCurrency(parseFloat(newLineItem.unitPrice) * parseFloat(newLineItem.quantity || '1')) : '$0.00'}
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      <button
+                        onClick={handleAddQuoteItem}
+                        disabled={!newLineItem.description || !newLineItem.unitPrice}
+                        className="text-green-600 hover:text-green-800 font-bold text-lg disabled:text-gray-400 disabled:cursor-not-allowed"
+                      >
+                        +
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                {quoteData.length > 0 && (
+                  <tfoot className="border-t-2 border-gray-300 bg-gray-50">
+                    <tr>
+                      <td colSpan={3} className="py-3 px-3 text-right font-bold text-gray-900">TOTAL</td>
+                      <td className="py-3 px-3 text-right font-bold text-emerald-600 text-lg">{formatCurrency(calculateQuoteTotal())}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
             </div>
-            <button
-              onClick={handleAddQuoteItem}
-              className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 text-sm rounded transition"
-            >
-              Add Line Item
-            </button>
-
-            {quoteData.length > 0 && (
-              <div className="flex justify-between items-center pt-3 mt-3 border-t-2 border-gray-300">
-                <span className="text-base font-bold text-gray-900">TOTAL</span>
-                <span className="text-lg font-bold text-emerald-600">
-                  {formatCurrency(calculateQuoteTotal())}
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="flex gap-2">
@@ -233,7 +342,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
               disabled={saving || quoteData.length === 0}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-semibold py-2 text-sm rounded-lg transition"
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving...' : 'Save Quote'}
             </button>
           </div>
         </div>
