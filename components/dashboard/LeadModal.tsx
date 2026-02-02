@@ -67,7 +67,7 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={isUpdating}
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
         >
           {statusOptions.map((option: any) => (
             <option key={option.value} value={option.value}>
@@ -105,6 +105,7 @@ export default function LeadModal({
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -361,14 +362,13 @@ export default function LeadModal({
           )}
 
           {/* Customer Photos - COMPACT */}
-          {customerPhotos.length > 0 && (
-            <PhotoGallery 
-              title="Customer Photos" 
-              photos={customerPhotos}
-              emoji=""
-              borderColor="border-gray-200"
-            />
-          )}
+         {customerPhotos.length > 0 && (
+  <PhotoGallery 
+    title="Customer Photos" 
+    photos={customerPhotos}
+    emoji="📷"
+  />
+)}
 
           {/* Convert to Project Button */}
           <ConvertToProjectButton 
@@ -411,83 +411,97 @@ export default function LeadModal({
             />
           )}
 
-
-
-          {/* Activity Timeline - COMPACT */}
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <h3 className="text-sm font-bold text-gray-900 mb-2">Activity ({notesArray.length})</h3>
-            
-            <div className="mb-3">
-              <textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a note..."
-                rows={2}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
-              />
-              <button
-                onClick={handleAddNote}
-                disabled={saving || !newNote.trim()}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1.5 text-sm rounded-lg transition disabled:opacity-50"
-              >
-                {saving ? 'Adding...' : 'Add Note'}
-              </button>
-            </div>
-
-            {notesArray.length > 0 ? (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {[...notesArray].reverse().map((note: any, idx: number) => {
-                  const isOldFormat = typeof note === 'string';
-                  const noteText = isOldFormat ? note : note.text;
-                  const noteType = isOldFormat ? 'note' : note.type;
-                  const userName = isOldFormat ? 'Unknown' : (note.user_name || 'System');
-                  const timestamp = isOldFormat ? lead.created_at : note.timestamp;
-
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`p-2 rounded-lg border-l-4 text-xs ${
-                        noteType === 'status_change' ? 'bg-blue-50 border-blue-500' 
-                        : noteType === 'project_created' || noteType === 'project_updated' ? 'bg-purple-50 border-purple-500'
-                        : noteType === 'quote_created' || noteType === 'quote_sent' ? 'bg-green-50 border-green-500'
-                        : noteType === 'payment_updated' ? 'bg-orange-50 border-orange-500'
-                        : noteType === 'photo_upload' ? 'bg-pink-50 border-pink-500'
-                        : 'bg-gray-50 border-gray-400'
-                      }`}
-                    >
-                      {noteType === 'status_change' ? (
-                        <div className="flex items-start gap-2">
-                          <span className="text-base">📊</span>
-                          <div className="flex-1">
-                            <p className="text-gray-900 font-semibold">Status Changed</p>
-                            <p className="text-gray-700 mt-0.5">
-                              <span className="inline-block px-1.5 py-0.5 bg-gray-200 rounded text-xs mr-1">{note.old_status}</span>
-                              →
-                              <span className="inline-block px-1.5 py-0.5 bg-blue-200 rounded text-xs ml-1">{note.new_status}</span>
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
-                                month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-gray-800 mb-1 whitespace-pre-wrap">{noteText}</p>
-                          <p className="text-xs text-gray-500">
-                            {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
-                              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+  
+          {/* Activity Timeline - COLLAPSIBLE */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <button
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition rounded-lg"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900">Activity</h3>
+                {notesArray.length > 0 && !showActivityLog && (
+                  <span className="text-xs text-gray-600">({notesArray.length})</span>
+                )}
               </div>
-            ) : (
-              <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-sm">No activity yet</div>
+              <span className={`text-lg transition-transform ${showActivityLog ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+
+            {showActivityLog && (
+              <div className="px-3 pb-3 space-y-3">
+                <div>
+                  <textarea
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
+                  />
+                  <button
+                    onClick={handleAddNote}
+                    disabled={saving || !newNote.trim()}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1.5 text-sm rounded-lg transition disabled:opacity-50"
+                  >
+                    {saving ? 'Adding...' : 'Add Note'}
+                  </button>
+                </div>
+
+                {notesArray.length > 0 ? (
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {[...notesArray].reverse().map((note: any, idx: number) => {
+                      const isOldFormat = typeof note === 'string';
+                      const noteText = isOldFormat ? note : note.text;
+                      const noteType = isOldFormat ? 'note' : note.type;
+                      const userName = isOldFormat ? 'Unknown' : (note.user_name || 'System');
+                      const timestamp = isOldFormat ? lead.created_at : note.timestamp;
+
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`p-2 rounded-lg border-l-4 text-xs ${
+                            noteType === 'status_change' ? 'bg-blue-50 border-blue-500' 
+                            : noteType === 'project_created' || noteType === 'project_updated' ? 'bg-purple-50 border-purple-500'
+                            : noteType === 'quote_created' || noteType === 'quote_sent' ? 'bg-green-50 border-green-500'
+                            : noteType === 'payment_updated' ? 'bg-orange-50 border-orange-500'
+                            : noteType === 'photo_upload' ? 'bg-pink-50 border-pink-500'
+                            : 'bg-gray-50 border-gray-400'
+                          }`}
+                        >
+                          {noteType === 'status_change' ? (
+                            <div className="flex items-start gap-2">
+                              <span className="text-base">📊</span>
+                              <div className="flex-1">
+                                <p className="text-gray-900 font-semibold">Status Changed</p>
+                                <p className="text-gray-700 mt-0.5">
+                                  <span className="inline-block px-1.5 py-0.5 bg-gray-200 rounded text-xs mr-1">{note.old_status}</span>
+                                  →
+                                  <span className="inline-block px-1.5 py-0.5 bg-blue-200 rounded text-xs ml-1">{note.new_status}</span>
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
+                                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-gray-800 mb-1 whitespace-pre-wrap">{noteText}</p>
+                              <p className="text-xs text-gray-500">
+                                {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
+                                  month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-sm">No activity yet</div>
+                )}
+              </div>
             )}
           </div>
         </div>
