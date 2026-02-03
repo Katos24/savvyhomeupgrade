@@ -110,7 +110,7 @@ export default async function CompanyDashboardPage({
     notFound();
   }
 
-  // 🔥 CHECK SUBSCRIPTION STATUSs
+  // 🔥 CHECK SUBSCRIPTION STATUS
   const isTrialExpired = company.subscription_status === 'trialing' && 
                          company.trial_ends_at && 
                          new Date(company.trial_ends_at) < new Date();
