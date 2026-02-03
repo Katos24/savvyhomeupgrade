@@ -56,10 +56,33 @@ async function verifyAuth(companySlug: string) {
       process.env.JWT_SECRET || 'your-secret-key-change-this'
     ) as any;
 
-    // Check if user has access to this company
-    if (decoded.role !== 'admin' && decoded.companySlug !== companySlug) {
-      // Redirect to their own dashboard
-      redirect(`/${decoded.companySlug}/dashboard`);
+    // 🔥 Check if user belongs to this company
+    const sql = neon(process.env.DATABASE_URL!);
+    const userAccess = await sql`
+      SELECT u.id, u.company_id, c.slug
+      FROM users u
+      JOIN companies c ON u.company_id = c.id
+      WHERE u.id = ${decoded.userId}
+      AND c.slug = ${companySlug}
+    `;
+
+    // If no match found, user doesn't have access to this company
+    if (userAccess.length === 0) {
+      // Get their actual company slug
+      const userCompany = await sql`
+        SELECT c.slug
+        FROM users u
+        JOIN companies c ON u.company_id = c.id
+        WHERE u.id = ${decoded.userId}
+      `;
+      
+      if (userCompany.length > 0) {
+        // Redirect to their own dashboard
+        redirect(`/${userCompany[0].slug}/dashboard`);
+      } else {
+        // No company found, go to login
+        redirect('/login');
+      }
     }
 
     return decoded;
@@ -76,15 +99,31 @@ export default async function CompanyDashboardPage({
 }) {
   // Await params first
   const { company: companySlug } = await params;
-
+  
   // Verify authentication and authorization
   await verifyAuth(companySlug);
-
+  
   // Get company data
   const company = await getCompany(companySlug);
-
+  
   if (!company) {
     notFound();
+  }
+
+  // 🔥 CHECK SUBSCRIPTION STATUS
+  const isTrialExpired = company.subscription_status === 'trialing' && 
+                         company.trial_ends_at && 
+                         new Date(company.trial_ends_at) < new Date();
+  
+  const needsPayment = !company.subscription_status || 
+                       company.subscription_status === 'canceled' ||
+                       company.subscription_status === 'past_due' ||
+                       company.subscription_status === 'inactive' ||
+                       isTrialExpired;
+
+  // Redirect to subscribe page if payment needed
+  if (needsPayment) {
+    redirect(`/subscribe?reason=payment_required&company=${companySlug}`);
   }
 
   return <CompanyDashboardClient company={company} />;

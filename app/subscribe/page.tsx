@@ -13,48 +13,57 @@ function SubscribePageContent() {
 
   const subscriptionStatus = searchParams.get('subscription');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        // Get current user
-        const userRes = await fetch('/api/auth/me');
-        const userData = await userRes.json();
+useEffect(() => {
+  async function loadData() {
+    console.log('🔍 Starting to load data...'); // ADD THIS
+    try {
+      // Get current user
+      const userRes = await fetch('/api/auth/me');
+      const userData = await userRes.json();
+      console.log('👤 User data:', userData); // ADD THIS
 
-        if (!userData.success || !userData.user) {
-          window.location.href = '/login';
-          return;
-        }
-
-        setCurrentUser(userData.user);
-
-        // Get company info
-        const companyRes = await fetch(`/api/company/${userData.user.company_slug}/info`);
-        const companyData = await companyRes.json();
-
-        if (companyData.success && companyData.company) {
-          setCompany(companyData.company);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
+      if (!userData.success || !userData.user) {
+        window.location.href = '/login';
+        return;
       }
+
+      setCurrentUser(userData.user);
+
+// Get company info
+      const slug = userData.user.companySlug || userData.user.company_slug;
+      if (!slug) {
+        console.error('No company slug found in user data:', userData.user);
+        return;
+      }
+      
+      console.log('🔍 Fetching company with slug:', slug);
+      const companyRes = await fetch(`/api/company/${slug}/info`);
+      const companyData = await companyRes.json();
+      console.log('🏢 Company data:', companyData);
+      
+      if (companyData.success && companyData.company) {
+        setCompany(companyData.company);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
-
-    loadData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
   }
 
+  loadData();
+}, []);
+
+if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin text-6xl mb-4">⏳</div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
   // Success state
   if (subscriptionStatus === 'success') {
     return (

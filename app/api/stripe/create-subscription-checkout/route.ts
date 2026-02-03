@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import { neon } from '@neondatabase/serverless';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get company slug from database
+    const sql = neon(process.env.DATABASE_URL!);
+    const companies = await sql`
+      SELECT slug FROM companies WHERE id = ${companyId}
+    `;
+
+    if (companies.length === 0) {
+      return NextResponse.json(
+        { error: 'Company not found' },
+        { status: 404 }
+      );
+    }
+
+    const companySlug = companies[0].slug;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -31,8 +47,8 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?subscription=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?subscription=cancelled`,
       client_reference_id: companyId.toString(),
       customer_email: companyEmail,
       subscription_data: {

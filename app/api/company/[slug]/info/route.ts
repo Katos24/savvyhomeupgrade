@@ -9,10 +9,13 @@ export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
     const sql = neon(process.env.DATABASE_URL!);
-    
+
     // Get company data
     const companies = await sql`
-      SELECT id, name, slug, email, phone, business_type, logo_url, status_options, created_at
+      SELECT 
+        id, name, slug, email, phone, business_type, logo_url, 
+        status_options, created_at,
+        subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id
       FROM companies 
       WHERE slug = ${slug}
     `;
@@ -37,7 +40,11 @@ export async function GET(request: Request, { params }: Props) {
         business_type: company.business_type,
         logo_url: company.logo_url,
         status_options: company.status_options,
-        created_at: company.created_at
+        created_at: company.created_at,
+        subscription_status: company.subscription_status,  // 👈 ADD THIS
+        trial_ends_at: company.trial_ends_at,              // 👈 ADD THIS
+        stripe_customer_id: company.stripe_customer_id,    // 👈 ADD THIS
+        stripe_subscription_id: company.stripe_subscription_id // 👈 ADD THIS
       }
     });
   } catch (error) {

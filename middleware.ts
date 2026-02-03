@@ -18,14 +18,15 @@ export function middleware(request: NextRequest) {
   // Check if it's an API route
   const isApiRoute = pathname.startsWith('/api/');
 
-  // Public API routes (login, logout, etc.)
-  const publicApiRoutes = [
-    '/api/auth/login',
-    '/api/auth/logout',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/signup',  // ADD THIS
-  ];
+// Public API routes (login, logout, etc.)
+const publicApiRoutes = [
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/signup',
+  '/api/stripe/webhook',  // 👈 ADD THIS
+];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route));
