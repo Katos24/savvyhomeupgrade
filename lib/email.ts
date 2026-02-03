@@ -521,3 +521,254 @@ export async function sendScheduleConfirmation({
     throw error;
   }
 }
+
+
+// 🎯 Send trial ending reminder (7 days before)
+export async function sendTrialEndingReminderEmail({
+  companyEmail,
+  companyName,
+  daysRemaining,
+  subscribeUrl,
+}: {
+  companyEmail: string;
+  companyName: string;
+  daysRemaining: number;
+  subscribeUrl: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .warning-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 24px 0; border-radius: 8px; text-align: center; }
+            .days { font-size: 48px; font-weight: bold; color: #f59e0b; margin: 12px 0; }
+            .button { background-color: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
+            .features { background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .feature { margin: 12px 0; padding-left: 24px; position: relative; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>⏰ Your Free Trial is Ending Soon</h1>
+            
+            <p>Hi ${companyName},</p>
+            
+            <div class="warning-box">
+              <div style="font-size: 64px; margin-bottom: 12px;">⏰</div>
+              <div class="days">${daysRemaining} Days Left</div>
+              <p style="margin: 8px 0; color: #92400e; font-weight: 600;">Your free trial ends in ${daysRemaining} days</p>
+            </div>
+            
+            <p>We hope you've been enjoying Lead2Project! Your trial is ending soon, but don't worry - you can continue using all features for just <strong>$39.99/month</strong>.</p>
+            
+            <div class="features">
+              <h3 style="margin-top: 0; color: #333;">✅ What You Keep:</h3>
+              <div class="feature">✓ Unlimited lead tracking</div>
+              <div class="feature">✓ Professional quote builder</div>
+              <div class="feature">✓ Photo uploads from customers</div>
+              <div class="feature">✓ Get paid in 2 days with Stripe</div>
+              <div class="feature">✓ Team management</div>
+              <div class="feature">✓ Email notifications</div>
+            </div>
+            
+            <p><strong>Your card will be automatically charged $39.99 on your trial end date.</strong> No action needed!</p>
+            
+            <center>
+              <a href="${subscribeUrl}" class="button">View Billing Details →</a>
+            </center>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 24px; text-align: center;">
+              Want to cancel? You can do so anytime from your billing settings.
+            </p>
+            
+            <div class="footer">
+              Lead2Project<br>
+              Questions? Reply to this email - we're here to help!
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: companyEmail,
+      subject: `⏰ ${daysRemaining} days left in your free trial`,
+      html: emailHtml,
+    });
+
+    console.log(`✅ Trial reminder (${daysRemaining} days) sent to:`, companyEmail);
+  } catch (error) {
+    console.error('❌ Failed to send trial reminder:', error);
+    throw error;
+  }
+}
+
+// 💳 Send payment failed notification
+export async function sendPaymentFailedEmail({
+  companyEmail,
+  companyName,
+  updatePaymentUrl,
+}: {
+  companyEmail: string;
+  companyName: string;
+  updatePaymentUrl: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #dc2626; font-size: 24px; margin-bottom: 20px; text-align: center; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .alert-box { background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 20px; margin: 24px 0; border-radius: 8px; }
+            .button { background-color: #dc2626; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>⚠️ Payment Failed</h1>
+            
+            <p>Hi ${companyName},</p>
+            
+            <div class="alert-box">
+              <div style="font-size: 48px; text-align: center; margin-bottom: 12px;">💳</div>
+              <p style="margin: 0; font-weight: 600; color: #991b1b; text-align: center;">
+                We couldn't process your payment
+              </p>
+            </div>
+            
+            <p>Your recent payment of $39.99 failed to process. This could be due to:</p>
+            
+            <ul style="color: #555; line-height: 28px;">
+              <li>Insufficient funds</li>
+              <li>Expired card</li>
+              <li>Card declined by your bank</li>
+            </ul>
+            
+            <p><strong>Don't worry!</strong> Your account is still active for now. Please update your payment method to avoid service interruption.</p>
+            
+            <center>
+              <a href="${updatePaymentUrl}" class="button">Update Payment Method →</a>
+            </center>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 24px;">
+              We'll automatically retry in a few days. If payment continues to fail, your account will be suspended after 7 days.
+            </p>
+            
+            <div class="footer">
+              Lead2Project<br>
+              Questions? Reply to this email and we'll help you out!
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: companyEmail,
+      subject: '⚠️ Payment Failed - Update Your Card',
+      html: emailHtml,
+    });
+
+    console.log('✅ Payment failed email sent to:', companyEmail);
+  } catch (error) {
+    console.error('❌ Failed to send payment failed email:', error);
+    throw error;
+  }
+}
+
+// ✅ Send subscription activated email
+export async function sendSubscriptionActivatedEmail({
+  companyEmail,
+  companyName,
+  dashboardUrl,
+}: {
+  companyEmail: string;
+  companyName: string;
+  dashboardUrl: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #10b981; font-size: 24px; margin-bottom: 20px; text-align: center; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .success-box { background-color: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin: 24px 0; border-radius: 8px; text-align: center; }
+            .button { background-color: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🎉 Welcome to Lead2Project!</h1>
+            
+            <p>Hi ${companyName},</p>
+            
+            <div class="success-box">
+              <div style="font-size: 64px; margin-bottom: 12px;">✅</div>
+              <p style="margin: 0; font-weight: 600; color: #065f46; font-size: 18px;">
+                Your subscription is now active!
+              </p>
+            </div>
+            
+            <p>Thank you for subscribing! Your payment of <strong>$39.99</strong> has been processed successfully.</p>
+            
+            <p>You now have full access to all Lead2Project features:</p>
+            
+            <ul style="color: #555; line-height: 28px;">
+              <li>✓ Unlimited lead tracking</li>
+              <li>✓ Professional quotes & invoices</li>
+              <li>✓ Fast payments (2 days with Stripe)</li>
+              <li>✓ Photo uploads from customers</li>
+              <li>✓ Team collaboration</li>
+            </ul>
+            
+            <center>
+              <a href="${dashboardUrl}" class="button">Go to Dashboard →</a>
+            </center>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 24px;">
+              You'll be billed $39.99 monthly. Manage your subscription anytime from your billing settings.
+            </p>
+            
+            <div class="footer">
+              Lead2Project<br>
+              Need help? Reply to this email anytime!
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: companyEmail,
+      subject: '🎉 Welcome to Lead2Project - Subscription Active!',
+      html: emailHtml,
+    });
+
+    console.log('✅ Subscription activated email sent to:', companyEmail);
+  } catch (error) {
+    console.error('❌ Failed to send activation email:', error);
+    throw error;
+  }
+}

@@ -26,6 +26,8 @@ const publicApiRoutes = [
   '/api/auth/reset-password',
   '/api/signup',
   '/api/stripe/webhook',  // 👈 ADD THIS
+    '/api/cron/check-trials',  // 👈 ADD THIS
+
 ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
