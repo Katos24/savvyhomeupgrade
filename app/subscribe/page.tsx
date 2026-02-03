@@ -13,57 +13,58 @@ function SubscribePageContent() {
 
   const subscriptionStatus = searchParams.get('subscription');
 
-useEffect(() => {
-  async function loadData() {
-    console.log('🔍 Starting to load data...'); // ADD THIS
-    try {
-      // Get current user
-      const userRes = await fetch('/api/auth/me');
-      const userData = await userRes.json();
-      console.log('👤 User data:', userData); // ADD THIS
+  useEffect(() => {
+    async function loadData() {
+      console.log('🔍 Starting to load data...');
+      try {
+        // Get current user
+        const userRes = await fetch('/api/auth/me');
+        const userData = await userRes.json();
+        console.log('👤 User data:', userData);
 
-      if (!userData.success || !userData.user) {
-        window.location.href = '/login';
-        return;
-      }
+        if (!userData.success || !userData.user) {
+          window.location.href = '/login';
+          return;
+        }
 
-      setCurrentUser(userData.user);
+        setCurrentUser(userData.user);
 
-// Get company info
-      const slug = userData.user.companySlug || userData.user.company_slug;
-      if (!slug) {
-        console.error('No company slug found in user data:', userData.user);
-        return;
+        // Get company info
+        const slug = userData.user.companySlug || userData.user.company_slug;
+        if (!slug) {
+          console.error('No company slug found in user data:', userData.user);
+          return;
+        }
+        
+        console.log('🔍 Fetching company with slug:', slug);
+        const companyRes = await fetch(`/api/company/${slug}/info`);
+        const companyData = await companyRes.json();
+        console.log('🏢 Company data:', companyData);
+        
+        if (companyData.success && companyData.company) {
+          setCompany(companyData.company);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      console.log('🔍 Fetching company with slug:', slug);
-      const companyRes = await fetch(`/api/company/${slug}/info`);
-      const companyData = await companyRes.json();
-      console.log('🏢 Company data:', companyData);
-      
-      if (companyData.success && companyData.company) {
-        setCompany(companyData.company);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
     }
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-6xl mb-4">⏳</div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  loadData();
-}, []);
-
-if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin text-6xl mb-4">⏳</div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    </div>
-  );
-}
   // Success state
   if (subscriptionStatus === 'success') {
     return (
@@ -75,7 +76,7 @@ if (loading) {
               Welcome to Lead2Project!
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              Your subscription is now active. Let's get started!
+              Your 14-day free trial is now active. Let's get started!
             </p>
             
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
@@ -155,7 +156,7 @@ if (loading) {
             <span className="text-xl font-bold">Lead2Project</span>
           </div>
           
-          {company && (
+          {company && company.subscription_status === 'active' && (
             <a 
               href={`/${company.slug}/dashboard`}
               className="text-gray-600 hover:text-gray-900 font-medium"
@@ -172,13 +173,13 @@ if (loading) {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-            🚀 Get Started with Lead2Project
+            🚀 Almost There!
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6">
-            Start Your 14-Day Free Trial
+            Complete Your Signup
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Track leads, send quotes, collect payments. Everything you need to run your contracting business.
+            Add your payment method to start your 14-day free trial. You won't be charged until the trial ends.
           </p>
         </div>
 
@@ -205,7 +206,7 @@ if (loading) {
                   🎉 First 14 days FREE
                 </p>
                 <p className="text-green-700 text-sm">
-                  No credit card required to start
+                  Card required - you'll be charged $39.99 after trial
                 </p>
               </div>
 
@@ -274,19 +275,19 @@ if (loading) {
           <div className="space-y-6">
             <div className="bg-white rounded-lg p-6 shadow-md">
               <h4 className="font-bold text-gray-900 mb-2">
-                💳 Do I need a credit card for the free trial?
+                💳 When will I be charged?
               </h4>
               <p className="text-gray-600">
-                Nope! Start your 14-day trial with just your email. We'll only ask for payment info when your trial ends.
+                Your card will be charged $39.99 after your 14-day free trial ends. Cancel anytime before then to avoid charges.
               </p>
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-md">
               <h4 className="font-bold text-gray-900 mb-2">
-                🔒 Can I cancel anytime?
+                🔒 Can I cancel during the trial?
               </h4>
               <p className="text-gray-600">
-                Yes! Cancel anytime from your dashboard. No hidden fees, no questions asked.
+                Yes! Cancel anytime during your trial from the billing settings. You won't be charged if you cancel before the trial ends.
               </p>
             </div>
 

@@ -58,8 +58,8 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Redirect to their new dashboard
-        window.location.href = `/${data.companySlug}/dashboard`;
+        // Redirect to subscribe page to complete signup
+        window.location.href = '/subscribe';
       } else {
         setError(data.error || 'Failed to create account');
         setLoading(false);
@@ -94,13 +94,13 @@ export default function SignupPage() {
         {/* Hero */}
         <div className="text-center mb-8">
           <div className="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-            🎉 Start Your 14-Day Free Trial
+            🎉 14-Day Free Trial
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
             Create Your Account
           </h1>
           <p className="text-lg text-gray-600">
-            No credit card required. Cancel anytime.
+            Start your free trial - card required, charged after 14 days.
           </p>
         </div>
 
@@ -222,7 +222,7 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating Account...' : 'Start 14-Day Free Trial →'}
+              {loading ? 'Creating Account...' : 'Continue to Payment →'}
             </button>
 
             {/* Terms */}
@@ -243,9 +243,9 @@ export default function SignupPage() {
         {/* Features */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           <div className="text-center">
-            <div className="text-4xl mb-2">✅</div>
+            <div className="text-4xl mb-2">🎉</div>
             <h3 className="font-bold text-gray-900 mb-1">14-Day Free Trial</h3>
-            <p className="text-sm text-gray-600">No credit card required</p>
+            <p className="text-sm text-gray-600">Card charged after trial ends</p>
           </div>
           <div className="text-center">
             <div className="text-4xl mb-2">⚡</div>

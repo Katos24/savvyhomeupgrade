@@ -16,12 +16,14 @@ export default function TeamAdminPage({
   companySlug, 
   companyName,
   companyLogoUrl,
-  currentUser 
+  currentUser,
+  company
 }: { 
   companySlug: string;
   companyName: string;
   companyLogoUrl?: string | null;
   currentUser: any;
+  company: any;
 }) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,27 @@ export default function TeamAdminPage({
       setError('Failed to load team members');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleManageSubscription() {
+    try {
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: company.id })
+      });
+
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Unable to open billing portal. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Error opening billing portal');
     }
   }
 
@@ -192,8 +215,8 @@ export default function TeamAdminPage({
           </div>
           
           <div className="flex gap-4 items-center">
-            <a
-              href={`/${companySlug}/dashboard/deleted-leads`}
+            
+<a href={`/${companySlug}/dashboard/deleted-leads`}
               className="bg-red-500/20 hover:bg-red-500/30 text-red-700 px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
             >
               🗑️ Deleted Leads
@@ -217,6 +240,57 @@ export default function TeamAdminPage({
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             ✗ {error}
+          </div>
+        )}
+
+        {/* 🔥 BILLING SECTION - OWNER ONLY */}
+        {currentUser.role === 'owner' && (
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  💳 Billing & Subscription
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Manage your subscription, payment method, and billing history
+                </p>
+              </div>
+              
+              <button
+                onClick={handleManageSubscription}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
+              >
+                💳 Manage Billing
+              </button>
+            </div>
+            
+            {/* Show current subscription status */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="text-gray-600 text-xs uppercase font-semibold mb-1">Status</div>
+                <div className="text-gray-900 font-bold text-lg">
+                  {company.subscription_status === 'active' && '✅ Active'}
+                  {company.subscription_status === 'trialing' && '🎉 Free Trial'}
+                  {company.subscription_status === 'past_due' && '⚠️ Payment Due'}
+                  {company.subscription_status === 'canceled' && '❌ Canceled'}
+                  {!company.subscription_status && '⚠️ Inactive'}
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="text-gray-600 text-xs uppercase font-semibold mb-1">Plan</div>
+                <div className="text-gray-900 font-bold text-lg">Professional - $39.99/mo</div>
+              </div>
+              
+              {company.trial_ends_at && company.subscription_status === 'trialing' && (
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-gray-600 text-xs uppercase font-semibold mb-1">Trial Ends</div>
+                  <div className="text-gray-900 font-bold text-lg">
+                    {new Date(company.trial_ends_at).toLocaleDateString()}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

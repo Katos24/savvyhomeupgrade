@@ -27,6 +27,8 @@ const publicApiRoutes = [
   '/api/signup',
   '/api/stripe/webhook',  // 👈 ADD THIS
     '/api/cron/check-trials',  // 👈 ADD THIS
+      '/api/upload',  // 👈 ADD THIS IF MISSING
+
 
 ];
 

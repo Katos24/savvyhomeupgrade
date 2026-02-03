@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
 import { CATEGORY_MAP, DEFAULT_STATUSES, ADDRESS_CONFIG } from '@/lib/formCategories';
+import { sendWelcomeEmail } from '@/lib/email';
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -59,17 +60,13 @@ export async function POST(req: NextRequest) {
     // Hash password for user
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Calculate trial end date (14 days from now)
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-
     // Get default categories for business type
     const defaultCategories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
     // Get address config for business type
     const addressConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
 
-    // Create company (NO PASSWORD HERE)
+    // Create company - NO TRIAL YET
     const [newCompany] = await sql`
       INSERT INTO companies (
         name,
@@ -80,7 +77,6 @@ export async function POST(req: NextRequest) {
         status_options,
         form_categories,
         subscription_status,
-        trial_ends_at,
         email_notifications_enabled,
         address_enabled,
         address_required
@@ -92,8 +88,7 @@ export async function POST(req: NextRequest) {
         ${businessType},
         ${JSON.stringify(DEFAULT_STATUSES)},
         ${JSON.stringify(defaultCategories)},
-        'trialing',
-        ${trialEndsAt.toISOString()},
+        'inactive',
         true,
         ${addressConfig.show},
         ${addressConfig.required}
@@ -101,7 +96,7 @@ export async function POST(req: NextRequest) {
       RETURNING id, slug
     `;
 
-    // Create owner user (PASSWORD GOES HERE)
+    // Create owner user
     const [newUser] = await sql`
       INSERT INTO users (
         name,
@@ -119,7 +114,20 @@ export async function POST(req: NextRequest) {
       RETURNING id
     `;
 
-    // Create JWT token (reuse your existing auth logic)
+// After creating user, BEFORE creating JWT token
+try {
+  await sendWelcomeEmail({
+    userEmail: email,
+    userName: ownerName,
+    companyName: companyName,
+    subscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
+  });
+} catch (emailError) {
+  console.error('Failed to send welcome email:', emailError);
+  // Don't block signup if email fails
+}
+
+    // Create JWT token
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       {
@@ -136,11 +144,11 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({
       success: true,
       companySlug: newCompany.slug,
-      message: 'Account created successfully!'
+      message: 'Account created! Complete your subscription.'
     });
 
     // Set auth cookie
-    response.cookies.set('auth_token', token, {
+    response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

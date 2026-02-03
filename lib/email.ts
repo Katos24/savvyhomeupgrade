@@ -772,3 +772,139 @@ export async function sendSubscriptionActivatedEmail({
     throw error;
   }
 }
+
+
+// 🎉 Send welcome email after signup
+export async function sendWelcomeEmail({
+  userEmail,
+  userName,
+  companyName,
+  subscribeUrl,
+}: {
+  userEmail: string;
+  userName: string;
+  companyName: string;
+  subscribeUrl: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #333; font-size: 28px; margin-bottom: 20px; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .button { background-color: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🎉 Welcome to Lead2Project, ${userName}!</h1>
+            
+            <p>Your account for <strong>${companyName}</strong> has been created successfully!</p>
+            
+            <p>Next step: Complete your setup by adding your payment method to start your 14-day free trial.</p>
+            
+            <center>
+              <a href="${subscribeUrl}" class="button">Complete Your Signup →</a>
+            </center>
+            
+            <p>You won't be charged until after your trial ends. Cancel anytime!</p>
+            
+            <div class="footer">
+              Lead2Project<br>
+              Questions? Reply to this email!
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: userEmail,
+      subject: `🎉 Welcome to Lead2Project - Complete Your Signup`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Welcome email sent to:', userEmail);
+  } catch (error) {
+    console.error('❌ Failed to send welcome email:', error);
+    throw error;
+  }
+}
+
+// 🚫 Send subscription cancelled email
+export async function sendSubscriptionCancelledEmail({
+  companyEmail,
+  companyName,
+}: {
+  companyEmail: string;
+  companyName: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
+            h1 { color: #333; font-size: 24px; margin-bottom: 20px; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .button { background-color: #3b82f6; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>😔 Your Subscription Has Been Cancelled</h1>
+            
+            <p>Hi ${companyName},</p>
+            
+            <p>We're sorry to see you go! Your Lead2Project subscription has been cancelled.</p>
+            
+            <p><strong>What happens now:</strong></p>
+            <ul style="color: #555; line-height: 28px;">
+              <li>Your access will continue until the end of your current billing period</li>
+              <li>You won't be charged again</li>
+              <li>Your data will be saved for 30 days in case you change your mind</li>
+            </ul>
+            
+            <p>Want to come back? You can reactivate your subscription anytime!</p>
+            
+            <center>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/subscribe" class="button">Reactivate Subscription</a>
+            </center>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 32px;">
+              We'd love to know why you cancelled. Reply to this email and let us know how we can improve!
+            </p>
+            
+            <div class="footer">
+              Lead2Project<br>
+              We hope to see you again soon!
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: companyEmail,
+      subject: 'Your Lead2Project subscription has been cancelled',
+      html: emailHtml,
+    });
+
+    console.log('✅ Cancellation email sent to:', companyEmail);
+  } catch (error) {
+    console.error('❌ Failed to send cancellation email:', error);
+    throw error;
+  }
+}

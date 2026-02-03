@@ -39,22 +39,13 @@ export default function TeamAdminPageRoute() {
           return;
         }
 
-        // 🔒 CHECK IF USER BELONGS TO THIS COMPANY (ADD THIS)
+        // 🔒 CHECK IF USER BELONGS TO THIS COMPANY
         const userCompanySlug = userData.user.companySlug || userData.user.company_slug;
         console.log('🔍 Security check - userCompanySlug:', userCompanySlug, 'requestedSlug:', companySlug);
         
         if (userData.user.role !== 'admin' && userCompanySlug !== companySlug) {
           console.log('⛔ User trying to access different company - redirecting');
           window.location.href = `/${userCompanySlug}/admin/team`;
-          return;
-        }
-
-        // 🔒 CHECK PERMISSION
-        const userRole = userData.user.role || 'member';
-        if (!canAccessTeamPage(userRole)) {
-          console.log('⛔ User does not have permission to access team page');
-          setError('You do not have permission to access team management. Only admins and owners can manage team members.');
-          setLoading(false);
           return;
         }
 
@@ -68,6 +59,32 @@ export default function TeamAdminPageRoute() {
 
         if (companyData.success && companyData.company) {
           setCompany(companyData.company);
+          
+          // 🔒 CHECK SUBSCRIPTION STATUS
+          const isTrialExpired = companyData.company.subscription_status === 'trialing' && 
+                                 companyData.company.trial_ends_at && 
+                                 new Date(companyData.company.trial_ends_at) < new Date();
+
+          const needsPayment = !companyData.company.subscription_status || 
+                               companyData.company.subscription_status === 'canceled' ||
+                               companyData.company.subscription_status === 'past_due' ||
+                               companyData.company.subscription_status === 'inactive' ||
+                               isTrialExpired;
+
+          if (needsPayment) {
+            console.log('⛔ Subscription required - redirecting to subscribe');
+            window.location.href = `/subscribe?reason=payment_required&company=${companySlug}`;
+            return;
+          }
+
+          // 🔒 CHECK PERMISSION
+          const userRole = userData.user.role || 'member';
+          if (!canAccessTeamPage(userRole)) {
+            console.log('⛔ User does not have permission to access team page');
+            setError('You do not have permission to access team management. Only admins and owners can manage team members.');
+            setLoading(false);
+            return;
+          }
         } else {
           setError('Failed to load company data');
         }
@@ -128,6 +145,8 @@ export default function TeamAdminPageRoute() {
       companyName={company.name}
       companyLogoUrl={company.logo_url}
       currentUser={currentUser}
+          company={company}  // 👈 ADD THIS
+
     />
   );
 }
