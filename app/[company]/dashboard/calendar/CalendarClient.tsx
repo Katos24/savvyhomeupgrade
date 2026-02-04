@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Calendar from '@/components/dashboard/Calendar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster } from 'sonner';
-import styles from '@/app/dashboard/dashboard.module.css';
 
 type Company = {
   id: number;
@@ -16,12 +14,10 @@ type Company = {
 };
 
 export default function CalendarClient({ company }: { company: Company }) {
-  const router = useRouter();
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0); // 🔥 NEW: Trigger calendar refresh
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
-  // Fetch current user
   useEffect(() => {
     fetchCurrentUser();
   }, []);
@@ -36,11 +32,6 @@ export default function CalendarClient({ company }: { company: Company }) {
     } catch (error) {
       console.error('Failed to fetch user:', error);
     }
-  }
-
-  async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
   }
 
   async function updateLeadStatus(id: number, status: string, oldStatus: string) {
@@ -123,10 +114,8 @@ export default function CalendarClient({ company }: { company: Company }) {
     }
   }
 
-  // 🔥 FIXED: Refresh with no-cache and trigger calendar refresh
   async function refreshModalLead() {
     try {
-      // Fetch fresh data with no-cache
       const response = await fetch(`/api/company/${company.slug}/leads`, {
         cache: 'no-store',
         headers: {
@@ -136,7 +125,6 @@ export default function CalendarClient({ company }: { company: Company }) {
       });
       const data = await response.json();
       
-      // Update modal if open
       if (selectedLead) {
         const updatedLead = data.leads.find((l: any) => l.id === selectedLead.id);
         if (updatedLead) {
@@ -144,7 +132,6 @@ export default function CalendarClient({ company }: { company: Company }) {
         }
       }
       
-      // 🔥 Trigger calendar to refresh its events list
       setCalendarRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to refresh:', error);
@@ -164,62 +151,11 @@ export default function CalendarClient({ company }: { company: Company }) {
     : DEFAULT_STATUSES;
 
   return (
-    <div className={styles.container}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
       <Toaster position="top-right" />
-      <div className={styles.innerContainer}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         
-        {/* HEADER */}
-        <div className="bg-white/10 backdrop-blur rounded-xl p-4 sm:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Left: Logo + Company Name */}
-            <div className="flex items-center gap-3">
-              {company.logo_url ? (
-                <img 
-                  src={company.logo_url} 
-                  alt={`${company.name} logo`}
-                  className="h-10 sm:h-12 w-auto object-contain"
-                />
-              ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
-                  {company.name.charAt(0)}
-                </div>
-              )}
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{company.name}</h1>
-                <p className="text-sm text-white/70">Calendar View</p>
-              </div>
-            </div>
-            
-            {/* Right: Navigation + User Menu */}
-            {currentUser && (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => router.push(`/${company.slug}/dashboard`)}
-                  className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition border border-white/30"
-                >
-                  📋 Back to Leads
-                </button>
-                <a
-                  href={`/${company.slug}`}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition shadow-lg flex items-center gap-2"
-                >
-                  ➕ Create Lead
-                </a>
-                <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 border border-white/20">
-                  <p className="text-sm font-semibold text-white">{currentUser.name}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg font-semibold transition border border-red-500/30 text-sm"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 🔥 CALENDAR - Pass refreshKey to trigger re-fetch */}
+        {/* CALENDAR - has its own back button */}
         <Calendar 
           companySlug={company.slug}
           onSelectLead={setSelectedLead}
