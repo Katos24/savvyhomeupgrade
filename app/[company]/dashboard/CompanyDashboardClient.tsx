@@ -519,14 +519,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           {filteredLeads.length === 0 ? (
             <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20">
               <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-2xl font-bold text-white mb-2">No leads yet</h3>
-              <p className="text-white/70 mb-6">Share your form link to start receiving leads</p>
-              <a
-                href={`/${company.slug}`}
-                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/20"
-              >
-                ➕ Create Your First Lead
-              </a>
+              <h3 className="text-2xl font-bold text-white mb-2">No leads found</h3>
+              <p className="text-white/70">Try adjusting your filters or search query</p>
             </div>
           ) : (
             <>

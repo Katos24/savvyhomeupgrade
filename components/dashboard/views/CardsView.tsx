@@ -1,5 +1,4 @@
 import { safeJSONParse, parseNotes } from '@/lib/utils';
-import styles from '@/app/dashboard/dashboard.module.css';
 
 interface CardsViewProps {
   leads: any[];
@@ -7,7 +6,6 @@ interface CardsViewProps {
 }
 
 export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
-  // Helper function to format category
   const formatCategory = (cat: string) => {
     if (!cat) return '';
     return cat
@@ -16,11 +14,42 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
       .join(' ');
   };
 
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return '';
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format as (XXX) XXX-XXXX
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    // Format as +X (XXX) XXX-XXXX for 11 digits
+    if (cleaned.length === 11) {
+      return `+${cleaned[0]} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    // Return as-is if not standard format
+    return phone;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: any = {
+      new: 'bg-blue-500',
+      contacted: 'bg-yellow-500',
+      quoted: 'bg-purple-500',
+      scheduled: 'bg-blue-500',
+      'in-progress': 'bg-orange-500',
+      completed: 'bg-green-500',
+      cancelled: 'bg-red-500',
+      lost: 'bg-gray-500',
+    };
+    return colors[status] || colors.new;
+  };
+
   const renderLeadCard = (lead: any) => {
     const fileUrls = safeJSONParse(lead.file_urls);
     const leadStatus = lead.status || 'new';
     const notesArray = parseNotes(lead.notes);
-    const isProject = !!lead.project_id; // Check if converted to project
+    const isProject = !!lead.project_id;
     
     const images = fileUrls?.filter((f: any) => 
       f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
@@ -30,106 +59,81 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
       f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
     ) || [];
 
-    // STRONG colors - Lead (blue) vs Project (emerald green)
-    const cardBackgroundColor = isProject ? '#a7f3d0' : '#bfdbfe'; // emerald-200 : blue-200
-    const cardBorderColor = isProject ? '#047857' : '#1d4ed8'; // emerald-700 : blue-700
-
-    // Status badge colors (keep existing logic)
-    const statusBadgeColors: any = {
-      new: 'bg-blue-500',
-      contacted: 'bg-yellow-500',
-      quoted: 'bg-purple-500',
-      'in-progress': 'bg-orange-500',
-      completed: 'bg-green-500',
-      lost: 'bg-gray-500',
-    };
-
     return (
       <div
         key={lead.id}
         onClick={() => onSelectLead(lead)}
-        className={`${styles.card}`}
-        style={{
-          backgroundColor: cardBackgroundColor,
-          borderLeft: `8px solid ${cardBorderColor}`
-        }}
+        className="group relative bg-slate-800 rounded-xl p-4 border-2 border-slate-700 hover:border-purple-500 hover:bg-slate-750 transition-all cursor-pointer overflow-hidden shadow-lg"
       >
-        {/* Project Badge - Top Right Corner */}
-        <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 items-end">
-          {isProject && (
-            <span className="bg-emerald-600 text-white text-xs px-2 py-1 rounded-full font-semibold uppercase">
-              🚀 Project
-            </span>
-          )}
-          <span className={`${statusBadgeColors[leadStatus]} text-white text-xs px-2 py-1 rounded-full font-semibold uppercase`}>
+        {/* Status indicator bar - left side */}
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusColor(leadStatus)}`} />
+        
+        {/* Top row: Name + Badges */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h3 className="text-white font-semibold text-lg truncate flex-1">
+            {lead.name}
+          </h3>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isProject && (
+              <span className="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-medium border border-emerald-500/30">
+                🚀
+              </span>
+            )}
+            {notesArray.length > 0 && (
+              <span className="bg-slate-700/50 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                📝 {notesArray.length}
+              </span>
+            )}
+            {(images.length > 0 || videos.length > 0) && (
+              <span className="bg-slate-700/50 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                {images.length > 0 && `📸${images.length}`}
+                {images.length > 0 && videos.length > 0 && ' '}
+                {videos.length > 0 && `🎥${videos.length}`}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Contact info */}
+        <div className="space-y-1.5 mb-3">
+          <p className="text-white/80 text-sm flex items-center gap-2">
+            <span className="text-white/50">📧</span>
+            <span className="truncate">{lead.email}</span>
+          </p>
+          <p className="text-white/80 text-sm flex items-center gap-2">
+            <span className="text-white/50">📞</span>
+            <span>{formatPhoneNumber(lead.phone)}</span>
+          </p>
+        </div>
+
+        {/* Category + Status + Date */}
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-medium border border-blue-500/30">
+            {formatCategory(lead.category)}
+          </span>
+          <span className={`${getStatusColor(leadStatus)} text-white px-2 py-1 rounded font-medium capitalize`}>
             {leadStatus}
           </span>
         </div>
 
-        {/* Notes Badge - Top Left */}
-        {notesArray.length > 0 && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded-full font-semibold">
-              📝 {notesArray.length}
-            </span>
-          </div>
-        )}
+        {/* Date - bottom */}
+        <p className="text-white/40 text-xs mt-3">
+          {new Date(lead.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })}
+        </p>
 
-        {/* Media Count Header - Cleaner Design */}
-        <div className={styles.cardIconHeader}>
-          <div className="flex items-center justify-center gap-6">
-            {images.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">📸</span>
-                <span className="text-2xl font-bold text-gray-700">{images.length}</span>
-              </div>
-            )}
-            {videos.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">🎥</span>
-                <span className="text-2xl font-bold text-gray-700">{videos.length}</span>
-              </div>
-            )}
-            {images.length === 0 && videos.length === 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">📝</span>
-                <span className="text-sm text-gray-500">Text only</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.cardContent}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardName}>{lead.name}</h3>
-            <span className={styles.categoryBadge}>{formatCategory(lead.category)}</span>
-          </div>
-
-          <p className={styles.cardEmail}>📧 {lead.email}</p>
-          <p className={styles.cardPhone}>📞 {lead.phone}</p>
-
-          {lead.description && (
-            <p className={styles.cardDescription}>
-              {lead.description.substring(0, 80)}{lead.description.length > 80 ? '...' : ''}
-            </p>
-          )}
-
-          <p className={styles.cardDate}>
-            🕒 {new Date(lead.created_at).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit'
-            })}
-          </p>
-        </div>
+        {/* Hover effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/5 group-hover:to-pink-500/5 transition-all pointer-events-none rounded-xl" />
       </div>
     );
   };
 
   return (
-    <div className={styles.cardsGrid}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {leads.map(lead => renderLeadCard(lead))}
     </div>
   );
