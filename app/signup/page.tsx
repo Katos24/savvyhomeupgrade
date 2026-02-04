@@ -14,6 +14,7 @@ export default function SignupPage() {
     email: '',
     phone: '',
     password: '',
+    confirmPassword: '',
     businessType: 'general',
     ownerName: '',
   });
@@ -30,6 +31,29 @@ export default function SignupPage() {
     setFormData({ ...formData, companyName: name, slug });
   };
 
+  // Format phone number as user types
+  const handlePhoneChange = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Limit to 10 digits
+    const limitedDigits = digits.substring(0, 10);
+    
+    // Format as (XXX) XXX-XXXX
+    let formatted = limitedDigits;
+    if (limitedDigits.length > 0) {
+      if (limitedDigits.length <= 3) {
+        formatted = `(${limitedDigits}`;
+      } else if (limitedDigits.length <= 6) {
+        formatted = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(3)}`;
+      } else {
+        formatted = `(${limitedDigits.slice(0, 3)}) ${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`;
+      }
+    }
+    
+    setFormData({ ...formData, phone: formatted });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -42,8 +66,22 @@ export default function SignupPage() {
       return;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
     if (formData.slug.length < 3) {
       setError('Company name is too short');
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone has 10 digits
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
       setLoading(false);
       return;
     }
@@ -52,7 +90,10 @@ export default function SignupPage() {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phone: phoneDigits // Send only digits to backend
+        }),
       });
 
       const data = await response.json();
@@ -130,7 +171,7 @@ export default function SignupPage() {
               />
               {formData.slug && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Your URL will be: <span className="font-semibold">yoursite.com/{formData.slug}</span>
+                  Your URL will be: <span className="font-semibold">lead2project.com/{formData.slug}</span>
                 </p>
               )}
             </div>
@@ -192,10 +233,13 @@ export default function SignupPage() {
                 type="tel"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="(555) 123-4567"
                 className="w-full px-4 py-3 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                US phone number required
+              </p>
             </div>
 
             {/* Password */}
@@ -214,6 +258,26 @@ export default function SignupPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Must be at least 6 characters
               </p>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Confirm Password *
+              </label>
+              <input
+                type="password"
+                required
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+              />
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <p className="text-xs text-red-600 mt-1">
+                  Passwords do not match
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -249,13 +313,13 @@ export default function SignupPage() {
           </div>
           <div className="text-center">
             <div className="text-4xl mb-2">⚡</div>
-            <h3 className="font-bold text-gray-900 mb-1">Get Paid Faster</h3>
-            <p className="text-sm text-gray-600">2 days vs 7+ with competitors</p>
+            <h3 className="font-bold text-gray-900 mb-1">Setup in Minutes</h3>
+            <p className="text-sm text-gray-600">Start capturing leads instantly</p>
           </div>
           <div className="text-center">
             <div className="text-4xl mb-2">🚀</div>
-            <h3 className="font-bold text-gray-900 mb-1">Simple Setup</h3>
-            <p className="text-sm text-gray-600">Start tracking leads in minutes</p>
+            <h3 className="font-bold text-gray-900 mb-1">Cancel Anytime</h3>
+            <p className="text-sm text-gray-600">No long-term commitment</p>
           </div>
         </div>
       </div>
