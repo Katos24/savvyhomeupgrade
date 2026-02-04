@@ -542,7 +542,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
               {/* 🔥 TABLE VIEW - Show ALL in one table, no grouping */}
               {currentView === 'table' && (
-                <div className="hidden lg:block" key={`table-${refreshKey}`}>
+                <div key={`table-${refreshKey}`}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       All Leads
@@ -566,14 +566,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   <TableView leads={filteredLeads} onSelectLead={setSelectedLead} />
                 </div>
               )}
-
-              {/* 🔥 MOBILE - Always show cards view */}
-              <div className="lg:hidden">
-                {renderLeadGroupCards(todayLeads, '🌟 Today')}
-                {renderLeadGroupCards(yesterdayLeads, '📅 Yesterday')}
-                {renderLeadGroupCards(thisWeekLeads, '📆 Earlier This Week')}
-                {renderLeadGroupCards(olderLeads, '📂 Older')}
-              </div>
             </>
           )}
         </div>
