@@ -46,7 +46,9 @@ export async function GET(request: Request, { params }: Props) {
         p.after_photos,
         p.documents,
         p.completed_at as job_completed_at,
-        p.notes as project_notes
+        p.notes as project_notes,
+        p.tasks as project_tasks
+
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = ${companyId}

@@ -554,11 +554,21 @@ else if (action === 'update_tasks') {
   
   const { tasks } = body;
   
+  const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
+  const projectId = leadCheck[0]?.project_id;
+
+  if (!projectId) {
+    return NextResponse.json({ 
+      success: false, 
+      error: 'No project exists. Please create a project first.' 
+    }, { status: 400 });
+  }
+  
   await sql`
-    UPDATE leads 
+    UPDATE projects 
     SET tasks = ${tasks},
         updated_at = NOW()
-    WHERE id = ${id}
+    WHERE id = ${projectId}
   `;
 
   console.log('✅ Tasks updated');

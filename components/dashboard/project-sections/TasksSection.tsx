@@ -27,9 +27,10 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   const [editText, setEditText] = useState('');
 
   // Parse tasks from lead
-  const tasks: Task[] = lead?.tasks 
-    ? (typeof lead.tasks === 'string' ? JSON.parse(lead.tasks) : lead.tasks)
-    : [];
+const tasks: Task[] = lead?.project_tasks 
+  ? (typeof lead.project_tasks === 'string' ? JSON.parse(lead.project_tasks) : lead.project_tasks)
+  : [];
+
 
   const pendingTasks = tasks.filter(t => !t.completed);
   const completedTasks = tasks.filter(t => t.completed);
@@ -77,12 +78,15 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
     }
   };
 
-  const handleToggleComplete = async (taskId: string) => {
-    setSaving(true);
-    try {
-      const updatedTasks = tasks.map(t => 
-        t.id === taskId ? { ...t, completed: !t.completed } : t
-      );
+const handleToggleComplete = async (taskId: string) => {
+  setSaving(true);
+  try {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const updatedTasks = tasks.map(t => 
+      t.id === taskId ? { ...t, completed: !t.completed } : t
+    );
 
       const response = await fetch('/api/leads/update', {
         method: 'POST',

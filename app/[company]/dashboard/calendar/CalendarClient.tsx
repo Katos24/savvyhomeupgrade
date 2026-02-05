@@ -156,11 +156,12 @@ export default function CalendarClient({ company }: { company: Company }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         
         {/* CALENDAR - has its own back button */}
-        <Calendar 
-          companySlug={company.slug}
-          onSelectLead={setSelectedLead}
-          key={calendarRefreshKey}
-        />
+       <Calendar
+  companySlug={company.slug}
+  onSelectLead={setSelectedLead}
+  statusOptions={statusOptions}
+  key={calendarRefreshKey}
+/>
       </div>
 
       {/* LEAD MODAL */}
