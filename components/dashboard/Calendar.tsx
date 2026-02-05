@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: any) => void;
+  statusOptions: any[]; // Add this
 };
 
 type CalendarEvent = {
@@ -13,33 +14,61 @@ type CalendarEvent = {
   name: string;
   scheduled_date: string;
   scheduled_time: string;
-  status: string; // Lead status (new, contacted, quoted, in-progress, completed)
-  job_status: string; // Project status (not_started, scheduled, in_progress, completed, cancelled)
+  status: string;
+  job_status: string;
   assigned_to: string;
   category: string;
   phone: string;
   email: string;
 };
 
-const JOB_STATUS_COLORS: Record<string, string> = {
-  // Default statuses
-  'new': 'bg-blue-100 text-blue-800 border-blue-300',
-  'contacted': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  'quoted': 'bg-purple-100 text-purple-800 border-purple-300',
-  'in-progress': 'bg-orange-100 text-orange-800 border-orange-300',
-  'completed': 'bg-green-100 text-green-800 border-green-300',
-  // Project statuses
-  'not_started': 'bg-gray-200 text-gray-800 border-gray-300',
-  'scheduled': 'bg-blue-100 text-blue-800 border-blue-300',
-  'in_progress': 'bg-orange-100 text-orange-800 border-orange-300',
-  'cancelled': 'bg-red-100 text-red-800 border-red-300',
-};
-
-export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
+export default function Calendar({ companySlug, onSelectLead, statusOptions }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'list'>('month');
+
+    // Add default statuses if none provided
+  const DEFAULT_STATUSES = [
+    { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
+    { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
+    { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
+    { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
+    { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
+  ];
+
+    // Use provided statusOptions or fallback to defaults
+  const safeStatusOptions = statusOptions && statusOptions.length > 0 
+    ? statusOptions 
+    : DEFAULT_STATUSES;
+  
+  // Helper to get status color from statusOptions
+  const getStatusColorHex = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      blue: '#3b82f6',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      orange: '#f97316',
+      green: '#22c55e',
+      red: '#ef4444',
+      gray: '#6b7280',
+      indigo: '#6366f1',
+      pink: '#ec4899',
+    };
+    return colorMap[colorName] || '#3b82f6';
+  };
+
+const getStatusConfig = (statusValue: string) => {
+  return safeStatusOptions.find((s: any) => s.value === statusValue) || safeStatusOptions[0];
+};
+
+  // Generate Tailwind-compatible classes from hex colors
+  const getStatusClasses = (statusValue: string) => {
+    const config = getStatusConfig(statusValue);
+    const hex = getStatusColorHex(config.color);
+    // Return inline style instead
+    return hex;
+  };
 
   useEffect(() => {
     fetchScheduledJobs();
@@ -56,13 +85,6 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
         
         return hasScheduledDate && notDeleted;
       });
-      
-      console.log('Scheduled leads:', scheduledLeads.map((l: any) => ({ 
-        name: l.name, 
-        date: l.scheduled_date, 
-        status: l.status,
-        job_status: l.job_status
-      })));
       
       setEvents(scheduledLeads);
     } catch (error) {
@@ -156,19 +178,18 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
-      {/* Back to Leads Button */}
+{/* Back to Leads Button */}
       <div className="mb-4">
-        <a
-          href={`/${companySlug}/dashboard`}
+        <a  // ✅ Has 
+    href={`/${companySlug}/dashboard`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-semibold transition border border-gray-300"
         >
-          ← Back to Leads
+          Back to Leads
         </a>
       </div>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
-        {/* Title + Today Button */}
         <div className="flex items-center justify-between sm:justify-start gap-4">
           <h2 className="text-xl sm:text-3xl font-bold text-gray-900">
             📅 {view === 'month' ? 'Monthly' : view === 'week' ? 'Weekly' : 'List'}
@@ -181,7 +202,6 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
           </button>
         </div>
 
-        {/* View Switcher - Mobile Friendly */}
         <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setView('list')}
@@ -239,39 +259,34 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
         </button>
       </div>
 
-      {/* Legend - Compact on Mobile */}
+ {/* Dynamic Legend based on statusOptions */}
       <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-5 sm:h-5 rounded bg-gray-200 border-2 border-gray-300"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Not Started</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-5 sm:h-5 rounded bg-blue-100 border-2 border-blue-300"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Scheduled</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-5 sm:h-5 rounded bg-orange-100 border-2 border-orange-300"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">In Progress</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-5 sm:h-5 rounded bg-green-100 border-2 border-green-300"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Completed</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-5 sm:h-5 rounded bg-red-100 border-2 border-red-300"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Cancelled</span>
-        </div>
+        {safeStatusOptions.map((status) => (
+          <div key={status.value} className="flex items-center gap-1 sm:gap-2">
+                        <div 
+              className="w-3 h-3 sm:w-5 sm:h-5 rounded border-2"
+              style={{ 
+                backgroundColor: getStatusColorHex(status.color),
+                borderColor: getStatusColorHex(status.color)
+              }}
+            ></div>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">
+              {status.emoji && `${status.emoji} `}{status.label}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* List View - Best for Mobile */}
+{/* Views */}
       {view === 'list' && <ListView 
-        currentDate={currentDate}
         events={events}
         formatTime={formatTime}
         onSelectLead={onSelectLead}
+        getStatusColorHex={getStatusColorHex}
+        getStatusConfig={getStatusConfig}
+        currentDate={currentDate}
       />}
 
-      {/* Month View */}
       {view === 'month' && <MonthView 
         currentDate={currentDate}
         events={events}
@@ -279,9 +294,10 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
         getDaysInMonth={getDaysInMonth}
         formatTime={formatTime}
         onSelectLead={onSelectLead}
+        getStatusColorHex={getStatusColorHex}
+        getStatusConfig={getStatusConfig}
       />}
 
-      {/* Week View */}
       {view === 'week' && <WeekView 
         currentDate={currentDate}
         events={events}
@@ -289,21 +305,24 @@ export default function Calendar({ companySlug, onSelectLead }: CalendarProps) {
         getWeekDays={getWeekDays}
         formatTime={formatTime}
         onSelectLead={onSelectLead}
+        getStatusColorHex={getStatusColorHex}
+        getStatusConfig={getStatusConfig}
       />}
     </div>
   );
 }
 
-// List View Component - MOBILE FRIENDLY
+// List View Component
 type ListViewProps = {
   currentDate: Date;
   events: CalendarEvent[];
   formatTime: (time: string) => string;
   onSelectLead: (lead: any) => void;
+  getStatusColorHex: (colorName: string) => string;
+  getStatusConfig: (statusValue: string) => any;
 };
 
-function ListView({ currentDate, events, formatTime, onSelectLead }: ListViewProps) {
-  // Get events for current month
+function ListView({ currentDate, events, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: ListViewProps) {
   const monthEvents = events.filter(event => {
     const eventDate = new Date(event.scheduled_date);
     return eventDate.getMonth() === currentDate.getMonth() && 
@@ -322,21 +341,24 @@ function ListView({ currentDate, events, formatTime, onSelectLead }: ListViewPro
   return (
     <div className="space-y-3">
       {monthEvents.map((event: CalendarEvent) => {
-        // Use job_status if available, otherwise fall back to status
         const statusToUse = event.job_status || event.status || 'new';
+        const statusConfig = getStatusConfig(statusToUse);
+        const bgColor = getStatusColorHex(statusConfig.color);
         
         return (
           <button
             key={event.id}
             onClick={() => onSelectLead(event)}
-            className={`w-full text-left p-4 rounded-lg border-2 ${
-              JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800 border-gray-300'
-            } hover:shadow-md transition`}
+            className="w-full text-left p-4 rounded-lg border-2 hover:shadow-md transition text-white"
+            style={{ 
+              backgroundColor: bgColor,
+              borderColor: bgColor
+            }}
           >
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex-1">
                 <div className="font-bold text-base sm:text-lg mb-1">{event.name}</div>
-                <div className="text-sm opacity-75">
+                <div className="text-sm opacity-90">
                   📅 {new Date(event.scheduled_date).toLocaleDateString('en-US', { 
                     weekday: 'short', 
                     month: 'short', 
@@ -345,13 +367,13 @@ function ListView({ currentDate, events, formatTime, onSelectLead }: ListViewPro
                 </div>
               </div>
               {event.scheduled_time && (
-                <div className="text-sm font-semibold opacity-75 whitespace-nowrap">
+                <div className="text-sm font-semibold opacity-90 whitespace-nowrap">
                   ⏰ {formatTime(event.scheduled_time)}
                 </div>
               )}
             </div>
             {event.assigned_to && (
-              <div className="text-sm opacity-75">
+              <div className="text-sm opacity-90">
                 👤 {event.assigned_to}
               </div>
             )}
@@ -367,12 +389,14 @@ type MonthViewProps = {
   currentDate: Date;
   events: CalendarEvent[];
   getEventsForDate: (date: Date) => CalendarEvent[];
-  getDaysInMonth: (date: Date) => { daysInMonth: number; startingDayOfWeek: number; firstDay: Date; lastDay: Date };
+  getDaysInMonth: (date: Date) => { daysInMonth: number; startingDayOfWeek: number };
   formatTime: (time: string) => string;
   onSelectLead: (lead: any) => void;
+  getStatusColorHex: (colorName: string) => string;
+  getStatusConfig: (statusValue: string) => any;
 };
 
-function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, formatTime, onSelectLead }: MonthViewProps) {
+function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: MonthViewProps) {
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
   
   const now = new Date();
@@ -393,12 +417,10 @@ function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, form
     calendarCells.push({ type: 'empty', key: `empty-end-${i}` });
   }
 
-  // Day names - Short on mobile
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="space-y-2">
-      {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {dayNames.map(day => (
           <div 
@@ -410,7 +432,6 @@ function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, form
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {calendarCells.map((cell) => {
           if (cell.type === 'empty') {
@@ -442,56 +463,52 @@ function MonthView({ currentDate, events, getEventsForDate, getDaysInMonth, form
                   : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-md'
               }`}
             >
-              {/* Day number */}
               <div className={`text-sm sm:text-base font-bold mb-1 ${
                 isToday ? 'text-blue-600' : 'text-gray-700'
               }`}>
                 {day}
               </div>
               
-              {/* Events - Show dots on mobile, cards on desktop */}
               <div className="flex-1 overflow-hidden">
-                {/* Mobile: Show colored dots */}
+                {/* Mobile: dots */}
                 <div className="sm:hidden flex flex-wrap gap-0.5">
                   {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
                     const statusToUse = event.job_status || event.status || 'new';
-                    const dotColor = 
-                      statusToUse === 'new' ? 'bg-blue-500' :
-                      statusToUse === 'contacted' ? 'bg-yellow-500' :
-                      statusToUse === 'quoted' ? 'bg-purple-500' :
-                      statusToUse === 'in-progress' || statusToUse === 'in_progress' ? 'bg-orange-500' :
-                      statusToUse === 'completed' ? 'bg-green-500' :
-                      statusToUse === 'cancelled' ? 'bg-red-500' :
-                      statusToUse === 'not_started' ? 'bg-gray-400' :
-                      statusToUse === 'scheduled' ? 'bg-blue-500' : 'bg-gray-400';
+                    const statusConfig = getStatusConfig(statusToUse);
+                    const dotColor = getStatusColorHex(statusConfig.color);
                     
                     return (
                       <button
                         key={event.id}
                         onClick={() => onSelectLead(event)}
-                        className={`w-2 h-2 rounded-full ${dotColor}`}
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: dotColor }}
                         title={event.name}
                       />
                     );
                   })}
                 </div>
                 
-                {/* Desktop: Show event cards */}
+                {/* Desktop: cards */}
                 <div className="hidden sm:block space-y-1">
                   {dayEvents.slice(0, 3).map((event: CalendarEvent) => {
                     const statusToUse = event.job_status || event.status || 'new';
+                    const statusConfig = getStatusConfig(statusToUse);
+                    const bgColor = getStatusColorHex(statusConfig.color);
                     
                     return (
                       <button
                         key={event.id}
                         onClick={() => onSelectLead(event)}
-                        className={`w-full text-left px-2 py-1 rounded text-xs font-medium border ${
-                          JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800 border-gray-300'
-                        } hover:opacity-80 hover:shadow transition`}
+                        className="w-full text-left px-2 py-1 rounded text-xs font-medium border hover:opacity-80 hover:shadow transition text-white"
+                        style={{ 
+                          backgroundColor: bgColor,
+                          borderColor: bgColor
+                        }}
                       >
                         <div className="truncate font-semibold">{event.name}</div>
                         {event.scheduled_time && (
-                          <div className="text-[10px] opacity-75 mt-0.5">
+                          <div className="text-[10px] opacity-90 mt-0.5">
                             ⏰ {formatTime(event.scheduled_time)}
                           </div>
                         )}
@@ -522,9 +539,11 @@ type WeekViewProps = {
   getWeekDays: (date: Date) => Date[];
   formatTime: (time: string) => string;
   onSelectLead: (lead: any) => void;
+  getStatusColorHex: (colorName: string) => string;
+  getStatusConfig: (statusValue: string) => any;
 };
 
-function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTime, onSelectLead }: WeekViewProps) {
+function WeekView({ currentDate, getEventsForDate, getWeekDays, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: WeekViewProps) {
   const weekDays = getWeekDays(currentDate);
   
   const now = new Date();
@@ -543,7 +562,6 @@ function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTi
 
         return (
           <div key={i} className="space-y-2">
-            {/* Day header */}
             <div className={`text-center py-2 rounded-lg ${
               isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
             }`}>
@@ -553,7 +571,6 @@ function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTi
               <div className="text-sm sm:text-lg font-bold">{date.getDate()}</div>
             </div>
 
-            {/* Events */}
             <div className="space-y-1 sm:space-y-2">
               {dayEvents.length === 0 ? (
                 <div className="hidden sm:block text-center text-gray-400 text-xs sm:text-sm py-2 sm:py-4">
@@ -562,25 +579,29 @@ function WeekView({ currentDate, events, getEventsForDate, getWeekDays, formatTi
               ) : (
                 dayEvents.map((event: CalendarEvent) => {
                   const statusToUse = event.job_status || event.status || 'new';
+                  const statusConfig = getStatusConfig(statusToUse);
+                  const bgColor = getStatusColorHex(statusConfig.color);
                   
                   return (
                     <button
                       key={event.id}
                       onClick={() => onSelectLead(event)}
-                      className={`w-full text-left p-1 sm:p-3 rounded-lg border-2 ${
-                        JOB_STATUS_COLORS[statusToUse] || 'bg-gray-100 text-gray-800'
-                      } hover:shadow-md transition`}
+                      className="w-full text-left p-1 sm:p-3 rounded-lg border-2 hover:shadow-md transition text-white"
+                      style={{ 
+                        backgroundColor: bgColor,
+                        borderColor: bgColor
+                      }}
                     >
                       <div className="font-semibold text-xs sm:text-sm mb-1 truncate">
                         {event.name}
                       </div>
                       {event.scheduled_time && (
-                        <div className="text-[10px] sm:text-xs opacity-75 mb-1">
+                        <div className="text-[10px] sm:text-xs opacity-90 mb-1">
                           ⏰ {formatTime(event.scheduled_time)}
                         </div>
                       )}
                       {event.assigned_to && (
-                        <div className="hidden sm:block text-xs opacity-75">
+                        <div className="hidden sm:block text-xs opacity-90">
                           👤 {event.assigned_to}
                         </div>
                       )}

@@ -8,6 +8,8 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 
+
+
 type StatusOption = {
   value: string;
   label: string;
@@ -26,14 +28,14 @@ type Company = {
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
-  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
-  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
-  { value: 'scheduled', label: 'Scheduled', color: 'blue', emoji: '📅' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
-  { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
-  { value: 'cancelled', label: 'Cancelled', color: 'red', emoji: '❌' },
-  { value: 'lost', label: 'Lost', color: 'gray', emoji: '🗑️' },
+  { value: 'new', label: 'New', color: 'blue', emoji: '' },
+  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '' },
+  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '' },
+  { value: 'scheduled', label: 'Scheduled', color: 'blue', emoji: '' },
+  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '' },
+  { value: 'completed', label: 'Completed', color: 'green', emoji: '' },
+  { value: 'cancelled', label: 'Cancelled', color: 'red', emoji: '' },
+  { value: 'lost', label: 'Lost', color: 'gray', emoji: '' },
 ];
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
@@ -322,8 +324,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           {title}
           <span className="text-white/60 text-base">({leads.length})</span>
         </h3>
-        <CardsView leads={leads} onSelectLead={setSelectedLead} />
-      </div>
+<CardsView 
+  leads={leads} 
+  onSelectLead={setSelectedLead} 
+  statusOptions={statusOptions}
+/>      </div>
     );
   };
 
@@ -557,8 +562,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                       📊 Export CSV
                     </a>
                   </div>
-                  <TableView leads={filteredLeads} onSelectLead={setSelectedLead} />
-                </div>
+<TableView 
+  leads={filteredLeads} 
+  onSelectLead={setSelectedLead}
+  statusOptions={statusOptions}
+/>                </div>
               )}
             </>
           )}

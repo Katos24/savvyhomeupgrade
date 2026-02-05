@@ -548,6 +548,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+// ==================== UPDATE TASKS ====================
+else if (action === 'update_tasks') {
+  console.log('✓ Updating tasks');
+  
+  const { tasks } = body;
+  
+  await sql`
+    UPDATE leads 
+    SET tasks = ${tasks},
+        updated_at = NOW()
+    WHERE id = ${id}
+  `;
+
+  console.log('✅ Tasks updated');
+  return NextResponse.json({ success: true });
+}
+
     // ==================== LEGACY ====================
     else {
       console.log('⚠️ Legacy update');

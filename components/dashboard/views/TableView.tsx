@@ -5,6 +5,7 @@ import { safeJSONParse } from '@/lib/utils';
 interface TableViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
+  statusOptions: any[]; // Add this
 }
 
 type SortConfig = {
@@ -20,7 +21,7 @@ const formatCategory = (cat: string) => {
     .join(' ');
 };
 
-export default function TableView({ leads, onSelectLead }: TableViewProps) {
+export default function TableView({ leads, onSelectLead, statusOptions }: TableViewProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const handleSort = (key: string) => {
@@ -31,6 +32,27 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
     }
     
     setSortConfig({ key, direction });
+  };
+
+  // Helper to get status config
+  const getStatusConfig = (statusValue: string) => {
+    return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
+  };
+
+  // Helper to get hex color from color name
+  const getStatusColorHex = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      blue: '#3b82f6',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      orange: '#f97316',
+      green: '#22c55e',
+      red: '#ef4444',
+      gray: '#6b7280',
+      indigo: '#6366f1',
+      pink: '#ec4899',
+    };
+    return colorMap[colorName] || '#3b82f6';
   };
 
   const getSortedLeads = () => {
@@ -62,18 +84,11 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
           bValue = b.city?.toLowerCase() || '';
           break;
         case 'status':
-          const statusOrder = { 
-            'new': 0, 
-            'contacted': 1, 
-            'quoted': 2, 
-            'scheduled': 3,
-            'in-progress': 4, 
-            'completed': 5,
-            'cancelled': 6,
-            'lost': 7 
-          };
-          aValue = statusOrder[(a.status || 'new') as keyof typeof statusOrder];
-          bValue = statusOrder[(b.status || 'new') as keyof typeof statusOrder];
+          // Use dynamic status order based on statusOptions array
+          const aStatusIndex = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
+          const bStatusIndex = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
+          aValue = aStatusIndex >= 0 ? aStatusIndex : 999;
+          bValue = bStatusIndex >= 0 ? bStatusIndex : 999;
           break;
         case 'scheduled_date':
           aValue = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0;
@@ -116,20 +131,6 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
     return sortConfig.direction === 'asc' ? 
       <span className="text-blue-600 ml-1">↑</span> : 
       <span className="text-blue-600 ml-1">↓</span>;
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: any = {
-      new: 'bg-blue-100 text-blue-800',
-      contacted: 'bg-yellow-100 text-yellow-800',
-      quoted: 'bg-purple-100 text-purple-800',
-      scheduled: 'bg-blue-100 text-blue-800',
-      'in-progress': 'bg-orange-100 text-orange-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-      lost: 'bg-gray-100 text-gray-800',
-    };
-    return colors[status] || colors.new;
   };
 
   const formatCurrency = (amount: number) => {
@@ -232,7 +233,9 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
           <tbody className="divide-y divide-white/10">
             {sortedLeads.map((lead) => {
               const fileUrls = safeJSONParse(lead.file_urls);
-              const leadStatus = lead.status || 'new';
+              const leadStatus = lead.status || statusOptions[0]?.value || 'new';
+              const statusConfig = getStatusConfig(leadStatus);
+              const statusColorHex = getStatusColorHex(statusConfig.color);
               const isProject = !!lead.project_id;
               
               const images = fileUrls?.filter((f: any) => 
@@ -244,6 +247,12 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
               ) || [];
 
               const rowBgColor = isProject ? 'bg-emerald-900/20 hover:bg-emerald-900/30' : 'hover:bg-slate-800/50';
+              
+              const formatPhone = (phone: string) => {
+                const cleaned = ('' + phone).replace(/\D/g, '');
+                const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+                return match ? `(${match[1]}) ${match[2]}-${match[3]}` : phone;
+              };
 
               return (
                 <tr 
@@ -256,7 +265,9 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">{lead.phone}</div>
+                    <div className="text-sm text-white">
+                      {formatPhone(lead.phone || '')}
+                    </div>
                     <div className="text-xs text-white/60">{lead.email}</div>
                   </td>
 
@@ -290,8 +301,11 @@ export default function TableView({ leads, onSelectLead }: TableViewProps) {
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(leadStatus)}`}>
-                      {leadStatus}
+                    <span 
+                      className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white"
+                      style={{ backgroundColor: statusColorHex }}
+                    >
+{statusConfig.label}
                     </span>
                   </td>
 

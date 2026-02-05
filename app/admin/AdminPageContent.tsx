@@ -65,6 +65,36 @@ const BUSINESS_TYPES = [
   { value: 'hvac', label: 'HVAC', emoji: '❄️' },
 ];
 
+const STATUS_COLOR_CLASS: Record<string, string> = {
+  blue: 'bg-blue-500',
+  yellow: 'bg-yellow-500',
+  purple: 'bg-purple-500',
+  orange: 'bg-orange-500',
+  green: 'bg-green-500',
+  red: 'bg-red-500',
+  gray: 'bg-gray-500',
+  indigo: 'bg-indigo-500',
+  pink: 'bg-pink-500',
+};
+
+// Add this function right after STATUS_COLOR_CLASS:
+const getStatusColor = (colorName: string) => {
+  const colorMap: Record<string, string> = {
+    blue: '#3b82f6',
+    yellow: '#eab308',
+    purple: '#a855f7',
+    orange: '#f97316',
+    green: '#22c55e',
+    red: '#ef4444',
+    gray: '#6b7280',
+    indigo: '#6366f1',
+    pink: '#ec4899',
+  };
+  return colorMap[colorName] || '#3b82f6';
+};
+
+
+
 export default function AdminPageContent({ onLogout }: { onLogout: () => void }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -529,9 +559,14 @@ export default function AdminPageContent({ onLogout }: { onLogout: () => void })
                 {statusOptions.map((status, index) => (
                   <div key={index} className="flex items-center gap-3 bg-white p-3 rounded-lg border">
                     <span className="text-2xl">{status.emoji}</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold bg-${status.color}-500 text-white`}>
-                      {status.label}
-                    </span>
+                <span
+  className="px-3 py-1 rounded-full text-sm font-semibold text-white"
+  style={{ backgroundColor: getStatusColor(status.color) }}
+>
+
+  {status.label}
+</span>
+
                     <button
                       type="button"
                       onClick={() => removeStatus(index)}
@@ -568,17 +603,7 @@ export default function AdminPageContent({ onLogout }: { onLogout: () => void })
                         className="form-input"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Emoji</label>
-                      <input
-                        type="text"
-                        value={newStatus.emoji}
-                        onChange={(e) => setNewStatus({ ...newStatus, emoji: e.target.value })}
-                        placeholder="📌"
-                        className="form-input"
-                        maxLength={2}
-                      />
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium mb-1">Color</label>
                       <div className="grid grid-cols-5 gap-2">

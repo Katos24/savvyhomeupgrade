@@ -24,23 +24,16 @@ type LeadModalProps = {
   statusOptions: any[];
 };
 
-// ============================================
-// STATUS UPDATE COMPONENT (COMPACT)
-// ============================================
 function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }: any) {
   const [selectedStatus, setSelectedStatus] = useState(lead.status || statusOptions[0]?.value);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleStatusChange = async () => {
     const oldStatus = lead.status || statusOptions[0]?.value;
-    
     if (isUpdating || selectedStatus === oldStatus) return;
-    
     setIsUpdating(true);
-    
     try {
       const success = await onUpdateStatus(lead.id, selectedStatus, oldStatus);
-      
       if (success) {
         toast.success(`Status updated to ${selectedStatus}!`);
         await onRefresh();
@@ -67,30 +60,26 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={isUpdating}
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50"
         >
           {statusOptions.map((option: any) => (
             <option key={option.value} value={option.value}>
-              {option.emoji && `${option.emoji} `}{option.label}
+              {option.label}
             </option>
           ))}
         </select>
-        
         <button
           onClick={handleStatusChange}
           disabled={isUpdating || selectedStatus === lead.status}
           className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-lg transition"
         >
-          {isUpdating ? '⏳' : 'Update'}
+          {isUpdating ? 'Updating...' : 'Update'}
         </button>
       </div>
     </div>
   );
 }
 
-// ============================================
-// MAIN LEAD MODAL (COMPACT VERSION)
-// ============================================
 export default function LeadModal({
   lead,
   onClose,
@@ -114,6 +103,21 @@ export default function LeadModal({
     libraries,
   });
 
+  const getStatusColor = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      blue: '#3b82f6',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      orange: '#f97316',
+      green: '#22c55e',
+      red: '#ef4444',
+      gray: '#6b7280',
+      indigo: '#6366f1',
+      pink: '#ec4899',
+    };
+    return colorMap[colorName] || '#3b82f6';
+  };
+
   const notesArray = parseNotes(lead.notes);
   const isProject = !!lead.project_id;
 
@@ -123,6 +127,7 @@ export default function LeadModal({
   
   const userRole = currentUser?.role || 'member';
   const canDelete = canDeleteLead(userRole);
+  
   const getStatusConfig = (statusValue: string) => {
     return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
   };
@@ -131,11 +136,9 @@ export default function LeadModal({
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
-    
     setSaving(true);
     const success = await onAddNote(lead.id, newNote);
     setSaving(false);
-    
     if (success) {
       setNewNote('');
       toast.success('Note added!');
@@ -148,7 +151,6 @@ export default function LeadModal({
     setSaving(true);
     const success = await onDeleteLead(lead.id);
     setSaving(false);
-    
     if (success) {
       toast.success('Lead deleted!');
       onClose();
@@ -157,10 +159,7 @@ export default function LeadModal({
     }
   };
 
-  // Parse photo arrays
   const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
-  const beforePhotos = lead.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
-  const afterPhotos = lead.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
 
   const formatCategory = (category: string) => {
     if (lead.category_label) return lead.category_label;
@@ -174,10 +173,6 @@ export default function LeadModal({
   };
 
   const fullAddress = getFullAddress();
-
-  const handleToggleCustomerInfo = () => {
-    setShowCustomerInfo(!showCustomerInfo);
-  };
 
   const mapContainerStyle = { width: '100%', height: '250px', borderRadius: '8px' };
   const mapOptions = {
@@ -198,7 +193,6 @@ export default function LeadModal({
         className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col" 
         onClick={(e) => e.stopPropagation()}
       >
-        {/* COMPACT HEADER */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-3 z-10">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
@@ -226,14 +220,15 @@ export default function LeadModal({
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {canDelete && !showDeleteConfirm ? (
+              {canDelete && !showDeleteConfirm && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="text-gray-400 hover:text-red-600 transition text-sm px-2 py-1 rounded hover:bg-red-50"
                 >
-                  🗑️
+                  Delete
                 </button>
-              ) : canDelete && showDeleteConfirm ? (
+              )}
+              {canDelete && showDeleteConfirm && (
                 <div className="flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded border border-red-200">
                   <span className="text-xs text-red-700 font-medium">Delete?</span>
                   <button
@@ -251,7 +246,7 @@ export default function LeadModal({
                     No
                   </button>
                 </div>
-              ) : null}
+              )}
               <button 
                 onClick={onClose} 
                 className="text-2xl text-gray-400 hover:text-gray-600 transition leading-none"
@@ -262,13 +257,10 @@ export default function LeadModal({
           </div>
         </div>
 
-        {/* COMPACT CONTENT */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
-
-          {/* Customer Info - COMPACT */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
             <button
-              onClick={handleToggleCustomerInfo}
+              onClick={() => setShowCustomerInfo(!showCustomerInfo)}
               className="w-full flex items-center justify-between p-3 hover:bg-blue-50/50 transition rounded-lg"
             >
               <div className="flex items-center gap-2">
@@ -288,7 +280,7 @@ export default function LeadModal({
                   <div className="bg-white rounded-lg p-2 border border-gray-200">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Phone</span>
                     <a href={`tel:${lead.phone}`} className="text-sm text-gray-900 font-medium hover:underline">
-                      {`(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
+                      {lead.phone && `(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
                     </a>
                   </div>
                 </div>
@@ -301,16 +293,25 @@ export default function LeadModal({
                         <p className="text-sm text-gray-900 font-medium">{lead.address_line_1}</p>
                         {lead.address_line_2 && <p className="text-xs text-gray-700">{lead.address_line_2}</p>}
                         {lead.city && <p className="text-xs text-gray-600 mt-0.5">{lead.city}</p>}
-                      </div>
+                          </div>
+
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition"
-                      >
+
+href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+
+target="_blank"
+
+rel="noopener noreferrer"
+
+className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition"
+
+>
+
                         Directions
-                      </a>
-                    </div>
+
+</a>
+
+</div>
 
                     {isLoaded && mapCenter && (
                       <div className="mt-2">
@@ -353,7 +354,6 @@ export default function LeadModal({
             )}
           </div>
 
-          {/* Description - COMPACT */}
           {lead.description && (
             <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
               <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
@@ -361,36 +361,34 @@ export default function LeadModal({
             </div>
           )}
 
-          {/* Customer Photos - COMPACT */}
-         {customerPhotos.length > 0 && (
-  <PhotoGallery 
-    title="Customer Photos" 
-    photos={customerPhotos}
-    emoji="📷"
-  />
-)}
+          {customerPhotos.length > 0 && (
+            <PhotoGallery 
+              title="Customer Photos" 
+              photos={customerPhotos}
+              emoji="📷"
+            />
+          )}
 
-          {/* Convert to Project Button */}
           <ConvertToProjectButton 
             lead={lead}
             currentUser={currentUser}
             onRefresh={onRefresh}
           />
 
-          {/* Status Section - COMPACT */}
           <div className={`rounded-lg border p-3 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-sm font-bold text-gray-900">
                 {isProject ? 'Project Status' : 'Lead Status'}
               </h3>
-              <div className={`inline-flex items-center px-2 py-1 rounded-lg font-semibold text-xs ${isProject ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}{currentStatusConfig.label}
+              <div 
+                className="inline-flex items-center px-2 py-1 rounded-lg font-semibold text-xs text-white"
+                style={{ backgroundColor: getStatusColor(currentStatusConfig.color) }}
+              >
+                {currentStatusConfig.label}
               </div>
             </div>
             
             <div className="space-y-2">
-
-              {/* Update Status */}
               <StatusUpdateSection 
                 lead={lead}
                 statusOptions={statusOptions}
@@ -400,7 +398,6 @@ export default function LeadModal({
             </div>
           </div>
 
-          {/* Project Section */}
           {lead.project_id && (
             <ProjectSection 
               lead={lead}
@@ -411,8 +408,6 @@ export default function LeadModal({
             />
           )}
 
-  
-          {/* Activity Timeline - COLLAPSIBLE */}
           <div className="bg-white rounded-lg border border-gray-200">
             <button
               onClick={() => setShowActivityLog(!showActivityLog)}
@@ -469,7 +464,6 @@ export default function LeadModal({
                         >
                           {noteType === 'status_change' ? (
                             <div className="flex items-start gap-2">
-                              <span className="text-base">📊</span>
                               <div className="flex-1">
                                 <p className="text-gray-900 font-semibold">Status Changed</p>
                                 <p className="text-gray-700 mt-0.5">
@@ -506,7 +500,6 @@ export default function LeadModal({
           </div>
         </div>
 
-        {/* COMPACT FOOTER */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex gap-2">
           <button
             onClick={onClose}

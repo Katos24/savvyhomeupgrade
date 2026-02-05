@@ -26,17 +26,43 @@ type Company = {
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const companies = await sql`
-    SELECT * FROM companies WHERE slug = ${slug}
+    SELECT 
+      id,
+      name,
+      slug,
+      email,
+      phone,
+      logo_url,
+      created_at,
+      business_type,
+      status_options,
+      form_categories,
+      address_enabled,
+      address_required
+    FROM companies 
+    WHERE slug = ${slug}
   `;
   
-  return companies.length > 0 ? (companies[0] as Company) : null;
+  if (companies.length === 0) return null;
+  
+  const company = companies[0] as Company;
+  
+  // Parse JSON fields if they're strings
+  if (typeof company.status_options === 'string') {
+    company.status_options = JSON.parse(company.status_options);
+  }
+  if (typeof company.form_categories === 'string') {
+    company.form_categories = JSON.parse(company.form_categories);
+  }
+  
+  return company;
 }
 
 async function verifyAuth(companySlug: string) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token');
-
+    
     if (!token) {
       redirect('/login');
     }
@@ -67,7 +93,7 @@ export default async function CalendarPage({ params }: PageProps) {
   await verifyAuth(companySlug);
   
   const company = await getCompany(companySlug);
-
+  
   if (!company) {
     notFound();
   }
@@ -75,7 +101,9 @@ export default async function CalendarPage({ params }: PageProps) {
   // Transform company to match CalendarClient's expected type
   const companyData = {
     ...company,
-    status_options: company.status_options || undefined,
+    status_options: Array.isArray(company.status_options) && company.status_options.length > 0
+      ? company.status_options 
+      : [], // Empty array will trigger fallback to DEFAULT_STATUSES
   };
 
   return <CalendarClient company={companyData} />;

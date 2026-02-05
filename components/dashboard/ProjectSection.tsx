@@ -6,6 +6,8 @@ import QuoteSection from './project-sections/QuoteSection';
 import PaymentSection from './project-sections/PaymentSection';
 import DocumentsSection from './project-sections/DocumentsSection';
 import PhotosSection from './project-sections/PhotosSection';
+import TasksSection from './project-sections/TasksSection';
+
 
 type ProjectSectionProps = {
   lead: any;
@@ -15,7 +17,7 @@ type ProjectSectionProps = {
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
 };
 
-type TabType = 'schedule' | 'quote' | 'payment' | 'documents' | 'photos';
+type TabType = 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'documents';
 
 export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
@@ -47,6 +49,12 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
       label: 'Payment', 
       icon: '💳',
       count: lead?.payment_amount ? 1 : 0
+    },
+        { 
+      id: 'tasks' as TabType, 
+      label: 'Tasks', 
+      icon: '✓',
+      count: lead?.tasks ? (Array.isArray(lead.tasks) ? lead.tasks.filter((t: any) => !t.completed).length : 0) : 0
     },
     { 
       id: 'documents' as TabType, 
@@ -141,6 +149,15 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                 hasProject={hasProject}
               />
             )}
+
+            {activeTab === 'tasks' && (
+  <TasksSection
+    lead={lead}
+    currentUser={currentUser}
+    onRefresh={onRefresh}
+    hasProject={hasProject}
+  />
+)}
 
             {activeTab === 'documents' && (
               <DocumentsSection

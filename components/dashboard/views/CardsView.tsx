@@ -3,9 +3,10 @@ import { safeJSONParse, parseNotes } from '@/lib/utils';
 interface CardsViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
+  statusOptions: any[]; // Add this prop
 }
 
-export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
+export default function CardsView({ leads, onSelectLead, statusOptions }: CardsViewProps) {
   const formatCategory = (cat: string) => {
     if (!cat) return '';
     return cat
@@ -16,38 +17,42 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
 
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return '';
-    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
     
-    // Format as (XXX) XXX-XXXX
     if (cleaned.length === 10) {
       return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
     }
-    // Format as +X (XXX) XXX-XXXX for 11 digits
     if (cleaned.length === 11) {
       return `+${cleaned[0]} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
     }
-    // Return as-is if not standard format
     return phone;
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: any = {
-      new: 'bg-blue-500',
-      contacted: 'bg-yellow-500',
-      quoted: 'bg-purple-500',
-      scheduled: 'bg-blue-500',
-      'in-progress': 'bg-orange-500',
-      completed: 'bg-green-500',
-      cancelled: 'bg-red-500',
-      lost: 'bg-gray-500',
+  // Update this function to use statusOptions and return hex color
+  const getStatusConfig = (statusValue: string) => {
+    return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
+  };
+
+  const getStatusColorHex = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      blue: '#3b82f6',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      orange: '#f97316',
+      green: '#22c55e',
+      red: '#ef4444',
+      gray: '#6b7280',
+      indigo: '#6366f1',
+      pink: '#ec4899',
     };
-    return colors[status] || colors.new;
+    return colorMap[colorName] || '#3b82f6';
   };
 
   const renderLeadCard = (lead: any) => {
     const fileUrls = safeJSONParse(lead.file_urls);
-    const leadStatus = lead.status || 'new';
+    const leadStatus = lead.status || statusOptions[0]?.value || 'new';
+    const statusConfig = getStatusConfig(leadStatus);
+    const statusColorHex = getStatusColorHex(statusConfig.color);
     const notesArray = parseNotes(lead.notes);
     const isProject = !!lead.project_id;
     
@@ -65,8 +70,11 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
         onClick={() => onSelectLead(lead)}
         className="group relative bg-slate-800 rounded-xl p-4 border-2 border-slate-700 hover:border-purple-500 hover:bg-slate-750 transition-all cursor-pointer overflow-hidden shadow-lg"
       >
-        {/* Status indicator bar - left side */}
-        <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusColor(leadStatus)}`} />
+        {/* Status indicator bar - left side - now uses actual color */}
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-1" 
+          style={{ backgroundColor: statusColorHex }}
+        />
         
         {/* Top row: Name + Badges */}
         <div className="flex items-start justify-between gap-2 mb-3">
@@ -79,11 +87,7 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
                 🚀
               </span>
             )}
-            {notesArray.length > 0 && (
-              <span className="bg-slate-700/50 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                📝 {notesArray.length}
-              </span>
-            )}
+           
             {(images.length > 0 || videos.length > 0) && (
               <span className="bg-slate-700/50 text-white text-xs px-2 py-0.5 rounded-full font-medium">
                 {images.length > 0 && `📸${images.length}`}
@@ -111,8 +115,12 @@ export default function CardsView({ leads, onSelectLead }: CardsViewProps) {
           <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-medium border border-blue-500/30">
             {formatCategory(lead.category)}
           </span>
-          <span className={`${getStatusColor(leadStatus)} text-white px-2 py-1 rounded font-medium capitalize`}>
-            {leadStatus}
+          {/* Updated to use actual color and show emoji + label */}
+          <span 
+            className="text-white px-2 py-1 rounded font-medium"
+            style={{ backgroundColor: statusColorHex }}
+          >
+{statusConfig.label}
           </span>
         </div>
 

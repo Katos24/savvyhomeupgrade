@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
+
 type TrialBannerProps = {
   subscriptionStatus: string;
   trialEndsAt: string | null;
