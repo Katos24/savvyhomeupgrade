@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-    let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId;
+    let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId, lead_source;
 
     // Helper function to format category
     const formatCategory = (cat: string) => {
@@ -31,10 +31,14 @@ export async function POST(request: Request) {
       fileUrls = body.file_urls || [];
       companySlug = body.company_slug;
       companyId = body.company_id;
+      lead_source = body.lead_source || null;
 
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
         console.log('📍 Address:', address_line_1, address_line_2 ? `(${address_line_2})` : '', city ? `in ${city}` : '');
+      }
+      if (lead_source) {
+        console.log('🎯 Lead source:', lead_source);
       }
     } else {
       const formData = await request.formData();
@@ -47,6 +51,7 @@ export async function POST(request: Request) {
       category = formData.get('category') as string;
       description = formData.get('description') as string;
       companySlug = formData.get('company_slug') as string;
+      lead_source = formData.get('lead_source') as string || null;
       fileUrls = [];
     }
 
@@ -64,10 +69,10 @@ export async function POST(request: Request) {
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, address_line_1, address_line_2, city, category, description, 
-        company_id, status, file_urls
+        company_id, status, file_urls, lead_source
       ) VALUES (
         ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${category}, ${description},
-        ${companyId}, 'new', ${JSON.stringify(fileUrls)}
+        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}
       )
       RETURNING id
     `;

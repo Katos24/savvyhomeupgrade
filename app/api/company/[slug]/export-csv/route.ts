@@ -49,6 +49,7 @@ export async function GET(
         p.quote_total,
         p.payment_status,
         p.payment_amount,
+        l.lead_source,
         CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
@@ -147,7 +148,9 @@ export async function GET(
       'Quote Total',
       'Payment Status',
       'Payment Amount',
-      'Created Date'
+      'Created Date',
+            'Lead Source'
+
     ];
     
     const csvRows = [headers.join(',')];

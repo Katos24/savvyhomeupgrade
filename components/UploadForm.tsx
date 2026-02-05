@@ -61,6 +61,7 @@ export default function UploadForm({
     city: '',
     category: '',
     description: '',
+    lead_source: 'upload_form',
   });
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
@@ -416,6 +417,8 @@ export default function UploadForm({
           file_urls: uploadedFiles,
           company_slug: finalCompanySlug,
           company_id: finalCompanyId,
+            lead_source: formData.lead_source || null, // ADD THIS LINE
+
         }),
       });
 
@@ -612,6 +615,29 @@ export default function UploadForm({
               <p className="mt-1 text-xs text-gray-500">
                 {formData.phone.replace(/\D/g, '').length}/10 digits
               </p>
+            </div>
+       {/* ADD THIS NEW SECTION HERE */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                How did you hear about us? (Optional)
+              </label>
+              <select
+                name="lead_source"
+                value={formData.lead_source}
+                onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={uploading}
+              >
+                <option value="">Select one...</option>
+                <option value="website">Website/Google Search</option>
+                <option value="facebook">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="google_ads">Google Ads</option>
+                <option value="referral">Referral from friend/family</option>
+                <option value="yard_sign">Yard Sign</option>
+                <option value="truck">Saw your truck</option>
+                <option value="other">Other</option>
+              </select>
             </div>
 
             {addressConfig.show && isLoaded && (

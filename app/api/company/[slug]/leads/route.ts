@@ -27,6 +27,7 @@ export async function GET(request: Request, { params }: Props) {
       SELECT 
         l.*,
         p.id as project_id,
+            p.project_number, 
         p.status as job_status,
         p.scheduled_date,
         p.scheduled_time,
@@ -47,7 +48,9 @@ export async function GET(request: Request, { params }: Props) {
         p.documents,
         p.completed_at as job_completed_at,
         p.notes as project_notes,
-        p.tasks as project_tasks
+        p.tasks as project_tasks,
+         p.follow_up_date, 
+    p.follow_up_notes  
 
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id

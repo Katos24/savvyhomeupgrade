@@ -203,11 +203,11 @@ export default function LeadModal({
                     {formatCategory(lead.category)}
                   </span>
                 )}
-                {isProject && (
-                  <span className="inline-block px-2 py-0.5 bg-emerald-600 text-white rounded text-xs font-semibold">
-                    PROJECT
-                  </span>
-                )}
+              {isProject && (
+  <span className="inline-block px-2 py-0.5 bg-emerald-600 text-white rounded text-xs font-semibold">
+    PROJECT #{lead.project_number}
+  </span>
+)}
               </div>
               <p className="text-xs text-gray-600 mt-0.5">
                 {new Date(lead.created_at).toLocaleDateString('en-US', {

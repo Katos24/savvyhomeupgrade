@@ -40,9 +40,7 @@ export default function ConvertToProjectButton({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(`✅ Project #${result.project_id} created!`, {
-          description: 'You can now schedule work, create quotes, and track payments.'
-        });
+     toast.success(`✅ Project #${result.project_number} created! You can now schedule work, create quotes, and track payments.`);
         setShowConfirm(false);
         await onRefresh();
       } else {

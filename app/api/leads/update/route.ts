@@ -24,7 +24,9 @@ export async function POST(request: Request) {
       estimated_hours,
       actual_hours,
       quote_data,
-      quote_total
+      quote_total,
+      follow_up_date,  
+  follow_up_notes   
     } = body;
 
     const sql = neon(process.env.DATABASE_URL!);
@@ -131,153 +133,170 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // ==================== CREATE PROJECT ====================
-    else if (action === 'create_project') {
-      console.log('🎯 Creating project');
-      
-      // Get complete lead data
-      const leadCheck = await sql`SELECT * FROM leads WHERE id = ${id}`;
+// ==================== CREATE PROJECT ====================
+else if (action === 'create_project') {
+  console.log('🎯 Creating project');
+  
+  // Get complete lead data
+  const leadCheck = await sql`SELECT * FROM leads WHERE id = ${id}`;
 
-      if (!leadCheck[0]) {
-        throw new Error('Lead not found');
-      }
+  if (!leadCheck[0]) {
+    throw new Error('Lead not found');
+  }
 
-      if (leadCheck[0].project_id) {
-        console.log('⚠️ Project already exists');
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Project already exists for this lead',
-          project_id: leadCheck[0].project_id 
-        });
-      }
+  if (leadCheck[0].project_id) {
+    console.log('⚠️ Project already exists');
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Project already exists for this lead',
+      project_id: leadCheck[0].project_id 
+    });
+  }
 
-      const leadData = leadCheck[0];
+  const leadData = leadCheck[0];
 
-      // Parse lead notes to copy to project
-      let leadNotes = [];
-      try {
-        leadNotes = leadData.notes ? JSON.parse(leadData.notes) : [];
-      } catch {
-        leadNotes = [];
-      }
+  // 🔥 Get next project number for this company
+  const maxProjectNumber = await sql`
+    SELECT COALESCE(MAX(p.project_number), 0) as max_num
+    FROM projects p
+    JOIN leads l ON p.lead_id = l.id
+    WHERE l.company_id = ${leadData.company_id}
+  `;
+  
+  const nextProjectNumber = (maxProjectNumber[0]?.max_num || 0) + 1;
 
-      // Create project with lead data (including address_line_2)
-      const projectResult = await sql`
-        INSERT INTO projects (
-          lead_id,
-          customer_name,
-          customer_email,
-          customer_phone,
-          service_address,
-          address_line_2,
-          city,
-          status,
-          company_id,
-          notes,
-          before_photos,
-          after_photos,
-          created_at,
-          updated_at
-        ) VALUES (
-          ${id},
-          ${leadData.name},
-          ${leadData.email},
-          ${leadData.phone},
-          ${leadData.address_line_1 || null},
-          ${leadData.address_line_2 || null},
-          ${leadData.city || null},
-          'scheduled',
-          ${leadData.company_id || null},
-          ${JSON.stringify(leadNotes)},
-          '[]'::jsonb,
-          '[]'::jsonb,
-          NOW(),
-          NOW()
-        )
-        RETURNING id
-      `;
+  // Parse lead notes to copy to project
+  let leadNotes = [];
+  try {
+    leadNotes = leadData.notes ? JSON.parse(leadData.notes) : [];
+  } catch {
+    leadNotes = [];
+  }
 
-      const projectId = projectResult[0].id;
+  // Create project with lead data (including project_number)
+  const projectResult = await sql`
+    INSERT INTO projects (
+      lead_id,
+      project_number,
+      customer_name,
+      customer_email,
+      customer_phone,
+      service_address,
+      address_line_2,
+      city,
+      status,
+      company_id,
+      notes,
+      before_photos,
+      after_photos,
+      created_at,
+      updated_at
+    ) VALUES (
+      ${id},
+      ${nextProjectNumber},
+      ${leadData.name},
+      ${leadData.email},
+      ${leadData.phone},
+      ${leadData.address_line_1 || null},
+      ${leadData.address_line_2 || null},
+      ${leadData.city || null},
+      'scheduled',
+      ${leadData.company_id || null},
+      ${JSON.stringify(leadNotes)},
+      '[]'::jsonb,
+      '[]'::jsonb,
+      NOW(),
+      NOW()
+    )
+    RETURNING id, project_number
+  `;
 
-      // Update lead with project_id
-      await sql`
-        UPDATE leads 
-        SET 
-          project_id = ${projectId},
-          status = 'scheduled',
-          updated_at = NOW()
-        WHERE id = ${id}
-      `;
+  const projectId = projectResult[0].id;
+  const projectNumber = projectResult[0].project_number;
 
-      // Add creation note to project
-      const projectNotes = [...leadNotes, {
-        type: 'project_created',
-        text: `Project created from Lead #${id} by ${user_name}`,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      }];
+  // Update lead with project_id
+  await sql`
+    UPDATE leads 
+    SET 
+      project_id = ${projectId},
+      status = 'scheduled',
+      updated_at = NOW()
+    WHERE id = ${id}
+  `;
 
-      await sql`
-        UPDATE projects 
-        SET notes = ${JSON.stringify(projectNotes)}
-        WHERE id = ${projectId}
-      `;
+  // Add creation note to project
+  const projectNotes = [...leadNotes, {
+    type: 'project_created',
+    text: `Project #${projectNumber} created from Lead #${id} by ${user_name}`,
+    user_name: user_name,
+    user_email: user_email,
+    timestamp: new Date().toISOString()
+  }];
 
-      console.log(`✅ Created project ${projectId} for lead ${id}`);
-      
-      return NextResponse.json({ 
-        success: true, 
-        project_id: projectId,
-        message: 'Project created successfully'
-      });
-    }
+  await sql`
+    UPDATE projects 
+    SET notes = ${JSON.stringify(projectNotes)}
+    WHERE id = ${projectId}
+  `;
 
-    // ==================== UPDATE PROJECT ====================
-    else if (action === 'update_project') {
-      console.log('📋 Updating project');
-      
-      const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
-      const projectId = leadCheck[0]?.project_id;
+  console.log(`✅ Created project ${projectId} (#${projectNumber}) for lead ${id}`);
+  
+  return NextResponse.json({ 
+    success: true, 
+    project_id: projectId,
+    project_number: projectNumber,
+    message: `Project #${projectNumber} created successfully`
+  });
+}
 
-      if (!projectId) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No project exists for this lead. Please create a project first.' 
-        }, { status: 400 });
-      }
+// ==================== UPDATE PROJECT ====================
+else if (action === 'update_project') {
+  console.log('📋 Updating project');
+  
+  const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
+  const projectId = leadCheck[0]?.project_id;
 
-      // Update project fields
-      await sql`
-        UPDATE projects 
-        SET 
-          scheduled_date = ${scheduled_date || null},
-          scheduled_time = ${scheduled_time || null},
-          assigned_to = ${assigned_to || null},
-          estimated_hours = ${estimated_hours || null},
-          actual_hours = ${actual_hours || null},
-          updated_at = NOW()
-        WHERE id = ${projectId}
-      `;
+  if (!projectId) {
+    return NextResponse.json({ 
+      success: false, 
+      error: 'No project exists for this lead. Please create a project first.' 
+    }, { status: 400 });
+  }
 
-      // 🔥 Add activity log
-      let noteText = 'Project updated';
-      if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
-      if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
+  // Update project fields (including follow-up reminder fields)
+  await sql`
+    UPDATE projects 
+    SET 
+      scheduled_date = ${scheduled_date || null},
+      scheduled_time = ${scheduled_time || null},
+      assigned_to = ${assigned_to || null},
+      estimated_hours = ${estimated_hours || null},
+      actual_hours = ${actual_hours || null},
+      follow_up_date = ${body.follow_up_date !== undefined ? body.follow_up_date : sql`follow_up_date`},
+      follow_up_notes = ${body.follow_up_notes !== undefined ? body.follow_up_notes : sql`follow_up_notes`},
+      updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
 
-      const projectUpdateEntry = {
-        type: 'project_updated',
-        text: noteText,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      };
+  // 🔥 Add activity log
+  let noteText = 'Project updated';
+  if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
+  if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
+  if (body.follow_up_date) noteText += `, Reminder set: ${body.follow_up_date}`;
 
-      await addActivityToProject(id, projectUpdateEntry);
+  const projectUpdateEntry = {
+    type: 'project_updated',
+    text: noteText,
+    user_name: user_name,
+    user_email: user_email,
+    timestamp: new Date().toISOString()
+  };
 
-      console.log('✅ Project updated');
-      return NextResponse.json({ success: true });
-    }
+  await addActivityToProject(id, projectUpdateEntry);
+
+  console.log('✅ Project updated');
+  return NextResponse.json({ success: true });
+}
 
     // ==================== SAVE QUOTE ====================
     else if (action === 'save_quote') {

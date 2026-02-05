@@ -5,7 +5,7 @@ import { safeJSONParse } from '@/lib/utils';
 interface TableViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
-  statusOptions: any[]; // Add this
+  statusOptions: any[];
 }
 
 type SortConfig = {
@@ -34,12 +34,10 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
     setSortConfig({ key, direction });
   };
 
-  // Helper to get status config
   const getStatusConfig = (statusValue: string) => {
     return statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0];
   };
 
-  // Helper to get hex color from color name
   const getStatusColorHex = (colorName: string) => {
     const colorMap: Record<string, string> = {
       blue: '#3b82f6',
@@ -83,8 +81,11 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
           aValue = a.city?.toLowerCase() || '';
           bValue = b.city?.toLowerCase() || '';
           break;
+        case 'lead_source':
+          aValue = a.lead_source?.toLowerCase() || '';
+          bValue = b.lead_source?.toLowerCase() || '';
+          break;
         case 'status':
-          // Use dynamic status order based on statusOptions array
           const aStatusIndex = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
           const bStatusIndex = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
           aValue = aStatusIndex >= 0 ? aStatusIndex : 999;
@@ -146,16 +147,17 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-lg overflow-hidden border border-white/20">
-      {/* Mobile: Show scroll hint */}
       <div className="lg:hidden bg-slate-800/50 px-4 py-2 text-xs text-white/70 text-center border-b border-white/10">
         ← Scroll horizontally to see all columns →
       </div>
       
-      {/* Scrollable container */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-slate-800/80">
             <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                Project #
+              </th>
               <th 
                 className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
                 onClick={() => handleSort('name')}
@@ -177,6 +179,7 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
               >
                 City <SortIcon columnKey="city" />
               </th>
+        
               <th 
                 className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
                 onClick={() => handleSort('category')}
@@ -225,6 +228,12 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
               >
                 Created <SortIcon columnKey="date" />
               </th>
+                    <th 
+                className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
+                onClick={() => handleSort('lead_source')}
+              >
+                Source <SortIcon columnKey="lead_source" />
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Actions
               </th>
@@ -260,6 +269,16 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                   className={`${rowBgColor} cursor-pointer transition`}
                   onClick={() => onSelectLead(lead)}
                 >
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {isProject && lead.project_number ? (
+                      <span className="font-semibold text-emerald-400">
+                        {lead.project_number}
+                      </span>
+                    ) : (
+                      <span className="text-white/40">—</span>
+                    )}
+                  </td>
+
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-white">{lead.name}</div>
                   </td>
@@ -294,6 +313,8 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                     </div>
                   </td>
 
+             
+
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
                       {formatCategory(lead.category)}
@@ -305,18 +326,18 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                       className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-white"
                       style={{ backgroundColor: statusColorHex }}
                     >
-{statusConfig.label}
+                      {statusConfig.label}
                     </span>
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap">
                     {isProject ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        🚀 Project
+                        Project
                       </span>
                     ) : (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        📧 Lead
+                        Lead
                       </span>
                     )}
                   </td>
@@ -377,9 +398,9 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white/80">
-                    {images.length > 0 && <span>📸 {images.length}</span>}
+                    {images.length > 0 && <span>{images.length} photos</span>}
                     {images.length > 0 && videos.length > 0 && <span> • </span>}
-                    {videos.length > 0 && <span>🎥 {videos.length}</span>}
+                    {videos.length > 0 && <span>{videos.length} videos</span>}
                     {images.length === 0 && videos.length === 0 && <span className="text-white/40">—</span>}
                   </td>
 
@@ -390,6 +411,15 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                       hour: 'numeric',
                       minute: '2-digit'
                     })}
+                  </td>
+                       <td className="px-4 py-4 whitespace-nowrap">
+                    {lead.lead_source ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 capitalize">
+                        {lead.lead_source.replace('_', ' ')}
+                      </span>
+                    ) : (
+                      <span className="text-white/40 text-sm">—</span>
+                    )}
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap text-sm">

@@ -7,7 +7,7 @@ import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-
+import FollowUpBanner from '@/components/dashboard/project-sections/FollowUpBanner';
 
 
 type StatusOption = {
@@ -53,6 +53,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showFollowUpsOnly, setShowFollowUpsOnly] = useState(false);
+
 
   const statusOptions = company.status_options && company.status_options.length > 0 
     ? company.status_options 
@@ -252,6 +254,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
     const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
     
+  // 🔥 NEW: Follow-up filter
+  const matchesFollowUp = !showFollowUpsOnly || (lead.follow_up_date !== null && lead.follow_up_date !== undefined);
+  
+
     // Time filter
     const leadDate = new Date(lead.created_at);
     const now = new Date();
@@ -283,7 +289,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       matchesTime = leadDate >= monthStart;
     }
     
-    return matchesSearch && matchesStatus && matchesCategory && matchesTime;
+return matchesSearch && matchesStatus && matchesCategory && matchesTime && matchesFollowUp;
   });
 
   // Sort by date (newest first)
@@ -436,6 +442,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <span className={`transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`}>▼</span>
           </button>
         </div>
+
+        {/* 🔥 FOLLOW-UP BANNER */}
+<FollowUpBanner 
+  leads={allLeads}
+  onFilterFollowUps={() => setShowFollowUpsOnly(!showFollowUpsOnly)}
+  isFiltered={showFollowUpsOnly}
+/>
 
         {/* FILTERS */}
         <div className="flex flex-col sm:flex-row justify-end gap-2 mb-6">
