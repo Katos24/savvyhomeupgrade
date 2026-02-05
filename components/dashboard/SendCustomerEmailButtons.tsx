@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Mail } from 'lucide-react';
 
 type SendCustomerEmailButtonsProps = {
   leadId: number;
@@ -38,11 +39,10 @@ export default function SendCustomerEmailButtons({
     }
 
     setSending(true);
-    
     const action = type === 'quote' ? 'send_quote_to_customer' : 'send_schedule_to_customer';
     const successMessage = type === 'quote' 
-      ? '✅ Quote emailed to customer!' 
-      : '✅ Schedule confirmation emailed!';
+      ? 'Quote emailed to customer!' 
+      : 'Schedule confirmation emailed!';
 
     try {
       const response = await fetch('/api/leads/update', {
@@ -55,9 +55,9 @@ export default function SendCustomerEmailButtons({
           user_email: currentUser?.email || ''
         })
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         toast.success(successMessage);
         await onRefresh();
@@ -73,8 +73,8 @@ export default function SendCustomerEmailButtons({
   };
 
   const buttonText = type === 'quote' 
-    ? (sending ? '📧 Sending...' : '📧 Email Quote to Customer')
-    : (sending ? '📧 Sending...' : '📧 Email Schedule to Customer');
+    ? (sending ? 'Sending...' : 'Email Quote to Customer')
+    : (sending ? 'Sending...' : 'Email Schedule to Customer');
 
   const isDisabled = disabled || sending || (type === 'quote' && !hasQuote) || (type === 'schedule' && !hasSchedule);
 
@@ -83,14 +83,15 @@ export default function SendCustomerEmailButtons({
       <button
         onClick={handleSendEmail}
         disabled={isDisabled}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base"
+        className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition text-sm"
       >
+        <Mail className="w-3.5 h-3.5" />
         {buttonText}
       </button>
-      
+
       {type === 'quote' && quoteSentAt && (
         <p className="text-xs text-green-600 font-semibold text-center">
-          ✅ Quote emailed on {new Date(quoteSentAt).toLocaleDateString()}
+          Quote emailed on {new Date(quoteSentAt).toLocaleDateString()}
         </p>
       )}
     </div>

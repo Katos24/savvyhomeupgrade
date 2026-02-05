@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, FileIcon, AlertCircle } from 'lucide-react';
 import SchedulingSection from './project-sections/SchedulingSection';
 import QuoteSection from './project-sections/QuoteSection';
 import PaymentSection from './project-sections/PaymentSection';
@@ -36,43 +37,50 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
     { 
       id: 'schedule' as TabType, 
       label: 'Schedule', 
-      icon: '📅',
+      icon: Calendar,
+      iconColor: '#22c55e', // green
       count: lead?.scheduled_date ? 1 : 0
     },
     { 
       id: 'quote' as TabType, 
       label: 'Quote', 
-      icon: '📝',
+      icon: FileText,
+      iconColor: '#3b82f6', // blue
       count: lead?.quote_data?.length || 0
     },
     { 
       id: 'payment' as TabType, 
       label: 'Payment', 
-      icon: '💳',
+      icon: CreditCard,
+      iconColor: '#f59e0b', // amber
       count: lead?.payment_amount ? 1 : 0
     },
     { 
       id: 'tasks' as TabType, 
       label: 'Tasks', 
-      icon: '✓',
+      icon: CheckSquare,
+      iconColor: '#8b5cf6', // purple
       count: lead?.tasks ? (Array.isArray(lead.tasks) ? lead.tasks.filter((t: any) => !t.completed).length : 0) : 0
     },
     { 
       id: 'reminders' as TabType, 
       label: 'Reminders', 
-      icon: '⏰',
+      icon: Bell,
+      iconColor: '#ef4444', // red
       count: lead?.follow_up_date ? 1 : 0
     },
     { 
       id: 'documents' as TabType, 
       label: 'Docs', 
-      icon: '📄',
+      icon: FileIcon,
+      iconColor: '#6366f1', // indigo
       count: lead?.documents ? (Array.isArray(lead.documents) ? lead.documents.length : JSON.parse(lead.documents).length) : 0
     },
     { 
       id: 'photos' as TabType, 
       label: 'Photos', 
-      icon: '📸',
+      icon: Image,
+      iconColor: '#ec4899', // pink
       count: (() => {
         const beforePhotos = lead?.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
         const afterPhotos = lead?.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
@@ -85,46 +93,70 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
     <div className="space-y-3">
       
       {!hasProject && (
-        <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-2 text-center">
-          <p className="text-yellow-800 font-semibold text-sm">
-            Convert to Project first to use scheduling, quotes, and payments
-          </p>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="p-2 bg-amber-100 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-amber-900 font-semibold text-sm">
+              Convert to Project First
+            </p>
+            <p className="text-amber-700 text-xs mt-1">
+              To use scheduling, quotes, and payments, convert this lead to a project
+            </p>
+          </div>
         </div>
       )}
 
       {hasProject && (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-          {/* HORIZONTAL BADGE NAVIGATION */}
-          <div className="p-3 bg-gray-50 border-b border-gray-200">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    flex-shrink-0 snap-start px-3 py-2 rounded-lg text-sm font-semibold transition-all
-                    flex items-center gap-2
-                    ${activeTab === tab.id 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                    }
-                  `}
-                >
-                  <span className="text-base">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  {tab.count > 0 && (
-                    <span className={`
-                      px-1.5 py-0.5 rounded-full text-xs font-bold
-                      ${activeTab === tab.id 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-100 text-gray-600'
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          {/* MODERN TAB NAVIGATION */}
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <div 
+              className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex-shrink-0 snap-start px-4 py-2.5 rounded-lg font-medium transition-all
+                      flex items-center gap-2.5 relative group
+                      ${isActive
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
+                        : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
                       }
-                    `}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+                    `}
+                  >
+                    <IconComponent 
+                      className="w-4 h-4" 
+                      style={{ color: isActive ? '#ffffff' : tab.iconColor }}
+                    />
+                    <span className="text-sm">{tab.label}</span>
+                    {tab.count > 0 && (
+                      <span className={`
+                        min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold
+                        flex items-center justify-center
+                        ${isActive
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700'
+                        }
+                      `}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

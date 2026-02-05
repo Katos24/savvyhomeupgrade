@@ -2,6 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { 
+  Mail, 
+  Phone, 
+  MessageSquare, 
+  MapPin, 
+  Navigation,
+  ChevronDown,
+  Trash2,
+  X,
+  Calendar,
+  Tag,
+  Briefcase
+} from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoUpload from '@/components/dashboard/PhotoUpload';
 import PhotoGallery from '@/components/dashboard/PhotoGallery';
@@ -52,15 +65,15 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
 
   return (
     <div>
-      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
+      <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block">
         Change Status
       </label>
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={isUpdating}
-          className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50"
+          className="flex-1 max-w-xs px-3 py-2.5 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 font-medium transition disabled:opacity-50"
         >
           {statusOptions.map((option: any) => (
             <option key={option.value} value={option.value}>
@@ -71,7 +84,7 @@ function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }:
         <button
           onClick={handleStatusChange}
           disabled={isUpdating || selectedStatus === lead.status}
-          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-lg transition"
+          className="px-8 py-2.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-lg transition whitespace-nowrap"
         >
           {isUpdating ? 'Updating...' : 'Update'}
         </button>
@@ -185,63 +198,70 @@ export default function LeadModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4" 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0 sm:p-4" 
       onClick={onClose}
       style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch' }}
     >
       <div 
-        className="bg-white w-full sm:max-w-4xl sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col" 
+        className="bg-white w-full sm:max-w-4xl sm:rounded-xl shadow-2xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col" 
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-3 z-10">
-          <div className="flex items-start justify-between gap-2">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 p-4 z-10 rounded-t-xl">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">{lead.name}</h2>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <h2 className="text-xl font-bold text-gray-900">{lead.name}</h2>
                 {lead.category && (
-                  <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-semibold">
+                    <Tag className="w-3 h-3" />
                     {formatCategory(lead.category)}
                   </span>
                 )}
-              {isProject && (
-  <span className="inline-block px-2 py-0.5 bg-emerald-600 text-white rounded text-xs font-semibold">
-    PROJECT #{lead.project_number}
-  </span>
-)}
+                {isProject && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm">
+                    <Briefcase className="w-3 h-3" />
+                    PROJECT #{lead.project_number}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-gray-600 mt-0.5">
-                {new Date(lead.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
-              </p>
+              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                <Calendar className="w-3.5 h-3.5" />
+                <p>
+                  {new Date(lead.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
             </div>
+            
             <div className="flex items-center gap-2 flex-shrink-0">
               {canDelete && !showDeleteConfirm && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="text-gray-400 hover:text-red-600 transition text-sm px-2 py-1 rounded hover:bg-red-50"
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                 >
-                  Delete
+                  <Trash2 className="w-4 h-4" />
                 </button>
               )}
               {canDelete && showDeleteConfirm && (
-                <div className="flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded border border-red-200">
+                <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
                   <span className="text-xs text-red-700 font-medium">Delete?</span>
                   <button
                     onClick={handleDelete}
                     disabled={saving}
-                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-2 py-0.5 rounded"
+                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-3 py-1 rounded-lg"
                   >
                     Yes
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={saving}
-                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-2 py-0.5 rounded"
+                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-3 py-1 rounded-lg"
                   >
                     No
                   </button>
@@ -249,72 +269,74 @@ export default function LeadModal({
               )}
               <button 
                 onClick={onClose} 
-                className="text-2xl text-gray-400 hover:text-gray-600 transition leading-none"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
               >
-                ×
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Customer Information */}
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
             <button
               onClick={() => setShowCustomerInfo(!showCustomerInfo)}
-              className="w-full flex items-center justify-between p-3 hover:bg-blue-50/50 transition rounded-lg"
+              className="w-full flex items-center justify-between p-4 hover:bg-blue-50/50 transition rounded-xl"
             >
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-900">Customer Information</h3>
-                <span className="text-xs text-gray-600">({lead.name})</span>
-              </div>
-              <span className={`text-lg transition-transform ${showCustomerInfo ? 'rotate-180' : ''}`}>▼</span>
+              <h3 className="text-sm font-bold text-gray-900">Customer Information</h3>
+              <ChevronDown className={`w-5 h-5 text-gray-600 transition-transform ${showCustomerInfo ? 'rotate-180' : ''}`} />
             </button>
 
             {showCustomerInfo && (
-              <div className="px-3 pb-3 space-y-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div className="bg-white rounded-lg p-2 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Email</span>
-                    <a href={`mailto:${lead.email}`} className="text-sm text-gray-900 font-medium hover:underline break-all">{lead.email}</a>
+              <div className="px-4 pb-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                      <Mail className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
+                      Email
+                    </span>
+                    <a href={`mailto:${lead.email}`} className="text-sm text-gray-900 font-medium hover:text-blue-600 hover:underline break-all">
+                      {lead.email}
+                    </a>
                   </div>
-                  <div className="bg-white rounded-lg p-2 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Phone</span>
-                    <a href={`tel:${lead.phone}`} className="text-sm text-gray-900 font-medium hover:underline">
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                      <Phone className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+                      Phone
+                    </span>
+                    <a href={`tel:${lead.phone}`} className="text-sm text-gray-900 font-medium hover:text-green-600 hover:underline">
                       {lead.phone && `(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
                     </a>
                   </div>
                 </div>
 
                 {fullAddress && (
-                  <div className="bg-white rounded-lg p-2 border border-gray-200">
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-0.5">Address</span>
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                          <MapPin className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
+                          Address
+                        </span>
                         <p className="text-sm text-gray-900 font-medium">{lead.address_line_1}</p>
-                        {lead.address_line_2 && <p className="text-xs text-gray-700">{lead.address_line_2}</p>}
+                        {lead.address_line_2 && <p className="text-xs text-gray-700 mt-0.5">{lead.address_line_2}</p>}
                         {lead.city && <p className="text-xs text-gray-600 mt-0.5">{lead.city}</p>}
-                          </div>
-
+                      </div>
                       <a
-
-href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-
-target="_blank"
-
-rel="noopener noreferrer"
-
-className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition"
-
->
-
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 ml-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
                         Directions
-
-</a>
-
-</div>
+                      </a>
+                    </div>
 
                     {isLoaded && mapCenter && (
-                      <div className="mt-2">
+                      <div className="mt-3">
                         <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15} options={mapOptions}>
                           <Marker position={mapCenter} />
                         </GoogleMap>
@@ -323,21 +345,24 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => {
                       const subject = encodeURIComponent(`Re: Your ${formatCategory(lead.category)} Project`);
                       const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
                       window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
                     }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
                   >
+                    <Mail className="w-4 h-4" />
                     Email
                   </button>
                   <button
                     onClick={() => window.location.href = `tel:${lead.phone}`}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
                   >
+                    <Phone className="w-4 h-4" />
                     Call
                   </button>
                   <button
@@ -345,8 +370,9 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                       const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
                       window.location.href = `sms:${lead.phone}?body=${message}`;
                     }}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 text-sm rounded-lg transition"
+                    className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
                   >
+                    <MessageSquare className="w-4 h-4" />
                     Text
                   </button>
                 </div>
@@ -354,13 +380,15 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
             )}
           </div>
 
+          {/* Description */}
           {lead.description && (
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Description</h3>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{lead.description}</p>
             </div>
           )}
 
+          {/* Customer Photos */}
           {customerPhotos.length > 0 && (
             <PhotoGallery 
               title="Customer Photos" 
@@ -369,35 +397,36 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
             />
           )}
 
+          {/* Convert to Project Button */}
           <ConvertToProjectButton 
             lead={lead}
             currentUser={currentUser}
             onRefresh={onRefresh}
           />
 
-          <div className={`rounded-lg border p-3 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
-            <div className="flex items-center gap-2 mb-2">
+          {/* Status Section */}
+          <div className={`rounded-xl border p-4 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
+            <div className="flex items-center gap-2 mb-3">
               <h3 className="text-sm font-bold text-gray-900">
                 {isProject ? 'Project Status' : 'Lead Status'}
               </h3>
               <div 
-                className="inline-flex items-center px-2 py-1 rounded-lg font-semibold text-xs text-white"
+                className="inline-flex items-center px-3 py-1 rounded-lg font-semibold text-xs text-white shadow-sm"
                 style={{ backgroundColor: getStatusColor(currentStatusConfig.color) }}
               >
                 {currentStatusConfig.label}
               </div>
             </div>
             
-            <div className="space-y-2">
-              <StatusUpdateSection 
-                lead={lead}
-                statusOptions={statusOptions}
-                onUpdateStatus={onUpdateStatus}
-                onRefresh={onRefresh}
-              />
-            </div>
+            <StatusUpdateSection 
+              lead={lead}
+              statusOptions={statusOptions}
+              onUpdateStatus={onUpdateStatus}
+              onRefresh={onRefresh}
+            />
           </div>
 
+          {/* Project Section */}
           {lead.project_id && (
             <ProjectSection 
               lead={lead}
@@ -408,34 +437,35 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
             />
           )}
 
-          <div className="bg-white rounded-lg border border-gray-200">
+          {/* Activity Log */}
+          <div className="bg-white rounded-xl border border-gray-200">
             <button
               onClick={() => setShowActivityLog(!showActivityLog)}
-              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition rounded-lg"
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-gray-900">Activity</h3>
                 {notesArray.length > 0 && !showActivityLog && (
-                  <span className="text-xs text-gray-600">({notesArray.length})</span>
+                  <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-full">{notesArray.length}</span>
                 )}
               </div>
-              <span className={`text-lg transition-transform ${showActivityLog ? 'rotate-180' : ''}`}>▼</span>
+              <ChevronDown className={`w-5 h-5 text-gray-600 transition-transform ${showActivityLog ? 'rotate-180' : ''}`} />
             </button>
 
             {showActivityLog && (
-              <div className="px-3 pb-3 space-y-3">
+              <div className="px-4 pb-4 space-y-3">
                 <div>
                   <textarea
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add a note..."
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 bg-white text-gray-900"
+                    rows={3}
+                    className="w-full px-3 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2 bg-white text-gray-900"
                   />
                   <button
                     onClick={handleAddNote}
                     disabled={saving || !newNote.trim()}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1.5 text-sm rounded-lg transition disabled:opacity-50"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 text-sm rounded-lg transition disabled:opacity-50 shadow-sm"
                   >
                     {saving ? 'Adding...' : 'Add Note'}
                   </button>
@@ -453,7 +483,7 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                       return (
                         <div 
                           key={idx} 
-                          className={`p-2 rounded-lg border-l-4 text-xs ${
+                          className={`p-3 rounded-lg border-l-4 text-xs ${
                             noteType === 'status_change' ? 'bg-blue-50 border-blue-500' 
                             : noteType === 'project_created' || noteType === 'project_updated' ? 'bg-purple-50 border-purple-500'
                             : noteType === 'quote_created' || noteType === 'quote_sent' ? 'bg-green-50 border-green-500'
@@ -466,12 +496,12 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                             <div className="flex items-start gap-2">
                               <div className="flex-1">
                                 <p className="text-gray-900 font-semibold">Status Changed</p>
-                                <p className="text-gray-700 mt-0.5">
-                                  <span className="inline-block px-1.5 py-0.5 bg-gray-200 rounded text-xs mr-1">{note.old_status}</span>
+                                <p className="text-gray-700 mt-1">
+                                  <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs mr-1">{note.old_status}</span>
                                   →
-                                  <span className="inline-block px-1.5 py-0.5 bg-blue-200 rounded text-xs ml-1">{note.new_status}</span>
+                                  <span className="inline-block px-2 py-0.5 bg-blue-200 rounded text-xs ml-1">{note.new_status}</span>
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 mt-1.5">
                                   {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
                                     month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                                   })}
@@ -480,7 +510,7 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                             </div>
                           ) : (
                             <div>
-                              <p className="text-gray-800 mb-1 whitespace-pre-wrap">{noteText}</p>
+                              <p className="text-gray-800 mb-1.5 whitespace-pre-wrap">{noteText}</p>
                               <p className="text-xs text-gray-500">
                                 {userName} • {new Date(timestamp).toLocaleDateString('en-US', {
                                   month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
@@ -493,17 +523,18 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                     })}
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500 text-sm">No activity yet</div>
+                  <div className="bg-gray-50 p-6 rounded-lg text-center text-gray-500 text-sm">No activity yet</div>
                 )}
               </div>
             )}
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 flex gap-2">
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-2 rounded-b-xl">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 text-sm rounded-lg transition"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 text-sm rounded-lg transition"
           >
             Close
           </button>
@@ -523,7 +554,7 @@ className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-
                 }
               }}
               disabled={saving}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition disabled:bg-gray-400"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 text-sm rounded-lg transition disabled:bg-gray-400 shadow-sm"
             >
               {saving ? 'Saving...' : 'Save Note'}
             </button>
