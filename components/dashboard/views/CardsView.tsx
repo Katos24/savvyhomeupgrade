@@ -1,4 +1,5 @@
 import { safeJSONParse, parseNotes } from '@/lib/utils';
+import { Mail, Clock, AlertCircle, Calendar } from 'lucide-react';
 
 interface CardsViewProps {
   leads: any[];
@@ -43,71 +44,30 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const reminderDate = new Date(followUpDate);
     
     if (reminderDate < todayStart) {
-      return { label: 'Overdue', emoji: '🔴', color: '#ef4444' };
+      return { 
+        label: 'Overdue', 
+        icon: AlertCircle, 
+        color: '#ef4444',
+        bgColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgba(239, 68, 68, 0.3)'
+      };
     } else if (reminderDate >= todayStart && reminderDate <= todayEnd) {
-      return { label: 'Today', emoji: '⚠️', color: '#eab308' };
+      return { 
+        label: 'Today', 
+        icon: Clock, 
+        color: '#eab308',
+        bgColor: 'rgba(234, 179, 8, 0.1)',
+        borderColor: 'rgba(234, 179, 8, 0.3)'
+      };
     } else {
-      return { label: 'Upcoming', emoji: '⏰', color: '#3b82f6' };
-    }
-  };
-
-  // 🔥 Smart info: Show the most relevant info based on what's available
-  const getSmartInfo = (lead: any) => {
-    const isProject = !!lead.project_id;
-    
-    // For projects, prioritize: Quote > Schedule > Address
-    if (isProject) {
-      if (lead.quote_total) {
-        return {
-          icon: '💰',
-          text: `Quote: $${parseFloat(lead.quote_total).toLocaleString()}`,
-          subtext: lead.payment_status ? `Payment: ${lead.payment_status}` : null
-        };
-      }
-      
-      if (lead.scheduled_date) {
-        const scheduleText = new Date(lead.scheduled_date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-        return {
-          icon: '📅',
-          text: `Scheduled: ${scheduleText}`,
-          subtext: lead.scheduled_time || null
-        };
-      }
-      
-      if (lead.address_line_1) {
-        return {
-          icon: '📍',
-          text: lead.address_line_1,
-          subtext: lead.city || null
-        };
-      }
-    }
-    
-    // For leads, show description if available
-    if (lead.description) {
-      const preview = lead.description.length > 80 
-        ? lead.description.substring(0, 80) + '...' 
-        : lead.description;
-      return {
-        text: preview,
-        subtext: null
+      return { 
+        label: 'Upcoming', 
+        icon: Calendar, 
+        color: '#3b82f6',
+        bgColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: 'rgba(59, 130, 246, 0.3)'
       };
     }
-    
-    // Fallback: show address if available
-    if (lead.address_line_1) {
-      return {
-        icon: '📍',
-        text: lead.address_line_1,
-        subtext: lead.city || null
-      };
-    }
-    
-    return null;
   };
 
   const renderLeadCard = (lead: any) => {
@@ -119,7 +79,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const isProject = !!lead.project_id;
     const hasReminder = !!lead.follow_up_date;
     const reminderStatus = hasReminder ? getReminderStatus(lead.follow_up_date) : null;
-    const smartInfo = getSmartInfo(lead);
+    
+    // Get short description preview
+    const descriptionPreview = lead.description 
+      ? (lead.description.length > 60 ? lead.description.substring(0, 60) + '...' : lead.description)
+      : null;
     
     const images = fileUrls?.filter((f: any) => 
       f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
@@ -128,6 +92,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const videos = fileUrls?.filter((f: any) => 
       f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
     ) || [];
+
+    const ReminderIcon = reminderStatus?.icon;
 
     return (
       <div
@@ -151,7 +117,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
             {lead.name}
           </h3>
           
-          {/* 🔥 Status and Project # on top right */}
+          {/* Status and Project # on top right */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span 
               className="text-white px-2 py-1 rounded font-medium text-xs"
@@ -171,46 +137,41 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
         {/* Email */}
         <div className="mb-3">
           <p className="text-white/80 text-sm flex items-center gap-2">
-            <span className="text-white/50">📧</span>
+            <Mail className="w-4 h-4 text-white/50" />
             <span className="truncate">{lead.email}</span>
           </p>
         </div>
 
-        {/* 🔥 Smart Info Section */}
-        {smartInfo && (
-          <div className="mb-3 bg-white/5 rounded-lg p-2 border border-white/10">
-            <p className="text-white text-sm flex items-start gap-2">
-              <span className="flex-shrink-0">{smartInfo.icon}</span>
-              <span className="flex-1 break-words text-white">{smartInfo.text}</span>
-            </p>
-            {smartInfo.subtext && (
-              <p className="text-white/70 text-xs mt-1 ml-6">
-                {smartInfo.subtext}
-              </p>
-            )}
+        {/* Description (if available) */}
+        {descriptionPreview && (
+          <div className="mb-3">
+            <p className="text-white/70 text-xs italic">{descriptionPreview}</p>
           </div>
         )}
 
-        {/* 🔥 Reminder indicator (if exists) */}
-        {hasReminder && reminderStatus && (
+        {/* Modern Reminder Badge */}
+        {hasReminder && reminderStatus && ReminderIcon && (
           <div 
-            className="mb-3 px-2 py-1.5 rounded-lg border"
+            className="mb-3 px-3 py-2 rounded-lg border flex items-center justify-between gap-2"
             style={{ 
-              backgroundColor: `${reminderStatus.color}20`,
-              borderColor: `${reminderStatus.color}60`
+              backgroundColor: reminderStatus.bgColor,
+              borderColor: reminderStatus.borderColor
             }}
           >
-            <div className="flex items-center gap-1.5 text-xs">
-              <span>{reminderStatus.emoji}</span>
-              <span className="font-semibold text-white">Follow-up {reminderStatus.label}</span>
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded" style={{ backgroundColor: `${reminderStatus.color}20` }}>
+                <ReminderIcon className="w-3.5 h-3.5" style={{ color: reminderStatus.color }} />
+              </div>
+              <span className="text-xs font-semibold text-white">
+                {reminderStatus.label}
+              </span>
             </div>
-            <div className="text-xs text-white/80 mt-0.5">
+            <span className="text-xs text-white/80 font-medium">
               {new Date(lead.follow_up_date).toLocaleDateString('en-US', {
                 month: 'short',
-                day: 'numeric',
-                year: 'numeric'
+                day: 'numeric'
               })}
-            </div>
+            </span>
           </div>
         )}
 

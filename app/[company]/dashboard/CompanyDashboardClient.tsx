@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { 
+  Search, 
+  X, 
+  Plus, 
+  Menu, 
+  Filter, 
+  ChevronDown,
+  Download,
+  Loader2,
+  Inbox
+} from 'lucide-react';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-import FollowUpBanner from '@/components/dashboard/project-sections/FollowUpBanner';
+
+
 
 
 type StatusOption = {
@@ -53,7 +65,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [showFollowUpsOnly, setShowFollowUpsOnly] = useState(false);
 
 
   const statusOptions = company.status_options && company.status_options.length > 0 
@@ -237,7 +248,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f172a' }}>
         <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
+          <Loader2 className="w-16 h-16 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-white text-xl font-semibold">Loading dashboard...</p>
         </div>
       </div>
@@ -254,9 +265,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
     const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
     
-  // 🔥 NEW: Follow-up filter
-  const matchesFollowUp = !showFollowUpsOnly || (lead.follow_up_date !== null && lead.follow_up_date !== undefined);
-  
+
 
     // Time filter
     const leadDate = new Date(lead.created_at);
@@ -289,13 +298,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       matchesTime = leadDate >= monthStart;
     }
     
-return matchesSearch && matchesStatus && matchesCategory && matchesTime && matchesFollowUp;
+    return matchesSearch && matchesStatus && matchesCategory && matchesTime;
   });
 
   // Sort by date (newest first)
   filteredLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  // 🔥 Group leads by time for CARDS view only
+  // Group leads by time for CARDS view only
   const now = new Date();
   const todayStart = new Date(now.setHours(0, 0, 0, 0));
   const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
@@ -320,7 +329,7 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
     return acc;
   }, {} as Record<string, number>);
 
-  // 🔥 Render function for CARDS - with grouping
+  // Render function for CARDS - with grouping
   const renderLeadGroupCards = (leads: any[], title: string) => {
     if (leads.length === 0) return null;
     
@@ -330,11 +339,12 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
           {title}
           <span className="text-white/60 text-base">({leads.length})</span>
         </h3>
-<CardsView 
-  leads={leads} 
-  onSelectLead={setSelectedLead} 
-  statusOptions={statusOptions}
-/>      </div>
+        <CardsView 
+          leads={leads} 
+          onSelectLead={setSelectedLead} 
+          statusOptions={statusOptions}
+        />      
+      </div>
     );
   };
 
@@ -375,18 +385,16 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
         
         {/* TOP BAR WITH MENU BUTTON */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 mb-6 border border-white/20 relative z-10">
+        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 mb-6 border border-white/20 relative z-10 shadow-xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {/* Menu Toggle Button */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-white border border-white/20"
+                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-white border border-white/20 hover:border-white/30"
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu className="w-6 h-6" />
               </button>
 
               {company.logo_url ? (
@@ -406,9 +414,10 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
             <div className="flex items-center gap-3">
               <a
                 href={`/${company.slug}`}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition shadow-lg shadow-purple-600/20 flex items-center gap-2"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition shadow-lg shadow-purple-600/20"
               >
-                ➕ Create
+                <Plus className="w-5 h-5" />
+                Create
               </a>
             </div>
           </div>
@@ -417,61 +426,56 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
         {/* SEARCH BAR */}
         <div className="mb-6 flex gap-3">
           <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
             <input
               type="text"
-              placeholder="🔍 Search by name, email, or phone..."
+              placeholder="Search by name, email, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-6 py-4 rounded-xl bg-white/10 backdrop-blur-xl border-2 border-white/20 focus:border-purple-500 focus:outline-none text-white placeholder-white/60 text-base sm:text-lg font-medium shadow-lg"
+              className="w-full pl-12 pr-12 py-4 rounded-xl bg-white/10 backdrop-blur-xl border-2 border-white/20 focus:border-purple-500 focus:outline-none text-white placeholder-white/60 text-base sm:text-lg font-medium shadow-lg transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-xl font-bold"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition"
               >
-                ✕
+                <X className="w-5 h-5 text-white/60 hover:text-white" />
               </button>
             )}
           </div>
           
           <button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className="px-4 py-2 text-sm rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold transition flex items-center gap-2 whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold transition shadow-lg"
           >
-            🎛️ More
-            <span className={`transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`}>▼</span>
+            <Filter className="w-4 h-4" />
+            Filters
+            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
-
-        {/* 🔥 FOLLOW-UP BANNER */}
-<FollowUpBanner 
-  leads={allLeads}
-  onFilterFollowUps={() => setShowFollowUpsOnly(!showFollowUpsOnly)}
-  isFiltered={showFollowUpsOnly}
-/>
 
         {/* FILTERS */}
         <div className="flex flex-col sm:flex-row justify-end gap-2 mb-6">
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value as any)}
-            className="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+            className="px-4 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-slate-700 transition"
           >
-            <option value="today" className="text-gray-900">📅 Today</option>
-            <option value="week" className="text-gray-900">📅 This Week</option>
-            <option value="month" className="text-gray-900">📅 This Month</option>
-            <option value="all" className="text-gray-900">📅 All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="all">All Time</option>
           </select>
 
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+            className="px-4 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-slate-700 transition"
           >
-            <option value="all" className="text-gray-900">All Statuses</option>
+            <option value="all">All Statuses</option>
             {statusOptions.map(status => (
-              <option key={status.value} value={status.value} className="text-gray-900">
-                {status.emoji} {status.label} ({statusCounts[status.value] || 0})
+              <option key={status.value} value={status.value}>
+                {status.label} ({statusCounts[status.value] || 0})
               </option>
             ))}
           </select>
@@ -479,39 +483,39 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
 
         {/* ADVANCED FILTERS */}
         {showAdvancedFilters && (
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-lg p-4 mb-6 border border-slate-700">
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
             <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">Category</label>
+                <label className="block text-xs font-semibold text-white/80 mb-2">Category</label>
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
                 >
-                  <option value="all" className="text-gray-900">All Categories</option>
+                  <option value="all">All Categories</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat} className="text-gray-900">{cat}</option>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
 
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">Start Date</label>
+                <label className="block text-xs font-semibold text-white/80 mb-2">Start Date</label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
                 />
               </div>
 
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-1.5">End Date</label>
+                <label className="block text-xs font-semibold text-white/80 mb-2">End Date</label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
                 />
               </div>
 
@@ -524,8 +528,9 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
                   setStartDate('');
                   setEndDate('');
                 }}
-                className="px-3 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30 whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30 whitespace-nowrap"
               >
+                <X className="w-4 h-4" />
                 Clear All
               </button>
             </div>
@@ -535,24 +540,26 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
         {/* LEADS VIEW */}
         <div>
           {filteredLeads.length === 0 ? (
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20">
-              <div className="text-6xl mb-4">📋</div>
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-700/50 mb-4">
+                <Inbox className="w-10 h-10 text-gray-400" />
+              </div>
               <h3 className="text-2xl font-bold text-white mb-2">No leads found</h3>
               <p className="text-white/70">Try adjusting your filters or search query</p>
             </div>
           ) : (
             <>
-              {/* 🔥 CARDS VIEW - Show grouped by time */}
+              {/* CARDS VIEW - Show grouped by time */}
               {currentView === 'cards' && (
                 <div className="lg:block">
-                  {renderLeadGroupCards(todayLeads, '🌟 Today')}
-                  {renderLeadGroupCards(yesterdayLeads, '📅 Yesterday')}
-                  {renderLeadGroupCards(thisWeekLeads, '📆 Earlier This Week')}
-                  {renderLeadGroupCards(olderLeads, '📂 Older')}
+                  {renderLeadGroupCards(todayLeads, 'Today')}
+                  {renderLeadGroupCards(yesterdayLeads, 'Yesterday')}
+                  {renderLeadGroupCards(thisWeekLeads, 'Earlier This Week')}
+                  {renderLeadGroupCards(olderLeads, 'Older')}
                 </div>
               )}
 
-              {/* 🔥 TABLE VIEW - Show ALL in one table, no grouping */}
+              {/* TABLE VIEW - Show ALL in one table, no grouping */}
               {currentView === 'table' && (
                 <div key={`table-${refreshKey}`}>
                   <div className="mb-4 flex items-center justify-between">
@@ -561,7 +568,7 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
                       <span className="text-white/60 text-base">({filteredLeads.length})</span>
                     </h3>
                     
-                    {/* 🔥 CSV Export Button */}
+                    {/* CSV Export Button */}
                     <a
                       href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({
                         status: filterStatus,
@@ -570,16 +577,18 @@ return matchesSearch && matchesStatus && matchesCategory && matchesTime && match
                         search: searchQuery
                       }).toString()}`}
                       download={`${company.slug}_${new Date().toISOString().split('T')[0]}.csv`}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20 shadow-lg"
                     >
-                      📊 Export CSV
+                      <Download className="w-4 h-4" />
+                      Export CSV
                     </a>
                   </div>
-<TableView 
-  leads={filteredLeads} 
-  onSelectLead={setSelectedLead}
-  statusOptions={statusOptions}
-/>                </div>
+                  <TableView 
+                    leads={filteredLeads} 
+                    onSelectLead={setSelectedLead}
+                    statusOptions={statusOptions}
+                  />                
+                </div>
               )}
             </>
           )}

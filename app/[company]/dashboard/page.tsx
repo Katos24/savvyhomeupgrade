@@ -14,6 +14,7 @@ interface Company {
   created_at: Date;
   subscription_status?: string;
   trial_ends_at?: string | null;
+  status_options?: any[];
 }
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -56,7 +57,7 @@ async function verifyAuth(companySlug: string) {
       process.env.JWT_SECRET || 'your-secret-key-change-this'
     ) as any;
 
-    // 🔥 Check if user belongs to this company
+    // Check if user belongs to this company
     const sql = neon(process.env.DATABASE_URL!);
     const userAccess = await sql`
       SELECT u.id, u.company_id, c.slug
@@ -75,7 +76,7 @@ async function verifyAuth(companySlug: string) {
         JOIN companies c ON u.company_id = c.id
         WHERE u.id = ${decoded.userId}
       `;
-      
+
       if (userCompany.length > 0) {
         // Redirect to their own dashboard
         redirect(`/${userCompany[0].slug}/dashboard`);
@@ -99,27 +100,27 @@ export default async function CompanyDashboardPage({
 }) {
   // Await params first
   const { company: companySlug } = await params;
-  
+
   // Verify authentication and authorization
   await verifyAuth(companySlug);
-  
+
   // Get company data
   const company = await getCompany(companySlug);
-  
+
   if (!company) {
     notFound();
   }
 
-  // 🔥 CHECK SUBSCRIPTION STATUS
+  // CHECK SUBSCRIPTION STATUS
   const isTrialExpired = company.subscription_status === 'trialing' && 
-                         company.trial_ends_at && 
-                         new Date(company.trial_ends_at) < new Date();
-  
+    company.trial_ends_at && 
+    new Date(company.trial_ends_at) < new Date();
+
   const needsPayment = !company.subscription_status || 
-                       company.subscription_status === 'canceled' ||
-                       company.subscription_status === 'past_due' ||
-                       company.subscription_status === 'inactive' ||
-                       isTrialExpired;
+    company.subscription_status === 'canceled' ||
+    company.subscription_status === 'past_due' ||
+    company.subscription_status === 'inactive' ||
+    isTrialExpired;
 
   // Redirect to subscribe page if payment needed
   if (needsPayment) {

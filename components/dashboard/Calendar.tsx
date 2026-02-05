@@ -271,7 +271,7 @@ const getStatusConfig = (statusValue: string) => {
               }}
             ></div>
             <span className="text-xs sm:text-sm font-medium text-gray-700">
-              {status.emoji && `${status.emoji} `}{status.label}
+             {status.label}
             </span>
           </div>
         ))}

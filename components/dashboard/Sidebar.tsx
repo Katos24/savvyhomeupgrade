@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { LayoutGrid, Table2, Calendar, Settings, LogOut, X } from 'lucide-react';
 
 type SidebarProps = {
   companySlug: string;
@@ -29,120 +30,164 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   
-  const isActive = (path: string) => pathname.includes(path);
+  const isActive = (path: string, exactMatch: boolean = false) => {
+    if (exactMatch) {
+      return pathname === path;
+    }
+    return pathname.includes(path);
+  };
 
   const navItems = [
-    { href: `/${companySlug}/dashboard`, icon: '📋', label: 'Leads', exactMatch: true },
-    { href: `/${companySlug}/dashboard/calendar`, icon: '📅', label: 'Calendar' },
-    { href: `/${companySlug}/admin/team`, icon: '⚙️', label: 'Admin' },
+    { 
+      href: `/${companySlug}/dashboard`, 
+      icon: LayoutGrid, 
+      label: 'Leads', 
+      exactMatch: true,
+      color: '#60a5fa' // blue-400
+    },
+    { 
+      href: `/${companySlug}/dashboard/calendar`, 
+      icon: Calendar, 
+      label: 'Calendar',
+      exactMatch: false,
+      color: '#4ade80' // green-400
+    },
+    { 
+      href: `/${companySlug}/admin/team`, 
+      icon: Settings, 
+      label: 'Admin',
+      exactMatch: false,
+      color: '#c084fc' // purple-400
+    },
   ];
 
-  // Close sidebar on route change
+  // Close sidebar when route changes
   useEffect(() => {
-    onClose();
+    if (isOpen) {
+      onClose();
+    }
   }, [pathname]);
 
-  // Prevent body scroll when sidebar is open on mobile
+  // Prevent body scroll when sidebar is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
+    
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
   }, [isOpen]);
 
+  if (!isOpen) return null;
+
   return (
     <>
+      {/* Overlay - Click to close */}
+      <div 
+        className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
       {/* Sidebar */}
       <div 
-        className={`fixed left-0 top-0 h-screen w-64 bg-gray-900 border-r border-white/20 flex flex-col z-50 shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        style={{ transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        className="fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-slate-900 to-slate-800 border-r border-white/20 flex flex-col z-50 shadow-2xl"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/30 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {companyLogoUrl ? (
-              <img 
-                src={companyLogoUrl} 
-                alt={`${companyName} logo`}
-                className="h-10 w-auto object-contain"
-              />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                {companyName.charAt(0)}
+        <div className="p-6 border-b border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {companyLogoUrl ? (
+                <img 
+                  src={companyLogoUrl} 
+                  alt={`${companyName} logo`}
+                  className="h-10 w-auto object-contain"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  {companyName.charAt(0)}
+                </div>
+              )}
+              <div>
+                <h2 className="text-white font-bold text-lg">{companyName}</h2>
+                <p className="text-white/60 text-xs">Dashboard</p>
               </div>
-            )}
-            <div>
-              <h2 className="text-white font-bold text-lg">{companyName}</h2>
-              <p className="text-white/60 text-xs">Dashboard</p>
             </div>
+            
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg transition"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
           </div>
-          
-          {/* Close button for mobile */}
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1 hover:bg-white/10 rounded text-white/80 hover:text-white transition"
-            aria-label="Close menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
-            const active = item.exactMatch 
-              ? pathname === item.href 
-              : isActive(item.href);
+            const Icon = item.icon;
+            const active = isActive(item.href, item.exactMatch);
             
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition ${
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
                   active
-                    ? 'bg-white text-gray-900'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
+                <Icon 
+                  className="w-5 h-5" 
+                  style={{ color: active ? '#111827' : item.color }}
+                />
                 <span>{item.label}</span>
               </Link>
             );
           })}
 
-          {/* View Toggle */}
-          {onViewChange && pathname === `/${companySlug}/dashboard` && (
-            <div className="mt-6 pt-4 border-t border-white/20">
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2 px-4">View Mode</p>
+          {/* View Toggle (only show on Leads page) */}
+          {pathname === `/${companySlug}/dashboard` && onViewChange && (
+            <div className="pt-4 mt-4 border-t border-white/20">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3 px-4">View Mode</p>
               <div className="space-y-1">
                 <button
-                  onClick={() => onViewChange('cards')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition ${
+                  onClick={() => {
+                    onViewChange('cards');
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
                     currentView === 'cards'
-                      ? 'bg-white text-gray-900'
+                      ? 'bg-white text-gray-900 shadow-lg'
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <span className="text-xl">⬜</span>
+                  <LayoutGrid 
+                    className="w-5 h-5" 
+                    style={{ color: currentView === 'cards' ? '#111827' : '#fb923c' }}
+                  />
                   <span>Cards</span>
                 </button>
                 <button
-                  onClick={() => onViewChange('table')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition ${
+                  onClick={() => {
+                    onViewChange('table');
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
                     currentView === 'table'
-                      ? 'bg-white text-gray-900'
+                      ? 'bg-white text-gray-900 shadow-lg'
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <span className="text-xl">📊</span>
+                  <Table2 
+                    className="w-5 h-5" 
+                    style={{ color: currentView === 'table' ? '#111827' : '#22d3ee' }}
+                  />
                   <span>Table</span>
                 </button>
               </div>
@@ -151,11 +196,11 @@ export default function Sidebar({
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-white/30">
+        <div className="p-4 border-t border-white/20">
           {currentUser && (
             <>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-white/5">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg">
                   {currentUser?.name?.charAt(0) || '?'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -164,10 +209,13 @@ export default function Sidebar({
                 </div>
               </div>
               <button
-                onClick={onLogout}
-                className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg font-semibold transition border border-red-500/30 text-sm flex items-center justify-center gap-2"
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="w-full px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30 text-sm flex items-center justify-center gap-2"
               >
-                <span>🚪</span>
+                <LogOut className="w-4 h-4" style={{ color: '#f87171' }} />
                 <span>Logout</span>
               </button>
             </>
