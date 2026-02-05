@@ -171,9 +171,10 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     <div className="p-4 space-y-4">
       {quoteData.length > 0 && !showQuoteBuilder ? (
         <div className="space-y-4">
-          {/* Quote Display */}
+          {/* Quote Display - Mobile Optimized */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
                   <tr>
@@ -215,6 +216,51 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
                   </tr>
                 </tfoot>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3 p-4">
+              {quoteData.map((item: any, idx: number) => (
+                <div key={item.id} className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                  <div className="mb-3">
+                    <div className="flex items-start gap-2 mb-2">
+                      <FileText className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{item.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Package className="w-3 h-3 text-gray-500" />
+                      </div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Qty</p>
+                      <p className="text-lg font-bold text-gray-900">{item.quantity || 1}</p>
+                    </div>
+                    
+                    <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <DollarSign className="w-3 h-3 text-gray-500" />
+                      </div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Unit</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(item.unitPrice || item.amount)}</p>
+                    </div>
+                    
+                    <div className="text-center bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                      <p className="text-xs text-emerald-700 uppercase tracking-wide mb-1 font-semibold">Total</p>
+                      <p className="text-lg font-bold text-emerald-600">{formatCurrency(item.amount)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Mobile Total */}
+              <div className="bg-gradient-to-r from-emerald-100 to-green-100 rounded-xl p-4 border-2 border-emerald-300 mt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-gray-900 uppercase tracking-wide">Grand Total</span>
+                  <span className="text-2xl font-bold text-emerald-600">{formatCurrency(calculateQuoteTotal())}</span>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -7,6 +7,23 @@ import { compressImages } from '@/lib/compressImage';
 import Toast from '@/components/Toast';
 import { CATEGORY_MAP, ADDRESS_CONFIG, type Category } from '@/lib/formCategories';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Home,
+  FileText,
+  Image as ImageIcon,
+  Video,
+  Upload,
+  X,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Building,
+  HelpCircle
+} from 'lucide-react';
 
 const libraries: ("places")[] = ["places"];
 
@@ -104,7 +121,6 @@ export default function UploadForm({
 
   const addressConfig = getAddressConfig();
 
-  // 🔥 NEW: Get dynamic CTA text
   const getCtaHeading = () => {
     if (company?.cta_heading) return company.cta_heading;
     
@@ -125,13 +141,13 @@ export default function UploadForm({
     
     switch (businessType) {
       case 'restaurant':
-        return '🍽️ Place Order';
+        return 'Place Order';
       case 'salon':
-        return '💇 Book Appointment';
+        return 'Book Appointment';
       case 'photography':
-        return '📸 Request Session';
+        return 'Request Session';
       default:
-        return '📸 Submit Project';
+        return 'Submit Project';
     }
   };
 
@@ -417,8 +433,7 @@ export default function UploadForm({
           file_urls: uploadedFiles,
           company_slug: finalCompanySlug,
           company_id: finalCompanyId,
-            lead_source: formData.lead_source || null, // ADD THIS LINE
-
+          lead_source: formData.lead_source || null,
         }),
       });
 
@@ -440,7 +455,7 @@ export default function UploadForm({
         throw new Error(result.error || 'Upload failed. Please try again.');
       }
 
-      showToast('✅ Submission successful! Redirecting...', 'success');
+      showToast('Submission successful! Redirecting...', 'success');
       
       setTimeout(() => {
         router.push(successRoute);
@@ -460,7 +475,7 @@ export default function UploadForm({
       if (errorMessage.toLowerCase().includes('fetch') || 
           errorMessage.toLowerCase().includes('network') ||
           errorMessage.toLowerCase().includes('failed to fetch')) {
-        errorMessage = '📡 Network error. Please check your internet connection and try again.';
+        errorMessage = 'Network error. Please check your internet connection and try again.';
       }
       
       setError(errorMessage);
@@ -476,10 +491,10 @@ export default function UploadForm({
   if (addressConfig.show && !isLoaded) {
     return (
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">⏳</div>
-            <p className="text-gray-600">Loading form...</p>
+        <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+          <div className="text-center py-12">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Loading form...</p>
           </div>
         </div>
       </div>
@@ -489,10 +504,10 @@ export default function UploadForm({
   if (addressConfig.show && loadError) {
     return (
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">⚠️</div>
-            <p className="text-red-600">Failed to load address autocomplete</p>
+        <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <p className="text-red-600 font-semibold">Failed to load address autocomplete</p>
             <p className="text-sm text-gray-500 mt-2">Please refresh the page and try again</p>
           </div>
         </div>
@@ -512,120 +527,136 @@ export default function UploadForm({
       ))}
 
       {showNoImageConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="text-center mb-4">
-              <div className="text-5xl mb-3">📸</div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                <ImageIcon className="w-8 h-8 text-blue-600" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No photos or videos uploaded</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600">
                 Adding photos or videos helps us provide a more accurate assessment. Continue without any media?
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowNoImageConfirm(false)}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition"
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition"
               >
-                ← Add Media
+                <Upload className="w-4 h-4" />
+                Add Media
               </button>
               <button
                 onClick={submitForm}
                 className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition"
               >
-                Continue Without →
+                Continue
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto px-4">
         {showHeader && (
-          <div className="text-center mb-6 sm:mb-8">
-            {/* 🔥 NEW: Show company logo if available */}
+          <div className="text-center mb-8">
             {company?.logo_url && (
-              <div className="mb-4 flex justify-center">
+              <div className="mb-6 flex justify-center">
                 <img 
                   src={company.logo_url} 
                   alt={company.name}
-                  className="h-16 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                 />
               </div>
             )}
             
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
               {ctaHeading}
             </h1>
-            <p className="text-base sm:text-lg text-gray-600 px-4">
+            <p className="text-lg text-gray-600">
               {headerSubtitle}
             </p>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8">
+        <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8">
           {error && (
-            <div className="mb-6 bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">⚠️</span>
+            <div className="mb-6 bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold">Error</p>
-                <p className="text-sm">{error}</p>
+                <p className="text-sm mt-1">{error}</p>
               </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Your Name *</label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <User className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                Your Name *
+              </label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="John Smith"
                 disabled={uploading}
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <Mail className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                Email *
+              </label>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="john@example.com"
                 disabled={uploading}
               />
             </div>
 
+            {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <Phone className="w-4 h-4" style={{ color: '#22c55e' }} />
+                Phone *
+              </label>
               <input
                 type="tel"
                 required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="(555) 123-4567"
                 maxLength={14}
                 disabled={uploading}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
                 {formData.phone.replace(/\D/g, '').length}/10 digits
               </p>
             </div>
-       {/* ADD THIS NEW SECTION HERE */}
+
+            {/* Lead Source */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <HelpCircle className="w-4 h-4" style={{ color: '#8b5cf6' }} />
                 How did you hear about us? (Optional)
               </label>
               <select
-                name="lead_source"
                 value={formData.lead_source}
                 onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 disabled={uploading}
               >
                 <option value="">Select one...</option>
@@ -640,10 +671,12 @@ export default function UploadForm({
               </select>
             </div>
 
+            {/* Address */}
             {addressConfig.show && isLoaded && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4" style={{ color: '#ef4444' }} />
                     Address {addressConfig.required ? '*' : '(Optional)'}
                   </label>
                   <Autocomplete
@@ -655,30 +688,27 @@ export default function UploadForm({
                       required={addressConfig.required}
                       value={formData.address_line_1}
                       onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                       placeholder="Start typing your address..."
                       disabled={uploading}
                     />
                   </Autocomplete>
-                  {!addressConfig.required && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      💡 Providing an address helps us give you a more accurate estimate
-                    </p>
-                  )}
-                  <p className="mt-1 text-xs text-green-600">
-                    ✨ Address autocomplete enabled - start typing to see suggestions
+                  <p className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Address autocomplete enabled - start typing to see suggestions
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                    <Home className="w-4 h-4" style={{ color: '#6b7280' }} />
                     Unit / Apt / Suite (Optional)
                   </label>
                   <input
                     type="text"
                     value={formData.address_line_2}
                     onChange={(e) => setFormData({ ...formData, address_line_2: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     placeholder="e.g., Apt 4B, Suite 200, Unit 5"
                     disabled={uploading}
                   />
@@ -686,13 +716,17 @@ export default function UploadForm({
               </>
             )}
 
+            {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Service Type *</label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <Building className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                Service Type *
+              </label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 disabled={uploading}
               >
                 <option value="">Select a service...</option>
@@ -704,21 +738,27 @@ export default function UploadForm({
               </select>
             </div>
 
+            {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <FileText className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+                Description *
+              </label>
               <textarea
                 required
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Describe your project..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                placeholder="Describe your project in detail..."
                 disabled={uploading}
               />
             </div>
 
+            {/* File Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                <ImageIcon className="w-4 h-4" style={{ color: '#ec4899' }} />
                 Upload Photos or Videos (Optional - recommended)
               </label>
               
@@ -727,8 +767,10 @@ export default function UploadForm({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
-                  isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                  isDragging 
+                    ? 'border-blue-500 bg-blue-50 scale-105' 
+                    : 'border-gray-300 hover:border-blue-400 bg-gradient-to-br from-gray-50 to-blue-50'
                 }`}
               >
                 <input
@@ -740,12 +782,23 @@ export default function UploadForm({
                   className="hidden"
                   disabled={compressing || uploading}
                 />
-                <label htmlFor="file-upload" className={`${compressing || uploading ? 'cursor-not-allowed' : 'cursor-pointer'} block`}>
-                  <div className="text-6xl mb-4">
-                    {compressing ? '⏳' : isDragging ? '📥' : '📸'}
+                <label 
+                  htmlFor="file-upload" 
+                  className={`${compressing || uploading ? 'cursor-not-allowed' : 'cursor-pointer'} block`}
+                >
+                  <div className="mb-4">
+                    {compressing ? (
+                      <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto" />
+                    ) : isDragging ? (
+                      <Upload className="w-16 h-16 text-blue-600 mx-auto" />
+                    ) : (
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full">
+                        <ImageIcon className="w-8 h-8 text-blue-600" />
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xl font-semibold text-gray-700 mb-2">
-                    {compressing ? 'Compressing...' : isDragging ? 'Drop files here!' : 'Click or drag to upload'}
+                  <p className="text-xl font-bold text-gray-700 mb-2">
+                    {compressing ? 'Compressing files...' : isDragging ? 'Drop files here!' : 'Click or drag to upload'}
                   </p>
                   <p className="text-sm text-gray-500">
                     Photos or short videos (max 10 seconds, 50MB per file)
@@ -755,22 +808,23 @@ export default function UploadForm({
 
               {files.length > 0 && (
                 <div className="mt-6">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">
-                    {files.length} file{files.length > 1 ? 's' : ''} ready
+                  <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    {files.length} file{files.length > 1 ? 's' : ''} ready to upload
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {files.map((file, index) => (
-                      <div key={index} className="relative rounded-lg overflow-hidden shadow-md">
+                      <div key={index} className="relative rounded-xl overflow-hidden shadow-lg group">
                         {file.type.startsWith('image/') ? (
-                          <img src={filePreviews[index]} alt={file.name} className="w-full h-40 object-cover" />
+                          <img src={filePreviews[index]} alt={file.name} className="w-full h-48 object-cover" />
                         ) : (
-                          <div className="w-full h-40 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                            <div className="text-5xl">🎥</div>
+                          <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                            <Video className="w-12 h-12 text-purple-600" />
                           </div>
                         )}
                         
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                          <p className="text-white text-xs truncate">{file.name}</p>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                          <p className="text-white text-xs truncate font-medium">{file.name}</p>
                           <p className="text-white/80 text-xs">{(file.size / 1024 / 1024).toFixed(2)}MB</p>
                         </div>
                         
@@ -778,9 +832,9 @@ export default function UploadForm({
                           type="button"
                           onClick={() => removeFile(index)}
                           disabled={uploading}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition opacity-0 group-hover:opacity-100"
                         >
-                          ✕
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
@@ -789,25 +843,33 @@ export default function UploadForm({
               )}
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={uploading || compressing}
-              className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-3 bg-blue-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {uploading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⏳</span>
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   {uploadProgress || 'Uploading...'}
-                </span>
+                </>
               ) : compressing ? (
-                'Compressing files...'
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Compressing files...
+                </>
               ) : (
-                ctaButtonText
+                <>
+                  <Upload className="w-5 h-5" />
+                  {ctaButtonText}
+                </>
               )}
             </button>
             
-            <p className="text-center text-xs text-gray-500">
-              💡 Tip: Photos and videos help us provide more accurate quotes
+            <p className="text-center text-xs text-gray-500 flex items-center justify-center gap-1">
+              <CheckCircle className="w-3 h-3" />
+              Photos and videos help us provide more accurate quotes
             </p>
           </form>
         </div>
