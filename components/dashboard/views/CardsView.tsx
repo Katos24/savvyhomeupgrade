@@ -93,7 +93,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
         ? lead.description.substring(0, 80) + '...' 
         : lead.description;
       return {
-        icon: '📝',
         text: preview,
         subtext: null
       };
@@ -152,7 +151,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
             {lead.name}
           </h3>
           
-          {/* Status and Project # on top right */}
+          {/* 🔥 Status and Project # on top right */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span 
               className="text-white px-2 py-1 rounded font-medium text-xs"
@@ -177,7 +176,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
           </p>
         </div>
 
-        {/* Smart Info Section */}
+        {/* 🔥 Smart Info Section */}
         {smartInfo && (
           <div className="mb-3 bg-white/5 rounded-lg p-2 border border-white/10">
             <p className="text-white text-sm flex items-start gap-2">
@@ -192,27 +191,26 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
           </div>
         )}
 
-        {/* 🔥 Reminder indicator - ONE LINE, SMALLER */}
+        {/* 🔥 Reminder indicator (if exists) */}
         {hasReminder && reminderStatus && (
           <div 
-            className="mb-3 px-2 py-1 rounded border flex items-center justify-between gap-2"
+            className="mb-3 px-2 py-1.5 rounded-lg border"
             style={{ 
               backgroundColor: `${reminderStatus.color}20`,
               borderColor: `${reminderStatus.color}60`
             }}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm">{reminderStatus.emoji}</span>
-              <span className="text-xs font-semibold text-white">
-                {reminderStatus.label}
-              </span>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span>{reminderStatus.emoji}</span>
+              <span className="font-semibold text-white">Follow-up {reminderStatus.label}</span>
             </div>
-            <span className="text-xs text-white/80">
+            <div className="text-xs text-white/80 mt-0.5">
               {new Date(lead.follow_up_date).toLocaleDateString('en-US', {
                 month: 'short',
-                day: 'numeric'
+                day: 'numeric',
+                year: 'numeric'
               })}
-            </span>
+            </div>
           </div>
         )}
 
