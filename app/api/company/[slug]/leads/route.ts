@@ -61,8 +61,11 @@ export async function GET(request: Request, { params }: Props) {
 
     // 🔥 Use project_notes ONLY - no more merging!
     const processedLeads = leads.map(lead => {
+
+      
       let notes = [];
       
+
       // Only use project notes if they exist
       if (lead.project_notes) {
         try {

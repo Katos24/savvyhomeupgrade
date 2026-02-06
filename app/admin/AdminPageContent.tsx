@@ -77,6 +77,15 @@ const STATUS_COLOR_CLASS: Record<string, string> = {
   pink: 'bg-pink-500',
 };
 
+const formatPhoneInput = (value: string) => {
+  const cleaned = value.replace(/\D/g, '').slice(0, 10);
+
+  const len = cleaned.length;
+  if (len < 4) return cleaned;
+  if (len < 7) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+  return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+};
+
 // Add this function right after STATUS_COLOR_CLASS:
 const getStatusColor = (colorName: string) => {
   const colorMap: Record<string, string> = {
@@ -501,17 +510,21 @@ export default function AdminPageContent({ onLogout }: { onLogout: () => void })
                   placeholder="service@licooling.com"
                 />
               </div>
-
-              <div>
-                <label className="form-label">Phone</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="form-input"
-                  placeholder="(631) 555-1234"
-                />
-              </div>
+<div>
+  <label className="form-label">Phone</label>
+  <input
+    type="tel"
+    value={formData.phone}
+    onChange={(e) =>
+      setFormData({
+        ...formData,
+        phone: formatPhoneInput(e.target.value)
+      })
+    }
+    className="form-input"
+    placeholder="(631) 555-1234"
+  />
+</div>
 
               <div>
                 <label className="form-label">

@@ -25,11 +25,10 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [estimatedHours, setEstimatedHours] = useState(lead?.estimated_hours || '');
   const [actualHours, setActualHours] = useState(lead?.actual_hours || '');
 
-  // Parse activity log and find schedule emails
+  // Parse activity log
   const notesArray = parseNotes(lead.notes);
   const scheduleEmails = notesArray.filter((note: any) => {
     if (typeof note === 'string') return false;
-    // Look for email_sent or schedule_sent activity types
     return (note.type === 'email_sent' || note.type === 'schedule_sent') && 
            (note.text?.toLowerCase().includes('schedule') || note.email_type === 'schedule');
   });
@@ -39,6 +38,16 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     userName: scheduleEmails[scheduleEmails.length - 1].user_name || 'Unknown',
     count: scheduleEmails.length
   } : null;
+
+  // Format time for display (convert 14:30 to 2:30 PM)
+  const formatTimeDisplay = (time24: string) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
 
   const handleUpdateProject = async () => {
     if (!hasProject) {
@@ -82,84 +91,104 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
   return (
     <div className="space-y-4 p-4 pb-24">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Assigned To */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <User className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
-            Assigned To
-          </label>
-          <input
-            type="text"
-            value={assignedTo}
-            onChange={(e) => setAssignedTo(e.target.value)}
-            placeholder="e.g., Mike"
-            className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none transition"
-          />
-        </div>
-        
-        {/* Date */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-            Date
-          </label>
-          <input
-            type="date"
-            value={scheduledDate}
-            onChange={(e) => setScheduledDate(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none transition"
-          />
-        </div>
+<div className="space-y-3 p-4 pb-16">
+  {/* Assigned To – full width */}
+  <div>
+    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+      <User className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
+      Assigned To
+    </label>
+    <input
+      type="text"
+      value={assignedTo}
+      onChange={(e) => setAssignedTo(e.target.value)}
+      placeholder="e.g., Mike"
+      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                 focus:border-purple-500 focus:ring-2 focus:ring-purple-100
+                 focus:outline-none transition"
+    />
+  </div>
 
-        {/* Time */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <Clock className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
-            Time
-          </label>
-          <input
-            type="time"
-            value={scheduledTime}
-            onChange={(e) => setScheduledTime(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition"
-          />
-        </div>
+  {/* Everything else */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {/* Date */}
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+        <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+        Date
+      </label>
+      <input
+        type="date"
+        value={scheduledDate}
+        onChange={(e) => setScheduledDate(e.target.value)}
+        className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                   focus:border-green-500 focus:ring-2 focus:ring-green-100
+                   focus:outline-none transition"
+      />
+    </div>
 
-        {/* Estimated Hours */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <Timer className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
-            Est. Hours
-          </label>
-          <input
-            type="number"
-            step="0.5"
-            value={estimatedHours}
-            onChange={(e) => setEstimatedHours(e.target.value)}
-            placeholder="2.5"
-            className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none transition"
-          />
-        </div>
+    {/* Time – modern */}
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+        <Clock className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
+        Time
+      </label>
+      <input
+        type="time"
+        step="900" // 15-minute increments
+        value={scheduledTime}
+        onChange={(e) => setScheduledTime(e.target.value)}
+        className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                   focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                   focus:outline-none transition"
+      />
+      {scheduledTime && (
+        <p className="text-xs text-gray-500 mt-1">
+          Selected: {formatTimeDisplay(scheduledTime)}
+        </p>
+      )}
+    </div>
 
-        {/* Actual Hours */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <Timer className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
-            Actual Hours
-          </label>
-          <input
-            type="number"
-            step="0.5"
-            value={actualHours}
-            onChange={(e) => setActualHours(e.target.value)}
-            placeholder="3.0"
-            className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none transition"
-          />
-        </div>
-      </div>
+    {/* Estimated Hours */}
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+        <Timer className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
+        Est. Hours
+      </label>
+      <input
+        type="number"
+        step="0.5"
+        value={estimatedHours}
+        onChange={(e) => setEstimatedHours(e.target.value)}
+        placeholder="2.5"
+        className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                   focus:border-amber-500 focus:ring-2 focus:ring-amber-100
+                   focus:outline-none transition"
+      />
+    </div>
 
-      {/* Save Button with More Actions Dropdown */}
+    {/* Actual Hours */}
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+        <Timer className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
+        Actual Hours
+      </label>
+      <input
+        type="number"
+        step="0.5"
+        value={actualHours}
+        onChange={(e) => setActualHours(e.target.value)}
+        placeholder="3.0"
+        className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                   focus:border-red-500 focus:ring-2 focus:ring-red-100
+                   focus:outline-none transition"
+      />
+    </div>
+  </div>
+</div>
+
+
+      {/* Save Button */}
       <div className="space-y-3">
         <div className="flex gap-2 relative">
           <button
@@ -171,25 +200,22 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             {saving ? 'Saving...' : 'Save Scheduling'}
           </button>
 
-          {/* More Actions Dropdown - Always Available */}
+          {/* More Actions Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowMoreActions(!showMoreActions)}
               className="px-3 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition shadow-sm"
-              aria-label="More actions"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
 
             {showMoreActions && (
               <>
-                {/* Backdrop to close dropdown */}
                 <div 
                   className="fixed inset-0 z-40" 
                   onClick={() => setShowMoreActions(false)}
                 />
                 
-                {/* Dropdown Menu - FORCED ABOVE */}
                 <div 
                   className="absolute right-0 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 w-64"
                   style={{ bottom: '100%', marginBottom: '8px' }}
@@ -225,7 +251,6 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                   Schedule emailed to customer
                 </p>
                 
-                {/* Show scheduled date/time that was sent */}
                 {scheduledDate && (
                   <div className="mt-1.5 flex items-center gap-2 text-xs text-green-700">
                     <Calendar className="w-3.5 h-3.5" />
@@ -236,7 +261,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                         day: 'numeric',
                         year: 'numeric'
                       })}
-                      {scheduledTime && ` at ${scheduledTime}`}
+                      {scheduledTime && ` at ${formatTimeDisplay(scheduledTime)}`}
                     </span>
                   </div>
                 )}

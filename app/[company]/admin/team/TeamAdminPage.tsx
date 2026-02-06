@@ -214,9 +214,15 @@ export default function TeamAdminPage({
             </div>
           </div>
           
-          <div className="flex gap-4 items-center">
-            
-<a href={`/${companySlug}/dashboard/deleted-leads`}
+          <div className="flex gap-3 items-center">
+            <a 
+              href={`/${companySlug}/admin/settings`}
+              className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-700 px-4 py-2 rounded-lg font-semibold transition border border-yellow-500/30 flex items-center gap-2"
+            >
+              ⚙️ Settings
+            </a>
+            <a 
+              href={`/${companySlug}/dashboard/deleted-leads`}
               className="bg-red-500/20 hover:bg-red-500/30 text-red-700 px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2"
             >
               🗑️ Deleted Leads

@@ -2,6 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import {
+  DollarSign,
+  CreditCard,
+  Calendar,
+  FileText,
+  Save,
+  CheckCircle,
+  AlertCircle,
+  Clock
+} from 'lucide-react';
 
 type PaymentSectionProps = {
   lead: any;
@@ -85,94 +95,150 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
     }).format(amount);
   };
 
+  const getStatusIcon = () => {
+    if (paymentStatus === 'paid') return <CheckCircle className="w-5 h-5" />;
+    if (paymentStatus === 'partial') return <Clock className="w-5 h-5" />;
+    return <AlertCircle className="w-5 h-5" />;
+  };
+
+  const getStatusColor = () => {
+    if (paymentStatus === 'paid') return 'text-green-600 bg-green-50 border-green-200';
+    if (paymentStatus === 'partial') return 'text-orange-600 bg-orange-50 border-orange-200';
+    return 'text-gray-600 bg-gray-50 border-gray-200';
+  };
+
+  const getStatusText = () => {
+    if (paymentStatus === 'paid') return 'Paid in Full';
+    if (paymentStatus === 'partial') return 'Partial Payment';
+    return 'Unpaid';
+  };
+
   return (
-    <div className="p-4 space-y-3">
+    <div className="p-4 space-y-4">
+      {/* Quote Total Banner */}
       {lead?.quote_total && (
-        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-semibold text-gray-700">Quote Total:</span>
-            <span className="text-base font-bold text-emerald-600">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Quote Total</span>
+            </div>
+            <span className="text-2xl font-bold text-emerald-600">
               {formatCurrency(parseFloat(lead.quote_total))}
             </span>
           </div>
         </div>
       )}
 
-      <div className="space-y-3">
+      {/* Payment Status Card */}
+      <div className={`rounded-xl p-4 border-2 ${getStatusColor()} transition-all`}>
+        <div className="flex items-center gap-3">
+          {getStatusIcon()}
+          <div className="flex-1">
+            <p className="text-sm font-semibold uppercase tracking-wide opacity-75">Payment Status</p>
+            <p className="text-lg font-bold">{getStatusText()}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Form */}
+      <div className="space-y-4">
+        {/* Amount */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Amount</label>
-          <input
-            type="number"
-            step="0.01"
-            value={paymentAmount}
-            onChange={(e) => setPaymentAmount(e.target.value)}
-            placeholder={lead?.quote_total || "0.00"}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:border-orange-500 focus:outline-none"
-          />
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+            <DollarSign className="w-4 h-4" style={{ color: '#22c55e' }} />
+            Payment Amount
+          </label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none select-none">
+              $
+            </div>
+            <input
+              type="number"
+              step="0.01"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder={lead?.quote_total || "0.00"}
+              className="w-full pl-12 pr-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none transition"
+            />
+          </div>
         </div>
 
+        {/* Method */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Method</label>
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+            <CreditCard className="w-4 h-4" style={{ color: '#3b82f6' }} />
+            Payment Method
+          </label>
           <select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 focus:outline-none bg-white text-gray-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
+            className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 transition"
           >
-            <option value="">Select...</option>
-            <option value="cash">Cash</option>
-            <option value="check">Check</option>
-            <option value="venmo">Venmo</option>
-            <option value="zelle">Zelle</option>
-            <option value="square">Square</option>
-            <option value="stripe">Credit Card</option>
-            <option value="paypal">PayPal</option>
-            <option value="other">Other</option>
+            <option value="">Select payment method...</option>
+            <option value="cash">💵 Cash</option>
+            <option value="check">📝 Check</option>
+            <option value="venmo">💜 Venmo</option>
+            <option value="zelle">⚡ Zelle</option>
+            <option value="square">🟦 Square</option>
+            <option value="stripe">💳 Credit Card (Stripe)</option>
+            <option value="paypal">🅿️ PayPal</option>
+            <option value="other">📋 Other</option>
           </select>
         </div>
 
-        <div className="relative z-10">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+        {/* Date */}
+        <div>
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+            <Calendar className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+            Payment Date
+          </label>
           <input
             type="date"
             value={paymentDate}
             onChange={(e) => setPaymentDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:border-orange-500 focus:outline-none"
+            className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none transition"
           />
         </div>
 
+        {/* Notes */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-          <div className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm flex items-center">
-            <span className={`font-semibold ${
-              paymentStatus === 'paid' ? 'text-green-600' : 
-              paymentStatus === 'partial' ? 'text-orange-600' : 
-              'text-gray-600'
-            }`}>
-              {paymentStatus === 'paid' ? '✅ Paid in Full' : 
-               paymentStatus === 'partial' ? '⏳ Partial Payment' : 
-               'Unpaid'}
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+            <FileText className="w-4 h-4" style={{ color: '#6b7280' }} />
+            Payment Notes (Optional)
+          </label>
           <textarea
             value={paymentNotes}
             onChange={(e) => setPaymentNotes(e.target.value)}
-            placeholder="Optional notes..."
+            placeholder="Add any notes about this payment..."
             rows={3}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:border-orange-500 focus:outline-none"
+            className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-gray-500 focus:ring-2 focus:ring-gray-100 focus:outline-none transition"
           />
         </div>
 
+        {/* Remaining Balance Card */}
         {lead?.quote_total && paymentAmount && (
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold text-gray-700">
-                {parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 ? 'Status:' : 'Remaining Balance:'}
-              </span>
-              <span className={`text-base font-bold ${
+          <div className={`rounded-xl p-4 border-2 ${
+            parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+              : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 ? (
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                ) : (
+                  <Clock className="w-5 h-5 text-orange-600" />
+                )}
+                <span className="text-sm font-semibold text-gray-700">
+                  {parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 
+                    ? 'Balance Status' 
+                    : 'Remaining Balance'}
+                </span>
+              </div>
+              <span className={`text-xl font-bold ${
                 parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 
                   ? 'text-green-600' 
                   : 'text-orange-600'
@@ -186,11 +252,13 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
           </div>
         )}
 
+        {/* Save Button */}
         <button
           onClick={handleUpdatePayment}
           disabled={saving}
-          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-2.5 text-sm rounded-lg transition"
+          className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-3 text-sm rounded-lg transition shadow-sm"
         >
+          <Save className="w-4 h-4" />
           {saving ? 'Saving...' : 'Update Payment'}
         </button>
       </div>

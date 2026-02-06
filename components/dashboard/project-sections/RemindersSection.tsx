@@ -26,6 +26,13 @@ export default function RemindersSection({ lead, currentUser, onRefresh, hasProj
         body: JSON.stringify({
           id: lead.id,
           action: 'update_project',
+          // PRESERVE EXISTING SCHEDULING DATA
+          scheduled_date: lead.scheduled_date || null,
+          scheduled_time: lead.scheduled_time || null,
+          assigned_to: lead.assigned_to || null,
+          estimated_hours: lead.estimated_hours || null,
+          actual_hours: lead.actual_hours || null,
+          // UPDATE ONLY REMINDER FIELDS
           follow_up_date: followUpDate || null,
           follow_up_notes: followUpNotes || null,
           user_name: currentUser?.name || 'Unknown User',
@@ -61,6 +68,13 @@ export default function RemindersSection({ lead, currentUser, onRefresh, hasProj
         body: JSON.stringify({
           id: lead.id,
           action: 'update_project',
+          // PRESERVE EXISTING SCHEDULING DATA
+          scheduled_date: lead.scheduled_date || null,
+          scheduled_time: lead.scheduled_time || null,
+          assigned_to: lead.assigned_to || null,
+          estimated_hours: lead.estimated_hours || null,
+          actual_hours: lead.actual_hours || null,
+          // CLEAR ONLY REMINDER FIELDS
           follow_up_date: null,
           follow_up_notes: null,
           user_name: currentUser?.name || 'Unknown User',
@@ -172,17 +186,21 @@ export default function RemindersSection({ lead, currentUser, onRefresh, hasProj
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setFollowUpDate(lead.follow_up_date);
-                    setFollowUpNotes(lead.follow_up_notes || '');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  Edit
-                </button>
+            <button
+  onClick={() => {
+    setIsEditing(true);
+    // FIX: Properly format the date for the input field
+    const dateStr = lead.follow_up_date 
+      ? new Date(lead.follow_up_date).toISOString().split('T')[0] 
+      : '';
+    setFollowUpDate(dateStr);
+    setFollowUpNotes(lead.follow_up_notes || '');
+  }}
+  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+>
+  <Edit2 className="w-3.5 h-3.5" />
+  Edit
+</button>
                 <button
                   onClick={handleClear}
                   disabled={isSaving}
