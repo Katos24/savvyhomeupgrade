@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, Workflow, Mail, Grid, Users, ArrowLeft } from 'lucide-react';
+import { Settings, Workflow, Mail, Grid, Bell, ArrowLeft } from 'lucide-react';
 import GeneralTab from './tabs/GeneralTab';
 import PipelineTab from './tabs/PipelineTab';
 import EmailTemplatesTab from './tabs/EmailTemplatesTab';
 import CategoriesTab from './tabs/CategoriesTab';
+import NotificationsTab from './tabs/NotificationsTab';
 
-type Tab = 'general' | 'pipeline' | 'email-templates' | 'categories';
+type Tab = 'general' | 'pipeline' | 'email-templates' | 'categories' | 'notifications';
 
 export default function CompanySettingsClient({ 
   company, 
@@ -25,6 +26,7 @@ export default function CompanySettingsClient({
     { id: 'pipeline' as Tab, label: 'Pipeline', icon: Workflow },
     { id: 'email-templates' as Tab, label: 'Email Templates', icon: Mail },
     { id: 'categories' as Tab, label: 'Categories', icon: Grid },
+    { id: 'notifications' as Tab, label: 'Notifications', icon: Bell },
   ];
 
   return (
@@ -94,6 +96,7 @@ export default function CompanySettingsClient({
         {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
         {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
         {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
+        {activeTab === 'notifications' && <NotificationsTab company={company} currentUser={currentUser} />}
       </div>
     </div>
   );

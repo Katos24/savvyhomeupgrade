@@ -6,14 +6,8 @@ import CompanySettingsClient from './CompanySettingsClient';
 
 const sql = neon(process.env.DATABASE_URL!);
 
-export default async function CompanySettingsPage({ 
-  params 
-}: { 
-  params: Promise<{ company: string }> 
-}) {
+export default async function SettingsPage({ params }: { params: Promise<{ company: string }> }) {
   const resolvedParams = await params;
-  const companySlug = resolvedParams.company;
-
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
 
@@ -22,55 +16,65 @@ export default async function CompanySettingsPage({
   }
 
   try {
-    // Decode JWT
+    // Verify JWT and get user
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
-
-    // Get current user
+    
     const users = await sql`
       SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1
     `;
+    
     const currentUser = users[0];
 
     if (!currentUser) {
       redirect('/login');
     }
 
-    // Get company
+    // Get company with ALL fields including brand colors AND reminder_settings
     const companies = await sql`
-      SELECT * FROM companies WHERE slug = ${companySlug} LIMIT 1
+      SELECT 
+        id, 
+        name, 
+        slug, 
+        email, 
+        phone, 
+        business_type, 
+        logo_url, 
+        status_options, 
+        form_categories, 
+        email_templates,
+        email_brand_color_1,
+        email_brand_color_2,
+        reminder_settings
+      FROM companies 
+      WHERE slug = ${resolvedParams.company} 
+      LIMIT 1
     `;
+    
     const company = companies[0];
 
     if (!company) {
-      return <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-red-600">Company not found: {companySlug}</p>
-          <a href="/dashboard" className="text-blue-600 underline mt-4 inline-block">Go to Dashboard</a>
-        </div>
-      </div>;
+      redirect('/login');
     }
 
     // Check if user belongs to this company
     if (currentUser.company_id !== company.id) {
-      return <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-red-600">Access denied</p>
-          <a href={`/${companySlug}/dashboard`} className="text-blue-600 underline mt-4 inline-block">Go to Dashboard</a>
-        </div>
-      </div>;
+      redirect('/login');
     }
 
     // Only owner and admin can access settings
     if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
-      redirect(`/${companySlug}/dashboard`);
+      redirect(`/${resolvedParams.company}/dashboard`);
     }
 
-    return (
-      <CompanySettingsClient 
-        company={company}
-        currentUser={currentUser}
-      />
-    );
+    console.log('Company data loaded:', {
+      id: company.id,
+      name: company.name,
+      email_brand_color_1: company.email_brand_color_1,
+      email_brand_color_2: company.email_brand_color_2,
+      reminder_settings: company.reminder_settings,
+    });
+
+    return <CompanySettingsClient company={company} currentUser={currentUser} />;
   } catch (error) {
     console.error('Settings page error:', error);
     redirect('/login');

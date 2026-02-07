@@ -7,57 +7,55 @@ export function middleware(request: NextRequest) {
 
   console.log('Middleware checking:', { pathname, hasToken: !!token });
 
-  // Public routes that don't need auth
   const publicRoutes = [
     '/login',
-    '/signup',  // ADD THIS
+    '/signup',
     '/forgot-password',
     '/reset-password',
   ];
 
-  // Check if it's an API route
   const isApiRoute = pathname.startsWith('/api/');
 
-// Public API routes (login, logout, etc.)
-const publicApiRoutes = [
-  '/api/auth/login',
-  '/api/auth/logout',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/signup',
-  '/api/stripe/webhook',  // 👈 ADD THIS
-    '/api/cron/check-trials',  // 👈 ADD THIS
-      '/api/upload',  // 👈 ADD THIS IF MISSING
-
-
-];
+  const publicApiRoutes = [
+    '/api/auth/login',
+    '/api/auth/logout',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/signup',
+    '/api/stripe/webhook',
+    '/api/cron/check-trials',
+    '/api/cron/send-reminders',
+    '/api/upload',
+  ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route));
+  const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/api/cron/');
 
-  // Protected routes that require authentication
-  const isProtectedRoute = 
-    pathname.includes('/dashboard') || 
+  console.log('DEBUG:', { 
+    pathname, 
+    isApiRoute, 
+    isPublicApiRoute,
+    matchesCron: pathname.startsWith('/api/cron/')
+  });
+
+  const isProtectedRoute =
+    pathname.includes('/dashboard') ||
     pathname.includes('/admin');
 
-  // For API routes, let them through if they have a token OR if they're public API routes
   if (isApiRoute) {
     if (isPublicApiRoute) {
-      // Public API routes - allow without token
+      console.log('Public API route - allowing through');
       return NextResponse.next();
     }
 
     if (!token) {
-      // Protected API route without token - return 401
       console.log('Protected API route without token, returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Has token - allow the API call through
     return NextResponse.next();
   }
 
-  // For page routes (not API), handle redirects
   if (isProtectedRoute && !token) {
     console.log('No token found, redirecting to login');
     return NextResponse.redirect(new URL('/login', request.url));

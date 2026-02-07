@@ -18,10 +18,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Decode JWT to get user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
 
-    // Get current user
     const users = await sql`
       SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1
     `;
@@ -31,7 +29,6 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get company
     const companies = await sql`
       SELECT * FROM companies WHERE slug = ${params.slug} LIMIT 1
     `;
@@ -41,12 +38,10 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
-    // Check if user belongs to this company
     if (currentUser.company_id !== company.id) {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 
-    // Only owner and admin can access settings
     if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
@@ -75,10 +70,8 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Decode JWT to get user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
     
-    // Get current user
     const users = await sql`
       SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1
     `;
@@ -88,7 +81,6 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get company
     const companies = await sql`
       SELECT * FROM companies WHERE slug = ${params.slug} LIMIT 1
     `;
@@ -98,12 +90,10 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
-    // Check if user belongs to this company
     if (currentUser.company_id !== company.id) {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 
-    // Only owner and admin can modify settings
     if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
@@ -114,20 +104,32 @@ export async function POST(
     console.log('Settings update action:', action);
     console.log('Settings update data:', data);
 
-    // Handle different actions
     switch (action) {
       case 'update-general':
-        await sql`
-          UPDATE companies
-          SET 
-            name = ${data.name},
-            email = ${data.email},
-            phone = ${data.phone},
-            business_type = ${data.business_type},
-            logo_url = ${data.logo_url}
-          WHERE id = ${company.id}
-        `;
-        console.log('General settings updated, new logo_url:', data.logo_url);
+        try {
+          console.log('Updating company ID:', company.id);
+          console.log('With colors:', data.email_brand_color_1, data.email_brand_color_2);
+          
+          const result = await sql`
+            UPDATE companies
+            SET 
+              name = ${data.name},
+              email = ${data.email},
+              phone = ${data.phone || null},
+              business_type = ${data.business_type || 'general'},
+              logo_url = ${data.logo_url || null},
+              email_brand_color_1 = ${data.email_brand_color_1 || '#667eea'},
+              email_brand_color_2 = ${data.email_brand_color_2 || '#764ba2'}
+            WHERE id = ${company.id}
+            RETURNING *
+          `;
+          
+          console.log('Update result:', result[0]);
+          console.log('Updated colors:', result[0]?.email_brand_color_1, result[0]?.email_brand_color_2);
+        } catch (updateError) {
+          console.error('❌ Update failed:', updateError);
+          throw updateError;
+        }
         break;
 
       case 'update-pipeline':
@@ -152,6 +154,19 @@ export async function POST(
           SET form_categories = ${JSON.stringify(data.form_categories)}::jsonb
           WHERE id = ${company.id}
         `;
+        break;
+
+      case 'update-notifications':
+        console.log('Updating notification settings for company:', company.id);
+        console.log('Settings:', data.reminder_settings);
+        
+        await sql`
+          UPDATE companies
+          SET reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb
+          WHERE id = ${company.id}
+        `;
+        
+        console.log('✅ Notification settings updated');
         break;
 
       default:

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building, Mail, Phone, Briefcase, Link2, Check, Copy, Download, QrCode } from 'lucide-react';
+import { Building, Mail, Phone, Briefcase, Link2, Check, Copy, Download, QrCode, Palette } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 
 export default function GeneralTab({ company, currentUser }: { company: any; currentUser: any }) {
@@ -15,11 +15,22 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
 
+  // Log company data on mount
+  useEffect(() => {
+    console.log('GeneralTab loaded with company:', {
+      name: company.name,
+      email_brand_color_1: company.email_brand_color_1,
+      email_brand_color_2: company.email_brand_color_2,
+    });
+  }, []);
+
   const [formData, setFormData] = useState({
     name: company.name || '',
     email: company.email || '',
     phone: company.phone || '',
     business_type: company.business_type || 'general',
+    email_brand_color_1: company.email_brand_color_1 || '#667eea',
+    email_brand_color_2: company.email_brand_color_2 || '#764ba2',
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -60,6 +71,15 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
     { value: 'other', label: 'Other' },
   ];
 
+  const colorPresets = [
+    { name: 'Purple Gradient', color1: '#667eea', color2: '#764ba2' },
+    { name: 'Blue Ocean', color1: '#2196F3', color2: '#1976D2' },
+    { name: 'Green Nature', color1: '#10b981', color2: '#059669' },
+    { name: 'Orange Sunset', color1: '#f97316', color2: '#ea580c' },
+    { name: 'Pink Rose', color1: '#ec4899', color2: '#db2777' },
+    { name: 'Red Fire', color1: '#ef4444', color2: '#dc2626' },
+  ];
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -97,7 +117,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
       if (logoFile) {
         console.log('Uploading new logo...');
         const formDataLogo = new FormData();
-        formDataLogo.append('logo', logoFile); // Changed from 'file' to 'logo'
+        formDataLogo.append('logo', logoFile);
         formDataLogo.append('companySlug', company.slug);
 
         const uploadRes = await fetch('/api/upload-logo', {
@@ -109,14 +129,17 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
         console.log('Logo upload response:', uploadData);
         
         if (uploadData.success) {
-          logoUrl = uploadData.logoUrl; // Changed from 'url' to 'logoUrl'
+          logoUrl = uploadData.logoUrl;
           console.log('New logo URL:', logoUrl);
         } else {
           throw new Error(uploadData.error || 'Failed to upload logo');
         }
       }
 
-      console.log('Updating company settings with logo_url:', logoUrl);
+      console.log('Saving settings with data:', {
+        ...formData,
+        logo_url: logoUrl,
+      });
 
       // Update company settings
       const response = await fetch(`/api/company/${company.slug}/settings`, {
@@ -137,7 +160,6 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
       if (data.success) {
         setSuccess('Settings saved successfully! Refreshing page...');
         setTimeout(() => {
-          // Hard refresh to show new logo
           window.location.reload();
         }, 1500);
       } else {
@@ -198,6 +220,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
               {logoFile && (
                 <p className="text-xs text-emerald-600 mt-1">New logo selected - click Save to upload</p>
               )}
+              <p className="text-xs text-slate-500 mt-1">Used in email headers and branding</p>
             </div>
           </div>
         </div>
@@ -266,9 +289,104 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
           />
         </div>
 
+        {/* Email Branding Section */}
+        <div className="pt-6 border-t border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-5 h-5 text-slate-700" />
+            <h3 className="text-lg font-bold text-slate-900">Email Branding</h3>
+          </div>
+          <p className="text-sm text-slate-600 mb-4">Customize the header gradient colors in your customer emails</p>
+
+          {/* Color Presets */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Color Presets</label>
+            <div className="grid grid-cols-3 gap-2">
+              {colorPresets.map((preset) => (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => {
+                    console.log('Setting colors:', preset);
+                    setFormData({
+                      ...formData,
+                      email_brand_color_1: preset.color1,
+                      email_brand_color_2: preset.color2,
+                    });
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:border-blue-500 transition"
+                >
+                  <div 
+                    className="w-8 h-8 rounded-md"
+                    style={{ background: `linear-gradient(135deg, ${preset.color1} 0%, ${preset.color2} 100%)` }}
+                  />
+                  <span className="text-xs font-medium text-slate-700">{preset.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Colors */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Gradient Start Color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.email_brand_color_1}
+                  onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                  className="w-12 h-12 rounded-lg cursor-pointer border border-slate-300"
+                />
+                <input
+                  type="text"
+                  value={formData.email_brand_color_1}
+                  onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm"
+                  placeholder="#667eea"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Gradient End Color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.email_brand_color_2}
+                  onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                  className="w-12 h-12 rounded-lg cursor-pointer border border-slate-300"
+                />
+                <input
+                  type="text"
+                  value={formData.email_brand_color_2}
+                  onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm"
+                  placeholder="#764ba2"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Email Header Preview</label>
+            <div 
+              className="rounded-lg p-8 text-center"
+              style={{ background: `linear-gradient(135deg, ${formData.email_brand_color_1} 0%, ${formData.email_brand_color_2} 100%)` }}
+            >
+              {logoPreview && (
+                <img 
+                  src={logoPreview} 
+                  alt="Logo preview" 
+                  className="h-12 mx-auto mb-3 object-contain"
+                />
+              )}
+              <h2 className="text-white text-2xl font-bold drop-shadow-lg">{formData.name}</h2>
+            </div>
+          </div>
+        </div>
+
         {/* Public Link with QR Code */}
         {publicLink && (
-          <div>
+          <div className="pt-6 border-t border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
               <Link2 className="w-4 h-4" />
               Public Booking Link
@@ -313,7 +431,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
         </div>
       </div>
 
-      {/* QR Code Modal */}
+      {/* QR Code Modal - keeping same as before */}
       {showQrModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
