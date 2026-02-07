@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Clock, Check, Mail } from 'lucide-react';
+import { Bell, Clock, Check, Mail, Smartphone, Layout } from 'lucide-react';
 
 export default function NotificationsTab({ company, currentUser }: { company: any; currentUser: any }) {
   const router = useRouter();
@@ -87,7 +87,7 @@ export default function NotificationsTab({ company, currentUser }: { company: an
                 <h3 className="text-lg font-bold text-slate-900">Follow-up Reminders</h3>
               </div>
               <p className="text-sm text-slate-600">
-                Automatically remind you to follow up with leads that haven't been contacted recently
+                Get a daily email digest at 9:00 AM Eastern with leads that need follow-up
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -108,7 +108,7 @@ export default function NotificationsTab({ company, currentUser }: { company: an
                   General Follow-up Reminder
                 </label>
                 <p className="text-xs text-slate-500 mb-2">
-                  Remind me to follow up with leads after they haven't been contacted
+                  Remind me to follow up with projects after they haven't been updated
                 </p>
                 <div className="flex items-center gap-3">
                   <input
@@ -173,8 +173,8 @@ export default function NotificationsTab({ company, currentUser }: { company: an
             <div>
               <h4 className="font-semibold text-blue-900 mb-1">How Reminders Work</h4>
               <p className="text-sm text-blue-800">
-                You'll receive a daily email digest at 9:00 AM with all leads that need follow-up. 
-                Each lead will show why it needs attention (e.g., "Quote sent 3 days ago").
+                You'll receive a daily email digest at 9:00 AM Eastern Time with all projects that need follow-up. 
+                Each project will show why it needs attention (e.g., "Quote sent 3 days ago", "No activity for 5 days").
               </p>
             </div>
           </div>
@@ -186,8 +186,8 @@ export default function NotificationsTab({ company, currentUser }: { company: an
           <ul className="space-y-1 text-sm text-slate-600">
             <li>• Customer appointment reminders (24hrs & 2hrs before)</li>
             <li>• Payment due date reminders</li>
-            <li>• Lead aging alerts (stale leads)</li>
-            <li>• Custom per-lead reminders</li>
+            <li>• Custom reminder times per company</li>
+            <li>• SMS notifications</li>
           </ul>
         </div>
 

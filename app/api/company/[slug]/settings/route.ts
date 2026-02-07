@@ -161,10 +161,12 @@ export async function POST(
         console.log('Settings:', data.reminder_settings);
         
         await sql`
-          UPDATE companies
-          SET reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb
-          WHERE id = ${company.id}
-        `;
+           UPDATE companies
+    SET 
+      reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
+      notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb
+    WHERE id = ${company.id}
+  `;
         
         console.log('✅ Notification settings updated');
         break;

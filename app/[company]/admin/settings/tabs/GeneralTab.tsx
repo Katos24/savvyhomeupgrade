@@ -105,6 +105,21 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
     link.click();
   };
 
+// Add this function near the top of the component, after the useState declarations
+const formatPhoneNumber = (value: string) => {
+  // Remove all non-digits
+  const digits = value.replace(/\D/g, '');
+  
+  // Format as (XXX) XXX-XXXX
+  if (digits.length <= 3) {
+    return digits;
+  } else if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  } else {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  }
+};
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -280,13 +295,17 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             <Phone className="w-4 h-4" />
             Phone Number
           </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="(555) 123-4567"
-          />
+         <input
+  type="tel"
+  value={formData.phone}
+  onChange={(e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setFormData({ ...formData, phone: formatted });
+  }}
+  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+  placeholder="(555) 123-4567"
+  maxLength={14}
+/>
         </div>
 
         {/* Email Branding Section */}

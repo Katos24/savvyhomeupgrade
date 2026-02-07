@@ -1,5 +1,5 @@
 import { safeJSONParse, parseNotes } from '@/lib/utils';
-import { Mail, Clock, AlertCircle, Calendar } from 'lucide-react';
+import { Mail, Calendar, Bell } from 'lucide-react';
 
 interface CardsViewProps {
   leads: any[];
@@ -35,41 +35,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     return colorMap[colorName] || '#3b82f6';
   };
 
-  const getReminderStatus = (followUpDate: string) => {
-    if (!followUpDate) return null;
-    
-    const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
-    const reminderDate = new Date(followUpDate);
-    
-    if (reminderDate < todayStart) {
-      return { 
-        label: 'Overdue', 
-        icon: AlertCircle, 
-        color: '#ef4444',
-        bgColor: 'rgba(239, 68, 68, 0.1)',
-        borderColor: 'rgba(239, 68, 68, 0.3)'
-      };
-    } else if (reminderDate >= todayStart && reminderDate <= todayEnd) {
-      return { 
-        label: 'Today', 
-        icon: Clock, 
-        color: '#eab308',
-        bgColor: 'rgba(234, 179, 8, 0.1)',
-        borderColor: 'rgba(234, 179, 8, 0.3)'
-      };
-    } else {
-      return { 
-        label: 'Upcoming', 
-        icon: Calendar, 
-        color: '#3b82f6',
-        bgColor: 'rgba(59, 130, 246, 0.1)',
-        borderColor: 'rgba(59, 130, 246, 0.3)'
-      };
-    }
-  };
-
   const renderLeadCard = (lead: any) => {
     const fileUrls = safeJSONParse(lead.file_urls);
     const leadStatus = lead.status || statusOptions[0]?.value || 'new';
@@ -78,7 +43,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const notesArray = parseNotes(lead.notes);
     const isProject = !!lead.project_id;
     const hasReminder = !!lead.follow_up_date;
-    const reminderStatus = hasReminder ? getReminderStatus(lead.follow_up_date) : null;
     
     // Get short description preview
     const descriptionPreview = lead.description 
@@ -92,8 +56,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const videos = fileUrls?.filter((f: any) => 
       f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i)
     ) || [];
-
-    const ReminderIcon = reminderStatus?.icon;
 
     return (
       <div
@@ -110,6 +72,35 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
           className="absolute left-0 top-0 bottom-0 w-1" 
           style={{ backgroundColor: statusColorHex }}
         />
+
+        {/* Bell Icon with Tooltip - Top Right */}
+        {hasReminder && (
+          <div className="absolute top-4 right-4 group/reminder z-10">
+            <div className="relative">
+              <div className="p-1.5 rounded-lg bg-red-500/20 border border-red-500/40">
+                <Bell className="w-4 h-4 text-red-400" />
+              </div>
+              
+              {/* Tooltip - Desktop only */}
+              <div className="hidden md:block absolute right-0 top-full mt-2 w-56 p-3 bg-slate-900/95 backdrop-blur-sm text-white text-sm rounded-lg shadow-xl opacity-0 invisible group-hover/reminder:opacity-100 group-hover/reminder:visible transition-all duration-200 z-50 pointer-events-none">
+                <div className="font-semibold mb-1 text-red-300">
+                  Follow-up: {new Date(lead.follow_up_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
+                {lead.follow_up_notes && (
+                  <div className="text-slate-300 text-xs leading-relaxed">
+                    {lead.follow_up_notes}
+                  </div>
+                )}
+                {/* Arrow pointer */}
+                <div className="absolute -top-1 right-3 w-2 h-2 bg-slate-900/95 rotate-45"></div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Top row: Name + Status + Project # */}
         <div className="flex items-start justify-between gap-2 mb-3">
@@ -118,7 +109,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
           </h3>
           
           {/* Status and Project # on top right */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0" style={{ marginRight: hasReminder ? '40px' : '0' }}>
             <span 
               className="text-white px-2 py-1 rounded font-medium text-xs"
               style={{ backgroundColor: statusColorHex }}
@@ -143,9 +134,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
         </div>
 
         {/* Scheduled Date Section */}
-        <div className="mb-3 space-y-2">
-          {/* Main Scheduled Date Display */}
-          {lead.scheduled_date && (
+        {lead.scheduled_date && (
+          <div className="mb-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-emerald-400" />
               <span className="text-sm font-semibold text-emerald-300">
@@ -160,28 +150,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
                 )}
               </span>
             </div>
-          )}
-
-          {/* Subtle Reminder Indicator (if has reminder) - Always Red */}
-          {hasReminder && ReminderIcon && (
-            <div 
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-red-500"
-              style={{ 
-                backgroundColor: 'rgba(239, 68, 68, 0.15)'
-              }}
-            >
-              <ReminderIcon 
-                className="w-3 h-3 text-red-400" 
-              />
-              <span className="text-xs font-medium text-red-300">
-                Follow up: {new Date(lead.follow_up_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </span>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Description (if available) */}
         {descriptionPreview && (
