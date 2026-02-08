@@ -18,6 +18,9 @@ type Company = {
   cta_heading?: string | null;
   cta_button_text?: string | null;
   cta_success_message?: string | null;
+  custom_questions?: any;
+  email_brand_color_1?: string | null;
+  email_brand_color_2?: string | null;
 };
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -36,7 +39,10 @@ async function getCompany(slug: string): Promise<Company | null> {
       address_required,
       cta_heading,
       cta_button_text,
-      cta_success_message
+      cta_success_message,
+      custom_questions,
+      email_brand_color_1,
+      email_brand_color_2
     FROM companies 
     WHERE slug = ${slug}
   `;
@@ -90,8 +96,15 @@ export default async function CompanyPage({
         </div>
       </header>
 
-      {/* Hero Section - Dynamic CTA Heading */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 px-6">
+      {/* Hero Section - Dynamic CTA Heading with Brand Colors */}
+      <div 
+        className="text-white py-12 px-6"
+        style={{
+          background: company.email_brand_color_1 && company.email_brand_color_2
+            ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
+            : 'linear-gradient(to right, #3b82f6, #8b5cf6)'
+        }}
+      >
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-3">
             {cta.heading}

@@ -35,6 +35,7 @@ type Company = {
   slug: string;
   logo_url?: string | null;
   status_options?: StatusOption[];
+  form_categories?: any[];
   subscription_status?: string;
   trial_ends_at?: string | null;
 };
@@ -606,8 +607,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onRefresh={refreshModalLead}
           currentUser={currentUser}
           statusOptions={statusOptions}
+          categories={company.form_categories || []}
         />
       )}
     </div>
   );
-}
+}   

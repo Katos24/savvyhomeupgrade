@@ -13,7 +13,9 @@ import {
   X,
   Calendar,
   Tag,
-  Briefcase
+  Briefcase,
+  Edit2,
+  Save
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoUpload from '@/components/dashboard/PhotoUpload';
@@ -35,6 +37,7 @@ type LeadModalProps = {
   onRefresh: () => Promise<void>;
   currentUser: any;
   statusOptions: any[];
+  categories: any[];
 };
 
 function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }: any) {
@@ -101,7 +104,8 @@ export default function LeadModal({
   onDeleteLead,
   onRefresh,
   currentUser,
-  statusOptions
+  statusOptions,
+  categories = []
 }: LeadModalProps) {
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -110,6 +114,19 @@ export default function LeadModal({
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Edit mode state
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editedDetails, setEditedDetails] = useState({
+    name: lead.name || '',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    address_line_1: lead.address_line_1 || '',
+    address_line_2: lead.address_line_2 || '',
+    city: lead.city || '',
+    category: lead.category || '',
+    description: lead.description || '',
+  });
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -172,17 +189,75 @@ export default function LeadModal({
     }
   };
 
+  const handleSaveDetails = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'update_details',
+          ...editedDetails,
+          user_name: currentUser?.name || currentUser?.email,
+          user_email: currentUser?.email,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Details updated!');
+        setIsEditingDetails(false);
+        await onRefresh();
+      } else {
+        toast.error('Failed to update details');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update details');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedDetails({
+      name: lead.name || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
+      address_line_1: lead.address_line_1 || '',
+      address_line_2: lead.address_line_2 || '',
+      city: lead.city || '',
+      category: lead.category || '',
+      description: lead.description || '',
+    });
+    setIsEditingDetails(false);
+  };
+
+  const formatPhoneNumber = (value: string): string => {
+    const phoneNumber = value.replace(/\D/g, '');
+    const limitedNumber = phoneNumber.slice(0, 10);
+    
+    if (limitedNumber.length === 0) return '';
+    if (limitedNumber.length <= 3) return `(${limitedNumber}`;
+    if (limitedNumber.length <= 6) return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
+    return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6)}`;
+  };
+
   const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
 
   const formatCategory = (category: string) => {
+    if (!category) return 'No category';
     if (lead.category_label) return lead.category_label;
-    return category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const cat = categories.find(c => c.value === category);
+    return cat ? cat.label : category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   const getFullAddress = () => {
-    if (!lead.address_line_1) return null;
-    if (lead.address_line_2) return `${lead.address_line_1}, ${lead.address_line_2}`;
-    return lead.address_line_1;
+    const addr = isEditingDetails ? editedDetails.address_line_1 : lead.address_line_1;
+    if (!addr) return null;
+    const line2 = isEditingDetails ? editedDetails.address_line_2 : lead.address_line_2;
+    if (line2) return `${addr}, ${line2}`;
+    return addr;
   };
 
   const fullAddress = getFullAddress();
@@ -195,6 +270,12 @@ export default function LeadModal({
     streetViewControl: true,
     fullscreenControl: true,
   };
+
+  const displayName = isEditingDetails ? editedDetails.name : lead.name;
+  const displayEmail = isEditingDetails ? editedDetails.email : lead.email;
+  const displayPhone = isEditingDetails ? editedDetails.phone : lead.phone;
+  const displayCategory = isEditingDetails ? editedDetails.category : lead.category;
+  const displayDescription = isEditingDetails ? editedDetails.description : lead.description;
 
   return (
     <div 
@@ -210,21 +291,31 @@ export default function LeadModal({
         <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 p-4 z-10 rounded-t-xl">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h2 className="text-xl font-bold text-gray-900">{lead.name}</h2>
-                {lead.category && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-semibold">
-                    <Tag className="w-3 h-3" />
-                    {formatCategory(lead.category)}
-                  </span>
-                )}
-                {isProject && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm">
-                    <Briefcase className="w-3 h-3" />
-                    PROJECT #{lead.project_number}
-                  </span>
-                )}
-              </div>
+              {isEditingDetails ? (
+                <input
+                  type="text"
+                  value={editedDetails.name}
+                  onChange={(e) => setEditedDetails({ ...editedDetails, name: e.target.value })}
+                  className="text-xl font-bold text-gray-900 border-2 border-blue-300 rounded px-2 py-1 mb-2 w-full"
+                  placeholder="Customer Name"
+                />
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
+                  {displayCategory && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-semibold">
+                      <Tag className="w-3 h-3" />
+                      {formatCategory(displayCategory)}
+                    </span>
+                  )}
+                  {isProject && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm">
+                      <Briefcase className="w-3 h-3" />
+                      PROJECT #{lead.project_number}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-1.5 text-xs text-gray-600">
                 <Calendar className="w-3.5 h-3.5" />
                 <p>
@@ -240,7 +331,16 @@ export default function LeadModal({
             </div>
             
             <div className="flex items-center gap-2 flex-shrink-0">
-              {canDelete && !showDeleteConfirm && (
+              {!isEditingDetails && (
+                <button
+                  onClick={() => setIsEditingDetails(true)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  title="Edit Details"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
+              {canDelete && !showDeleteConfirm && !isEditingDetails && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -267,18 +367,41 @@ export default function LeadModal({
                   </button>
                 </div>
               )}
-              <button 
-                onClick={onClose} 
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {!isEditingDetails && (
+                <button 
+                  onClick={onClose} 
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Save/Cancel buttons when editing */}
+          {isEditingDetails && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 flex gap-3">
+              <button
+                onClick={handleSaveDetails}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {/* Customer Information */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
             <button
@@ -291,100 +414,217 @@ export default function LeadModal({
 
             {showCustomerInfo && (
               <div className="px-4 pb-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
-                      <Mail className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
-                      Email
-                    </span>
-                    <a href={`mailto:${lead.email}`} className="text-sm text-gray-900 font-medium hover:text-blue-600 hover:underline break-all">
-                      {lead.email}
-                    </a>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
-                      <Phone className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-                      Phone
-                    </span>
-                    <a href={`tel:${lead.phone}`} className="text-sm text-gray-900 font-medium hover:text-green-600 hover:underline">
-                      {lead.phone && `(${lead.phone.slice(0, 3)}) ${lead.phone.slice(3, 6)}-${lead.phone.slice(6)}`}
-                    </a>
-                  </div>
-                </div>
-
-                {fullAddress && (
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
-                          <MapPin className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
-                          Address
-                        </span>
-                        <p className="text-sm text-gray-900 font-medium">{lead.address_line_1}</p>
-                        {lead.address_line_2 && <p className="text-xs text-gray-700 mt-0.5">{lead.address_line_2}</p>}
-                        {lead.city && <p className="text-xs text-gray-600 mt-0.5">{lead.city}</p>}
+                {isEditingDetails ? (
+                  // EDIT MODE
+                  <div className="space-y-3">
+                    {/* Email & Phone */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">EMAIL</label>
+                        <input
+                          type="email"
+                          value={editedDetails.email}
+                          onChange={(e) => setEditedDetails({ ...editedDetails, email: e.target.value })}
+                          className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                        />
                       </div>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 ml-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm"
-                      >
-                        <Navigation className="w-3.5 h-3.5" />
-                        Directions
-                      </a>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">PHONE</label>
+                        <input
+                          type="tel"
+                          value={editedDetails.phone}
+                          onChange={(e) => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
+                          className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                          maxLength={14}
+                        />
+                      </div>
                     </div>
 
-                    {isLoaded && mapCenter && (
-                      <div className="mt-3">
-                        <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15} options={mapOptions}>
-                          <Marker position={mapCenter} />
-                        </GoogleMap>
+                    {/* Address */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">ADDRESS LINE 1</label>
+                      <input
+                        type="text"
+                        value={editedDetails.address_line_1}
+                        onChange={(e) => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                        placeholder="123 Main St"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">ADDRESS LINE 2</label>
+                        <input
+                          type="text"
+                          value={editedDetails.address_line_2}
+                          onChange={(e) => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
+                          className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                          placeholder="Apt 4B"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">CITY</label>
+                        <input
+                          type="text"
+                          value={editedDetails.city}
+                          onChange={(e) => setEditedDetails({ ...editedDetails, city: e.target.value })}
+                          className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                          placeholder="New York"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">CATEGORY</label>
+                      <select
+                        value={editedDetails.category}
+                        onChange={(e) => setEditedDetails({ ...editedDetails, category: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                      >
+                        <option value="">Select category...</option>
+                        
+                        {/* Show current category if it's not in the active list (orphaned) */}
+                        {editedDetails.category && 
+                         !categories.find((c: any) => c.value === editedDetails.category) && (
+                          <option value={editedDetails.category} className="text-orange-600">
+                            ⚠️ {formatCategory(editedDetails.category)} (Legacy)
+                          </option>
+                        )}
+                        
+                        {/* Show all current active categories */}
+                        {categories.map((cat: any) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.emoji} {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* Warning if category is orphaned */}
+                      {editedDetails.category && 
+                       !categories.find((c: any) => c.value === editedDetails.category) && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          ⚠️ This category is no longer active. Please select a new one.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">DESCRIPTION</label>
+                      <textarea
+                        value={editedDetails.description}
+                        onChange={(e) => setEditedDetails({ ...editedDetails, description: e.target.value })}
+                        rows={4}
+                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm resize-none"
+                        placeholder="Project description..."
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  // VIEW MODE
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                          <Mail className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
+                          Email
+                        </span>
+                        <a href={`mailto:${displayEmail}`} className="text-sm text-gray-900 font-medium hover:text-blue-600 hover:underline break-all">
+                          {displayEmail}
+                        </a>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                          <Phone className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+                          Phone
+                        </span>
+                        <a href={`tel:${displayPhone}`} className="text-sm text-gray-900 font-medium hover:text-green-600 hover:underline">
+                          {displayPhone && formatPhoneNumber(displayPhone)}
+                        </a>
+                      </div>
+                    </div>
+
+                    {fullAddress && (
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                              <MapPin className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
+                              Address
+                            </span>
+                            <p className="text-sm text-gray-900 font-medium">{isEditingDetails ? editedDetails.address_line_1 : lead.address_line_1}</p>
+                            {(isEditingDetails ? editedDetails.address_line_2 : lead.address_line_2) && (
+                              <p className="text-xs text-gray-700 mt-0.5">{isEditingDetails ? editedDetails.address_line_2 : lead.address_line_2}</p>
+                            )}
+                            {(isEditingDetails ? editedDetails.city : lead.city) && (
+                              <p className="text-xs text-gray-600 mt-0.5">{isEditingDetails ? editedDetails.city : lead.city}</p>
+                            )}
+                          </div>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 ml-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm"
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            Directions
+                          </a>
+                        </div>
+
+                        {isLoaded && mapCenter && (
+                          <div className="mt-3">
+                            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15} options={mapOptions}>
+                              <Marker position={mapCenter} />
+                            </GoogleMap>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      const subject = encodeURIComponent(`Re: Your ${formatCategory(lead.category)} Project`);
-                      const body = encodeURIComponent(`Hi ${lead.name},\n\nThank you for reaching out!`);
-                      window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
-                    }}
-                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Email
-                  </button>
-                  <button
-                    onClick={() => window.location.href = `tel:${lead.phone}`}
-                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
-                  >
-                    <Phone className="w-4 h-4" />
-                    Call
-                  </button>
-                  <button
-                    onClick={() => {
-                      const message = encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`);
-                      window.location.href = `sms:${lead.phone}?body=${message}`;
-                    }}
-                    className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    Text
-                  </button>
-                </div>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => {
+                          const subject = encodeURIComponent(`Re: Your ${formatCategory(displayCategory)} Project`);
+                          const body = encodeURIComponent(`Hi ${displayName},\n\nThank you for reaching out!`);
+                          window.location.href = `mailto:${displayEmail}?subject=${subject}&body=${body}`;
+                        }}
+                        className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Email
+                      </button>
+                      <button
+                        onClick={() => window.location.href = `tel:${displayPhone}`}
+                        className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Call
+                      </button>
+                      <button
+                        onClick={() => {
+                          const message = encodeURIComponent(`Hi ${displayName}, I reviewed your project.`);
+                          window.location.href = `sms:${displayPhone}?body=${message}`;
+                        }}
+                        className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-3 text-sm rounded-lg transition shadow-sm"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Text
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
 
-          {/* Description */}
-          {lead.description && (
+          {/* Description (when not editing) */}
+          {!isEditingDetails && displayDescription && (
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
               <h3 className="text-sm font-bold text-gray-900 mb-2">Description</h3>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{lead.description}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{displayDescription}</p>
             </div>
           )}
 
@@ -489,6 +729,7 @@ export default function LeadModal({
                             : noteType === 'quote_created' || noteType === 'quote_sent' ? 'bg-green-50 border-green-500'
                             : noteType === 'payment_updated' ? 'bg-orange-50 border-orange-500'
                             : noteType === 'photo_upload' ? 'bg-pink-50 border-pink-500'
+                            : noteType === 'details_updated' ? 'bg-yellow-50 border-yellow-500'
                             : 'bg-gray-50 border-gray-400'
                           }`}
                         >
@@ -532,32 +773,54 @@ export default function LeadModal({
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-2 rounded-b-xl">
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 text-sm rounded-lg transition"
-          >
-            Close
-          </button>
-          {hasUnsavedChanges && (
-            <button
-              onClick={async () => {
-                if (newNote.trim()) {
-                  setSaving(true);
-                  const success = await onAddNote(lead.id, newNote);
-                  setSaving(false);
-                  if (success) {
-                    setNewNote('');
-                    toast.success('Note saved!');
-                    await onRefresh();
-                    onClose();
-                  }
-                }
-              }}
-              disabled={saving}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 text-sm rounded-lg transition disabled:bg-gray-400 shadow-sm"
-            >
-              {saving ? 'Saving...' : 'Save Note'}
-            </button>
+          {isEditingDetails ? (
+            <>
+              <button
+                onClick={handleSaveDetails}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 text-sm rounded-lg transition"
+              >
+                Close
+              </button>
+              {hasUnsavedChanges && (
+                <button
+                  onClick={async () => {
+                    if (newNote.trim()) {
+                      setSaving(true);
+                      const success = await onAddNote(lead.id, newNote);
+                      setSaving(false);
+                      if (success) {
+                        setNewNote('');
+                        toast.success('Note saved!');
+                        await onRefresh();
+                        onClose();
+                      }
+                    }
+                  }}
+                  disabled={saving}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 text-sm rounded-lg transition disabled:bg-gray-400 shadow-sm"
+                >
+                  {saving ? 'Saving...' : 'Save Note'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

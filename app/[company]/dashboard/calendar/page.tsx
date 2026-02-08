@@ -18,7 +18,7 @@ type Company = {
   created_at: string;
   business_type: string;
   status_options: any[] | null;
-  form_categories: any[] | null;
+form_categories?: any[] | null;
   address_enabled: boolean | null;
   address_required: boolean;
 };
@@ -98,13 +98,13 @@ export default async function CalendarPage({ params }: PageProps) {
     notFound();
   }
 
-  // Transform company to match CalendarClient's expected type
-  const companyData = {
-    ...company,
-    status_options: Array.isArray(company.status_options) && company.status_options.length > 0
-      ? company.status_options 
-      : [], // Empty array will trigger fallback to DEFAULT_STATUSES
-  };
+// Transform company to match CalendarClient's expected type
+const companyData = {
+  ...company,
+  status_options: Array.isArray(company.status_options) && company.status_options.length > 0
+    ? company.status_options 
+    : [], // Empty array will trigger fallback to DEFAULT_STATUSES
+  form_categories: company.form_categories || [], // ← ADD THIS LINE
+};
 
-  return <CalendarClient company={companyData} />;
-}
+return <CalendarClient company={companyData} />;} 

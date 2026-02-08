@@ -11,6 +11,7 @@ type Company = {
   slug: string;
   logo_url?: string | null;
   status_options?: any[];
+  form_categories?: any[];
 };
 
 export default function CalendarClient({ company }: { company: Company }) {
@@ -175,6 +176,8 @@ export default function CalendarClient({ company }: { company: Company }) {
           onRefresh={refreshModalLead}
           currentUser={currentUser}
           statusOptions={statusOptions}
+            categories={company.form_categories || []}  // ← ADD THIS LINE
+
         />
       )}
     </div>

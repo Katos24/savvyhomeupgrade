@@ -15,6 +15,7 @@ interface Company {
   subscription_status?: string;
   trial_ends_at?: string | null;
   status_options?: any[];
+  form_categories?: any[];
 }
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -30,7 +31,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       created_at,
       subscription_status,
       trial_ends_at,
-      status_options
+      status_options,
+      form_categories
     FROM companies 
     WHERE slug = ${slug}
   `;

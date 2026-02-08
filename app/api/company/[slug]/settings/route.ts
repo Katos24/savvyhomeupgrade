@@ -108,7 +108,15 @@ export async function POST(
       case 'update-general':
         try {
           console.log('Updating company ID:', company.id);
-          console.log('With colors:', data.email_brand_color_1, data.email_brand_color_2);
+          console.log('With data:', {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            business_type: data.business_type,
+            logo_url: data.logo_url,
+            email_brand_color_1: data.email_brand_color_1,
+            email_brand_color_2: data.email_brand_color_2
+          });
           
           const result = await sql`
             UPDATE companies
@@ -124,8 +132,7 @@ export async function POST(
             RETURNING *
           `;
           
-          console.log('Update result:', result[0]);
-          console.log('Updated colors:', result[0]?.email_brand_color_1, result[0]?.email_brand_color_2);
+          console.log('✅ Update successful:', result[0]);
         } catch (updateError) {
           console.error('❌ Update failed:', updateError);
           throw updateError;
@@ -158,26 +165,64 @@ export async function POST(
 
       case 'update-notifications':
         console.log('Updating notification settings for company:', company.id);
-        console.log('Settings:', data.reminder_settings);
+        console.log('Settings:', {
+          reminder_settings: data.reminder_settings,
+          notification_preferences: data.notification_preferences
+        });
         
         await sql`
-           UPDATE companies
-    SET 
-      reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
-      notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb
-    WHERE id = ${company.id}
-  `;
+          UPDATE companies
+          SET 
+            reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
+            notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb
+          WHERE id = ${company.id}
+        `;
         
         console.log('✅ Notification settings updated');
+        break;
+
+      case 'update-custom-questions':
+        console.log('Updating custom questions for company:', company.id);
+        console.log('Custom questions:', data.custom_questions);
+        
+        await sql`
+          UPDATE companies
+          SET custom_questions = ${JSON.stringify(data.custom_questions)}::jsonb
+          WHERE id = ${company.id}
+        `;
+        
+        console.log('✅ Custom questions updated');
+        break;
+
+      case 'update-cta':
+        console.log('Updating CTA settings for company:', company.id);
+        console.log('CTA data:', data);
+        
+        await sql`
+          UPDATE companies
+          SET 
+            cta_heading = ${data.cta_heading || null},
+            cta_button_text = ${data.cta_button_text || null},
+            cta_success_message = ${data.cta_success_message || null}
+          WHERE id = ${company.id}
+        `;
+        
+        console.log('✅ CTA settings updated');
         break;
 
       default:
         return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
 
+    // Fetch updated company data to return
+    const updatedCompanies = await sql`
+      SELECT * FROM companies WHERE id = ${company.id} LIMIT 1
+    `;
+
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
+      company: updatedCompanies[0],
     });
 
   } catch (error) {

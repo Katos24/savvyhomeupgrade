@@ -174,6 +174,37 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      // 4. Custom reminders (manually set follow-up dates)
+      const customReminders = await sql`
+        SELECT 
+          p.id,
+          p.lead_id,
+          p.customer_name,
+          p.customer_email,
+          p.customer_phone,
+          p.status,
+          l.category,
+          p.follow_up_date,
+          p.follow_up_notes
+        FROM projects p
+        LEFT JOIN leads l ON p.lead_id = l.id
+        WHERE p.company_id = ${company.id}
+          AND p.follow_up_date IS NOT NULL
+          AND p.follow_up_date::date <= CURRENT_DATE
+          AND p.status NOT IN ('completed', 'cancelled', 'lost')
+        LIMIT 50
+      `;
+
+      customReminders.forEach((lead: any) => {
+        if (!leadsNeedingFollowUp.find(l => l.id === lead.id)) {
+          leadsNeedingFollowUp.push({
+            ...lead,
+            reason: lead.follow_up_notes || 'Custom reminder',
+            type: 'custom',
+          });
+        }
+      });
+
       // Send email if there are leads needing follow-up
       if (leadsNeedingFollowUp.length > 0) {
         console.log(`📧 Sending reminder email to ${adminUser.email} for ${leadsNeedingFollowUp.length} leads`);

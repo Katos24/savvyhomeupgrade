@@ -44,7 +44,13 @@ export default async function SettingsPage({ params }: { params: Promise<{ compa
         email_templates,
         email_brand_color_1,
         email_brand_color_2,
-        reminder_settings
+        reminder_settings, 
+        address_enabled,
+        address_required,
+        cta_heading,
+        cta_button_text,
+        cta_success_message,
+        custom_questions
       FROM companies 
       WHERE slug = ${resolvedParams.company} 
       LIMIT 1

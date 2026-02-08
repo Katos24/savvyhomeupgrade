@@ -3,6 +3,8 @@ export const BUSINESS_TYPES = [
   { value: 'home_services', label: 'Home Services', emoji: '🏠' },
   { value: 'construction', label: 'Construction', emoji: '🏗️' },
   { value: 'hvac', label: 'HVAC', emoji: '❄️' },
+    { value: 'electrical', label: 'Electrical', emoji: '⚡' }, 
+  { value: 'plumbing', label: 'Plumbing', emoji: '🔧' },    
   { value: 'auto_services', label: 'Auto Services', emoji: '🚗' },
   { value: 'beauty_services', label: 'Beauty Services', emoji: '💇' },
   { value: 'pet_services', label: 'Pet Services', emoji: '🐕' },
@@ -53,6 +55,8 @@ export const ADDRESS_CONFIG: Record<string, { show: boolean; required: boolean }
   construction: { show: true, required: true },
   cleaning_services: { show: true, required: true },
   real_estate: { show: true, required: true },
+  electrical: { show: true, required: true }, 
+  plumbing: { show: true, required: true },  
   
   // OPTIONAL - Sometimes on-site
   auto_services: { show: true, required: false },
@@ -82,6 +86,30 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'heat_pump', label: 'Heat Pump Service', emoji: '♨️' },
     { value: 'ductwork', label: 'Ductwork/Vents', emoji: '🌬️' },
     { value: 'maintenance', label: 'Maintenance/Tune-up', emoji: '🔧' },
+    { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+
+  electrical: [
+    { value: 'wiring', label: 'Wiring', emoji: '⚡' },
+    { value: 'panel_upgrade', label: 'Panel Upgrade', emoji: '📊' },
+    { value: 'outlets', label: 'Outlets/Switches', emoji: '🔌' },
+    { value: 'lighting', label: 'Lighting Installation', emoji: '💡' },
+    { value: 'ceiling_fan', label: 'Ceiling Fan', emoji: '🌀' },
+    { value: 'generator', label: 'Generator', emoji: '⚡' },
+    { value: 'troubleshooting', label: 'Troubleshooting', emoji: '🔍' },
+    { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
+    { value: 'other', label: 'Other', emoji: '📋' },
+  ],
+
+  plumbing: [
+    { value: 'leak_repair', label: 'Leak Repair', emoji: '💧' },
+    { value: 'drain_cleaning', label: 'Drain Cleaning', emoji: '🚰' },
+    { value: 'water_heater', label: 'Water Heater', emoji: '🔥' },
+    { value: 'toilet_repair', label: 'Toilet Repair', emoji: '🚽' },
+    { value: 'faucet', label: 'Faucet Installation', emoji: '🚿' },
+    { value: 'pipe_repair', label: 'Pipe Repair', emoji: '🔧' },
+    { value: 'sump_pump', label: 'Sump Pump', emoji: '💦' },
     { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
     { value: 'other', label: 'Other', emoji: '📋' },
   ],

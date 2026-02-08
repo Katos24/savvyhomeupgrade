@@ -33,6 +33,14 @@ type ToastType = {
   id: number;
 };
 
+type CustomQuestion = {
+  id: string;
+  label: string;
+  type: 'text' | 'select' | 'checkbox';
+  required: boolean;
+  options?: string[];
+};
+
 type Company = {
   id: number;
   name: string;
@@ -47,6 +55,9 @@ type Company = {
   cta_heading?: string | null;
   cta_button_text?: string | null;
   cta_success_message?: string | null;
+  custom_questions?: CustomQuestion[];
+  email_brand_color_1?: string | null;
+  email_brand_color_2?: string | null;
 };
 
 interface UploadFormProps {
@@ -80,6 +91,7 @@ export default function UploadForm({
     description: '',
     lead_source: 'upload_form',
   });
+  const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -106,6 +118,9 @@ export default function UploadForm({
 
   const finalCompanySlug = company?.slug || companySlug;
   const finalCompanyId = company?.id || companyId;
+
+  // Get custom questions
+  const customQuestions = company?.custom_questions || [];
 
   // Get address configuration
   const getAddressConfig = () => {
@@ -330,6 +345,13 @@ export default function UploadForm({
     showToast('File removed', 'info');
   };
 
+  const handleCustomAnswerChange = (questionId: string, value: any) => {
+    setCustomAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -347,6 +369,16 @@ export default function UploadForm({
       showToast('Address is required', 'error');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
+    }
+
+    // Validate custom questions
+    for (const question of customQuestions) {
+      if (question.required && !customAnswers[question.id]) {
+        setError(`Please answer: ${question.label}`);
+        showToast(`Please answer: ${question.label}`, 'error');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
     }
 
     const rawPhone = formData.phone.replace(/\D/g, '');
@@ -434,6 +466,7 @@ export default function UploadForm({
           company_slug: finalCompanySlug,
           company_id: finalCompanyId,
           lead_source: formData.lead_source || null,
+          custom_answers: customAnswers, // Send custom answers
         }),
       });
 
@@ -755,6 +788,68 @@ export default function UploadForm({
               />
             </div>
 
+            {/* CUSTOM QUESTIONS */}
+            {customQuestions.length > 0 && (
+              <div className="border-t-2 border-gray-200 pt-6 mt-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Additional Information</h3>
+                <div className="space-y-6">
+                  {customQuestions.map((question) => (
+                    <div key={question.id}>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <HelpCircle className="w-4 h-4" style={{ color: '#10b981' }} />
+                        {question.label} {question.required && '*'}
+                      </label>
+
+                      {question.type === 'text' && (
+                        <input
+                          type="text"
+                          required={question.required}
+                          value={customAnswers[question.id] || ''}
+                          onChange={(e) => handleCustomAnswerChange(question.id, e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          placeholder="Your answer..."
+                          disabled={uploading}
+                        />
+                      )}
+
+                      {question.type === 'select' && (
+                        <select
+                          required={question.required}
+                          value={customAnswers[question.id] || ''}
+                          onChange={(e) => handleCustomAnswerChange(question.id, e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          disabled={uploading}
+                        >
+                          <option value="">Select one...</option>
+                          {question.options?.map((option, idx) => (
+                            <option key={idx} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {question.type === 'checkbox' && (
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={question.id}
+                            checked={customAnswers[question.id] || false}
+                            onChange={(e) => handleCustomAnswerChange(question.id, e.target.checked)}
+                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            disabled={uploading}
+                          />
+                          <label htmlFor={question.id} className="text-gray-700 cursor-pointer">
+                            Yes
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* File Upload */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
@@ -847,7 +942,13 @@ export default function UploadForm({
             <button
               type="submit"
               disabled={uploading || compressing}
-              className="w-full inline-flex items-center justify-center gap-3 bg-blue-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              style={{
+                background: company?.email_brand_color_1 && company?.email_brand_color_2
+                  ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
+                  : '#3b82f6',
+                opacity: (uploading || compressing) ? 0.5 : 1
+              }}
             >
               {uploading ? (
                 <>

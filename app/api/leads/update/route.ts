@@ -180,7 +180,7 @@ export async function POST(request: Request) {
         leadNotes = [];
       }
 
-      // Create project with lead data (including project_number)
+      // Create project with lead data (including project_number and category)
       const projectResult = await sql`
         INSERT INTO projects (
           lead_id,
@@ -191,6 +191,7 @@ export async function POST(request: Request) {
           service_address,
           address_line_2,
           city,
+          category,
           status,
           company_id,
           notes,
@@ -207,6 +208,7 @@ export async function POST(request: Request) {
           ${leadData.address_line_1 || null},
           ${leadData.address_line_2 || null},
           ${leadData.city || null},
+          ${leadData.category || null},
           'scheduled',
           ${leadData.company_id || null},
           ${JSON.stringify(leadNotes)},
@@ -428,7 +430,7 @@ export async function POST(request: Request) {
           customerName: lead.name,
           companyName: lead.company_name || 'Your Service Provider',
           companyPhone: lead.company_phone,
-          companyId: lead.company_id, // ADD THIS
+          companyId: lead.company_id,
           quoteTotal: parseFloat(lead.quote_total),
           quoteItems: quoteItems,
           projectDescription: lead.category || 'Your project',
@@ -526,7 +528,7 @@ export async function POST(request: Request) {
           customerName: lead.name,
           companyName: lead.company_name || 'Your Service Provider',
           companyPhone: lead.company_phone,
-          companyId: lead.company_id, // ADD THIS
+          companyId: lead.company_id,
           scheduledDate: lead.scheduled_date,
           scheduledTime: lead.scheduled_time || undefined,
           serviceAddress: serviceAddress || undefined,
@@ -601,6 +603,74 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    // ==================== UPDATE DETAILS 📝 ====================
+    else if (action === 'update_details') {
+      console.log('📝 Updating lead/project details');
+      
+      const {
+        name,
+        email,
+        phone,
+        address_line_1,
+        address_line_2,
+        city,
+        category,
+        description
+      } = body;
+
+      // Update lead table
+      await sql`
+        UPDATE leads 
+        SET 
+          name = ${name},
+          email = ${email},
+          phone = ${phone},
+          address_line_1 = ${address_line_1 || null},
+          address_line_2 = ${address_line_2 || null},
+          city = ${city || null},
+          category = ${category || null},
+          description = ${description || null},
+          updated_at = NOW()
+        WHERE id = ${id}
+      `;
+
+      // If project exists, also update project customer info
+      const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
+      const projectId = leadCheck[0]?.project_id;
+
+      if (projectId) {
+        await sql`
+          UPDATE projects 
+          SET 
+            customer_name = ${name},
+            customer_email = ${email},
+            customer_phone = ${phone},
+            service_address = ${address_line_1 || null},
+            address_line_2 = ${address_line_2 || null},
+            city = ${city || null},
+            category = ${category || null},
+            updated_at = NOW()
+          WHERE id = ${projectId}
+        `;
+      }
+
+      // Add activity log
+      const detailsEntry = {
+        type: 'details_updated',
+        text: 'Customer details updated',
+        user_name: user_name,
+        user_email: user_email,
+        timestamp: new Date().toISOString()
+      };
+
+      if (projectId) {
+        await addActivityToProject(id, detailsEntry);
+      }
+
+      console.log('✅ Details updated');
+      return NextResponse.json({ success: true });
+    }
+
     // ==================== UPDATE TASKS ====================
     else if (action === 'update_tasks') {
       console.log('✓ Updating tasks');
@@ -644,7 +714,6 @@ export async function POST(request: Request) {
     console.error('❌ Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update lead' },
-      { status: 500 }
-    );
+      { status: 500 });
   }
 }
