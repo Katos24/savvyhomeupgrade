@@ -317,6 +317,20 @@ export default function LeadModal({
                      #{lead.project_number}
                     </span>
                   )}
+{/* Status Badge - Smaller version */}
+<span 
+  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold"
+  style={{ 
+    backgroundColor: `${getStatusColor(currentStatusConfig.color)}15`,
+    border: `1px solid ${getStatusColor(currentStatusConfig.color)}`,
+    color: getStatusColor(currentStatusConfig.color)
+  }}
+>
+  {currentStatusConfig.emoji && <span>{currentStatusConfig.emoji}</span>}
+  {currentStatusConfig.label}
+</span>
+
+                  
                 </div>
               )}
               <div className="flex items-center gap-1.5 text-xs text-gray-600">
