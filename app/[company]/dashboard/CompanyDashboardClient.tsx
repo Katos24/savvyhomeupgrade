@@ -1,3 +1,6 @@
+
+
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -51,7 +54,14 @@ const DEFAULT_STATUSES: StatusOption[] = [
   { value: 'lost', label: 'Lost', color: 'gray', emoji: '' },
 ];
 
+
+
 export default function CompanyDashboardClient({ company }: { company: Company }) {
+  console.log('🔍 Company data received:', company);
+  console.log('🔍 form_categories:', company.form_categories);
+  console.log('🔍 Is array?', Array.isArray(company.form_categories));
+  console.log('🔍 Length:', company.form_categories?.length);
+ 
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -608,6 +618,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           currentUser={currentUser}
           statusOptions={statusOptions}
           categories={company.form_categories || []}
+            company={company}  
+
         />
       )}
     </div>

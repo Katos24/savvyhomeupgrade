@@ -15,7 +15,8 @@ import {
   Tag,
   Briefcase,
   Edit2,
-  Save
+  Save,
+  MoreVertical
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoUpload from '@/components/dashboard/PhotoUpload';
@@ -38,6 +39,7 @@ type LeadModalProps = {
   currentUser: any;
   statusOptions: any[];
   categories: any[];
+  company?: any;
 };
 
 function StatusUpdateSection({ lead, statusOptions, onUpdateStatus, onRefresh }: any) {
@@ -105,7 +107,8 @@ export default function LeadModal({
   onRefresh,
   currentUser,
   statusOptions,
-  categories = []
+  categories = [],
+  company
 }: LeadModalProps) {
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -114,6 +117,7 @@ export default function LeadModal({
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   
   // Edit mode state
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -248,7 +252,7 @@ export default function LeadModal({
   const formatCategory = (category: string) => {
     if (!category) return 'No category';
     if (lead.category_label) return lead.category_label;
-    const cat = categories.find(c => c.value === category);
+    const cat = categories.find((c: any) => c.value === category);
     return cat ? cat.label : category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
@@ -310,8 +314,7 @@ export default function LeadModal({
                   )}
                   {isProject && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm">
-                      <Briefcase className="w-3 h-3" />
-                      PROJECT #{lead.project_number}
+                     #{lead.project_number}
                     </span>
                   )}
                 </div>
@@ -340,33 +343,7 @@ export default function LeadModal({
                   <Edit2 className="w-4 h-4" />
                 </button>
               )}
-              {canDelete && !showDeleteConfirm && !isEditingDetails && (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-              {canDelete && showDeleteConfirm && (
-                <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
-                  <span className="text-xs text-red-700 font-medium">Delete?</span>
-                  <button
-                    onClick={handleDelete}
-                    disabled={saving}
-                    className="text-xs bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold px-3 py-1 rounded-lg"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={saving}
-                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-3 py-1 rounded-lg"
-                  >
-                    No
-                  </button>
-                </div>
-              )}
+              
               {!isEditingDetails && (
                 <button 
                   onClick={onClose} 
@@ -381,6 +358,7 @@ export default function LeadModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
           {/* Save/Cancel buttons when editing */}
           {isEditingDetails && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 flex gap-3">
@@ -620,6 +598,8 @@ export default function LeadModal({
             )}
           </div>
 
+          
+
           {/* Description (when not editing) */}
           {!isEditingDetails && displayDescription && (
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
@@ -637,6 +617,44 @@ export default function LeadModal({
             />
           )}
 
+          {/* Custom Questions */}
+          {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-indigo-600" />
+                Custom Questions
+              </h3>
+              <div className="space-y-3">
+                {(() => {
+                  // Get company's custom questions to map IDs to labels
+                  const companyQuestions = company?.custom_questions || [];
+                  
+                  return Object.entries(lead.custom_answers).map(([questionId, answer]: [string, any], idx: number) => {
+                    // Find the question definition
+                    const questionDef = companyQuestions.find((q: any) => q.id === questionId);
+                    const questionLabel = questionDef?.label || questionId;
+                    
+                    return (
+                      <div key={idx} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                          {questionLabel}
+                        </p>
+                        <p className="text-sm text-gray-900 font-medium">
+                          {typeof answer === 'boolean' 
+                            ? (answer ? 'Yes' : 'No')
+                            : answer || <span className="text-gray-400 italic">No answer provided</span>
+                          }
+                        </p>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
+
+          
+
           {/* Convert to Project Button */}
           <ConvertToProjectButton 
             lead={lead}
@@ -644,29 +662,18 @@ export default function LeadModal({
             onRefresh={onRefresh}
           />
 
-          {/* Status Section */}
-          <div className={`rounded-xl border p-4 ${isProject ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-sm font-bold text-gray-900">
-                {isProject ? 'Project Status' : 'Lead Status'}
-              </h3>
-              <div 
-                className="inline-flex items-center px-3 py-1 rounded-lg font-semibold text-xs text-white shadow-sm"
-                style={{ backgroundColor: getStatusColor(currentStatusConfig.color) }}
-              >
-                {currentStatusConfig.label}
-              </div>
-            </div>
-            
-            <StatusUpdateSection 
-              lead={lead}
-              statusOptions={statusOptions}
-              onUpdateStatus={onUpdateStatus}
-              onRefresh={onRefresh}
-            />
-          </div>
+                    {lead.project_id && (
+  <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <StatusUpdateSection
+      lead={lead}
+      statusOptions={statusOptions}
+      onUpdateStatus={onUpdateStatus}
+      onRefresh={onRefresh}
+    />
+  </div>
+)}
 
-          {/* Project Section */}
+          {/* Project Section - Only show if converted to project */}
           {lead.project_id && (
             <ProjectSection 
               lead={lead}
@@ -793,6 +800,72 @@ export default function LeadModal({
             </>
           ) : (
             <>
+              {/* 3-Dot Menu - Left of Close */}
+              {canDelete && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {showMoreMenu && (
+                    <>
+                      {/* Overlay */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowMoreMenu(false)}
+                      />
+                      
+                      {/* Menu */}
+                      <div 
+                        className="absolute left-0 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 w-48"
+                        style={{ bottom: '100%', marginBottom: '8px' }}
+                      >
+                        {!showDeleteConfirm ? (
+                          <div className="p-2">
+                            <button
+                              onClick={() => {
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Lead
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-3">
+                            <p className="text-xs font-semibold text-gray-700 mb-3">Confirm deletion?</p>
+                            <div className="space-y-2">
+                              <button
+                                onClick={handleDelete}
+                                disabled={saving}
+                                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold text-xs py-2 rounded transition"
+                              >
+                                {saving ? 'Deleting...' : 'Yes, Delete'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowDeleteConfirm(false);
+                                  setShowMoreMenu(false);
+                                }}
+                                disabled={saving}
+                                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium text-xs py-2 rounded transition"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              
               <button
                 onClick={onClose}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 text-sm rounded-lg transition"

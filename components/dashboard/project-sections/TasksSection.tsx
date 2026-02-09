@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Plus, Loader2, CheckCircle2, Circle, Edit2, Trash2 } from 'lucide-react';
 
 type Task = {
-  id: string;
-  text: string;
+  id: number;
+  project_id: number;
+  company_id: number;
+  label: string;
   completed: boolean;
-  assigned_to?: string;
-  due_date?: string;
+  task_order: number;
+  completed_at?: string | null;
+  completed_by?: string | null;
   created_at: string;
-  created_by: string;
 };
 
 type TasksSectionProps = {
@@ -21,54 +24,71 @@ type TasksSectionProps = {
 };
 
 export default function TasksSection({ lead, currentUser, onRefresh, hasProject }: TasksSectionProps) {
-  const [newTaskText, setNewTaskText] = useState('');
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newTaskLabel, setNewTaskLabel] = useState('');
   const [saving, setSaving] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState('');
 
-  // Parse tasks from lead
-const tasks: Task[] = lead?.project_tasks 
-  ? (typeof lead.project_tasks === 'string' ? JSON.parse(lead.project_tasks) : lead.project_tasks)
-  : [];
+  // Fetch tasks from database
+  useEffect(() => {
+    if (hasProject && lead.project_id) {
+      fetchTasks();
+    } else {
+      setLoading(false);
+    }
+  }, [lead.project_id, hasProject]);
 
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/tasks?project_id=${lead.project_id}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setTasks(data.tasks || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const pendingTasks = tasks.filter(t => !t.completed);
-  const completedTasks = tasks.filter(t => t.completed);
+  const pendingTasks = tasks.filter(t => !t.completed).sort((a, b) => a.task_order - b.task_order);
+  const completedTasks = tasks.filter(t => t.completed).sort((a, b) => a.task_order - b.task_order);
 
   const handleAddTask = async () => {
-    if (!newTaskText.trim()) {
+    if (!newTaskLabel.trim()) {
       toast.error('Please enter a task');
       return;
     }
 
     setSaving(true);
     try {
-      const newTask: Task = {
-        id: `task_${Date.now()}`,
-        text: newTaskText.trim(),
-        completed: false,
-        created_at: new Date().toISOString(),
-        created_by: currentUser?.name || currentUser?.email || 'Unknown',
-      };
-
-      const updatedTasks = [...tasks, newTask];
-
-      const response = await fetch('/api/leads/update', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          tasks: JSON.stringify(updatedTasks),
-          action: 'update_tasks',
+          action: 'create',
+          project_id: lead.project_id,
+          company_id: lead.company_id,
+          label: newTaskLabel.trim(),
+          task_order: tasks.length + 1,
         }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         toast.success('Task added!');
-        setNewTaskText('');
+        setNewTaskLabel('');
+        await fetchTasks();
         await onRefresh();
       } else {
-        toast.error('Failed to add task');
+        toast.error(data.error || 'Failed to add task');
       }
     } catch (error) {
       console.error('Add task error:', error);
@@ -78,28 +98,25 @@ const tasks: Task[] = lead?.project_tasks
     }
   };
 
-const handleToggleComplete = async (taskId: string) => {
-  setSaving(true);
-  try {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    const updatedTasks = tasks.map(t => 
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    );
-
-      const response = await fetch('/api/leads/update', {
+  const handleToggleComplete = async (taskId: number, currentCompleted: boolean) => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          tasks: JSON.stringify(updatedTasks),
-          action: 'update_tasks',
+          action: 'toggle',
+          task_id: taskId,
+          completed: !currentCompleted,
+          completed_by: currentUser?.name || currentUser?.email || 'Unknown',
         }),
       });
 
-      if (response.ok) {
-        toast.success('Task updated!');
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(currentCompleted ? 'Task uncompleted!' : 'Task completed!');
+        await fetchTasks();
         await onRefresh();
       } else {
         toast.error('Failed to update task');
@@ -112,25 +129,25 @@ const handleToggleComplete = async (taskId: string) => {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteTask = async (taskId: number) => {
     if (!confirm('Delete this task?')) return;
 
     setSaving(true);
     try {
-      const updatedTasks = tasks.filter(t => t.id !== taskId);
-
-      const response = await fetch('/api/leads/update', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          tasks: JSON.stringify(updatedTasks),
-          action: 'update_tasks',
+          action: 'delete',
+          task_id: taskId,
         }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         toast.success('Task deleted!');
+        await fetchTasks();
         await onRefresh();
       } else {
         toast.error('Failed to delete task');
@@ -143,32 +160,31 @@ const handleToggleComplete = async (taskId: string) => {
     }
   };
 
-  const handleEditTask = async (taskId: string) => {
-    if (!editText.trim()) {
+  const handleEditTask = async (taskId: number) => {
+    if (!editLabel.trim()) {
       toast.error('Task cannot be empty');
       return;
     }
 
     setSaving(true);
     try {
-      const updatedTasks = tasks.map(t => 
-        t.id === taskId ? { ...t, text: editText.trim() } : t
-      );
-
-      const response = await fetch('/api/leads/update', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          tasks: JSON.stringify(updatedTasks),
-          action: 'update_tasks',
+          action: 'update',
+          task_id: taskId,
+          label: editLabel.trim(),
         }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
         toast.success('Task updated!');
         setEditingTaskId(null);
-        setEditText('');
+        setEditLabel('');
+        await fetchTasks();
         await onRefresh();
       } else {
         toast.error('Failed to update task');
@@ -183,8 +199,20 @@ const handleToggleComplete = async (taskId: string) => {
 
   if (!hasProject) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        <p className="text-sm">Convert to project to manage tasks</p>
+      <div className="p-6 text-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full mb-3">
+          <CheckCircle2 className="w-6 h-6 text-gray-400" />
+        </div>
+        <p className="text-sm font-medium">Convert to project to manage tasks</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
+        <p className="text-sm text-gray-500">Loading tasks...</p>
       </div>
     );
   }
@@ -192,43 +220,49 @@ const handleToggleComplete = async (taskId: string) => {
   return (
     <div className="p-4 space-y-4">
       {/* Add New Task */}
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
-        <h4 className="text-sm font-bold text-gray-900 mb-2">Add Task</h4>
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <Plus className="w-4 h-4 text-green-600" />
+          Add Task
+        </h4>
         <div className="flex gap-2">
           <input
             type="text"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
+            value={newTaskLabel}
+            onChange={(e) => setNewTaskLabel(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && !saving && handleAddTask()}
             placeholder="What needs to be done?"
-            className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+            className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
             disabled={saving}
           />
           <button
             onClick={handleAddTask}
-            disabled={saving || !newTaskText.trim()}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-semibold text-sm rounded-lg transition"
+            disabled={saving || !newTaskLabel.trim()}
+            className="px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition shadow-sm"
           >
-            {saving ? '...' : 'Add'}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
           </button>
         </div>
       </div>
 
       {/* Progress Summary */}
       {tasks.length > 0 && (
-        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-gray-700">Progress</span>
             <span className="text-sm font-bold text-blue-600">
-              {completedTasks.length} / {tasks.length}
+              {completedTasks.length} / {tasks.length} completed
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-blue-200 rounded-full h-2.5">
             <div
-              className="bg-green-500 h-2 rounded-full transition-all"
+              className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
               style={{ width: `${tasks.length > 0 ? (completedTasks.length / tasks.length) * 100 : 0}%` }}
             />
           </div>
+          <p className="text-xs text-gray-600 mt-2">
+            {tasks.length - completedTasks.length} remaining
+          </p>
         </div>
       )}
 
@@ -236,21 +270,24 @@ const handleToggleComplete = async (taskId: string) => {
       {pendingTasks.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Circle className="w-4 h-4 text-gray-400" />
             <span>To Do</span>
-            <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">{pendingTasks.length}</span>
+            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-semibold">
+              {pendingTasks.length}
+            </span>
           </h4>
           {pendingTasks.map((task) => (
             <div
               key={task.id}
-              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition group"
+              className="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition group"
             >
               <div className="flex items-start gap-3">
                 <button
-                  onClick={() => handleToggleComplete(task.id)}
+                  onClick={() => handleToggleComplete(task.id, task.completed)}
                   disabled={saving}
-                  className="mt-0.5 w-5 h-5 rounded border-2 border-gray-300 hover:border-green-500 transition flex items-center justify-center flex-shrink-0"
+                  className="mt-0.5 w-5 h-5 rounded border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 transition flex items-center justify-center flex-shrink-0 disabled:opacity-50"
                 >
-                  {task.completed && <span className="text-green-600 text-sm">✓</span>}
+                  {task.completed && <CheckCircle2 className="w-4 h-4 text-green-600" />}
                 </button>
 
                 <div className="flex-1 min-w-0">
@@ -258,56 +295,57 @@ const handleToggleComplete = async (taskId: string) => {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
+                        value={editLabel}
+                        onChange={(e) => setEditLabel(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleEditTask(task.id)}
-                        className="flex-1 px-2 py-1 text-sm rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 text-sm rounded-lg border-2 border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
                       />
                       <button
                         onClick={() => handleEditTask(task.id)}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded"
+                        disabled={saving}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-semibold rounded-lg transition"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => {
                           setEditingTaskId(null);
-                          setEditText('');
+                          setEditLabel('');
                         }}
-                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded"
+                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-900 font-medium">{task.text}</p>
+                      <p className="text-sm text-gray-900 font-medium">{task.label}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Added by {task.created_by} • {new Date(task.created_at).toLocaleDateString()}
+                        Created {new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     </>
                   )}
                 </div>
 
                 {editingTaskId !== task.id && (
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => {
                         setEditingTaskId(task.id);
-                        setEditText(task.text);
+                        setEditLabel(task.label);
                       }}
-                      className="p-1.5 hover:bg-blue-50 rounded text-blue-600 text-xs"
-                      title="Edit"
+                      className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition"
+                      title="Edit task"
                     >
-                      ✏️
+                      <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
-                      className="p-1.5 hover:bg-red-50 rounded text-red-600 text-xs"
-                      title="Delete"
+                      className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition"
+                      title="Delete task"
                     >
-                      🗑️
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 )}
@@ -321,36 +359,40 @@ const handleToggleComplete = async (taskId: string) => {
       {completedTasks.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span>Completed</span>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{completedTasks.length}</span>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+              {completedTasks.length}
+            </span>
           </h4>
           {completedTasks.map((task) => (
             <div
               key={task.id}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-3 opacity-75 hover:opacity-100 transition group"
+              className="bg-green-50 border border-green-200 rounded-lg p-3 opacity-75 hover:opacity-100 transition group"
             >
               <div className="flex items-start gap-3">
                 <button
-                  onClick={() => handleToggleComplete(task.id)}
+                  onClick={() => handleToggleComplete(task.id, task.completed)}
                   disabled={saving}
-                  className="mt-0.5 w-5 h-5 rounded border-2 border-green-500 bg-green-500 transition flex items-center justify-center flex-shrink-0"
+                  className="mt-0.5 w-5 h-5 rounded border-2 border-green-500 bg-green-500 transition flex items-center justify-center flex-shrink-0 disabled:opacity-50"
                 >
-                  <span className="text-white text-sm">✓</span>
+                  <CheckCircle2 className="w-4 h-4 text-white" />
                 </button>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-600 line-through">{task.text}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Added by {task.created_by} • {new Date(task.created_at).toLocaleDateString()}
+                  <p className="text-sm text-green-800 line-through font-medium">{task.label}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Completed {task.completed_at && new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {task.completed_by && ` by ${task.completed_by}`}
                   </p>
                 </div>
 
                 <button
                   onClick={() => handleDeleteTask(task.id)}
-                  className="p-1.5 hover:bg-red-50 rounded text-red-600 text-xs opacity-0 group-hover:opacity-100 transition"
-                  title="Delete"
+                  className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition opacity-0 group-hover:opacity-100"
+                  title="Delete task"
                 >
-                  🗑️
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -360,9 +402,12 @@ const handleToggleComplete = async (taskId: string) => {
 
       {/* Empty State */}
       {tasks.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <div className="text-4xl mb-2">✓</div>
-          <p className="text-sm">No tasks yet. Add one above to get started!</p>
+        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
+            <CheckCircle2 className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-sm font-medium text-gray-600 mb-1">No tasks yet</p>
+          <p className="text-xs text-gray-500">Add a task above to get started!</p>
         </div>
       )}
     </div>

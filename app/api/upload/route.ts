@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
     let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId, lead_source;
+    let customAnswers: Record<string, any> = {}; // ← ADD THIS LINE
 
     // Helper function to format category
     const formatCategory = (cat: string) => {
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
       companySlug = body.company_slug;
       companyId = body.company_id;
       lead_source = body.lead_source || null;
+      customAnswers = body.custom_answers || {}; // ← ADD THIS LINE
 
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
@@ -39,6 +41,9 @@ export async function POST(request: Request) {
       }
       if (lead_source) {
         console.log('🎯 Lead source:', lead_source);
+      }
+      if (Object.keys(customAnswers).length > 0) {
+        console.log('📝 Custom answers:', customAnswers);
       }
     } else {
       const formData = await request.formData();
@@ -66,13 +71,14 @@ export async function POST(request: Request) {
     const sql = neon(process.env.DATABASE_URL!);
     console.log(`🔄 Creating lead for ${name}...`);
 
+    // ← UPDATE THIS INSERT STATEMENT TO INCLUDE custom_answers
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, address_line_1, address_line_2, city, category, description, 
-        company_id, status, file_urls, lead_source
+        company_id, status, file_urls, lead_source, custom_answers
       ) VALUES (
         ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${category}, ${description},
-        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}
+        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}
       )
       RETURNING id
     `;
@@ -84,7 +90,6 @@ export async function POST(request: Request) {
     if (companySlug) {
       // Get contractor email from company
       const company = await sql`SELECT email, name FROM companies WHERE slug = ${companySlug}`;
-      
       if (company.length > 0 && company[0].email) {
         const contractorEmail = company[0].email;
         const companyName = company[0].name;
@@ -105,7 +110,6 @@ export async function POST(request: Request) {
         }).catch(err => {
           console.error('Failed to send contractor email alert:', err);
         });
-
         console.log(`📧 Contractor email alert queued for ${contractorEmail}`);
 
         // 🔥 NEW: Send confirmation email to customer
@@ -117,7 +121,6 @@ export async function POST(request: Request) {
         }).catch(err => {
           console.error('Failed to send customer confirmation:', err);
         });
-
         console.log(`📧 Customer confirmation queued for ${email}`);
       }
     }
@@ -128,6 +131,7 @@ export async function POST(request: Request) {
       leadId,
       filesUploaded: fileUrls.length
     });
+
   } catch (error) {
     console.error('❌ Upload error:', error);
     return NextResponse.json(

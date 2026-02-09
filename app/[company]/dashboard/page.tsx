@@ -16,6 +16,7 @@ interface Company {
   trial_ends_at?: string | null;
   status_options?: any[];
   form_categories?: any[];
+  custom_questions?: any[];
 }
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -32,7 +33,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       subscription_status,
       trial_ends_at,
       status_options,
-      form_categories
+      form_categories,
+      custom_questions
     FROM companies 
     WHERE slug = ${slug}
   `;
@@ -41,7 +43,14 @@ async function getCompany(slug: string): Promise<Company | null> {
     return null;
   }
 
-  return companies[0] as Company;
+  const company = companies[0];
+
+  // Parse JSON fields to ensure they're proper arrays
+  return {
+    ...company,
+    status_options: company.status_options || [],
+    form_categories: company.form_categories || [],
+  } as Company;
 }
 
 async function verifyAuth(companySlug: string) {

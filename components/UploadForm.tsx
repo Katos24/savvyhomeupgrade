@@ -829,20 +829,34 @@ export default function UploadForm({
                         </select>
                       )}
 
-                      {question.type === 'checkbox' && (
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            id={question.id}
-                            checked={customAnswers[question.id] || false}
-                            onChange={(e) => handleCustomAnswerChange(question.id, e.target.checked)}
-                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            disabled={uploading}
-                          />
-                          <label htmlFor={question.id} className="text-gray-700 cursor-pointer">
-                            Yes
-                          </label>
-                        </div>
+                  {question.type === 'checkbox' && (
+  <div className="space-y-2">
+    <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+      <input
+        type="radio"
+        name={question.id}
+        value="true"
+        checked={customAnswers[question.id] === true}
+        onChange={() => handleCustomAnswerChange(question.id, true)}
+        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+        disabled={uploading}
+      />
+      <span className="text-gray-700 font-medium">Yes</span>
+    </label>
+    <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+      <input
+        type="radio"
+        name={question.id}
+        value="false"
+        checked={customAnswers[question.id] === false}
+        onChange={() => handleCustomAnswerChange(question.id, false)}
+        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+        disabled={uploading}
+      />
+      <span className="text-gray-700 font-medium">No</span>
+    </label>
+  </div>
+
                       )}
                     </div>
                   ))}

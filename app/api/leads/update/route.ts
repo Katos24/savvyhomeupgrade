@@ -161,6 +161,13 @@ export async function POST(request: Request) {
       }
 
       const leadData = leadCheck[0];
+      // 🔥 Get company data including form_categories for task templates
+const companyResult = await sql`
+  SELECT form_categories 
+  FROM companies 
+  WHERE id = ${leadData.company_id}
+`;
+const formCategories = companyResult[0]?.form_categories || [];
 
       // 🔥 Get next project number for this company
       const maxProjectNumber = await sql`
@@ -222,6 +229,37 @@ export async function POST(request: Request) {
 
       const projectId = projectResult[0].id;
       const projectNumber = projectResult[0].project_number;
+
+      // 🔥 AUTO-CREATE TASKS FROM CATEGORY TEMPLATES
+const leadCategory = formCategories.find((cat: any) => cat.value === leadData.category);
+
+if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
+  console.log(`📋 Creating ${leadCategory.task_templates.length} tasks from template`);
+  
+  const sortedTasks = [...leadCategory.task_templates].sort((a: any, b: any) => a.order - b.order);
+  
+  for (const taskTemplate of sortedTasks) {
+    await sql`
+      INSERT INTO tasks (
+        project_id,
+        company_id,
+        label,
+        completed,
+        task_order,
+        created_at
+      ) VALUES (
+        ${projectId},
+        ${leadData.company_id},
+        ${taskTemplate.label},
+        false,
+        ${taskTemplate.order},
+        NOW()
+      )
+    `;
+  }
+  
+  console.log(`✅ Created ${sortedTasks.length} tasks`);
+}
 
       // Update lead with project_id
       await sql`
