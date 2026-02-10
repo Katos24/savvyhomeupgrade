@@ -36,6 +36,7 @@ export default async function SuccessPage({ params }: PageProps) {
   // Fetch company
   const company = await getCompany(companySlug);
   
+  
   if (!company) {
     notFound();
   }
@@ -65,7 +66,7 @@ export default async function SuccessPage({ params }: PageProps) {
 
         {/* Dynamic success message based on business type */}
         <p className="text-lg text-gray-600 mb-6">
-          {cta.successMessage}
+  {company.cta_success_message || cta.successMessage}
         </p>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">

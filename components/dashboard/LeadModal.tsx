@@ -317,6 +317,7 @@ export default function LeadModal({
                      #{lead.project_number}
                     </span>
                   )}
+{/* Status Badge - Shows ALWAYS (both leads and projects) */}
 {/* Status Badge - Smaller version */}
 <span 
   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold"

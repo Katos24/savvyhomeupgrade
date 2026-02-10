@@ -10,6 +10,7 @@ export default function AcceptInviteForm() {
 
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -51,6 +52,17 @@ export default function AcceptInviteForm() {
     validateToken();
   }, [token]);
 
+  // Format phone number as user types
+  const formatPhoneNumber = (value: string): string => {
+    const phoneNumber = value.replace(/\D/g, '');
+    const limitedNumber = phoneNumber.slice(0, 10);
+    
+    if (limitedNumber.length === 0) return '';
+    if (limitedNumber.length <= 3) return `(${limitedNumber}`;
+    if (limitedNumber.length <= 6) return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
+    return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6)}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -79,6 +91,7 @@ export default function AcceptInviteForm() {
         body: JSON.stringify({
           token,
           name: formData.name,
+          phone: formData.phone,
           password: formData.password
         })
       });
@@ -167,6 +180,20 @@ export default function AcceptInviteForm() {
                 className="form-input"
                 placeholder="John Smith"
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="form-label">
+                Phone Number <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
+                className="form-input"
+                placeholder="(555) 123-4567"
+                maxLength={14}
               />
             </div>
 

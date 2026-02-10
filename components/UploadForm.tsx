@@ -22,7 +22,9 @@ import {
   CheckCircle,
   AlertCircle,
   Building,
-  HelpCircle
+  HelpCircle,
+   Calendar,  
+  Clock  
 } from 'lucide-react';
 
 const libraries: ("places")[] = ["places"];
@@ -90,6 +92,8 @@ export default function UploadForm({
     category: '',
     description: '',
     lead_source: 'upload_form',
+      preferred_date: '', // ADD THIS LINE
+      preferred_time: '', // ADD THIS LINE
   });
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<File[]>([]);
@@ -462,6 +466,8 @@ export default function UploadForm({
           city: formData.city || null,
           category: formData.category,
           description: formData.description,
+          preferred_date: formData.preferred_date || null,
+  preferred_time: formData.preferred_time || null,
           file_urls: uploadedFiles,
           company_slug: finalCompanySlug,
           company_id: finalCompanyId,
@@ -704,6 +710,44 @@ export default function UploadForm({
               </select>
             </div>
 
+            {/* Preferred Date */}
+<div>
+  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+    <Calendar className="w-4 h-4" style={{ color: '#10b981' }} />
+    Preferred Date (Optional)
+  </label>
+  <input
+    type="date"
+    value={formData.preferred_date}
+    onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    disabled={uploading}
+    min={new Date().toISOString().split('T')[0]} // Prevents past dates
+  />
+  <p className="mt-2 text-xs text-gray-500">
+    Let us know when you'd prefer us to visit
+  </p>
+</div>
+
+{/* Preferred Time */}
+<div>
+  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+    <Clock className="w-4 h-4" style={{ color: '#3b82f6' }} />
+    Preferred Time (Optional)
+  </label>
+  <input
+    type="text"
+    value={formData.preferred_time}
+    onChange={(e) => setFormData({ ...formData, preferred_time: e.target.value })}
+    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    placeholder="e.g., 2:00 PM, Morning, Afternoon"
+    disabled={uploading}
+  />
+  <p className="mt-2 text-xs text-gray-500">
+    What time works best for you?
+  </p>
+</div>
+
             {/* Address */}
             {addressConfig.show && isLoaded && (
               <>
@@ -748,6 +792,8 @@ export default function UploadForm({
                 </div>
               </>
             )}
+
+            
 
             {/* Category */}
             <div>
@@ -863,6 +909,8 @@ export default function UploadForm({
                 </div>
               </div>
             )}
+
+
 
             {/* File Upload */}
             <div>

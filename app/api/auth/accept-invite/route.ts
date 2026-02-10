@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-    const { token, name, password } = await request.json();
+  const { token, name, phone, password } = await request.json();
 
     if (!token || !name || !password) {
       return NextResponse.json(
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
     await sql`
       UPDATE users
       SET name = ${name},
+          phone = ${phone || null},
           password = ${hashedPassword},
           is_active = true,
           invite_token = NULL,

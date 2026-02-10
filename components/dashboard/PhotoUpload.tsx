@@ -19,13 +19,10 @@ export default function PhotoUpload({
   currentUser, 
   onUploadComplete,
   beforePhotos = [],
-  afterPhotos = [],
   hasProject
 }: PhotoUploadProps) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [photoType, setPhotoType] = useState<'before' | 'after'>('before');
-  const [showPhotos, setShowPhotos] = useState(false);
   
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +54,7 @@ export default function PhotoUpload({
     try {
       const formData = new FormData();
       formData.append('leadId', leadId.toString());
-      formData.append('photoType', photoType);
+      formData.append('photoType', 'before'); // Always use 'before' in database
       formData.append('uploadType', 'photo');
       formData.append('userName', currentUser?.name || currentUser?.email || 'Unknown User');
 
@@ -83,7 +80,7 @@ export default function PhotoUpload({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(`${files.length} ${photoType} photo${files.length > 1 ? 's' : ''} uploaded!`);
+        toast.success(`${files.length} photo${files.length > 1 ? 's' : ''} uploaded!`);
         await onUploadComplete();
       } else {
         toast.error(result.error || 'Failed to upload photos');
@@ -105,125 +102,63 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-      <button
-        onClick={() => setShowPhotos(!showPhotos)}
-        className="w-full flex items-center justify-between p-3 hover:bg-blue-50/50 transition rounded-lg"
-      >
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-gray-900">Project Photos</h3>
-          {(beforePhotos.length > 0 || afterPhotos.length > 0) && !showPhotos && (
-            <span className="text-xs text-gray-600">
-              ({beforePhotos.length + afterPhotos.length})
-            </span>
-          )}
-        </div>
-        <span className={`text-lg transition-transform ${showPhotos ? 'rotate-180' : ''}`}>▼</span>
-      </button>
+    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200 shadow-sm p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xl">📸</span>
+        <h3 className="text-sm font-bold text-gray-900">Project Photos</h3>
+        {beforePhotos.length > 0 && (
+          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+            {beforePhotos.length}
+          </span>
+        )}
+      </div>
 
-      {showPhotos && (
-        <div className="px-3 pb-3 space-y-3">
-          {/* SEGMENTED CONTROL */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Type</label>
-            <div className="flex bg-gray-200 rounded-lg p-1">
-              <button
-                type="button"
-                onClick={() => setPhotoType('before')}
-                disabled={uploadingPhotos}
-                className={`flex-1 px-3 py-2 text-sm font-semibold rounded-md transition-all ${
-                  photoType === 'before'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Before
-              </button>
-              <button
-                type="button"
-                onClick={() => setPhotoType('after')}
-                disabled={uploadingPhotos}
-                className={`flex-1 px-3 py-2 text-sm font-semibold rounded-md transition-all ${
-                  photoType === 'after'
-                    ? 'bg-white text-green-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                After
-              </button>
-            </div>
-          </div>
-
-          {/* DISPLAY PHOTOS FOR ACTIVE TAB */}
-          {photoType === 'before' && beforePhotos.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-gray-900 mb-2">Before ({beforePhotos.length})</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {beforePhotos.map((photo: Photo, index) => {
-                  const photoUrl = typeof photo === 'string' ? photo : photo.url;
-                  const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
-                  
-                  return (
-                    <a
-                      key={index}
-                      href={photoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-blue-500 transition-all hover:shadow-md"
-                    >
-                      <img
-                        src={thumbnailUrl}
-                        alt={`Before ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                        <span className="text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                          🔍
-                        </span>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
+      <div className="space-y-4">
+          {/* PHOTO GALLERY */}
+          {beforePhotos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {beforePhotos.map((photo: Photo, index) => {
+                const photoUrl = typeof photo === 'string' ? photo : photo.url;
+                const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
+                
+                return (
+                  <a
+                    key={index}
+                    href={photoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all hover:shadow-lg"
+                  >
+                    <img
+                      src={thumbnailUrl}
+                      alt={`Photo ${index + 1}`}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                      <span className="text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                        🔍
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      #{index + 1}
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           )}
 
-          {photoType === 'after' && afterPhotos.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-gray-900 mb-2">After ({afterPhotos.length})</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {afterPhotos.map((photo: Photo, index) => {
-                  const photoUrl = typeof photo === 'string' ? photo : photo.url;
-                  const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
-                  
-                  return (
-                    <a
-                      key={index}
-                      href={photoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-green-500 transition-all hover:shadow-md"
-                    >
-                      <img
-                        src={thumbnailUrl}
-                        alt={`After ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
-                        <span className="text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                          🔍
-                        </span>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
+          {beforePhotos.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <span className="text-4xl mb-2 block">📷</span>
+              <p className="text-sm font-medium">No photos yet</p>
+              <p className="text-xs mt-1">Upload your first project photo below</p>
             </div>
           )}
 
-          {/* UPLOAD BUTTON - BELOW PHOTOS */}
+          {/* UPLOAD AREA */}
           <div className="space-y-2">
             <input
               ref={photoInputRef}
@@ -237,28 +172,30 @@ export default function PhotoUpload({
             />
             <label
               htmlFor={`photo-upload-${leadId}`}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 transition cursor-pointer ${
-                uploadingPhotos ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50'
+              className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-dashed transition cursor-pointer ${
+                uploadingPhotos 
+                  ? 'opacity-50 cursor-not-allowed border-gray-300 bg-gray-50' 
+                  : 'border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white'
               }`}
             >
-              <span className="text-xl">{photoType === 'before' ? '📸' : '✨'}</span>
-              <span className="font-semibold text-gray-700 text-sm">
-                {uploadingPhotos ? 'Uploading...' : `Upload ${photoType === 'before' ? 'Before' : 'After'} Photos`}
+              <span className="text-2xl">📸</span>
+              <span className="font-bold text-gray-700 text-sm">
+                {uploadingPhotos ? 'Uploading...' : 'Upload Photos'}
               </span>
             </label>
             <p className="text-xs text-gray-500 text-center">
-              JPG, PNG • Max 10MB each
+              JPG, PNG • Max 10MB each • Multiple files supported
             </p>
 
             {uploadingPhotos && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
+              <div className="space-y-2 bg-blue-50 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 text-xs text-blue-700 font-medium">
                   <div className="animate-spin">⏳</div>
                   <span>Uploading... {uploadProgress}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="w-full bg-blue-200 rounded-full h-2">
                   <div 
-                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -266,7 +203,6 @@ export default function PhotoUpload({
             )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
   );
 }

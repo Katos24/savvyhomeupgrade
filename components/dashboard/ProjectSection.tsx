@@ -23,7 +23,8 @@ type TabType = 'schedule' | 'quote' | 'payment' | 'tasks' | 'reminders' | 'photo
 
 export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
-  const [activeTab, setActiveTab] = useState<TabType>('schedule');
+  const [planningTab, setPlanningTab] = useState<'schedule' | 'tasks' | 'reminders'>('schedule');
+  const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'documents' | 'photos'>('quote');
 
   if (!lead) {
     return (
@@ -33,54 +34,57 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
     );
   }
 
-  const tabs = [
+  const planningTabs = [
     { 
-      id: 'schedule' as TabType, 
+      id: 'schedule' as const, 
       label: 'Schedule', 
       icon: Calendar,
-      iconColor: '#22c55e', // green
+      iconColor: '#22c55e',
       count: lead?.scheduled_date ? 1 : 0
     },
     { 
-      id: 'quote' as TabType, 
-      label: 'Quote', 
-      icon: FileText,
-      iconColor: '#3b82f6', // blue
-      count: lead?.quote_data?.length || 0
-    },
-    { 
-      id: 'payment' as TabType, 
-      label: 'Payment', 
-      icon: CreditCard,
-      iconColor: '#f59e0b', // amber
-      count: lead?.payment_amount ? 1 : 0
-    },
-    { 
-      id: 'tasks' as TabType, 
+      id: 'tasks' as const, 
       label: 'Tasks', 
       icon: CheckSquare,
-      iconColor: '#8b5cf6', // purple
+      iconColor: '#8b5cf6',
       count: lead?.tasks ? (Array.isArray(lead.tasks) ? lead.tasks.filter((t: any) => !t.completed).length : 0) : 0
     },
     { 
-      id: 'reminders' as TabType, 
+      id: 'reminders' as const, 
       label: 'Reminders', 
       icon: Bell,
-      iconColor: '#ef4444', // red
+      iconColor: '#ef4444',
       count: lead?.follow_up_date ? 1 : 0
     },
+  ];
+
+  const financialsTabs = [
     { 
-      id: 'documents' as TabType, 
+      id: 'quote' as const, 
+      label: 'Quote', 
+      icon: FileText,
+      iconColor: '#3b82f6',
+      count: lead?.quote_data?.length || 0
+    },
+    { 
+      id: 'payment' as const, 
+      label: 'Payment', 
+      icon: CreditCard,
+      iconColor: '#f59e0b',
+      count: lead?.payment_amount ? 1 : 0
+    },
+    { 
+      id: 'documents' as const, 
       label: 'Docs', 
       icon: FileIcon,
-      iconColor: '#6366f1', // indigo
+      iconColor: '#6366f1',
       count: lead?.documents ? (Array.isArray(lead.documents) ? lead.documents.length : JSON.parse(lead.documents).length) : 0
     },
     { 
-      id: 'photos' as TabType, 
+      id: 'photos' as const, 
       label: 'Photos', 
       icon: Image,
-      iconColor: '#ec4899', // pink
+      iconColor: '#ec4899',
       count: (() => {
         const beforePhotos = lead?.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
         const afterPhotos = lead?.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
@@ -109,122 +113,189 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
       )}
 
       {hasProject && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* MODERN TAB NAVIGATION */}
-          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <div 
-              className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1"
-              style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                WebkitOverflowScrolling: 'touch'
-              }}
-            >
-              {tabs.map((tab) => {
-                const IconComponent = tab.icon;
-                const isActive = activeTab === tab.id;
-                
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex-shrink-0 snap-start px-4 py-2.5 rounded-lg font-medium transition-all
-                      flex items-center gap-2.5 relative group
-                      ${isActive
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
-                        : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
-                      }
-                    `}
-                  >
-                    <IconComponent 
-                      className="w-4 h-4" 
-                      style={{ color: isActive ? '#ffffff' : tab.iconColor }}
-                    />
-                    <span className="text-sm">{tab.label}</span>
-                    {tab.count > 0 && (
-                      <span className={`
-                        min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold
-                        flex items-center justify-center
+        <div className="space-y-4">
+          
+          {/* PROJECT PLANNING SECTION */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+              <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Project Planning
+              </h3>
+              <div 
+                className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {planningTabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  const isActive = planningTab === tab.id;
+                  
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setPlanningTab(tab.id)}
+                      className={`
+                        flex-shrink-0 snap-start px-4 py-2.5 rounded-lg font-medium transition-all
+                        flex items-center gap-2.5 relative group
                         ${isActive
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700'
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
                         }
-                      `}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                      `}
+                    >
+                      <IconComponent 
+                        className="w-4 h-4" 
+                        style={{ color: isActive ? '#ffffff' : tab.iconColor }}
+                      />
+                      <span className="text-sm">{tab.label}</span>
+                      {tab.count > 0 && (
+                        <span className={`
+                          min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold
+                          flex items-center justify-center
+                          ${isActive
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700'
+                          }
+                        `}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* PLANNING CONTENT */}
+            <div className="bg-white">
+              {planningTab === 'schedule' && (
+                <SchedulingSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
+
+              {planningTab === 'tasks' && (
+                <TasksSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
+
+              {planningTab === 'reminders' && (
+                <RemindersSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
             </div>
           </div>
 
-          {/* ACTIVE TAB CONTENT */}
-          <div className="bg-white">
-            {activeTab === 'schedule' && (
-              <SchedulingSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
+          {/* FINANCIALS & DELIVERABLES SECTION */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+              <h3 className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                Financials & Deliverables
+              </h3>
+              <div 
+                className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {financialsTabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  const isActive = financialsTab === tab.id;
+                  
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFinancialsTab(tab.id)}
+                      className={`
+                        flex-shrink-0 snap-start px-4 py-2.5 rounded-lg font-medium transition-all
+                        flex items-center gap-2.5 relative group
+                        ${isActive
+                          ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' 
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700'
+                        }
+                      `}
+                    >
+                      <IconComponent 
+                        className="w-4 h-4" 
+                        style={{ color: isActive ? '#ffffff' : tab.iconColor }}
+                      />
+                      <span className="text-sm">{tab.label}</span>
+                      {tab.count > 0 && (
+                        <span className={`
+                          min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold
+                          flex items-center justify-center
+                          ${isActive
+                            ? 'bg-purple-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 group-hover:bg-purple-100 group-hover:text-purple-700'
+                          }
+                        `}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-            {activeTab === 'quote' && (
-              <QuoteSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
+            {/* FINANCIALS CONTENT */}
+            <div className="bg-white">
+              {financialsTab === 'quote' && (
+                <QuoteSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
 
-            {activeTab === 'payment' && (
-              <PaymentSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
+              {financialsTab === 'payment' && (
+                <PaymentSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
 
-            {activeTab === 'tasks' && (
-              <TasksSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
+              {financialsTab === 'documents' && (
+                <DocumentsSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
 
-            {activeTab === 'reminders' && (
-              <RemindersSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
-
-            {activeTab === 'documents' && (
-              <DocumentsSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
-
-            {activeTab === 'photos' && (
-              <PhotosSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                hasProject={hasProject}
-              />
-            )}
+              {financialsTab === 'photos' && (
+                <PhotosSection
+                  lead={lead}
+                  currentUser={currentUser}
+                  onRefresh={onRefresh}
+                  hasProject={hasProject}
+                />
+              )}
+            </div>
           </div>
+
         </div>
       )}
 

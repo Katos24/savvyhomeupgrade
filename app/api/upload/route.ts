@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-    let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId, lead_source;
+let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId, lead_source, preferred_date, preferred_time;
     let customAnswers: Record<string, any> = {}; // ← ADD THIS LINE
 
     // Helper function to format category
@@ -34,6 +34,8 @@ export async function POST(request: Request) {
       companyId = body.company_id;
       lead_source = body.lead_source || null;
       customAnswers = body.custom_answers || {}; // ← ADD THIS LINE
+      preferred_date = body.preferred_date || null;    // ADD THIS
+preferred_time = body.preferred_time || null;    // ADD THIS
 
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
@@ -75,10 +77,10 @@ export async function POST(request: Request) {
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, address_line_1, address_line_2, city, category, description, 
-        company_id, status, file_urls, lead_source, custom_answers
+        company_id, status, file_urls, lead_source, custom_answers, preferred_date, preferred_time
       ) VALUES (
         ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${category}, ${description},
-        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}
+        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}, ${preferred_date}, ${preferred_time}
       )
       RETURNING id
     `;

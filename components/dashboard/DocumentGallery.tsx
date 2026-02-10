@@ -19,77 +19,67 @@ export default function DocumentGallery({
   title, 
   documents, 
   emoji = "📄",
-  borderColor = "border-green-200" 
+  borderColor = "border-indigo-200" 
 }: DocumentGalleryProps) {
   if (!documents || documents.length === 0) return null;
 
-  const getDocIcon = (name: string, type: string) => {
+  const getDocIcon = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return '📕';
     if (ext === 'doc' || ext === 'docx') return '📘';
     if (ext === 'xls' || ext === 'xlsx') return '📊';
     if (ext === 'txt') return '📄';
-    if (type === 'contract') return '📋';
-    if (type === 'invoice') return '💰';
-    if (type === 'permit') return '🏛️';
     return '📎';
   };
 
-  const getDocTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      contract: 'Contract',
-      invoice: 'Invoice',
-      permit: 'Permit',
-      other: 'Document'
-    };
-    return labels[type] || 'Document';
-  };
-
   return (
-    <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border ${borderColor} p-3`}>
-      <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-        {emoji} {title} ({documents.length})
-      </h3>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 ${borderColor} p-4 shadow-sm`}>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xl">{emoji}</span>
+        <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
+          {documents.length}
+        </span>
+      </div>
+
+      <div className="space-y-2">
         {documents.map((doc, index) => (
           <a
             key={index}
             href={doc.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group bg-white rounded-lg border border-gray-200 hover:border-green-500 p-2 transition-all hover:shadow-md"
+            className="group block bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 p-3 transition-all hover:shadow-lg"
           >
-            <div className="flex items-start gap-2">
-              <div className="text-xl flex-shrink-0">
-                {getDocIcon(doc.name, doc.type)}
+            <div className="flex items-start gap-3">
+              {/* Icon */}
+              <div className="text-2xl flex-shrink-0">
+                {getDocIcon(doc.name)}
               </div>
               
+              {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-1 mb-0.5">
-                  <h4 className="font-semibold text-gray-900 text-xs truncate group-hover:text-green-600 transition">
-                    {doc.name}
-                  </h4>
-                  <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full font-medium flex-shrink-0">
-                    {getDocTypeLabel(doc.type)}
+                <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-indigo-600 transition mb-1">
+                  {doc.name}
+                </h4>
+                
+                {/* Meta info - stacks on mobile */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-gray-500">
+                  <span className="truncate">{doc.uploadedBy}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="text-gray-400">
+                    {new Date(doc.uploadedAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
                   </span>
                 </div>
-                
-                <p className="text-xs text-gray-500">
-                  {doc.uploadedBy}
-                </p>
-                
-                <p className="text-xs text-gray-400">
-                  {new Date(doc.uploadedAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
-                </p>
               </div>
               
-              <div className="text-gray-400 group-hover:text-green-600 transition flex-shrink-0">
+              {/* Download icon */}
+              <div className="text-gray-400 group-hover:text-indigo-600 transition flex-shrink-0 text-xl">
                 ⬇️
               </div>
             </div>
