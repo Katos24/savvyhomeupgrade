@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 
-
 type TrialBannerProps = {
   subscriptionStatus: string;
   trialEndsAt: string | null;
@@ -34,10 +33,10 @@ export default function TrialBanner({
               🚫 Trial Expired • Subscribe to continue
             </p>
             <button
-              onClick={() => router.push('/subscribe')}
-              className="bg-white text-red-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap"
+              onClick={() => router.push(`/${companySlug}/admin/settings`)}
+              className="bg-white text-red-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-red-50 transition"
             >
-              Subscribe
+              Manage Billing
             </button>
           </div>
         </div>
@@ -55,10 +54,10 @@ export default function TrialBanner({
               ⚠️ Trial ends in <span className="font-bold">{daysLeft}</span> day{daysLeft !== 1 ? 's' : ''}
             </p>
             <button
-              onClick={() => router.push('/subscribe')}
-              className="bg-white text-orange-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap"
+              onClick={() => router.push(`/${companySlug}/admin/settings`)}
+              className="bg-white text-orange-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-orange-50 transition"
             >
-              Subscribe
+              Subscribe Now
             </button>
           </div>
         </div>
@@ -75,10 +74,10 @@ export default function TrialBanner({
             🎉 Free Trial • <span className="font-bold">{daysLeft}</span> days left
           </p>
           <button
-            onClick={() => router.push('/subscribe')}
+            onClick={() => router.push(`/${companySlug}/admin/settings`)}
             className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-purple-600 transition"
           >
-            View Plans
+            Manage Billing
           </button>
         </div>
       </div>

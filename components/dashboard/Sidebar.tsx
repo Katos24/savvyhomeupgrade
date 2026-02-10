@@ -52,13 +52,13 @@ export default function Sidebar({
       exactMatch: false,
       color: '#4ade80' // green-400
     },
-    { 
-      href: `/${companySlug}/admin/team`, 
-      icon: Settings, 
-      label: 'Admin',
-      exactMatch: false,
-      color: '#c084fc' // purple-400
-    },
+   { 
+  href: `/${companySlug}/admin/settings`, 
+  icon: Settings, 
+  label: 'Settings',
+  exactMatch: false,
+  color: '#c084fc'
+},
   ];
 
   // Close sidebar when route changes
