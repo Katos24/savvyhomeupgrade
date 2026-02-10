@@ -11,7 +11,8 @@ import {
   Trash2,
   GripVertical,
   Save,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 
@@ -45,6 +46,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   );
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCategory, setNewCategory] = useState({ label: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'task'; index?: number; id?: string; label?: string } | null>(null);
   
   // Task Template Management
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
@@ -57,8 +59,15 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       setTimeout(() => setError(''), 3000);
       return;
     }
-    setCategories(categories.filter((_, i) => i !== index));
-    setUseDefaults(false);
+    setDeleteConfirm({ type: 'category', index, label: categories[index].label });
+  };
+
+  const confirmRemoveCategory = () => {
+    if (deleteConfirm?.type === 'category' && deleteConfirm.index !== undefined) {
+      setCategories(categories.filter((_, i) => i !== deleteConfirm.index));
+      setUseDefaults(false);
+      setDeleteConfirm(null);
+    }
   };
 
   const handleAddCategory = () => {
@@ -119,8 +128,15 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     setNewTaskLabel('');
   };
 
-  const removeTask = (taskId: string) => {
-    setEditingTasks(editingTasks.filter(t => t.id !== taskId));
+  const removeTask = (taskId: string, taskLabel: string) => {
+    setDeleteConfirm({ type: 'task', id: taskId, label: taskLabel });
+  };
+
+  const confirmRemoveTask = () => {
+    if (deleteConfirm?.type === 'task' && deleteConfirm.id) {
+      setEditingTasks(editingTasks.filter(t => t.id !== deleteConfirm.id));
+      setDeleteConfirm(null);
+    }
   };
 
   const updateTaskLabel = (taskId: string, newLabel: string) => {
@@ -371,6 +387,43 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         </div>
       </div>
 
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  Delete {deleteConfirm.type === 'category' ? 'Category' : 'Task'}?
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Are you sure you want to delete "<span className="font-semibold">{deleteConfirm.label}</span>"? 
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteConfirm.type === 'category' ? confirmRemoveCategory : confirmRemoveTask}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TASK TEMPLATE EDITOR MODAL - Mobile Optimized */}
       {editingCategoryIndex !== null && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
@@ -461,7 +514,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
 
                       {/* Delete Button */}
                       <button
-                        onClick={() => removeTask(task.id)}
+                        onClick={() => removeTask(task.id, task.label)}
                         className="sm:opacity-0 sm:group-hover:opacity-100 text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
