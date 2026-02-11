@@ -18,7 +18,9 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
+    phone: '',
     role: 'member' as 'admin' | 'member'
   });
   const [saving, setSaving] = useState(false);
@@ -43,6 +45,11 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
   }
 
   async function handleSendInvite() {
+    if (!formData.name) {
+      setError('Name is required');
+      return;
+    }
+    
     if (!formData.email) {
       setError('Email is required');
       return;
@@ -65,11 +72,11 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
       });
       const result = await response.json();
       if (response.ok && result.success) {
-        setSuccess(`✅ Invitation sent to ${formData.email}!`);
-        setFormData({ email: '', role: 'member' });
+        setSuccess(`✅ Invitation sent to ${formData.name} (${formData.email})!`);
+        setFormData({ name: '', email: '', phone: '', role: 'member' });
         setShowInviteModal(false);
         setTimeout(() => setSuccess(''), 5000);
-        await fetchTeamData();
+        await fetchTeamData(); // Refresh team list
       } else setError(result.error || 'Failed to send invitation');
     } catch (error) {
       console.error('Invite error:', error);
@@ -237,58 +244,91 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
 
       {/* INVITE MODAL */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-4 sm:p-6 relative" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setShowInviteModal(false)}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-slate-600 text-2xl sm:text-3xl leading-none"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl leading-none"
             >
               ×
             </button>
-            <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-slate-900">
-              <UserPlus className="w-6 h-6 text-blue-600" />
-              Invite Team Member
-            </h3>
-            <div className="space-y-3 sm:space-y-4">
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">📧 Invite Team Member</h3>
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="John Doe"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="teammate@example.com"
-                  className="w-full border-2 border-slate-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  autoFocus
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-slate-500 mt-1">They'll receive an email to set up their account</p>
+                <p className="text-xs text-gray-500 mt-1">They'll receive an email to set up their account</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Role *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const input = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                    if (input.length <= 10) {
+                      // Format as (XXX) XXX-XXXX
+                      let formatted = input;
+                      if (input.length > 6) {
+                        formatted = `(${input.slice(0, 3)}) ${input.slice(3, 6)}-${input.slice(6, 10)}`;
+                      } else if (input.length > 3) {
+                        formatted = `(${input.slice(0, 3)}) ${input.slice(3)}`;
+                      } else if (input.length > 0) {
+                        formatted = `(${input}`;
+                      }
+                      setFormData({...formData, phone: formatted});
+                    }
+                  }}
+                  placeholder="(555) 123-4567"
+                  maxLength={14}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">US format: (XXX) XXX-XXXX</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
-                  className="w-full border-2 border-slate-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="member">👤 Member - Can view and manage leads</option>
                   <option value="admin">⚙️ Admin - Can manage team and settings</option>
                 </select>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs sm:text-sm text-blue-800">
-                <strong>💡 How it works:</strong> They'll get an email with a link to create their account and set their own password.
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                💡 <strong>How it works:</strong> They'll get an email with a link to create their account and set their own password.
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 mt-2">
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-semibold transition text-sm"
+                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSendInvite}
                   disabled={saving}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 text-sm shadow-sm"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
                 >
-                  {saving ? 'Sending...' : 'Send Invite'}
+                  {saving ? '📧 Sending...' : '✅ Send Invite'}
                 </button>
               </div>
             </div>

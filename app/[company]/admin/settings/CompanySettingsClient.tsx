@@ -10,8 +10,10 @@ import EmailTemplatesTab from './tabs/EmailTemplatesTab';
 import CategoriesTab from './tabs/CategoriesTab';
 import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
+import QuoteTemplatesTab from './tabs/QuoteTemplatesTab';
 
-type Tab = 'general' | 'form' | 'pipeline' | 'email-templates' | 'categories' | 'team' | 'billing';
+
+type Tab = 'general' | 'form' | 'pipeline' | 'email-templates' | 'categories' | 'quote-templates' | 'team' | 'billing';
 
 export default function CompanySettingsClient({ 
   company, 
@@ -30,6 +32,7 @@ export default function CompanySettingsClient({
     { id: 'pipeline' as Tab, label: 'Pipeline', icon: Workflow },
     { id: 'email-templates' as Tab, label: 'Email Templates', icon: Mail },
     { id: 'categories' as Tab, label: 'Categories', icon: Grid },
+    { id: 'quote-templates' as Tab, label: 'Quote Templates', icon: FileText },
     { id: 'team' as Tab, label: 'Team', icon: Settings },
     { id: 'billing' as Tab, label: 'Billing', icon: Settings },
   ];
@@ -170,6 +173,7 @@ export default function CompanySettingsClient({
         {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
         {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
         {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
+        {activeTab === 'quote-templates' && <QuoteTemplatesTab company={company} currentUser={currentUser} />}
         {activeTab === 'team' && <TeamTab company={company} currentUser={currentUser} />}
         {activeTab === 'billing' && <BillingTab company={company} currentUser={currentUser} />}
       </div>

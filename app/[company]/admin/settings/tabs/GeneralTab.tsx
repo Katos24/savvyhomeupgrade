@@ -380,23 +380,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             </div>
           </div>
 
-          {/* Preview */}
-          <div className="mt-4">
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Email Header Preview</label>
-            <div 
-              className="rounded-lg p-6 sm:p-8 text-center"
-              style={{ background: `linear-gradient(135deg, ${formData.email_brand_color_1} 0%, ${formData.email_brand_color_2} 100%)` }}
-            >
-              {logoPreview && (
-                <img 
-                  src={logoPreview} 
-                  alt="Logo preview" 
-                  className="h-10 sm:h-12 mx-auto mb-3 object-contain"
-                />
-              )}
-              <h2 className="text-white text-xl sm:text-2xl font-bold drop-shadow-lg">{formData.name}</h2>
-            </div>
-          </div>
+
         </div>
 
         {/* Save Button - Mobile Full Width */}

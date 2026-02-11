@@ -29,9 +29,11 @@ export default function TeamAdminPage({
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    role: 'member' as 'admin' | 'member'
-  });
+  name: '',
+  email: '',
+  phone: '',
+  role: 'member' as 'admin' | 'member'
+});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -70,40 +72,45 @@ export default function TeamAdminPage({
   }
 
   async function handleSendInvite() {
-    if (!formData.email) {
-      setError('Email is required');
-      return;
-    }
-
-    const emailExists = teamMembers.some(m => m.email.toLowerCase() === formData.email.toLowerCase());
-    if (emailExists) {
-      setError('This email is already a team member');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-
-    try {
-      const response = await fetch(`/api/company/${companySlug}/team/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        setSuccess(`✅ Invitation sent to ${formData.email}!`);
-        setFormData({ email: '', role: 'member' });
-        setShowInviteModal(false);
-        setTimeout(() => setSuccess(''), 5000);
-      } else setError(result.error || 'Failed to send invitation');
-    } catch (error) {
-      console.error('Invite error:', error);
-      setError('Failed to send invitation');
-    } finally {
-      setSaving(false);
-    }
+  if (!formData.name) {
+    setError('Name is required');
+    return;
   }
+  
+  if (!formData.email) {
+    setError('Email is required');
+    return;
+  }
+
+  const emailExists = teamMembers.some(m => m.email.toLowerCase() === formData.email.toLowerCase());
+  if (emailExists) {
+    setError('This email is already a team member');
+    return;
+  }
+
+  setSaving(true);
+  setError('');
+
+  try {
+    const response = await fetch(`/api/company/${companySlug}/team/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const result = await response.json();
+    if (response.ok && result.success) {
+      setSuccess(`✅ Invitation sent to ${formData.name} (${formData.email})!`);
+      setFormData({ name: '', email: '', phone: '', role: 'member' });
+      setShowInviteModal(false);
+      setTimeout(() => setSuccess(''), 5000);
+    } else setError(result.error || 'Failed to send invitation');
+  } catch (error) {
+    console.error('Invite error:', error);
+    setError('Failed to send invitation');
+  } finally {
+    setSaving(false);
+  }
+}
 
   async function handleUpdateRole(userId: number, newRole: 'admin' | 'member', memberName: string) {
     try {
@@ -321,63 +328,82 @@ export default function TeamAdminPage({
       </main>
 
       {/* INVITE MODAL */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl leading-none"
-            >
-              ×
-            </button>
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">📧 Invite Team Member</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="teammate@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  autoFocus
-                />
-                <p className="text-xs text-gray-500 mt-1">They'll receive an email to set up their account</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="member">👤 Member - Can view and manage leads</option>
-                  <option value="admin">⚙️ Admin - Can manage team and settings</option>
-                </select>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                💡 <strong>How it works:</strong> They'll get an email with a link to create their account and set their own password.
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                <button
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendInvite}
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
-                >
-                  {saving ? '📧 Sending...' : '✅ Send Invite'}
-                </button>
-              </div>
-            </div>
-          </div>
+{showInviteModal && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
+    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setShowInviteModal(false)}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl leading-none"
+      >
+        ×
+      </button>
+      <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">📧 Invite Team Member</h3>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            placeholder="John Doe"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          />
         </div>
-      )}
-
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            placeholder="teammate@example.com"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">They'll receive an email to set up their account</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            placeholder="+1 (555) 123-4567"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+          <select
+            value={formData.role}
+            onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="member">👤 Member - Can view and manage leads</option>
+            <option value="admin">⚙️ Admin - Can manage team and settings</option>
+          </select>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          💡 <strong>How it works:</strong> They'll get an email with a link to create their account and set their own password.
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 mt-2">
+          <button
+            onClick={() => setShowInviteModal(false)}
+            className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSendInvite}
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
+          >
+            {saving ? '📧 Sending...' : '✅ Send Invite'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

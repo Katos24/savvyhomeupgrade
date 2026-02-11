@@ -68,7 +68,7 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
     },
     { 
       id: 'payment' as const, 
-      label: 'Payment', 
+      label: 'Payment Status', 
       icon: CreditCard,
       iconColor: '#f59e0b',
       count: lead?.payment_amount ? 1 : 0

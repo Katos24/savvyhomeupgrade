@@ -7,11 +7,11 @@ import { cookies } from 'next/headers';
 export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug: companySlug } = await params;
-    const { email, role } = await request.json();
+    const { name, email, phone, role } = await request.json();
 
-    if (!email || !role) {
+    if (!name || !email || !role) {
       return NextResponse.json(
-        { success: false, error: 'Email and role are required' },
+        { success: false, error: 'Name, email and role are required' },
         { status: 400 }
       );
     }
@@ -52,7 +52,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     // Create user with invite token (account not active yet)
     await sql`
       INSERT INTO users (
+        name,
         email, 
+        phone,
         company_id, 
         role, 
         invite_token, 
@@ -60,7 +62,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
         is_active,
         created_at
       ) VALUES (
+        ${name},
         ${email.toLowerCase()},
+        ${phone || null},
         ${company.id},
         ${role},
         ${inviteToken},

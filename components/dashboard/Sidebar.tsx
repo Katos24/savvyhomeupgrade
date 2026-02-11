@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { LayoutGrid, Table2, Calendar, Settings, LogOut, X } from 'lucide-react';
+import { LayoutGrid, Table2, Calendar, Settings, LogOut, X, User } from 'lucide-react';
 
 type SidebarProps = {
   companySlug: string;
@@ -52,13 +52,13 @@ export default function Sidebar({
       exactMatch: false,
       color: '#4ade80' // green-400
     },
-   { 
-  href: `/${companySlug}/admin/settings`, 
-  icon: Settings, 
-  label: 'Settings',
-  exactMatch: false,
-  color: '#c084fc'
-},
+    { 
+      href: `/${companySlug}/admin/settings`, 
+      icon: Settings, 
+      label: 'Settings',
+      exactMatch: false,
+      color: '#c084fc'
+    },
   ];
 
   // Close sidebar when route changes
@@ -196,10 +196,15 @@ export default function Sidebar({
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-white/20">
+        <div className="p-4 border-t border-white/20 space-y-2">
           {currentUser && (
             <>
-              <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-white/5">
+              {/* User Profile Card - Clickable */}
+              <Link
+                href={`/${companySlug}/profile`}
+                onClick={onClose}
+                className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all group cursor-pointer"
+              >
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg">
                   {currentUser?.name?.charAt(0) || '?'}
                 </div>
@@ -207,7 +212,10 @@ export default function Sidebar({
                   <p className="text-white font-semibold text-sm truncate">{currentUser?.name}</p>
                   <p className="text-white/60 text-xs truncate">{currentUser?.email}</p>
                 </div>
-              </div>
+                <User className="w-4 h-4 text-white/40 group-hover:text-white/60 transition-colors" />
+              </Link>
+
+              {/* Logout Button */}
               <button
                 onClick={() => {
                   onLogout();

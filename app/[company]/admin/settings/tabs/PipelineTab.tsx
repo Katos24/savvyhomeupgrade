@@ -41,6 +41,8 @@ export default function PipelineTab({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
 
   const [statuses, setStatuses] = useState<StatusOption[]>(
     company.status_options?.length ? company.status_options : DEFAULT_STATUSES
