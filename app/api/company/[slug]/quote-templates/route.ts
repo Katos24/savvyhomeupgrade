@@ -7,7 +7,7 @@ const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ company: string }> }
+  { params }: { params: Promise<{ slug: string }> }  // ← CHANGED
 ) {
   try {
     const resolvedParams = await params;
@@ -24,7 +24,7 @@ export async function GET(
     const companies = await sql`
       SELECT id, quote_templates 
       FROM companies 
-      WHERE slug = ${resolvedParams.company}
+      WHERE slug = ${resolvedParams.slug}  // ← CHANGED
       LIMIT 1
     `;
 
@@ -48,7 +48,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ company: string }> }
+  { params }: { params: Promise<{ slug: string }> }  // ← CHANGED
 ) {
   try {
     const resolvedParams = await params;
@@ -78,7 +78,7 @@ export async function POST(
     const companies = await sql`
       SELECT id, quote_templates 
       FROM companies 
-      WHERE slug = ${resolvedParams.company}
+      WHERE slug = ${resolvedParams.slug}  // ← CHANGED
       LIMIT 1
     `;
 

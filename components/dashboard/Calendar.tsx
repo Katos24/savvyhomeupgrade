@@ -531,7 +531,7 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
   );
 }
 
-// Week View Component
+// Week View Component - MOBILE FRIENDLY VERSION
 type WeekViewProps = {
   currentDate: Date;
   events: CalendarEvent[];
@@ -545,74 +545,196 @@ type WeekViewProps = {
 
 function WeekView({ currentDate, getEventsForDate, getWeekDays, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: WeekViewProps) {
   const weekDays = getWeekDays(currentDate);
-  
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+  // Contractor hours: 7 AM to 7 PM
+  const timeSlots = [];
+  for (let hour = 7; hour <= 19; hour++) {
+    timeSlots.push(hour);
+  }
+
+  const getEventTimeSlot = (time: string) => {
+    if (!time) return null;
+    const [hours] = time.split(':');
+    return parseInt(hours);
+  };
+
   return (
-    <div className="grid grid-cols-7 gap-1 sm:gap-3">
-      {weekDays.map((date: Date, i: number) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-        
-        const dayEvents = getEventsForDate(date);
-        const isToday = dateStr === today;
+    <>
+      {/* MOBILE VIEW - List of days with events */}
+      <div className="lg:hidden space-y-4">
+        {weekDays.map((date: Date, dayIndex: number) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
+          const isToday = dateStr === today;
+          const dayEvents = getEventsForDate(date).sort((a, b) => {
+            const timeA = a.scheduled_time || '00:00';
+            const timeB = b.scheduled_time || '00:00';
+            return timeA.localeCompare(timeB);
+          });
 
-        return (
-          <div key={i} className="space-y-2">
-            <div className={`text-center py-2 rounded-lg ${
-              isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-            }`}>
-              <div className="text-[10px] sm:text-xs font-medium">
-                {date.toLocaleDateString('en-US', { weekday: 'short' })}
-              </div>
-              <div className="text-sm sm:text-lg font-bold">{date.getDate()}</div>
-            </div>
-
-            <div className="space-y-1 sm:space-y-2">
-              {dayEvents.length === 0 ? (
-                <div className="hidden sm:block text-center text-gray-400 text-xs sm:text-sm py-2 sm:py-4">
-                  No jobs
+          return (
+            <div key={dayIndex} className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+              {/* Day header */}
+              <div className={`p-3 border-b-2 ${
+                isToday ? 'bg-blue-600 border-blue-700' : 'bg-gray-100 border-gray-300'
+              }`}>
+                <div className={`text-sm font-medium ${isToday ? 'text-blue-100' : 'text-gray-600'}`}>
+                  {date.toLocaleDateString('en-US', { weekday: 'long' })}
                 </div>
-              ) : (
-                dayEvents.map((event: CalendarEvent) => {
-                  const statusToUse = event.job_status || event.status || 'new';
-                  const statusConfig = getStatusConfig(statusToUse);
-                  const bgColor = getStatusColorHex(statusConfig.color);
-                  
-                  return (
-                    <button
-                      key={event.id}
-                      onClick={() => onSelectLead(event)}
-                      className="w-full text-left p-1 sm:p-3 rounded-lg border-2 hover:shadow-md transition text-white"
-                      style={{ 
-                        backgroundColor: bgColor,
-                        borderColor: bgColor
-                      }}
-                    >
-                      <div className="font-semibold text-xs sm:text-sm mb-1 truncate">
-                        {event.name}
-                      </div>
-                      {event.scheduled_time && (
-                        <div className="text-[10px] sm:text-xs opacity-90 mb-1">
-                          ⏰ {formatTime(event.scheduled_time)}
-                        </div>
-                      )}
-                      {event.assigned_to && (
-                        <div className="hidden sm:block text-xs opacity-90">
-                          👤 {event.assigned_to}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })
-              )}
+                <div className={`text-2xl font-bold ${isToday ? 'text-white' : 'text-gray-900'}`}>
+                  {date.getDate()}
+                </div>
+              </div>
+
+              {/* Events for this day */}
+              <div className="p-3">
+                {dayEvents.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-4">No jobs scheduled</p>
+                ) : (
+                  <div className="space-y-2">
+                    {dayEvents.map((event: CalendarEvent) => {
+                      const statusToUse = event.job_status || event.status || 'new';
+                      const statusConfig = getStatusConfig(statusToUse);
+                      const bgColor = getStatusColorHex(statusConfig.color);
+
+                      return (
+                        <button
+                          key={event.id}
+                          onClick={() => onSelectLead(event)}
+                          className="w-full text-left p-3 rounded-lg border-2 text-white hover:shadow-md transition-all"
+                          style={{ 
+                            backgroundColor: bgColor,
+                            borderColor: bgColor
+                          }}
+                        >
+                          <div className="font-bold text-base mb-1">{event.name}</div>
+                          <div className="text-sm opacity-90">
+                            ⏰ {formatTime(event.scheduled_time)}
+                          </div>
+                          {event.assigned_to && (
+                            <div className="text-sm opacity-90 mt-1">
+                              👤 {event.assigned_to}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* DESKTOP VIEW - Grid with time slots */}
+      <div className="hidden lg:block bg-white rounded-lg border border-gray-300 overflow-hidden">
+        {/* Week header */}
+        <div className="grid border-b-2 border-gray-300 bg-gray-50" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          <div className="p-2 text-center text-xs font-bold text-gray-600 border-r border-gray-300">
+            Time
           </div>
-        );
-      })}
-    </div>
+          {weekDays.map((date: Date, i: number) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const isToday = dateStr === today;
+
+            return (
+              <div 
+                key={i} 
+                className={`p-2 text-center border-r border-gray-300 last:border-r-0 ${
+                  isToday ? 'bg-blue-100' : ''
+                }`}
+              >
+                <div className="text-xs font-medium text-gray-600">
+                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                </div>
+                <div className={`text-base font-bold ${
+                  isToday ? 'text-blue-600' : 'text-gray-900'
+                }`}>
+                  {date.getDate()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Time slots grid */}
+        <div>
+          {timeSlots.map((hour) => (
+            <div 
+              key={hour} 
+              className="grid border-b border-gray-200" 
+              style={{ 
+                gridTemplateColumns: '60px repeat(7, 1fr)',
+                minHeight: '50px' 
+              }}
+            >
+              {/* Time label */}
+              <div className="p-1 text-xs font-semibold text-gray-600 border-r border-gray-300 bg-gray-50 flex items-start justify-center">
+                {hour % 12 || 12}{hour < 12 ? 'a' : 'p'}
+              </div>
+
+              {/* Day columns */}
+              {weekDays.map((date: Date, dayIndex: number) => {
+                const dayEvents = getEventsForDate(date);
+                const hourEvents = dayEvents.filter(event => {
+                  const eventHour = getEventTimeSlot(event.scheduled_time);
+                  return eventHour === hour;
+                });
+
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                const isToday = dateStr === today;
+
+                return (
+                  <div 
+                    key={dayIndex} 
+                    className={`p-0.5 border-r border-gray-200 last:border-r-0 ${
+                      isToday ? 'bg-blue-50/30' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {hourEvents.map((event: CalendarEvent) => {
+                      const statusToUse = event.job_status || event.status || 'new';
+                      const statusConfig = getStatusConfig(statusToUse);
+                      const bgColor = getStatusColorHex(statusConfig.color);
+
+                      return (
+                        <button
+                          key={event.id}
+                          onClick={() => onSelectLead(event)}
+                          className="w-full text-left px-1.5 py-1 rounded text-white text-xs font-medium border-l-2 hover:shadow-md hover:scale-[1.01] transition-all mb-0.5"
+                          style={{ 
+                            backgroundColor: bgColor,
+                            borderLeftColor: bgColor,
+                            opacity: 0.95
+                          }}
+                          title={`${event.name} - ${formatTime(event.scheduled_time)}${event.assigned_to ? ' - ' + event.assigned_to : ''}`}
+                        >
+                          <div className="font-bold truncate leading-tight">{event.name}</div>
+                          {event.scheduled_time && (
+                            <div className="opacity-90 truncate leading-tight text-[10px]">
+                              {formatTime(event.scheduled_time).replace(' ', '')}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
