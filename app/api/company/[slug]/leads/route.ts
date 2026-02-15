@@ -50,6 +50,8 @@ export async function GET(request: Request, { params }: Props) {
         p.notes as project_notes,
         p.tasks as project_tasks,
          p.follow_up_date, 
+         p.internal_notes as project_internal_notes,
+
     p.follow_up_notes  
 
       FROM leads l

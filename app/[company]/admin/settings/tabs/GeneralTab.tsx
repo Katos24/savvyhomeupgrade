@@ -220,24 +220,6 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
           />
         </div>
 
-        {/* Business Type */}
-        <div>
-          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <Briefcase className="w-4 h-4" />
-            Business Type
-          </label>
-          <select
-            value={formData.business_type}
-            onChange={(e) => setFormData({ ...formData, business_type: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
-          >
-            {businessTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* Email */}
         <div>

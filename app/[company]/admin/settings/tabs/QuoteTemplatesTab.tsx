@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Copy, Save, X, AlertCircle, FileText, DollarSign } from 'lucide-react';
-import { getTemplatesByCategory, getAllTemplates, QuoteTemplate } from '@/lib/quoteTemplates';
+import { Plus, Edit2, Trash2, Save, X, AlertCircle, FileText, DollarSign } from 'lucide-react';
 
 type QuoteTemplatesTabProps = {
   company: any;
@@ -37,6 +36,7 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
   const [success, setSuccess] = useState('');
   
   // Editor state
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null);
   const [templateName, setTemplateName] = useState('');
@@ -50,9 +50,6 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
   });
 
   const categories = company.form_categories || [];
-  const hardcodedTemplates = selectedCategory === 'all' 
-    ? getAllTemplates() 
-    : getTemplatesByCategory(selectedCategory);
 
   useEffect(() => {
     loadCustomTemplates();
@@ -73,35 +70,39 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
     }
   }
 
-  function openEditor(template?: CustomTemplate | QuoteTemplate, isHardcoded = false) {
+  function startCreateTemplate() {
+    setShowCategorySelector(true);
+  }
+
+  function selectCategoryAndContinue(category: string) {
+    setTemplateCategory(category);
+    setShowCategorySelector(false);
+    setShowEditor(true);
+  }
+
+  function openEditor(template?: CustomTemplate) {
     if (template) {
+      // Editing existing template
       const items = template.items.map((item, idx) => ({
         id: `item_${Date.now()}_${idx}`,
         description: item.description,
         quantity: item.quantity || 1,
-        unitPrice: item.amount / (item.quantity || 1),
+        unitPrice: item.unitPrice,
         amount: item.amount
       }));
 
-      setEditingTemplate(isHardcoded ? null : (template as CustomTemplate));
-      setTemplateName(isHardcoded ? `${template.name} (Copy)` : template.name);
+      setEditingTemplate(template);
+      setTemplateName(template.name);
       setTemplateCategory(template.category);
       setTemplateNotes(template.notes || '');
       setLineItems(items);
-    } else {
-      setEditingTemplate(null);
-      setTemplateName('');
-      setTemplateCategory(categories[0]?.value || '');
-      setTemplateNotes('');
-      setLineItems([]);
+      setShowEditor(true);
     }
-    
-    setShowEditor(true);
-    setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
   }
 
   function closeEditor() {
     setShowEditor(false);
+    setShowCategorySelector(false);
     setEditingTemplate(null);
     setTemplateName('');
     setTemplateCategory('');
@@ -153,11 +154,6 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
   async function saveTemplate() {
     if (!templateName.trim()) {
       setError('Template name is required');
-      return;
-    }
-
-    if (!templateCategory) {
-      setError('Category is required');
       return;
     }
 
@@ -268,7 +264,7 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
           </p>
         </div>
         <button
-          onClick={() => openEditor()}
+          onClick={startCreateTemplate}
           className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm text-sm sm:text-base"
         >
           <Plus className="w-4 h-4" />
@@ -308,12 +304,12 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
         </select>
       </div>
 
-      {/* Custom Templates Section */}
-      {filteredCustomTemplates.length > 0 && (
+      {/* Templates Grid */}
+      {filteredCustomTemplates.length > 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
-            Your Custom Templates ({filteredCustomTemplates.length})
+            Your Templates ({filteredCustomTemplates.length})
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -364,64 +360,60 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
             ))}
           </div>
         </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <FileText className="w-8 h-8 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No Templates Yet</h3>
+          <p className="text-slate-600 mb-4">
+            {selectedCategory === 'all' 
+              ? 'Create your first quote template to speed up your estimates'
+              : `No templates for ${categories.find((c: any) => c.value === selectedCategory)?.label || 'this category'} yet`
+            }
+          </p>
+          <button
+            onClick={startCreateTemplate}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create Template
+          </button>
+        </div>
       )}
 
-      {/* Hardcoded Templates (Default Library) */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              📚 Template Library ({hardcodedTemplates.length})
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Pre-built templates you can copy and customize
-            </p>
+      {/* CATEGORY SELECTOR MODAL */}
+      {showCategorySelector && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h3 className="text-xl font-bold text-white">Select Category</h3>
+              <button
+                onClick={closeEditor}
+                className="text-white hover:bg-white/20 p-2 rounded-lg transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4">Which category is this template for?</p>
+              <div className="space-y-2">
+                {categories.map((cat: any) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => selectCategoryAndContinue(cat.value)}
+                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 rounded-xl transition text-left"
+                  >
+                    <span className="text-2xl">{cat.emoji}</span>
+                    <span className="font-semibold text-slate-900">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        
-        {hardcodedTemplates.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hardcodedTemplates.map(template => (
-              <div key={template.id} className="bg-gradient-to-br from-slate-50 to-gray-50 border-2 border-slate-200 rounded-xl p-4 hover:shadow-md transition">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate">{template.name}</h4>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {categories.find((c: any) => c.value === template.category)?.label || template.category}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => openEditor(template, true)}
-                    className="p-1.5 hover:bg-slate-200 rounded-lg transition text-slate-600 flex-shrink-0 ml-2"
-                    title="Copy & Customize"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                <div className="space-y-1 mb-3">
-                  {template.items.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="text-xs text-slate-600 flex justify-between">
-                      <span className="truncate flex-1">{item.description}</span>
-                      <span className="font-semibold ml-2">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))}
-                  {template.items.length > 3 && (
-                    <p className="text-xs text-slate-500">+{template.items.length - 3} more...</p>
-                  )}
-                </div>
-                
-                <div className="pt-3 border-t border-slate-300 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-600">Total</span>
-                  <span className="text-lg font-bold text-slate-600">{formatCurrency(template.total)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-slate-500 py-8">No templates available for this category</p>
-        )}
-      </div>
+      )}
 
       {/* TEMPLATE EDITOR MODAL */}
       {showEditor && (
@@ -429,10 +421,15 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <FileText className="w-6 h-6" />
-                {editingTemplate ? 'Edit Template' : 'Create Template'}
-              </h3>
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FileText className="w-6 h-6" />
+                  {editingTemplate ? 'Edit Template' : 'Create Template'}
+                </h3>
+                <p className="text-blue-100 text-sm mt-1">
+                  {categories.find((c: any) => c.value === templateCategory)?.emoji} {categories.find((c: any) => c.value === templateCategory)?.label}
+                </p>
+              </div>
               <button
                 onClick={closeEditor}
                 className="text-white hover:bg-white/20 p-2 rounded-lg transition"
@@ -443,36 +440,20 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
 
             {/* Body */}
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Template Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Template Name *</label>
-                  <input
-                    type="text"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="e.g., Standard Kitchen Remodel"
-                    className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Category *</label>
-                  <select
-                    value={templateCategory}
-                    onChange={(e) => setTemplateCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select category...</option>
-                    {categories.map((cat: any) => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.emoji} {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Template Name */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Template Name *</label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="e.g., Standard AC Installation"
+                  className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  autoFocus
+                />
               </div>
 
+              {/* Notes */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Optional)</label>
                 <textarea

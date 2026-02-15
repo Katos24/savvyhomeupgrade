@@ -1,11 +1,17 @@
 'use client';
 import { useState } from 'react';
 import { safeJSONParse } from '@/lib/utils';
+import { Edit2, X, Trash2, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TableViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
   statusOptions: any[];
+  onBulkUpdate?: (leadIds: number[], updates: any) => Promise<void>;
+  onBulkDelete?: (leadIds: number[]) => Promise<void>;
+  teamMembers?: any[];
+  categories?: any[];
 }
 
 type SortConfig = {
@@ -21,8 +27,21 @@ const formatCategory = (cat: string) => {
     .join(' ');
 };
 
-export default function TableView({ leads, onSelectLead, statusOptions }: TableViewProps) {
+export default function TableView({ 
+  leads, 
+  onSelectLead, 
+  statusOptions,
+  onBulkUpdate,
+  onBulkDelete,
+  teamMembers = [],
+  categories = []
+}: TableViewProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -51,6 +70,96 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
       pink: '#ec4899',
     };
     return colorMap[colorName] || '#3b82f6';
+  };
+
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
+    setSelectedIds(new Set());
+    setShowActionsMenu(false);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === leads.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(leads.map(l => l.id)));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (!onBulkUpdate || selectedIds.size === 0) return;
+    
+    setBulkActionLoading(true);
+    try {
+      await onBulkUpdate(Array.from(selectedIds), { status: newStatus });
+      toast.success(`Updated ${selectedIds.size} lead(s) to ${newStatus}`);
+      setSelectedIds(new Set());
+      setShowActionsMenu(false);
+    } catch (error) {
+      toast.error('Failed to update leads');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkAssign = async (assignedTo: string) => {
+    if (!onBulkUpdate || selectedIds.size === 0) return;
+    
+    setBulkActionLoading(true);
+    try {
+      await onBulkUpdate(Array.from(selectedIds), { assigned_to: assignedTo });
+      toast.success(`Assigned ${selectedIds.size} lead(s) to ${assignedTo}`);
+      setSelectedIds(new Set());
+      setShowActionsMenu(false);
+    } catch (error) {
+      toast.error('Failed to assign leads');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkCategoryChange = async (newCategory: string) => {
+    if (!onBulkUpdate || selectedIds.size === 0) return;
+    
+    setBulkActionLoading(true);
+    try {
+      await onBulkUpdate(Array.from(selectedIds), { category: newCategory });
+      toast.success(`Updated ${selectedIds.size} lead(s) category`);
+      setSelectedIds(new Set());
+      setShowActionsMenu(false);
+    } catch (error) {
+      toast.error('Failed to update category');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!onBulkDelete || selectedIds.size === 0) return;
+    
+    setBulkActionLoading(true);
+    try {
+      await onBulkDelete(Array.from(selectedIds));
+      toast.success(`Deleted ${selectedIds.size} lead(s)`);
+      setSelectedIds(new Set());
+      setShowDeleteConfirm(false);
+      setShowActionsMenu(false);
+      setEditMode(false);
+    } catch (error) {
+      toast.error('Failed to delete leads');
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
   const getSortedLeads = () => {
@@ -147,6 +256,196 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-lg overflow-hidden border border-white/20">
+      
+      {/* Top Action Bar */}
+      <div className="bg-slate-800/80 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {editMode ? (
+            <>
+              <label className="flex items-center gap-2 text-white cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === leads.length && leads.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+                />
+                <span className="text-sm font-medium">
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select All'}
+                </span>
+              </label>
+
+              {selectedIds.size > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowActionsMenu(!showActionsMenu)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm"
+                    disabled={bulkActionLoading}
+                  >
+                    {bulkActionLoading ? 'Processing...' : 'Actions'}
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {/* Actions Dropdown */}
+                  {showActionsMenu && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setShowActionsMenu(false)}
+                      />
+                      <div className="absolute left-0 top-full mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-20 overflow-hidden">
+                        
+                        {/* Change Status */}
+                        <div className="group">
+                          <div className="px-4 py-2 text-sm font-semibold text-white bg-slate-700">
+                            Change Status
+                          </div>
+                          <div className="max-h-48 overflow-y-auto">
+                            {statusOptions.map((status) => (
+                              <button
+                                key={status.value}
+                                onClick={() => handleBulkStatusChange(status.value)}
+                                className="w-full text-left px-4 py-2 text-sm text-white hover:bg-slate-700 transition flex items-center gap-2"
+                              >
+                                <span 
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: getStatusColorHex(status.color) }}
+                                />
+                                {status.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-700" />
+
+                        {/* Assign To */}
+                        {teamMembers.length > 0 && (
+                          <>
+                            <div className="group">
+                              <div className="px-4 py-2 text-sm font-semibold text-white bg-slate-700">
+                                Assign To
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                {teamMembers.map((member) => (
+                                  <button
+                                    key={member.id}
+                                    onClick={() => handleBulkAssign(member.name)}
+                                    className="w-full text-left px-4 py-2 text-sm text-white hover:bg-slate-700 transition"
+                                  >
+                                    {member.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="border-t border-slate-700" />
+                          </>
+                        )}
+
+                        {/* Change Category */}
+                        {categories.length > 0 && (
+                          <>
+                            <div className="group">
+                              <div className="px-4 py-2 text-sm font-semibold text-white bg-slate-700">
+                                Change Category
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                {categories.map((category: any) => (
+                                  <button
+                                    key={category.value}
+                                    onClick={() => handleBulkCategoryChange(category.value)}
+                                    className="w-full text-left px-4 py-2 text-sm text-white hover:bg-slate-700 transition"
+                                  >
+                                    {category.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="border-t border-slate-700" />
+                          </>
+                        )}
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => {
+                            setShowActionsMenu(false);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition flex items-center gap-2 font-semibold"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete ({selectedIds.size})
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-white/70 text-sm">
+              {leads.length} lead{leads.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={toggleEditMode}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition text-sm ${
+            editMode 
+              ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30'
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          {editMode ? (
+            <>
+              <X className="w-4 h-4" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <Edit2 className="w-4 h-4" />
+              Edit
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-700">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Delete {selectedIds.size} Lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
+                  <p className="text-sm text-white/60">This action cannot be undone.</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={bulkActionLoading}
+                  className="flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
+                >
+                  {bulkActionLoading ? 'Deleting...' : 'Delete Forever'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="lg:hidden bg-slate-800/50 px-4 py-2 text-xs text-white/70 text-center border-b border-white/10">
         ← Scroll horizontally to see all columns →
       </div>
@@ -155,6 +454,13 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
         <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-slate-800/80">
             <tr>
+              {/* Checkbox column - only in edit mode */}
+              {editMode && (
+                <th className="px-4 py-3 w-12">
+                  {/* Empty - checkbox is in action bar */}
+                </th>
+              )}
+              
               <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Project #
               </th>
@@ -179,7 +485,6 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
               >
                 City <SortIcon columnKey="city" />
               </th>
-        
               <th 
                 className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
                 onClick={() => handleSort('category')}
@@ -228,15 +533,18 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
               >
                 Created <SortIcon columnKey="date" />
               </th>
-                    <th 
+              <th 
                 className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
                 onClick={() => handleSort('lead_source')}
               >
                 Source <SortIcon columnKey="lead_source" />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
-                Actions
-              </th>
+              
+              {!editMode && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
@@ -263,12 +571,33 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                 return match ? `(${match[1]}) ${match[2]}-${match[3]}` : phone;
               };
 
+              const isSelected = selectedIds.has(lead.id);
+
               return (
                 <tr 
                   key={lead.id} 
-                  className={`${rowBgColor} cursor-pointer transition`}
-                  onClick={() => onSelectLead(lead)}
+                  className={`${rowBgColor} ${editMode ? '' : 'cursor-pointer'} transition ${isSelected ? 'bg-blue-900/20' : ''}`}
+                  onClick={(e) => {
+                    if (editMode) {
+                      toggleSelect(lead.id);
+                    } else {
+                      onSelectLead(lead);
+                    }
+                  }}
                 >
+                  {/* Checkbox column */}
+                  {editMode && (
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+                      />
+                    </td>
+                  )}
+
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     {isProject && lead.project_number ? (
                       <span className="font-semibold text-emerald-400">
@@ -312,8 +641,6 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                       {lead.city || <span className="text-white/40">—</span>}
                     </div>
                   </td>
-
-             
 
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
@@ -412,7 +739,8 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                       minute: '2-digit'
                     })}
                   </td>
-                       <td className="px-4 py-4 whitespace-nowrap">
+                  
+                  <td className="px-4 py-4 whitespace-nowrap">
                     {lead.lead_source ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 capitalize">
                         {lead.lead_source.replace('_', ' ')}
@@ -422,17 +750,19 @@ export default function TableView({ leads, onSelectLead, statusOptions }: TableV
                     )}
                   </td>
 
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectLead(lead);
-                      }}
-                      className="text-blue-400 hover:text-blue-300 font-medium"
-                    >
-                      View
-                    </button>
-                  </td>
+                  {!editMode && (
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectLead(lead);
+                        }}
+                        className="text-blue-400 hover:text-blue-300 font-medium"
+                      >
+                        View
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}

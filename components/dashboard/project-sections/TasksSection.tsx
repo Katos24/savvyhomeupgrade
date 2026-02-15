@@ -30,6 +30,29 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   const [saving, setSaving] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState('');
+  const [companyCategories, setCompanyCategories] = useState<any[]>([]);
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
+
+  // Fetch company categories (which contain task templates)
+  useEffect(() => {
+    async function fetchCompanyCategories() {
+      try {
+        const companySlug = window.location.pathname.split('/')[1];
+        const response = await fetch(`/api/company/${companySlug}/settings`);
+        const data = await response.json();
+        
+        if (data.success && data.company?.form_categories) {
+          setCompanyCategories(data.company.form_categories);
+        }
+      } catch (error) {
+        console.error('Failed to fetch company categories:', error);
+      } finally {
+        setTemplatesLoaded(true);
+      }
+    }
+    
+    fetchCompanyCategories();
+  }, []);
 
   // Fetch tasks from database
   useEffect(() => {
@@ -39,6 +62,54 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
       setLoading(false);
     }
   }, [lead.project_id, hasProject]);
+
+  // Auto-populate tasks from category template when category changes
+  useEffect(() => {
+    if (!templatesLoaded || !hasProject || !lead.project_id) return;
+    if (tasks.length > 0) return; // Don't overwrite existing tasks
+    if (!lead?.category) return;
+    
+    // Find category matching lead
+    const matchingCategory = companyCategories.find(
+      cat => cat.value === lead?.category
+    );
+    
+    if (matchingCategory?.task_templates && matchingCategory.task_templates.length > 0) {
+      // Auto-create tasks from template
+      createTasksFromTemplate(matchingCategory.task_templates);
+    }
+  }, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
+
+  const createTasksFromTemplate = async (taskTemplates: any[]) => {
+    try {
+      setSaving(true);
+      
+      // Sort by order
+      const sortedTemplates = [...taskTemplates].sort((a, b) => a.order - b.order);
+      
+      // Create all tasks in sequence
+      for (let i = 0; i < sortedTemplates.length; i++) {
+        await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            project_id: lead.project_id,
+            company_id: lead.company_id,
+            label: sortedTemplates[i].label,
+            task_order: sortedTemplates[i].order,
+          }),
+        });
+      }
+      
+      await fetchTasks();
+      await onRefresh();
+    } catch (error) {
+      console.error('Failed to create tasks from template:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -401,7 +472,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
       )}
 
       {/* Empty State */}
-      {tasks.length === 0 && (
+      {tasks.length === 0 && !saving && (
         <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
             <CheckCircle2 className="w-8 h-8 text-gray-400" />

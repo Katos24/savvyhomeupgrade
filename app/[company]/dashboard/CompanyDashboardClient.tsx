@@ -1,6 +1,4 @@
 
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -76,6 +74,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+
 
 
   const statusOptions = company.status_options && company.status_options.length > 0 
@@ -212,6 +212,76 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       return false;
     }
   }
+
+// FIXED HANDLERS - Replace in CompanyDashboardClient.tsx
+
+async function handleBulkUpdate(leadIds: number[], updates: any) {
+  try {
+    const response = await fetch('/api/leads/bulk-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        leadIds, 
+        updates,
+        user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+        user_email: currentUser?.email || ''
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      await fetchLeads(); // Refresh the leads list
+    } else {
+      throw new Error(result.error || 'Failed to update leads');
+    }
+  } catch (error) {
+    console.error('Bulk update error:', error);
+    throw error;
+  }
+}
+
+async function handleBulkDelete(leadIds: number[]) {
+  try {
+    const response = await fetch('/api/leads/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        leadIds,
+        user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+        user_email: currentUser?.email || ''
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      await fetchLeads(); // Refresh the leads list
+    } else {
+      throw new Error(result.error || 'Failed to delete leads');
+    }
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    throw error;
+  }
+}
+
+// ADD THIS TO YOUR useEffect (or create a new one)
+useEffect(() => {
+  fetchTeamMembers();
+}, []);
+
+async function fetchTeamMembers() {
+  try {
+    const response = await fetch(`/api/company/${company.slug}/team`);
+    const data = await response.json();
+    if (data.success) {
+      setTeamMembers(data.members || []);
+    }
+  } catch (error) {
+    console.error('Failed to fetch team members:', error);
+  }
+}
 
   async function deleteLead(id: number) {
     try {
@@ -598,6 +668,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     leads={filteredLeads} 
                     onSelectLead={setSelectedLead}
                     statusOptions={statusOptions}
+                    onBulkUpdate={handleBulkUpdate}
+  onBulkDelete={handleBulkDelete}
+  teamMembers={teamMembers}
+  categories={company.form_categories || []}
+                    
                   />                
                 </div>
               )}

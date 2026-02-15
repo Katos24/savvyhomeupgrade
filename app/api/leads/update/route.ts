@@ -26,7 +26,8 @@ export async function POST(request: Request) {
       quote_data,
       quote_total,
       follow_up_date,  
-      follow_up_notes   
+      follow_up_notes,
+      internal_notes 
     } = body;
 
     const sql = neon(process.env.DATABASE_URL!);
@@ -295,6 +296,47 @@ if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
         message: `Project #${projectNumber} created successfully`
       });
     }
+
+
+    // Add this to your existing /api/leads/update/route.ts
+// Just add this case to the existing switch/if statement for actions:
+
+if (action === 'update_internal_notes') {
+  // Get the project from lead
+  const projects = await sql`
+    SELECT id FROM projects WHERE lead_id = ${id}
+  `;
+
+  if (projects.length === 0) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  const projectId = projects[0].id;
+
+  // Update internal notes on project
+  await sql`
+    UPDATE projects
+    SET 
+      internal_notes = ${internal_notes},
+      updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
+
+  // Add activity log to lead
+  await sql`
+    UPDATE leads
+    SET notes = COALESCE(notes::jsonb, '[]'::jsonb) || ${JSON.stringify([{
+      type: 'internal_notes_updated',
+      text: 'Updated internal notes',
+      user_name,
+      user_email,
+      timestamp: new Date().toISOString()
+    }])}::jsonb
+    WHERE id = ${id}
+  `;
+
+  return NextResponse.json({ success: true });
+}
 
     // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {

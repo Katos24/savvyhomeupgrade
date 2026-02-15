@@ -1,6 +1,17 @@
 export interface AIAnalysisData {
-  // New simple format
+  // AI Brief format (NEW)
+  summary?: string;
+  next_steps?: string[];
+  critical_info?: string[];
   urgency?: string;
+  customer_name?: string;
+  is_project?: boolean;
+  scheduled?: {
+    date: string;
+    time?: string;
+  };
+  
+  // Simple format
   complexity?: string;
   damage_assessment?: string;
   estimated_scope?: string;
@@ -8,8 +19,7 @@ export interface AIAnalysisData {
   safety_concerns?: string;
   estimated_time?: string;
   
-  // Old detailed format
-  summary?: string;
+  // Detailed format (photo analysis)
   whatYouSee?: string;
   condition?: string;
   scope?: any;
@@ -27,6 +37,7 @@ export interface AIAnalysisData {
   status?: string;
   error?: string;
   details?: string;
+  raw_response?: string;
   [key: string]: any;
 }
 
@@ -56,7 +67,8 @@ export default function AIAnalysis({ analysis }: AIAnalysisProps) {
   }
 
   // Detect which format we have
-  const isDetailedFormat = !!(analysis.summary || analysis.whatYouSee || analysis.scope);
+  const isBriefFormat = !!(analysis.next_steps && Array.isArray(analysis.next_steps));
+  const isDetailedFormat = !!(analysis.whatYouSee || analysis.scope || analysis.costBreakdown);
   const isSimpleFormat = !!(analysis.damage_assessment || analysis.estimated_scope);
 
   const getUrgencyColor = (urgency: string) => {
@@ -91,15 +103,109 @@ export default function AIAnalysis({ analysis }: AIAnalysisProps) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          🤖 AI Analysis Report
+          🤖 {isBriefFormat ? 'AI Brief' : 'AI Analysis Report'}
         </h3>
       </div>
 
       <div className="p-6 space-y-4">
-        {/* DETAILED FORMAT (Old) */}
-        {isDetailedFormat && (
+        
+        {/* AI BRIEF FORMAT (NEW) */}
+        {isBriefFormat && (
+          <>
+            {/* Quick Stats Bar */}
+            {(analysis.urgency || analysis.scheduled || analysis.is_project) && (
+              <div className="flex gap-3 flex-wrap mb-4">
+                {analysis.urgency && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-1">Urgency</p>
+                    <span className={`inline-block px-4 py-2 rounded-lg text-sm font-bold ${getUrgencyColor(analysis.urgency)}`}>
+                      {analysis.urgency}
+                    </span>
+                  </div>
+                )}
+                
+                {analysis.scheduled && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-1">Scheduled</p>
+                    <span className="inline-block px-4 py-2 rounded-lg text-sm font-bold bg-green-100 text-green-800 border-2 border-green-200">
+                      {new Date(analysis.scheduled.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                      {analysis.scheduled.time && ` ${analysis.scheduled.time}`}
+                    </span>
+                  </div>
+                )}
+                
+                {analysis.is_project && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-1">Type</p>
+                    <span className="inline-block px-4 py-2 rounded-lg text-sm font-bold bg-purple-100 text-purple-800 border-2 border-purple-200">
+                      Active Project
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Summary */}
+            {analysis.summary && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-900 mb-2">📋 Summary</h4>
+                <p className="text-gray-700 bg-blue-50 p-4 rounded-lg border border-blue-200 leading-relaxed">
+                  {analysis.summary}
+                </p>
+              </div>
+            )}
+
+            {/* Next Steps */}
+            {analysis.next_steps && analysis.next_steps.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-900 mb-2">✅ Next Steps</h4>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <ul className="space-y-2">
+                    {analysis.next_steps.map((step: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2 text-gray-800">
+                        <span className="text-green-600 font-bold min-w-[1.5rem]">{idx + 1}.</span>
+                        <span className="leading-relaxed">{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Critical Info */}
+            {analysis.critical_info && analysis.critical_info.length > 0 && (
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Critical Information</h4>
+                <ul className="space-y-1">
+                  {analysis.critical_info.map((info: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-yellow-800">
+                      <span className="font-bold">•</span>
+                      <span className="leading-relaxed">{info}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Raw response fallback */}
+            {analysis.raw_response && !analysis.summary && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Response</h4>
+                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm">
+                  {analysis.raw_response}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* DETAILED FORMAT (Photo Analysis) */}
+        {isDetailedFormat && !isBriefFormat && (
           <>
             {/* Executive Summary */}
             {analysis.summary && (
@@ -214,8 +320,8 @@ export default function AIAnalysis({ analysis }: AIAnalysisProps) {
           </>
         )}
 
-        {/* SIMPLE FORMAT (New) */}
-        {isSimpleFormat && (
+        {/* SIMPLE FORMAT */}
+        {isSimpleFormat && !isBriefFormat && !isDetailedFormat && (
           <>
             {/* Quick Stats */}
             {(analysis.urgency || analysis.complexity || analysis.estimated_time) && (

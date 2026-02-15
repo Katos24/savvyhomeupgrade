@@ -16,7 +16,8 @@ import {
   Briefcase,
   Edit2,
   Save,
-  MoreVertical
+  MoreVertical,
+    FileText 
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoUpload from '@/components/dashboard/PhotoUpload';
@@ -118,6 +119,8 @@ export default function LeadModal({
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+const [internalNotesText, setInternalNotesText] = useState(lead.project_internal_notes || '');
   
   // Edit mode state
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -181,6 +184,42 @@ export default function LeadModal({
     }
   };
 
+const handleSaveInternalNotes = async () => {
+  if (!lead.project_id) {
+    toast.error('Project not found');
+    return;
+  }
+
+  setSaving(true);
+  try {
+    const response = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lead.id,
+        action: 'update_internal_notes',
+        internal_notes: internalNotesText,
+        user_name: currentUser?.name || currentUser?.email,
+        user_email: currentUser?.email,
+      }),
+    });
+
+    if (response.ok) {
+      toast.success('Internal notes saved!');
+      setIsEditingNotes(false);
+      await onRefresh();
+    } else {
+      toast.error('Failed to save notes');
+    }
+  } catch (error) {
+    console.error('Save notes error:', error);
+    toast.error('Failed to save notes');
+  } finally {
+    setSaving(false);
+  }
+};
+
+
   const handleDelete = async () => {
     setSaving(true);
     const success = await onDeleteLead(lead.id);
@@ -233,6 +272,7 @@ export default function LeadModal({
       city: lead.city || '',
       category: lead.category || '',
       description: lead.description || '',
+
     });
     setIsEditingDetails(false);
   };
@@ -395,7 +435,7 @@ export default function LeadModal({
             </div>
           )}
 
-          {/* Customer Information */}
+{/* Customer Information */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
             <button
               onClick={() => setShowCustomerInfo(!showCustomerInfo)}
@@ -466,53 +506,6 @@ export default function LeadModal({
                           placeholder="New York"
                         />
                       </div>
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="text-xs font-semibold text-gray-600 mb-1 block">CATEGORY</label>
-                      <select
-                        value={editedDetails.category}
-                        onChange={(e) => setEditedDetails({ ...editedDetails, category: e.target.value })}
-                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
-                      >
-                        <option value="">Select category...</option>
-                        
-                        {/* Show current category if it's not in the active list (orphaned) */}
-                        {editedDetails.category && 
-                         !categories.find((c: any) => c.value === editedDetails.category) && (
-                          <option value={editedDetails.category} className="text-orange-600">
-                            ⚠️ {formatCategory(editedDetails.category)} (Legacy)
-                          </option>
-                        )}
-                        
-                        {/* Show all current active categories */}
-                        {categories.map((cat: any) => (
-                          <option key={cat.value} value={cat.value}>
-                            {cat.emoji} {cat.label}
-                          </option>
-                        ))}
-                      </select>
-                      
-                      {/* Warning if category is orphaned */}
-                      {editedDetails.category && 
-                       !categories.find((c: any) => c.value === editedDetails.category) && (
-                        <p className="text-xs text-orange-600 mt-1">
-                          ⚠️ This category is no longer active. Please select a new one.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <label className="text-xs font-semibold text-gray-600 mb-1 block">DESCRIPTION</label>
-                      <textarea
-                        value={editedDetails.description}
-                        onChange={(e) => setEditedDetails({ ...editedDetails, description: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm resize-none"
-                        placeholder="Project description..."
-                      />
                     </div>
                   </div>
                 ) : (
@@ -613,15 +606,162 @@ export default function LeadModal({
             )}
           </div>
 
-          
+         {/* Category & Description Section */}
+          <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className="p-4 space-y-3">
+              {/* Category Section - Editable */}
+              <div className="bg-purple-50 rounded-xl border border-purple-200 overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-purple-600" />
+                      Category
+                    </h3>
+                    {!isEditingDetails && (
+                      <button
+                        onClick={() => setIsEditingDetails(true)}
+                        className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition"
+                        title="Edit Category"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {isEditingDetails ? (
+                    <div className="space-y-2">
+                      <select
+                        value={editedDetails.category}
+                        onChange={(e) => setEditedDetails({ ...editedDetails, category: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm"
+                      >
+                        <option value="">Select category...</option>
+                        
+                        {editedDetails.category && 
+                         !categories.find((c: any) => c.value === editedDetails.category) && (
+                          <option value={editedDetails.category} className="text-orange-600">
+                            ⚠️ {formatCategory(editedDetails.category)} (Legacy)
+                          </option>
+                        )}
+                        
+                        {categories.map((cat: any) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.emoji} {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {editedDetails.category && 
+                       !categories.find((c: any) => c.value === editedDetails.category) && (
+                        <p className="text-xs text-orange-600">
+                          ⚠️ This category is no longer active. Please select a new one.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-purple-300 rounded-lg">
+                      <span className="text-lg">
+                        {categories.find((c: any) => c.value === displayCategory)?.emoji || '📋'}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatCategory(displayCategory)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {/* Description (when not editing) */}
-          {!isEditingDetails && displayDescription && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <h3 className="text-sm font-bold text-gray-900 mb-2">Description</h3>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{displayDescription}</p>
-            </div>
-          )}
+              {/* Customer Description - READ ONLY */}
+              {displayDescription && (
+                <div className="bg-blue-50 rounded-xl border border-blue-200 overflow-hidden">
+                  <div className="p-4">
+                    <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-blue-600" />
+                      Customer's Message
+                    </h3>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white border border-blue-300 rounded-lg p-3">
+                      {displayDescription}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2 italic">
+                      This is what the customer wrote in their request
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            
+{/* Company Internal Notes - EDITABLE - Only for projects */}
+{lead.project_id && (
+  <div className="bg-yellow-50 rounded-xl border border-yellow-200 overflow-hidden">
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-yellow-600" />
+          Internal Notes
+        </h3>
+      </div>
+      
+
+      {/* Show notes if they exist */}
+      {lead.project_internal_notes && !isEditingNotes ? (
+        <div>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white border border-yellow-300 rounded-lg p-3 mb-2">
+            {lead.project_internal_notes}
+          </p>
+          <button
+            onClick={() => setIsEditingNotes(true)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+          >
+            Edit Notes
+          </button>
+        </div>
+      ) : isEditingNotes ? (
+        // Edit mode
+        <div className="space-y-2">
+          <textarea
+            value={internalNotesText}
+            onChange={(e) => setInternalNotesText(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg text-sm resize-none"
+            placeholder="Add internal notes, project details, special requirements..."
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveInternalNotes}
+              disabled={saving}
+              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition text-sm"
+            >
+              {saving ? 'Saving...' : 'Save Notes'}
+            </button>
+            <button
+              onClick={() => {
+                setIsEditingNotes(false);
+                setInternalNotesText(lead.project_internal_notes || '');
+              }}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded-lg transition text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        // Empty state - show "Add Notes" button
+        <button
+          onClick={() => setIsEditingNotes(true)}
+          className="w-full py-8 bg-white border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-400 hover:bg-yellow-50 transition text-center"
+        >
+          <p className="text-sm font-semibold text-gray-700">+ Add Internal Notes</p>
+          <p className="text-xs text-gray-500 mt-1">For your team only - customers won't see this</p>
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
+</div>
+          </div>
+
+
 
           {/* Customer Photos */}
           {customerPhotos.length > 0 && (
