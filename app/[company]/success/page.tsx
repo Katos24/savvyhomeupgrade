@@ -12,11 +12,14 @@ type Company = {
   logo_url?: string | null;
 };
 
+
+
 interface SuccessPageProps {
   company?: Company;
   headerTitle?: string;
   showHomeButton?: boolean;
 }
+
 
 export default function SuccessPage({
   company,
@@ -79,3 +82,4 @@ export default function SuccessPage({
     </div>
   );
 }
+

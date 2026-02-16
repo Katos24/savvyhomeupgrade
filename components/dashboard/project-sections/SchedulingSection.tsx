@@ -6,7 +6,6 @@ import { Calendar, Clock, User, Timer, Save, MoreVertical, Mail } from 'lucide-r
 import { parseNotes } from '@/lib/utils';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
 
-
 type SchedulingSectionProps = {
   lead: any;
   currentUser: any;
@@ -42,26 +41,34 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeamMembers();
   }, []);
 
-  // Update state when lead changes
+  // Update state when lead changes - FIXED BUG
   useEffect(() => {
     setScheduledDate(lead?.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : '');
     setScheduledTime(lead?.scheduled_time || '');
     
     // Check if assigned_to is a team member or custom entry
-    const isTeamMember = teamMembers.some(member => member.name === lead?.assigned_to);
-    if (lead?.assigned_to && !isTeamMember) {
-      setShowCustomAssignee(true);
-      setCustomAssignee(lead.assigned_to);
-      setAssignedTo('custom');
+    if (lead?.assigned_to) {
+      const isTeamMember = teamMembers.some(member => member.name === lead.assigned_to);
+      if (isTeamMember) {
+        // It's a team member - select from dropdown
+        setAssignedTo(lead.assigned_to);
+        setShowCustomAssignee(false);
+        setCustomAssignee('');
+      } else {
+        // It's a custom name - keep in dropdown as selected option
+        setAssignedTo(lead.assigned_to);
+        setShowCustomAssignee(false);
+        setCustomAssignee('');
+      }
     } else {
-      setAssignedTo(lead?.assigned_to || '');
+      setAssignedTo('');
       setShowCustomAssignee(false);
       setCustomAssignee('');
     }
     
     setEstimatedHours(lead?.estimated_hours || '');
     setActualHours(lead?.actual_hours || '');
-  }, [lead?.id, lead?.scheduled_time, teamMembers]);
+  }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
 
   // Parse activity log
   const notesArray = parseNotes(lead.notes);
@@ -92,8 +99,6 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
       toast.error('Please convert to project first');
       return;
     }
-
-    console.log('🎯 Saving with scheduledTime:', scheduledTime);
 
     // Determine final assignee value
     const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
@@ -132,67 +137,99 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     }
   };
 
+  // Check if current assignedTo is a team member
+  const isCurrentAssigneeTeamMember = teamMembers.some(m => m.name === assignedTo);
+
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-3">
-        {/* Assigned To – full width with dropdown */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-            <User className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
-            Assigned To
-          </label>
-          
-          {!showCustomAssignee ? (
-            <div className="flex gap-2">
+        {/* Assigned To – NOT full width */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+              <User className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
+              Assigned To
+            </label>
+            
+            {!showCustomAssignee ? (
               <select
                 value={assignedTo}
                 onChange={(e) => {
-                  if (e.target.value === 'custom') {
+                  if (e.target.value === '__custom__') {
                     setShowCustomAssignee(true);
                     setAssignedTo('');
                   } else {
                     setAssignedTo(e.target.value);
                   }
                 }}
-                className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
                            focus:border-purple-500 focus:ring-2 focus:ring-purple-100
                            focus:outline-none transition bg-white"
               >
                 <option value="">Select team member...</option>
+                
+                {/* Team members */}
                 {teamMembers.map((member) => (
                   <option key={member.id} value={member.name}>
                     {member.name} {member.id === currentUser?.id && '(You)'}
                   </option>
                 ))}
-                <option value="custom">➕ Enter custom name...</option>
+                
+                {/* Show current custom assignee if it exists and is not a team member */}
+                {assignedTo && !isCurrentAssigneeTeamMember && (
+                  <option value={assignedTo}>
+                    {assignedTo} (Custom)
+                  </option>
+                )}
+                
+                <option value="__custom__">➕ Enter custom name...</option>
               </select>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customAssignee}
-                onChange={(e) => setCustomAssignee(e.target.value)}
-                placeholder="e.g., Mike"
-                className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                           focus:border-purple-500 focus:ring-2 focus:ring-purple-100
-                           focus:outline-none transition"
-                autoFocus
-              />
-              <button
-                onClick={() => {
-                  setShowCustomAssignee(false);
-                  setCustomAssignee('');
-                }}
-                className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            Select a team member or enter a custom name
-          </p>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customAssignee}
+                  onChange={(e) => setCustomAssignee(e.target.value)}
+                  placeholder="e.g., Mike"
+                  className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                             focus:border-purple-500 focus:ring-2 focus:ring-purple-100
+                             focus:outline-none transition"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && customAssignee.trim()) {
+                      setAssignedTo(customAssignee);
+                      setShowCustomAssignee(false);
+                    }
+                    if (e.key === 'Escape') {
+                      setShowCustomAssignee(false);
+                      setCustomAssignee('');
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (customAssignee.trim()) {
+                      setAssignedTo(customAssignee);
+                      setShowCustomAssignee(false);
+                    }
+                  }}
+                  disabled={!customAssignee.trim()}
+                  className="px-3 py-2.5 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-semibold"
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCustomAssignee(false);
+                    setCustomAssignee('');
+                  }}
+                  className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Everything else */}
@@ -206,10 +243,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             <input
               type="date"
               value={scheduledDate}
-              onChange={(e) => {
-                console.log('📅 Date changed:', e.target.value);
-                setScheduledDate(e.target.value);
-              }}
+              onChange={(e) => setScheduledDate(e.target.value)}
               className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
                          focus:border-green-500 focus:ring-2 focus:ring-green-100
                          focus:outline-none transition"
@@ -224,10 +258,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             </label>
             <select
               value={scheduledTime}
-              onChange={(e) => {
-                console.log('⏰ Time selected:', e.target.value);
-                setScheduledTime(e.target.value);
-              }}
+              onChange={(e) => setScheduledTime(e.target.value)}
               className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
                          focus:border-blue-500 focus:ring-2 focus:ring-blue-100
                          focus:outline-none transition bg-white"
@@ -248,11 +279,6 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                 );
               })}
             </select>
-            {scheduledTime && (
-              <p className="text-xs text-gray-500 mt-1">
-                Selected: {formatTimeDisplay(scheduledTime)}
-              </p>
-            )}
           </div>
 
           {/* Estimated Hours */}

@@ -17,6 +17,7 @@ import {
 import { parseNotes } from '@/lib/utils';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
 
+
 type QuoteSectionProps = {
   lead: any;
   currentUser: any;

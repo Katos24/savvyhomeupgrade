@@ -89,6 +89,7 @@ export default function UploadForm({
     address_line_1: '',
     address_line_2: '',
     city: '',
+    zip_code: '',
     category: '',
     description: '',
     lead_source: 'upload_form',
@@ -212,40 +213,48 @@ export default function UploadForm({
     autocomplete.setComponentRestrictions({ country: 'us' });
   };
 
-  const onPlaceChanged = () => {
-    if (autocompleteRef.current) {
-      const place = autocompleteRef.current.getPlace();
+// Update onPlaceChanged function:
+const onPlaceChanged = () => {
+  if (autocompleteRef.current) {
+    const place = autocompleteRef.current.getPlace();
+    
+    if (place.formatted_address) {
+      let city = '';
+      let zipCode = '';
       
-      if (place.formatted_address) {
-        let city = '';
+      if (place.address_components) {
+        const localityComponent = place.address_components.find(
+          (component) => component.types.includes('locality')
+        );
+        const sublocalityComponent = place.address_components.find(
+          (component) => component.types.includes('sublocality') || component.types.includes('sublocality_level_1')
+        );
+        const adminArea3Component = place.address_components.find(
+          (component) => component.types.includes('administrative_area_level_3')
+        );
+        const postalCodeComponent = place.address_components.find(
+          (component) => component.types.includes('postal_code')
+        );
         
-        if (place.address_components) {
-          const localityComponent = place.address_components.find(
-            (component) => component.types.includes('locality')
-          );
-          const sublocalityComponent = place.address_components.find(
-            (component) => component.types.includes('sublocality') || component.types.includes('sublocality_level_1')
-          );
-          const adminArea3Component = place.address_components.find(
-            (component) => component.types.includes('administrative_area_level_3')
-          );
-          
-          city = localityComponent?.long_name || 
-                 sublocalityComponent?.long_name || 
-                 adminArea3Component?.long_name || 
-                 '';
-        }
-        
-        setFormData({ 
-          ...formData, 
-          address_line_1: place.formatted_address,
-          city: city 
-        });
-        
-        showToast(city ? `Address selected in ${city}!` : 'Address selected!', 'success');
+        city = localityComponent?.long_name || 
+               sublocalityComponent?.long_name || 
+               adminArea3Component?.long_name || 
+               '';
+        zipCode = postalCodeComponent?.long_name || '';
       }
+      
+      setFormData({ 
+        ...formData, 
+        address_line_1: place.formatted_address,
+        city: city,
+        zip_code: zipCode
+      });
+      
+      showToast(city ? `Address selected in ${city}!` : 'Address selected!', 'success');
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     const newPreviews = files.map(file => {
@@ -464,6 +473,7 @@ export default function UploadForm({
           address_line_1: formData.address_line_1 || null,
           address_line_2: formData.address_line_2 || null,
           city: formData.city || null,
+          zip_code: formData.zip_code || null,
           category: formData.category,
           description: formData.description,
           preferred_date: formData.preferred_date || null,
@@ -775,6 +785,25 @@ export default function UploadForm({
                     Address autocomplete enabled - start typing to see suggestions
                   </p>
                 </div>
+                <div>
+  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+    <MapPin className="w-4 h-4" style={{ color: '#10b981' }} />
+    Zip Code {addressConfig.required ? '*' : '(Optional)'}
+  </label>
+  <input
+    type="text"
+    required={addressConfig.required}
+    value={formData.zip_code}
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+      setFormData({ ...formData, zip_code: value });
+    }}
+    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    placeholder="12345"
+    maxLength={5}
+    disabled={uploading}
+  />
+</div>
 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
