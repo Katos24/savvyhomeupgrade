@@ -683,6 +683,9 @@ async function fetchTeamMembers() {
 
       {/* LEAD MODAL */}
       {selectedLead && (
+         <>
+    {console.log('🔍 DEBUG: company.slug =', company.slug)}
+    {console.log('🔍 DEBUG: selectedLead =', selectedLead?.id)}
         <LeadModal
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
@@ -694,8 +697,11 @@ async function fetchTeamMembers() {
           statusOptions={statusOptions}
           categories={company.form_categories || []}
             company={company}  
+            companySlug={company.slug}
 
         />
+          </>
+
       )}
     </div>
   );

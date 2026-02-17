@@ -177,6 +177,7 @@ export default function CalendarClient({ company }: { company: Company }) {
           currentUser={currentUser}
           statusOptions={statusOptions}
             categories={company.form_categories || []}  // ← ADD THIS LINE
+            companySlug={company.slug}
 
         />
       )}

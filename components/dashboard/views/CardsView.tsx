@@ -53,16 +53,38 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
     const leadDate = new Date(date.setHours(0, 0, 0, 0));
     
     if (leadDate.getTime() === today.getTime()) {
-      return new Date(dateString).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
+      // Manual 12-hour format to avoid locale issues
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+      return `${hours}:${minutesStr} ${ampm}`;
     }
     
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const formatScheduledTime = (timeString: string) => {
+    if (!timeString) return '';
+    
+    // Handle HH:MM format (24-hour)
+    const timeParts = timeString.split(':');
+    if (timeParts.length >= 2) {
+      let hours = parseInt(timeParts[0]);
+      const minutes = timeParts[1];
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+    
+    // If it's already formatted or other format, return as is
+    return timeString;
   };
 
   const handleGetBrief = useCallback(async (e: React.MouseEvent, lead: any) => {
@@ -231,7 +253,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
                 month: 'short',
                 day: 'numeric'
               })}
-              {lead.scheduled_time && ` at ${lead.scheduled_time}`}
+              {lead.scheduled_time && ` at ${formatScheduledTime(lead.scheduled_time)}`}
             </span>
           </div>
         )}

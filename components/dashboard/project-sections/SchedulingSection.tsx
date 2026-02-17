@@ -5,19 +5,31 @@ import { toast } from 'sonner';
 import { Calendar, Clock, User, Timer, Save, MoreVertical, Mail } from 'lucide-react';
 import { parseNotes } from '@/lib/utils';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
+import SchedulingCalendarModal from './SchedulingCalendarModal';
 
 type SchedulingSectionProps = {
   lead: any;
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
+  companySlug: string; // Add this
 };
 
-export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject }: SchedulingSectionProps) {
+export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug }: SchedulingSectionProps) {
+  console.log('🔍 SchedulingSection received companySlug:', companySlug);
+  console.log('🔍 SchedulingSection typeof companySlug:', typeof companySlug);
+  
   const [saving, setSaving] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  
+  // New separate time components
+  const [timeHour, setTimeHour] = useState('');
+  const [timeMinute, setTimeMinute] = useState('');
+  const [timeAmPm, setTimeAmPm] = useState('AM');
+  
   const [assignedTo, setAssignedTo] = useState('');
   const [showCustomAssignee, setShowCustomAssignee] = useState(false);
   const [customAssignee, setCustomAssignee] = useState('');
@@ -41,21 +53,62 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeamMembers();
   }, []);
 
-  // Update state when lead changes - FIXED BUG
+  // Parse 24-hour time string into hour/minute/ampm components
+  const parseTimeString = (time24: string) => {
+    if (!time24) return { hour: '', minute: '', ampm: 'AM' };
+    
+    const [hours, minutes] = time24.split(':');
+    const hour24 = parseInt(hours);
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    
+    return {
+      hour: hour12.toString(),
+      minute: minutes,
+      ampm: ampm
+    };
+  };
+
+  // Convert hour/minute/ampm back to 24-hour format
+  const buildTimeString = (hour: string, minute: string, ampm: string) => {
+    if (!hour || !minute) return '';
+    
+    let hour24 = parseInt(hour);
+    if (ampm === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (ampm === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    
+    return `${hour24.toString().padStart(2, '0')}:${minute}`;
+  };
+
+  // Update state when lead changes
   useEffect(() => {
     setScheduledDate(lead?.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : '');
-    setScheduledTime(lead?.scheduled_time || '');
+    
+    // Parse the time
+    if (lead?.scheduled_time) {
+      const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
+      setTimeHour(hour);
+      setTimeMinute(minute);
+      setTimeAmPm(ampm);
+      setScheduledTime(lead.scheduled_time);
+    } else {
+      setTimeHour('');
+      setTimeMinute('');
+      setTimeAmPm('AM');
+      setScheduledTime('');
+    }
     
     // Check if assigned_to is a team member or custom entry
     if (lead?.assigned_to) {
       const isTeamMember = teamMembers.some(member => member.name === lead.assigned_to);
       if (isTeamMember) {
-        // It's a team member - select from dropdown
         setAssignedTo(lead.assigned_to);
         setShowCustomAssignee(false);
         setCustomAssignee('');
       } else {
-        // It's a custom name - keep in dropdown as selected option
         setAssignedTo(lead.assigned_to);
         setShowCustomAssignee(false);
         setCustomAssignee('');
@@ -69,6 +122,12 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     setEstimatedHours(lead?.estimated_hours || '');
     setActualHours(lead?.actual_hours || '');
   }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
+
+  // Update scheduledTime whenever time components change
+  useEffect(() => {
+    const newTime = buildTimeString(timeHour, timeMinute, timeAmPm);
+    setScheduledTime(newTime);
+  }, [timeHour, timeMinute, timeAmPm]);
 
   // Parse activity log
   const notesArray = parseNotes(lead.notes);
@@ -139,6 +198,15 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
   // Check if current assignedTo is a team member
   const isCurrentAssigneeTeamMember = teamMembers.some(m => m.name === assignedTo);
+
+  const handleCalendarSelection = (date: string, time: string) => {
+    setScheduledDate(date);
+    const { hour, minute, ampm } = parseTimeString(time);
+    setTimeHour(hour);
+    setTimeMinute(minute);
+    setTimeAmPm(ampm);
+    setScheduledTime(time);
+  };
 
   return (
     <div className="space-y-4 p-4">
@@ -234,51 +302,43 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
         {/* Everything else */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Date */}
-          <div>
+          {/* Calendar Button - Opens modal */}
+          <div className="sm:col-span-2">
             <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
               <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-              Date
+              Date & Time
             </label>
-            <input
-              type="date"
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                         focus:border-green-500 focus:ring-2 focus:ring-green-100
-                         focus:outline-none transition"
-            />
-          </div>
-
-          {/* Time - Dropdown selector */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-              <Clock className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
-              Time
-            </label>
-            <select
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                         focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                         focus:outline-none transition bg-white"
+            <button
+              type="button"
+              onClick={() => setShowCalendarModal(true)}
+              className="w-full px-4 py-3 text-left rounded-lg border-2 border-gray-300
+                         hover:border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-100
+                         focus:outline-none transition bg-white flex items-center justify-between group"
             >
-              <option value="">Select time...</option>
-              {Array.from({ length: 48 }, (_, i) => {
-                const hour = Math.floor(i / 2);
-                const minute = i % 2 === 0 ? '00' : '30';
-                const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
-                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                const ampm = hour < 12 ? 'AM' : 'PM';
-                const time12 = `${hour12}:${minute} ${ampm}`;
-                
-                return (
-                  <option key={time24} value={time24}>
-                    {time12}
-                  </option>
-                );
-              })}
-            </select>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition" />
+                {scheduledDate && scheduledTime ? (
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {formatTimeDisplay(scheduledTime)}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-gray-500">Click to select date and time from calendar</span>
+                )}
+              </div>
+              <div className="text-sm font-semibold text-green-600 opacity-0 group-hover:opacity-100 transition">
+                View Calendar →
+              </div>
+            </button>
           </div>
 
           {/* Estimated Hours */}
@@ -411,6 +471,17 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           </div>
         )}
       </div>
+
+      {/* Scheduling Calendar Modal */}
+      <SchedulingCalendarModal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        onSelectDateTime={handleCalendarSelection}
+        companySlug={companySlug}
+        currentScheduledDate={scheduledDate}
+        currentScheduledTime={scheduledTime}
+        selectedTeamMember={assignedTo}
+      />
     </div>
   );
 }

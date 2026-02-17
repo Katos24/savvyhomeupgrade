@@ -17,11 +17,12 @@ type ProjectSectionProps = {
   onRefresh: () => Promise<void>;
   statusOptions: any[];
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
+  companySlug: string;
 };
 
 type TabType = 'schedule' | 'quote' | 'payment' | 'tasks' | 'reminders' | 'photos' | 'documents';
 
-export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus }: ProjectSectionProps) {
+export default function ProjectSection({ lead, currentUser, onRefresh, statusOptions, onUpdateStatus, companySlug }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
   const [planningTab, setPlanningTab] = useState<'schedule' | 'tasks' | 'reminders'>('schedule');
   const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'documents' | 'photos'>('quote');
@@ -178,6 +179,8 @@ export default function ProjectSection({ lead, currentUser, onRefresh, statusOpt
                   currentUser={currentUser}
                   onRefresh={onRefresh}
                   hasProject={hasProject}
+                    companySlug={companySlug} 
+
                 />
               )}
 

@@ -35,7 +35,7 @@ type LeadModalProps = {
   statusOptions: any[];
   categories: any[];
   company?: any;
-};
+companySlug: string;};
 
 export default function LeadModal({
   lead,
@@ -47,7 +47,9 @@ export default function LeadModal({
   currentUser,
   statusOptions,
   categories = [],
-  company
+  company,
+    companySlug
+
 }: LeadModalProps) {
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -80,6 +82,21 @@ export default function LeadModal({
   const isProject = !!lead.project_id;
   const userRole = currentUser?.role || 'member';
   const canDelete = canDeleteLead(userRole);
+  
+  const getStatusColor = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      blue: '#3b82f6',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      orange: '#f97316',
+      green: '#22c55e',
+      red: '#ef4444',
+      gray: '#6b7280',
+      indigo: '#6366f1',
+      pink: '#ec4899',
+    };
+    return colorMap[colorName] || '#3b82f6';
+  };
   
   useEffect(() => {
     setHasUnsavedChanges(newNote.trim().length > 0);
@@ -302,17 +319,27 @@ export default function LeadModal({
           {/* Status Dropdown */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold text-gray-700">Status:</span>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {statusOptions.map((option: any) => (
-                <option key={option.value} value={option.value}>
-                  {option.emoji} {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="appearance-none px-4 py-2 pr-8 border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                style={{
+                  backgroundColor: `${getStatusColor(getStatusConfig(selectedStatus).color)}20`,
+                  color: getStatusColor(getStatusConfig(selectedStatus).color),
+                  borderColor: getStatusColor(getStatusConfig(selectedStatus).color)
+                }}
+              >
+                {statusOptions.map((option: any) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" 
+                style={{ color: getStatusColor(getStatusConfig(selectedStatus).color) }}
+              />
+            </div>
             {selectedStatus !== lead.status && (
               <button
                 onClick={handleStatusChange}
@@ -671,6 +698,7 @@ export default function LeadModal({
               onRefresh={onRefresh}
               statusOptions={statusOptions}
               onUpdateStatus={onUpdateStatus}
+companySlug={companySlug}
             />
           )}
 
