@@ -75,6 +75,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [filterAssignee, setFilterAssignee] = useState('all');
+const [filterPayment, setFilterPayment] = useState('all');
 
 
 
@@ -275,8 +277,9 @@ async function fetchTeamMembers() {
   try {
     const response = await fetch(`/api/company/${company.slug}/team`);
     const data = await response.json();
+    console.log('👥 Team API response:', data);
     if (data.success) {
-      setTeamMembers(data.members || []);
+      setTeamMembers(data.teamMembers || []); // ✅ CORRECT - match API response
     }
   } catch (error) {
     console.error('Failed to fetch team members:', error);
@@ -336,51 +339,59 @@ async function fetchTeamMembers() {
     );
   }
 
-  // Filter leads
-  let filteredLeads = allLeads.filter(lead => {
-    const matchesSearch = searchQuery === '' || 
-      lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.phone?.includes(searchQuery);
-    
-    const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
-    const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
-    
+// Filter leads
+let filteredLeads = allLeads.filter(lead => {
+  const matchesSearch = searchQuery === '' || 
+    lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lead.phone?.includes(searchQuery);
+  
+  const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
+  const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
+  
+  // Assignee filter
+  const matchesAssignee = filterAssignee === 'all' || 
+    (filterAssignee === 'unassigned' && !lead.assigned_to) ||
+    lead.assigned_to === filterAssignee;
+  
+  // Payment filter
+  const matchesPayment = filterPayment === 'all' ||
+    (filterPayment === 'paid' && lead.payment_status === 'paid') ||
+    (filterPayment === 'unpaid' && (!lead.payment_status || lead.payment_status === 'unpaid'));
 
-
-    // Time filter
-    const leadDate = new Date(lead.created_at);
-    const now = new Date();
-    let matchesTime = true;
-    
-    // Custom date range filter (overrides preset filters)
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Include entire end date
-      matchesTime = leadDate >= start && leadDate <= end;
-    } else if (startDate) {
-      const start = new Date(startDate);
-      matchesTime = leadDate >= start;
-    } else if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      matchesTime = leadDate <= end;
-    } else if (timeFilter === 'today') {
-      const todayStart = new Date(now.setHours(0, 0, 0, 0));
-      matchesTime = leadDate >= todayStart;
-    } else if (timeFilter === 'week') {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      matchesTime = leadDate >= weekStart;
-    } else if (timeFilter === 'month') {
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      matchesTime = leadDate >= monthStart;
-    }
-    
-    return matchesSearch && matchesStatus && matchesCategory && matchesTime;
-  });
+  // Time filter
+  const leadDate = new Date(lead.created_at);
+  const now = new Date();
+  let matchesTime = true;
+  
+  // Custom date range filter (overrides preset filters)
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Include entire end date
+    matchesTime = leadDate >= start && leadDate <= end;
+  } else if (startDate) {
+    const start = new Date(startDate);
+    matchesTime = leadDate >= start;
+  } else if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    matchesTime = leadDate <= end;
+  } else if (timeFilter === 'today') {
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    matchesTime = leadDate >= todayStart;
+  } else if (timeFilter === 'week') {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    matchesTime = leadDate >= weekStart;
+  } else if (timeFilter === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    matchesTime = leadDate >= monthStart;
+  }
+  
+  return matchesSearch && matchesStatus && matchesCategory && matchesAssignee && matchesPayment && matchesTime;
+});
 
   // Sort by date (newest first)
   filteredLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -562,61 +573,101 @@ async function fetchTeamMembers() {
           </select>
         </div>
 
-        {/* ADVANCED FILTERS */}
-        {showAdvancedFilters && (
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
-            <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-2">Category</label>
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+       {/* ADVANCED FILTERS */}
+{showAdvancedFilters && (
+  <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Category Filter */}
+      <div>
+        <label className="block text-xs font-semibold text-white/80 mb-2">Category</label>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
+        >
+          <option value="all">All Categories</option>
+          {categories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
 
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-2">Start Date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-                />
-              </div>
+      {/* Assignee Filter */}
+      <div>
+        <label className="block text-xs font-semibold text-white/80 mb-2">Assigned To</label>
+        <select
+          value={filterAssignee}
+          onChange={(e) => setFilterAssignee(e.target.value)}
+          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
+        >
+          <option value="all">All Team Members</option>
+          <option value="unassigned">Unassigned</option>
+          {teamMembers.map(member => (
+            <option key={member.id} value={member.name}>
+              {member.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-white/80 mb-2">End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-                />
-              </div>
+      {/* Payment Status Filter */}
+      <div>
+        <label className="block text-xs font-semibold text-white/80 mb-2">Payment Status</label>
+        <select
+          value={filterPayment}
+          onChange={(e) => setFilterPayment(e.target.value)}
+          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
+        >
+          <option value="all">All</option>
+          <option value="paid">Paid</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+      </div>
 
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilterCategory('all');
-                  setFilterStatus('all');
-                  setTimeFilter('all');
-                  setStartDate('');
-                  setEndDate('');
-                }}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30 whitespace-nowrap"
-              >
-                <X className="w-4 h-4" />
-                Clear All
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Start Date */}
+      <div>
+        <label className="block text-xs font-semibold text-white/80 mb-2">Start Date</label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
+        />
+      </div>
+
+      {/* End Date */}
+      <div>
+        <label className="block text-xs font-semibold text-white/80 mb-2">End Date</label>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
+        />
+      </div>
+    </div>
+
+    {/* Clear All Button */}
+    <div className="mt-4 flex justify-end">
+      <button
+        onClick={() => {
+          setSearchQuery('');
+          setFilterCategory('all');
+          setFilterStatus('all');
+          setFilterAssignee('all');
+          setFilterPayment('all');
+          setTimeFilter('all');
+          setStartDate('');
+          setEndDate('');
+        }}
+        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30"
+      >
+        <X className="w-4 h-4" />
+        Clear All Filters
+      </button>
+    </div>
+  </div>
+)}
 
         {/* LEADS VIEW */}
         <div>

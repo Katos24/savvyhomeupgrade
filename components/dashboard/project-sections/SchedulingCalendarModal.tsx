@@ -369,12 +369,29 @@ export default function SchedulingCalendarModal({
                                 {formatTime(time)}
                               </span>
                               {isSelectedTime ? (
-                                <CheckCircle className="w-5 h-5 text-green-600" />
-                              ) : available ? (
-                                <div className="text-xs text-green-600 font-semibold">Available</div>
-                              ) : (
-                                <div className="text-xs text-red-600 font-semibold">Booked</div>
-                              )}
+  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+) : available ? (
+  <div className="text-xs text-green-600 font-semibold">Available</div>
+) : (
+  (() => {
+    // Find the job that's booked at this time
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    const bookedJob = scheduledJobs.find(job => {
+      const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
+      return jobDate === dateStr && job.scheduled_time === time;
+    });
+    
+    return (
+      <div className="text-xs text-red-600 font-semibold">
+        {bookedJob?.assigned_to ? `${bookedJob.assigned_to}` : 'Booked'}
+      </div>
+    );
+  })()
+)}
                             </div>
                           </button>
                         );

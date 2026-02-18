@@ -302,44 +302,97 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
         {/* Everything else */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Calendar Button - Opens modal */}
-          <div className="sm:col-span-2">
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-              <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-              Date & Time
-            </label>
-            <button
-              type="button"
-              onClick={() => setShowCalendarModal(true)}
-              className="w-full px-4 py-3 text-left rounded-lg border-2 border-gray-300
-                         hover:border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-100
-                         focus:outline-none transition bg-white flex items-center justify-between group"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition" />
-                {scheduledDate && scheduledTime ? (
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {formatTimeDisplay(scheduledTime)}
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-gray-500">Click to select date and time from calendar</span>
-                )}
-              </div>
-              <div className="text-sm font-semibold text-green-600 opacity-0 group-hover:opacity-100 transition">
-                View Calendar →
-              </div>
-            </button>
-          </div>
+      {/* Date Input */}
+<div>
+  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+    <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+    Date
+  </label>
+  <input
+    type="date"
+    value={scheduledDate}
+    onChange={(e) => setScheduledDate(e.target.value)}
+    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
+               focus:border-green-500 focus:ring-2 focus:ring-green-100
+               focus:outline-none transition"
+  />
+</div>
+
+{/* Time Input - Hour/Minute/AM-PM */}
+<div>
+  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+    <Clock className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+    Time
+  </label>
+  <div className="flex gap-2">
+    {/* Hour - Narrower */}
+    <select
+      value={timeHour}
+      onChange={(e) => setTimeHour(e.target.value)}
+      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                 focus:border-green-500 focus:ring-2 focus:ring-green-100
+                 focus:outline-none transition bg-white
+                 appearance-none cursor-pointer
+                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
+                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
+    >
+      <option value="">HH</option>
+      {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+        <option key={h} value={h}>{h}</option>
+      ))}
+    </select>
+
+    <span className="flex items-center text-gray-400 font-bold">:</span>
+
+    {/* Minute - Narrower */}
+    <select
+      value={timeMinute}
+      onChange={(e) => setTimeMinute(e.target.value)}
+      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                 focus:border-green-500 focus:ring-2 focus:ring-green-100
+                 focus:outline-none transition bg-white
+                 appearance-none cursor-pointer
+                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
+                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
+    >
+      <option value="">MM</option>
+      <option value="00">00</option>
+      <option value="15">15</option>
+      <option value="30">30</option>
+      <option value="45">45</option>
+    </select>
+
+    {/* AM/PM - Narrower */}
+    <select
+      value={timeAmPm}
+      onChange={(e) => setTimeAmPm(e.target.value)}
+      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
+                 focus:border-green-500 focus:ring-2 focus:ring-green-100
+                 focus:outline-none transition bg-white
+                 appearance-none cursor-pointer
+                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
+                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
+    >
+      <option value="AM">AM</option>
+      <option value="PM">PM</option>
+    </select>
+  </div>
+</div>
+
+{/* View Calendar Button - Narrower */}
+<div className="sm:col-span-2 flex justify-center">
+  <button
+    type="button"
+    onClick={() => setShowCalendarModal(true)}
+    className="px-6 py-2.5 text-sm text-center rounded-lg border border-gray-300
+               hover:border-gray-400 hover:bg-gray-50 transition
+               text-gray-700 font-medium 
+               flex items-center gap-2"
+  >
+    <Calendar className="w-4 h-4" />
+    View Calendar
+  </button>
+</div>
 
           {/* Estimated Hours */}
           <div>

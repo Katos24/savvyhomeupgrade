@@ -14,6 +14,7 @@ interface Company {
   created_at: Date;
   subscription_status?: string;
   trial_ends_at?: string | null;
+  plan_tier?: string; // ADD THIS
   status_options?: any[];
   form_categories?: any[];
   custom_questions?: any[];
@@ -21,6 +22,7 @@ interface Company {
 
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
+  
   const companies = await sql`
     SELECT 
       id,
@@ -32,6 +34,7 @@ async function getCompany(slug: string): Promise<Company | null> {
       created_at,
       subscription_status,
       trial_ends_at,
+      plan_tier,
       status_options,
       form_categories,
       custom_questions
@@ -48,6 +51,7 @@ async function getCompany(slug: string): Promise<Company | null> {
   // Parse JSON fields to ensure they're proper arrays
   return {
     ...company,
+    plan_tier: company.plan_tier || 'basic', // DEFAULT TO BASIC
     status_options: company.status_options || [],
     form_categories: company.form_categories || [],
   } as Company;
