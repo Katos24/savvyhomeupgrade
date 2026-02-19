@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { LayoutGrid, Table2, Calendar, Settings, LogOut, X, User } from 'lucide-react';
+import { LayoutGrid, Table2, Calendar, Settings, LogOut, X, User, BarChart3 } from 'lucide-react';
 
 type SidebarProps = {
   companySlug: string;
@@ -44,6 +44,13 @@ export default function Sidebar({
       label: 'Leads', 
       exactMatch: true,
       color: '#60a5fa' // blue-400
+    },
+    { 
+      href: `/${companySlug}/dashboard/analytics`, 
+      icon: BarChart3, 
+      label: 'Analytics',
+      exactMatch: false,
+      color: '#a78bfa' // violet-400
     },
     { 
       href: `/${companySlug}/dashboard/calendar`, 
