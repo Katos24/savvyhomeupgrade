@@ -8,8 +8,8 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-let name, email, phone, address_line_1, address_line_2, city, category, description, fileUrls, companySlug, companyId, lead_source, preferred_date, preferred_time;
-    let customAnswers: Record<string, any> = {}; // ← ADD THIS LINE
+    let name, email, phone, address_line_1, address_line_2, city, zip_code, category, description, fileUrls, companySlug, companyId, lead_source, preferred_date, preferred_time;
+    let customAnswers: Record<string, any> = {};
 
     // Helper function to format category
     const formatCategory = (cat: string) => {
@@ -27,19 +27,20 @@ let name, email, phone, address_line_1, address_line_2, city, category, descript
       address_line_1 = body.address_line_1 || null;
       address_line_2 = body.address_line_2 || null;
       city = body.city || null;
+      zip_code = body.zip_code || null;
       category = body.category;
       description = body.description;
       fileUrls = body.file_urls || [];
       companySlug = body.company_slug;
       companyId = body.company_id;
       lead_source = body.lead_source || null;
-      customAnswers = body.custom_answers || {}; // ← ADD THIS LINE
-      preferred_date = body.preferred_date || null;    // ADD THIS
-preferred_time = body.preferred_time || null;    // ADD THIS
+      customAnswers = body.custom_answers || {};
+      preferred_date = body.preferred_date || null;
+      preferred_time = body.preferred_time || null;
 
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
-        console.log('📍 Address:', address_line_1, address_line_2 ? `(${address_line_2})` : '', city ? `in ${city}` : '');
+        console.log('📍 Address:', address_line_1, address_line_2 ? `(${address_line_2})` : '', city ? `in ${city}` : '', zip_code ? `${zip_code}` : '');
       }
       if (lead_source) {
         console.log('🎯 Lead source:', lead_source);
@@ -55,6 +56,7 @@ preferred_time = body.preferred_time || null;    // ADD THIS
       address_line_1 = formData.get('address_line_1') as string || null;
       address_line_2 = formData.get('address_line_2') as string || null;
       city = formData.get('city') as string || null;
+      zip_code = formData.get('zip_code') as string || null;
       category = formData.get('category') as string;
       description = formData.get('description') as string;
       companySlug = formData.get('company_slug') as string;
@@ -73,13 +75,12 @@ preferred_time = body.preferred_time || null;    // ADD THIS
     const sql = neon(process.env.DATABASE_URL!);
     console.log(`🔄 Creating lead for ${name}...`);
 
-    // ← UPDATE THIS INSERT STATEMENT TO INCLUDE custom_answers
     const [lead] = await sql`
       INSERT INTO leads (
-        name, email, phone, address_line_1, address_line_2, city, category, description, 
+        name, email, phone, address_line_1, address_line_2, city, zip_code, category, description,
         company_id, status, file_urls, lead_source, custom_answers, preferred_date, preferred_time
       ) VALUES (
-        ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${category}, ${description},
+        ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${zip_code}, ${category}, ${description},
         ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}, ${preferred_date}, ${preferred_time}
       )
       RETURNING id
@@ -88,16 +89,14 @@ preferred_time = body.preferred_time || null;    // ADD THIS
     const leadId = lead.id;
     console.log(`✅ Lead created with ID: ${leadId}`);
 
-    // 🔥 NEW: Send email notification to contractor
+    // Send email notification to contractor
     if (companySlug) {
-      // Get contractor email from company
       const company = await sql`SELECT email, name FROM companies WHERE slug = ${companySlug}`;
       if (company.length > 0 && company[0].email) {
         const contractorEmail = company[0].email;
         const companyName = company[0].name;
         const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${companySlug}/dashboard`;
 
-        // Send email alert to contractor (don't await - let it happen in background)
         sendNewLeadAlertEmail({
           contractorEmail,
           customerName: name,
@@ -114,7 +113,6 @@ preferred_time = body.preferred_time || null;    // ADD THIS
         });
         console.log(`📧 Contractor email alert queued for ${contractorEmail}`);
 
-        // 🔥 NEW: Send confirmation email to customer
         sendLeadConfirmationEmail({
           customerEmail: email,
           customerName: name,

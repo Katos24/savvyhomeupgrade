@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building, Mail, Phone, Briefcase, Link2, Check, Copy, Download, QrCode, Palette } from 'lucide-react';
+import { Building, Mail, Phone, Briefcase, Link2, Check, Copy, Download, QrCode, Palette, Pencil, X } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 
 export default function GeneralTab({ company, currentUser }: { company: any; currentUser: any }) {
@@ -14,6 +14,8 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
   const [copied, setCopied] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     console.log('GeneralTab loaded with company:', {
@@ -32,13 +34,16 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
     email_brand_color_2: company.email_brand_color_2 || '#764ba2',
   });
 
+  // Keep a snapshot to restore on cancel
+  const [savedData, setSavedData] = useState({ ...formData });
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
 
   useEffect(() => {
     const link = `${window.location.origin}/${company.slug}`;
     setPublicLink(link);
-    
+
     QRCodeLib.toDataURL(link, {
       width: 300,
       margin: 2,
@@ -103,7 +108,25 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
   };
 
-  const handleSave = async () => {
+  const handleEditClick = () => {
+    setSavedData({ ...formData });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({ ...savedData });
+    setLogoFile(null);
+    setLogoPreview(company.logo_url || '');
+    setIsEditing(false);
+    setError('');
+  };
+
+  const handleSaveClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirm(false);
     setLoading(true);
     setError('');
     setSuccess('');
@@ -141,6 +164,8 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
       const data = await response.json();
       if (data.success) {
         setSuccess('Settings saved successfully! Refreshing page...');
+        setSavedData({ ...formData });
+        setIsEditing(false);
         setTimeout(() => window.location.reload(), 1500);
       } else {
         setError(data.error || 'Failed to save settings');
@@ -155,10 +180,36 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">General Settings</h2>
-        <p className="text-sm sm:text-base text-slate-600">Manage your company information and branding</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">General Settings</h2>
+          <p className="text-sm sm:text-base text-slate-600">Manage your company information and branding</p>
+        </div>
+        {!isEditing ? (
+          <button
+            onClick={handleEditClick}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
+        ) : (
+          <button
+            onClick={handleCancelEdit}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition text-sm"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </button>
+        )}
       </div>
+
+      {!isEditing && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm">
+          <Pencil className="w-4 h-4" />
+          Click <strong>Edit</strong> to make changes to your settings.
+        </div>
+      )}
 
       {success && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
@@ -174,15 +225,15 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-5 sm:space-y-6">
-        
-        {/* Company Logo - Mobile Optimized */}
+
+        {/* Company Logo */}
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-3">Company Logo</label>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {logoPreview ? (
-              <img 
-                src={logoPreview} 
-                alt="Company logo" 
+              <img
+                src={logoPreview}
+                alt="Company logo"
                 className="w-20 h-20 sm:w-24 sm:h-24 object-contain border border-slate-200 rounded-lg bg-slate-50"
               />
             ) : (
@@ -190,18 +241,20 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
                 {formData.name.charAt(0)}
               </div>
             )}
-            <div className="flex-1 w-full">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoChange}
-                className="block w-full text-xs sm:text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-              />
-              {logoFile && (
-                <p className="text-xs text-emerald-600 mt-1">New logo selected - click Save to upload</p>
-              )}
-              <p className="text-xs text-slate-500 mt-1">Used in email headers and branding</p>
-            </div>
+            {isEditing && (
+              <div className="flex-1 w-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="block w-full text-xs sm:text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+                {logoFile && (
+                  <p className="text-xs text-emerald-600 mt-1">New logo selected - click Save to upload</p>
+                )}
+                <p className="text-xs text-slate-500 mt-1">Used in email headers and branding</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -211,15 +264,20 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             <Building className="w-4 h-4" />
             Company Name
           </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
-            placeholder="Your Company Name"
-          />
+          {isEditing ? (
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
+              placeholder="Your Company Name"
+            />
+          ) : (
+            <p className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm sm:text-base text-slate-700">
+              {formData.name || <span className="text-slate-400">Not set</span>}
+            </p>
+          )}
         </div>
-
 
         {/* Email */}
         <div>
@@ -227,13 +285,19 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             <Mail className="w-4 h-4" />
             Contact Email
           </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
-            placeholder="contact@company.com"
-          />
+          {isEditing ? (
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
+              placeholder="contact@company.com"
+            />
+          ) : (
+            <p className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm sm:text-base text-slate-700">
+              {formData.email || <span className="text-slate-400">Not set</span>}
+            </p>
+          )}
         </div>
 
         {/* Phone */}
@@ -242,17 +306,23 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             <Phone className="w-4 h-4" />
             Phone Number
           </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
-            placeholder="(555) 123-4567"
-            maxLength={14}
-          />
+          {isEditing ? (
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
+              placeholder="(555) 123-4567"
+              maxLength={14}
+            />
+          ) : (
+            <p className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm sm:text-base text-slate-700">
+              {formData.phone || <span className="text-slate-400">Not set</span>}
+            </p>
+          )}
         </div>
 
-        {/* Public Link with QR Code - MOVED UP & MOBILE OPTIMIZED */}
+        {/* Public Link with QR Code */}
         {publicLink && (
           <div className="pt-4 sm:pt-6 border-t border-slate-200">
             <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2 sm:mb-3 flex items-center gap-2">
@@ -289,7 +359,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
           </div>
         )}
 
-        {/* Email Branding Section - Mobile Optimized */}
+        {/* Email Branding Section */}
         <div className="pt-5 sm:pt-6 border-t border-slate-200">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <Palette className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
@@ -297,93 +367,151 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
           </div>
           <p className="text-xs sm:text-sm text-slate-600 mb-4">Customize the header gradient colors in your customer emails and booking form</p>
 
-          {/* Color Presets - Mobile Grid */}
-          <div className="mb-4">
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Color Presets</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {colorPresets.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => setFormData({
-                    ...formData,
-                    email_brand_color_1: preset.color1,
-                    email_brand_color_2: preset.color2,
-                  })}
-                  className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg border border-slate-200 hover:border-blue-500 transition"
-                >
-                  <div 
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-md flex-shrink-0"
-                    style={{ background: `linear-gradient(135deg, ${preset.color1} 0%, ${preset.color2} 100%)` }}
-                  />
-                  <span className="text-xs font-medium text-slate-700 truncate">{preset.name}</span>
-                </button>
-              ))}
+          {isEditing && (
+            <div className="mb-4">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Color Presets</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {colorPresets.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      email_brand_color_1: preset.color1,
+                      email_brand_color_2: preset.color2,
+                    })}
+                    className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg border border-slate-200 hover:border-blue-500 transition"
+                  >
+                    <div
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-md flex-shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${preset.color1} 0%, ${preset.color2} 100%)` }}
+                    />
+                    <span className="text-xs font-medium text-slate-700 truncate">{preset.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Custom Colors */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Gradient Start Color</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={formData.email_brand_color_1}
-                  onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg cursor-pointer border border-slate-300 flex-shrink-0"
+                <div
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-slate-300 flex-shrink-0"
+                  style={{ backgroundColor: formData.email_brand_color_1 }}
                 />
-                <input
-                  type="text"
-                  value={formData.email_brand_color_1}
-                  onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs sm:text-sm"
-                  placeholder="#667eea"
-                />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="color"
+                      value={formData.email_brand_color_1}
+                      onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg cursor-pointer border border-slate-300 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={formData.email_brand_color_1}
+                      onChange={(e) => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs sm:text-sm"
+                      placeholder="#667eea"
+                    />
+                  </>
+                ) : (
+                  <span className="font-mono text-sm text-slate-600">{formData.email_brand_color_1}</span>
+                )}
               </div>
             </div>
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Gradient End Color</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={formData.email_brand_color_2}
-                  onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg cursor-pointer border border-slate-300 flex-shrink-0"
+                <div
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-slate-300 flex-shrink-0"
+                  style={{ backgroundColor: formData.email_brand_color_2 }}
                 />
-                <input
-                  type="text"
-                  value={formData.email_brand_color_2}
-                  onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs sm:text-sm"
-                  placeholder="#764ba2"
-                />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="color"
+                      value={formData.email_brand_color_2}
+                      onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg cursor-pointer border border-slate-300 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={formData.email_brand_color_2}
+                      onChange={(e) => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs sm:text-sm"
+                      placeholder="#764ba2"
+                    />
+                  </>
+                ) : (
+                  <span className="font-mono text-sm text-slate-600">{formData.email_brand_color_2}</span>
+                )}
               </div>
             </div>
           </div>
-
-
         </div>
 
-        {/* Save Button - Mobile Full Width */}
-        <div className="pt-4 border-t border-slate-200">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
+        {/* Save Button - only shown in edit mode */}
+        {isEditing && (
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleSaveClick}
+              disabled={loading}
+              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              onClick={handleCancelEdit}
+              className="w-full sm:w-auto px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition text-sm sm:text-base"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* QR Code Modal - Mobile Optimized */}
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Save Changes?</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to update your company settings? This will take effect immediately.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleConfirmSave}
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm"
+              >
+                Yes, Save Changes
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
       {showQrModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={() => setShowQrModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
@@ -400,14 +528,14 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             <div className="text-center space-y-4">
               {qrCodeUrl && (
                 <div className="bg-white p-4 sm:p-6 rounded-lg border-2 border-slate-200 inline-block">
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="QR Code" 
+                  <img
+                    src={qrCodeUrl}
+                    alt="QR Code"
                     className="w-48 h-48 sm:w-64 sm:h-64"
                   />
                 </div>
               )}
-              
+
               <p className="text-xs sm:text-sm text-slate-600">
                 Scan this QR code to access your booking page
               </p>

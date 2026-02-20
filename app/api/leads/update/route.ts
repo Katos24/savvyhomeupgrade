@@ -61,7 +61,6 @@ export async function POST(request: Request) {
       try {
         const rawNotes = project[0]?.notes;
         
-        // 🔥 Handle both string and already-parsed object
         if (!rawNotes) {
           existingNotes = [];
         } else if (typeof rawNotes === 'string') {
@@ -106,7 +105,6 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      // 🔥 Add to projects.notes (if project exists)
       const statusChangeEntry = {
         type: 'status_change',
         old_status: old_status,
@@ -126,7 +124,6 @@ export async function POST(request: Request) {
     else if (action === 'add_note') {
       console.log('📝 Adding note');
       
-      // 🔥 Always add to projects.notes (if project exists)
       const newNote = {
         type: 'note',
         text: notes,
@@ -162,15 +159,16 @@ export async function POST(request: Request) {
       }
 
       const leadData = leadCheck[0];
-      // 🔥 Get company data including form_categories for task templates
-const companyResult = await sql`
-  SELECT form_categories 
-  FROM companies 
-  WHERE id = ${leadData.company_id}
-`;
-const formCategories = companyResult[0]?.form_categories || [];
 
-      // 🔥 Get next project number for this company
+      // Get company data including form_categories for task templates
+      const companyResult = await sql`
+        SELECT form_categories 
+        FROM companies 
+        WHERE id = ${leadData.company_id}
+      `;
+      const formCategories = companyResult[0]?.form_categories || [];
+
+      // Get next project number for this company
       const maxProjectNumber = await sql`
         SELECT COALESCE(MAX(p.project_number), 0) as max_num
         FROM projects p
@@ -188,7 +186,7 @@ const formCategories = companyResult[0]?.form_categories || [];
         leadNotes = [];
       }
 
-      // Create project with lead data (including project_number and category)
+      // Create project with lead data (including zip_code)
       const projectResult = await sql`
         INSERT INTO projects (
           lead_id,
@@ -199,6 +197,7 @@ const formCategories = companyResult[0]?.form_categories || [];
           service_address,
           address_line_2,
           city,
+          zip_code,
           category,
           status,
           company_id,
@@ -216,6 +215,7 @@ const formCategories = companyResult[0]?.form_categories || [];
           ${leadData.address_line_1 || null},
           ${leadData.address_line_2 || null},
           ${leadData.city || null},
+          ${leadData.zip_code || null},
           ${leadData.category || null},
           'scheduled',
           ${leadData.company_id || null},
@@ -231,36 +231,36 @@ const formCategories = companyResult[0]?.form_categories || [];
       const projectId = projectResult[0].id;
       const projectNumber = projectResult[0].project_number;
 
-      // 🔥 AUTO-CREATE TASKS FROM CATEGORY TEMPLATES
-const leadCategory = formCategories.find((cat: any) => cat.value === leadData.category);
+      // AUTO-CREATE TASKS FROM CATEGORY TEMPLATES
+      const leadCategory = formCategories.find((cat: any) => cat.value === leadData.category);
 
-if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
-  console.log(`📋 Creating ${leadCategory.task_templates.length} tasks from template`);
-  
-  const sortedTasks = [...leadCategory.task_templates].sort((a: any, b: any) => a.order - b.order);
-  
-  for (const taskTemplate of sortedTasks) {
-    await sql`
-      INSERT INTO tasks (
-        project_id,
-        company_id,
-        label,
-        completed,
-        task_order,
-        created_at
-      ) VALUES (
-        ${projectId},
-        ${leadData.company_id},
-        ${taskTemplate.label},
-        false,
-        ${taskTemplate.order},
-        NOW()
-      )
-    `;
-  }
-  
-  console.log(`✅ Created ${sortedTasks.length} tasks`);
-}
+      if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
+        console.log(`📋 Creating ${leadCategory.task_templates.length} tasks from template`);
+        
+        const sortedTasks = [...leadCategory.task_templates].sort((a: any, b: any) => a.order - b.order);
+        
+        for (const taskTemplate of sortedTasks) {
+          await sql`
+            INSERT INTO tasks (
+              project_id,
+              company_id,
+              label,
+              completed,
+              task_order,
+              created_at
+            ) VALUES (
+              ${projectId},
+              ${leadData.company_id},
+              ${taskTemplate.label},
+              false,
+              ${taskTemplate.order},
+              NOW()
+            )
+          `;
+        }
+        
+        console.log(`✅ Created ${sortedTasks.length} tasks`);
+      }
 
       // Update lead with project_id
       await sql`
@@ -297,46 +297,40 @@ if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
       });
     }
 
+    // ==================== UPDATE INTERNAL NOTES ====================
+    if (action === 'update_internal_notes') {
+      const projects = await sql`
+        SELECT id FROM projects WHERE lead_id = ${id}
+      `;
 
-    // Add this to your existing /api/leads/update/route.ts
-// Just add this case to the existing switch/if statement for actions:
+      if (projects.length === 0) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
 
-if (action === 'update_internal_notes') {
-  // Get the project from lead
-  const projects = await sql`
-    SELECT id FROM projects WHERE lead_id = ${id}
-  `;
+      const projectId = projects[0].id;
 
-  if (projects.length === 0) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+      await sql`
+        UPDATE projects
+        SET 
+          internal_notes = ${internal_notes},
+          updated_at = NOW()
+        WHERE id = ${projectId}
+      `;
 
-  const projectId = projects[0].id;
+      await sql`
+        UPDATE leads
+        SET notes = COALESCE(notes::jsonb, '[]'::jsonb) || ${JSON.stringify([{
+          type: 'internal_notes_updated',
+          text: 'Updated internal notes',
+          user_name,
+          user_email,
+          timestamp: new Date().toISOString()
+        }])}::jsonb
+        WHERE id = ${id}
+      `;
 
-  // Update internal notes on project
-  await sql`
-    UPDATE projects
-    SET 
-      internal_notes = ${internal_notes},
-      updated_at = NOW()
-    WHERE id = ${projectId}
-  `;
-
-  // Add activity log to lead
-  await sql`
-    UPDATE leads
-    SET notes = COALESCE(notes::jsonb, '[]'::jsonb) || ${JSON.stringify([{
-      type: 'internal_notes_updated',
-      text: 'Updated internal notes',
-      user_name,
-      user_email,
-      timestamp: new Date().toISOString()
-    }])}::jsonb
-    WHERE id = ${id}
-  `;
-
-  return NextResponse.json({ success: true });
-}
+      return NextResponse.json({ success: true });
+    }
 
     // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {
@@ -352,7 +346,6 @@ if (action === 'update_internal_notes') {
         }, { status: 400 });
       }
 
-      // Update project fields (including follow-up reminder fields)
       await sql`
         UPDATE projects 
         SET 
@@ -367,7 +360,6 @@ if (action === 'update_internal_notes') {
         WHERE id = ${projectId}
       `;
 
-      // 🔥 Add activity log
       let noteText = 'Project updated';
       if (scheduled_date) noteText += ` - Scheduled: ${scheduled_date}`;
       if (assigned_to) noteText += `, Assigned to: ${assigned_to}`;
@@ -401,7 +393,6 @@ if (action === 'update_internal_notes') {
         }, { status: 400 });
       }
 
-      // Save quote
       await sql`
         UPDATE projects 
         SET 
@@ -411,7 +402,6 @@ if (action === 'update_internal_notes') {
         WHERE id = ${projectId}
       `;
 
-      // 🔥 Add activity log
       const quoteEntry = {
         type: 'quote_created',
         text: `Quote created - Total: $${quote_total}`,
@@ -440,7 +430,6 @@ if (action === 'update_internal_notes') {
         }, { status: 400 });
       }
 
-      // Mark quote as sent
       await sql`
         UPDATE projects 
         SET 
@@ -449,7 +438,6 @@ if (action === 'update_internal_notes') {
         WHERE id = ${projectId}
       `;
 
-      // 🔥 Add activity log
       const quoteSentEntry = {
         type: 'quote_sent',
         text: 'Quote sent to customer',
@@ -492,7 +480,6 @@ if (action === 'update_internal_notes') {
         }, { status: 400 });
       }
 
-      // Parse quote data
       let quoteItems = [];
       try {
         quoteItems = typeof lead.quote_data === 'string' 
@@ -503,7 +490,6 @@ if (action === 'update_internal_notes') {
         quoteItems = [];
       }
 
-      // Send email to customer
       try {
         await sendQuoteToCustomer({
           customerEmail: lead.email,
@@ -516,7 +502,6 @@ if (action === 'update_internal_notes') {
           projectDescription: lead.category || 'Your project',
         });
 
-        // Mark quote as sent
         await sql`
           UPDATE projects 
           SET quote_sent_at = NOW(),
@@ -524,7 +509,6 @@ if (action === 'update_internal_notes') {
           WHERE id = ${lead.project_id}
         `;
 
-        // Add activity log
         const quoteSentEntry = {
           type: 'quote_sent',
           text: `Quote emailed to customer ($${lead.quote_total})`,
@@ -558,6 +542,7 @@ if (action === 'update_internal_notes') {
           l.address_line_1,
           l.address_line_2,
           l.city,
+          l.zip_code,
           l.project_id,
           p.scheduled_date,
           p.scheduled_time,
@@ -587,12 +572,12 @@ if (action === 'update_internal_notes') {
         }, { status: 400 });
       }
 
-      // Build service address
+      // Build service address (now includes zip_code)
       let serviceAddress = lead.address_line_1 || '';
       if (lead.address_line_2) serviceAddress += `, ${lead.address_line_2}`;
       if (lead.city) serviceAddress += `, ${lead.city}`;
+      if (lead.zip_code) serviceAddress += ` ${lead.zip_code}`;
 
-      // 🔍 Debug log
       console.log('📧 Email data:', {
         scheduledDate: lead.scheduled_date,
         scheduledTime: lead.scheduled_time,
@@ -601,7 +586,6 @@ if (action === 'update_internal_notes') {
         companyId: lead.company_id
       });
 
-      // Send email to customer
       try {
         await sendScheduleConfirmation({
           customerEmail: lead.email,
@@ -615,7 +599,6 @@ if (action === 'update_internal_notes') {
           assignedTo: lead.assigned_to || undefined,
         });
 
-        // Add activity log
         const scheduleEntry = {
           type: 'schedule_sent',
           text: `Schedule confirmation emailed to customer (${lead.scheduled_date}${lead.scheduled_time ? ' at ' + lead.scheduled_time : ''})`,
@@ -637,7 +620,7 @@ if (action === 'update_internal_notes') {
       }
     }
 
-    // ==================== UPDATE PAYMENT 🔥 ====================
+    // ==================== UPDATE PAYMENT 💳 ====================
     else if (action === 'update_payment') {
       console.log('💳 Updating payment');
       
@@ -653,7 +636,6 @@ if (action === 'update_internal_notes') {
 
       const paidAt = payment_status === 'paid' ? new Date().toISOString() : null;
 
-      // 🔥 NEW: Update payment with additional tracking fields
       await sql`
         UPDATE projects 
         SET 
@@ -667,7 +649,6 @@ if (action === 'update_internal_notes') {
         WHERE id = ${projectId}
       `;
 
-      // 🔥 Add activity log with payment method
       const paymentMethodText = body.payment_method ? ` via ${body.payment_method}` : '';
       const paymentEntry = {
         type: 'payment_updated',
@@ -694,11 +675,12 @@ if (action === 'update_internal_notes') {
         address_line_1,
         address_line_2,
         city,
+        zip_code,
         category,
         description
       } = body;
 
-      // Update lead table
+      // Update lead table (including zip_code)
       await sql`
         UPDATE leads 
         SET 
@@ -708,13 +690,14 @@ if (action === 'update_internal_notes') {
           address_line_1 = ${address_line_1 || null},
           address_line_2 = ${address_line_2 || null},
           city = ${city || null},
+          zip_code = ${zip_code || null},
           category = ${category || null},
           description = ${description || null},
           updated_at = NOW()
         WHERE id = ${id}
       `;
 
-      // If project exists, also update project customer info
+      // If project exists, also update project customer info (including zip_code)
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
 
@@ -728,13 +711,13 @@ if (action === 'update_internal_notes') {
             service_address = ${address_line_1 || null},
             address_line_2 = ${address_line_2 || null},
             city = ${city || null},
+            zip_code = ${zip_code || null},
             category = ${category || null},
             updated_at = NOW()
           WHERE id = ${projectId}
         `;
       }
 
-      // Add activity log
       const detailsEntry = {
         type: 'details_updated',
         text: 'Customer details updated',

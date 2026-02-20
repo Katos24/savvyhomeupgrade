@@ -26,6 +26,7 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [markPaidInFull, setMarkPaidInFull] = useState(false);
 
   // Only populate from saved payment data, never auto-fill
   useEffect(() => {
@@ -33,7 +34,16 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
     setPaymentMethod(lead?.payment_method || '');
     setPaymentDate(lead?.payment_date ? new Date(lead.payment_date).toISOString().split('T')[0] : '');
     setPaymentNotes(lead?.payment_notes || '');
+    setMarkPaidInFull(false);
   }, [lead?.id]);
+
+  // Auto-fill when toggled
+  useEffect(() => {
+    if (markPaidInFull && lead?.quote_total) {
+      setPaymentAmount(lead.quote_total.toString());
+      setPaymentDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [markPaidInFull, lead?.quote_total]);
 
   const calculatePaymentStatus = () => {
     if (!lead?.quote_total || !paymentAmount) return 'unpaid';
@@ -95,30 +105,13 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
     }).format(amount);
   };
 
-  const getStatusIcon = () => {
-    if (paymentStatus === 'paid') return <CheckCircle className="w-5 h-5" />;
-    if (paymentStatus === 'partial') return <Clock className="w-5 h-5" />;
-    return <AlertCircle className="w-5 h-5" />;
-  };
-
-  const getStatusColor = () => {
-    if (paymentStatus === 'paid') return 'text-green-600 bg-green-50 border-green-200';
-    if (paymentStatus === 'partial') return 'text-orange-600 bg-orange-50 border-orange-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
-  };
-
-  const getStatusText = () => {
-    if (paymentStatus === 'paid') return 'Paid in Full';
-    if (paymentStatus === 'partial') return 'Partial Payment';
-    return 'Unpaid';
-  };
-
   return (
     <div className="p-4 space-y-4">
-      {/* Payment Form */}
       <div className="space-y-4">
-        {/* Amount, Method, Date - Single Row on Desktop */}
+
+        {/* Amount / Method / Date */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
           {/* Amount */}
           <div>
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -130,6 +123,7 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
                 </span>
               )}
             </label>
+
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none select-none">
                 $
@@ -138,25 +132,13 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
                 type="number"
                 step="0.01"
                 value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="0.00"
-                style={{ 
-                  MozAppearance: 'textfield',
-                  WebkitAppearance: 'none',
-                  appearance: 'none'
+                onChange={(e) => {
+                  setPaymentAmount(e.target.value);
+                  setMarkPaidInFull(false);
                 }}
+                placeholder="0.00"
                 className="w-full pl-12 pr-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none transition"
               />
-              <style jsx>{`
-                input[type="number"]::-webkit-inner-spin-button,
-                input[type="number"]::-webkit-outer-spin-button {
-                  -webkit-appearance: none;
-                  margin: 0;
-                }
-                input[type="number"] {
-                  -moz-appearance: textfield;
-                }
-              `}</style>
             </div>
           </div>
 
@@ -199,6 +181,32 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
           </div>
         </div>
 
+        {/* Paid in Full Toggle */}
+        {lead?.quote_total && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-semibold text-gray-700">
+                Mark as Paid in Full
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMarkPaidInFull(!markPaidInFull)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                markPaidInFull ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                  markPaidInFull ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
+
         {/* Notes */}
         <div>
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -208,13 +216,12 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
           <textarea
             value={paymentNotes}
             onChange={(e) => setPaymentNotes(e.target.value)}
-            placeholder="Add any notes about this payment..."
             rows={3}
             className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-gray-500 focus:ring-2 focus:ring-gray-100 focus:outline-none transition"
           />
         </div>
 
-        {/* Remaining Balance Card - Show always if quote exists */}
+        {/* Remaining Balance Card — Your Full Gradient Logic Preserved */}
         {lead?.quote_total && (
           <div className={`rounded-xl p-4 border-2 ${
             paymentAmount && parseFloat(paymentAmount) > 0
@@ -261,7 +268,9 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
               {paymentAmount && parseFloat(paymentAmount) > 0 && parseFloat(lead.quote_total) - parseFloat(paymentAmount) > 0 && (
                 <div className="text-right">
                   <p className="text-xs text-gray-600">Paid</p>
-                  <p className="text-sm font-semibold text-gray-900">{formatCurrency(parseFloat(paymentAmount))}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(parseFloat(paymentAmount))}
+                  </p>
                 </div>
               )}
             </div>
@@ -277,6 +286,7 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
           <Save className="w-4 h-4" />
           {saving ? 'Saving...' : 'Update Payment'}
         </button>
+
       </div>
     </div>
   );

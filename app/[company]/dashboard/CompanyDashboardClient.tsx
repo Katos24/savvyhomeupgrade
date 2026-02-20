@@ -37,6 +37,7 @@ type Company = {
   logo_url?: string | null;
   status_options?: StatusOption[];
   form_categories?: any[];
+  custom_questions?: any[]
   subscription_status?: string;
   trial_ends_at?: string | null;
 };
@@ -723,6 +724,7 @@ let filteredLeads = allLeads.filter(lead => {
   onBulkDelete={handleBulkDelete}
   teamMembers={teamMembers}
   categories={company.form_categories || []}
+  customQuestions={company.custom_questions || []} 
                     
                   />                
                 </div>

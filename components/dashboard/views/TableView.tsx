@@ -4,6 +4,14 @@ import { safeJSONParse } from '@/lib/utils';
 import { Edit2, X, Trash2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface CustomQuestion {
+  id: string;
+  type: 'text' | 'select' | 'checkbox' | 'textarea';
+  label: string;
+  options: string[];
+  required: boolean;
+}
+
 interface TableViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
@@ -12,6 +20,7 @@ interface TableViewProps {
   onBulkDelete?: (leadIds: number[]) => Promise<void>;
   teamMembers?: any[];
   categories?: any[];
+  customQuestions?: CustomQuestion[];
 }
 
 type SortConfig = {
@@ -27,6 +36,14 @@ const formatCategory = (cat: string) => {
     .join(' ');
 };
 
+const formatCustomAnswer = (value: any, question: CustomQuestion): string => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (question.type === 'checkbox') {
+    return value === true || value === 'true' ? '✅ Yes' : '❌ No';
+  }
+  return String(value);
+};
+
 export default function TableView({ 
   leads, 
   onSelectLead, 
@@ -34,7 +51,8 @@ export default function TableView({
   onBulkUpdate,
   onBulkDelete,
   teamMembers = [],
-  categories = []
+  categories = [],
+  customQuestions = [],
 }: TableViewProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [editMode, setEditMode] = useState(false);
@@ -45,11 +63,9 @@ export default function TableView({
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    
     if (sortConfig?.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
-    
     setSortConfig({ key, direction });
   };
 
@@ -98,7 +114,6 @@ export default function TableView({
 
   const handleBulkStatusChange = async (newStatus: string) => {
     if (!onBulkUpdate || selectedIds.size === 0) return;
-    
     setBulkActionLoading(true);
     try {
       await onBulkUpdate(Array.from(selectedIds), { status: newStatus });
@@ -114,7 +129,6 @@ export default function TableView({
 
   const handleBulkAssign = async (assignedTo: string) => {
     if (!onBulkUpdate || selectedIds.size === 0) return;
-    
     setBulkActionLoading(true);
     try {
       await onBulkUpdate(Array.from(selectedIds), { assigned_to: assignedTo });
@@ -130,7 +144,6 @@ export default function TableView({
 
   const handleBulkCategoryChange = async (newCategory: string) => {
     if (!onBulkUpdate || selectedIds.size === 0) return;
-    
     setBulkActionLoading(true);
     try {
       await onBulkUpdate(Array.from(selectedIds), { category: newCategory });
@@ -146,7 +159,6 @@ export default function TableView({
 
   const handleBulkDelete = async () => {
     if (!onBulkDelete || selectedIds.size === 0) return;
-    
     setBulkActionLoading(true);
     try {
       await onBulkDelete(Array.from(selectedIds));
@@ -169,61 +181,70 @@ export default function TableView({
       let aValue: any;
       let bValue: any;
 
-      switch (sortConfig.key) {
-        case 'name':
-          aValue = a.name?.toLowerCase() || '';
-          bValue = b.name?.toLowerCase() || '';
-          break;
-        case 'phone':
-          aValue = a.phone || '';
-          bValue = b.phone || '';
-          break;
-        case 'email':
-          aValue = a.email?.toLowerCase() || '';
-          bValue = b.email?.toLowerCase() || '';
-          break;
-        case 'category':
-          aValue = a.category?.toLowerCase() || '';
-          bValue = b.category?.toLowerCase() || '';
-          break;
-        case 'city':
-          aValue = a.city?.toLowerCase() || '';
-          bValue = b.city?.toLowerCase() || '';
-          break;
-        case 'lead_source':
-          aValue = a.lead_source?.toLowerCase() || '';
-          bValue = b.lead_source?.toLowerCase() || '';
-          break;
-        case 'status':
-          const aStatusIndex = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
-          const bStatusIndex = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
-          aValue = aStatusIndex >= 0 ? aStatusIndex : 999;
-          bValue = bStatusIndex >= 0 ? bStatusIndex : 999;
-          break;
-        case 'scheduled_date':
-          aValue = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0;
-          bValue = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0;
-          break;
-        case 'quote_total':
-          aValue = a.quote_total || 0;
-          bValue = b.quote_total || 0;
-          break;
-        case 'payment_amount':
-          aValue = a.payment_amount || 0;
-          bValue = b.payment_amount || 0;
-          break;
-        case 'media':
-          const aFiles = safeJSONParse(a.file_urls) || [];
-          const bFiles = safeJSONParse(b.file_urls) || [];
-          aValue = aFiles.length;
-          bValue = bFiles.length;
-          break;
-        case 'date':
-          aValue = new Date(a.created_at).getTime();
-          bValue = new Date(b.created_at).getTime();
-          break;
-        default:
-          return 0;
+      // Handle custom question sorting
+      if (sortConfig.key.startsWith('cq_')) {
+        const qId = sortConfig.key.replace('cq_', '');
+        const aAnswers = a.custom_answers || {};
+        const bAnswers = b.custom_answers || {};
+        aValue = String(aAnswers[qId] ?? '').toLowerCase();
+        bValue = String(bAnswers[qId] ?? '').toLowerCase();
+      } else {
+        switch (sortConfig.key) {
+          case 'name':
+            aValue = a.name?.toLowerCase() || '';
+            bValue = b.name?.toLowerCase() || '';
+            break;
+          case 'phone':
+            aValue = a.phone || '';
+            bValue = b.phone || '';
+            break;
+          case 'email':
+            aValue = a.email?.toLowerCase() || '';
+            bValue = b.email?.toLowerCase() || '';
+            break;
+          case 'category':
+            aValue = a.category?.toLowerCase() || '';
+            bValue = b.category?.toLowerCase() || '';
+            break;
+          case 'city':
+            aValue = a.city?.toLowerCase() || '';
+            bValue = b.city?.toLowerCase() || '';
+            break;
+          case 'lead_source':
+            aValue = a.lead_source?.toLowerCase() || '';
+            bValue = b.lead_source?.toLowerCase() || '';
+            break;
+          case 'status':
+            const aStatusIndex = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
+            const bStatusIndex = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
+            aValue = aStatusIndex >= 0 ? aStatusIndex : 999;
+            bValue = bStatusIndex >= 0 ? bStatusIndex : 999;
+            break;
+          case 'scheduled_date':
+            aValue = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0;
+            bValue = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0;
+            break;
+          case 'quote_total':
+            aValue = a.quote_total || 0;
+            bValue = b.quote_total || 0;
+            break;
+          case 'payment_amount':
+            aValue = a.payment_amount || 0;
+            bValue = b.payment_amount || 0;
+            break;
+          case 'media':
+            const aFiles = safeJSONParse(a.file_urls) || [];
+            const bFiles = safeJSONParse(b.file_urls) || [];
+            aValue = aFiles.length;
+            bValue = bFiles.length;
+            break;
+          case 'date':
+            aValue = new Date(a.created_at).getTime();
+            bValue = new Date(b.created_at).getTime();
+            break;
+          default:
+            return 0;
+        }
       }
 
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -253,6 +274,9 @@ export default function TableView({
   };
 
   const sortedLeads = getSortedLeads();
+
+  // Only render custom question columns if there are any defined
+  const hasCustomQuestions = customQuestions.length > 0;
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-lg shadow-lg overflow-hidden border border-white/20">
@@ -285,7 +309,6 @@ export default function TableView({
                     <ChevronDown className="w-4 h-4" />
                   </button>
 
-                  {/* Actions Dropdown */}
                   {showActionsMenu && (
                     <>
                       <div 
@@ -294,7 +317,6 @@ export default function TableView({
                       />
                       <div className="absolute left-0 top-full mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-20 overflow-hidden">
                         
-                        {/* Change Status */}
                         <div className="group">
                           <div className="px-4 py-2 text-sm font-semibold text-white bg-slate-700">
                             Change Status
@@ -318,7 +340,6 @@ export default function TableView({
 
                         <div className="border-t border-slate-700" />
 
-                        {/* Assign To */}
                         {teamMembers.length > 0 && (
                           <>
                             <div className="group">
@@ -341,7 +362,6 @@ export default function TableView({
                           </>
                         )}
 
-                        {/* Change Category */}
                         {categories.length > 0 && (
                           <>
                             <div className="group">
@@ -364,7 +384,6 @@ export default function TableView({
                           </>
                         )}
 
-                        {/* Delete */}
                         <button
                           onClick={() => {
                             setShowActionsMenu(false);
@@ -454,11 +473,8 @@ export default function TableView({
         <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-slate-800/80">
             <tr>
-              {/* Checkbox column - only in edit mode */}
               {editMode && (
-                <th className="px-4 py-3 w-12">
-                  {/* Empty - checkbox is in action bar */}
-                </th>
+                <th className="px-4 py-3 w-12" />
               )}
               
               <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
@@ -539,7 +555,23 @@ export default function TableView({
               >
                 Source <SortIcon columnKey="lead_source" />
               </th>
-              
+
+              {/* ── Custom Question Columns ── */}
+              {hasCustomQuestions && customQuestions.map((q) => (
+                <th
+                  key={q.id}
+                  className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap border-l border-violet-500/20"
+                  onClick={() => handleSort(`cq_${q.id}`)}
+                  title={q.label}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="text-white/40 text-[10px]">✦</span>
+                    {q.label.length > 20 ? q.label.slice(0, 20) + '…' : q.label}
+                    <SortIcon columnKey={`cq_${q.id}`} />
+                  </span>
+                </th>
+              ))}
+
               {!editMode && (
                 <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Actions
@@ -554,6 +586,7 @@ export default function TableView({
               const statusConfig = getStatusConfig(leadStatus);
               const statusColorHex = getStatusColorHex(statusConfig.color);
               const isProject = !!lead.project_id;
+              const customAnswers = lead.custom_answers || {};
               
               const images = fileUrls?.filter((f: any) => 
                 f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
@@ -577,7 +610,7 @@ export default function TableView({
                 <tr 
                   key={lead.id} 
                   className={`${rowBgColor} ${editMode ? '' : 'cursor-pointer'} transition ${isSelected ? 'bg-blue-900/20' : ''}`}
-                  onClick={(e) => {
+                  onClick={() => {
                     if (editMode) {
                       toggleSelect(lead.id);
                     } else {
@@ -585,7 +618,6 @@ export default function TableView({
                     }
                   }}
                 >
-                  {/* Checkbox column */}
                   {editMode && (
                     <td className="px-4 py-4">
                       <input
@@ -600,9 +632,7 @@ export default function TableView({
 
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     {isProject && lead.project_number ? (
-                      <span className="font-semibold text-emerald-400">
-                        {lead.project_number}
-                      </span>
+                      <span className="font-semibold text-emerald-400">{lead.project_number}</span>
                     ) : (
                       <span className="text-white/40">—</span>
                     )}
@@ -613,22 +643,16 @@ export default function TableView({
                   </td>
 
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">
-                      {formatPhone(lead.phone || '')}
-                    </div>
+                    <div className="text-sm text-white">{formatPhone(lead.phone || '')}</div>
                     <div className="text-xs text-white/60">{lead.email}</div>
                   </td>
 
                   <td className="px-4 py-4">
                     {lead.address_line_1 ? (
                       <div className="text-sm max-w-xs">
-                        <div className="text-white truncate font-medium">
-                          {lead.address_line_1}
-                        </div>
+                        <div className="text-white truncate font-medium">{lead.address_line_1}</div>
                         {lead.address_line_2 && (
-                          <div className="text-white/70 text-xs truncate">
-                            {lead.address_line_2}
-                          </div>
+                          <div className="text-white/70 text-xs truncate">{lead.address_line_2}</div>
                         )}
                       </div>
                     ) : (
@@ -699,9 +723,7 @@ export default function TableView({
 
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
                     {lead.quote_total ? (
-                      <div className="font-semibold text-green-400">
-                        {formatCurrency(lead.quote_total)}
-                      </div>
+                      <div className="font-semibold text-green-400">{formatCurrency(lead.quote_total)}</div>
                     ) : (
                       <span className="text-white/40">—</span>
                     )}
@@ -710,9 +732,7 @@ export default function TableView({
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
                     {lead.payment_amount ? (
                       <div>
-                        <div className="font-semibold text-blue-400">
-                          {formatCurrency(lead.payment_amount)}
-                        </div>
+                        <div className="font-semibold text-blue-400">{formatCurrency(lead.payment_amount)}</div>
                         {lead.payment_status && (
                           <div className="text-xs text-white/60 capitalize">{lead.payment_status}</div>
                         )}
@@ -749,6 +769,34 @@ export default function TableView({
                       <span className="text-white/40 text-sm">—</span>
                     )}
                   </td>
+
+                  {/* ── Custom Question Answer Cells ── */}
+                  {hasCustomQuestions && customQuestions.map((q) => {
+                    const rawAnswer = customAnswers[q.id];
+                    const displayValue = formatCustomAnswer(rawAnswer, q);
+                    const hasAnswer = rawAnswer !== null && rawAnswer !== undefined && rawAnswer !== '';
+
+                    return (
+                      <td
+                        key={q.id}
+                        className="px-4 py-4 whitespace-nowrap text-sm border-l border-violet-500/10"
+                      >
+                        {hasAnswer ? (
+                          q.type === 'checkbox' ? (
+                            <span className={`text-sm ${rawAnswer === true || rawAnswer === 'true' ? 'text-green-400' : 'text-red-400'}`}>
+                              {displayValue}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md bg-white/10 text-white border border-white/20 text-xs font-medium">
+                              {displayValue}
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-white/40">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
 
                   {!editMode && (
                     <td className="px-4 py-4 whitespace-nowrap text-sm">

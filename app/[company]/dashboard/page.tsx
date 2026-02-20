@@ -54,6 +54,7 @@ async function getCompany(slug: string): Promise<Company | null> {
     plan_tier: company.plan_tier || 'basic', // DEFAULT TO BASIC
     status_options: company.status_options || [],
     form_categories: company.form_categories || [],
+    custom_questions: company.custom_questions || [],
   } as Company;
 }
 
