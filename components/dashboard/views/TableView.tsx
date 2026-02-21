@@ -210,6 +210,10 @@ export default function TableView({
             aValue = a.city?.toLowerCase() || '';
             bValue = b.city?.toLowerCase() || '';
             break;
+          case 'zip_code':
+            aValue = a.zip_code?.toLowerCase() || '';
+            bValue = b.zip_code?.toLowerCase() || '';
+            break;
           case 'lead_source':
             aValue = a.lead_source?.toLowerCase() || '';
             bValue = b.lead_source?.toLowerCase() || '';
@@ -502,6 +506,12 @@ export default function TableView({
                 City <SortIcon columnKey="city" />
               </th>
               <th 
+  className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
+  onClick={() => handleSort('zip_code')}
+>
+  Zip <SortIcon columnKey="zip_code" />
+</th>
+              <th 
                 className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer hover:bg-slate-700/50 transition select-none whitespace-nowrap"
                 onClick={() => handleSort('category')}
               >
@@ -665,6 +675,12 @@ export default function TableView({
                       {lead.city || <span className="text-white/40">—</span>}
                     </div>
                   </td>
+
+                  <td className="px-4 py-4 whitespace-nowrap">
+  <div className="text-sm text-white">
+    {lead.zip_code || <span className="text-white/40">—</span>}
+  </div>
+</td>
 
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">

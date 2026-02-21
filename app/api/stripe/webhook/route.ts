@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
 
   const sql = neon(process.env.DATABASE_URL!);
 
-  // Handle the event
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
@@ -42,7 +41,6 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // Update company with subscription info
       await sql`
         UPDATE companies 
         SET 
@@ -53,9 +51,8 @@ export async function POST(req: NextRequest) {
         WHERE id = ${parseInt(companyId)}
       `;
 
-      console.log(`✅ Subscription created for company ${companyId}`);
+      console.log(`✅ Checkout completed for company ${companyId}`);
 
-      // 🔥 SEND ACTIVATION EMAIL
       try {
         const company = await sql`
           SELECT name, email, slug FROM companies WHERE id = ${parseInt(companyId)}
@@ -76,20 +73,32 @@ export async function POST(req: NextRequest) {
 
     case 'customer.subscription.updated': {
       const subscription = event.data.object;
-      
-      await sql`
+
+      console.log('Subscription updated:', subscription.id, '| Status:', subscription.status, '| Customer:', subscription.customer);
+
+      // Look up by stripe_customer_id as fallback since subscription_id may not be set yet
+      const result = await sql`
         UPDATE companies 
-        SET subscription_status = ${subscription.status}
-        WHERE stripe_subscription_id = ${subscription.id}
+        SET 
+          stripe_subscription_id = ${subscription.id},
+          subscription_status = ${subscription.status}
+        WHERE stripe_customer_id = ${subscription.customer as string}
+           OR stripe_subscription_id = ${subscription.id}
+        RETURNING id, subscription_status
       `;
 
-      console.log(`✅ Subscription updated: ${subscription.status}`);
-      
-      // 🔥 SEND CANCELLATION EMAIL IF SCHEDULED TO CANCEL
+      if (result.length === 0) {
+        console.error('❌ No company found for customer:', subscription.customer, 'or subscription:', subscription.id);
+      } else {
+        console.log(`✅ Subscription updated for company ${result[0].id}: ${result[0].subscription_status}`);
+      }
+
+      // Send cancellation email if scheduled to cancel
       if (subscription.cancel_at_period_end === true) {
         try {
           const company = await sql`
-            SELECT name, email FROM companies WHERE stripe_subscription_id = ${subscription.id}
+            SELECT name, email FROM companies 
+            WHERE stripe_customer_id = ${subscription.customer as string}
           `;
           if (company[0]) {
             await sendSubscriptionCancelledEmail({
@@ -102,25 +111,31 @@ export async function POST(req: NextRequest) {
           console.error('Failed to send cancellation email:', emailError);
         }
       }
-      
+
       break;
     }
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
-      
-      await sql`
+
+      const result = await sql`
         UPDATE companies 
         SET subscription_status = 'canceled'
-        WHERE stripe_subscription_id = ${subscription.id}
+        WHERE stripe_customer_id = ${subscription.customer as string}
+           OR stripe_subscription_id = ${subscription.id}
+        RETURNING id
       `;
 
-      console.log(`✅ Subscription canceled`);
+      if (result.length === 0) {
+        console.error('❌ No company found for deleted subscription:', subscription.id);
+      } else {
+        console.log(`✅ Subscription canceled for company ${result[0].id}`);
+      }
 
-      // 🔥 SEND CANCELLATION EMAIL (for immediate cancels)
       try {
         const company = await sql`
-          SELECT name, email FROM companies WHERE stripe_subscription_id = ${subscription.id}
+          SELECT name, email FROM companies 
+          WHERE stripe_customer_id = ${subscription.customer as string}
         `;
         if (company[0]) {
           await sendSubscriptionCancelledEmail({
@@ -138,10 +153,10 @@ export async function POST(req: NextRequest) {
 
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
-      
+
       try {
         const company = await sql`
-          SELECT name, email FROM companies WHERE stripe_customer_id = ${invoice.customer}
+          SELECT name, email FROM companies WHERE stripe_customer_id = ${invoice.customer as string}
         `;
         if (company[0]) {
           await sendPaymentFailedEmail({
@@ -149,12 +164,14 @@ export async function POST(req: NextRequest) {
             companyName: company[0].name,
             updatePaymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
           });
+          console.log('✅ Payment failed email sent');
+        } else {
+          console.error('❌ No company found for failed payment, customer:', invoice.customer);
         }
       } catch (emailError) {
         console.error('Failed to send payment failed email:', emailError);
       }
 
-      console.log(`✅ Payment failed email sent`);
       break;
     }
 

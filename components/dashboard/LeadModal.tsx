@@ -23,6 +23,8 @@ import PhotoGallery from '@/components/dashboard/PhotoGallery';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
 import { parseNotes } from '@/lib/utils';
 import { canDeleteLead } from '@/lib/permissions';
+import CompletionSummaryModal from './CompletionSummaryModal';
+
 
 type LeadModalProps = {
   lead: any;
@@ -66,6 +68,8 @@ export default function LeadModal({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [newNote, setNewNote] = useState('');
+  const [showCompletionSummary, setShowCompletionSummary] = useState(false);
+
   
   // Edit mode
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -193,6 +197,15 @@ export default function LeadModal({
       setIsUpdatingStatus(false);
     }
   };
+const handleSaveStatusWithCheck = () => {
+  const oldStatus = lead.status || statusOptions[0]?.value;
+  if (selectedStatus === 'completed' && selectedStatus !== oldStatus) {
+    setShowCompletionSummary(true);
+    return;
+  }
+  handleStatusChange();
+};
+  
 
   const handleSaveInternalNotes = async () => {
     if (!lead.project_id) {
@@ -342,7 +355,7 @@ export default function LeadModal({
             </div>
             {selectedStatus !== lead.status && (
               <button
-                onClick={handleStatusChange}
+onClick={handleSaveStatusWithCheck}
                 disabled={isUpdatingStatus}
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white text-sm font-semibold rounded-lg transition"
               >
@@ -560,7 +573,7 @@ export default function LeadModal({
                   className="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
                 >
                   <span className="text-xs">{showCustomQuestions ? '▼' : '▶'}</span>
-                  Additional Questions ({Object.keys(lead.custom_answers).length})
+                  Additional ({Object.keys(lead.custom_answers).length})
                 </button>
                 
                 {showCustomQuestions && (
@@ -852,6 +865,20 @@ companySlug={companySlug}
             </button>
           )}
         </div>
+
+        {showCompletionSummary && (
+  <CompletionSummaryModal
+    lead={lead}
+    onConfirm={() => {
+      setShowCompletionSummary(false);
+      handleStatusChange();
+    }}
+    onCancel={() => {
+      setShowCompletionSummary(false);
+      setSelectedStatus(lead.status || statusOptions[0]?.value);
+    }}
+  />
+)}
 
         {/* Category Confirmation */}
         {showCategoryConfirm && (

@@ -22,7 +22,8 @@ import {
   Clock, 
   Users,
   Loader2,
-  Calendar
+  Calendar,
+  ArrowLeft  
 } from 'lucide-react';
 
 type Company = {
@@ -91,6 +92,17 @@ export default function AnalyticsClient({ company }: { company: Company }) {
   return (
     <div className="min-h-screen p-6" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
       <div className="max-w-7xl mx-auto">
+
+     {/* Back to Dashboard */}
+<div className="mb-6">
+  <a
+    href={`/${company.slug}/dashboard`}
+    className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20"
+  >
+    <ArrowLeft className="w-4 h-4" />
+    Back to Dashboard
+  </a>
+</div>
         
         {/* Header */}
         <div className="mb-8">

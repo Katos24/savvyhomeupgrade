@@ -761,6 +761,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    // ==================== UPDATE LEAD STEP 2 (from public form) ====================
+else if (action === 'update_lead_step2') {
+  console.log('📋 Updating lead with step 2 details, lead ID:', id);
+
+  const {
+    address_line_1,
+    address_line_2,
+    city,
+    zip_code,
+    lead_source,
+    preferred_date,
+    preferred_time,
+    custom_answers,
+    file_urls,
+  } = body;
+
+  // Merge new file_urls with any existing ones
+  const existingLead = await sql`SELECT file_urls FROM leads WHERE id = ${id}`;
+  let existingFiles = [];
+  try {
+    const raw = existingLead[0]?.file_urls;
+    existingFiles = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+  } catch {
+    existingFiles = [];
+  }
+  const mergedFiles = [...existingFiles, ...(file_urls || [])];
+
+  await sql`
+    UPDATE leads
+    SET
+      address_line_1 = COALESCE(${address_line_1 || null}, address_line_1),
+      address_line_2 = COALESCE(${address_line_2 || null}, address_line_2),
+      city           = COALESCE(${city || null}, city),
+      zip_code       = COALESCE(${zip_code || null}, zip_code),
+      lead_source    = COALESCE(${lead_source || null}, lead_source),
+      preferred_date = COALESCE(${preferred_date || null}, preferred_date),
+      preferred_time = COALESCE(${preferred_time || null}, preferred_time),
+      custom_answers = COALESCE(${custom_answers ? JSON.stringify(custom_answers) : null}::jsonb, custom_answers),
+      file_urls      = ${JSON.stringify(mergedFiles)},
+      updated_at     = NOW()
+    WHERE id = ${id}
+  `;
+
+  console.log('✅ Lead step 2 updated');
+  return NextResponse.json({ success: true });
+}
+
     // ==================== LEGACY ====================
     else {
       console.log('⚠️ Legacy update');
