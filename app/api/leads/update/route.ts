@@ -502,12 +502,19 @@ export async function POST(request: Request) {
           projectDescription: lead.category || 'Your project',
         });
 
-        await sql`
-          UPDATE projects 
-          SET quote_sent_at = NOW(),
-              updated_at = NOW()
-          WHERE id = ${lead.project_id}
-        `;
+       await sql`
+  UPDATE projects 
+  SET quote_sent_at = NOW(),
+      quote_emails = COALESCE(quote_emails, '[]'::jsonb) || ${JSON.stringify([{
+        sent_at: new Date().toISOString(),
+        sent_by_name: user_name,
+        sent_by_email: user_email,
+        quote_total: parseFloat(lead.quote_total),
+        quote_data: quoteItems
+      }])}::jsonb,
+      updated_at = NOW()
+  WHERE id = ${lead.project_id}
+`;
 
         const quoteSentEntry = {
           type: 'quote_sent',
@@ -519,6 +526,8 @@ export async function POST(request: Request) {
 
         await addActivityToProject(id, quoteSentEntry);
 
+
+
         console.log('✅ Quote email sent to customer');
         return NextResponse.json({ success: true, message: 'Quote sent to customer!' });
       } catch (emailError) {
@@ -529,6 +538,8 @@ export async function POST(request: Request) {
         }, { status: 500 });
       }
     }
+
+    
 
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
@@ -544,8 +555,8 @@ export async function POST(request: Request) {
           l.city,
           l.zip_code,
           l.project_id,
-          p.scheduled_date,
-          p.scheduled_time,
+          p.scheduled_date::text as scheduled_date,
+          p.scheduled_time::text as scheduled_time,
           p.assigned_to,
           c.name as company_name,
           c.phone as company_phone,

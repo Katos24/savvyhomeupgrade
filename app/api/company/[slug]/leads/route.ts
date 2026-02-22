@@ -38,6 +38,8 @@ export async function GET(request: Request, { params }: Props) {
         p.quote_total,
         p.quote_sent_at,
         p.quote_accepted_at,
+        p.schedule_emails,
+        p.quote_accepted_at,
         p.payment_status,
         p.payment_amount,
         p.paid_at,

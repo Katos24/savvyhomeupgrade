@@ -33,6 +33,9 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
 
+console.log('quote_emails:', lead?.quote_emails);
+
+
   // Fetch custom templates on mount
   useEffect(() => {
     async function fetchCustomTemplates() {
@@ -93,19 +96,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     template => template.category === lead?.category
   );
 
-  // Parse activity log
-  const notesArray = parseNotes(lead.notes);
-  const quoteEmails = notesArray.filter((note: any) => {
-    if (typeof note === 'string') return false;
-    return (note.type === 'email_sent' || note.type === 'quote_sent') && 
-           (note.text?.toLowerCase().includes('quote') || note.email_type === 'quote');
-  });
 
-  const lastEmailSent = quoteEmails.length > 0 ? {
-    timestamp: quoteEmails[quoteEmails.length - 1].timestamp,
-    userName: quoteEmails[quoteEmails.length - 1].user_name || 'Unknown',
-    quoteTotal: quoteEmails[quoteEmails.length - 1].quote_total,
-  } : null;
 
   const handleTemplateSelect = (templateId: string) => {
     if (!templateId) return;
@@ -463,33 +454,44 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         )}
       </div>
 
-      {/* Email Sent Log */}
-      {lastEmailSent && !isEditing && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Mail className="w-5 h-5 text-blue-600" />
+{/* Email Sent Log */}
+{!isEditing && (() => {
+  let emailLog = [];
+  try {
+    const raw = lead?.quote_emails;
+    emailLog = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+  } catch { emailLog = []; }
+
+  if (emailLog.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+        <Mail className="w-4 h-4" />
+        Quote Email History
+      </p>
+      {[...emailLog].reverse().map((entry: any, idx: number) => (
+        <div key={idx} className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-bold text-blue-900">
+                {formatCurrency(entry.quote_total)}
+              </span>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-blue-900">Quote Sent to Customer</p>
-              <div className="mt-2 flex items-center gap-2 text-sm text-blue-800">
-                <DollarSign className="w-4 h-4" />
-                <span className="font-semibold">{formatCurrency(lastEmailSent.quoteTotal)}</span>
-              </div>
-              <p className="text-xs text-blue-700 mt-2">
-                Sent by <span className="font-semibold">{lastEmailSent.userName}</span> on{' '}
-                {new Date(lastEmailSent.timestamp).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
+            <span className="text-xs text-blue-700">
+              {new Date(entry.sent_at).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+                hour: 'numeric', minute: '2-digit'
+              })}
+            </span>
           </div>
+          <p className="text-xs text-blue-600 mt-1">by {entry.sent_by_email}</p>
         </div>
-      )}
+      ))}
+    </div>
+  );
+})()}
     </div>
   );
 }

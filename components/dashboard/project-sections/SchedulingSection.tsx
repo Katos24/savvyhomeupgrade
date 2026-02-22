@@ -53,6 +53,11 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeamMembers();
   }, []);
 
+  console.log('💾 schedule_emails entry:', {
+  scheduled_date: lead.scheduled_date,
+  scheduled_time: lead.scheduled_time
+});
+
   // Parse 24-hour time string into hour/minute/ampm components
   const parseTimeString = (time24: string) => {
     if (!time24) return { hour: '', minute: '', ampm: 'AM' };
@@ -129,19 +134,12 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     setScheduledTime(newTime);
   }, [timeHour, timeMinute, timeAmPm]);
 
-  // Parse activity log
-  const notesArray = parseNotes(lead.notes);
-  const scheduleEmails = notesArray.filter((note: any) => {
-    if (typeof note === 'string') return false;
-    return (note.type === 'email_sent' || note.type === 'schedule_sent') && 
-           (note.text?.toLowerCase().includes('schedule') || note.email_type === 'schedule');
-  });
-
-  const lastEmailSent = scheduleEmails.length > 0 ? {
-    timestamp: scheduleEmails[scheduleEmails.length - 1].timestamp,
-    userName: scheduleEmails[scheduleEmails.length - 1].user_name || 'Unknown',
-    count: scheduleEmails.length
-  } : null;
+// Parse schedule_emails log from projects table
+  let scheduleEmailLog: any[] = [];
+  try {
+    const raw = lead?.schedule_emails;
+    scheduleEmailLog = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+  } catch { scheduleEmailLog = []; }
 
   // Format time for display (convert 14:30 to 2:30 PM)
   const formatTimeDisplay = (time24: string) => {
@@ -481,44 +479,27 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             )}
           </div>
         </div>
-
-        {/* Email Sent Log */}
-        {lastEmailSent && (
+        {/* Schedule Email History */}
+        {scheduleEmailLog.length > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-start gap-2">
               <Mail className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-green-800">
-                  Schedule emailed to customer
+                <p className="text-sm font-semibold text-green-800 mb-2">
+                  Schedule emailed to customer ({scheduleEmailLog.length}x)
                 </p>
-                
-                {scheduledDate && (
-                  <div className="mt-1.5 flex items-center gap-2 text-xs text-green-700">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span className="font-medium">
-                      {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                      {scheduledTime && ` at ${formatTimeDisplay(scheduledTime)}`}
-                    </span>
+                {[...scheduleEmailLog].reverse().map((entry: any, idx: number) => (
+                  <div key={idx} className={`text-xs text-green-700 ${idx > 0 ? 'mt-2 pt-2 border-t border-green-200' : ''}`}>
+                   <div className="flex items-center gap-1.5 font-medium">
+  <Mail className="w-3.5 h-3.5" />
+  Sent {new Date(entry.sent_at).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit'
+  })}
+</div>
+<p className="mt-0.5 text-green-600">by {entry.sent_by_email}</p>
                   </div>
-                )}
-                
-                {lastEmailSent && (
-                  <p className="text-xs text-green-700 mt-1.5">
-                    Last sent by <span className="font-medium">{lastEmailSent.userName}</span> on{' '}
-                    {new Date(lastEmailSent.timestamp).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                )}
+                ))}
               </div>
             </div>
           </div>
