@@ -1,9 +1,7 @@
 'use client';
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Mail } from 'lucide-react';
-import EmailPreviewModal from './EmailPreviewModal';
 
 type SendCustomerEmailButtonsProps = {
   leadId: number;
@@ -26,32 +24,22 @@ export default function SendCustomerEmailButtons({
   quoteSentAt = null,
   disabled = false,
 }: SendCustomerEmailButtonsProps) {
-  const [showPreview, setShowPreview] = useState(false);
+  const canSend = type === 'quote' ? hasQuote : hasSchedule;
 
-  const canSend =
-    type === 'quote' ? hasQuote : hasSchedule;
-
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log('🔍 SendCustomerEmailButtons handleClick fired');
-    console.log('🔍 type:', type, 'canSend:', canSend, 'disabled:', disabled);
-    console.log('🔍 hasQuote:', hasQuote, 'hasSchedule:', hasSchedule);
 
     if (type === 'quote' && !hasQuote) {
       toast.error('Create a quote first');
       return;
     }
+
     if (type === 'schedule' && !hasSchedule) {
       toast.error('Set a schedule date first');
       return;
     }
 
-    console.log('🔍 Setting showPreview to true');
-    setShowPreview(true);
-  };
-
-  const handleSend = async (personalNote: string) => {
     const action = type === 'quote' ? 'send_quote_to_customer' : 'send_schedule_to_customer';
     const successMessage =
       type === 'quote' ? 'Quote emailed to customer!' : 'Schedule confirmation emailed!';
@@ -62,7 +50,7 @@ export default function SendCustomerEmailButtons({
       body: JSON.stringify({
         id: leadId,
         action,
-        personal_note: personalNote || '',
+        personal_note: '',
         user_name: currentUser?.name || 'Unknown User',
         user_email: currentUser?.email || '',
       }),
@@ -75,44 +63,28 @@ export default function SendCustomerEmailButtons({
       await onRefresh();
     } else {
       toast.error(result.error || 'Failed to send email');
-      throw new Error(result.error || 'Failed to send email');
     }
   };
 
   const buttonText =
     type === 'quote' ? 'Email Quote to Customer' : 'Email Schedule to Customer';
-
   const isDisabled = disabled || !canSend;
 
-  console.log('🔍 SendCustomerEmailButtons render - showPreview:', showPreview, 'isDisabled:', isDisabled);
-
   return (
-    <>
-      <div className="space-y-2">
-        <button
-          onClick={handleClick}
-          disabled={isDisabled}
-          className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition text-sm"
-        >
-          <Mail className="w-3.5 h-3.5" />
-          {buttonText}
-        </button>
-        {type === 'quote' && quoteSentAt && (
-          <p className="text-xs text-green-600 font-semibold text-center">
-            Quote emailed on {new Date(quoteSentAt).toLocaleDateString()}
-          </p>
-        )}
-      </div>
-
-      {showPreview && (
-        <EmailPreviewModal
-          leadId={leadId}
-          type={type}
-          currentUser={currentUser}
-          onClose={() => setShowPreview(false)}
-          onSend={handleSend}
-        />
+    <div className="space-y-2">
+      <button
+        onClick={handleClick}
+        disabled={isDisabled}
+        className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition text-sm"
+      >
+        <Mail className="w-3.5 h-3.5" />
+        {buttonText}
+      </button>
+      {type === 'quote' && quoteSentAt && (
+        <p className="text-xs text-green-600 font-semibold text-center">
+          Quote emailed on {new Date(quoteSentAt).toLocaleDateString()}
+        </p>
       )}
-    </>
+    </div>
   );
 }
