@@ -91,7 +91,7 @@ export default async function CompanyPage({
             href="/" 
             className="text-gray-600 hover:text-gray-900 text-sm transition"
           >
-            Powered by SavvyHomeUpgrade
+            Powered by Lead2Project
           </a>
         </div>
       </header>

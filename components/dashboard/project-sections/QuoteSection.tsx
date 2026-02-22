@@ -238,18 +238,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
           Create Quote
         </button>
         
-        {/* Payment Locked Notice */}
-        <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4 max-w-md mx-auto">
-          <div className="flex items-start gap-3">
-            <Lock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-            <div className="text-left">
-              <p className="text-sm font-semibold text-gray-700">Payment Tracking Locked</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Save a quote to unlock payment tracking and billing features
-              </p>
-            </div>
-          </div>
-        </div>
+     
       </div>
     );
   }

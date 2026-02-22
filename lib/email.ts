@@ -100,14 +100,14 @@ export async function sendNewLeadAlertEmail({
               <a href="${dashboardUrl}" class="button">View in Dashboard</a>
             </center>
             
-            <div class="footer">SavvyHome CRM</div>
+            <div class="footer">Lead2Project</div>
           </div>
         </body>
       </html>
     `;
 
     await resend.emails.send({
-      from: 'SavvyHome CRM <onboarding@resend.dev>',
+      from: 'Lead2Project <onboarding@resend.dev>',
       to: contractorEmail,
       subject: `🎯 New Lead: ${customerName} - ${category}`,
       html: emailHtml,
@@ -158,7 +158,7 @@ export async function sendLeadConfirmationEmail({
     `;
 
     await resend.emails.send({
-      from: 'SavvyHome <onboarding@resend.dev>',
+      from: 'Lead2Project <onboarding@resend.dev>',
       to: customerEmail,
       subject: `Thanks for reaching out to ${companyName}!`,
       html: emailHtml,

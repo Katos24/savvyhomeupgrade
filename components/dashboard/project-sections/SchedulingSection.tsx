@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Calendar, Clock, User, Timer, Save, MoreVertical, Mail } from 'lucide-react';
 import { parseNotes } from '@/lib/utils';
-import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
+import SendCustomerEmailButtons from '@/components/dashboard/SendCustomerEmailButtons';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 
 type SchedulingSectionProps = {
@@ -465,16 +465,16 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                   style={{ bottom: '100%', marginBottom: '8px' }}
                 >
                   <div className="p-2">
-                    <div onClick={() => setShowMoreActions(false)}>
-                      <SendCustomerEmailButtons
-                        leadId={lead.id}
-                        type="schedule"
-                        currentUser={currentUser}
-                        onRefresh={onRefresh}
-                        hasSchedule={!!scheduledDate}
-                        disabled={!hasProject}
-                      />
-                    </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+  <SendCustomerEmailButtons
+    leadId={lead.id}
+    type="schedule"
+    currentUser={currentUser}
+    onRefresh={onRefresh}
+    hasSchedule={!!scheduledDate}
+    disabled={!hasProject}
+  />
+</div>
                   </div>
                 </div>
               </>

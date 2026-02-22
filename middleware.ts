@@ -26,6 +26,8 @@ export function middleware(request: NextRequest) {
     '/api/cron/check-trials',
     '/api/cron/send-reminders',
     '/api/upload',
+    '/api/leads/preview-email',
+
   ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));

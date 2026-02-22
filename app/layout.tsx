@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Savvy Home Upgrade - Smart CRM for Contractors",
+  title: "Lead2Project - Smart CRM for Contractors",
   description: "Manage leads, quotes, and projects for your contracting business with ease.",
   keywords: ["CRM", "contractors", "home services", "lead management", "quotes", "scheduling"],
-  authors: [{ name: "Savvy Home Upgrade" }],
+  authors: [{ name: "Lead2Project" }],
   viewport: "width=device-width, initial-scale=1",
   themeColor: "#3b82f6",
 };

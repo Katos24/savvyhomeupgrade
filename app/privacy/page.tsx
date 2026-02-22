@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed">
-              Welcome to Savvy Home Upgrade ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.
+              Welcome to Lead2Project ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.
             </p>
           </section>
 
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
               <li><strong>Withdraw consent:</strong> Withdraw consent where we rely on consent to process your information</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">
-              To exercise these rights, please contact us at privacy@savvyhomeupgrade.com
+              To exercise these rights, please contact us at privacy@lead2project.com
             </p>
           </section>
 
@@ -180,13 +180,13 @@ export default function PrivacyPage() {
             </p>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-gray-700">
-                <strong>Email:</strong> privacy@savvyhomeupgrade.com
+                <strong>Email:</strong> privacy@lead2project.com
               </p>
               <p className="text-gray-700">
                 <strong>Phone:</strong> (555) 123-4567
               </p>
               <p className="text-gray-700">
-                <strong>Address:</strong> Savvy Home Upgrade, New York, NY
+                <strong>Address:</strong> Lead2Project, New York, NY
               </p>
             </div>
           </section>

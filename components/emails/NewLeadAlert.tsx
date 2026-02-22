@@ -63,7 +63,7 @@ export default function NewLeadAlert({
           <Hr style={hr} />
           
           <Text style={footer}>
-            SavvyHome CRM
+            Lead2Project
           </Text>
         </Container>
       </Body>

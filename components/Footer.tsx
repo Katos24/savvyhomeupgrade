@@ -15,7 +15,7 @@ export default function Footer() {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Savvy Home Upgrade
+              Lead2Project
             </h3>
             <p className="text-slate-300 mb-4 leading-relaxed">
               The modern way to manage home service leads. Connect with customers, track projects, and grow your business.
@@ -23,8 +23,8 @@ export default function Footer() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <Mail className="w-4 h-4" />
-                <a href="mailto:support@savvyhomeupgrade.com" className="hover:text-blue-400 transition">
-                  support@savvyhomeupgrade.com
+                <a href="mailto:support@lead2project.com" className="hover:text-blue-400 transition">
+                  support@lead2project.com
                 </a>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -96,7 +96,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-400">
-              © {currentYear} Savvy Home Upgrade. All rights reserved.
+              © {currentYear} Lead2Project. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a

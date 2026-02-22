@@ -23,14 +23,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              By accessing or using Savvy Home Upgrade ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Service.
+              By accessing or using Lead2Project ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Description of Service</h2>
             <p className="text-gray-700 leading-relaxed">
-              Savvy Home Upgrade is a lead management and customer relationship platform designed for home service providers. The Service allows businesses to collect, manage, and track customer leads, projects, quotes, payments, and communications.
+              Lead2Project is a lead management and customer relationship platform designed for home service providers. The Service allows businesses to collect, manage, and track customer leads, projects, quotes, payments, and communications.
             </p>
           </section>
 
@@ -145,7 +145,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed">
-              The Service and its original content, features, and functionality are owned by Savvy Home Upgrade and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of our Service without our express written permission.
+              The Service and its original content, features, and functionality are owned by Lead2Project and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of our Service without our express written permission.
             </p>
           </section>
 
@@ -172,7 +172,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Limitation of Liability</h2>
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
               <p className="text-gray-700 leading-relaxed">
-                To the maximum extent permitted by law, Savvy Home Upgrade shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from:
+                To the maximum extent permitted by law, Lead2Project shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from:
               </p>
               <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4 mt-2">
                 <li>Your use or inability to use the Service</li>
@@ -187,7 +187,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Indemnification</h2>
             <p className="text-gray-700 leading-relaxed">
-              You agree to indemnify, defend, and hold harmless Savvy Home Upgrade and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, and expenses, including reasonable attorney's fees, arising out of or in any way connected with your access to or use of the Service or your violation of these Terms.
+              You agree to indemnify, defend, and hold harmless Lead2Project and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, and expenses, including reasonable attorney's fees, arising out of or in any way connected with your access to or use of the Service or your violation of these Terms.
             </p>
           </section>
 
@@ -227,7 +227,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Entire Agreement</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms constitute the entire agreement between you and Savvy Home Upgrade regarding the Service and supersede all prior agreements and understandings.
+              These Terms constitute the entire agreement between you and Lead2Project regarding the Service and supersede all prior agreements and understandings.
             </p>
           </section>
 
@@ -238,13 +238,13 @@ export default function TermsPage() {
             </p>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-gray-700">
-                <strong>Email:</strong> legal@savvyhomeupgrade.com
+                <strong>Email:</strong> legal@lead2project.com
               </p>
               <p className="text-gray-700">
                 <strong>Phone:</strong> (555) 123-4567
               </p>
               <p className="text-gray-700">
-                <strong>Address:</strong> Savvy Home Upgrade, New York, NY
+                <strong>Address:</strong> Lead2Project, New York, NY
               </p>
             </div>
           </section>
