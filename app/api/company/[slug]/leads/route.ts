@@ -41,6 +41,7 @@ export async function GET(request: Request, { params }: Props) {
         p.schedule_emails,
         p.quote_accepted_at,
         p.payment_status,
+        p.quote_emails,
         p.payment_amount,
         p.paid_at,
         p.invoice_data,

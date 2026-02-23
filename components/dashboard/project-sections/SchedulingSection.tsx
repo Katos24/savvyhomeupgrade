@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Calendar, Clock, User, Timer, Save, MoreVertical, Mail } from 'lucide-react';
-import { parseNotes } from '@/lib/utils';
+import { Mail, MoreVertical, Calendar } from 'lucide-react';
 import SendCustomerEmailButtons from '@/components/dashboard/SendCustomerEmailButtons';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 
@@ -12,24 +11,18 @@ type SchedulingSectionProps = {
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
-  companySlug: string; // Add this
+  companySlug: string;
 };
 
 export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug }: SchedulingSectionProps) {
-  console.log('🔍 SchedulingSection received companySlug:', companySlug);
-  console.log('🔍 SchedulingSection typeof companySlug:', typeof companySlug);
-  
   const [saving, setSaving] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
-  
-  // New separate time components
   const [timeHour, setTimeHour] = useState('');
   const [timeMinute, setTimeMinute] = useState('');
   const [timeAmPm, setTimeAmPm] = useState('AM');
-  
   const [assignedTo, setAssignedTo] = useState('');
   const [showCustomAssignee, setShowCustomAssignee] = useState(false);
   const [customAssignee, setCustomAssignee] = useState('');
@@ -37,15 +30,12 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [actualHours, setActualHours] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
-  // Fetch team members
   useEffect(() => {
     async function fetchTeamMembers() {
       try {
         const response = await fetch('/api/team/members');
         const data = await response.json();
-        if (data.success) {
-          setTeamMembers(data.members);
-        }
+        if (data.success) setTeamMembers(data.members);
       } catch (error) {
         console.error('Failed to fetch team members:', error);
       }
@@ -53,46 +43,25 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeamMembers();
   }, []);
 
-  console.log('💾 schedule_emails entry:', {
-  scheduled_date: lead.scheduled_date,
-  scheduled_time: lead.scheduled_time
-});
-
-  // Parse 24-hour time string into hour/minute/ampm components
   const parseTimeString = (time24: string) => {
     if (!time24) return { hour: '', minute: '', ampm: 'AM' };
-    
     const [hours, minutes] = time24.split(':');
     const hour24 = parseInt(hours);
     const ampm = hour24 >= 12 ? 'PM' : 'AM';
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-    
-    return {
-      hour: hour12.toString(),
-      minute: minutes,
-      ampm: ampm
-    };
+    return { hour: hour12.toString(), minute: minutes, ampm };
   };
 
-  // Convert hour/minute/ampm back to 24-hour format
   const buildTimeString = (hour: string, minute: string, ampm: string) => {
     if (!hour || !minute) return '';
-    
     let hour24 = parseInt(hour);
-    if (ampm === 'PM' && hour24 !== 12) {
-      hour24 += 12;
-    } else if (ampm === 'AM' && hour24 === 12) {
-      hour24 = 0;
-    }
-    
+    if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
+    else if (ampm === 'AM' && hour24 === 12) hour24 = 0;
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
 
-  // Update state when lead changes
   useEffect(() => {
     setScheduledDate(lead?.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : '');
-    
-    // Parse the time
     if (lead?.scheduled_time) {
       const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
       setTimeHour(hour);
@@ -105,61 +74,36 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
       setTimeAmPm('AM');
       setScheduledTime('');
     }
-    
-    // Check if assigned_to is a team member or custom entry
-    if (lead?.assigned_to) {
-      const isTeamMember = teamMembers.some(member => member.name === lead.assigned_to);
-      if (isTeamMember) {
-        setAssignedTo(lead.assigned_to);
-        setShowCustomAssignee(false);
-        setCustomAssignee('');
-      } else {
-        setAssignedTo(lead.assigned_to);
-        setShowCustomAssignee(false);
-        setCustomAssignee('');
-      }
-    } else {
-      setAssignedTo('');
-      setShowCustomAssignee(false);
-      setCustomAssignee('');
-    }
-    
+    setAssignedTo(lead?.assigned_to || '');
+    setShowCustomAssignee(false);
+    setCustomAssignee('');
     setEstimatedHours(lead?.estimated_hours || '');
     setActualHours(lead?.actual_hours || '');
   }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
 
-  // Update scheduledTime whenever time components change
   useEffect(() => {
-    const newTime = buildTimeString(timeHour, timeMinute, timeAmPm);
-    setScheduledTime(newTime);
+    setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
   }, [timeHour, timeMinute, timeAmPm]);
 
-// Parse schedule_emails log from projects table
-  let scheduleEmailLog: any[] = [];
-  try {
-    const raw = lead?.schedule_emails;
-    scheduleEmailLog = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
-  } catch { scheduleEmailLog = []; }
-
-  // Format time for display (convert 14:30 to 2:30 PM)
-  const formatTimeDisplay = (time24: string) => {
-    if (!time24) return '';
-    const [hours, minutes] = time24.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
-  };
+  // Parse email log safely, updates whenever lead refreshes
+  const scheduleEmailLog = useMemo(() => {
+    try {
+      const raw = lead?.schedule_emails;
+      console.log('schedule_emails raw:', raw); // remove after debugging
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+      console.log('schedule_emails parsed:', parsed); // remove after debugging
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [lead?.schedule_emails]);
 
   const handleUpdateProject = async () => {
     if (!hasProject) {
       toast.error('Please convert to project first');
       return;
     }
-
-    // Determine final assignee value
     const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
-
     setSaving(true);
     try {
       const response = await fetch('/api/leads/update', {
@@ -177,9 +121,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           user_email: currentUser?.email || ''
         })
       });
-      
       const result = await response.json();
-      
       if (response.ok && result.success) {
         toast.success('Project updated!');
         await onRefresh();
@@ -194,7 +136,6 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     }
   };
 
-  // Check if current assignedTo is a team member
   const isCurrentAssigneeTeamMember = teamMembers.some(m => m.name === assignedTo);
 
   const handleCalendarSelection = (date: string, time: string) => {
@@ -207,16 +148,29 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   };
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="space-y-3">
-        {/* Assigned To – NOT full width */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+
+      {/* Header */}
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-gray-800">Scheduling</div>
+        <div className="text-xs text-gray-500">
+          {scheduledDate
+            ? `Scheduled: ${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${timeHour && timeMinute ? ` at ${timeHour}:${timeMinute} ${timeAmPm}` : ''}`
+            : 'No date scheduled'}
+        </div>
+      </div>
+
+      {/* 2 Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* LEFT COLUMN */}
+        <div className="space-y-4">
+
+          {/* Assigned To */}
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-              <User className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               Assigned To
             </label>
-            
             {!showCustomAssignee ? (
               <select
                 value={assignedTo}
@@ -228,27 +182,18 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                     setAssignedTo(e.target.value);
                   }
                 }}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                           focus:border-purple-500 focus:ring-2 focus:ring-purple-100
-                           focus:outline-none transition bg-white"
+                className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="">Select team member...</option>
-                
-                {/* Team members */}
                 {teamMembers.map((member) => (
                   <option key={member.id} value={member.name}>
-                    {member.name} {member.id === currentUser?.id && '(You)'}
+                    {member.name}{member.id === currentUser?.id ? ' (You)' : ''}
                   </option>
                 ))}
-                
-                {/* Show current custom assignee if it exists and is not a team member */}
                 {assignedTo && !isCurrentAssigneeTeamMember && (
-                  <option value={assignedTo}>
-                    {assignedTo} (Custom)
-                  </option>
+                  <option value={assignedTo}>{assignedTo} (Custom)</option>
                 )}
-                
-                <option value="__custom__">➕ Enter custom name...</option>
+                <option value="__custom__">Enter custom name...</option>
               </select>
             ) : (
               <div className="flex gap-2">
@@ -257,9 +202,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                   value={customAssignee}
                   onChange={(e) => setCustomAssignee(e.target.value)}
                   placeholder="e.g., Mike"
-                  className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                             focus:border-purple-500 focus:ring-2 focus:ring-purple-100
-                             focus:outline-none transition"
+                  className="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && customAssignee.trim()) {
@@ -273,240 +216,205 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                   }}
                 />
                 <button
-                  onClick={() => {
-                    if (customAssignee.trim()) {
-                      setAssignedTo(customAssignee);
-                      setShowCustomAssignee(false);
-                    }
-                  }}
+                  onClick={() => { if (customAssignee.trim()) { setAssignedTo(customAssignee); setShowCustomAssignee(false); } }}
                   disabled={!customAssignee.trim()}
-                  className="px-3 py-2.5 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-semibold"
+                  className="px-3 py-2 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-semibold"
                 >
                   Add
                 </button>
                 <button
-                  onClick={() => {
-                    setShowCustomAssignee(false);
-                    setCustomAssignee('');
-                  }}
-                  className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                  onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }}
+                  className="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
                 >
                   Cancel
                 </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Everything else */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* Date Input */}
-<div>
-  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-    <Calendar className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-    Date
-  </label>
-  <input
-    type="date"
-    value={scheduledDate}
-    onChange={(e) => setScheduledDate(e.target.value)}
-    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-               focus:border-green-500 focus:ring-2 focus:ring-green-100
-               focus:outline-none transition"
-  />
-</div>
-
-{/* Time Input - Hour/Minute/AM-PM */}
-<div>
-  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-    <Clock className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
-    Time
-  </label>
-  <div className="flex gap-2">
-    {/* Hour - Narrower */}
-    <select
-      value={timeHour}
-      onChange={(e) => setTimeHour(e.target.value)}
-      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                 focus:border-green-500 focus:ring-2 focus:ring-green-100
-                 focus:outline-none transition bg-white
-                 appearance-none cursor-pointer
-                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
-                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
-    >
-      <option value="">HH</option>
-      {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-        <option key={h} value={h}>{h}</option>
-      ))}
-    </select>
-
-    <span className="flex items-center text-gray-400 font-bold">:</span>
-
-    {/* Minute - Narrower */}
-    <select
-      value={timeMinute}
-      onChange={(e) => setTimeMinute(e.target.value)}
-      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                 focus:border-green-500 focus:ring-2 focus:ring-green-100
-                 focus:outline-none transition bg-white
-                 appearance-none cursor-pointer
-                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
-                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
-    >
-      <option value="">MM</option>
-      <option value="00">00</option>
-      <option value="15">15</option>
-      <option value="30">30</option>
-      <option value="45">45</option>
-    </select>
-
-    {/* AM/PM - Narrower */}
-    <select
-      value={timeAmPm}
-      onChange={(e) => setTimeAmPm(e.target.value)}
-      className="w-20 px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                 focus:border-green-500 focus:ring-2 focus:ring-green-100
-                 focus:outline-none transition bg-white
-                 appearance-none cursor-pointer
-                 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNkI3MjgwIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')]
-                 bg-[length:12px] bg-[position:right_0.75rem_center] bg-no-repeat pr-8"
-    >
-      <option value="AM">AM</option>
-      <option value="PM">PM</option>
-    </select>
-  </div>
-</div>
-
-{/* View Calendar Button - Narrower */}
-<div className="sm:col-span-2 flex justify-center">
-  <button
-    type="button"
-    onClick={() => setShowCalendarModal(true)}
-    className="px-6 py-2.5 text-sm text-center rounded-lg border border-gray-300
-               hover:border-gray-400 hover:bg-gray-50 transition
-               text-gray-700 font-medium 
-               flex items-center gap-2"
-  >
-    <Calendar className="w-4 h-4" />
-    View Calendar
-  </button>
-</div>
-
-          {/* Estimated Hours */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-              <Timer className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
-              Est. Hours
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              value={estimatedHours}
-              onChange={(e) => setEstimatedHours(e.target.value)}
-              placeholder="2.5"
-              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                         focus:border-amber-500 focus:ring-2 focus:ring-amber-100
-                         focus:outline-none transition"
-            />
-          </div>
-
-          {/* Actual Hours */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
-              <Timer className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
-              Actual Hours
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              value={actualHours}
-              onChange={(e) => setActualHours(e.target.value)}
-              placeholder="3.0"
-              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300
-                         focus:border-red-500 focus:ring-2 focus:ring-red-100
-                         focus:outline-none transition"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="space-y-3">
-        <div className="flex gap-2 relative">
-          <button
-            onClick={handleUpdateProject}
-            disabled={saving}
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-3 text-sm rounded-lg transition shadow-sm"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save Scheduling'}
-          </button>
-
-          {/* More Actions Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMoreActions(!showMoreActions)}
-              className="px-3 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition shadow-sm"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-
-            {showMoreActions && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowMoreActions(false)}
-                />
-                
-                <div 
-                  className="absolute right-0 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 w-64"
-                  style={{ bottom: '100%', marginBottom: '8px' }}
+          {/* Date & Time */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Date
+              </label>
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Time
+              </label>
+              <div className="flex items-center gap-1">
+                <select
+                  value={timeHour}
+                  onChange={(e) => setTimeHour(e.target.value)}
+                  className="flex-1 min-w-0 px-1 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  <div className="p-2">
-                  <div onClick={(e) => e.stopPropagation()}>
-  <SendCustomerEmailButtons
-    leadId={lead.id}
-    type="schedule"
-    currentUser={currentUser}
-    onRefresh={onRefresh}
-    hasSchedule={!!scheduledDate}
-    disabled={!hasProject}
-  />
-</div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-        {/* Schedule Email History */}
-        {scheduleEmailLog.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <Mail className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-green-800 mb-2">
-                  Schedule emailed to customer ({scheduleEmailLog.length}x)
-                </p>
-                {[...scheduleEmailLog].reverse().map((entry: any, idx: number) => (
-                  <div key={idx} className={`text-xs text-green-700 ${idx > 0 ? 'mt-2 pt-2 border-t border-green-200' : ''}`}>
-                   <div className="flex items-center gap-1.5 font-medium">
-  <Mail className="w-3.5 h-3.5" />
-  Sent {new Date(entry.sent_at).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit'
-  })}
-</div>
-<p className="mt-0.5 text-green-600">by {entry.sent_by_email}</p>
-                  </div>
-                ))}
+                  <option value="">HH</option>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+                <span className="text-gray-400 font-bold text-xs">:</span>
+                <select
+                  value={timeMinute}
+                  onChange={(e) => setTimeMinute(e.target.value)}
+                  className="flex-1 min-w-0 px-1 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">MM</option>
+                  <option value="00">00</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="45">45</option>
+                </select>
+                <select
+                  value={timeAmPm}
+                  onChange={(e) => setTimeAmPm(e.target.value)}
+                  className="flex-1 min-w-0 px-1 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
               </div>
             </div>
           </div>
-        )}
+
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="space-y-4">
+
+          {/* Est. vs Actual Hours */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Est. Hrs
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)}
+                placeholder="2.5"
+                className="w-full px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Actual Hrs
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                value={actualHours}
+                onChange={(e) => setActualHours(e.target.value)}
+                placeholder="3.0"
+                className="w-full px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* View Calendar */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Calendar
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowCalendarModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-white hover:border-gray-400 transition text-gray-700 font-medium"
+            >
+              <Calendar className="w-4 h-4" />
+              View Calendar
+            </button>
+          </div>
+
+          {/* Save Button */}
+          <div className="pt-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleUpdateProject}
+                disabled={saving}
+                className="flex-1 bg-blue-600 text-white text-sm font-semibold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Scheduling'}
+              </button>
+
+              {/* More Actions */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreActions(!showMoreActions)}
+                  className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {showMoreActions && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
+                    <div
+                      className="absolute right-0 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 w-64"
+                      style={{ bottom: '100%', marginBottom: '8px' }}
+                    >
+                      <div className="p-2" onClick={(e) => e.stopPropagation()}>
+                        <SendCustomerEmailButtons
+                          leadId={lead.id}
+                          type="schedule"
+                          currentUser={currentUser}
+                          onRefresh={onRefresh}
+                          hasSchedule={!!scheduledDate}
+                          disabled={!hasProject}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      {/* Scheduling Calendar Modal */}
+      {/* Email History Log */}
+      {scheduleEmailLog.length > 0 && (
+        <div className="mt-5 space-y-2">
+          <p className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Schedule Email History
+          </p>
+          {[...scheduleEmailLog].reverse().map((entry: any, idx: number) => (
+            <div key={idx} className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-bold text-green-900">
+                    {entry.scheduled_date
+                      ? new Date(entry.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        })
+                      : 'No date'}
+                    {entry.scheduled_time ? ` at ${entry.scheduled_time}` : ''}
+                  </span>
+                </div>
+                <span className="text-xs text-green-700">
+                  {new Date(entry.sent_at).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: 'numeric', minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">by {entry.sent_by_email}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Calendar Modal */}
       <SchedulingCalendarModal
         isOpen={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}

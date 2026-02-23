@@ -58,19 +58,15 @@ console.log('quote_emails:', lead?.quote_emails);
     fetchCustomTemplates();
   }, []);
 
-  // Auto-populate quote with first matching template
+// Auto-populate quote with first matching template
   useEffect(() => {
     if (customTemplates.length === 0) return;
     if (!lead?.category) return;
     
-    // Only auto-populate if:
-    // 1. Quote is empty, OR
-    // 2. Quote exists but hasn't been saved yet (no quote_total on lead)
     const shouldAutoPopulate = quoteData.length === 0 || !lead?.quote_total;
     
     if (!shouldAutoPopulate) return;
     
-    // Find first template matching lead category
     const matchingTemplate = customTemplates.find(
       template => template.category === lead?.category
     );
@@ -85,17 +81,70 @@ console.log('quote_emails:', lead?.quote_emails);
       }));
       
       setQuoteData(templateItems);
+
+      // Auto-save inline — avoids stale closure issues with autoSaveTemplate
+      if (!lead?.quote_total && hasProject && templateItems.length > 0) {
+        const total = templateItems.reduce((sum: number, item: any) => sum + item.amount, 0);
+        fetch('/api/leads/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: lead.id,
+            action: 'save_quote',
+            quote_data: templateItems,
+            quote_total: total,
+            user_name: currentUser?.name || 'Unknown User',
+            user_email: currentUser?.email || ''
+          })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result.success) {
+              toast.success('Quote auto-saved!');
+              onRefresh();
+            }
+          })
+          .catch(err => console.error('Auto-save failed:', err));
+      }
     } else {
-      // No template found for this category, clear the quote
       setQuoteData([]);
     }
-  }, [customTemplates, lead?.category, lead?.id]); // Re-run when category OR lead changes
-
+  }, [customTemplates, lead?.category, lead?.id, hasProject]);
+  
   // Filter templates by lead category
   const availableTemplates = customTemplates.filter(
     template => template.category === lead?.category
   );
 
+const autoSaveTemplate = async (items: any[]) => {
+  if (!hasProject || items.length === 0) return;
+  
+  const total = items.reduce((sum: number, item: any) => sum + item.amount, 0);
+  
+  try {
+    const response = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lead.id,
+        action: 'save_quote',
+        quote_data: items,
+        quote_total: total,
+        user_name: currentUser?.name || 'Unknown User',
+        user_email: currentUser?.email || ''
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      toast.success('Quote auto-saved from template!');
+      await onRefresh();
+    }
+  } catch (error) {
+    console.error('Auto-save template error:', error);
+  }
+};
 
 
   const handleTemplateSelect = (templateId: string) => {

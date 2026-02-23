@@ -2,33 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import {
-  DollarSign,
-  CreditCard,
-  Calendar,
-  FileText,
-  Save,
-  CheckCircle,
-  AlertCircle,
-  Clock
-} from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
-type PaymentSectionProps = {
+type PaymentUpdateProps = {
   lead: any;
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
 };
 
-export default function PaymentSection({ lead, currentUser, onRefresh, hasProject }: PaymentSectionProps) {
+export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject }: PaymentUpdateProps) {
   const [saving, setSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [markPaidInFull, setMarkPaidInFull] = useState(false);
+  const [error, setError] = useState('');
 
-  // Only populate from saved payment data, never auto-fill
+  // Populate from saved payment data
   useEffect(() => {
     setPaymentAmount(lead?.payment_amount || '');
     setPaymentMethod(lead?.payment_method || '');
@@ -37,7 +29,7 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
     setMarkPaidInFull(false);
   }, [lead?.id]);
 
-  // Auto-fill when toggled
+  // Auto-fill when marking paid in full
   useEffect(() => {
     if (markPaidInFull && lead?.quote_total) {
       setPaymentAmount(lead.quote_total.toString());
@@ -47,10 +39,8 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
 
   const calculatePaymentStatus = () => {
     if (!lead?.quote_total || !paymentAmount) return 'unpaid';
-    
     const total = parseFloat(lead.quote_total);
     const paid = parseFloat(paymentAmount);
-    
     if (paid >= total) return 'paid';
     if (paid > 0) return 'partial';
     return 'unpaid';
@@ -58,9 +48,24 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
 
   const paymentStatus = calculatePaymentStatus();
 
-  const handleUpdatePayment = async () => {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+  const remainingBalance = lead?.quote_total
+    ? Math.max(parseFloat(lead.quote_total) - parseFloat(paymentAmount || '0'), 0)
+    : null;
+
+  const handleSavePayment = async () => {
+    setError('');
+
     if (!hasProject) {
       toast.error('Please convert to project first');
+      return;
+    }
+
+    const amount = parseFloat(paymentAmount);
+    if (!amount || amount <= 0) {
+      setError('Please enter a valid payment amount.');
       return;
     }
 
@@ -78,82 +83,81 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
           payment_date: paymentDate || null,
           payment_notes: paymentNotes || null,
           user_name: currentUser?.name || 'Unknown User',
-          user_email: currentUser?.email || ''
-        })
+          user_email: currentUser?.email || '',
+        }),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         toast.success('Payment updated!');
+        setMarkPaidInFull(false);
         await onRefresh();
       } else {
         toast.error(result.error || 'Failed to update payment');
       }
-    } catch (error) {
-      console.error('Payment update error:', error);
-      toast.error('Failed to update payment');
+    } catch (err) {
+      console.error('Payment update error:', err);
+      setError('Failed to save payment. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
   return (
-    <div className="p-4 space-y-4">
-      <div className="space-y-4">
+    <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
 
-        {/* Amount / Method / Date */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Amount */}
+      {/* Header */}
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-gray-800">Add Payment</div>
+        {remainingBalance !== null && (
+          <div className="text-xs text-gray-500">
+            Remaining Balance: {formatCurrency(remainingBalance)}
+            {lead?.quote_total && (
+              <span className="ml-2 text-gray-400">
+                (Quote: {formatCurrency(parseFloat(lead.quote_total))})
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 2 Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* LEFT COLUMN */}
+        <div className="space-y-4">
+
+          {/* Payment Amount */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <DollarSign className="w-4 h-4" style={{ color: '#22c55e' }} />
-              Amount
-              {lead?.quote_total && (
-                <span className="ml-auto text-xs text-gray-500 font-normal">
-                  Quote: {formatCurrency(parseFloat(lead.quote_total))}
-                </span>
-              )}
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Payment Amount
             </label>
-
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none select-none">
-                $
-              </div>
-              <input
-                type="number"
-                step="0.01"
-                value={paymentAmount}
-                onChange={(e) => {
-                  setPaymentAmount(e.target.value);
-                  setMarkPaidInFull(false);
-                }}
-                placeholder="0.00"
-                className="w-full pl-12 pr-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none transition"
-              />
-            </div>
+            <input
+              type="number"
+              step="0.01"
+              value={paymentAmount}
+              onChange={(e) => {
+                setPaymentAmount(e.target.value);
+                if (markPaidInFull) setMarkPaidInFull(false);
+              }}
+              disabled={markPaidInFull}
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              placeholder="0.00"
+            />
           </div>
 
           {/* Method */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <CreditCard className="w-4 h-4" style={{ color: '#3b82f6' }} />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               Method
             </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-white text-gray-900 transition"
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select...</option>
+              <option value="">Select method</option>
               <option value="cash">Cash</option>
               <option value="check">Check</option>
               <option value="credit_card">Credit Card</option>
@@ -166,128 +170,125 @@ export default function PaymentSection({ lead, currentUser, onRefresh, hasProjec
             </select>
           </div>
 
+          {/* Mark Paid in Full */}
+          {lead?.quote_total && (
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                checked={markPaidInFull}
+                onChange={(e) => setMarkPaidInFull(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <label className="text-sm font-medium text-gray-700">
+                Mark Paid in Full
+              </label>
+            </div>
+          )}
+
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="space-y-4">
+
           {/* Date */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Calendar className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
               Date
             </label>
             <input
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
-              className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 focus:outline-none transition"
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
-        </div>
 
-        {/* Paid in Full Toggle */}
-        {lead?.quote_total && (
-          <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-semibold text-gray-700">
-                Mark as Paid in Full
-              </span>
-            </div>
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+              placeholder="Optional payment notes..."
+            />
+          </div>
 
+          {/* Save Button */}
+          <div className="pt-2">
             <button
-              type="button"
-              onClick={() => setMarkPaidInFull(!markPaidInFull)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                markPaidInFull ? 'bg-green-600' : 'bg-gray-300'
-              }`}
+              onClick={handleSavePayment}
+              disabled={saving}
+              className="w-full bg-blue-600 text-white text-sm font-semibold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                  markPaidInFull ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
+              {saving ? 'Saving...' : 'Save Payment'}
             </button>
           </div>
-        )}
 
-        {/* Notes */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-            <FileText className="w-4 h-4" style={{ color: '#6b7280' }} />
-            Payment Notes (Optional)
-          </label>
-          <textarea
-            value={paymentNotes}
-            onChange={(e) => setPaymentNotes(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 focus:border-gray-500 focus:ring-2 focus:ring-gray-100 focus:outline-none transition"
-          />
         </div>
-
-        {/* Remaining Balance Card — Your Full Gradient Logic Preserved */}
-        {lead?.quote_total && (
-          <div className={`rounded-xl p-4 border-2 ${
-            paymentAmount && parseFloat(paymentAmount) > 0
-              ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
-                  : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200')
-              : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {paymentAmount && parseFloat(paymentAmount) > 0 ? (
-                  parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <Clock className="w-5 h-5 text-orange-600" />
-                  )
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-gray-500" />
-                )}
-                <div>
-                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide block">
-                    {paymentAmount && parseFloat(paymentAmount) > 0
-                      ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 
-                          ? 'Payment Status' 
-                          : 'Remaining Balance')
-                      : 'Payment Status'}
-                  </span>
-                  <span className={`text-lg font-bold ${
-                    paymentAmount && parseFloat(paymentAmount) > 0
-                      ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0 
-                          ? 'text-green-600' 
-                          : 'text-orange-600')
-                      : 'text-gray-600'
-                  }`}>
-                    {paymentAmount && parseFloat(paymentAmount) > 0
-                      ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
-                          ? 'Paid in Full ✓'
-                          : formatCurrency(parseFloat(lead.quote_total) - parseFloat(paymentAmount)))
-                      : 'Unpaid'
-                    }
-                  </span>
-                </div>
-              </div>
-              {paymentAmount && parseFloat(paymentAmount) > 0 && parseFloat(lead.quote_total) - parseFloat(paymentAmount) > 0 && (
-                <div className="text-right">
-                  <p className="text-xs text-gray-600">Paid</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(parseFloat(paymentAmount))}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Save Button */}
-        <button
-          onClick={handleUpdatePayment}
-          disabled={saving}
-          className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold py-3 text-sm rounded-lg transition shadow-sm"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Update Payment'}
-        </button>
-
       </div>
+
+      {/* Balance Status Card */}
+      {lead?.quote_total && (
+        <div className={`mt-5 rounded-xl p-4 border-2 ${
+          paymentAmount && parseFloat(paymentAmount) > 0
+            ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+                : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200')
+            : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {paymentAmount && parseFloat(paymentAmount) > 0 ? (
+                parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+                  ? <CheckCircle className="w-5 h-5 text-green-600" />
+                  : <Clock className="w-5 h-5 text-orange-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-gray-500" />
+              )}
+              <div>
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide block">
+                  {paymentAmount && parseFloat(paymentAmount) > 0
+                    ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+                        ? 'Payment Status'
+                        : 'Remaining Balance')
+                    : 'Payment Status'}
+                </span>
+                <span className={`text-lg font-bold ${
+                  paymentAmount && parseFloat(paymentAmount) > 0
+                    ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+                        ? 'text-green-600'
+                        : 'text-orange-600')
+                    : 'text-gray-600'
+                }`}>
+                  {paymentAmount && parseFloat(paymentAmount) > 0
+                    ? (parseFloat(lead.quote_total) - parseFloat(paymentAmount) <= 0
+                        ? 'Paid in Full ✓'
+                        : formatCurrency(parseFloat(lead.quote_total) - parseFloat(paymentAmount)))
+                    : 'Unpaid'}
+                </span>
+              </div>
+            </div>
+            {paymentAmount && parseFloat(paymentAmount) > 0 && parseFloat(lead.quote_total) - parseFloat(paymentAmount) > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-gray-600">Paid</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(parseFloat(paymentAmount))}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="mt-4 text-sm text-red-600 font-medium">{error}</div>
+      )}
+
     </div>
   );
 }

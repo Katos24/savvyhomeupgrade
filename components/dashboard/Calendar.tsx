@@ -470,24 +470,22 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
               </div>
               
               <div className="flex-1 overflow-hidden">
-                {/* Mobile: dots */}
-                <div className="sm:hidden flex flex-wrap gap-0.5">
-                  {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
-                    const statusToUse = event.job_status || event.status || 'new';
-                    const statusConfig = getStatusConfig(statusToUse);
-                    const dotColor = getStatusColorHex(statusConfig.color);
-                    
-                    return (
-                      <button
-                        key={event.id}
-                        onClick={() => onSelectLead(event)}
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: dotColor }}
-                        title={event.name}
-                      />
-                    );
-                  })}
-                </div>
+               {/* Mobile: tap date to jump to week view */}
+<div className="sm:hidden flex flex-wrap gap-0.5">
+  {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
+    const statusToUse = event.job_status || event.status || 'new';
+    const statusConfig = getStatusConfig(statusToUse);
+    const dotColor = getStatusColorHex(statusConfig.color);
+    
+    return (
+      <div
+        key={event.id}
+        className="w-2 h-2 rounded-full"
+        style={{ backgroundColor: dotColor }}
+      />
+    );
+  })}
+</div>
                 
                 {/* Desktop: cards */}
                 <div className="hidden sm:block space-y-1">
