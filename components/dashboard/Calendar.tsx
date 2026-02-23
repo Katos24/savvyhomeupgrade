@@ -287,7 +287,7 @@ const getStatusConfig = (statusValue: string) => {
         currentDate={currentDate}
       />}
 
-      {view === 'month' && <MonthView 
+   {view === 'month' && <MonthView 
         currentDate={currentDate}
         events={events}
         getEventsForDate={getEventsForDate}
@@ -296,6 +296,10 @@ const getStatusConfig = (statusValue: string) => {
         onSelectLead={onSelectLead}
         getStatusColorHex={getStatusColorHex}
         getStatusConfig={getStatusConfig}
+        onSwitchToWeek={(date) => {
+          setCurrentDate(date);
+          setView('week');
+        }}
       />}
 
       {view === 'week' && <WeekView 
@@ -394,9 +398,11 @@ type MonthViewProps = {
   onSelectLead: (lead: any) => void;
   getStatusColorHex: (colorName: string) => string;
   getStatusConfig: (statusValue: string) => any;
+    onSwitchToWeek: (date: Date) => void;
+
 };
 
-function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: MonthViewProps) {
+function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, onSelectLead, getStatusColorHex, getStatusConfig, onSwitchToWeek }: MonthViewProps) {
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
   
   const now = new Date();
@@ -454,13 +460,16 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
           const dayEvents = getEventsForDate(date);
           const isToday = dateStr === today;
 
-          return (
+        return (
             <div
               key={cell.key}
-              className={`aspect-square min-h-[60px] sm:min-h-[120px] rounded-lg border-2 p-1 sm:p-2 transition-all flex flex-col ${
+              onClick={() => dayEvents.length > 0 && onSwitchToWeek(date)}
+              className={`aspect-square min-h-[60px] sm:min-h-[120px] rounded-lg border-2 p-1 sm:p-2 transition-all flex flex-col sm:cursor-default ${
                 isToday 
                   ? 'border-blue-500 bg-blue-50 shadow-lg' 
-                  : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-md'
+                  : dayEvents.length > 0
+                    ? 'border-gray-300 bg-white active:bg-blue-50 active:border-blue-400 cursor-pointer'
+                    : 'border-gray-300 bg-white'
               }`}
             >
               <div className={`text-sm sm:text-base font-bold mb-1 ${
@@ -539,6 +548,7 @@ type WeekViewProps = {
   onSelectLead: (lead: any) => void;
   getStatusColorHex: (colorName: string) => string;
   getStatusConfig: (statusValue: string) => any;
+  
 };
 
 function WeekView({ currentDate, getEventsForDate, getWeekDays, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: WeekViewProps) {
