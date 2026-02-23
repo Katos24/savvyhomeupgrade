@@ -46,7 +46,7 @@ type LeadModalProps = {
   companySlug: string;
 };
 
-type TopTab = 'overview' | 'schedule' | 'quote' | 'tasks' | 'photos' | 'docs' | 'activity';
+type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'docs' | 'activity';
 
 export default function LeadModal({
   lead,
@@ -234,6 +234,7 @@ export default function LeadModal({
     { id: 'overview', label: 'Overview', icon: '◉', show: true },
     { id: 'schedule', label: 'Schedule', icon: '📅', show: isProject },
     { id: 'quote', label: 'Quote', icon: '💰', show: isProject },
+    { id: 'payment', label: 'Payment', icon: '💳', show: isProject },
     { id: 'tasks', label: 'Tasks', icon: '✅', show: isProject },
     { id: 'photos', label: 'Photos', icon: '📷', show: isProject },
     { id: 'docs', label: 'Docs', icon: '📁', show: isProject },
