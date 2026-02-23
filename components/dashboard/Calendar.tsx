@@ -438,14 +438,14 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {calendarCells.map((cell) => {
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 sm:items-start">
+  {calendarCells.map((cell) => {
           if (cell.type === 'empty') {
             return (
               <div 
-                key={cell.key} 
-                className="aspect-square min-h-[60px] sm:min-h-[120px] bg-gray-50 rounded-lg border border-gray-200"
-              />
+  key={cell.key} 
+  className="aspect-square sm:aspect-auto sm:min-h-[120px] min-h-[60px] bg-gray-50 rounded-lg border border-gray-200"
+/>
             );
           }
 
@@ -462,9 +462,9 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
 
         return (
             <div
-              key={cell.key}
-              onClick={() => dayEvents.length > 0 && onSwitchToWeek(date)}
-              className={`aspect-square min-h-[60px] sm:min-h-[120px] rounded-lg border-2 p-1 sm:p-2 transition-all flex flex-col sm:cursor-default ${
+  key={cell.key}
+  onClick={() => dayEvents.length > 0 && onSwitchToWeek(date)}
+className={`aspect-square sm:aspect-auto min-h-[60px] sm:min-h-fit rounded-lg border-2 p-1 sm:p-2 transition-all flex flex-col sm:cursor-default ${
                 isToday 
                   ? 'border-blue-500 bg-blue-50 shadow-lg' 
                   : dayEvents.length > 0
@@ -478,7 +478,7 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
                 {day}
               </div>
               
-              <div className="flex-1 overflow-hidden">
+<div className="flex-1 sm:overflow-visible overflow-hidden">
                {/* Mobile: tap date to jump to week view */}
 <div className="sm:hidden flex flex-wrap gap-0.5">
   {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
@@ -497,8 +497,8 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
 </div>
                 
                 {/* Desktop: cards */}
-                <div className="hidden sm:block space-y-1">
-                  {dayEvents.slice(0, 3).map((event: CalendarEvent) => {
+<div className="hidden sm:block space-y-1 pb-1">
+                  {dayEvents.map((event: CalendarEvent) => {
                     const statusToUse = event.job_status || event.status || 'new';
                     const statusConfig = getStatusConfig(statusToUse);
                     const bgColor = getStatusColorHex(statusConfig.color);
@@ -523,11 +523,7 @@ function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, 
                     );
                   })}
                   
-                  {dayEvents.length > 3 && (
-                    <div className="text-xs text-gray-500 text-center pt-1 font-medium">
-                      +{dayEvents.length - 3} more
-                    </div>
-                  )}
+                 
                 </div>
               </div>
             </div>
