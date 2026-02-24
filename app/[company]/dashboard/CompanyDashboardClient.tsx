@@ -1,19 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox, MessageCircle, Send, Sparkles } from 'lucide-react';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
+import { canUseAiChat, canUseAiBrief, PLAN_ERRORS, PlanTier } from '@/lib/permissions';
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
 type Company = {
   id: number; name: string; slug: string; logo_url?: string | null;
   status_options?: StatusOption[]; form_categories?: any[]; custom_questions?: any[];
   subscription_status?: string; trial_ends_at?: string | null;
+  plan_tier?: string;
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
@@ -45,6 +47,23 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [refreshKey, setRefreshKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 60);
+  };
+
+  const scrollToBottom = () => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const statusOptions = company.status_options?.length ? company.status_options : DEFAULT_STATUSES;
 
@@ -183,6 +202,111 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } catch (e) { console.error('Failed to refresh modal lead:', e); }
   }
 
+  // Dynamic starter questions based on real data
+  const aiStarterQuestions = useMemo(() => {
+    if (!allLeads.length) return [
+      "What's scheduled this week?",
+      'Which jobs need payment?',
+      'Who are my biggest customers?',
+      'What should I prioritize today?',
+    ];
+
+    const now = new Date();
+    const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7);
+    const unpaid = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid');
+    const unpaidTotal = unpaid.reduce((s, l) => s + parseFloat(l.quote_total || 0), 0);
+    const thisWeek = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date) >= now && new Date(l.scheduled_date) <= weekEnd);
+    const unassigned = allLeads.filter(l => !l.assigned_to && l.status !== 'completed' && l.status !== 'cancelled');
+    const newLeads = allLeads.filter(l => l.status === 'new');
+
+    const questions = [];
+    if (unpaid.length > 0) questions.push(`${unpaid.length} job${unpaid.length > 1 ? 's' : ''} unpaid ($${unpaidTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })} total)`);
+    if (thisWeek.length > 0) questions.push(`${thisWeek.length} job${thisWeek.length > 1 ? 's' : ''} scheduled this week`);
+    if (unassigned.length > 0) questions.push(`${unassigned.length} job${unassigned.length > 1 ? 's' : ''} unassigned`);
+    if (newLeads.length > 0) questions.push(`${newLeads.length} new lead${newLeads.length > 1 ? 's' : ''} to review`);
+    if (questions.length < 4) questions.push('What should I prioritize today?');
+    if (questions.length < 4) questions.push('Who are my biggest customers?');
+
+    return questions.slice(0, 4);
+  }, [allLeads]);
+
+  async function sendAiMessage(message: string) {
+    if (!message.trim() || aiLoading) return;
+    const userMsg = { role: 'user' as const, content: message };
+    const updated = [...aiMessages, userMsg];
+    setAiMessages(updated);
+    setAiInput('');
+    setAiLoading(true);
+
+    // Smarter bucketed context
+    const now = new Date();
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+    const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7);
+
+    const recentLeads = allLeads.filter(l => new Date(l.created_at) > cutoff);
+
+    const todayJobs = allLeads.filter(l => l.scheduled_date &&
+      new Date(l.scheduled_date).toDateString() === now.toDateString());
+    const thisWeekJobs = allLeads.filter(l => l.scheduled_date &&
+      new Date(l.scheduled_date) >= now && new Date(l.scheduled_date) <= weekEnd);
+    const unpaidJobs = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid');
+    const unassignedJobs = allLeads.filter(l => !l.assigned_to &&
+      l.status !== 'completed' && l.status !== 'cancelled');
+    const newLeads = allLeads.filter(l => l.status === 'new');
+
+    const context = {
+      summary: {
+        total_leads: allLeads.length,
+        new_leads: newLeads.length,
+        unpaid_jobs: unpaidJobs.length,
+        unpaid_total: unpaidJobs.reduce((s, l) => s + parseFloat(l.quote_total || 0), 0),
+        unassigned_jobs: unassignedJobs.length,
+        today_scheduled: todayJobs.length,
+        this_week_scheduled: thisWeekJobs.length,
+      },
+      today_schedule: todayJobs.map(l => ({ name: l.name, category: l.category, time: l.scheduled_time, assigned_to: l.assigned_to })),
+      this_week_schedule: thisWeekJobs.map(l => ({ name: l.name, category: l.category, date: l.scheduled_date, assigned_to: l.assigned_to })),
+      unpaid: unpaidJobs.map(l => ({ name: l.name, category: l.category, quote_total: l.quote_total, status: l.status })),
+      unassigned: unassignedJobs.map(l => ({ name: l.name, category: l.category, status: l.status, created_at: l.created_at })),
+      recent_leads: recentLeads.map(l => ({
+        name: l.name, category: l.category, status: l.status, city: l.city,
+        quote_total: l.quote_total || null, payment_status: l.payment_status || null,
+        scheduled_date: l.scheduled_date || null, assigned_to: l.assigned_to || null,
+        created_at: l.created_at,
+      })),
+    };
+
+    try {
+      const res = await fetch('/api/ai/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: null,
+          customer_name: null,
+          description: message,
+          category: null,
+          status: null,
+          project_id: null,
+          company_name: company.name,
+          chat_mode: true,
+          chat_history: updated,
+          all_leads_summary: context,
+          plan_tier: company.plan_tier || 'basic',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.reply) {
+        setAiMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      } else {
+        setAiMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Try again.' }]);
+      }
+    } catch {
+      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Failed to connect. Please try again.' }]);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f172a' }}>
@@ -319,6 +443,26 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <Filter className="w-4 h-4" /> Filters
             <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
+          {canUseAiChat(company.plan_tier as any) ? (
+            <button
+              onClick={() => setShowAiChat(!showAiChat)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold transition shadow-lg"
+              style={{ background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}
+            >
+              <Sparkles className="w-4 h-4" /> AI Assistant
+            </button>
+          ) : (
+            <div className="relative group">
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold opacity-50 cursor-not-allowed border border-slate-600"
+                style={{ background: '#1e293b', color: '#94a3b8' }}
+                onClick={() => window.location.href = `/subscribe?upgrade=pro&company=${company.slug}`}
+              >
+                <Sparkles className="w-4 h-4" /> AI Assistant
+                <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold">Pro</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quick filters */}
@@ -376,6 +520,127 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         )}
 
+        {/* AI Chat Panel — inline below filters */}
+        {showAiChat && canUseAiChat(company.plan_tier as any) && (
+          <div className="mb-6 border border-indigo-500/30 overflow-hidden shadow-2xl"
+            style={{ background: '#0f172a' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700"
+              style={{ background: '#312e81' }}>
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-indigo-300" />
+                <div>
+                  <p className="text-white font-bold text-sm">AI Assistant</p>
+                  <p className="text-indigo-300 text-xs">{company.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {aiMessages.length > 0 && (
+                  <button onClick={() => setAiMessages([])}
+                    className="text-white/40 hover:text-white/70 text-xs font-semibold transition px-2 py-1 hover:bg-white/10">
+                    Clear
+                  </button>
+                )}
+                <button onClick={() => setShowAiChat(false)}
+                  className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 transition">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="relative">
+              <div ref={chatScrollRef} onScroll={handleChatScroll}
+                className="h-72 overflow-y-auto p-4 space-y-3">
+              {aiMessages.length === 0 && (
+                <div className="space-y-2">
+                  <p className="text-slate-400 text-xs text-center pt-1">Ask me anything about your jobs</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {aiStarterQuestions.map(q => (
+                      <button key={q} onClick={() => sendAiMessage(q)}
+                        className="text-left px-3 py-2 text-xs text-slate-300 border border-slate-700 hover:border-indigo-500 hover:bg-indigo-500/10 transition leading-snug">
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {aiMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className="max-w-[80%] px-3 py-2 text-sm leading-relaxed"
+                    style={msg.role === 'user'
+                      ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }
+                      : { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155' }}>
+                    {msg.role === 'assistant' ? (
+                      <div className="space-y-1">
+                        {msg.content.split('\n').map((line, j) => {
+                          if (!line.trim()) return null;
+                          // Bold: **text**
+                          const renderLine = (text: string) => {
+                            const parts = text.split(/\*\*(.*?)\*\*/g);
+                            return parts.map((p, k) => k % 2 === 1 ? <strong key={k}>{p}</strong> : p);
+                          };
+                          // Bullet point
+                          if (line.match(/^[-•*]\s/)) return (
+                            <div key={j} className="flex gap-2">
+                              <span className="text-indigo-400 flex-shrink-0 mt-0.5">•</span>
+                              <span>{renderLine(line.replace(/^[-•*]\s/, ''))}</span>
+                            </div>
+                          );
+                          // Numbered list
+                          if (line.match(/^\d+\.\s/)) return (
+                            <div key={j} className="flex gap-2">
+                              <span className="text-indigo-400 flex-shrink-0 font-bold">{line.match(/^\d+/)![0]}.</span>
+                              <span>{renderLine(line.replace(/^\d+\.\s/, ''))}</span>
+                            </div>
+                          );
+                          return <p key={j}>{renderLine(line)}</p>;
+                        })}
+                      </div>
+                    ) : msg.content}
+                  </div>
+                </div>
+              ))}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="px-3 py-2 border border-slate-700 bg-slate-800">
+                    <div className="flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatBottomRef} />
+              </div>
+              {showScrollDown && (
+                <button onClick={scrollToBottom}
+                  className="absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border border-slate-600 transition hover:scale-110"
+                  style={{ background: '#312e81' }}>
+                  <ChevronDown className="w-4 h-4 text-white" />
+                </button>
+              )}
+            </div>
+
+            {/* Input */}
+            <div className="p-3 border-t border-slate-700 flex gap-2">
+              <input type="text" value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
+                placeholder="Ask about your jobs..."
+                className="flex-1 px-3 py-2 text-sm bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              />
+              <button onClick={() => sendAiMessage(aiInput)}
+                disabled={!aiInput.trim() || aiLoading}
+                className="px-3 py-2 disabled:opacity-40 text-white transition"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Leads */}
         {filteredLeads.length === 0 ? (
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
@@ -392,7 +657,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   {title} <span className="text-white/60 text-base">({leads.length})</span>
                 </h3>
-                <CardsView leads={leads} onSelectLead={setSelectedLead} statusOptions={statusOptions} />
+                <CardsView leads={leads} onSelectLead={setSelectedLead} statusOptions={statusOptions} planTier={(company.plan_tier as PlanTier) || 'basic'} />
               </div>
             ))}
           </div>

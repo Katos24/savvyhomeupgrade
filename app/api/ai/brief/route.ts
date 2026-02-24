@@ -2,27 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
 export async function POST(request: NextRequest) {
-
-      // DEBUG
-  console.log('API Key length:', process.env.ANTHROPIC_API_KEY?.length);
-  console.log('API Key first 20 chars:', process.env.ANTHROPIC_API_KEY?.substring(0, 20));
-  
   try {
-    // Check API key
     if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('ANTHROPIC_API_KEY is not set');
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Anthropic API key not configured' 
-      }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Anthropic API key not configured' }, { status: 500 });
     }
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const body = await request.json();
-    
+
     console.log('Generating AI Brief for lead:', body.lead_id);
 
     const {
@@ -36,175 +23,227 @@ export async function POST(request: NextRequest) {
       assigned_to,
       quote_total,
       payment_amount,
+      payment_status,
       tasks,
       internal_notes,
+      company_name,
+      repeat_customer,
+      past_jobs,
+      chat_mode,
+      chat_history,
+      all_leads_summary,
+      plan_tier,
     } = body;
 
-    // Build context string
-    const contextLines = [];
+    // ── Plan gating ────────────────────────────────────────────
+    if (plan_tier === 'basic') {
+      return NextResponse.json({
+        success: false,
+        error: 'AI features are available on Pro and Business plans',
+        upgrade_required: true,
+      }, { status: 403 });
+    }
 
+    // ── CHAT MODE ──────────────────────────────────────────────
+    if (chat_mode) {
+      const ctx = all_leads_summary;
+      const leadsContext = ctx
+        ? `BUSINESS SNAPSHOT for ${company_name}:
+- Total leads: ${ctx.summary?.total_leads || 0}
+- New leads awaiting review: ${ctx.summary?.new_leads || 0}
+- Unpaid jobs: ${ctx.summary?.unpaid_jobs || 0} ($${(ctx.summary?.unpaid_total || 0).toLocaleString()} outstanding)
+- Unassigned jobs: ${ctx.summary?.unassigned_jobs || 0}
+- Scheduled today: ${ctx.summary?.today_scheduled || 0}
+- Scheduled this week: ${ctx.summary?.this_week_scheduled || 0}
+
+${ctx.today_schedule?.length ? `TODAY'S SCHEDULE:\n${ctx.today_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.time || 'no time'} | assigned: ${j.assigned_to || 'nobody'}`).join('\n')}` : ''}
+
+${ctx.this_week_schedule?.length ? `THIS WEEK:\n${ctx.this_week_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.date} | assigned: ${j.assigned_to || 'nobody'}`).join('\n')}` : ''}
+
+${ctx.unpaid?.length ? `UNPAID JOBS:\n${ctx.unpaid.map((j: any) => `- ${j.name} | ${j.category} | $${parseFloat(j.quote_total).toLocaleString()} | status: ${j.status}`).join('\n')}` : ''}
+
+${ctx.unassigned?.length ? `UNASSIGNED JOBS:\n${ctx.unassigned.map((j: any) => `- ${j.name} | ${j.category} | ${j.status}`).join('\n')}` : ''}
+
+${ctx.recent_leads?.length ? `ALL RECENT LEADS (60 days):\n${ctx.recent_leads.map((l: any) => `- ${l.name} | ${l.category || 'unknown'} | ${l.status} | quote: ${l.quote_total ? '$' + parseFloat(l.quote_total).toLocaleString() : 'none'} | payment: ${l.payment_status || 'none'} | scheduled: ${l.scheduled_date || 'not scheduled'} | assigned: ${l.assigned_to || 'unassigned'}`).join('\n')}` : ''}`
+        : 'No lead data available.';
+
+      const systemPrompt = `You are a smart business assistant for ${company_name || 'a contractor'}. You have real-time access to their job data. Answer questions specifically using the actual data provided — never be vague when you have the numbers. Be conversational, direct, and actionable. Use bullet points for lists. Bold important numbers or names with **text**. Keep responses under 150 words unless detail is truly needed.
+
+${leadsContext}`;
+
+      const messages = (chat_history || []).map((m: any) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const chatResponse = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 512,
+        system: systemPrompt,
+        messages,
+      });
+
+      const replyContent = chatResponse.content[0];
+      if (replyContent.type !== 'text') throw new Error('Unexpected response type');
+
+      return NextResponse.json({ success: true, reply: replyContent.text });
+    }
+
+    // ── Build context ──────────────────────────────────────────
+    const contextLines: string[] = [];
+
+    contextLines.push(`COMPANY: ${company_name || 'Contractor'}`);
     contextLines.push(`CUSTOMER: ${customer_name || 'Unknown'}`);
-    contextLines.push(`CATEGORY: ${category || 'Not specified'}`);
-    contextLines.push(`STATUS: ${status || 'New lead'}`);
-    
+    contextLines.push(`SERVICE CATEGORY: ${category || 'Not specified'}`);
+    contextLines.push(`CURRENT STATUS: ${status || 'New lead'}`);
+
+    // Repeat customer context
+    if (repeat_customer && past_jobs?.length > 0) {
+      const lifetimeValue = past_jobs
+        .filter((j: any) => j.quote_total)
+        .reduce((sum: number, j: any) => sum + parseFloat(j.quote_total), 0);
+
+      contextLines.push(`\n⭐ REPEAT CUSTOMER — ${past_jobs.length} previous job(s), $${lifetimeValue.toLocaleString()} lifetime value`);
+      contextLines.push(`Past jobs:`);
+      past_jobs.forEach((j: any) => {
+        const monthsAgo = Math.floor((Date.now() - new Date(j.created_at).getTime()) / (1000 * 60 * 60 * 24 * 30));
+        const timeStr = monthsAgo < 1 ? 'this month' : monthsAgo === 1 ? '1 month ago' : `${monthsAgo} months ago`;
+        contextLines.push(`  - ${j.category || 'Unknown'} | ${j.status} | ${j.quote_total ? '$' + parseFloat(j.quote_total).toLocaleString() : 'no quote'} | ${timeStr}${j.description ? ` | "${j.description}"` : ''}`);
+      });
+    }
+
     if (description) {
-      contextLines.push(`\nCUSTOMER REQUEST:\n"${description}"`);
+      contextLines.push(`\nCUSTOMER'S REQUEST:\n"${description}"`);
     }
 
     if (project_id) {
-      contextLines.push(`\n--- PROJECT DETAILS ---`);
-      
+      contextLines.push(`\n── PROJECT DETAILS ──`);
+
+      // Scheduling with urgency calculation
       if (scheduled_date) {
-        const dateStr = new Date(scheduled_date).toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric'
-        });
-        contextLines.push(`Scheduled: ${dateStr}${scheduled_time ? ` at ${scheduled_time}` : ''}`);
+        const schedDate = new Date(scheduled_date);
+        const now = new Date();
+        const daysUntil = Math.ceil((schedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const dateStr = schedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        let urgencyNote = '';
+        if (daysUntil < 0) urgencyNote = ' ⚠️ PAST DUE';
+        else if (daysUntil === 0) urgencyNote = ' 🚨 TODAY';
+        else if (daysUntil === 1) urgencyNote = ' ⚠️ TOMORROW';
+        else if (daysUntil <= 3) urgencyNote = ` ⚠️ IN ${daysUntil} DAYS`;
+        contextLines.push(`Scheduled: ${dateStr}${scheduled_time ? ` at ${scheduled_time}` : ''}${urgencyNote}`);
+      } else {
+        contextLines.push(`Scheduled: Not yet scheduled`);
       }
 
       if (assigned_to) {
         contextLines.push(`Assigned to: ${assigned_to}`);
+      } else {
+        contextLines.push(`Assigned to: ⚠️ NOBODY — unassigned`);
       }
 
+      // Payment with clear status
       if (quote_total) {
-        contextLines.push(`\nQuote: $${parseFloat(quote_total).toLocaleString()}`);
-        
-        if (payment_amount && parseFloat(payment_amount) > 0) {
-          const paid = parseFloat(payment_amount);
-          const total = parseFloat(quote_total);
-          const remaining = total - paid;
-          
-          contextLines.push(`Paid: $${paid.toLocaleString()}`);
-          
-          if (remaining > 0) {
-            contextLines.push(`⚠️ PAYMENT DUE: $${remaining.toLocaleString()}`);
-          } else {
-            contextLines.push(`✓ Paid in full`);
-          }
+        const total = parseFloat(quote_total);
+        const paid = payment_amount ? parseFloat(payment_amount) : 0;
+        const remaining = total - paid;
+        contextLines.push(`\nQuote total: $${total.toLocaleString()}`);
+
+        if (payment_status === 'paid') {
+          contextLines.push(`Payment: ✓ PAID IN FULL`);
+        } else if (payment_status === 'partial') {
+          contextLines.push(`Payment: Partial — $${paid.toLocaleString()} paid, $${remaining.toLocaleString()} still owed ⚠️`);
         } else {
-          contextLines.push(`⚠️ NO PAYMENT RECEIVED YET`);
+          contextLines.push(`Payment: ⚠️ NOTHING RECEIVED — $${total.toLocaleString()} outstanding`);
         }
       }
 
+      // Tasks
       if (tasks && Array.isArray(tasks) && tasks.length > 0) {
         const completed = tasks.filter((t: any) => t.completed).length;
-        const total = tasks.length;
-        contextLines.push(`\nTasks: ${completed}/${total} completed`);
-        
+        contextLines.push(`\nTasks: ${completed}/${tasks.length} complete`);
         const pending = tasks.filter((t: any) => !t.completed);
         if (pending.length > 0 && pending.length <= 5) {
-          contextLines.push(`Pending tasks:`);
           pending.forEach((t: any) => {
-            contextLines.push(`  - ${t.title || t.description || 'Unnamed task'}`);
+            contextLines.push(`  ☐ ${t.label || t.title || 'Unnamed task'}`);
           });
         }
       }
 
       if (internal_notes) {
-        contextLines.push(`\nINTERNAL NOTES:\n${internal_notes}`);
+        contextLines.push(`\nINTERNAL NOTES: ${internal_notes}`);
       }
     } else {
-      contextLines.push(`\n(This is a NEW LEAD - not yet converted to project)`);
+      contextLines.push(`\n(New lead — not yet converted to a project)`);
     }
 
     const context = contextLines.join('\n');
 
-    console.log('Context built, calling Claude...');
+    // ── Prompt ────────────────────────────────────────────────
+    const prompt = `You are an expert assistant for a home services contractor business.
 
-    // Create prompt
-    const prompt = `You are a helpful assistant for a busy contractor.
-
-Here's all the information about this lead/project:
+Here is everything you know about this lead/project:
 
 ${context}
 
-Create a BRIEF, ACTIONABLE summary that the contractor can read in 30 seconds.
+Write a fast, actionable brief that a busy contractor can scan in under 30 seconds.
 
-Focus on:
-1. What's the current situation?
-2. What does the customer need?
-3. What should the contractor do NEXT?
-4. Any critical details or warnings?
+Rules:
+- Be specific to the service category (roofing, HVAC, plumbing, etc) — use industry-appropriate language
+- If it's a repeat customer, acknowledge the relationship and factor in their history
+- Calculate urgency from the scheduling and payment data — don't be vague
+- The headline should be a single punchy sentence capturing the situation
+- Next steps should be concrete actions, not generic advice
+- Flag anything that needs immediate attention in critical_info
 
-Keep it conversational and specific. Use bullet points for clarity.
-Highlight important numbers (payment due, dates, etc).
-
-Format as JSON:
+Respond ONLY with this JSON (no markdown, no extra text):
 {
-  "summary": "One-paragraph overview of the situation",
-  "next_steps": ["Action 1", "Action 2", "Action 3"],
-  "critical_info": ["Important detail 1", "Important detail 2"],
-  "urgency": "Emergency/High Priority/Normal/Low Priority"
-}`;
+  "headline": "One punchy sentence — the situation in a nutshell",
+  "summary": "2-3 sentence paragraph with the full context",
+  "next_steps": ["Specific action 1", "Specific action 2", "Specific action 3"],
+  "critical_info": ["Urgent flag 1 if any", "Urgent flag 2 if any"],
+  "urgency": "Emergency|High Priority|Normal|Low Priority",
+  "customer_score": "VIP|Good|New|Risky"
+}
 
-    // Call Claude
+customer_score rules:
+- VIP = repeat customer, always paid, multiple jobs
+- Good = paid on time, no issues
+- New = first job, no history
+- Risky = payment issues or cancelled jobs in history`;
+
+    // ── Call Claude ────────────────────────────────────────────
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    console.log('Claude response received');
-
     const content = message.content[0];
-    
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
+    if (content.type !== 'text') throw new Error('Unexpected response type');
 
-    // Parse response
     let brief;
     try {
-      const cleanContent = content.text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-      
-      brief = JSON.parse(cleanContent);
-      
-      // Add metadata
+      const clean = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      brief = JSON.parse(clean);
       brief.customer_name = customer_name;
       brief.is_project = !!project_id;
       brief.status = status;
-      
-      if (scheduled_date) {
-        brief.scheduled = {
-          date: scheduled_date,
-          time: scheduled_time
-        };
-      }
-
-    } catch (parseError) {
-      console.error('Failed to parse Claude response:', content.text);
-      
-      // Fallback: return raw text
+      if (scheduled_date) brief.scheduled = { date: scheduled_date, time: scheduled_time };
+    } catch {
       brief = {
+        headline: `${customer_name} — ${category || 'New lead'}`,
         summary: content.text,
-        next_steps: ["Review this lead"],
+        next_steps: ['Review this lead'],
         critical_info: [],
-        urgency: "Normal",
-        raw_response: content.text
+        urgency: 'Normal',
+        customer_score: 'New',
       };
     }
 
-    console.log('AI Brief generated successfully');
-
-    return NextResponse.json({ 
-      success: true, 
-      brief 
-    });
+    return NextResponse.json({ success: true, brief });
 
   } catch (error: any) {
-    console.error('AI Brief Error:', error);
-    console.error('Error message:', error.message);
-    
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message || 'Failed to generate brief' 
-    }, { status: 500 });
+    console.error('AI Brief Error:', error.message);
+    return NextResponse.json({ success: false, error: error.message || 'Failed to generate brief' }, { status: 500 });
   }
 }

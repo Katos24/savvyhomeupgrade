@@ -24,6 +24,7 @@ import {
   User,
   Hash,
   ArrowLeft,
+  History,
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoGallery from '@/components/dashboard/PhotoGallery';
@@ -74,6 +75,61 @@ export default function LeadModal({
   const [newNote, setNewNote] = useState('');
   const [showCompletionSummary, setShowCompletionSummary] = useState(false);
   const [activeTab, setActiveTab] = useState<TopTab>('overview');
+  const [relatedLeads, setRelatedLeads] = useState<any[]>([]);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [aiSummary, setAiSummary] = useState<any>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  const getTimeAgo = (dateStr: string) => {
+    const months = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    if (months < 1) return 'This month';
+    if (months === 1) return '1 month ago';
+    if (months < 12) return `${months} months ago`;
+    const years = Math.floor(months / 12);
+    return years === 1 ? '1 year ago' : `${years} years ago`;
+  };
+
+  const handleAiSummary = async () => {
+    if (aiSummary || loadingAi) return;
+    setLoadingAi(true);
+    try {
+      const res = await fetch('/api/ai/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          customer_name: lead.name,
+          description: lead.description,
+          category: lead.category,
+          status: lead.status,
+          project_id: lead.project_id,
+          scheduled_date: lead.scheduled_date || null,
+          scheduled_time: lead.scheduled_time || null,
+          assigned_to: lead.assigned_to || null,
+          quote_total: lead.quote_total || null,
+          payment_amount: lead.payment_amount || null,
+          payment_status: lead.payment_status || null,
+          internal_notes: lead.project_internal_notes || null,
+          company_name: company?.name || null,
+          repeat_customer: relatedLeads.length > 0,
+          past_jobs: relatedLeads.map(r => ({
+            category: r.category,
+            status: r.status,
+            quote_total: r.quote_total,
+            payment_status: r.payment_status,
+            created_at: r.created_at,
+            description: r.description,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setAiSummary(data.brief);
+    } catch (e) {
+      console.error('AI summary error:', e);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [editedDetails, setEditedDetails] = useState({
     name: lead.name || '',
@@ -86,6 +142,22 @@ export default function LeadModal({
 
   const notesArray = parseNotes(lead.notes);
   const isProject = !!lead.project_id;
+
+  // Fetch related leads (repeat customer detection)
+  useEffect(() => {
+    if (!lead.name || !lead.city || !lead.company_id) return;
+    const params = new URLSearchParams({
+      name: lead.name,
+      city: lead.city,
+      company_id: String(lead.company_id),
+      exclude: String(lead.id),
+      ...(lead.email ? { email: lead.email } : {}),
+    });
+    fetch(`/api/leads/related?${params}`)
+      .then(r => r.json())
+      .then(data => { if (data.leads?.length) setRelatedLeads(data.leads); })
+      .catch(() => {});
+  }, [lead.id]);
   const userRole = currentUser?.role || 'member';
   const canDelete = canDeleteLead(userRole);
   const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
@@ -446,6 +518,16 @@ export default function LeadModal({
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                       <span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center text-xs">👤</span>
                       Client Info
+                      {relatedLeads.length > 0 && (
+                        <button
+                          onClick={() => setShowHistoryDrawer(true)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-bold transition hover:opacity-80"
+                          style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#f59e0b' }}
+                        >
+                          <History className="w-3 h-3" />
+                          {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
+                        </button>
+                      )}
                     </h3>
                     <div className="relative">
                       <button
@@ -788,6 +870,80 @@ export default function LeadModal({
         </div>
 
       </div>
+
+      {/* ── REPEAT CUSTOMER HISTORY DRAWER ── */}
+      {showHistoryDrawer && (
+        <div className="fixed inset-0 z-[60] flex">
+          <div className="flex-1" onClick={() => setShowHistoryDrawer(false)} />
+          <div className="w-full sm:w-96 bg-white shadow-2xl flex flex-col h-full border-l border-gray-200">
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#312e81' }}>
+              <button onClick={() => setShowHistoryDrawer(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-none"
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <X className="w-4 h-4 text-white/70" />
+              </button>
+              <div>
+                <p className="text-xs font-semibold text-white/50">Repeat Customer</p>
+                <p className="text-sm font-bold text-white">{lead.name}</p>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                {relatedLeads.length} Previous Job{relatedLeads.length > 1 ? 's' : ''}
+              </p>
+              {relatedLeads.map((rl: any) => {
+                const confidence = rl.match_confidence === 'high';
+                const date = new Date(rl.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return (
+                  <div key={rl.id} className="bg-white border border-gray-200 rounded-none p-4 space-y-2 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{rl.category || 'No category'}</p>
+                        <p className="text-xs text-gray-400">{date}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-none ${
+                        rl.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
+                        : rl.status === 'cancelled' ? 'bg-red-100 text-red-600'
+                        : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {rl.status}
+                      </span>
+                    </div>
+                    {rl.description && (
+                      <p className="text-xs text-gray-500 leading-relaxed">{rl.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      {rl.quote_total && (
+                        <span className="font-semibold text-gray-700">
+                          ${parseFloat(rl.quote_total).toLocaleString()}
+                        </span>
+                      )}
+                      {rl.payment_status === 'paid' && (
+                        <span className="text-emerald-600 font-semibold">Paid</span>
+                      )}
+                      {rl.scheduled_date && (
+                        <span>{new Date(rl.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-50">
+                      <span className={`text-xs font-semibold ${confidence ? 'text-amber-500' : 'text-gray-400'}`}>
+                        {confidence ? '✓ Name + City + Email' : '~ Name + City'}
+                      </span>
+                      {rl.project_id ? (
+                        <span className="text-xs text-gray-400">Project #{rl.project_number || rl.project_id}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">No project</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCompletionSummary && (
         <CompletionSummaryModal

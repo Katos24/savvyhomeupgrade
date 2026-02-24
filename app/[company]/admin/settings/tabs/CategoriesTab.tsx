@@ -308,7 +308,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   value={newTaskLabel}
                   onChange={(e) => setNewTaskLabel(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addTask()}
-                  placeholder="Add a task template..."
+                  placeholder="Add a task ..."
                   className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
                 />
                 <button onClick={addTask}
