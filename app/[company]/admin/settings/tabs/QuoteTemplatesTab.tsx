@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, AlertCircle, FileText, DollarSign } from 'lucide-react';
 
-type QuoteTemplatesTabProps = {
-  company: any;
-  currentUser: any;
-};
-
 type LineItem = {
   id: string;
   description: string;
@@ -27,15 +22,16 @@ type CustomTemplate = {
   updated_at?: string;
 };
 
-export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplatesTabProps) {
-  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+export default function QuoteTemplatesTab({ company, currentUser }: { company: any; currentUser: any }) {
+  const [templates, setTemplates] = useState<CustomTemplate[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
-  // Editor state
+
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomTemplate | null>(null);
@@ -43,550 +39,350 @@ export default function QuoteTemplatesTab({ company, currentUser }: QuoteTemplat
   const [templateCategory, setTemplateCategory] = useState('');
   const [templateNotes, setTemplateNotes] = useState('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
-  const [newLineItem, setNewLineItem] = useState({
-    description: '',
-    quantity: '1',
-    unitPrice: ''
-  });
+  const [newItem, setNewItem] = useState({ description: '', quantity: '1', unitPrice: '' });
 
   const categories = company.form_categories || [];
 
-  useEffect(() => {
-    loadCustomTemplates();
-  }, []);
+  useEffect(() => { loadTemplates(); }, []);
 
-  async function loadCustomTemplates() {
+  async function loadTemplates() {
     try {
-      const response = await fetch(`/api/company/${company.slug}/quote-templates`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setCustomTemplates(data.templates || []);
-      }
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function startCreateTemplate() {
-    setShowCategorySelector(true);
-  }
-
-  function selectCategoryAndContinue(category: string) {
-    setTemplateCategory(category);
-    setShowCategorySelector(false);
-    setShowEditor(true);
+      const res = await fetch(`/api/company/${company.slug}/quote-templates`);
+      const data = await res.json();
+      if (data.success) setTemplates(data.templates || []);
+    } catch { } finally { setLoading(false); }
   }
 
   function openEditor(template?: CustomTemplate) {
     if (template) {
-      // Editing existing template
-      const items = template.items.map((item, idx) => ({
-        id: `item_${Date.now()}_${idx}`,
-        description: item.description,
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice,
-        amount: item.amount
-      }));
-
       setEditingTemplate(template);
       setTemplateName(template.name);
       setTemplateCategory(template.category);
       setTemplateNotes(template.notes || '');
-      setLineItems(items);
+      setLineItems(template.items.map((item, i) => ({ ...item, id: `item_${Date.now()}_${i}` })));
       setShowEditor(true);
     }
   }
 
   function closeEditor() {
-    setShowEditor(false);
-    setShowCategorySelector(false);
-    setEditingTemplate(null);
-    setTemplateName('');
-    setTemplateCategory('');
-    setTemplateNotes('');
-    setLineItems([]);
-    setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
+    setShowEditor(false); setShowCategorySelector(false);
+    setEditingTemplate(null); setTemplateName(''); setTemplateCategory('');
+    setTemplateNotes(''); setLineItems([]); setNewItem({ description: '', quantity: '1', unitPrice: '' });
     setError('');
   }
 
   function addLineItem() {
-    if (!newLineItem.description || !newLineItem.unitPrice) {
-      setError('Description and price are required');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    const qty = parseFloat(newLineItem.quantity) || 1;
-    const price = parseFloat(newLineItem.unitPrice);
-    
-    setLineItems([...lineItems, {
-      id: `item_${Date.now()}`,
-      description: newLineItem.description,
-      quantity: qty,
-      unitPrice: price,
-      amount: qty * price
-    }]);
-    
-    setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
+    if (!newItem.description || !newItem.unitPrice) { setError('Description and price are required'); setTimeout(() => setError(''), 3000); return; }
+    const qty = parseFloat(newItem.quantity) || 1;
+    const price = parseFloat(newItem.unitPrice);
+    setLineItems([...lineItems, { id: `item_${Date.now()}`, description: newItem.description, quantity: qty, unitPrice: price, amount: qty * price }]);
+    setNewItem({ description: '', quantity: '1', unitPrice: '' });
   }
 
   function updateLineItem(id: string, field: string, value: any) {
     setLineItems(lineItems.map(item => {
       if (item.id !== id) return item;
-      
       const updated = { ...item, [field]: field === 'description' ? value : parseFloat(value) || 0 };
-      
-      if (field === 'quantity' || field === 'unitPrice') {
-        updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
-      }
-      
+      if (field === 'quantity' || field === 'unitPrice') updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
       return updated;
     }));
   }
 
-  function removeLineItem(id: string) {
-    setLineItems(lineItems.filter(item => item.id !== id));
-  }
-
   async function saveTemplate() {
-    if (!templateName.trim()) {
-      setError('Template name is required');
-      return;
-    }
-
-    if (lineItems.length === 0) {
-      setError('Add at least one line item');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-
+    if (!templateName.trim()) { setError('Template name is required'); return; }
+    if (lineItems.length === 0) { setError('Add at least one line item'); return; }
+    setSaving(true); setError('');
     const total = lineItems.reduce((sum, item) => sum + item.amount, 0);
-    
-    const templateData: CustomTemplate = {
-      id: editingTemplate?.id || `custom_${Date.now()}`,
-      name: templateName.trim(),
-      category: templateCategory,
-      items: lineItems,
-      total,
-      notes: templateNotes.trim(),
-      created_at: editingTemplate?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
+    const templateData = { id: editingTemplate?.id || `custom_${Date.now()}`, name: templateName.trim(), category: templateCategory, items: lineItems, total, notes: templateNotes.trim(), created_at: editingTemplate?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
     try {
-      const response = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: editingTemplate ? 'update' : 'create',
-          template: templateData
-        })
+      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: editingTemplate ? 'update' : 'create', template: templateData }),
       });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      const result = await res.json();
+      if (res.ok && result.success) {
         setSuccess(editingTemplate ? 'Template updated!' : 'Template created!');
-        await loadCustomTemplates();
-        closeEditor();
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(result.error || 'Failed to save template');
-      }
-    } catch (error) {
-      console.error('Save template error:', error);
-      setError('Failed to save template');
-    } finally {
-      setSaving(false);
-    }
+        await loadTemplates(); closeEditor(); setTimeout(() => setSuccess(''), 3000);
+      } else setError(result.error || 'Failed to save template');
+    } catch { setError('Failed to save template'); }
+    finally { setSaving(false); }
   }
 
-  async function deleteTemplate(templateId: string, templateName: string) {
-    if (!confirm(`Delete "${templateName}"? This cannot be undone.`)) return;
-
+  async function deleteTemplate(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
     try {
-      const response = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          templateId
-        })
+      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', templateId: id }),
       });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setSuccess('Template deleted!');
-        await loadCustomTemplates();
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError('Failed to delete template');
-      }
-    } catch (error) {
-      console.error('Delete template error:', error);
-      setError('Failed to delete template');
-    }
+      const result = await res.json();
+      if (res.ok && result.success) { setSuccess('Template deleted!'); await loadTemplates(); setTimeout(() => setSuccess(''), 3000); }
+      else setError('Failed to delete template');
+    } catch { setError('Failed to delete template'); }
   }
 
-  const filteredCustomTemplates = selectedCategory === 'all'
-    ? customTemplates
-    : customTemplates.filter(t => t.category === selectedCategory);
+  const filtered = selectedCategory === 'all' ? templates : templates.filter(t => t.category === selectedCategory);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin text-4xl mb-3">⏳</div>
-          <p className="text-gray-600">Loading templates...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="py-16 text-center text-gray-400 text-sm">Loading templates...</div>
+  );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-6">
+
+      {/* Page header */}
+      <div className="border-b border-gray-100 pb-5 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Quote Templates</h2>
-          <p className="text-sm sm:text-base text-slate-600">
-            Create reusable quote templates for faster estimates
-          </p>
+          <h2 className="text-xl font-bold text-gray-900">Quote Templates</h2>
+          <p className="text-sm text-gray-500 mt-1">Create reusable quote templates for faster estimates</p>
         </div>
         <button
-          onClick={startCreateTemplate}
-          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm text-sm sm:text-base"
+          onClick={() => setShowCategorySelector(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex-shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          Create Template
+          <Plus className="w-3.5 h-3.5" /> Create Template
         </button>
       </div>
 
-      {/* Success/Error Messages */}
+      {/* Alerts */}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <span className="text-lg flex-shrink-0">✓</span>
-          <span className="flex-1">{success}</span>
+        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+          <span>✓</span> {success}
         </div>
       )}
-
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1">{error}</span>
+        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
         </div>
       )}
 
-      {/* Category Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-        <label className="block text-sm font-semibold text-slate-700 mb-2">Filter by Category</label>
+      {/* Filter card */}
+      <div className="bg-white border border-gray-200 px-5 py-4 flex flex-wrap items-center gap-3">
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Filter</span>
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full sm:w-64 px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+          className="flex-1 sm:flex-none sm:w-48 text-sm border border-gray-200 px-3 py-2 focus:border-indigo-400 focus:outline-none bg-white transition"
         >
           <option value="all">All Categories</option>
           {categories.map((cat: any) => (
-            <option key={cat.value} value={cat.value}>
-              {cat.emoji} {cat.label}
-            </option>
+            <option key={cat.value} value={cat.value}>{cat.label}</option>
           ))}
         </select>
+        <span className="text-xs text-gray-400">{filtered.length} template{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Templates Grid */}
-      {filteredCustomTemplates.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            Your Templates ({filteredCustomTemplates.length})
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCustomTemplates.map(template => (
-              <div key={template.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 hover:shadow-lg transition">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate">{template.name}</h4>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {categories.find((c: any) => c.value === template.category)?.label || template.category}
-                    </p>
-                  </div>
-                  <div className="flex gap-1 flex-shrink-0 ml-2">
-                    <button
-                      onClick={() => openEditor(template)}
-                      className="p-1.5 hover:bg-blue-200 rounded-lg transition text-blue-600"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteTemplate(template.id, template.name)}
-                      className="p-1.5 hover:bg-red-100 rounded-lg transition text-red-600"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-3">
-                  {template.items.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="text-xs text-slate-600 flex justify-between">
-                      <span className="truncate flex-1">{item.description}</span>
-                      <span className="font-semibold ml-2">{formatCurrency(item.amount)}</span>
+      {/* Templates */}
+      {filtered.length > 0 ? (
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Templates</span>
+          </div>
+          <div className="p-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filtered.map(template => {
+              const cat = categories.find((c: any) => c.value === template.category);
+              return (
+                <div key={template.id} className="border border-gray-200 hover:border-indigo-200 hover:shadow-sm group transition overflow-hidden flex flex-col">
+                  {/* Card header */}
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-800 text-sm truncate">{template.name}</p>
+                      {cat && <p className="text-xs text-gray-400 mt-0.5">{cat.label}</p>}
                     </div>
-                  ))}
-                  {template.items.length > 3 && (
-                    <p className="text-xs text-slate-500">+{template.items.length - 3} more...</p>
-                  )}
+                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+                      <button onClick={() => openEditor(template)}
+                        className="p-1.5 hover:bg-indigo-50 text-indigo-400 transition">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => deleteTemplate(template.id, template.name)}
+                        className="p-1.5 hover:bg-red-50 text-red-400 transition">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Line items preview */}
+                  <div className="px-4 py-3 flex-1 space-y-1.5">
+                    {template.items.slice(0, 3).map((item, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-gray-500 truncate">{item.description}</span>
+                        <span className="text-gray-700 font-semibold flex-shrink-0">{fmt(item.amount)}</span>
+                      </div>
+                    ))}
+                    {template.items.length > 3 && (
+                      <p className="text-xs text-gray-300">+{template.items.length - 3} more items</p>
+                    )}
+                  </div>
+
+                  {/* Total footer */}
+                  <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Total</span>
+                    <span className="text-base font-bold text-emerald-600">{fmt(template.total)}</span>
+                  </div>
                 </div>
-                
-                <div className="pt-3 border-t border-blue-300 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-600">Total</span>
-                  <span className="text-lg font-bold text-blue-600">{formatCurrency(template.total)}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-            <FileText className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">No Templates Yet</h3>
-          <p className="text-slate-600 mb-4">
-            {selectedCategory === 'all' 
-              ? 'Create your first quote template to speed up your estimates'
-              : `No templates for ${categories.find((c: any) => c.value === selectedCategory)?.label || 'this category'} yet`
-            }
+        <div className="bg-white border border-gray-200 py-16 text-center">
+          <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="font-bold text-gray-400 text-sm mb-1">No Templates Yet</p>
+          <p className="text-xs text-gray-300 mb-4">
+            {selectedCategory === 'all'
+              ? 'Create your first quote template to speed up estimates'
+              : `No templates for ${categories.find((c: any) => c.value === selectedCategory)?.label || 'this category'} yet`}
           </p>
-          <button
-            onClick={startCreateTemplate}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Template
+          <button onClick={() => setShowCategorySelector(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">
+            <Plus className="w-4 h-4" /> Create Template
           </button>
         </div>
       )}
 
-      {/* CATEGORY SELECTOR MODAL */}
+      {/* Category selector modal */}
       {showCategorySelector && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h3 className="text-xl font-bold text-white">Select Category</h3>
-              <button
-                onClick={closeEditor}
-                className="text-white hover:bg-white/20 p-2 rounded-lg transition"
-              >
-                <X className="w-6 h-6" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-white border border-gray-200 w-full sm:max-w-lg shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-indigo-900 flex items-center justify-between" style={{ background: '#312e81' }}>
+              <div>
+                <p className="font-bold text-white">Select Category</p>
+                <p className="text-xs text-indigo-300 mt-0.5">Which category is this template for?</p>
+              </div>
+              <button onClick={closeEditor} className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 transition">
+                <X className="w-5 h-5" />
               </button>
             </div>
-
-            <div className="p-6">
-              <p className="text-sm text-slate-600 mb-4">Which category is this template for?</p>
-              <div className="space-y-2">
-                {categories.map((cat: any) => (
-                  <button
-                    key={cat.value}
-                    onClick={() => selectCategoryAndContinue(cat.value)}
-                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 rounded-xl transition text-left"
-                  >
-                    <span className="text-2xl">{cat.emoji}</span>
-                    <span className="font-semibold text-slate-900">{cat.label}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
+              {categories.map((cat: any) => (
+                <button
+                  key={cat.value}
+                  onClick={() => { setTemplateCategory(cat.value); setShowCategorySelector(false); setShowEditor(true); }}
+                  className="flex items-center justify-center px-3 py-3 bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition text-center"
+                >
+                  <span className="font-semibold text-gray-700 text-sm">{cat.label}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* TEMPLATE EDITOR MODAL */}
+      {/* Template editor modal */}
       {showEditor && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-gray-200 w-full sm:max-w-4xl sm:my-8 shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+            <div className="px-5 py-4 border-b border-indigo-900 flex items-center justify-between flex-shrink-0" style={{ background: '#312e81' }}>
               <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <FileText className="w-6 h-6" />
+                <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">
                   {editingTemplate ? 'Edit Template' : 'Create Template'}
-                </h3>
-                <p className="text-blue-100 text-sm mt-1">
-                  {categories.find((c: any) => c.value === templateCategory)?.emoji} {categories.find((c: any) => c.value === templateCategory)?.label}
+                </p>
+                <p className="text-white font-bold">
+                  {categories.find((c: any) => c.value === templateCategory)?.label}
                 </p>
               </div>
-              <button
-                onClick={closeEditor}
-                className="text-white hover:bg-white/20 p-2 rounded-lg transition"
-              >
-                <X className="w-6 h-6" />
+              <button onClick={closeEditor} className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 transition">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Template Name */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Template Name *</label>
-                <input
-                  type="text"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="e.g., Standard AC Installation"
-                  className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  autoFocus
-                />
+            <div className="p-5 space-y-5 flex-1 overflow-y-auto">
+
+              {/* Name + Notes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Template Name *</label>
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="e.g., Standard AC Installation"
+                    autoFocus
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Notes (Optional)</label>
+                  <input
+                    type="text"
+                    value={templateNotes}
+                    onChange={(e) => setTemplateNotes(e.target.value)}
+                    placeholder="Any additional notes..."
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+                  />
+                </div>
               </div>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Optional)</label>
-                <textarea
-                  value={templateNotes}
-                  onChange={(e) => setTemplateNotes(e.target.value)}
-                  placeholder="Any additional notes about this template..."
-                  rows={2}
-                  className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              {/* Line items header */}
+              <div className="border border-gray-100 overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Line Items</span>
+                  {lineItems.length > 0 && <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-bold">{lineItems.length}</span>}
+                </div>
 
-              {/* Line Items */}
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  Line Items
-                </h4>
-
-                {/* Existing Items */}
+                {/* Existing items */}
                 {lineItems.length > 0 && (
-                  <div className="bg-slate-50 rounded-lg p-4 mb-4 space-y-2">
-                    {lineItems.map(item => (
-                      <div key={item.id} className="flex items-center gap-2 bg-white p-3 rounded-lg border border-slate-200">
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
-                          className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Description"
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={item.quantity}
-                          onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)}
-                          className="w-20 px-3 py-2 text-sm text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.unitPrice}
-                          onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                          className="w-28 px-3 py-2 text-sm text-right border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="0.00"
-                        />
-                        <span className="w-28 text-right font-bold text-sm">{formatCurrency(item.amount)}</span>
-                        <button
-                          onClick={() => removeLineItem(item.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
+                  <div className="divide-y divide-gray-50">
+                    {lineItems.map((item, idx) => (
+                      <div key={item.id} className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 group transition">
+                        <span className="text-xs text-gray-300 w-5 text-center flex-shrink-0">{idx + 1}</span>
+                        <input type="text" value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                          className="flex-1 px-2 py-1.5 text-sm border-b-2 border-transparent hover:border-gray-200 focus:border-indigo-400 focus:outline-none bg-transparent transition" />
+                        <input type="number" min="1" value={item.quantity} onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)}
+                          className="w-16 px-2 py-1.5 text-sm text-center border border-gray-200 focus:border-indigo-400 focus:outline-none transition" />
+                        <input type="number" step="0.01" min="0" value={item.unitPrice} onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)}
+                          className="w-24 px-2 py-1.5 text-sm text-right border border-gray-200 focus:border-indigo-400 focus:outline-none transition" />
+                        <span className="w-24 text-right text-sm font-bold text-emerald-600 flex-shrink-0">{fmt(item.amount)}</span>
+                        <button onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}
+                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-400 transition flex-shrink-0">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
+                    {/* Total row */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border-t border-emerald-100">
+                      <span className="text-sm font-bold text-gray-600">Total</span>
+                      <span className="text-lg font-bold text-emerald-600">{fmt(lineItems.reduce((s, i) => s + i.amount, 0))}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Add New Item */}
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-slate-700 mb-3">Add Line Item</p>
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={newLineItem.description}
-                        onChange={(e) => setNewLineItem({...newLineItem, description: e.target.value})}
-                        onKeyPress={(e) => e.key === 'Enter' && addLineItem()}
-                        placeholder="Description"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={newLineItem.quantity}
-                        onChange={(e) => setNewLineItem({...newLineItem, quantity: e.target.value})}
-                        onKeyPress={(e) => e.key === 'Enter' && addLineItem()}
-                        className="w-20 px-3 py-2 text-sm text-center border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Qty"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={newLineItem.unitPrice}
-                        onChange={(e) => setNewLineItem({...newLineItem, unitPrice: e.target.value})}
-                        onKeyPress={(e) => e.key === 'Enter' && addLineItem()}
-                        placeholder="Price"
-                        className="w-28 px-3 py-2 text-sm text-right border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <button
-                      onClick={addLineItem}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
+                {/* Add new item row */}
+                <div className="px-4 py-3 bg-indigo-50 border-t border-indigo-100 flex items-center gap-2">
+                  <span className="text-xs text-indigo-300 w-5 text-center flex-shrink-0">+</span>
+                  <input type="text" value={newItem.description} onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                    onKeyDown={(e) => e.key === 'Enter' && addLineItem()}
+                    placeholder="Description"
+                    className="flex-1 px-2 py-1.5 text-sm border border-indigo-200 focus:border-indigo-400 focus:outline-none bg-white transition" />
+                  <input type="number" min="1" value={newItem.quantity} onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
+                    onKeyDown={(e) => e.key === 'Enter' && addLineItem()}
+                    className="w-16 px-2 py-1.5 text-sm text-center border border-indigo-200 focus:border-indigo-400 focus:outline-none bg-white transition" />
+                  <input type="number" step="0.01" min="0" value={newItem.unitPrice} onChange={(e) => setNewItem({...newItem, unitPrice: e.target.value})}
+                    onKeyDown={(e) => e.key === 'Enter' && addLineItem()}
+                    placeholder="0.00"
+                    className="w-24 px-2 py-1.5 text-sm text-right border border-indigo-200 focus:border-indigo-400 focus:outline-none bg-white transition" />
+                  <span className="w-24 flex-shrink-0" />
+                  <button onClick={addLineItem}
+                    className="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white transition flex-shrink-0">
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-
-                {/* Total */}
-                {lineItems.length > 0 && (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 mt-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-slate-900">Total</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        {formatCurrency(lineItems.reduce((sum, item) => sum + item.amount, 0))}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-slate-200 px-6 py-4 flex gap-3">
-              <button
-                onClick={closeEditor}
-                className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-semibold transition"
-              >
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+              <button onClick={closeEditor}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm transition">
                 Cancel
               </button>
-              <button
-                onClick={saveTemplate}
-                disabled={saving}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2"
-              >
+              <button onClick={saveTemplate} disabled={saving}
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition flex items-center justify-center gap-2">
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : editingTemplate ? 'Update Template' : 'Create Template'}
               </button>

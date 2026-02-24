@@ -1,18 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  X, 
-  ChevronUp, 
-  ChevronDown, 
-  AlertCircle,
-  AlertTriangle,
-  Workflow,
-  Palette,
-  Lock
-} from 'lucide-react';
+import { Plus, X, ChevronUp, ChevronDown, AlertCircle, AlertTriangle, Workflow, Lock } from 'lucide-react';
 
 type StatusOption = {
   value: string;
@@ -46,43 +35,24 @@ const COLOR_OPTIONS = [
 
 const EMOJI_OPTIONS = ['✨', '📞', '💰', '📅', '🔨', '✅', '📋', '🎯', '⚡', '🚀', '💼', '🏆', '⏰', '📊', '🔔'];
 
-export default function PipelineTab({
-  company,
-  currentUser,
-}: {
-  company: any;
-  currentUser: any;
-}) {
-  const router = useRouter();
+export default function PipelineTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
-
   const [statuses, setStatuses] = useState<StatusOption[]>(
     company.status_options?.length ? company.status_options : DEFAULT_STATUSES
   );
-
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newStatus, setNewStatus] = useState({ 
-    label: '', 
-    color: 'blue',
-    emoji: '📋'
-  });
+  const [newStatus, setNewStatus] = useState({ label: '', color: 'blue', emoji: '📋' });
 
-  const getColorHex = (colorName: string) => {
-    return COLOR_OPTIONS.find(c => c.value === colorName)?.hex || '#3b82f6';
-  };
-
-  const isLocked = (status: StatusOption) => LOCKED_STATUSES.includes(status.value);
+  const getColorHex = (name: string) => COLOR_OPTIONS.find(c => c.value === name)?.hex || '#3b82f6';
+  const isLocked = (s: StatusOption) => LOCKED_STATUSES.includes(s.value);
 
   const moveStatus = (from: number, to: number) => {
     if (to < 0 || to >= statuses.length) return;
-    // Prevent moving locked statuses
     if (isLocked(statuses[from])) return;
-    // Prevent moving into the first position if 'new' is locked there
     if (to === 0 && isLocked(statuses[0])) return;
-    // Prevent moving into the last position if 'completed' is locked there
     if (to === statuses.length - 1 && isLocked(statuses[statuses.length - 1])) return;
     const updated = [...statuses];
     const [moved] = updated.splice(from, 1);
@@ -92,51 +62,21 @@ export default function PipelineTab({
 
   const handleRemoveStatus = (index: number) => {
     if (isLocked(statuses[index])) return;
-    if (statuses.length <= 1) {
-      setError('You must have at least 1 status');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
+    if (statuses.length <= 1) { setError('You must have at least 1 status'); setTimeout(() => setError(''), 3000); return; }
     setDeleteConfirm({ index, label: statuses[index].label });
   };
 
-  const confirmRemoveStatus = () => {
-    if (deleteConfirm) {
-      setStatuses(statuses.filter((_, i) => i !== deleteConfirm.index));
-      setDeleteConfirm(null);
-    }
+  const confirmRemove = () => {
+    if (deleteConfirm) { setStatuses(statuses.filter((_, i) => i !== deleteConfirm.index)); setDeleteConfirm(null); }
   };
 
   const handleAddStatus = () => {
-    if (!newStatus.label.trim()) {
-      setError('Please enter a status label');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    if (statuses.length >= 10) {
-      setError('Maximum 10 statuses allowed');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
+    if (!newStatus.label.trim()) { setError('Please enter a status label'); setTimeout(() => setError(''), 3000); return; }
+    if (statuses.length >= 10) { setError('Maximum 10 statuses allowed'); setTimeout(() => setError(''), 3000); return; }
     const value = newStatus.label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    // Prevent adding a status with a locked value
-    if (LOCKED_STATUSES.includes(value)) {
-      setError(`"${newStatus.label}" is a reserved status name`);
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // Insert before the last item (which should always be 'completed')
+    if (LOCKED_STATUSES.includes(value)) { setError(`"${newStatus.label}" is a reserved status name`); setTimeout(() => setError(''), 3000); return; }
     const updated = [...statuses];
-    updated.splice(updated.length - 1, 0, {
-      value,
-      label: newStatus.label.trim(),
-      color: newStatus.color,
-      emoji: newStatus.emoji,
-    });
+    updated.splice(updated.length - 1, 0, { value, label: newStatus.label.trim(), color: newStatus.color, emoji: newStatus.emoji });
     setStatuses(updated);
     setNewStatus({ label: '', color: 'blue', emoji: '📋' });
     setShowAddForm(false);
@@ -146,48 +86,29 @@ export default function PipelineTab({
     if (isLocked(statuses[index])) return;
     const updated = [...statuses];
     updated[index] = { ...updated[index], [field]: value };
-    if (field === 'label') {
-      updated[index].value = value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    }
+    if (field === 'label') updated[index].value = value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     setStatuses(updated);
   };
 
   const handleSave = async () => {
-    if (!statuses.length) {
-      setError('You must have at least 1 status');
-      return;
-    }
-
-    // Ensure new and completed are always present
+    if (!statuses.length) { setError('You must have at least 1 status'); return; }
     const hasNew = statuses.some(s => s.value === 'new');
     const hasCompleted = statuses.some(s => s.value === 'completed');
-    if (!hasNew || !hasCompleted) {
-      setError('"New" and "Completed" statuses are required');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
+    if (!hasNew || !hasCompleted) { setError('"New" and "Completed" statuses are required'); setTimeout(() => setError(''), 3000); return; }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
+    setLoading(true); setError(''); setSuccess('');
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-pipeline',
-          data: { status_options: statuses },
-        }),
+        body: JSON.stringify({ action: 'update-pipeline', data: { status_options: statuses } }),
       });
-
       const data = await res.json();
-
       if (data.success) {
-        setSuccess('Pipeline statuses saved successfully! Refreshing...');
+        setSuccess('Pipeline saved! Refreshing...');
         setTimeout(() => window.location.reload(), 1500);
       } else {
-        setError(data.error || 'Failed to save statuses');
+        setError(data.error || 'Failed to save');
       }
     } catch {
       setError('Failed to save statuses');
@@ -197,274 +118,231 @@ export default function PipelineTab({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">
-          Pipeline Statuses
-        </h2>
-        <p className="text-sm sm:text-base text-slate-600">
-          Customize the workflow stages for your leads and projects
-        </p>
+    <div className="space-y-6">
+
+      {/* Page header */}
+      <div className="border-b border-gray-100 pb-5">
+        <h2 className="text-xl font-bold text-gray-900">Pipeline Statuses</h2>
+        <p className="text-sm text-gray-500 mt-1">Customize the workflow stages for your leads and projects</p>
       </div>
 
-      {/* Success/Error Messages */}
+      {/* Alerts */}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <span className="text-lg flex-shrink-0">✓</span>
-          <span className="flex-1">{success}</span>
+        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+          <span>✓</span> {success}
         </div>
       )}
-
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1">{error}</span>
+        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-4 sm:space-y-6">
-        
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <p className="text-xs sm:text-sm text-slate-600 flex items-center gap-2">
-              <Workflow className="w-4 h-4" />
-              {statuses.length} status{statuses.length !== 1 ? 'es' : ''} • Min: 1, Max: 10
-            </p>
-            {statuses.length < 10 && (
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Status
-              </button>
-            )}
+      {/* Card */}
+      <div className="bg-white border border-gray-200 overflow-hidden">
+
+        {/* Card header */}
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Workflow className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Statuses
+            </span>
+            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold">
+              {statuses.length} / 10
+            </span>
           </div>
+          {statuses.length < 10 && !showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Status
+            </button>
+          )}
+        </div>
 
-          {/* Add Status Form */}
-          {showAddForm && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3 sm:p-4 mb-4">
-              <h4 className="font-bold mb-3 text-slate-900 text-sm sm:text-base">Add New Status</h4>
-              <div className="space-y-3">
-                {/* Label */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1">
-                    Status Label *
-                  </label>
-                  <input
-                    type="text"
-                    value={newStatus.label}
-                    onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddStatus()}
-                    placeholder="e.g., Awaiting Approval"
-                    className="w-full px-3 sm:px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                    autoFocus
-                  />
-                </div>
+        {/* Add form */}
+        {showAddForm && (
+          <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100">
+            <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-4">New Status</p>
+            <div className="space-y-4">
 
-                {/* Emoji Picker */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
-                    Emoji
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {EMOJI_OPTIONS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setNewStatus({ ...newStatus, emoji })}
-                        className={`w-10 h-10 text-xl rounded-lg transition ${
-                          newStatus.emoji === emoji
-                            ? 'bg-blue-200 ring-2 ring-blue-500'
-                            : 'bg-white hover:bg-blue-50 border border-slate-300'
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Label</label>
+                <input
+                  type="text"
+                  value={newStatus.label}
+                  onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
+                  placeholder="e.g., Awaiting Approval"
+                  autoFocus
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition"
+                />
+              </div>
 
-                {/* Color Picker */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
-                    Color
-                  </label>
-                  <div className="grid grid-cols-9 gap-2">
-                    {COLOR_OPTIONS.map((color) => (
-                      <button
-                        key={color.value}
-                        onClick={() => setNewStatus({ ...newStatus, color: color.value })}
-                        className={`h-10 rounded-lg transition ${
-                          newStatus.color === color.value
-                            ? 'ring-4 ring-blue-500 scale-110'
-                            : 'hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: color.hex }}
-                        title={color.label}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={handleAddStatus}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition text-sm sm:text-base"
-                  >
-                    Add Status
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setNewStatus({ label: '', color: 'blue', emoji: '📋' });
-                    }}
-                    className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-2 px-4 rounded-lg font-semibold transition text-sm sm:text-base"
-                  >
-                    Cancel
-                  </button>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Emoji</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {EMOJI_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => setNewStatus({ ...newStatus, emoji })}
+                      className={`w-9 h-9 text-lg transition ${
+                        newStatus.emoji === emoji
+                          ? 'bg-indigo-100 ring-2 ring-indigo-500'
+                          : 'bg-white border border-gray-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Statuses List */}
-          <div className="space-y-3">
-            {statuses.map((status, index) => {
-              const locked = isLocked(status);
-              return (
-                <div
-                  key={index}
-                  className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-lg border group transition ${
-                    locked
-                      ? 'bg-slate-100 border-slate-300 opacity-80'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  {/* Status Display */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl flex-shrink-0">{status.emoji || '📋'}</span>
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: getColorHex(status.color) }}
-                    />
-                    <input
-                      type="text"
-                      value={status.label}
-                      onChange={(e) => updateStatus(index, 'label', e.target.value)}
-                      readOnly={locked}
-                      className={`flex-1 min-w-0 px-2 py-1 border-2 border-transparent rounded font-semibold text-sm sm:text-base ${
-                        locked
-                          ? 'bg-transparent cursor-not-allowed text-slate-500 select-none'
-                          : 'bg-transparent hover:border-slate-300 focus:border-blue-500 text-slate-900'
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setNewStatus({ ...newStatus, color: color.value })}
+                      className={`w-8 h-8 transition ${
+                        newStatus.color === color.value ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-105'
                       }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.label}
                     />
-                    {locked && (
-                      <span className="flex items-center gap-1 text-xs text-slate-500 font-medium px-2 py-0.5 bg-slate-200 rounded-full flex-shrink-0">
-                        <Lock className="w-3 h-3" />
-                        Locked
-                      </span>
-                    )}
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 sm:gap-1">
-                    {/* Move Up */}
-                    <button
-                      disabled={index === 0 || locked}
-                      onClick={() => moveStatus(index, index - 1)}
-                      className="p-2 hover:bg-slate-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-slate-600"
-                      title="Move up"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleAddStatus}
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition"
+                >
+                  Add Status
+                </button>
+                <button
+                  onClick={() => { setShowAddForm(false); setNewStatus({ label: '', color: 'blue', emoji: '📋' }); }}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-                    {/* Move Down */}
-                    <button
-                      disabled={index === statuses.length - 1 || locked}
-                      onClick={() => moveStatus(index, index + 1)}
-                      className="p-2 hover:bg-slate-200 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-slate-600"
-                      title="Move down"
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
+        {/* Status list */}
+        <div className="divide-y divide-gray-50">
+          {statuses.map((status, index) => {
+            const locked = isLocked(status);
+            return (
+              <div
+                key={index}
+                className={`flex items-center gap-3 px-5 py-3.5 group transition ${
+                  locked ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'
+                }`}
+              >
+                {/* Color bar */}
+                <div className="w-1 h-8 flex-shrink-0" style={{ backgroundColor: getColorHex(status.color) }} />
 
-                    {/* Remove */}
+                {/* Emoji */}
+                <span className="text-xl flex-shrink-0 w-8 text-center">{status.emoji || '📋'}</span>
+
+                {/* Label input */}
+                <input
+                  type="text"
+                  value={status.label}
+                  onChange={(e) => updateStatus(index, 'label', e.target.value)}
+                  readOnly={locked}
+                  className={`flex-1 min-w-0 px-2 py-1 text-sm font-semibold border-b-2 border-transparent transition ${
+                    locked
+                      ? 'bg-transparent cursor-not-allowed text-gray-400 select-none'
+                      : 'bg-transparent hover:border-gray-200 focus:border-indigo-400 focus:outline-none text-gray-800'
+                  }`}
+                />
+
+                {/* Locked badge */}
+                {locked && (
+                  <span className="flex items-center gap-1 text-xs text-gray-400 font-bold px-2 py-0.5 bg-gray-100 flex-shrink-0">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <button
+                    disabled={index === 0 || locked}
+                    onClick={() => moveStatus(index, index - 1)}
+                    className="p-1.5 hover:bg-gray-200 transition disabled:opacity-20 disabled:cursor-not-allowed text-gray-500"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    disabled={index === statuses.length - 1 || locked}
+                    onClick={() => moveStatus(index, index + 1)}
+                    className="p-1.5 hover:bg-gray-200 transition disabled:opacity-20 disabled:cursor-not-allowed text-gray-500"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  {!locked && (
                     <button
                       onClick={() => handleRemoveStatus(index)}
-                      disabled={locked}
-                      className={`p-2 rounded-lg transition ${
-                        locked
-                          ? 'opacity-0 cursor-not-allowed pointer-events-none'
-                          : 'sm:opacity-0 sm:group-hover:opacity-100 text-red-600 hover:text-red-800 hover:bg-red-50'
-                      }`}
-                      title={locked ? 'Cannot delete locked status' : 'Remove status'}
+                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 transition"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
-                  </div>
+                  )}
+                  {locked && <div className="w-7" />}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 space-y-1">
-          <p className="text-xs sm:text-sm text-blue-900">
-            <strong>💡 Pro Tip:</strong> Status order matters! Organize them in the sequence leads typically move through your workflow.
+        {/* Info + Save footer */}
+        <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 space-y-4">
+          <p className="text-xs text-gray-400 leading-relaxed">
+            <span className="font-bold text-gray-500">Tip:</span> Order matters — arrange statuses in the sequence leads move through your workflow.
+            <span className="font-bold text-gray-500"> New</span> and <span className="font-bold text-gray-500">Completed</span> are locked system statuses.
           </p>
-          <p className="text-xs sm:text-sm text-blue-700">
-            <strong>🔒 Locked:</strong> <span className="font-semibold">New</span> and <span className="font-semibold">Completed</span> are required system statuses and cannot be edited or removed.
-          </p>
-        </div>
-
-        {/* Save Button */}
-        <div className="pt-4 border-t border-slate-200">
           <button
             onClick={handleSave}
             disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm sm:text-base"
+            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition"
           >
-            {loading ? 'Saving...' : 'Save Pipeline Statuses'}
+            {loading ? 'Saving...' : 'Save Pipeline'}
           </button>
         </div>
       </div>
 
-      {/* DELETE CONFIRMATION MODAL */}
+      {/* Delete confirm modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 max-w-sm w-full shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-10 h-10 bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-1">Delete "{deleteConfirm.label}"?</h3>
+                  <p className="text-sm text-gray-500">Leads with this status will need to be reassigned. This cannot be undone.</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  Delete Status?
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Are you sure you want to delete "<span className="font-semibold">{deleteConfirm.label}</span>"? 
-                  Leads with this status will need to be reassigned.
-                </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm transition">
+                  Cancel
+                </button>
+                <button onClick={confirmRemove}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition">
+                  Delete
+                </button>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemoveStatus}
-                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
-              >
-                Delete
-              </button>
             </div>
           </div>
         </div>

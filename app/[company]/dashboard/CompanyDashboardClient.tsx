@@ -1,18 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Search, 
-  X, 
-  Plus, 
-  Menu, 
-  Filter, 
-  ChevronDown,
-  Download,
-  Loader2,
-  Inbox
-} from 'lucide-react';
+import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox } from 'lucide-react';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
@@ -20,47 +9,25 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 
-
-
-
-type StatusOption = {
-  value: string;
-  label: string;
-  color: string;
-  emoji?: string;
-};
-
+type StatusOption = { value: string; label: string; color: string; emoji?: string };
 type Company = {
-  id: number;
-  name: string;
-  slug: string;
-  logo_url?: string | null;
-  status_options?: StatusOption[];
-  form_categories?: any[];
-  custom_questions?: any[]
-  subscription_status?: string;
-  trial_ends_at?: string | null;
+  id: number; name: string; slug: string; logo_url?: string | null;
+  status_options?: StatusOption[]; form_categories?: any[]; custom_questions?: any[];
+  subscription_status?: string; trial_ends_at?: string | null;
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'blue', emoji: '' },
-  { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '' },
-  { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '' },
-  { value: 'scheduled', label: 'Scheduled', color: 'blue', emoji: '' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '' },
-  { value: 'completed', label: 'Completed', color: 'green', emoji: '' },
-  { value: 'cancelled', label: 'Cancelled', color: 'red', emoji: '' },
-  { value: 'lost', label: 'Lost', color: 'gray', emoji: '' },
+  { value: 'new', label: 'New', color: 'blue' },
+  { value: 'contacted', label: 'Contacted', color: 'yellow' },
+  { value: 'quoted', label: 'Quoted', color: 'purple' },
+  { value: 'scheduled', label: 'Scheduled', color: 'blue' },
+  { value: 'in-progress', label: 'In Progress', color: 'orange' },
+  { value: 'completed', label: 'Completed', color: 'green' },
+  { value: 'cancelled', label: 'Cancelled', color: 'red' },
+  { value: 'lost', label: 'Lost', color: 'gray' },
 ];
 
-
-
 export default function CompanyDashboardClient({ company }: { company: Company }) {
-  console.log('🔍 Company data received:', company);
-  console.log('🔍 form_categories:', company.form_categories);
-  console.log('🔍 Is array?', Array.isArray(company.form_categories));
-  console.log('🔍 Length:', company.form_categories?.length);
- 
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -70,40 +37,34 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month' | 'all'>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterAssignee, setFilterAssignee] = useState('all');
+  const [filterPayment, setFilterPayment] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [filterAssignee, setFilterAssignee] = useState('all');
-const [filterPayment, setFilterPayment] = useState('all');
 
-
-
-  const statusOptions = company.status_options && company.status_options.length > 0 
-    ? company.status_options 
-    : DEFAULT_STATUSES;
+  const statusOptions = company.status_options?.length ? company.status_options : DEFAULT_STATUSES;
 
   useEffect(() => {
     fetchLeads();
     fetchCurrentUser();
+    fetchTeamMembers();
   }, []);
 
   async function fetchLeads() {
     try {
-      const response = await fetch(`/api/company/${company.slug}/leads`, {
+      const res = await fetch(`/api/company/${company.slug}/leads`, {
         cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
       });
-      const data = await response.json();
+      const data = await res.json();
       setAllLeads((data.leads || []).filter((l: any) => !l.deleted));
       setRefreshKey(prev => prev + 1);
-    } catch (error) {
-      console.error('Failed to fetch leads:', error);
+    } catch (e) {
+      console.error('Failed to fetch leads:', e);
     } finally {
       setLoading(false);
     }
@@ -111,14 +72,18 @@ const [filterPayment, setFilterPayment] = useState('all');
 
   async function fetchCurrentUser() {
     try {
-      const response = await fetch('/api/auth/me');
-      const data = await response.json();
-      if (data.success) {
-        setCurrentUser(data.user);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-    }
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success) setCurrentUser(data.user);
+    } catch (e) { console.error('Failed to fetch user:', e); }
+  }
+
+  async function fetchTeamMembers() {
+    try {
+      const res = await fetch(`/api/company/${company.slug}/team`);
+      const data = await res.json();
+      if (data.success) setTeamMembers(data.teamMembers || []);
+    } catch (e) { console.error('Failed to fetch team:', e); }
   }
 
   async function handleLogout() {
@@ -126,207 +91,96 @@ const [filterPayment, setFilterPayment] = useState('all');
     window.location.href = '/login';
   }
 
+  const userMeta = () => ({
+    user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+    user_email: currentUser?.email || '',
+  });
+
   async function updateLeadStatus(id: number, status: string, oldStatus: string) {
     try {
-      console.log('🔄 updateLeadStatus called:', { id, status, oldStatus });
-      
-      const response = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id, 
-          status,
-          action: 'update_status',
-          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-          user_email: currentUser?.email || '',
-          old_status: oldStatus
-        })
+      const res = await fetch('/api/leads/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, action: 'update_status', old_status: oldStatus, ...userMeta() }),
       });
-      
-      const result = await response.json();
-      console.log('📥 Update response:', result);
-      
-      if (response.ok && result.success) {
-        console.log('✅ Update successful, fetching fresh data...');
-        
-        const freshResponse = await fetch(`/api/company/${company.slug}/leads`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+      const result = await res.json();
+      if (res.ok && result.success) {
+        const fresh = await fetch(`/api/company/${company.slug}/leads`, {
+          cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
         });
-        const freshData = await freshResponse.json();
+        const freshData = await fresh.json();
         const freshLeads = (freshData.leads || []).filter((l: any) => !l.deleted);
-        
         setAllLeads(freshLeads);
         setRefreshKey(prev => prev + 1);
-        
         if (selectedLead?.id === id) {
-          const updatedLead = freshLeads.find((l: any) => l.id === id);
-          if (updatedLead) {
-            console.log('🔄 Updating modal with fresh lead data');
-            setSelectedLead(updatedLead);
-          }
+          const updated = freshLeads.find((l: any) => l.id === id);
+          if (updated) setSelectedLead(updated);
         }
-        
-        console.log('✅ Status update complete');
         return true;
-      } else {
-        console.error('❌ Update failed:', result);
-        return false;
       }
-    } catch (error) {
-      console.error('❌ Update status error:', error);
       return false;
-    }
+    } catch (e) { console.error('Update status error:', e); return false; }
   }
 
   async function addNote(id: number, noteText: string) {
     try {
-      const response = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id, 
-          notes: noteText, 
-          action: 'add_note',
-          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-          user_email: currentUser?.email || ''
-        })
+      const res = await fetch('/api/leads/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
       });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
+      const result = await res.json();
+      if (res.ok && result.success) {
         await fetchLeads();
-        const updatedResponse = await fetch(`/api/company/${company.slug}/leads`);
-        const updatedData = await updatedResponse.json();
-        const updatedLead = updatedData.leads.find((l: any) => l.id === id);
-        if (updatedLead) {
-          setSelectedLead(updatedLead);
-        }
+        const r = await fetch(`/api/company/${company.slug}/leads`);
+        const d = await r.json();
+        const updated = d.leads.find((l: any) => l.id === id);
+        if (updated) setSelectedLead(updated);
         return true;
-      } else {
-        return false;
       }
-    } catch (error) {
-      console.error('Add note error:', error);
       return false;
-    }
+    } catch (e) { console.error('Add note error:', e); return false; }
   }
-
-// FIXED HANDLERS - Replace in CompanyDashboardClient.tsx
-
-async function handleBulkUpdate(leadIds: number[], updates: any) {
-  try {
-    const response = await fetch('/api/leads/bulk-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        leadIds, 
-        updates,
-        user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-        user_email: currentUser?.email || ''
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.success) {
-      await fetchLeads(); // Refresh the leads list
-    } else {
-      throw new Error(result.error || 'Failed to update leads');
-    }
-  } catch (error) {
-    console.error('Bulk update error:', error);
-    throw error;
-  }
-}
-
-async function handleBulkDelete(leadIds: number[]) {
-  try {
-    const response = await fetch('/api/leads/bulk-delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        leadIds,
-        user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-        user_email: currentUser?.email || ''
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok && result.success) {
-      await fetchLeads(); // Refresh the leads list
-    } else {
-      throw new Error(result.error || 'Failed to delete leads');
-    }
-  } catch (error) {
-    console.error('Bulk delete error:', error);
-    throw error;
-  }
-}
-
-// ADD THIS TO YOUR useEffect (or create a new one)
-useEffect(() => {
-  fetchTeamMembers();
-}, []);
-
-async function fetchTeamMembers() {
-  try {
-    const response = await fetch(`/api/company/${company.slug}/team`);
-    const data = await response.json();
-    console.log('👥 Team API response:', data);
-    if (data.success) {
-      setTeamMembers(data.teamMembers || []); // ✅ CORRECT - match API response
-    }
-  } catch (error) {
-    console.error('Failed to fetch team members:', error);
-  }
-}
 
   async function deleteLead(id: number) {
     try {
-      const response = await fetch('/api/leads/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id,
-          user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-          user_email: currentUser?.email || ''
-        })
+      const res = await fetch('/api/leads/delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...userMeta() }),
       });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        await fetchLeads();
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error('Delete lead error:', error);
+      const result = await res.json();
+      if (res.ok && result.success) { await fetchLeads(); return true; }
       return false;
-    }
+    } catch (e) { console.error('Delete lead error:', e); return false; }
+  }
+
+  async function handleBulkUpdate(leadIds: number[], updates: any) {
+    const res = await fetch('/api/leads/bulk-update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds, updates, ...userMeta() }),
+    });
+    const result = await res.json();
+    if (res.ok && result.success) await fetchLeads();
+    else throw new Error(result.error || 'Failed to update leads');
+  }
+
+  async function handleBulkDelete(leadIds: number[]) {
+    const res = await fetch('/api/leads/bulk-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds, ...userMeta() }),
+    });
+    const result = await res.json();
+    if (res.ok && result.success) await fetchLeads();
+    else throw new Error(result.error || 'Failed to delete leads');
   }
 
   async function refreshModalLead() {
     await fetchLeads();
-    if (selectedLead) {
-      try {
-        const response = await fetch(`/api/company/${company.slug}/leads`);
-        const data = await response.json();
-        const updatedLead = data.leads.find((l: any) => l.id === selectedLead.id);
-        if (updatedLead) {
-          setSelectedLead(updatedLead);
-        }
-      } catch (error) {
-        console.error('Failed to refresh modal lead:', error);
-      }
-    }
+    if (!selectedLead) return;
+    try {
+      const res = await fetch(`/api/company/${company.slug}/leads`);
+      const data = await res.json();
+      const updated = data.leads.find((l: any) => l.id === selectedLead.id);
+      if (updated) setSelectedLead(updated);
+    } catch (e) { console.error('Failed to refresh modal lead:', e); }
   }
 
   if (loading) {
@@ -340,422 +194,240 @@ async function fetchTeamMembers() {
     );
   }
 
-// Filter leads
-let filteredLeads = allLeads.filter(lead => {
-  const matchesSearch = searchQuery === '' || 
-    lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lead.phone?.includes(searchQuery);
-  
-  const matchesStatus = filterStatus === 'all' || (lead.status || 'new') === filterStatus;
-  const matchesCategory = filterCategory === 'all' || lead.category === filterCategory;
-  
-  // Assignee filter
-  const matchesAssignee = filterAssignee === 'all' || 
-    (filterAssignee === 'unassigned' && !lead.assigned_to) ||
-    lead.assigned_to === filterAssignee;
-  
-  // Payment filter
-  const matchesPayment = filterPayment === 'all' ||
-    (filterPayment === 'paid' && lead.payment_status === 'paid') ||
-    (filterPayment === 'unpaid' && (!lead.payment_status || lead.payment_status === 'unpaid'));
-
-  // Time filter
-  const leadDate = new Date(lead.created_at);
+  // ── Filtering ──────────────────────────────────────────────────────────────
   const now = new Date();
-  let matchesTime = true;
-  
-  // Custom date range filter (overrides preset filters)
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // Include entire end date
-    matchesTime = leadDate >= start && leadDate <= end;
-  } else if (startDate) {
-    const start = new Date(startDate);
-    matchesTime = leadDate >= start;
-  } else if (endDate) {
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    matchesTime = leadDate <= end;
-  } else if (timeFilter === 'today') {
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    matchesTime = leadDate >= todayStart;
-  } else if (timeFilter === 'week') {
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    matchesTime = leadDate >= weekStart;
-  } else if (timeFilter === 'month') {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    matchesTime = leadDate >= monthStart;
-  }
-  
-  return matchesSearch && matchesStatus && matchesCategory && matchesAssignee && matchesPayment && matchesTime;
-});
-
-  // Sort by date (newest first)
-  filteredLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  // Group leads by time for CARDS view only
-  const now = new Date();
-  const todayStart = new Date(now.setHours(0, 0, 0, 0));
-  const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+  const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const todayLeads = filteredLeads.filter(l => new Date(l.created_at) >= todayStart);
-  const yesterdayLeads = filteredLeads.filter(l => {
-    const date = new Date(l.created_at);
-    return date >= yesterdayStart && date < todayStart;
-  });
-  const thisWeekLeads = filteredLeads.filter(l => {
-    const date = new Date(l.created_at);
-    return date >= weekStart && date < yesterdayStart;
-  });
-  const olderLeads = filteredLeads.filter(l => new Date(l.created_at) < weekStart);
+  const filteredLeads = allLeads
+    .filter(lead => {
+      const q = searchQuery.toLowerCase();
+      if (q && !lead.name?.toLowerCase().includes(q) && !lead.email?.toLowerCase().includes(q) && !lead.phone?.includes(q)) return false;
+      if (filterStatus !== 'all' && (lead.status || 'new') !== filterStatus) return false;
+      if (filterCategory !== 'all' && lead.category !== filterCategory) return false;
+      if (filterAssignee !== 'all') {
+        if (filterAssignee === 'unassigned' && lead.assigned_to) return false;
+        if (filterAssignee !== 'unassigned' && lead.assigned_to !== filterAssignee) return false;
+      }
+      if (filterPayment !== 'all') {
+        if (filterPayment === 'paid' && lead.payment_status !== 'paid') return false;
+        if (filterPayment === 'unpaid' && lead.payment_status === 'paid') return false;
+      }
+      const d = new Date(lead.created_at);
+      if (startDate && endDate) {
+        const end = new Date(endDate); end.setHours(23, 59, 59, 999);
+        if (d < new Date(startDate) || d > end) return false;
+      } else if (startDate && d < new Date(startDate)) return false;
+      else if (endDate) {
+        const end = new Date(endDate); end.setHours(23, 59, 59, 999);
+        if (d > end) return false;
+      } else if (timeFilter === 'today' && d < todayStart) return false;
+      else if (timeFilter === 'week' && d < weekStart) return false;
+      else if (timeFilter === 'month' && d < new Date(now.getFullYear(), now.getMonth(), 1)) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const categories = [...new Set(allLeads.map(l => l.category))];
-  const statusCounts = statusOptions.reduce((acc, status) => {
-    acc[status.value] = allLeads.filter(l => (l.status || statusOptions[0].value) === status.value).length;
+  const statusCounts = statusOptions.reduce((acc, s) => {
+    acc[s.value] = allLeads.filter(l => (l.status || statusOptions[0].value) === s.value).length;
     return acc;
   }, {} as Record<string, number>);
 
-  // Render function for CARDS - with grouping
-  const renderLeadGroupCards = (leads: any[], title: string) => {
-    if (leads.length === 0) return null;
-    
-    return (
-      <div className="mb-8" key={`${title}-cards-${refreshKey}`}>
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          {title}
-          <span className="text-white/60 text-base">({leads.length})</span>
-        </h3>
-        <CardsView 
-          leads={leads} 
-          onSelectLead={setSelectedLead} 
-          statusOptions={statusOptions}
-        />      
-      </div>
-    );
+  const groups = [
+    { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
+    { title: 'Yesterday', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= yesterdayStart && d < todayStart; }) },
+    { title: 'Earlier This Week', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= weekStart && d < yesterdayStart; }) },
+    { title: 'Older', leads: filteredLeads.filter(l => new Date(l.created_at) < weekStart) },
+  ];
+
+  const clearFilters = () => {
+    setSearchQuery(''); setFilterCategory('all'); setFilterStatus('all');
+    setFilterAssignee('all'); setFilterPayment('all'); setTimeFilter('all');
+    setStartDate(''); setEndDate('');
   };
 
+  const selectClass = "px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition";
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
       <Toaster position="top-right" />
-      
-      {/* TRIAL BANNER */}
+
       <div className="relative z-10">
-        <TrialBanner 
+        <TrialBanner
           subscriptionStatus={company.subscription_status || 'inactive'}
           trialEndsAt={company.trial_ends_at || null}
           companySlug={company.slug}
         />
       </div>
-      
-      {/* Overlay when sidebar is open */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      
-      {/* Sidebar */}
+
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
+
       <Sidebar
-        companySlug={company.slug}
-        companyName={company.name}
-        companyLogoUrl={company.logo_url}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        currentView={currentView}
-        onViewChange={setCurrentView}
+        companySlug={company.slug} companyName={company.name} companyLogoUrl={company.logo_url}
+        currentUser={currentUser} onLogout={handleLogout} isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)} currentView={currentView} onViewChange={setCurrentView}
       />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-        
-        {/* TOP BAR WITH MENU BUTTON */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 mb-6 border border-white/20 relative z-10 shadow-xl">
+
+        {/* Top bar */}
+        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 mb-6 border border-white/20 shadow-xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              {/* Menu Toggle Button */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-white border border-white/20 hover:border-white/30"
-                aria-label="Toggle menu"
-              >
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-white border border-white/20">
                 <Menu className="w-6 h-6" />
               </button>
-
               {company.logo_url ? (
-                <img 
-                  src={company.logo_url} 
-                  alt={`${company.name} logo`}
-                  className="h-10 sm:h-12 w-auto object-contain"
-                />
+                <img src={company.logo_url} alt={company.name} className="h-10 sm:h-12 w-auto object-contain" />
               ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0 shadow-lg shadow-purple-500/20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20">
                   {company.name.charAt(0)}
                 </div>
               )}
               <h1 className="text-xl sm:text-2xl font-bold text-white">{company.name}</h1>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <a
-                href={`/${company.slug}`}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition shadow-lg shadow-purple-600/20"
-              >
-                <Plus className="w-5 h-5" />
-                Create
-              </a>
-            </div>
+            <a href={`/${company.slug}`}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition shadow-lg shadow-purple-600/20">
+              <Plus className="w-5 h-5" /> Create
+            </a>
           </div>
         </div>
 
-        {/* SEARCH BAR */}
-        <div className="mb-6 flex gap-3">
+        {/* Search + filter toggle */}
+        <div className="mb-4 flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
             <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              type="text" placeholder="Search by name, email, or phone..."
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-12 py-4 rounded-xl bg-white/10 backdrop-blur-xl border-2 border-white/20 focus:border-purple-500 focus:outline-none text-white placeholder-white/60 text-base sm:text-lg font-medium shadow-lg transition-colors"
             />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition"
-              >
+              <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition">
                 <X className="w-5 h-5 text-white/60 hover:text-white" />
               </button>
             )}
           </div>
-          
-          <button
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold transition shadow-lg"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
+          <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold transition shadow-lg">
+            <Filter className="w-4 h-4" /> Filters
             <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
-        {/* FILTERS */}
-        <div className="flex flex-col sm:flex-row justify-end gap-2 mb-6">
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value as any)}
-            className="px-4 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-slate-700 transition"
-          >
+        {/* Quick filters */}
+        <div className="flex flex-col sm:flex-row justify-end gap-2 mb-4">
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value as any)} className={selectClass}>
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
             <option value="all">All Time</option>
           </select>
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-slate-700 transition"
-          >
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
             <option value="all">All Statuses</option>
-            {statusOptions.map(status => (
-              <option key={status.value} value={status.value}>
-                {status.label} ({statusCounts[status.value] || 0})
-              </option>
+            {statusOptions.map(s => (
+              <option key={s.value} value={s.value}>{s.label} ({statusCounts[s.value] || 0})</option>
             ))}
           </select>
         </div>
 
-       {/* ADVANCED FILTERS */}
-{showAdvancedFilters && (
-  <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      {/* Category Filter */}
-      <div>
-        <label className="block text-xs font-semibold text-white/80 mb-2">Category</label>
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-        >
-          <option value="all">All Categories</option>
-          {categories.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Assignee Filter */}
-      <div>
-        <label className="block text-xs font-semibold text-white/80 mb-2">Assigned To</label>
-        <select
-          value={filterAssignee}
-          onChange={(e) => setFilterAssignee(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-        >
-          <option value="all">All Team Members</option>
-          <option value="unassigned">Unassigned</option>
-          {teamMembers.map(member => (
-            <option key={member.id} value={member.name}>
-              {member.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Payment Status Filter */}
-      <div>
-        <label className="block text-xs font-semibold text-white/80 mb-2">Payment Status</label>
-        <select
-          value={filterPayment}
-          onChange={(e) => setFilterPayment(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-        >
-          <option value="all">All</option>
-          <option value="paid">Paid</option>
-          <option value="unpaid">Unpaid</option>
-        </select>
-      </div>
-
-      {/* Start Date */}
-      <div>
-        <label className="block text-xs font-semibold text-white/80 mb-2">Start Date</label>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-        />
-      </div>
-
-      {/* End Date */}
-      <div>
-        <label className="block text-xs font-semibold text-white/80 mb-2">End Date</label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition"
-        />
-      </div>
-    </div>
-
-    {/* Clear All Button */}
-    <div className="mt-4 flex justify-end">
-      <button
-        onClick={() => {
-          setSearchQuery('');
-          setFilterCategory('all');
-          setFilterStatus('all');
-          setFilterAssignee('all');
-          setFilterPayment('all');
-          setTimeFilter('all');
-          setStartDate('');
-          setEndDate('');
-        }}
-        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30"
-      >
-        <X className="w-4 h-4" />
-        Clear All Filters
-      </button>
-    </div>
-  </div>
-)}
-
-        {/* LEADS VIEW */}
-        <div>
-          {filteredLeads.length === 0 ? (
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-700/50 mb-4">
-                <Inbox className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">No leads found</h3>
-              <p className="text-white/70">Try adjusting your filters or search query</p>
+        {/* Advanced filters */}
+        {showAdvancedFilters && (
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[
+                { label: 'Category', value: filterCategory, onChange: setFilterCategory,
+                  options: [{ value: 'all', label: 'All Categories' }, ...categories.map(c => ({ value: c, label: c }))] },
+                { label: 'Assigned To', value: filterAssignee, onChange: setFilterAssignee,
+                  options: [{ value: 'all', label: 'All Team Members' }, { value: 'unassigned', label: 'Unassigned' },
+                    ...teamMembers.map(m => ({ value: m.name, label: m.name }))] },
+                { label: 'Payment', value: filterPayment, onChange: setFilterPayment,
+                  options: [{ value: 'all', label: 'All' }, { value: 'paid', label: 'Paid' }, { value: 'unpaid', label: 'Unpaid' }] },
+              ].map(({ label, value, onChange, options }) => (
+                <div key={label}>
+                  <label className="block text-xs font-semibold text-white/80 mb-2">{label}</label>
+                  <select value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClass}`}>
+                    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              ))}
+              {[
+                { label: 'Start Date', value: startDate, onChange: setStartDate },
+                { label: 'End Date', value: endDate, onChange: setEndDate },
+              ].map(({ label, value, onChange }) => (
+                <div key={label}>
+                  <label className="block text-xs font-semibold text-white/80 mb-2">{label}</label>
+                  <input type="date" value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClass}`} />
+                </div>
+              ))}
             </div>
-          ) : (
-            <>
-              {/* CARDS VIEW - Show grouped by time */}
-              {currentView === 'cards' && (
-                <div className="lg:block">
-                  {renderLeadGroupCards(todayLeads, 'Today')}
-                  {renderLeadGroupCards(yesterdayLeads, 'Yesterday')}
-                  {renderLeadGroupCards(thisWeekLeads, 'Earlier This Week')}
-                  {renderLeadGroupCards(olderLeads, 'Older')}
-                </div>
-              )}
+            <div className="mt-4 flex justify-end">
+              <button onClick={clearFilters}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30">
+                <X className="w-4 h-4" /> Clear All Filters
+              </button>
+            </div>
+          </div>
+        )}
 
-              {/* TABLE VIEW - Show ALL in one table, no grouping */}
-              {currentView === 'table' && (
-                <div key={`table-${refreshKey}`}>
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      All Leads
-                      <span className="text-white/60 text-base">({filteredLeads.length})</span>
-                    </h3>
-                    
-                    {/* CSV Export Button */}
-                    <a
-                      href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({
-                        status: filterStatus,
-                        time: timeFilter,
-                        category: filterCategory,
-                        search: searchQuery
-                      }).toString()}`}
-                      download={`${company.slug}_${new Date().toISOString().split('T')[0]}.csv`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20 shadow-lg"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export CSV
-                    </a>
-                  </div>
-                  <TableView 
-                    leads={filteredLeads} 
-                    onSelectLead={setSelectedLead}
-                    statusOptions={statusOptions}
-                    onBulkUpdate={handleBulkUpdate}
-  onBulkDelete={handleBulkDelete}
-  teamMembers={teamMembers}
-  categories={company.form_categories || []}
-  customQuestions={company.custom_questions || []} 
-                    
-                  />                
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        {/* Leads */}
+        {filteredLeads.length === 0 ? (
+          <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-700/50 mb-4">
+              <Inbox className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">No leads found</h3>
+            <p className="text-white/70">Try adjusting your filters or search query</p>
+          </div>
+        ) : currentView === 'cards' ? (
+          <div>
+            {groups.map(({ title, leads }) => leads.length > 0 && (
+              <div key={title} className="mb-8">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  {title} <span className="text-white/60 text-base">({leads.length})</span>
+                </h3>
+                <CardsView leads={leads} onSelectLead={setSelectedLead} statusOptions={statusOptions} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div key={`table-${refreshKey}`}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                All Leads <span className="text-white/60 text-base">({filteredLeads.length})</span>
+              </h3>
+              <a href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({ status: filterStatus, time: timeFilter, category: filterCategory, search: searchQuery })}`}
+                download={`${company.slug}_${new Date().toISOString().split('T')[0]}.csv`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20 shadow-lg">
+                <Download className="w-4 h-4" /> Export CSV
+              </a>
+            </div>
+            <TableView
+              leads={filteredLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions}
+              onBulkUpdate={handleBulkUpdate} onBulkDelete={handleBulkDelete}
+              teamMembers={teamMembers} categories={company.form_categories || []}
+              customQuestions={company.custom_questions || []}
+            />
+          </div>
+        )}
       </div>
 
-      {/* LEAD MODAL */}
       {selectedLead && (
-         <>
-    {console.log('🔍 DEBUG: company.slug =', company.slug)}
-    {console.log('🔍 DEBUG: selectedLead =', selectedLead?.id)}
         <LeadModal
-          lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
-          onUpdateStatus={updateLeadStatus}
-          onAddNote={addNote}
-          onDeleteLead={deleteLead}
-          onRefresh={refreshModalLead}
-          currentUser={currentUser}
-          statusOptions={statusOptions}
+          lead={selectedLead} onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus} onAddNote={addNote}
+          onDeleteLead={deleteLead} onRefresh={refreshModalLead}
+          currentUser={currentUser} statusOptions={statusOptions}
           categories={company.form_categories || []}
-            company={company}  
-            companySlug={company.slug}
-
+          company={company} companySlug={company.slug}
         />
-          </>
-
       )}
     </div>
   );
-}   
+}
