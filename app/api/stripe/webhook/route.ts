@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const companyId = session.metadata?.companyId;
+      const plan = session.metadata?.plan || 'basic'; // ← grab plan from metadata
 
       if (!companyId) {
         console.error('No companyId in session metadata');
@@ -47,11 +48,12 @@ export async function POST(req: NextRequest) {
           stripe_customer_id = ${session.customer as string},
           stripe_subscription_id = ${session.subscription as string},
           subscription_status = 'trialing',
-          trial_ends_at = NOW() + INTERVAL '14 days'
+          trial_ends_at = NOW() + INTERVAL '14 days',
+          plan_tier = ${plan}
         WHERE id = ${parseInt(companyId)}
       `;
 
-      console.log(`✅ Checkout completed for company ${companyId}`);
+      console.log(`✅ Checkout completed for company ${companyId} on ${plan} plan`);
 
       try {
         const company = await sql`
@@ -76,24 +78,39 @@ export async function POST(req: NextRequest) {
 
       console.log('Subscription updated:', subscription.id, '| Status:', subscription.status, '| Customer:', subscription.customer);
 
-      // Look up by stripe_customer_id as fallback since subscription_id may not be set yet
-      const result = await sql`
-        UPDATE companies 
-        SET 
-          stripe_subscription_id = ${subscription.id},
-          subscription_status = ${subscription.status}
-        WHERE stripe_customer_id = ${subscription.customer as string}
-           OR stripe_subscription_id = ${subscription.id}
-        RETURNING id, subscription_status
-      `;
+      // Check if plan changed by looking at the price ID
+      const priceId = subscription.items?.data?.[0]?.price?.id;
+      let planTier: string | null = null;
+      if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
+      if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
+
+      const result = planTier
+        ? await sql`
+            UPDATE companies 
+            SET 
+              stripe_subscription_id = ${subscription.id},
+              subscription_status = ${subscription.status},
+              plan_tier = ${planTier}
+            WHERE stripe_customer_id = ${subscription.customer as string}
+               OR stripe_subscription_id = ${subscription.id}
+            RETURNING id, subscription_status, plan_tier
+          `
+        : await sql`
+            UPDATE companies 
+            SET 
+              stripe_subscription_id = ${subscription.id},
+              subscription_status = ${subscription.status}
+            WHERE stripe_customer_id = ${subscription.customer as string}
+               OR stripe_subscription_id = ${subscription.id}
+            RETURNING id, subscription_status
+          `;
 
       if (result.length === 0) {
         console.error('❌ No company found for customer:', subscription.customer, 'or subscription:', subscription.id);
       } else {
-        console.log(`✅ Subscription updated for company ${result[0].id}: ${result[0].subscription_status}`);
+        console.log(`✅ Subscription updated for company ${result[0].id}: ${result[0].subscription_status}${planTier ? ` (plan: ${planTier})` : ''}`);
       }
 
-      // Send cancellation email if scheduled to cancel
       if (subscription.cancel_at_period_end === true) {
         try {
           const company = await sql`
@@ -120,7 +137,9 @@ export async function POST(req: NextRequest) {
 
       const result = await sql`
         UPDATE companies 
-        SET subscription_status = 'canceled'
+        SET 
+          subscription_status = 'canceled',
+          plan_tier = 'basic'
         WHERE stripe_customer_id = ${subscription.customer as string}
            OR stripe_subscription_id = ${subscription.id}
         RETURNING id
@@ -129,7 +148,7 @@ export async function POST(req: NextRequest) {
       if (result.length === 0) {
         console.error('❌ No company found for deleted subscription:', subscription.id);
       } else {
-        console.log(`✅ Subscription canceled for company ${result[0].id}`);
+        console.log(`✅ Subscription canceled for company ${result[0].id}, reverted to basic`);
       }
 
       try {

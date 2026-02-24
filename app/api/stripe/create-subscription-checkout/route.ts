@@ -5,9 +5,14 @@ import { neon } from '@neondatabase/serverless';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const PLAN_PRICE_IDS: Record<string, string> = {
+  basic: process.env.STRIPE_BASIC_PRICE_ID || '',
+  pro:   process.env.STRIPE_PRO_PRICE_ID || '',
+};
+
 export async function POST(req: NextRequest) {
   try {
-    const { companyId, companyEmail } = await req.json();
+    const { companyId, companyEmail, plan = 'basic' } = await req.json();
 
     if (!companyId || !companyEmail) {
       return NextResponse.json(
@@ -16,24 +21,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.STRIPE_SUBSCRIPTION_PRICE_ID) {
+    const priceId = PLAN_PRICE_IDS[plan];
+    if (!priceId) {
       return NextResponse.json(
-        { error: 'Stripe price ID not configured' },
+        { error: `No price configured for plan: ${plan}` },
         { status: 500 }
       );
     }
 
-    // Get company slug from database
     const sql = neon(process.env.DATABASE_URL!);
     const companies = await sql`
       SELECT slug FROM companies WHERE id = ${companyId}
     `;
 
     if (companies.length === 0) {
-      return NextResponse.json(
-        { error: 'Company not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
     const companySlug = companies[0].slug;
@@ -41,12 +43,7 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: process.env.STRIPE_SUBSCRIPTION_PRICE_ID,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?subscription=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?subscription=cancelled`,
       client_reference_id: companyId.toString(),
@@ -55,10 +52,12 @@ export async function POST(req: NextRequest) {
         trial_period_days: 14,
         metadata: {
           companyId: companyId.toString(),
+          plan,
         },
       },
       metadata: {
         companyId: companyId.toString(),
+        plan,
       },
     });
 
