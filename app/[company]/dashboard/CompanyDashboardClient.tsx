@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox, MessageCircle, Send, Sparkles } from 'lucide-react';
+import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox, Send, Sparkles } from 'lucide-react';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
@@ -65,6 +65,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  useEffect(() => {
+  chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+}, [aiMessages, aiLoading]);
   const statusOptions = company.status_options?.length ? company.status_options : DEFAULT_STATUSES;
 
   useEffect(() => {
@@ -202,7 +205,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } catch (e) { console.error('Failed to refresh modal lead:', e); }
   }
 
-  // Dynamic starter questions based on real data
   const aiStarterQuestions = useMemo(() => {
     if (!allLeads.length) return [
       "What's scheduled this week?",
@@ -238,20 +240,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     setAiInput('');
     setAiLoading(true);
 
-    // Smarter bucketed context
     const now = new Date();
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
     const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7);
-
     const recentLeads = allLeads.filter(l => new Date(l.created_at) > cutoff);
-
-    const todayJobs = allLeads.filter(l => l.scheduled_date &&
-      new Date(l.scheduled_date).toDateString() === now.toDateString());
-    const thisWeekJobs = allLeads.filter(l => l.scheduled_date &&
-      new Date(l.scheduled_date) >= now && new Date(l.scheduled_date) <= weekEnd);
+    const todayJobs = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date).toDateString() === now.toDateString());
+    const thisWeekJobs = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date) >= now && new Date(l.scheduled_date) <= weekEnd);
     const unpaidJobs = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid');
-    const unassignedJobs = allLeads.filter(l => !l.assigned_to &&
-      l.status !== 'completed' && l.status !== 'cancelled');
+    const unassignedJobs = allLeads.filter(l => !l.assigned_to && l.status !== 'completed' && l.status !== 'cancelled');
     const newLeads = allLeads.filter(l => l.status === 'new');
 
     const context = {
@@ -281,16 +277,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lead_id: null,
-          customer_name: null,
-          description: message,
-          category: null,
-          status: null,
-          project_id: null,
-          company_name: company.name,
-          chat_mode: true,
-          chat_history: updated,
-          all_leads_summary: context,
+          lead_id: null, customer_name: null, description: message,
+          category: null, status: null, project_id: null,
+          company_name: company.name, chat_mode: true,
+          chat_history: updated, all_leads_summary: context,
           plan_tier: company.plan_tier || 'basic',
         }),
       });
@@ -318,7 +308,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     );
   }
 
-  // ── Filtering ──────────────────────────────────────────────────────────────
   const now = new Date();
   const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
   const yesterdayStart = new Date(todayStart.getTime() - 86400000);
@@ -376,7 +365,40 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const selectClass = "px-3 py-2.5 text-sm rounded-lg bg-slate-800 text-white border border-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-slate-700 transition";
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const renderAiMessages = () => aiMessages.map((msg, i) => (
+    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+      <div className="max-w-[80%] px-3 py-2 text-sm leading-relaxed"
+        style={msg.role === 'user'
+          ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '12px 12px 2px 12px' }
+          : { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '12px 12px 12px 2px' }}>
+        {msg.role === 'assistant' ? (
+          <div className="space-y-1">
+            {msg.content.split('\n').map((line, j) => {
+              if (!line.trim()) return null;
+              const renderLine = (text: string) => {
+                const parts = text.split(/\*\*(.*?)\*\*/g);
+                return parts.map((p, k) => k % 2 === 1 ? <strong key={k}>{p}</strong> : p);
+              };
+              if (line.match(/^[-•*]\s/)) return (
+                <div key={j} className="flex gap-2">
+                  <span className="text-indigo-400 flex-shrink-0 mt-0.5">•</span>
+                  <span>{renderLine(line.replace(/^[-•*]\s/, ''))}</span>
+                </div>
+              );
+              if (line.match(/^\d+\.\s/)) return (
+                <div key={j} className="flex gap-2">
+                  <span className="text-indigo-400 flex-shrink-0 font-bold">{line.match(/^\d+/)![0]}.</span>
+                  <span>{renderLine(line.replace(/^\d+\.\s/, ''))}</span>
+                </div>
+              );
+              return <p key={j}>{renderLine(line)}</p>;
+            })}
+          </div>
+        ) : msg.content}
+      </div>
+    </div>
+  ));
+
   return (
     <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
       <Toaster position="top-right" />
@@ -443,26 +465,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <Filter className="w-4 h-4" /> Filters
             <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
-          {canUseAiChat(company.plan_tier as any) ? (
-            <button
-              onClick={() => setShowAiChat(!showAiChat)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold transition shadow-lg"
-              style={{ background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}
-            >
-              <Sparkles className="w-4 h-4" /> AI Assistant
-            </button>
-          ) : (
-            <div className="relative group">
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl font-semibold opacity-50 cursor-not-allowed border border-slate-600"
-                style={{ background: '#1e293b', color: '#94a3b8' }}
-                onClick={() => window.location.href = `/subscribe?upgrade=pro&company=${company.slug}`}
-              >
-                <Sparkles className="w-4 h-4" /> AI Assistant
-                <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold">Pro</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Quick filters */}
@@ -520,127 +522,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         )}
 
-        {/* AI Chat Panel — inline below filters */}
-        {showAiChat && canUseAiChat(company.plan_tier as any) && (
-          <div className="mb-6 border border-indigo-500/30 overflow-hidden shadow-2xl"
-            style={{ background: '#0f172a' }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700"
-              style={{ background: '#312e81' }}>
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-indigo-300" />
-                <div>
-                  <p className="text-white font-bold text-sm">AI Assistant</p>
-                  <p className="text-indigo-300 text-xs">{company.name}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {aiMessages.length > 0 && (
-                  <button onClick={() => setAiMessages([])}
-                    className="text-white/40 hover:text-white/70 text-xs font-semibold transition px-2 py-1 hover:bg-white/10">
-                    Clear
-                  </button>
-                )}
-                <button onClick={() => setShowAiChat(false)}
-                  className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 transition">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="relative">
-              <div ref={chatScrollRef} onScroll={handleChatScroll}
-                className="h-72 overflow-y-auto p-4 space-y-3">
-              {aiMessages.length === 0 && (
-                <div className="space-y-2">
-                  <p className="text-slate-400 text-xs text-center pt-1">Ask me anything about your jobs</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {aiStarterQuestions.map(q => (
-                      <button key={q} onClick={() => sendAiMessage(q)}
-                        className="text-left px-3 py-2 text-xs text-slate-300 border border-slate-700 hover:border-indigo-500 hover:bg-indigo-500/10 transition leading-snug">
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {aiMessages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className="max-w-[80%] px-3 py-2 text-sm leading-relaxed"
-                    style={msg.role === 'user'
-                      ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }
-                      : { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155' }}>
-                    {msg.role === 'assistant' ? (
-                      <div className="space-y-1">
-                        {msg.content.split('\n').map((line, j) => {
-                          if (!line.trim()) return null;
-                          // Bold: **text**
-                          const renderLine = (text: string) => {
-                            const parts = text.split(/\*\*(.*?)\*\*/g);
-                            return parts.map((p, k) => k % 2 === 1 ? <strong key={k}>{p}</strong> : p);
-                          };
-                          // Bullet point
-                          if (line.match(/^[-•*]\s/)) return (
-                            <div key={j} className="flex gap-2">
-                              <span className="text-indigo-400 flex-shrink-0 mt-0.5">•</span>
-                              <span>{renderLine(line.replace(/^[-•*]\s/, ''))}</span>
-                            </div>
-                          );
-                          // Numbered list
-                          if (line.match(/^\d+\.\s/)) return (
-                            <div key={j} className="flex gap-2">
-                              <span className="text-indigo-400 flex-shrink-0 font-bold">{line.match(/^\d+/)![0]}.</span>
-                              <span>{renderLine(line.replace(/^\d+\.\s/, ''))}</span>
-                            </div>
-                          );
-                          return <p key={j}>{renderLine(line)}</p>;
-                        })}
-                      </div>
-                    ) : msg.content}
-                  </div>
-                </div>
-              ))}
-              {aiLoading && (
-                <div className="flex justify-start">
-                  <div className="px-3 py-2 border border-slate-700 bg-slate-800">
-                    <div className="flex gap-1 items-center">
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={chatBottomRef} />
-              </div>
-              {showScrollDown && (
-                <button onClick={scrollToBottom}
-                  className="absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border border-slate-600 transition hover:scale-110"
-                  style={{ background: '#312e81' }}>
-                  <ChevronDown className="w-4 h-4 text-white" />
-                </button>
-              )}
-            </div>
-
-            {/* Input */}
-            <div className="p-3 border-t border-slate-700 flex gap-2">
-              <input type="text" value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
-                placeholder="Ask about your jobs..."
-                className="flex-1 px-3 py-2 text-sm bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-              />
-              <button onClick={() => sendAiMessage(aiInput)}
-                disabled={!aiInput.trim() || aiLoading}
-                className="px-3 py-2 disabled:opacity-40 text-white transition"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Leads */}
         {filteredLeads.length === 0 ? (
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
@@ -692,6 +573,145 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           categories={company.form_categories || []}
           company={company} companySlug={company.slug}
         />
+      )}
+
+      {/* ── FLOATING AI ASSISTANT ── */}
+      {canUseAiChat(company.plan_tier as any) ? (
+<div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
+          {/* Chat Panel */}
+          {showAiChat && (
+            <div
+          className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col"
+style={{ 
+  background: '#0f172a', 
+  borderRadius: '16px', 
+  maxHeight: '70vh',
+  width: 'calc(100vw - 48px)',
+  maxWidth: '420px',
+}}
+>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0"
+                style={{ background: '#312e81' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">AI Assistant</p>
+                    <p className="text-indigo-300 text-xs">{company.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {aiMessages.length > 0 && (
+                    <button onClick={() => setAiMessages([])}
+                      className="text-white/40 hover:text-white/70 text-xs font-semibold transition px-2 py-1 rounded hover:bg-white/10">
+                      Clear
+                    </button>
+                  )}
+                  <button onClick={() => setShowAiChat(false)}
+                    className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded transition">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+     {/* Messages */}
+<div className="relative flex-1 overflow-hidden">
+  <div
+    ref={chatScrollRef}
+    onScroll={handleChatScroll}
+    className="overflow-y-auto p-4 space-y-3"
+    style={{ height: 'calc(70vh - 130px)', maxHeight: '320px' }}
+  >
+    {aiMessages.length === 0 && (
+      <div className="space-y-2">
+        <p className="text-slate-400 text-xs text-center pt-1">Ask me anything about your jobs</p>
+        <div className="grid grid-cols-2 gap-2">
+          {aiStarterQuestions.map(q => (
+            <button key={q} onClick={() => sendAiMessage(q)}
+              className="text-left px-3 py-2 text-xs text-slate-300 border border-slate-700 rounded-lg hover:border-indigo-500 hover:bg-indigo-500/10 transition leading-snug">
+              {q}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+                  {renderAiMessages()}
+                  {aiLoading && (
+                    <div className="flex justify-start">
+                      <div className="px-3 py-2 border border-slate-700 bg-slate-800 rounded-xl">
+                        <div className="flex gap-1 items-center">
+                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+                {showScrollDown && (
+                  <button onClick={scrollToBottom}
+                    className="absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border border-slate-600 transition hover:scale-110"
+                    style={{ background: '#312e81' }}>
+                    <ChevronDown className="w-4 h-4 text-white" />
+                  </button>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="p-3 border-t border-slate-700 flex gap-2 flex-shrink-0">
+                <input
+                  type="text"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
+                  placeholder="Ask about your jobs..."
+                  className="flex-1 px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  onClick={() => sendAiMessage(aiInput)}
+                  disabled={!aiInput.trim() || aiLoading}
+                  className="px-3 py-2 rounded-lg disabled:opacity-40 text-white transition hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* FAB Toggle Button */}
+          <button
+            onClick={() => setShowAiChat(!showAiChat)}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+            style={{
+              background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
+            }}
+          >
+            {showAiChat
+              ? <X className="w-6 h-6 text-white" />
+              : <Sparkles className="w-6 h-6 text-white" />
+            }
+          </button>
+        </div>
+      ) : (
+        /* Locked FAB for basic plan */
+<div className="fixed bottom-6 right-6 z-[9999]">
+          <button
+            onClick={() => window.location.href = `/subscribe?upgrade=pro&company=${company.slug}`}
+            title="Upgrade to Pro for AI Assistant"
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 relative"
+            style={{ background: '#1e293b', border: '2px solid #334155' }}
+          >
+            <Sparkles className="w-6 h-6 text-slate-500" />
+            <span className="absolute -top-1 -right-1 text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold leading-none">
+              Pro
+            </span>
+          </button>
+        </div>
       )}
     </div>
   );

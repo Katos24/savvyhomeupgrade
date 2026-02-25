@@ -44,6 +44,36 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
+    // ── Retry helper — try Sonnet once, immediately fall back to Haiku ──
+    async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
+      // Try Sonnet once — no retries, fail fast
+      try {
+        console.log('Trying claude-sonnet-4-20250514...');
+        return await anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' });
+      } catch (err: any) {
+        const isOverloaded = err?.status === 529 || err?.message?.includes('529') || err?.message?.includes('overloaded');
+        if (!isOverloaded) throw err;
+        console.log('Sonnet overloaded, falling back to Haiku immediately...');
+      }
+
+      // Haiku fallback — 2 attempts with short delay
+      for (let attempt = 0; attempt <= 1; attempt++) {
+        try {
+          console.log(`Trying claude-haiku-4-5-20251001, attempt: ${attempt + 1}`);
+          return await anthropic.messages.create({ ...params, model: 'claude-haiku-4-5-20251001' });
+        } catch (err: any) {
+          const isOverloaded = err?.status === 529 || err?.message?.includes('529') || err?.message?.includes('overloaded');
+          if (!isOverloaded) throw err;
+          if (attempt === 0) {
+            console.log('Haiku overloaded, retrying in 800ms...');
+            await new Promise(r => setTimeout(r, 800));
+          }
+        }
+      }
+
+      throw new Error('All models overloaded. Please try again shortly.');
+    }
+
     // ── CHAT MODE ──────────────────────────────────────────────
     if (chat_mode) {
       const ctx = all_leads_summary;
@@ -76,8 +106,7 @@ ${leadsContext}`;
         content: m.content,
       }));
 
-      const chatResponse = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+      const chatResponse = await callClaude({
         max_tokens: 512,
         system: systemPrompt,
         messages,
@@ -97,7 +126,6 @@ ${leadsContext}`;
     contextLines.push(`SERVICE CATEGORY: ${category || 'Not specified'}`);
     contextLines.push(`CURRENT STATUS: ${status || 'New lead'}`);
 
-    // Repeat customer context
     if (repeat_customer && past_jobs?.length > 0) {
       const lifetimeValue = past_jobs
         .filter((j: any) => j.quote_total)
@@ -119,7 +147,6 @@ ${leadsContext}`;
     if (project_id) {
       contextLines.push(`\n── PROJECT DETAILS ──`);
 
-      // Scheduling with urgency calculation
       if (scheduled_date) {
         const schedDate = new Date(scheduled_date);
         const now = new Date();
@@ -141,7 +168,6 @@ ${leadsContext}`;
         contextLines.push(`Assigned to: ⚠️ NOBODY — unassigned`);
       }
 
-      // Payment with clear status
       if (quote_total) {
         const total = parseFloat(quote_total);
         const paid = payment_amount ? parseFloat(payment_amount) : 0;
@@ -157,7 +183,6 @@ ${leadsContext}`;
         }
       }
 
-      // Tasks
       if (tasks && Array.isArray(tasks) && tasks.length > 0) {
         const completed = tasks.filter((t: any) => t.completed).length;
         contextLines.push(`\nTasks: ${completed}/${tasks.length} complete`);
@@ -178,7 +203,6 @@ ${leadsContext}`;
 
     const context = contextLines.join('\n');
 
-    // ── Prompt ────────────────────────────────────────────────
     const prompt = `You are an expert assistant for a home services contractor business.
 
 Here is everything you know about this lead/project:
@@ -211,9 +235,7 @@ customer_score rules:
 - New = first job, no history
 - Risky = payment issues or cancelled jobs in history`;
 
-    // ── Call Claude ────────────────────────────────────────────
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const message = await callClaude({
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -244,6 +266,21 @@ customer_score rules:
 
   } catch (error: any) {
     console.error('AI Brief Error:', error.message);
+
+    const isOverloaded =
+      error?.status === 529 ||
+      error?.message?.includes('529') ||
+      error?.message?.includes('overloaded') ||
+      error?.message?.includes('All models overloaded');
+
+    if (isOverloaded) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI is busy right now — please try again in a moment.',
+        overloaded: true,
+      }, { status: 503 });
+    }
+
     return NextResponse.json({ success: false, error: error.message || 'Failed to generate brief' }, { status: 500 });
   }
 }
