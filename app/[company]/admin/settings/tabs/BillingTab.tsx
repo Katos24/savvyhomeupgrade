@@ -1,24 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditCard, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, Calendar, CheckCircle, AlertCircle, Sparkles, Zap } from 'lucide-react';
+import { PLAN_CONFIG } from '@/lib/permissions';
 
 export default function BillingTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const plan = (company.plan_tier || 'basic') as 'basic' | 'pro' | 'business';
+  const planConfig = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
+
   async function handleManageSubscription() {
     setLoading(true);
     setError('');
-    
     try {
       const response = await fetch('/api/stripe/create-portal-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId: company.id })
+        body: JSON.stringify({ companyId: company.id }),
       });
       const data = await response.json();
-      
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -49,7 +51,6 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
   const statusInfo = getStatusInfo();
 
-  // Check if user is owner
   if (currentUser.role !== 'owner') {
     return (
       <div className="flex items-center justify-center py-12">
@@ -70,9 +71,8 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         <p className="text-sm sm:text-base text-slate-600">Manage your subscription, payment methods, and billing history.</p>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span className="flex-1">{error}</span>
         </div>
@@ -93,7 +93,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
             <button
               onClick={handleManageSubscription}
               disabled={loading}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm sm:text-base"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm"
             >
               <CreditCard className="w-4 h-4" />
               {loading ? 'Loading...' : 'Manage Billing'}
@@ -104,14 +104,26 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         {/* Subscription Details */}
         <div className="p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
             {/* Plan Card */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
+                {plan === 'pro' || plan === 'business'
+                  ? <Sparkles className="w-5 h-5 text-indigo-600" />
+                  : <Zap className="w-5 h-5 text-blue-600" />}
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Current Plan</p>
               </div>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">Professional</p>
-              <p className="text-slate-600 font-semibold">$39.99<span className="text-sm font-normal">/month</span></p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">{planConfig.label}</p>
+              <p className="text-slate-600 font-semibold">
+                ${planConfig.price}<span className="text-sm font-normal">/month</span>
+              </p>
+              {/* Upgrade nudge for basic users */}
+              {plan === 'basic' && (
+                <a href="/subscribe?plan=pro"
+                  className="inline-block mt-3 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                  Upgrade to Pro →
+                </a>
+              )}
             </div>
 
             {/* Billing Period */}
@@ -124,7 +136,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
               <p className="text-xs sm:text-sm text-slate-600 mt-1">Auto-renews each month</p>
             </div>
 
-            {/* Trial End Date (if trialing) */}
+            {/* Trial End Date */}
             {company.trial_ends_at && company.subscription_status === 'trialing' && (
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -132,11 +144,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
                   <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Trial Ends</p>
                 </div>
                 <p className="text-lg sm:text-xl font-bold text-slate-900">
-                  {new Date(company.trial_ends_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  {new Date(company.trial_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1">
                   {Math.ceil((new Date(company.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days remaining
@@ -145,64 +153,18 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
             )}
           </div>
 
-          {/* Features List */}
+          {/* Features List — dynamic based on plan */}
           <div className="border-t border-slate-200 pt-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Plan Features</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">{planConfig.label} Plan Features</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
+              {planConfig.features.map(feature => (
+                <div key={feature} className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-green-600 text-xs">✓</span>
+                  </div>
+                  <p className="text-sm text-slate-700">{feature}</p>
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Unlimited Leads</p>
-                  <p className="text-xs text-slate-600">Track and manage all your leads</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Team Collaboration</p>
-                  <p className="text-xs text-slate-600">Invite unlimited team members</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Custom Branding</p>
-                  <p className="text-xs text-slate-600">White-label forms and emails</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Email Automation</p>
-                  <p className="text-xs text-slate-600">Automated follow-ups and reminders</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Project Management</p>
-                  <p className="text-xs text-slate-600">Task templates and scheduling</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 text-sm">Priority Support</p>
-                  <p className="text-xs text-slate-600">Fast email support response</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

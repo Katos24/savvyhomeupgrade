@@ -194,6 +194,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
             </div>
           )}
 
+          
+
           <div className="flex items-center justify-between pt-3 border-t border-slate-700">
             <div className="flex items-center gap-2.5">
               <span className="text-gray-500 text-xs">{formatDate(lead.created_at)}</span>

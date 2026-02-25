@@ -618,10 +618,25 @@ export async function POST(request: Request) {
           timestamp: new Date().toISOString()
         };
 
-        await addActivityToProject(id, scheduleEntry);
+await addActivityToProject(id, scheduleEntry);
 
-        console.log('✅ Schedule email sent to customer');
-        return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
+// ✅ Save to schedule_emails log
+await sql`
+  UPDATE projects 
+  SET schedule_emails = COALESCE(schedule_emails, '[]'::jsonb) || ${JSON.stringify([{
+    sent_at: new Date().toISOString(),
+    sent_by_name: user_name,
+    sent_by_email: user_email,
+    scheduled_date: lead.scheduled_date,
+    scheduled_time: lead.scheduled_time || null,
+  }])}::jsonb,
+  updated_at = NOW()
+  WHERE id = ${lead.project_id}
+`;
+
+console.log('✅ Schedule email sent to customer');
+return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
+
       } catch (emailError) {
         console.error('❌ Failed to send schedule email:', emailError);
         return NextResponse.json({ 

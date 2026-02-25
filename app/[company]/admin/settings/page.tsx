@@ -52,7 +52,8 @@ export default async function SettingsPage({ params }: { params: Promise<{ compa
         cta_success_message,
         custom_questions,
         subscription_status,
-    trial_ends_at
+        trial_ends_at,
+        plan_tier
       FROM companies 
       WHERE slug = ${resolvedParams.company} 
       LIMIT 1

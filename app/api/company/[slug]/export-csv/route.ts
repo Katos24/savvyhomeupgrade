@@ -53,7 +53,9 @@ export async function GET(
         p.payment_status,
         p.payment_amount,
         l.lead_source,
-        CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
+l.preferred_date,
+l.preferred_time,
+CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = $1
@@ -143,6 +145,8 @@ export async function GET(
       'Payment Amount',
       'Created Date',
       'Lead Source',
+      'Preferred Date',
+'Preferred Time',
     ];
 
     const customHeaders = customQuestions.map(q => q.label);
@@ -172,6 +176,8 @@ export async function GET(
         escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
         escape(new Date(lead.created_at).toLocaleDateString()),
         escape(lead.lead_source || ''),
+        escape(lead.preferred_date ? new Date(lead.preferred_date).toLocaleDateString() : ''),
+escape(lead.preferred_time || ''),
       ];
 
       // Format each custom answer

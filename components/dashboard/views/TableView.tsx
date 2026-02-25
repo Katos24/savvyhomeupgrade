@@ -125,6 +125,7 @@ export default function TableView({
           bv = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
           break;
         case 'scheduled_date': av = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0; bv = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0; break;
+        case 'preferred_date': av = a.preferred_date ? new Date(a.preferred_date).getTime() : 0; bv = b.preferred_date ? new Date(b.preferred_date).getTime() : 0; break;
         case 'quote_total': av = a.quote_total || 0; bv = b.quote_total || 0; break;
         case 'payment_amount': av = a.payment_amount || 0; bv = b.payment_amount || 0; break;
         case 'media': av = (safeJSONParse(a.file_urls) || []).length; bv = (safeJSONParse(b.file_urls) || []).length; break;
@@ -302,6 +303,7 @@ export default function TableView({
               <Th label="Status" sortKey="status" />
               <Th label="Type" />
               <Th label="Scheduled" sortKey="scheduled_date" />
+              <Th label="Preferred Date" sortKey="preferred_date" />
               <Th label="Assigned" />
               <Th label="Quote" sortKey="quote_total" />
               <Th label="Payment" sortKey="payment_amount" />
@@ -415,6 +417,17 @@ export default function TableView({
                         </div>
                       : <span className="text-slate-600">—</span>}
                   </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+  {lead.preferred_date
+    ? <div>
+        <div className="text-amber-300 font-medium">
+          {new Date(lead.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+        {lead.preferred_time && <div className="text-xs text-slate-400">{lead.preferred_time}</div>}
+      </div>
+    : <span className="text-slate-600">—</span>}
+</td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
                     {lead.assigned_to

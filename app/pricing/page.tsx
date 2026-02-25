@@ -4,8 +4,8 @@ import { Check, X, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Pricing | Savvy Home Upgrade',
-  description: 'Simple pricing for contractors. Start free, upgrade when ready.',
+  title: 'Pricing | Lead2Project',
+  description: 'Simple, transparent pricing. Choose the plan that fits your business.',
 };
 
 export default function PricingPage() {
@@ -14,9 +14,8 @@ export default function PricingPage() {
 
       {/* Nav */}
       <nav className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto">
-        <span className="text-white font-bold text-lg tracking-tight">Savvy Home</span>
-        <Link href="/login"
-          className="text-sm text-slate-400 hover:text-white transition font-medium">
+        <span className="text-white font-bold text-lg tracking-tight">Lead2Project</span>
+        <Link href="/login" className="text-sm text-slate-400 hover:text-white transition font-medium">
           Sign in →
         </Link>
       </nav>
@@ -40,11 +39,10 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="pb-24 px-4">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+        <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6">
 
           {/* Basic */}
-          <div className="rounded-none border border-slate-700 p-8 flex flex-col"
-            style={{ background: '#1e293b' }}>
+          <div className="border border-slate-700 p-8 flex flex-col" style={{ background: '#1e293b' }}>
             <div className="flex items-center gap-2 mb-1">
               <Zap className="w-4 h-4 text-slate-400" />
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Basic</span>
@@ -56,7 +54,7 @@ export default function PricingPage() {
             <p className="text-slate-400 text-sm mb-8">Lead tracking for solo contractors</p>
 
             <Link href="/signup?plan=basic"
-              className="block w-full py-3 text-center text-sm font-bold text-white border border-slate-600 hover:border-slate-400 hover:bg-white/5 transition mb-8 rounded-none">
+              className="block w-full py-3 text-center text-sm font-bold text-white border border-slate-600 hover:border-slate-400 hover:bg-white/5 transition mb-8">
               Start Free Trial
             </Link>
 
@@ -81,7 +79,7 @@ export default function PricingPage() {
                 {[
                   'AI Brief on every job',
                   'AI Assistant chat',
-                  'Projects & quotes',
+                  'Projects, quotes & payments',
                   'Repeat customer detection',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3 opacity-40">
@@ -94,11 +92,9 @@ export default function PricingPage() {
           </div>
 
           {/* Pro */}
-          <div className="rounded-none border-2 border-indigo-500 p-8 flex flex-col relative"
-            style={{ background: '#1e293b' }}>
-            {/* Badge */}
+          <div className="border-2 border-indigo-500 p-8 flex flex-col relative" style={{ background: '#1e293b' }}>
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="px-3 py-1 text-xs font-bold text-white rounded-none"
+              <span className="px-3 py-1 text-xs font-bold text-white"
                 style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
                 ⭐ MOST POPULAR
               </span>
@@ -115,7 +111,7 @@ export default function PricingPage() {
             <p className="text-slate-400 text-sm mb-8">Full job management + AI</p>
 
             <Link href="/signup?plan=pro"
-              className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8 rounded-none"
+              className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
               Start Free Trial
             </Link>
@@ -137,12 +133,11 @@ export default function PricingPage() {
                   <span className="text-slate-300 text-sm">{f}</span>
                 </div>
               ))}
-              {/* AI features highlighted */}
               <div className="pt-4 border-t border-indigo-500/30 space-y-3">
-                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">AI Features</p>
+                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest">AI Features</p>
                 {[
                   'AI Brief on every job card',
-                  'AI Assistant chat — knows your whole business',
+                  'AI Assistant — knows your whole business',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3">
                     <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0" />
@@ -152,18 +147,16 @@ export default function PricingPage() {
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* Value prop below cards */}
-        <div className="max-w-4xl mx-auto mt-8 grid grid-cols-3 gap-4 text-center">
+        {/* Stats */}
+        <div className="max-w-3xl mx-auto mt-6 grid grid-cols-3 gap-4 text-center">
           {[
             { stat: '$60K', label: 'Lost yearly from missed leads' },
             { stat: '1 job', label: 'Pays for an entire year' },
             { stat: '30 sec', label: 'AI brief on any job' },
           ].map(({ stat, label }) => (
-            <div key={stat} className="py-6 border border-slate-700 rounded-none"
-              style={{ background: '#1e293b' }}>
+            <div key={stat} className="py-5 border border-slate-700" style={{ background: '#1e293b' }}>
               <div className="text-2xl font-extrabold text-white mb-1">{stat}</div>
               <div className="text-xs text-slate-400">{label}</div>
             </div>
@@ -175,7 +168,7 @@ export default function PricingPage() {
       <section className="pb-24 px-4 border-t border-slate-800">
         <div className="max-w-2xl mx-auto pt-16">
           <h2 className="text-2xl font-bold text-white mb-10 text-center">Common questions</h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               {
                 q: 'Is there a free trial?',
@@ -195,11 +188,10 @@ export default function PricingPage() {
               },
               {
                 q: 'What if I just need lead tracking?',
-                a: 'Basic is a solid lead tracker — unlimited leads, status management, contact actions. When you want to run full projects with quotes and AI, upgrade to Pro.',
+                a: 'Basic is a solid lead tracker — unlimited leads, status management, contact actions. When you want full projects with quotes and AI, upgrade to Pro.',
               },
             ].map(({ q, a }) => (
-              <details key={q} className="border border-slate-700 group rounded-none"
-                style={{ background: '#1e293b' }}>
+              <details key={q} className="border border-slate-700 group" style={{ background: '#1e293b' }}>
                 <summary className="px-5 py-4 text-sm font-semibold text-white cursor-pointer list-none flex justify-between items-center">
                   {q}
                   <span className="text-slate-400 group-open:rotate-45 transition-transform text-xl leading-none">+</span>
@@ -213,18 +205,18 @@ export default function PricingPage() {
 
       {/* CTA */}
       <section className="pb-24 px-4">
-        <div className="max-w-2xl mx-auto text-center border border-indigo-500/30 p-12 rounded-none"
+        <div className="max-w-2xl mx-auto text-center border border-indigo-500/30 p-12"
           style={{ background: 'rgba(99,102,241,0.05)' }}>
           <h2 className="text-3xl font-extrabold text-white mb-3">Ready to get organized?</h2>
           <p className="text-slate-400 mb-8">Start your free trial today. No credit card needed.</p>
           <div className="flex gap-3 justify-center">
             <Link href="/signup?plan=pro"
-              className="px-8 py-3 text-sm font-bold text-white rounded-none transition"
+              className="px-8 py-3 text-sm font-bold text-white transition"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
               Start Free Trial
             </Link>
             <Link href="/login"
-              className="px-8 py-3 text-sm font-bold text-slate-300 border border-slate-600 hover:border-slate-400 rounded-none transition">
+              className="px-8 py-3 text-sm font-bold text-slate-300 border border-slate-600 hover:border-slate-400 transition">
               Sign In
             </Link>
           </div>

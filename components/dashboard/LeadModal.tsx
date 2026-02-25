@@ -694,11 +694,31 @@ export default function LeadModal({
                       </h3>
                     </div>
                     <div className="p-5">
-                      {lead.description ? (
-                        <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
-                      ) : (
-                        <p className="text-sm text-gray-400 italic">No message provided</p>
-                      )}
+                     {lead.description ? (
+  <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
+) : (
+  <p className="text-sm text-gray-400 italic">No message provided</p>
+)}
+
+{(lead.preferred_date || lead.preferred_time) && (
+  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+    {lead.preferred_date && (
+      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+        <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+        <span className="font-semibold text-gray-400 uppercase tracking-wide mr-1">Preferred:</span>
+{(() => {
+  const d = new Date(lead.preferred_date);
+  return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+})()}      </div>
+    )}
+    {lead.preferred_time && (
+      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+        <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+        {lead.preferred_time}
+      </div>
+    )}
+  </div>
+)}
                       {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}

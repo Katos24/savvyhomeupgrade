@@ -4,6 +4,40 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SubscribeButton from '@/components/SubscribeButton';
 
+const PLAN_CONFIG = {
+  basic: {
+    label: 'Basic',
+    price: '$49',
+    cents: '.00',
+    features: [
+      'Unlimited lead tracking',
+      'Cards + table view',
+      'Status management',
+      'Customer contact form',
+      'Activity log & notes',
+      'CSV export',
+      'Email support',
+      'Cancel anytime',
+    ],
+  },
+  pro: {
+    label: 'Pro',
+    price: '$99',
+    cents: '.00',
+    features: [
+      'Everything in Basic',
+      'Convert leads to projects',
+      'Quotes & payment tracking',
+      'Tasks & scheduling',
+      'Docs & photo management',
+      'Repeat customer detection',
+      'AI Brief on every job card',
+      'AI Assistant chat',
+      'Cancel anytime',
+    ],
+  },
+};
+
 function SubscribePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -12,35 +46,23 @@ function SubscribePageContent() {
   const [loading, setLoading] = useState(true);
 
   const subscriptionStatus = searchParams.get('subscription');
+  const plan = (searchParams.get('plan') || 'basic') as 'basic' | 'pro';
+  const planConfig = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
 
   useEffect(() => {
     async function loadData() {
-      console.log('🔍 Starting to load data...');
       try {
-        // Get current user
         const userRes = await fetch('/api/auth/me');
         const userData = await userRes.json();
-        console.log('👤 User data:', userData);
-
         if (!userData.success || !userData.user) {
           window.location.href = '/login';
           return;
         }
-
         setCurrentUser(userData.user);
-
-        // Get company info
         const slug = userData.user.companySlug || userData.user.company_slug;
-        if (!slug) {
-          console.error('No company slug found in user data:', userData.user);
-          return;
-        }
-        
-        console.log('🔍 Fetching company with slug:', slug);
+        if (!slug) return;
         const companyRes = await fetch(`/api/company/${slug}/info`);
         const companyData = await companyRes.json();
-        console.log('🏢 Company data:', companyData);
-        
         if (companyData.success && companyData.company) {
           setCompany(companyData.company);
         }
@@ -50,7 +72,6 @@ function SubscribePageContent() {
         setLoading(false);
       }
     }
-
     loadData();
   }, []);
 
@@ -72,27 +93,19 @@ function SubscribePageContent() {
         <div className="max-w-2xl w-full">
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
             <div className="text-7xl mb-6">🎉</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Welcome to Lead2Project!
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Your 14-day free trial is now active. Let's get started!
-            </p>
-            
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to Lead2Project!</h1>
+            <p className="text-xl text-gray-600 mb-8">Your 14-day free trial is now active. Let's get started!</p>
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
               <h3 className="font-bold text-green-900 mb-2">What's Next?</h3>
               <ul className="text-left text-green-800 space-y-2">
-                <li>✓ Start tracking leads and quotes</li>
-                <li>✓ Upload customer photos</li>
-                <li>✓ Send professional invoices</li>
-                <li>✓ Get paid faster with Stripe</li>
+                <li>✓ Start tracking leads</li>
+                <li>✓ Convert leads to projects</li>
+                <li>✓ Try the AI Assistant</li>
+                <li>✓ Get paid faster</li>
               </ul>
             </div>
-
-            <button
-              onClick={() => router.push(`/${company?.slug}/dashboard`)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl text-lg shadow-lg transition"
-            >
+            <button onClick={() => router.push(`/${company?.slug}/dashboard`)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl text-lg shadow-lg transition">
               Go to Dashboard →
             </button>
           </div>
@@ -108,24 +121,15 @@ function SubscribePageContent() {
         <div className="max-w-2xl w-full">
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
             <div className="text-7xl mb-6">😔</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Subscription Cancelled
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              No worries! You can subscribe anytime.
-            </p>
-            
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Checkout Cancelled</h1>
+            <p className="text-xl text-gray-600 mb-8">No worries! You can subscribe anytime.</p>
             <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => router.push(`/${company?.slug}/dashboard`)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-lg transition"
-              >
+              <button onClick={() => router.push(`/${company?.slug}/dashboard`)}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
                 Back to Dashboard
               </button>
-              <button
-                onClick={() => router.push('/subscribe')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition"
-              >
+              <button onClick={() => router.push(`/subscribe?plan=${plan}`)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition">
                 Try Again
               </button>
             </div>
@@ -135,7 +139,7 @@ function SubscribePageContent() {
     );
   }
 
-  // Default: Show subscription page
+  // Default: show subscribe page
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
@@ -143,11 +147,7 @@ function SubscribePageContent() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             {company?.logo_url ? (
-              <img 
-                src={company.logo_url} 
-                alt={company.name}
-                className="h-10 w-auto object-contain"
-              />
+              <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain" />
             ) : (
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
                 L2P
@@ -155,98 +155,70 @@ function SubscribePageContent() {
             )}
             <span className="text-xl font-bold">Lead2Project</span>
           </div>
-          
-          {company && company.subscription_status === 'active' && (
-            <a 
-              href={`/${company.slug}/dashboard`}
-              className="text-gray-600 hover:text-gray-900 font-medium"
-            >
+          {company?.subscription_status === 'active' && (
+            <a href={`/${company.slug}/dashboard`} className="text-gray-600 hover:text-gray-900 font-medium">
               ← Back to Dashboard
             </a>
           )}
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 py-12 md:py-20">
-        
-        {/* Hero Section */}
+
+        {/* Hero */}
         <div className="text-center mb-16">
           <div className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold mb-6">
             🚀 Almost There!
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6">
-            Complete Your Signup
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6">Complete Your Signup</h1>
+          <p className="text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
             Add your payment method to start your 14-day free trial. You won't be charged until the trial ends.
           </p>
+          {/* Plan switcher */}
+          <div className="inline-flex gap-2 bg-gray-100 p-1 rounded-lg mt-2">
+            <a href="/subscribe?plan=basic"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition ${plan === 'basic' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+              Basic — $49/mo
+            </a>
+            <a href="/subscribe?plan=pro"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition ${plan === 'pro' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+              Pro — $99/mo
+            </a>
+          </div>
         </div>
 
         {/* Pricing Card */}
         <div className="max-w-md mx-auto mb-16">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 border-4 border-blue-200 relative overflow-hidden">
-            {/* Popular Badge */}
-            <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 text-sm font-bold">
-              MOST POPULAR
-            </div>
-            
-            <div className="text-center pt-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Professional Plan
-              </h3>
-              <div className="flex items-baseline justify-center gap-2 mb-6">
-                <span className="text-5xl font-extrabold text-gray-900">$39</span>
-                <span className="text-2xl text-gray-600">.99</span>
+          <div className={`bg-white rounded-2xl shadow-2xl p-8 relative overflow-hidden border-4 ${plan === 'pro' ? 'border-indigo-400' : 'border-blue-200'}`}>
+            {plan === 'pro' && (
+              <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 text-sm font-bold">
+                ⭐ MOST POPULAR
+              </div>
+            )}
+
+            <div className="text-center pt-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{planConfig.label} Plan</h3>
+              <div className="flex items-baseline justify-center gap-1 mb-6">
+                <span className="text-5xl font-extrabold text-gray-900">{planConfig.price}</span>
                 <span className="text-gray-600">/month</span>
               </div>
-              
+
               <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-8">
-                <p className="text-green-800 font-semibold">
-                  🎉 First 14 days FREE
-                </p>
+                <p className="text-green-800 font-semibold">🎉 First 14 days FREE</p>
                 <p className="text-green-700 text-sm">
-                  Card required - you'll be charged $39.99 after trial
+                  Card required — charged {planConfig.price}/mo after trial
                 </p>
               </div>
 
-              {/* Features */}
               <div className="text-left space-y-3 mb-8">
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Unlimited lead tracking</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Photo uploads from customers</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Professional quote builder</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Stripe payment processing</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Get paid in 2 days (vs 7 with competitors)</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Team management</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Email notifications</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Cancel anytime</span>
-                </div>
+                {planConfig.features.map(f => (
+                  <div key={f} className="flex items-start gap-3">
+                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                    <span className="text-gray-700">{f}</span>
+                  </div>
+                ))}
               </div>
 
-              {/* CTA Button */}
               {company && currentUser ? (
                 <SubscribeButton
                   companyId={company.id}
@@ -254,6 +226,7 @@ function SubscribePageContent() {
                   subscriptionStatus={company.subscription_status}
                   trialEndsAt={company.trial_ends_at}
                   variant="banner"
+                  plan={plan}
                 />
               ) : (
                 <div className="text-gray-500">Loading...</div>
@@ -266,39 +239,20 @@ function SubscribePageContent() {
           </div>
         </div>
 
-        {/* FAQ / Trust Section */}
+        {/* FAQ */}
         <div className="max-w-3xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-8">
-            Frequently Asked Questions
-          </h3>
-          
+          <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
           <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h4 className="font-bold text-gray-900 mb-2">
-                💳 When will I be charged?
-              </h4>
-              <p className="text-gray-600">
-                Your card will be charged $39.99 after your 14-day free trial ends. Cancel anytime before then to avoid charges.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h4 className="font-bold text-gray-900 mb-2">
-                🔒 Can I cancel during the trial?
-              </h4>
-              <p className="text-gray-600">
-                Yes! Cancel anytime during your trial from the billing settings. You won't be charged if you cancel before the trial ends.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h4 className="font-bold text-gray-900 mb-2">
-                ⚡ How fast do I get paid?
-              </h4>
-              <p className="text-gray-600">
-                With Stripe, payments hit your account in 2 business days (or instantly for $0.50 fee). Way faster than competitors' 7+ days.
-              </p>
-            </div>
+            {[
+              { q: '💳 When will I be charged?', a: `Your card will be charged ${planConfig.price}/month after your 14-day free trial ends. Cancel anytime before then to avoid charges.` },
+              { q: '🔒 Can I cancel during the trial?', a: "Yes! Cancel anytime during your trial from billing settings. You won't be charged if you cancel before the trial ends." },
+              { q: '🔄 Can I switch plans?', a: 'Yes — upgrade or downgrade anytime. Changes take effect immediately.' },
+            ].map(({ q, a }) => (
+              <div key={q} className="bg-white rounded-lg p-6 shadow-md">
+                <h4 className="font-bold text-gray-900 mb-2">{q}</h4>
+                <p className="text-gray-600">{a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -310,10 +264,7 @@ export default function SubscribePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <div className="animate-spin text-6xl">⏳</div>
       </div>
     }>
       <SubscribePageContent />

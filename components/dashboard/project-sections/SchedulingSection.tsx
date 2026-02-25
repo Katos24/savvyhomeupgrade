@@ -328,11 +328,18 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-500" />
                 <span className="font-bold text-emerald-900">
-                  {entry.scheduled_date
-                    ? new Date(entry.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : 'No date'}
-                  {entry.scheduled_time ? ` at ${entry.scheduled_time}` : ''}
-                </span>
+  {entry.scheduled_date
+  ? (() => {
+      const dateOnly = entry.scheduled_date.split(' ')[0]; // Gets '2026-03-25'
+      const d = new Date(dateOnly + 'T00:00:00');
+      return isNaN(d.getTime()) ? dateOnly : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    })()
+  : 'No date'}
+{entry.scheduled_time ? ` at ${(() => {
+  const [h, m] = entry.scheduled_time.split(':');
+  const hour = parseInt(h);
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+})()}` : ''}                </span>
                 <span className="text-xs text-emerald-500">by {entry.sent_by_email}</span>
               </div>
               <span className="text-xs text-emerald-500">
