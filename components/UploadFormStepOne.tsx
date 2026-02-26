@@ -28,6 +28,7 @@ interface StepOneProps {
   headerSubtitle: string;
   logoUrl?: string | null;
   companyName?: string;
+  companyWebsite?: string | null;
   brandColor1?: string | null;
   brandColor2?: string | null;
   showHeader?: boolean;
@@ -52,12 +53,13 @@ export default function UploadFormStepOne({
   headerSubtitle,
   logoUrl,
   companyName,
+  companyWebsite,
   brandColor1,
   brandColor2,
   showHeader = true,
 }: StepOneProps) {
   return (
-    <div className="max-w-3xl mx-auto px-4">
+    <div className="max-w-3xl mx-auto px-4 pb-10">
       {showHeader && (
         <div className="text-center mb-8">
           {logoUrl && (
@@ -210,6 +212,20 @@ export default function UploadFormStepOne({
           </p>
         </div>
       </div>
+
+      {/* Company website link */}
+      {companyWebsite && (
+        <div className="text-center mt-6">
+          <a
+            href={companyWebsite.startsWith('http') ? companyWebsite : `https://${companyWebsite}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
+          >
+            {companyName ? `Visit ${companyName}'s website` : 'Visit our website'}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

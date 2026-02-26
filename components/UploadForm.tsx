@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { compressImages } from '@/lib/compressImage';
 import Toast from '@/components/Toast';
@@ -29,6 +28,7 @@ type Company = {
   slug: string;
   email: string;
   phone: string;
+  website?: string | null;
   business_type?: string;
   logo_url?: string | null;
   form_categories?: Category[];
@@ -46,7 +46,6 @@ interface UploadFormProps {
   company?: Company;
   companySlug?: string;
   companyId?: number;
-  successRoute: string;
   showHeader?: boolean;
   headerTitle?: string;
   headerSubtitle?: string;
@@ -56,14 +55,12 @@ export default function UploadForm({
   company,
   companySlug,
   companyId,
-  successRoute,
   showHeader = true,
   headerTitle = 'Submit Your Project',
   headerSubtitle = 'Upload photos or videos and get a fast, accurate assessment',
 }: UploadFormProps) {
-  const router = useRouter();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 'success'>(1);
   const [savedLeadId, setSavedLeadId] = useState<number | null>(null);
 
   // Step 1 fields
@@ -114,7 +111,7 @@ export default function UploadForm({
       return { show: company.address_enabled, required: false };
     }
     const config = ADDRESS_CONFIG[businessType] || { show: false, required: false };
-    return { ...config, required: false }; // always optional in step 2
+    return { ...config, required: false };
   };
   const addressConfig = getAddressConfig();
 
@@ -242,7 +239,6 @@ export default function UploadForm({
       if (!result.success) throw new Error(result.error || 'Submission failed.');
 
       setSavedLeadId(result.leadId);
-      showToast('Info saved! Add more details to help us out.', 'success');
       setStep(2);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to submit. Please try again.';
@@ -260,11 +256,9 @@ export default function UploadForm({
     setSubmittingStep2(true);
 
     try {
-      // Upload files if any
       const uploadedFiles = [];
       if (files.length > 0) {
         setUploadProgress(`Uploading ${files.length} files...`);
-        showToast('Uploading files...', 'info');
         for (let i = 0; i < files.length; i++) {
           setUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
           const blob = await upload(`${Date.now()}-${files[i].name}`, files[i], {
@@ -273,7 +267,6 @@ export default function UploadForm({
           });
           uploadedFiles.push({ url: blob.url, name: files[i].name, type: files[i].type, size: files[i].size });
         }
-        showToast('Files uploaded!', 'success');
       }
 
       setUploadProgress('Saving details...');
@@ -300,8 +293,7 @@ export default function UploadForm({
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to save details.');
 
-      showToast('All done! Redirecting...', 'success');
-      setTimeout(() => router.push(successRoute), 800);
+      setStep('success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save. Please try again.';
       setStep2Error(msg);
@@ -312,7 +304,45 @@ export default function UploadForm({
     }
   };
 
-  const handleSkip = () => router.push(successRoute);
+  const handleSkip = () => setStep('success');
+
+  // ─── Success screen ───
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f8fafc' }}>
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              {company?.cta_success_message || "You're all set! 🎉"}
+            </h2>
+            <p className="text-gray-500 text-base mb-6">
+              We've received your request and will be in touch shortly.
+            </p>
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <p className="text-blue-700 text-sm font-medium">
+                📱 Keep an eye on your phone and email — we'll reach out soon!
+              </p>
+            </div>
+            {company?.website && (
+              <a
+                href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-6 text-sm text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
+              >
+                Visit {company.name}'s website
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -320,22 +350,25 @@ export default function UploadForm({
         <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
       ))}
 
-      {/* Step 1 — always visible underneath */}
-      <UploadFormStepOne
-        formData={step1Data}
-        categories={categories}
-        onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
-        onSubmit={handleStep1Submit}
-        submitting={submittingStep1}
-        error={step1Error}
-        ctaHeading={getCtaHeading()}
-        headerSubtitle={headerSubtitle}
-        logoUrl={company?.logo_url}
-        companyName={company?.name}
-        brandColor1={company?.email_brand_color_1}
-        brandColor2={company?.email_brand_color_2}
-        showHeader={showHeader}
-      />
+      {/* Step 1 — always the base layer */}
+      <div className={step === 2 ? 'pointer-events-none select-none' : ''}>
+        <UploadFormStepOne
+          formData={step1Data}
+          categories={categories}
+          onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
+          onSubmit={handleStep1Submit}
+          submitting={submittingStep1}
+          error={step1Error}
+          ctaHeading={getCtaHeading()}
+          headerSubtitle={headerSubtitle}
+          logoUrl={company?.logo_url}
+          companyName={company?.name}
+          companyWebsite={company?.website}
+          brandColor1={company?.email_brand_color_1}
+          brandColor2={company?.email_brand_color_2}
+          showHeader={showHeader}
+        />
+      </div>
 
       {/* Step 2 — modal overlay */}
       {step === 2 && (
@@ -353,6 +386,8 @@ export default function UploadForm({
           ctaButtonText={getCtaButtonText()}
           brandColor1={company?.email_brand_color_1}
           brandColor2={company?.email_brand_color_2}
+          companyWebsite={company?.website}
+          companyName={company?.name}
           isDragging={isDragging}
           onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
           onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
@@ -363,6 +398,7 @@ export default function UploadForm({
           onDragOver={handleDragOver}
           onRemoveFile={removeFile}
           onSubmit={handleStep2Submit}
+          onSkip={handleSkip}
         />
       )}
     </>

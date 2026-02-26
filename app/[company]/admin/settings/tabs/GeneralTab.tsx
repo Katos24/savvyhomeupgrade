@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building, Mail, Phone, Link2, Check, Copy, Download, QrCode, Palette, Pencil, X } from 'lucide-react';
+import { Building, Mail, Phone, Link2, Globe, Check, Copy, Download, QrCode, Palette, Pencil, X } from 'lucide-react';
 import QRCodeLib from 'qrcode';
+
+function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+        {icon} {label}
+      </label>
+      {children}
+    </div>
+  );
+}
 
 export default function GeneralTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [loading, setLoading] = useState(false);
@@ -19,6 +30,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
     name: company.name || '',
     email: company.email || '',
     phone: company.phone || '',
+    website: company.website || '',
     business_type: company.business_type || 'general',
     email_brand_color_1: company.email_brand_color_1 || '#667eea',
     email_brand_color_2: company.email_brand_color_2 || '#764ba2',
@@ -107,15 +119,6 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
       setLoading(false);
     }
   };
-
-  const Field = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
-    <div>
-      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-        {icon} {label}
-      </label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -231,6 +234,24 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
               </p>
             )}
           </Field>
+
+          {/* Website */}
+          <Field label="Website" icon={<Globe className="w-3.5 h-3.5" />}>
+            {isEditing ? (
+              <input type="url" value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+                placeholder="https://yourcompany.com" />
+            ) : (
+              <p className="px-3 py-2.5 bg-gray-50 border border-gray-100 text-sm text-gray-700">
+                {formData.website
+                  ? <a href={formData.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{formData.website}</a>
+                  : <span className="text-gray-400">Not set</span>
+                }
+              </p>
+            )}
+          </Field>
+
         </div>
       </div>
 

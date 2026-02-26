@@ -10,6 +10,7 @@ type Company = {
   slug: string;
   email: string;
   phone: string;
+  website?: string | null;
   business_type?: string;
   logo_url?: string | null;
   form_categories?: Category[];
@@ -31,7 +32,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       name, 
       slug, 
       email, 
-      phone, 
+      phone,
+      website,
       business_type, 
       logo_url,
       form_categories, 
@@ -61,16 +63,14 @@ export default async function CompanyPage({
     notFound();
   }
 
-  // Get dynamic CTA config
   const cta = getCTAConfig(company);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header with Logo */}
+      {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            {/* COMPANY LOGO */}
             {company.logo_url ? (
               <img 
                 src={company.logo_url} 
@@ -96,7 +96,7 @@ export default async function CompanyPage({
         </div>
       </header>
 
-      {/* Hero Section - Dynamic CTA Heading with Brand Colors */}
+      {/* Hero */}
       <div 
         className="text-white py-12 px-6"
         style={{
@@ -115,17 +115,16 @@ export default async function CompanyPage({
               : company.business_type === 'hvac'
               ? 'Describe your issue and upload photos for faster service'
               : company.business_type === 'food_services'
-              ? 'Tell us what you need and we\'ll create something special'
+              ? "Tell us what you need and we'll create something special"
               : 'Upload photos and we\'ll get back to you within 24 hours'}
           </p>
         </div>
       </div>
 
-      {/* Form Section */}
+      {/* Form */}
       <div className="py-12 px-6">
         <UploadForm 
           company={company}
-          successRoute={`/${company.slug}/success`}
           showHeader={false}
         />
       </div>
