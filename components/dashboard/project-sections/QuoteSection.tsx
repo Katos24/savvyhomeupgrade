@@ -143,7 +143,6 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
 
   const total = quoteData.reduce((s: number, i: any) => s + i.amount, 0);
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-  const colCount = isEditing ? 5 : 4;
 
   // Empty state
   if (quoteData.length === 0 && !isEditing && !loadingTemplates) {
@@ -180,8 +179,8 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   return (
     <div className="overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+      <div className="px-4 py-4 border-b border-gray-50 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
           <span className="w-5 h-5 bg-blue-50 flex items-center justify-center text-xs">💰</span>
           Quote
           {quoteData.length > 0 && (
@@ -191,16 +190,15 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
           )}
         </h3>
 
-        {/* Action buttons in header */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {isEditing ? (
             <>
               {availableTemplates.length > 1 && (
                 <select
                   onChange={(e) => handleTemplateSelect(e.target.value)}
-                  className="text-xs border border-gray-200 px-2 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600"
+                  className="text-xs border border-gray-200 px-2 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600 max-w-[120px]"
                 >
-                  <option value="">Load template...</option>
+                  <option value="">Template...</option>
                   {availableTemplates.map((t) => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -254,23 +252,86 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* ── MOBILE: card per line item ── */}
+      <div className="sm:hidden">
+        <div className="divide-y divide-gray-50">
+          {quoteData.map((item: any, idx: number) => (
+            <div key={item.id} className="p-4 space-y-3">
+              {/* Description */}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.description}
+                  onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                  placeholder="Description..."
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+                />
+              ) : (
+                <p className="text-sm font-semibold text-gray-900">{item.description || '—'}</p>
+              )}
+
+              {/* Qty / Unit Price / Amount row */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400 mb-1">Qty</p>
+                  {isEditing ? (
+                    <input
+                      type="number" min="1" step="1"
+                      value={item.quantity || ''}
+                      onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-center"
+                      style={{ MozAppearance: 'textfield' } as any}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-700">{item.quantity}</p>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400 mb-1">Unit Price</p>
+                  {isEditing ? (
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={item.unitPrice || ''}
+                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-right"
+                      style={{ MozAppearance: 'textfield' } as any}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-700 text-right">{fmt(item.unitPrice)}</p>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400 mb-1">Amount</p>
+                  <p className="text-sm font-bold text-gray-900 text-right">{fmt(item.amount)}</p>
+                </div>
+                {isEditing && (
+                  <button onClick={() => handleRemoveRow(item.id)}
+                    className="mt-4 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition flex-shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile total */}
+        <div className="flex items-center justify-between px-4 py-3 border-t-2 border-gray-200 bg-green-50">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total</span>
+          <span className="text-base font-extrabold text-green-600">{fmt(total)}</span>
+        </div>
+      </div>
+
+      {/* ── DESKTOP: table layout ── */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f8fafc' }}>
-              <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100">
-                Description
-              </th>
-              <th className="text-center py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-20">
-                Qty
-              </th>
-              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">
-                Unit Price
-              </th>
-              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">
-                Amount
-              </th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100">Description</th>
+              <th className="text-center py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-20">Qty</th>
+              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">Unit Price</th>
+              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">Amount</th>
               {isEditing && <th className="w-10 border-b border-gray-100" />}
             </tr>
           </thead>
@@ -308,9 +369,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
                     <div className="px-4 py-3 text-sm text-gray-900">{fmt(item.unitPrice)}</div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                  {fmt(item.amount)}
-                </td>
+                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{fmt(item.amount)}</td>
                 {isEditing && (
                   <td className="px-2 py-3 text-center">
                     <button onClick={() => handleRemoveRow(item.id)}
@@ -322,13 +381,10 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
               </tr>
             ))}
           </tbody>
-          {/* Total row - full width spanning all columns */}
           <tfoot>
             <tr style={{ background: '#f0fdf4' }}>
-              <td
-                colSpan={isEditing ? 4 : 3}
-                className="px-4 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-t-2 border-gray-200"
-              >
+              <td colSpan={isEditing ? 4 : 3}
+                className="px-4 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-t-2 border-gray-200">
                 Total
               </td>
               <td className="px-4 py-4 text-right font-extrabold text-green-600 text-base border-t-2 border-gray-200">
@@ -338,7 +394,6 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
             </tr>
           </tfoot>
         </table>
-
         <style jsx>{`
           input[type="number"]::-webkit-inner-spin-button,
           input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -359,13 +414,13 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
               <Mail className="w-3.5 h-3.5" /> Email History
             </p>
             {[...emailLog].reverse().map((entry: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 text-sm">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-blue-500" />
+              <div key={i} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 text-sm gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <DollarSign className="w-4 h-4 text-blue-500 flex-shrink-0" />
                   <span className="font-bold text-blue-900">{fmt(entry.quote_total)}</span>
-                  <span className="text-xs text-blue-500">by {entry.sent_by_email}</span>
+                  <span className="text-xs text-blue-500 truncate">by {entry.sent_by_email}</span>
                 </div>
-                <span className="text-xs text-blue-500">
+                <span className="text-xs text-blue-500 flex-shrink-0">
                   {new Date(entry.sent_at).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
                   })}
