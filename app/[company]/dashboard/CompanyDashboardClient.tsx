@@ -243,8 +243,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     const now = new Date();
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
     const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7);
-    const recentLeads = allLeads.filter(l => new Date(l.created_at) > cutoff);
-    const todayJobs = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date).toDateString() === now.toDateString());
+const recentLeads = allLeads
+  .slice() // don't mutate
+  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  .slice(0, 50); 
+      const todayJobs = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date).toDateString() === now.toDateString());
     const thisWeekJobs = allLeads.filter(l => l.scheduled_date && new Date(l.scheduled_date) >= now && new Date(l.scheduled_date) <= weekEnd);
     const unpaidJobs = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid');
     const unassignedJobs = allLeads.filter(l => !l.assigned_to && l.status !== 'completed' && l.status !== 'cancelled');
@@ -265,11 +268,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       unpaid: unpaidJobs.map(l => ({ name: l.name, category: l.category, quote_total: l.quote_total, status: l.status })),
       unassigned: unassignedJobs.map(l => ({ name: l.name, category: l.category, status: l.status, created_at: l.created_at })),
       recent_leads: recentLeads.map(l => ({
-        name: l.name, category: l.category, status: l.status, city: l.city,
-        quote_total: l.quote_total || null, payment_status: l.payment_status || null,
-        scheduled_date: l.scheduled_date || null, assigned_to: l.assigned_to || null,
-        created_at: l.created_at,
-      })),
+  name: l.name, category: l.category, status: l.status, city: l.city,
+  address_line_1: l.address_line_1 || null, zip_code: l.zip_code || null,
+  notes: l.notes || null, description: l.description || null,
+  quote_total: l.quote_total || null, payment_status: l.payment_status || null,
+  scheduled_date: l.scheduled_date || null, assigned_to: l.assigned_to || null,
+  created_at: l.created_at,
+})),
     };
 
     try {
@@ -280,7 +285,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           lead_id: null, customer_name: null, description: message,
           category: null, status: null, project_id: null,
           company_name: company.name, chat_mode: true,
-          chat_history: updated, all_leads_summary: context,
+          chat_history: updated.slice(-6), all_leads_summary: context,
           plan_tier: company.plan_tier || 'basic',
         }),
       });
@@ -465,6 +470,28 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <Filter className="w-4 h-4" /> Filters
             <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
+          <div className="flex rounded-xl overflow-hidden border border-slate-700">
+  <button
+    onClick={() => setCurrentView('cards')}
+    className={`px-4 py-2 text-sm font-semibold transition ${
+      currentView === 'cards'
+        ? 'bg-indigo-600 text-white'
+        : 'bg-slate-800 text-white/50 hover:bg-slate-700'
+    }`}
+  >
+    ⊞ Cards
+  </button>
+  <button
+    onClick={() => setCurrentView('table')}
+    className={`px-4 py-2 text-sm font-semibold transition ${
+      currentView === 'table'
+        ? 'bg-indigo-600 text-white'
+        : 'bg-slate-800 text-white/50 hover:bg-slate-700'
+    }`}
+  >
+    ≡ Table
+  </button>
+</div>
         </div>
 
         {/* Quick filters */}

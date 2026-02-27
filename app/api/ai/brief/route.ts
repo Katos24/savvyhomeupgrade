@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
       plan_tier,
     } = body;
 
-    // ── Plan gating ────────────────────────────────────────────
     if (plan_tier === 'basic') {
       return NextResponse.json({
         success: false,
@@ -44,9 +43,7 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // ── Retry helper — try Sonnet once, immediately fall back to Haiku ──
     async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
-      // Try Sonnet once — no retries, fail fast
       try {
         console.log('Trying claude-sonnet-4-20250514...');
         return await anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' });
@@ -56,7 +53,6 @@ export async function POST(request: NextRequest) {
         console.log('Sonnet overloaded, falling back to Haiku immediately...');
       }
 
-      // Haiku fallback — 2 attempts with short delay
       for (let attempt = 0; attempt <= 1; attempt++) {
         try {
           console.log(`Trying claude-haiku-4-5-20251001, attempt: ${attempt + 1}`);
@@ -86,15 +82,32 @@ export async function POST(request: NextRequest) {
 - Scheduled today: ${ctx.summary?.today_scheduled || 0}
 - Scheduled this week: ${ctx.summary?.this_week_scheduled || 0}
 
-${ctx.today_schedule?.length ? `TODAY'S SCHEDULE:\n${ctx.today_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.time || 'no time'} | assigned: ${j.assigned_to || 'nobody'}`).join('\n')}` : ''}
+${ctx.today_schedule?.length ? `TODAY'S SCHEDULE:\n${ctx.today_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.time || 'no time'} | assigned: ${j.assigned_to || 'nobody'}${j.address_line_1 ? ` | ${j.address_line_1}${j.city ? ', ' + j.city : ''}` : ''}`).join('\n')}` : ''}
 
-${ctx.this_week_schedule?.length ? `THIS WEEK:\n${ctx.this_week_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.date} | assigned: ${j.assigned_to || 'nobody'}`).join('\n')}` : ''}
+${ctx.this_week_schedule?.length ? `THIS WEEK:\n${ctx.this_week_schedule.map((j: any) => `- ${j.name} | ${j.category} | ${j.date} | assigned: ${j.assigned_to || 'nobody'}${j.address_line_1 ? ` | ${j.address_line_1}${j.city ? ', ' + j.city : ''}` : ''}`).join('\n')}` : ''}
 
 ${ctx.unpaid?.length ? `UNPAID JOBS:\n${ctx.unpaid.map((j: any) => `- ${j.name} | ${j.category} | $${parseFloat(j.quote_total).toLocaleString()} | status: ${j.status}`).join('\n')}` : ''}
 
 ${ctx.unassigned?.length ? `UNASSIGNED JOBS:\n${ctx.unassigned.map((j: any) => `- ${j.name} | ${j.category} | ${j.status}`).join('\n')}` : ''}
 
-${ctx.recent_leads?.length ? `ALL RECENT LEADS (60 days):\n${ctx.recent_leads.map((l: any) => `- ${l.name} | ${l.category || 'unknown'} | ${l.status} | quote: ${l.quote_total ? '$' + parseFloat(l.quote_total).toLocaleString() : 'none'} | payment: ${l.payment_status || 'none'} | scheduled: ${l.scheduled_date || 'not scheduled'} | assigned: ${l.assigned_to || 'unassigned'}`).join('\n')}` : ''}`
+${ctx.recent_leads?.length ? `ALL RECENT LEADS (60 days):\n${ctx.recent_leads.map((l: any) => {
+  const parts = [
+    `- ${l.name}`,
+    l.category || 'unknown',
+    l.status,
+    `quote: ${l.quote_total ? '$' + parseFloat(l.quote_total).toLocaleString() : 'none'}`,
+    `payment: ${l.payment_status || 'none'}`,
+    `scheduled: ${l.scheduled_date || 'not scheduled'}`,
+    `assigned: ${l.assigned_to || 'unassigned'}`,
+  ];
+  if (l.address_line_1 || l.city || l.zip_code) {
+    const addr = [l.address_line_1, l.city, l.zip_code].filter(Boolean).join(', ');
+    parts.push(`address: ${addr}`);
+  }
+  if (l.notes) parts.push(`notes: "${l.notes}"`);
+  if (l.description) parts.push(`request: "${l.description.slice(0, 120)}"`);
+  return parts.join(' | ');
+}).join('\n')}` : ''}`
         : 'No lead data available.';
 
       const systemPrompt = `You are a smart business assistant for ${company_name || 'a contractor'}. You have real-time access to their job data. Answer questions specifically using the actual data provided — never be vague when you have the numbers. Be conversational, direct, and actionable. Use bullet points for lists. Bold important numbers or names with **text**. Keep responses under 150 words unless detail is truly needed.
@@ -106,11 +119,12 @@ ${leadsContext}`;
         content: m.content,
       }));
 
-      const chatResponse = await callClaude({
-        max_tokens: 512,
-        system: systemPrompt,
-        messages,
-      });
+      const chatResponse = await anthropic.messages.create({
+  model: 'claude-haiku-4-5-20251001',
+  max_tokens: 512,
+  system: systemPrompt,
+  messages,
+});
 
       const replyContent = chatResponse.content[0];
       if (replyContent.type !== 'text') throw new Error('Unexpected response type');

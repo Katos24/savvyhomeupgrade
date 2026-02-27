@@ -17,7 +17,6 @@ export default function ConvertToProjectButton({
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // If already converted, show nothing
   if (lead.project_id) {
     return null;
   }
@@ -40,8 +39,41 @@ export default function ConvertToProjectButton({
       const result = await response.json();
 
       if (response.ok && result.success) {
-     toast.success(`✅ Project #${result.project_number} created! You can now schedule work, create quotes, and track payments.`);
+        toast.success(`✅ Project #${result.project_number} created! You can now schedule work, create quotes, and track payments.`);
         setShowConfirm(false);
+
+        // ── Auto-save quote template if one matches this category ──
+        try {
+          const companySlug = window.location.pathname.split('/')[1];
+          const tmplRes = await fetch(`/api/company/${companySlug}/quote-templates`);
+          const tmplData = await tmplRes.json();
+          if (tmplData.success) {
+            const match = (tmplData.templates || []).find((t: any) => t.category === lead.category);
+            if (match) {
+              const items = match.items.map((item: any, i: number) => ({
+                id: Date.now() + i,
+                description: item.description,
+                quantity: item.quantity || 1,
+                unitPrice: item.amount / (item.quantity || 1),
+                amount: item.amount,
+              }));
+              const total = items.reduce((s: number, i: any) => s + i.amount, 0);
+              await fetch('/api/leads/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id: lead.id, action: 'save_quote',
+                  quote_data: items, quote_total: total,
+                  user_name: currentUser?.name || 'Unknown',
+                  user_email: currentUser?.email || '',
+                }),
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Auto-save quote failed:', e);
+        }
+
         await onRefresh();
       } else {
         toast.error(result.error || 'Failed to create project');

@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, FileIcon, AlertCircle } from 'lucide-react';
+import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, AlertCircle } from 'lucide-react';
 import SchedulingSection from './project-sections/SchedulingSection';
 import QuoteSection from './project-sections/QuoteSection';
 import PaymentSection from './project-sections/PaymentSection';
-import DocumentsSection from './project-sections/DocumentsSection';
-import PhotosSection from './project-sections/PhotosSection';
+import MediaSection from './project-sections/MediaSection';
 import TasksSection from './project-sections/TasksSection';
 import RemindersSection from './project-sections/RemindersSection';
 
@@ -17,7 +16,7 @@ type ProjectSectionProps = {
   statusOptions: any[];
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
   companySlug: string;
-  defaultTab?: string; // receives active tab from LeadModal
+  defaultTab?: string;
 };
 
 export default function ProjectSection({
@@ -31,31 +30,30 @@ export default function ProjectSection({
 }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
 
-  // Map LeadModal top-level tab → section tab
   const resolveTab = (tab?: string) => {
     if (tab === 'schedule') return { section: 'planning', tab: 'schedule' };
     if (tab === 'tasks') return { section: 'planning', tab: 'tasks' };
     if (tab === 'reminders') return { section: 'planning', tab: 'reminders' };
     if (tab === 'quote') return { section: 'financials', tab: 'quote' };
     if (tab === 'payment') return { section: 'financials', tab: 'payment' };
-    if (tab === 'photos') return { section: 'financials', tab: 'photos' };
-    if (tab === 'docs') return { section: 'financials', tab: 'documents' };
+    if (tab === 'photos') return { section: 'financials', tab: 'media' };
+    if (tab === 'docs') return { section: 'financials', tab: 'media' };
     return { section: 'planning', tab: 'schedule' };
   };
 
   const resolved = resolveTab(defaultTab);
-  const hideTabs = !!defaultTab; // hide internal tab bars when parent drives navigation
+  const hideTabs = !!defaultTab;
+
   const [planningTab, setPlanningTab] = useState<'schedule' | 'tasks' | 'reminders'>(
     resolved.section === 'planning' ? resolved.tab as any : 'schedule'
   );
-  const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'documents' | 'photos'>(
+  const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'media'>(
     resolved.section === 'financials' ? resolved.tab as any : 'quote'
   );
   const [activeSection, setActiveSection] = useState<'planning' | 'financials'>(
     resolved.section as 'planning' | 'financials'
   );
 
-  // Sync when defaultTab changes (user clicks top tabs)
   useEffect(() => {
     const r = resolveTab(defaultTab);
     setActiveSection(r.section as any);
@@ -105,6 +103,13 @@ export default function ProjectSection({
     },
   ];
 
+  const mediaCount = (() => {
+    const before = lead?.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
+    const after = lead?.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
+    const docs = lead?.documents ? (typeof lead.documents === 'string' ? JSON.parse(lead.documents) : lead.documents) : [];
+    return before.length + after.length + docs.length;
+  })();
+
   const financialsTabs = [
     {
       id: 'quote' as const,
@@ -121,27 +126,11 @@ export default function ProjectSection({
       count: lead?.payment_amount ? 1 : 0,
     },
     {
-      id: 'documents' as const,
-      label: 'Docs',
-      icon: FileIcon,
-      color: '#6366f1',
-      count: (() => {
-        try {
-          const d = lead?.documents;
-          return d ? (Array.isArray(d) ? d.length : JSON.parse(d).length) : 0;
-        } catch { return 0; }
-      })(),
-    },
-    {
-      id: 'photos' as const,
-      label: 'Photos',
+      id: 'media' as const,
+      label: 'Media',
       icon: Image,
       color: '#ec4899',
-      count: (() => {
-        const before = lead?.before_photos ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos) : [];
-        const after = lead?.after_photos ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos) : [];
-        return before.length + after.length;
-      })(),
+      count: mediaCount,
     },
   ];
 
@@ -150,112 +139,108 @@ export default function ProjectSection({
 
       {/* ── PLANNING SECTION ─────────────────────────── */}
       {(activeSection === 'planning' || !hideTabs) && (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Section header — only show when not driven by parent */}
-        {!hideTabs && (
-        <div className="px-5 py-4 border-b border-gray-50"
-          style={{ background: 'linear-gradient(to right, #f0fdf4, #f0fdf9)' }}>
-          <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2 mb-3">
-            <Calendar className="w-3.5 h-3.5" />
-            Project Planning
-          </h3>
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-            {planningTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = planningTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setPlanningTab(tab.id)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={isActive ? {
-                    background: '#6366f1', color: 'white',
-                    boxShadow: '0 4px 12px rgba(99,102,241,0.25)', border: '1px solid transparent',
-                  } : { background: 'white', color: '#6b7280', border: '1px solid #e5e7eb' }}
-                >
-                  <Icon className="w-3.5 h-3.5" style={{ color: isActive ? 'white' : tab.color }} />
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-                      style={isActive
-                        ? { background: 'rgba(255,255,255,0.2)', color: 'white' }
-                        : { background: '#eef2ff', color: '#6366f1' }}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        )}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {!hideTabs && (
+            <div className="px-5 py-4 border-b border-gray-50"
+              style={{ background: 'linear-gradient(to right, #f0fdf4, #f0fdf9)' }}>
+              <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2 mb-3">
+                <Calendar className="w-3.5 h-3.5" />
+                Project Planning
+              </h3>
+              <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                {planningTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = planningTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setPlanningTab(tab.id)}
+                      className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                      style={isActive ? {
+                        background: '#6366f1', color: 'white',
+                        boxShadow: '0 4px 12px rgba(99,102,241,0.25)', border: '1px solid transparent',
+                      } : { background: 'white', color: '#6b7280', border: '1px solid #e5e7eb' }}
+                    >
+                      <Icon className="w-3.5 h-3.5" style={{ color: isActive ? 'white' : tab.color }} />
+                      {tab.label}
+                      {tab.count > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
+                          style={isActive
+                            ? { background: 'rgba(255,255,255,0.2)', color: 'white' }
+                            : { background: '#eef2ff', color: '#6366f1' }}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-        {planningTab === 'schedule' && (
-          <SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} />
-        )}
-        {planningTab === 'tasks' && (
-          <TasksSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-        {planningTab === 'reminders' && (
-          <RemindersSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-      </div>
+          {planningTab === 'schedule' && (
+            <SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} />
+          )}
+          {planningTab === 'tasks' && (
+            <TasksSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
+          )}
+          {planningTab === 'reminders' && (
+            <RemindersSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
+          )}
+        </div>
       )}
 
       {/* ── FINANCIALS SECTION ───────────────────────── */}
       {(activeSection === 'financials' || !hideTabs) && (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {!hideTabs && (
-        <div className="px-5 py-4 border-b border-gray-50"
-          style={{ background: 'linear-gradient(to right, #faf5ff, #fdf4ff)' }}>
-          <h3 className="text-xs font-bold text-purple-800 uppercase tracking-widest flex items-center gap-2 mb-3">
-            <CreditCard className="w-3.5 h-3.5" />
-            Financials & Deliverables
-          </h3>
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-            {financialsTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = financialsTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setFinancialsTab(tab.id)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={isActive ? {
-                    background: '#7c3aed', color: 'white',
-                    boxShadow: '0 4px 12px rgba(124,58,237,0.25)', border: '1px solid transparent',
-                  } : { background: 'white', color: '#6b7280', border: '1px solid #e5e7eb' }}
-                >
-                  <Icon className="w-3.5 h-3.5" style={{ color: isActive ? 'white' : tab.color }} />
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-                      style={isActive
-                        ? { background: 'rgba(255,255,255,0.2)', color: 'white' }
-                        : { background: '#f5f3ff', color: '#7c3aed' }}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        )}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {!hideTabs && (
+            <div className="px-5 py-4 border-b border-gray-50"
+              style={{ background: 'linear-gradient(to right, #faf5ff, #fdf4ff)' }}>
+              <h3 className="text-xs font-bold text-purple-800 uppercase tracking-widest flex items-center gap-2 mb-3">
+                <CreditCard className="w-3.5 h-3.5" />
+                Financials & Deliverables
+              </h3>
+              <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                {financialsTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = financialsTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFinancialsTab(tab.id)}
+                      className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                      style={isActive ? {
+                        background: '#7c3aed', color: 'white',
+                        boxShadow: '0 4px 12px rgba(124,58,237,0.25)', border: '1px solid transparent',
+                      } : { background: 'white', color: '#6b7280', border: '1px solid #e5e7eb' }}
+                    >
+                      <Icon className="w-3.5 h-3.5" style={{ color: isActive ? 'white' : tab.color }} />
+                      {tab.label}
+                      {tab.count > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
+                          style={isActive
+                            ? { background: 'rgba(255,255,255,0.2)', color: 'white' }
+                            : { background: '#f5f3ff', color: '#7c3aed' }}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-        {financialsTab === 'quote' && (
-          <QuoteSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-        {financialsTab === 'payment' && (
-          <PaymentSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-        {financialsTab === 'documents' && (
-          <DocumentsSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-        {financialsTab === 'photos' && (
-          <PhotosSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-        )}
-      </div>
+          {financialsTab === 'quote' && (
+            <QuoteSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
+          )}
+          {financialsTab === 'payment' && (
+            <PaymentSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
+          )}
+          {financialsTab === 'media' && (
+            <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
+          )}
+        </div>
       )}
 
     </div>

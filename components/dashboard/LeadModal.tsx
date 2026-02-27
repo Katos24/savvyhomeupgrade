@@ -308,9 +308,8 @@ export default function LeadModal({
     { id: 'quote', label: 'Quote', icon: '💰', show: isProject },
     { id: 'payment', label: 'Payment', icon: '💳', show: isProject },
     { id: 'tasks', label: 'Tasks', icon: '✅', show: isProject },
-    { id: 'photos', label: 'Photos', icon: '📷', show: isProject },
-    { id: 'docs', label: 'Docs', icon: '📁', show: isProject },
-    { id: 'activity', label: 'Activity', icon: '💬', show: true },
+    { id: 'photos', label: 'Media', icon: '📷', show: isProject },
+{ id: 'activity', label: 'Activity', icon: '💬', show: isProject },
   ];
 
   return (
