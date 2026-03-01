@@ -172,16 +172,15 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
                 <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 z-50 w-64 p-2">
-                  <div onClick={() => setShowMoreActions(false)}>
-                    <SendCustomerEmailButtons
-                      leadId={lead.id}
-                      type="schedule"
-                      currentUser={currentUser}
-                      onRefresh={onRefresh}
-                      hasSchedule={!!scheduledDate}
-                      disabled={!hasProject}
-                    />
-                  </div>
+                  <SendCustomerEmailButtons
+  leadId={lead.id}
+  type="schedule"
+  currentUser={currentUser}
+  onRefresh={onRefresh}
+  hasSchedule={!!scheduledDate}
+  disabled={!hasProject}
+  scheduleSentAt={scheduleEmailLog.length > 0 ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at : null}
+/>
                 </div>
               </>
             )}

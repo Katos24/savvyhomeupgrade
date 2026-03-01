@@ -232,17 +232,21 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
                     <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 z-50 w-64 p-2">
-                      <div onClick={() => setShowMoreActions(false)}>
                         <SendCustomerEmailButtons
                           leadId={lead.id}
                           type="quote"
                           currentUser={currentUser}
                           onRefresh={onRefresh}
                           hasQuote={quoteData.length > 0}
-                          quoteSentAt={lead?.quote_sent_at}
-                          disabled={!hasProject}
+quoteSentAt={(() => {
+  try {
+    const log = typeof lead?.quote_emails === 'string'
+      ? JSON.parse(lead.quote_emails)
+      : lead?.quote_emails || [];
+    return log.length > 0 ? log[log.length - 1].sent_at : null;
+  } catch { return null; }
+})()}                          disabled={!hasProject}
                         />
-                      </div>
                     </div>
                   </>
                 )}
