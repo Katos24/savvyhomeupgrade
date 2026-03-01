@@ -200,10 +200,11 @@ export default function LeadModal({
   const fullAddress = getFullAddress();
 
   const formatScheduledDate = () => {
-    if (!lead.scheduled_date) return null;
-    const d = new Date(lead.scheduled_date.includes('T') ? lead.scheduled_date : lead.scheduled_date + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  if (!lead.scheduled_date) return null;
+  const parts = lead.scheduled_date.split('T')[0].split('-');
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
   const formatScheduledTime = () => {
     if (!lead.scheduled_time) return null;
