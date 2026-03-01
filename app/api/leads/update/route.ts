@@ -27,7 +27,8 @@ export async function POST(request: Request) {
       quote_total,
       follow_up_date,  
       follow_up_notes,
-      internal_notes 
+      internal_notes,
+      payment_due_date, 
     } = body;
 
     const sql = neon(process.env.DATABASE_URL!);
@@ -670,6 +671,7 @@ return NextResponse.json({ success: true, message: 'Schedule confirmation sent!'
           payment_method = ${body.payment_method || null},
           payment_date = ${body.payment_date || null},
           payment_notes = ${body.payment_notes || null},
+          payment_due_date = ${payment_due_date || null},
           paid_at = ${paidAt},
           updated_at = NOW()
         WHERE id = ${projectId}

@@ -17,6 +17,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentDueDate, setPaymentDueDate] = useState('');
   const [markPaidInFull, setMarkPaidInFull] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,6 +26,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
     setPaymentMethod(lead?.payment_method || '');
     setPaymentDate(lead?.payment_date ? new Date(lead.payment_date).toISOString().split('T')[0] : '');
     setPaymentNotes(lead?.payment_notes || '');
+    setPaymentDueDate(lead?.payment_due_date ? new Date(lead.payment_due_date).toISOString().split('T')[0] : '');
     setMarkPaidInFull(false);
   }, [lead?.id]);
 
@@ -70,6 +72,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
           payment_amount: paymentAmount || null,
           payment_method: paymentMethod || null,
           payment_date: paymentDate || null,
+          payment_due_date: paymentDueDate || null,
           payment_notes: paymentNotes || null,
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
@@ -187,6 +190,19 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
             className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
           />
         </div>
+
+        {/* Due Date */}
+<div>
+  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+    Due Date
+  </label>
+  <input
+    type="date"
+    value={paymentDueDate}
+    onChange={(e) => setPaymentDueDate(e.target.value)}
+    className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+  />
+</div>
 
         {/* Notes */}
         <div>

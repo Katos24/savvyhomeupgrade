@@ -190,7 +190,7 @@ export default function QuoteTemplatesTab({ company, currentUser }: { company: a
                       <p className="font-bold text-gray-800 text-sm truncate">{template.name}</p>
                       {cat && <p className="text-xs text-gray-400 mt-0.5">{cat.label}</p>}
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+                    <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                       <button onClick={() => openEditor(template)}
                         className="p-1.5 hover:bg-indigo-50 text-indigo-400 transition">
                         <Edit2 className="w-3.5 h-3.5" />

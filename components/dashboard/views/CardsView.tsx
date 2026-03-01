@@ -194,7 +194,24 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
             </div>
           )}
 
-          
+          {lead.quote_total && (
+            <div className="flex items-center gap-1.5 text-xs mb-3">
+              <span className={`px-2 py-0.5 font-bold ${
+                lead.payment_status === 'paid'
+                  ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
+                  : lead.payment_status === 'partial'
+                  ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
+                  : 'bg-white/5 border border-white/10 text-white/50'
+              }`}>
+                {lead.payment_status === 'paid'
+                  ? `✓ ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} Paid`
+                  : lead.payment_status === 'partial'
+                  ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.payment_amount || 0))} / ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} paid`
+                  : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} due`}
+              </span>
+            </div>
+          )}
+
 
           <div className="flex items-center justify-between pt-3 border-t border-slate-700">
             <div className="flex items-center gap-2.5">

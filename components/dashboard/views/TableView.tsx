@@ -128,6 +128,8 @@ export default function TableView({
         case 'preferred_date': av = a.preferred_date ? new Date(a.preferred_date).getTime() : 0; bv = b.preferred_date ? new Date(b.preferred_date).getTime() : 0; break;
         case 'quote_total': av = a.quote_total || 0; bv = b.quote_total || 0; break;
         case 'payment_amount': av = a.payment_amount || 0; bv = b.payment_amount || 0; break;
+        case 'payment_due_date': av = a.payment_due_date ? new Date(a.payment_due_date).getTime() : 0; bv = b.payment_due_date ? new Date(b.payment_due_date).getTime() : 0; break;
+
         case 'media': av = (safeJSONParse(a.file_urls) || []).length; bv = (safeJSONParse(b.file_urls) || []).length; break;
         case 'date': av = new Date(a.created_at).getTime(); bv = new Date(b.created_at).getTime(); break;
         default: return 0;
@@ -307,6 +309,8 @@ export default function TableView({
               <Th label="Assigned" />
               <Th label="Quote" sortKey="quote_total" />
               <Th label="Payment" sortKey="payment_amount" />
+              <Th label="Due Date" sortKey="payment_due_date" />
+
               <Th label="Media" sortKey="media" />
               <Th label="Created" sortKey="date" />
               <Th label="Source" sortKey="lead_source" />
@@ -451,6 +455,21 @@ export default function TableView({
                       ? <span className="text-xs text-slate-400 capitalize">{lead.payment_status}</span>
                       : <span className="text-slate-600">—</span>}
                   </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+  {lead.payment_due_date
+    ? (() => {
+        const due = new Date(lead.payment_due_date);
+        const isOverdue = !lead.payment_status?.includes('paid') && due < new Date();
+        return (
+          <span className={`font-medium ${isOverdue ? 'text-red-400' : 'text-slate-300'}`}>
+            {due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {isOverdue && <span className="ml-1 text-xs text-red-500">overdue</span>}
+          </span>
+        );
+      })()
+    : <span className="text-slate-600">—</span>}
+</td>
 
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
                     {images.length > 0 && `${images.length} photos`}
