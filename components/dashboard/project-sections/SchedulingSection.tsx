@@ -61,7 +61,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   };
 
   useEffect(() => {
-    setScheduledDate(lead?.scheduled_date ? new Date(lead.scheduled_date).toISOString().split('T')[0] : '');
+setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
     if (lead?.scheduled_time) {
       const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
       setTimeHour(hour);
