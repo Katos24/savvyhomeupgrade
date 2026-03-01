@@ -9,6 +9,8 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 import { canUseAiChat, canUseAiBrief, PLAN_ERRORS, PlanTier } from '@/lib/permissions';
+import PaymentReminderBanner from '@/components/PaymentReminderBanner';
+
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
 type Company = {
@@ -414,6 +416,7 @@ const recentLeads = allLeads
           trialEndsAt={company.trial_ends_at || null}
           companySlug={company.slug}
         />
+        <PaymentReminderBanner slug={company.slug} /> 
       </div>
 
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}

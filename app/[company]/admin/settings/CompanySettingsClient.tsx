@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Settings, Workflow, Mail, Grid, FileText, ArrowLeft, Menu, X } from 'lucide-react';
+import { Settings, Workflow, Mail, Grid, FileText, ArrowLeft, Bell, Users, CreditCard, ChevronRight, X } from 'lucide-react';
 import GeneralTab from './tabs/GeneralTab';
 import FormTab from './tabs/FormTab';
 import PipelineTab from './tabs/PipelineTab';
@@ -11,171 +10,163 @@ import CategoriesTab from './tabs/CategoriesTab';
 import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
 import QuoteTemplatesTab from './tabs/QuoteTemplatesTab';
+import NotificationsTab from './tabs/NotificationsTab';
 
+type Tab = 'general' | 'form' | 'pipeline' | 'email-templates' | 'categories' | 'quote-templates' | 'team' | 'billing' | 'notifications';
 
-type Tab = 'general' | 'form' | 'pipeline' | 'email-templates' | 'categories' | 'quote-templates' | 'team' | 'billing';
+const TAB_GROUPS = [
+  {
+    label: 'Company',
+    items: [
+      { id: 'general' as Tab,         label: 'General',         desc: 'Name, logo, contact info',        icon: Settings,  color: '#6366f1' },
+      { id: 'team' as Tab,            label: 'Team',            desc: 'Members and permissions',          icon: Users,     color: '#0ea5e9' },
+      { id: 'billing' as Tab,         label: 'Billing',         desc: 'Plan and subscription',            icon: CreditCard,color: '#10b981' },
+    ],
+  },
+  {
+    label: 'Pipeline',
+    items: [
+      { id: 'pipeline' as Tab,        label: 'Pipeline',        desc: 'Statuses and stages',              icon: Workflow,  color: '#f59e0b' },
+      { id: 'categories' as Tab,      label: 'Categories',      desc: 'Job types and task templates',     icon: Grid,      color: '#8b5cf6' },
+      { id: 'quote-templates' as Tab, label: 'Quote Templates', desc: 'Reusable line item templates',     icon: FileText,  color: '#ec4899' },
+    ],
+  },
+  {
+    label: 'Customer-facing',
+    items: [
+      { id: 'form' as Tab,            label: 'Lead Form',       desc: 'Public booking form settings',     icon: FileText,  color: '#f97316' },
+      { id: 'email-templates' as Tab, label: 'Email Templates', desc: 'Quotes, schedules, payments',      icon: Mail,      color: '#3b82f6' },
+    ],
+  },
+  {
+    label: 'Notifications',
+    items: [
+      { id: 'notifications' as Tab,   label: 'Notifications',   desc: 'Daily digest and reminders',       icon: Bell,      color: '#ef4444' },
+    ],
+  },
+];
 
-export default function CompanySettingsClient({ 
-  company, 
-  currentUser 
-}: { 
-  company: any; 
-  currentUser: any; 
+export default function CompanySettingsClient({
+  company,
+  currentUser,
+}: {
+  company: any;
+  currentUser: any;
 }) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('general');
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab | null>(null);
 
-  const tabs = [
-    { id: 'general' as Tab, label: 'General', icon: Settings },
-    { id: 'form' as Tab, label: 'Form Settings', icon: FileText },
-    { id: 'pipeline' as Tab, label: 'Pipeline', icon: Workflow },
-    { id: 'email-templates' as Tab, label: 'Email Templates', icon: Mail },
-    { id: 'categories' as Tab, label: 'Categories', icon: Grid },
-    { id: 'quote-templates' as Tab, label: 'Quote Templates', icon: FileText },
-    { id: 'team' as Tab, label: 'Team', icon: Settings },
-    { id: 'billing' as Tab, label: 'Billing', icon: Settings },
-  ];
+  const allItems = TAB_GROUPS.flatMap(g => g.items);
+  const current = allItems.find(t => t.id === activeTab);
 
-  const handleTabChange = (tabId: Tab) => {
-    setActiveTab(tabId);
-    setShowMobileMenu(false);
-  };
+  // ── DETAIL VIEW ──
+  if (activeTab && current) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        {/* Header */}
+        <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+            <button
+              onClick={() => setActiveTab(null)}
+              className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 font-semibold transition text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" /> Settings
+            </button>
+            <span className="text-slate-300">/</span>
+            <span className="font-bold text-slate-900 text-sm">{current.label}</span>
+            <div className="ml-auto">
+              <a
+                href={`/${company.slug}/dashboard`}
+                className="hidden sm:flex items-center gap-1.5 text-slate-500 hover:text-slate-800 font-semibold transition text-sm px-3 py-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <ArrowLeft className="w-4 h-4" /> Dashboard
+              </a>
+            </div>
+          </div>
+        </header>
 
-  const currentTab = tabs.find(t => t.id === activeTab);
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          {activeTab === 'general'         && <GeneralTab         company={company} currentUser={currentUser} />}
+          {activeTab === 'form'            && <FormTab            company={company} currentUser={currentUser} />}
+          {activeTab === 'pipeline'        && <PipelineTab        company={company} currentUser={currentUser} />}
+          {activeTab === 'email-templates' && <EmailTemplatesTab  company={company} currentUser={currentUser} />}
+          {activeTab === 'categories'      && <CategoriesTab      company={company} currentUser={currentUser} />}
+          {activeTab === 'quote-templates' && <QuoteTemplatesTab  company={company} currentUser={currentUser} />}
+          {activeTab === 'team'            && <TeamTab            company={company} currentUser={currentUser} />}
+          {activeTab === 'billing'         && <BillingTab         company={company} currentUser={currentUser} />}
+          {activeTab === 'notifications'   && <NotificationsTab   company={company} currentUser={currentUser} />}
+        </div>
+      </div>
+    );
+  }
 
+  // ── MENU VIEW ──
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      
-      {/* HEADER - Mobile Optimized */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex items-center justify-between gap-3">
-            {/* Logo and Title */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              {company.logo_url ? (
-                <img 
-                  src={company.logo_url} 
-                  alt={`${company.name} logo`}
-                  className="h-10 sm:h-14 w-auto object-contain flex-shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-2xl shadow-lg flex-shrink-0">
-                  {company.name.charAt(0)}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-3xl font-bold text-slate-900 truncate">{company.name}</h1>
-                <p className="text-xs sm:text-sm text-slate-600 hidden sm:block">Company Settings</p>
-              </div>
-            </div>
-            
-            {/* Desktop: Back to Dashboard */}
-            <a 
-              href={`/${company.slug}/dashboard`} 
-              className="hidden md:flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold transition px-4 py-2 rounded-lg hover:bg-slate-100"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Dashboard
-            </a>
 
-            {/* Mobile: Menu Button */}
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-            >
-              {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain flex-shrink-0" />
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                {company.name.charAt(0)}
+              </div>
+            )}
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">{company.name}</h1>
+              <p className="text-xs text-slate-500">Settings</p>
+            </div>
           </div>
+          <a
+            href={`/${company.slug}/dashboard`}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 font-semibold transition text-sm px-3 py-1.5 rounded-lg hover:bg-slate-100 flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </a>
         </div>
       </header>
 
-      {/* MOBILE MENU OVERLAY */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden" onClick={() => setShowMobileMenu(false)}>
-          <div className="bg-white w-4/5 max-w-sm h-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900">Settings Menu</h2>
-            </div>
-            <div className="p-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
+      {/* Card grid */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        {TAB_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">
+              {group.label}
+            </p>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
+              {group.items.map((item) => {
+                const Icon = item.icon;
                 return (
                   <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition text-left ${
-                      activeTab === tab.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition text-left group"
                   >
-                    <Icon className="w-5 h-5" />
-                    {tab.label}
+                    {/* Icon bubble */}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${item.color}20` }}
+                    >
+                      <Icon className="w-4.5 h-4.5" style={{ color: item.color }} />
+                    </div>
+
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">{item.label}</p>
+                      <p className="text-xs text-slate-400 truncate">{item.desc}</p>
+                    </div>
+
+                    {/* Chevron */}
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition flex-shrink-0" />
                   </button>
                 );
               })}
-              <div className="border-t border-slate-200 mt-2 pt-2">
-                <a 
-                  href={`/${company.slug}/dashboard`} 
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back to Dashboard
-                </a>
-              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* DESKTOP TABS NAVIGATION */}
-      <div className="hidden md:block bg-white border-b border-slate-200 shadow-sm sticky top-[88px] z-30">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-2 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-6 py-4 font-semibold whitespace-nowrap transition border-b-4 ${
-                    activeTab === tab.id
-                      ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* MOBILE: Current Tab Indicator */}
-      <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 sticky top-[72px] z-30">
-        <div className="flex items-center gap-2 text-slate-600">
-          {currentTab && (
-            <>
-              <currentTab.icon className="w-5 h-5" />
-              <span className="font-semibold">{currentTab.label}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* TAB CONTENT */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {activeTab === 'general' && <GeneralTab company={company} currentUser={currentUser} />}
-        {activeTab === 'form' && <FormTab company={company} currentUser={currentUser} />}
-        {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
-        {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
-        {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
-        {activeTab === 'quote-templates' && <QuoteTemplatesTab company={company} currentUser={currentUser} />}
-        {activeTab === 'team' && <TeamTab company={company} currentUser={currentUser} />}
-        {activeTab === 'billing' && <BillingTab company={company} currentUser={currentUser} />}
+        ))}
       </div>
     </div>
   );

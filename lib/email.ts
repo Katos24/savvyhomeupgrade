@@ -337,40 +337,75 @@ export async function sendQuoteToCustomer({
   companyPhone?: string;
   companyId: number;
   quoteTotal: number;
-  quoteItems: Array<{ description: string; amount: number }>;
+  quoteItems: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
   projectDescription?: string;
 }) {
   try {
     console.log('🔥 sendQuoteToCustomer called');
 
-    // Get company details for logo
     const company = await getCompanyDetails(companyId);
-
-    // Get company's custom email template
     const templates = await getCompanyEmailTemplates(companyId);
     const quoteTemplate = templates.quote;
-    
-    // Prepare variables
+
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+    const accentColor = company.email_brand_color_1 || '#667eea';
+
+    const lineItemsHtml = quoteItems.length > 0 ? `
+      <div style="margin: 28px 0;">
+        <h3 style="margin: 0 0 12px 0; color: ${accentColor}; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+          Quote Breakdown
+        </h3>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <thead>
+            <tr style="background: #f8fafc;">
+              <th style="padding: 10px 14px; text-align: left; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0;">Description</th>
+              <th style="padding: 10px 14px; text-align: center; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 50px;">Qty</th>
+              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">Unit</th>
+              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quoteItems.map((item, i) => `
+              <tr style="border-bottom: 1px solid #f1f5f9; background: ${i % 2 === 0 ? '#ffffff' : '#fafafa'};">
+                <td style="padding: 12px 14px; color: #334155; font-size: 14px;">${item.description}</td>
+                <td style="padding: 12px 14px; text-align: center; color: #64748b; font-size: 14px;">${item.quantity ?? 1}</td>
+                <td style="padding: 12px 14px; text-align: right; color: #64748b; font-size: 14px;">${item.unitPrice ? fmt(item.unitPrice) : '—'}</td>
+                <td style="padding: 12px 14px; text-align: right; color: #334155; font-weight: 600; font-size: 14px;">${fmt(item.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
+              <td colspan="3" style="padding: 14px; text-align: right; color: #475569; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Total</td>
+              <td style="padding: 14px; text-align: right; color: ${accentColor}; font-weight: 800; font-size: 20px;">${fmt(quoteTotal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    ` : '';
+
     const variables = {
       company_name: company.name || companyName,
       company_phone: company.phone || companyPhone || '',
       customer_name: customerName,
-      quote_total: quoteTotal.toFixed(2),
+      quote_total: fmt(quoteTotal),
       project_description: projectDescription || 'Your project',
     };
-    
-    // Render the template
+
     const rendered = renderEmailTemplate(quoteTemplate, variables);
-    
-    // Convert to branded HTML with logo
-   const emailHtml = textToHtml(
-  rendered.body,
-  company.name || companyName,
-  company.logo_url || undefined,
-  company.phone || companyPhone,
-  company.email_brand_color_1 || undefined,
-  company.email_brand_color_2 || undefined
-);
+
+    const emailHtml = textToHtml(
+      rendered.body,
+      company.name || companyName,
+      company.logo_url || undefined,
+      company.phone || companyPhone,
+      company.email_brand_color_1 || undefined,
+      company.email_brand_color_2 || undefined,
+      lineItemsHtml,
+    );
+
     await resend.emails.send({
       from: `${company.name || companyName} <onboarding@resend.dev>`,
       to: customerEmail,
@@ -990,6 +1025,277 @@ export async function sendFollowUpReminderEmail({
     console.log('✅ Follow-up reminder email sent to:', recipientEmail);
   } catch (error) {
     console.error('❌ Failed to send reminder email:', error);
+    throw error;
+  }
+}
+
+
+// 💳 Send payment reminder to customer
+export async function sendPaymentReminderEmail({
+  customerEmail,
+  customerName,
+  companyName,
+  companyPhone,
+  amountDue,
+  dueDate,
+  isOverdue,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyName: string;
+  companyPhone?: string;
+  amountDue: number;
+  dueDate: string;
+  isOverdue: boolean;
+}) {
+  try {
+    const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+    const formattedDate = new Date(dueDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
+    const label = isOverdue ? '⚠️ Payment Overdue' : '💳 Payment Reminder';
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
+            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; }
+            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
+            .amount-box { background-color: #f9fafb; border-left: 4px solid ${accentColor}; padding: 24px; margin: 24px 0; text-align: center; }
+            .amount { font-size: 42px; font-weight: bold; color: ${accentColor}; }
+            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 style="color: ${accentColor}; font-size: 24px; margin-bottom: 8px;">${label}</h1>
+            <p>Hi ${customerName},</p>
+            <p>${isOverdue
+              ? `This is a reminder that your payment to <strong>${companyName}</strong> was due on <strong>${formattedDate}</strong> and has not yet been received.`
+              : `This is a friendly reminder that you have a payment due to <strong>${companyName}</strong> on <strong>${formattedDate}</strong>.`
+            }</p>
+            <div class="amount-box">
+              <div style="font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+                ${isOverdue ? 'Amount Overdue' : 'Amount Due'}
+              </div>
+              <div class="amount">${fmt(amountDue)}</div>
+              <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">Due: ${formattedDate}</div>
+            </div>
+            <p>Please reach out if you have any questions about your invoice.</p>
+            ${companyPhone ? `<p style="font-size: 14px; color: #6b7280;">📞 <a href="tel:${companyPhone}" style="color: #3b82f6;">${companyPhone}</a></p>` : ''}
+            <div class="footer">${companyName}</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: `${companyName} <onboarding@resend.dev>`,
+      to: customerEmail,
+      subject: isOverdue ? `⚠️ Overdue Payment - ${companyName}` : `💳 Payment Reminder - ${companyName}`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Payment reminder sent to:', customerEmail);
+  } catch (error) {
+    console.error('❌ Failed to send payment reminder:', error);
+    throw error;
+  }
+}
+
+
+
+
+// 📋 Daily digest email to contractor
+// Add this function to /lib/email.ts
+
+export async function sendDailyDigestEmail({
+  companyEmail,
+  companyName,
+  companySlug,
+  todayJobs,
+  staleLeads,
+  staleQuotes,
+  unpaidJobs,
+  overduePayments,
+  dueSoon,
+}: {
+  companyEmail: string;
+  companyName: string;
+  companySlug: string;
+  todayJobs: Array<{ customer_name: string; customer_phone?: string; scheduled_time?: string; assigned_to?: string; project_number?: number; category?: string }>;
+  staleLeads: Array<{ name: string; category?: string; status?: string; updated_at?: string }>;
+  staleQuotes: Array<{ customer_name: string; project_number?: number; quote_total?: string; quote_sent_at?: string }>;
+  unpaidJobs: Array<{ customer_name: string; project_number?: number; quote_total?: string; scheduled_date?: string }>;
+  overduePayments: Array<{ customer_name: string; project_number?: number; quote_total?: string; payment_amount?: string; payment_due_date?: string }>;
+  dueSoon: Array<{ customer_name: string; project_number?: number; quote_total?: string; payment_amount?: string; payment_due_date?: string }>;
+}) {
+  try {
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard`;
+    const fmt = (n: string | number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(Number(n));
+    const fmtDate = (d: string) =>
+      new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const fmtTime = (t?: string) => {
+      if (!t) return '';
+      const [h, m] = t.split(':');
+      const hour = parseInt(h);
+      return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+    };
+
+    const totalItems =
+      todayJobs.length + staleLeads.length + staleQuotes.length +
+      unpaidJobs.length + overduePayments.length + dueSoon.length;
+
+    const today = new Date().toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric',
+    });
+
+    // ── section builder ──
+    const section = (
+      emoji: string,
+      title: string,
+      color: string,
+      rows: string[]
+    ) => rows.length === 0 ? '' : `
+      <div style="margin-bottom: 28px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid ${color}20;">
+          <span style="font-size: 18px;">${emoji}</span>
+          <h3 style="margin: 0; color: ${color}; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+            ${title} <span style="font-weight: 400; color: #94a3b8;">(${rows.length})</span>
+          </h3>
+        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+          ${rows.join('')}
+        </table>
+      </div>
+    `;
+
+    const row = (left: string, right: string, accent = '#f8fafc') => `
+      <tr style="border-bottom: 1px solid #f1f5f9; background: ${accent};">
+        <td style="padding: 10px 12px; color: #334155; font-size: 14px;">${left}</td>
+        <td style="padding: 10px 12px; color: #64748b; font-size: 13px; text-align: right; white-space: nowrap;">${right}</td>
+      </tr>
+    `;
+
+    const todayRows = todayJobs.map(j =>
+      row(
+        `<strong>${j.customer_name}</strong>${j.category ? ` <span style="color:#94a3b8;">· ${j.category}</span>` : ''}`,
+        `${j.scheduled_time ? fmtTime(j.scheduled_time) : 'Time TBD'}${j.assigned_to ? ` · ${j.assigned_to}` : ''}`
+      )
+    );
+
+    const staleLeadRows = staleLeads.map(l =>
+      row(
+        `<strong>${l.name}</strong>${l.category ? ` <span style="color:#94a3b8;">· ${l.category}</span>` : ''}`,
+        l.status || 'new'
+      )
+    );
+
+    const quoteRows = staleQuotes.map(q =>
+      row(
+        `<strong>${q.customer_name}</strong>${q.project_number ? ` <span style="color:#94a3b8;">#${q.project_number}</span>` : ''}`,
+        `${q.quote_total ? fmt(q.quote_total) : ''} · sent ${q.quote_sent_at ? fmtDate(q.quote_sent_at) : ''}`
+      )
+    );
+
+    const unpaidRows = unpaidJobs.map(j =>
+      row(
+        `<strong>${j.customer_name}</strong>${j.project_number ? ` <span style="color:#94a3b8;">#${j.project_number}</span>` : ''}`,
+        `${j.quote_total ? fmt(j.quote_total) : ''} · job ${j.scheduled_date ? fmtDate(j.scheduled_date) : ''}`
+      )
+    );
+
+    const overdueRows = overduePayments.map(p => {
+      const total = parseFloat(p.quote_total || '0');
+      const paid = parseFloat(p.payment_amount || '0');
+      const owed = paid > 0 ? Math.max(total - paid, 0) : total;
+      return row(
+        `<strong>${p.customer_name}</strong>${p.project_number ? ` <span style="color:#94a3b8;">#${p.project_number}</span>` : ''}`,
+        `<span style="color:#ef4444;font-weight:700;">${fmt(owed)}</span> · due ${p.payment_due_date ? fmtDate(p.payment_due_date) : ''}`,
+        '#fff5f5'
+      );
+    });
+
+    const dueSoonRows = dueSoon.map(p => {
+      const total = parseFloat(p.quote_total || '0');
+      const paid = parseFloat(p.payment_amount || '0');
+      const owed = paid > 0 ? Math.max(total - paid, 0) : total;
+      return row(
+        `<strong>${p.customer_name}</strong>${p.project_number ? ` <span style="color:#94a3b8;">#${p.project_number}</span>` : ''}`,
+        `${fmt(owed)} · due ${p.payment_due_date ? fmtDate(p.payment_due_date) : ''}`
+      );
+    });
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fc;padding:32px 0;">
+            <tr><td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+
+                <!-- Header -->
+                <tr>
+                  <td style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:28px 32px;">
+                    <p style="margin:0 0 4px 0;color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">${today}</p>
+                    <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">Good morning — here's your day</h1>
+                    <p style="margin:6px 0 0 0;color:#64748b;font-size:14px;">${companyName} · ${totalItems} item${totalItems !== 1 ? 's' : ''} need attention</p>
+                  </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                  <td style="padding:32px;">
+
+                    ${section('📅', "Today's Jobs", '#3b82f6', todayRows)}
+                    ${section('🔴', 'Overdue Payments', '#ef4444', overdueRows)}
+                    ${section('💳', 'Collect Payment', '#f97316', unpaidRows)}
+                    ${section('⏰', 'Due This Week', '#f59e0b', dueSoonRows)}
+                    ${section('📬', 'Quote Follow-up', '#eab308', quoteRows)}
+                    ${section('⚡', 'Stale Leads', '#6366f1', staleLeadRows)}
+
+                    <!-- CTA -->
+                    <div style="text-align:center;margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0;">
+                      <a href="${dashboardUrl}"
+                        style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:15px;">
+                        Open Dashboard →
+                      </a>
+                    </div>
+
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
+                    <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">
+                      ${companyName} · Daily Digest<br>
+                      <a href="${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/admin/settings" style="color:#6366f1;">Manage notification settings</a>
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td></tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <onboarding@resend.dev>',
+      to: companyEmail,
+      subject: `📋 ${today} — ${totalItems} item${totalItems !== 1 ? 's' : ''} need attention · ${companyName}`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Daily digest sent to:', companyEmail);
+  } catch (error) {
+    console.error('❌ Failed to send daily digest:', error);
     throw error;
   }
 }

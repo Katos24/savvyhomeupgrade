@@ -165,23 +165,17 @@ export async function POST(
         `;
         break;
 
-      case 'update-notifications':
-        console.log('Updating notification settings for company:', company.id);
-        console.log('Settings:', {
-          reminder_settings: data.reminder_settings,
-          notification_preferences: data.notification_preferences
-        });
-        
-        await sql`
-          UPDATE companies
-          SET 
-            reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
-            notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb
-          WHERE id = ${company.id}
-        `;
-        
-        console.log('✅ Notification settings updated');
-        break;
+ case 'update-notifications':
+  await sql`
+  UPDATE companies
+  SET 
+    reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
+    notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb,
+    daily_digest_enabled = ${data.notification_preferences?.daily_digest?.enabled ?? false},
+    daily_digest_time = ${data.notification_preferences?.daily_digest?.time ?? '07:00'}
+  WHERE id = ${company.id}
+`;
+  break;
 
       case 'update-custom-questions':
         console.log('Updating custom questions for company:', company.id);

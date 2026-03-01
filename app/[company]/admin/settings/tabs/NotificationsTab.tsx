@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Bell, Clock, Check, Mail, Smartphone, Layout } from 'lucide-react';
+import { Bell, Check, Mail } from 'lucide-react';
 
 export default function NotificationsTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -17,190 +15,199 @@ export default function NotificationsTab({ company, currentUser }: { company: an
     schedule_follow_up_days: 1,
   };
 
-  const [settings, setSettings] = useState(
-    company.reminder_settings || defaultSettings
-  );
+  const defaultDigest = {
+    enabled: false,
+    time: '07:00',
+  };
+
+  const [settings, setSettings] = useState(company.reminder_settings || defaultSettings);
+  const [digest, setDigest] = useState({
+  enabled: company.daily_digest_enabled ?? false,
+  time: company.daily_digest_time ?? '07:00',
+});
 
   const handleSave = async () => {
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
-      const response = await fetch(`/api/company/${company.slug}/settings`, {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update-notifications',
           data: {
             reminder_settings: settings,
+            notification_preferences: { daily_digest: digest },
           },
         }),
       });
-
-      const data = await response.json();
-
+      const data = await res.json();
       if (data.success) {
-        setSuccess('Notification settings saved successfully!');
-        setTimeout(() => {
-          setSuccess('');
-        }, 3000);
+        setSuccess('Notification settings saved!');
+        setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(data.error || 'Failed to save settings');
       }
-    } catch (err) {
-      console.error('Save error:', err);
+    } catch {
       setError('Failed to save settings');
     } finally {
       setLoading(false);
     }
   };
 
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
+      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
+    </label>
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Notifications & Reminders</h2>
-        <p className="text-slate-600">Automate follow-ups and never miss an opportunity</p>
+
+      {/* Page header */}
+      <div className="border-b border-gray-100 pb-5">
+        <h2 className="text-xl font-bold text-gray-900">Notifications & Reminders</h2>
+        <p className="text-sm text-gray-500 mt-1">Stay on top of your pipeline without logging in every day</p>
       </div>
 
+      {/* Alerts */}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-2">
-          <Check className="w-5 h-5" />
-          {success}
+        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+          <Check className="w-4 h-4" /> {success}
         </div>
       )}
-
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
-        
-        {/* Follow-up Reminders */}
-        <div className="pb-6 border-b border-slate-200">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-900">Follow-up Reminders</h3>
-              </div>
-              <p className="text-sm text-slate-600">
-                Get a daily email digest at 9:00 AM Eastern with leads that need follow-up
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.follow_up_enabled}
-                onChange={(e) => setSettings({ ...settings, follow_up_enabled: e.target.checked })}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+      {/* ── DAILY DIGEST ── */}
+      <div className="bg-white border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Daily Digest Email</span>
           </div>
+          <Toggle checked={digest.enabled} onChange={(v) => setDigest({ ...digest, enabled: v })} />
+        </div>
 
-          {settings.follow_up_enabled && (
-            <div className="space-y-4 mt-4 pl-7">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  General Follow-up Reminder
-                </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Remind me to follow up with projects after they haven't been updated
-                </p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={settings.follow_up_days}
-                    onChange={(e) => setSettings({ ...settings, follow_up_days: parseInt(e.target.value) || 3 })}
-                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="text-sm text-slate-700">days after last activity</span>
-                </div>
-              </div>
+        <div className="p-5 space-y-5">
+          <p className="text-sm text-gray-600">
+            Get a morning email with everything that needs your attention — jobs today, stale leads, unpaid invoices, overdue payments, and quotes with no response.
+            Only sends when there's actually something to action.
+          </p>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Quote Follow-up Reminder
-                </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Remind me to follow up after sending a quote
-                </p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={settings.quote_follow_up_days}
-                    onChange={(e) => setSettings({ ...settings, quote_follow_up_days: parseInt(e.target.value) || 2 })}
-                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="text-sm text-slate-700">days after quote sent</span>
-                </div>
+          {digest.enabled && (
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Send Time</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="time"
+                  value={digest.time}
+                  onChange={(e) => setDigest({ ...digest, time: e.target.value })}
+                  className="px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+                />
+                <span className="text-sm text-gray-400">local time</span>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Post-Appointment Follow-up
-                </label>
-                <p className="text-xs text-slate-500 mb-2">
-                  Remind me to follow up after a scheduled appointment
-                </p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={settings.schedule_follow_up_days}
-                    onChange={(e) => setSettings({ ...settings, schedule_follow_up_days: parseInt(e.target.value) || 1 })}
-                    className="w-20 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="text-sm text-slate-700">days after appointment date</span>
-                </div>
-              </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                Sends to <strong className="text-gray-600">{company.email}</strong>
+              </p>
             </div>
           )}
-        </div>
 
-        {/* How Reminders Work */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-1">How Reminders Work</h4>
-              <p className="text-sm text-blue-800">
-                You'll receive a daily email digest at 9:00 AM Eastern Time with all projects that need follow-up. 
-                Each project will show why it needs attention (e.g., "Quote sent 3 days ago", "No activity for 5 days").
-              </p>
+          {/* What's included */}
+          <div className="bg-gray-50 border border-gray-100 p-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">What's included</p>
+            <div className="space-y-2">
+              {[
+                { icon: '📅', label: "Today's scheduled jobs" },
+                { icon: '⚡', label: 'Leads with no activity in 2+ days' },
+                { icon: '📬', label: 'Quotes sent with no response after 3+ days' },
+                { icon: '💳', label: 'Completed jobs with no payment recorded' },
+                { icon: '🔴', label: 'Overdue payments' },
+                { icon: '⏰', label: 'Payments due this week' },
+              ].map(({ icon, label }) => (
+                <div key={label} className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="w-5 text-center">{icon}</span>
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Coming Soon */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <h4 className="font-semibold text-slate-700 mb-2">Coming Soon</h4>
-          <ul className="space-y-1 text-sm text-slate-600">
-            <li>• Customer appointment reminders (24hrs & 2hrs before)</li>
-            <li>• Payment due date reminders</li>
-            <li>• Custom reminder times per company</li>
-            <li>• SMS notifications</li>
-          </ul>
+      {/* ── FOLLOW-UP THRESHOLDS ── */}
+      <div className="bg-white border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Follow-up Thresholds</span>
+          </div>
+          <Toggle
+            checked={settings.follow_up_enabled}
+            onChange={(v) => setSettings({ ...settings, follow_up_enabled: v })}
+          />
         </div>
 
-        {/* Save Button */}
-        <div className="pt-4 border-t border-slate-200">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Saving...' : 'Save Settings'}
-          </button>
-        </div>
+        {settings.follow_up_enabled && (
+          <div className="p-5 space-y-5">
+            <p className="text-sm text-gray-500">
+              These thresholds control when items show up in your daily digest.
+            </p>
+
+            {[
+              {
+                label: 'No activity reminder',
+                desc: 'Flag leads/projects with no updates after X days',
+                key: 'follow_up_days',
+                max: 30,
+              },
+              {
+                label: 'Quote follow-up',
+                desc: 'Flag quotes with no response after X days',
+                key: 'quote_follow_up_days',
+                max: 30,
+              },
+              {
+                label: 'Post-appointment follow-up',
+                desc: 'Flag completed jobs missing payment after X days',
+                key: 'schedule_follow_up_days',
+                max: 7,
+              },
+            ].map(({ label, desc, key, max }) => (
+              <div key={key}>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-0.5">{label}</label>
+                <p className="text-xs text-gray-400 mb-2">{desc}</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max={max}
+                    value={settings[key]}
+                    onChange={(e) => setSettings({ ...settings, [key]: parseInt(e.target.value) || 1 })}
+                    className="w-20 px-3 py-2 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+                  />
+                  <span className="text-sm text-gray-500">days</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Save */}
+      <div className="bg-white border border-gray-200 px-5 py-4">
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition"
+        >
+          {loading ? 'Saving...' : 'Save Settings'}
+        </button>
       </div>
     </div>
   );

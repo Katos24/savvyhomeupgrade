@@ -98,7 +98,8 @@ export function textToHtml(
   companyLogo?: string,
   companyPhone?: string,
   brandColor1?: string,
-  brandColor2?: string
+  brandColor2?: string,
+  extraHtml?: string
 ): string {
   // Use custom colors or defaults
   const color1 = brandColor1 || '#667eea';
@@ -163,8 +164,9 @@ export function textToHtml(
                 <tr>
                   <td style="padding: 48px 40px;">
                     <div style="color: #334155;">
-                      ${bodyHtml}
-                    </div>
+  ${bodyHtml}
+  ${extraHtml || ''}
+</div>
                   </td>
                 </tr>
                 
