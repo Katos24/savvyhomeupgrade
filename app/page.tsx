@@ -1,6 +1,296 @@
-import Link from "next/link";
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+
+/* ── AI Chat Demo Component ── */
+function AIChatDemo() {
+  const [activeDemo, setActiveDemo] = useState(0);
+  const [phase, setPhase] = useState<'typing-q' | 'thinking' | 'typing-a' | 'done'>('typing-q');
+  const [displayedQ, setDisplayedQ] = useState('');
+  const [displayedA, setDisplayedA] = useState('');
+  const [dotCount, setDotCount] = useState(1);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const demos = [
+    {
+      question: "Who hasn't paid yet?",
+      answer: `3 unpaid jobs totaling $4,200:
+
+• Sarah Kim — Kitchen Remodel — $1,850
+  Quoted Mar 4, no payment received
+
+• James Park — HVAC Repair — $890
+  Completed Mar 6, invoice sent Mar 7
+
+• David Chen — Electrical Panel — $1,460
+  Completed Feb 28, 14 days overdue
+
+→ Recommend: Send payment reminders to all three.`,
+      color: '#6366f1',
+      colorDim: 'rgba(99,102,241,0.7)',
+    },
+    {
+      question: "What's on the schedule this week?",
+      answer: `2 jobs scheduled this week:
+
+📅 Thu, Mar 6 · 9:00 AM
+  James Park — HVAC Repair
+  AC unit rattling, not cooling. Home warranty.
+  Quote: $890 · Status: Confirmed
+
+📅 Sat, Mar 8 · 8:00 AM
+  Amanda Rodriguez — Deck Staining
+  800 sq ft pressure-treated wood
+  Quote: $1,850 · Status: Confirmed
+
+→ No scheduling conflicts detected.`,
+      color: '#22c55e',
+      colorDim: 'rgba(34,197,94,0.7)',
+    },
+    {
+      question: "Which leads went cold?",
+      answer: `5 leads inactive for 7+ days:
+
+🔴 Mike Torres — Roofing — 14 days
+   Storm damage, 3 photos. Never responded to quote.
+
+🟠 Jennifer Mills — Tile Work — 9 days
+   Bathroom shower surround. Opened quote email, no reply.
+
+🟠 Thomas Wright — Plumbing — 8 days
+   Kitchen leak detection. Called once, voicemail.
+
+🟡 Patricia Lee — Painting — 7 days
+   Exterior 2-story. Waiting on color selection.
+
+🟡 Elizabeth Davis — HVAC — 7 days
+   Water heater replacement. New lead, uncontacted.
+
+→ Recommend: Follow up with Mike & Jennifer first.`,
+      color: '#f87171',
+      colorDim: 'rgba(248,113,113,0.7)',
+    },
+  ];
+
+  const demo = demos[activeDemo];
+
+  useEffect(() => {
+    // Reset on demo change
+    setPhase('typing-q');
+    setDisplayedQ('');
+    setDisplayedA('');
+    setDotCount(1);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    let i = 0;
+    const q = demos[activeDemo].question;
+    const a = demos[activeDemo].answer;
+
+    // Phase 1: Type question
+    const typeQ = () => {
+      if (i < q.length) {
+        setDisplayedQ(q.slice(0, i + 1));
+        i++;
+        timeoutRef.current = setTimeout(typeQ, 30 + Math.random() * 40);
+      } else {
+        // Phase 2: Thinking
+        setPhase('thinking');
+        i = 0;
+        timeoutRef.current = setTimeout(typeA, 1200);
+      }
+    };
+
+    // Phase 3: Type answer
+    const typeA = () => {
+      setPhase('typing-a');
+      const typeNext = () => {
+        if (i < a.length) {
+          // Type in chunks for speed
+          const chunk = Math.min(3, a.length - i);
+          setDisplayedA(a.slice(0, i + chunk));
+          i += chunk;
+          timeoutRef.current = setTimeout(typeNext, 12 + Math.random() * 18);
+        } else {
+          setPhase('done');
+          // Auto-advance after pause
+          timeoutRef.current = setTimeout(() => {
+            setActiveDemo(prev => (prev + 1) % demos.length);
+          }, 4000);
+        }
+      };
+      typeNext();
+    };
+
+    timeoutRef.current = setTimeout(typeQ, 600);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDemo]);
+
+  // Thinking dots animation
+  useEffect(() => {
+    if (phase !== 'thinking') return;
+    const interval = setInterval(() => {
+      setDotCount(prev => (prev % 3) + 1);
+    }, 400);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  return (
+    <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      {/* Chat Window */}
+      <div style={{
+        background: '#0a0a0a',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 12,
+        overflow: 'hidden',
+        boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.06)',
+      }}>
+        {/* Window bar */}
+        <div style={{
+          background: '#111',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>✦</span>
+            <span style={{ fontFamily: 'DM Mono', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>AI ASSISTANT</span>
+          </div>
+          <div style={{ width: 50 }} />
+        </div>
+
+        {/* Chat body */}
+        <div style={{ padding: '24px 20px', minHeight: 340, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* User message */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{
+              background: demo.color,
+              color: 'white',
+              padding: '10px 16px',
+              borderRadius: '16px 16px 4px 16px',
+              fontSize: 14,
+              fontWeight: 600,
+              maxWidth: '80%',
+              minHeight: 20,
+            }}>
+              {displayedQ}
+              {phase === 'typing-q' && (
+                <span style={{ opacity: 0.7, animation: 'blink 0.8s infinite' }}>|</span>
+              )}
+            </div>
+          </div>
+
+          {/* AI response */}
+          {(phase === 'thinking' || phase === 'typing-a' || phase === 'done') && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <div style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                color: 'rgba(255,255,255,0.75)',
+                padding: '14px 18px',
+                borderRadius: '16px 16px 16px 4px',
+                fontSize: 13,
+                lineHeight: 1.65,
+                maxWidth: '90%',
+                fontFamily: "'DM Sans', sans-serif",
+                whiteSpace: 'pre-wrap',
+                minWidth: 60,
+              }}>
+                {phase === 'thinking' && (
+                  <span style={{ color: demo.colorDim, fontFamily: 'DM Mono', fontSize: 12, letterSpacing: '0.05em' }}>
+                    Searching your pipeline{'.'.repeat(dotCount)}
+                  </span>
+                )}
+                {(phase === 'typing-a' || phase === 'done') && (
+                  <>
+                    {displayedA}
+                    {phase === 'typing-a' && (
+                      <span style={{ opacity: 0.5, animation: 'blink 0.8s infinite' }}>▊</span>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input bar */}
+        <div style={{
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <div style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8,
+            padding: '10px 14px',
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.2)',
+            fontFamily: 'DM Mono',
+          }}>
+            Ask anything about your business...
+          </div>
+          <div style={{
+            width: 36, height: 36,
+            background: demo.color,
+            borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'background 0.3s',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Demo selector pills */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+        {demos.map((d, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveDemo(i)}
+            style={{
+              fontFamily: 'DM Mono',
+              fontSize: 11,
+              padding: '6px 14px',
+              border: `1px solid ${i === activeDemo ? d.color + '60' : 'rgba(255,255,255,0.08)'}`,
+              background: i === activeDemo ? d.color + '15' : 'rgba(255,255,255,0.02)',
+              color: i === activeDemo ? d.color : 'rgba(255,255,255,0.35)',
+              borderRadius: 4,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {d.question}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 export default function Home() {
+  const [mockView, setMockView] = useState<'cards' | 'table'>('cards');
+  
   return (
     <div className="min-h-screen text-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#0d0d0d' }}>
 
@@ -9,6 +299,11 @@ export default function Home() {
 
         html, body { background: #0d0d0d !important; margin: 0; }
         * { box-sizing: border-box; }
+
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
 
         .grain {
           position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.035;
@@ -298,174 +593,271 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── MOCK DASHBOARD ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="section-label">The Dashboard</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              Everything in one place.<br />
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 300 }}>Nothing scattered.</span>
-            </h2>
+{/* ── MOCK DASHBOARD ── */}
+<section className="py-24 px-6">
+  <div className="max-w-6xl mx-auto">
+    <div className="text-center mb-12">
+      <div className="section-label">The Dashboard</div>
+      <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em', color: 'white' }}>
+        Everything in one place.<br />
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 300 }}>Nothing scattered.</span>
+      </h2>
+    </div>
+
+    {/* Browser chrome */}
+    <div className="mock-dashboard">
+      {/* Browser bar */}
+      <div style={{ background: '#ffffff', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57', flexShrink: 0 }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e', flexShrink: 0 }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840', flexShrink: 0 }} />
+        <div style={{ flex: 1, margin: '0 12px', background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 4, padding: '3px 10px', fontFamily: 'DM Mono', fontSize: 11, color: 'rgba(0,0,0,0.35)', textAlign: 'center' }}>
+          lead2project.com/acme-roofing/dashboard
+        </div>
+        <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: 'rgba(234,88,12,0.7)', letterSpacing: '0.08em', flexShrink: 0 }}>$26,690 PIPELINE</div>
+      </div>
+
+      {/* Sidebar + Content layout */}
+      <div style={{ display: 'flex', minHeight: 480 }}>
+
+        {/* Sidebar */}
+        <div style={{ width: 52, background: '#f8fafc', borderRight: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12, gap: 8 }}>
+          {['📋', '📅', '💬', '⚙️'].map((icon, i) => (
+            <div key={i} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: i === 0 ? 'rgba(99,102,241,0.1)' : 'transparent', borderRadius: 4 }}>
+              {icon}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+          {/* Toolbar */}
+          <div style={{ background: '#ffffff', borderBottom: '1px solid rgba(0,0,0,0.05)', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {['All (47)', 'New (12)', 'Quoted (8)', 'Scheduled (6)', 'Completed (21)'].map((f, i) => (
+                <span key={f} style={{
+                  fontSize: 10, fontWeight: 700, padding: '3px 9px',
+                  fontFamily: 'DM Mono', letterSpacing: '0.02em',
+                  background: i === 0 ? '#6366f1' : 'rgba(0,0,0,0.04)',
+                  color: i === 0 ? 'white' : 'rgba(0,0,0,0.5)',
+                  border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.07)',
+                }}>
+                  {f}
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ width: 110, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)', padding: '3px 7px', fontSize: 10, color: 'rgba(0,0,0,0.3)', fontFamily: 'DM Mono' }}>🔍 Search...</div>
+              {/* INTERACTIVE BUTTONS */}
+              <button
+                onClick={() => setMockView('cards')}
+                className="mock-view-toggle"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  background: mockView === 'cards' ? '#6366f1' : 'rgba(0,0,0,0.04)',
+                  color: mockView === 'cards' ? 'white' : 'rgba(0,0,0,0.5)',
+                  border: mockView === 'cards' ? 'none' : '1px solid rgba(0,0,0,0.07)',
+                  fontFamily: 'DM Mono',
+                  cursor: 'pointer',
+                }}
+              >
+                Cards
+              </button>
+              <button
+                onClick={() => setMockView('table')}
+                className="mock-view-toggle"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  background: mockView === 'table' ? '#6366f1' : 'rgba(0,0,0,0.04)',
+                  color: mockView === 'table' ? 'white' : 'rgba(0,0,0,0.5)',
+                  border: mockView === 'table' ? 'none' : '1px solid rgba(0,0,0,0.07)',
+                  fontFamily: 'DM Mono',
+                  cursor: 'pointer',
+                }}
+              >
+                Table
+              </button>
+            </div>
           </div>
 
-          {/* Browser chrome */}
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, overflow: 'hidden', background: '#0f172a' }}>
-            {/* Browser bar */}
-            <div style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57', flexShrink: 0 }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e', flexShrink: 0 }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840', flexShrink: 0 }} />
-              <div style={{ flex: 1, margin: '0 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4, padding: '3px 10px', fontFamily: 'DM Mono', fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
-                lead2project.com/acme-roofing/dashboard
-              </div>
-              <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: 'rgba(234,88,12,0.7)', letterSpacing: '0.08em', flexShrink: 0 }}>$26,690 PIPELINE</div>
-            </div>
-
-            {/* Sidebar + Content layout */}
-            <div style={{ display: 'flex', minHeight: 480 }}>
-
-              {/* Sidebar */}
-              <div style={{ width: 52, background: '#0f172a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12, gap: 8 }}>
-                {['📋', '📅', '💬', '⚙️'].map((icon, i) => (
-                  <div key={i} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: i === 0 ? 'rgba(99,102,241,0.2)' : 'transparent', borderRadius: 4 }}>
-                    {icon}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
-                {/* Toolbar */}
-                <div style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                    {['All (47)', 'New (12)', 'Quoted (8)', 'Scheduled (6)', 'Completed (21)'].map((f, i) => (
-                      <span key={f} style={{
-                        fontSize: 10, fontWeight: 700, padding: '3px 9px',
-                        fontFamily: 'DM Mono', letterSpacing: '0.02em',
-                        background: i === 0 ? '#6366f1' : 'rgba(255,255,255,0.04)',
-                        color: i === 0 ? 'white' : 'rgba(255,255,255,0.35)',
-                        border: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.07)',
-                      }}>
-                        {f}
+          {/* Cards View */}
+          {mockView === 'cards' && (
+            <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, background: '#f8fafc' }}>
+             {[
+  { name: 'Mike Torres', desc: 'Roof damage after storm, shingles missing on south side. 3 photos uploaded.', cat: 'Roofing', status: 'New', statusHex: '#3b82f6', time: '2m ago', quote: null, isProject: false, scheduled: null, projectNum: null },
+  { name: 'Sarah Kim', desc: 'Full kitchen remodel — cabinets, countertops, tile backsplash. Budget flexible.', cat: 'Renovation', status: 'Quoted', statusHex: '#f97316', time: '1h ago', quote: '$18,500', isProject: true, scheduled: null, projectNum: 12 },
+  { name: 'James Park', desc: 'AC unit not cooling, making rattling noise. Has home warranty.', cat: 'HVAC', status: 'Scheduled', statusHex: '#22c55e', time: '3h ago', quote: '$890', isProject: true, scheduled: 'Thu Mar 6 · 9:00 AM', projectNum: 11 },
+  { name: 'Lisa Morgan', desc: 'Backyard fence, 60 linear ft cedar. Wants matching gate.', cat: 'Fencing', status: 'In Progress', statusHex: '#a855f7', time: 'Yesterday', quote: '$3,100', isProject: true, scheduled: null, projectNum: 10 },
+  { name: 'David Chen', desc: 'Electrical panel upgrade needed. 200 amp to 400 amp service.', cat: 'Electrical', status: 'Quoted', statusHex: '#f97316', time: '4h ago', quote: '$2,450', isProject: true, scheduled: null, projectNum: 9 },
+  { name: 'Jennifer Mills', desc: 'Bathroom tile work - shower surround and floor. 2 sketches included.', cat: 'Tile Work', status: 'New', statusHex: '#3b82f6', time: '6h ago', quote: null, isProject: false, scheduled: null, projectNum: null },
+  { name: 'Robert Jackson', desc: 'Gutter replacement and downspout installation. Full house.', cat: 'Gutters', status: 'Completed', statusHex: '#22c55e', time: '1d ago', quote: '$1,200', isProject: true, scheduled: 'Mar 1', projectNum: 8 },
+  { name: 'Amanda Rodriguez', desc: 'Deck staining - 800 sq ft pressure treated wood. Spring cleanup.', cat: 'Decks', status: 'In Progress', statusHex: '#a855f7', time: '3d ago', quote: '$1,850', isProject: true, scheduled: 'Mar 8', projectNum: 7 },
+  { name: 'Thomas Wright', desc: 'Plumbing inspection and leak detection. Kitchen sink area.', cat: 'Plumbing', status: 'New', statusHex: '#3b82f6', time: '5h ago', quote: null, isProject: false, scheduled: null, projectNum: null },
+  { name: 'Patricia Lee', desc: 'Exterior paint job - 2 story home. All trim and siding included.', cat: 'Painting', status: 'Quoted', statusHex: '#f97316', time: '2d ago', quote: '$4,200', isProject: true, scheduled: null, projectNum: 6 },
+  { name: 'Christopher Brown', desc: 'Landscape design and hardscaping. New patio and planting beds.', cat: 'Landscaping', status: 'Scheduled', statusHex: '#22c55e', time: '4d ago', quote: '$3,600', isProject: true, scheduled: 'Mar 10', projectNum: 5 },
+  { name: 'Elizabeth Davis', desc: 'Water heater replacement. Current unit 12 years old, needs upgrade.', cat: 'HVAC', status: 'New', statusHex: '#3b82f6', time: '30m ago', quote: null, isProject: false, scheduled: null, projectNum: null },
+].map((lead, i) => (
+                <div key={i} style={{
+                  background: lead.isProject ? '#f0fdf4' : '#eff6ff',
+                  border: `1px solid ${lead.isProject ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)'}`,
+                  overflow: 'hidden',
+                }}>
+                  {/* Color bar */}
+                  <div style={{ height: 3, background: lead.statusHex }} />
+                  <div style={{ padding: '10px 10px 10px' }}>
+                    {/* Status + project number */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', background: `${lead.statusHex}20`, color: lead.statusHex, border: `1px solid ${lead.statusHex}40` }}>
+                        {lead.status}
                       </span>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
-                    <div style={{ width: 110, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', padding: '3px 7px', fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'DM Mono' }}>🔍 Search...</div>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', background: '#6366f1', color: 'white', fontFamily: 'DM Mono' }}>Cards</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontFamily: 'DM Mono' }}>Table</span>
-                  </div>
-                </div>
+                      {lead.isProject && lead.projectNum && (
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#16a34a' }}>
+                          #{lead.projectNum}
+                        </span>
+                      )}
+                    </div>
 
-                {/* Cards grid — exact match to CardsView.tsx */}
-                <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, background: '#0f172a' }}>
-                  {[
-                    { name: 'Mike Torres', desc: 'Roof damage after storm, shingles missing on south side. 3 photos uploaded.', cat: 'Roofing', status: 'New', statusHex: '#3b82f6', time: '2m ago', quote: null, isProject: false, scheduled: null, projectNum: null },
-                    { name: 'Sarah Kim', desc: 'Full kitchen remodel — cabinets, countertops, tile backsplash. Budget flexible.', cat: 'Renovation', status: 'Quoted', statusHex: '#f97316', time: '1h ago', quote: '$18,500', isProject: true, scheduled: null, projectNum: 12 },
-                    { name: 'James Park', desc: 'AC unit not cooling, making rattling noise. Has home warranty.', cat: 'HVAC', status: 'Scheduled', statusHex: '#22c55e', time: '3h ago', quote: '$890', isProject: true, scheduled: 'Thu Mar 6 · 9:00 AM', projectNum: 11 },
-                    { name: 'Lisa Morgan', desc: 'Backyard fence, 60 linear ft cedar. Wants matching gate.', cat: 'Fencing', status: 'In Progress', statusHex: '#a855f7', time: 'Yesterday', quote: '$3,100', isProject: true, scheduled: null, projectNum: 10 },
-                  ].map((lead, i) => (
-                    <div key={i} style={{
-                      background: lead.isProject ? '#1a2e1f' : '#243447',
-                      border: `1px solid ${lead.isProject ? '#2d5a3d' : '#354f6e'}`,
-                      overflow: 'hidden',
-                      opacity: i === 3 ? 0.8 : 1,
-                      transition: 'border-color 0.2s',
-                    }}>
-                      {/* Color bar */}
-                      <div style={{ height: 3, background: lead.statusHex }} />
-                      <div style={{ padding: '10px 10px 10px' }}>
-                        {/* Status + project number */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', background: `${lead.statusHex}30`, color: lead.statusHex, border: `1px solid ${lead.statusHex}50` }}>
-                            {lead.status}
-                          </span>
-                          {lead.isProject && lead.projectNum && (
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#86efac' }}>
-                              #{lead.projectNum}
-                            </span>
-                          )}
-                        </div>
+                    {/* Name */}
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name}</div>
 
-                        {/* Name */}
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'white', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name}</div>
+                    {/* Description */}
+                    <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.55)', lineHeight: 1.5, marginBottom: 8, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {lead.desc}
+                    </div>
 
-                        {/* Description */}
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 8, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {lead.desc}
-                        </div>
+                    {/* Scheduled date */}
+                    {lead.scheduled && (
+                      <div style={{ fontSize: 9, color: 'rgba(0,0,0,0.4)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        📅 <span>{lead.scheduled}</span>
+                      </div>
+                    )}
 
-                        {/* Scheduled date */}
-                        {lead.scheduled && (
-                          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 3 }}>
-                            📅 <span>{lead.scheduled}</span>
-                          </div>
-                        )}
-
-                        {/* Footer row — exact match */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 7, borderTop: '1px solid rgba(100,116,139,0.3)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'DM Mono', flexShrink: 0 }}>{lead.time}</span>
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', background: '#0ea5e9', color: 'white', display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                              🏷 {lead.cat}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                            {lead.quote && <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', fontFamily: 'DM Mono' }}>{lead.quote}</span>}
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', background: '#7c3aed', color: 'white' }}>✦</span>
-                          </div>
-                        </div>
+                    {/* Footer row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 7, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                        <span style={{ fontSize: 9, color: 'rgba(0,0,0,0.3)', fontFamily: 'DM Mono', flexShrink: 0 }}>{lead.time}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', background: '#0ea5e9', color: 'white', display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                          🏷 {lead.cat}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                        {lead.quote && <span style={{ fontSize: 9, fontWeight: 700, color: '#16a34a', fontFamily: 'DM Mono' }}>{lead.quote}</span>}
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', background: '#7c3aed', color: 'white' }}>✦</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Table View */}
+          {mockView === 'table' && (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9, background: '#f8fafc' }}>
+                <thead>
+                  <tr style={{ background: '#ffffff', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                    {['Project #', 'Name', 'Contact', 'Category', 'Status', 'Scheduled', 'Quote', 'Payment', 'Media', 'Created'].map(h => (
+                      <th key={h} style={{ padding: '5px 8px', textAlign: 'left', fontFamily: 'DM Mono', fontSize: 8, color: 'rgba(0,0,0,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { proj: '#12', name: 'Sarah Kim', contact: '(555) 201-3847', cat: 'Renovation', status: 'Quoted', statusHex: '#f97316', scheduled: '—', quote: '$18,500', payment: '—', media: '2 photos', created: 'Mar 4' },
+                    { proj: '#11', name: 'James Park', contact: '(555) 948-2210', cat: 'HVAC', status: 'Scheduled', statusHex: '#22c55e', scheduled: 'Mar 6', quote: '$890', payment: 'Pending', media: '1 photo', created: 'Mar 3' },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ background: '#ffffff', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                      <td style={{ padding: '5px 8px', color: '#16a34a', fontWeight: 700, fontFamily: 'DM Mono' }}>{row.proj}</td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.85)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.name}</td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>{row.contact}</td>
+                      <td style={{ padding: '5px 8px' }}><span style={{ padding: '1px 5px', background: 'rgba(14,165,233,0.1)', color: '#0284c7', fontWeight: 700, fontSize: 8 }}>{row.cat}</span></td>
+                      <td style={{ padding: '5px 8px' }}><span style={{ padding: '1px 5px', background: row.statusHex + '20', color: row.statusHex, fontWeight: 700, fontSize: 8 }}>{row.status}</span></td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>{row.scheduled}</td>
+                      <td style={{ padding: '5px 8px', color: '#16a34a', fontWeight: 700, fontFamily: 'DM Mono' }}>{row.quote}</td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.35)' }}>{row.payment}</td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.5)' }}>{row.media}</td>
+                      <td style={{ padding: '5px 8px', color: 'rgba(0,0,0,0.35)', whiteSpace: 'nowrap' }}>{row.created}</td>
+                    </tr>
                   ))}
-                </div>
-
-                {/* Table preview — collapsed, just header + 2 rows */}
-                <div style={{ margin: '0 12px 12px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ background: '#1e293b', padding: '5px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em' }}>TABLE VIEW — 47 LEADS</span>
-                    <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(234,88,12,0.6)', letterSpacing: '0.05em' }}>SWITCH VIEW ↑</span>
-                  </div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9 }}>
-                      <thead>
-                        <tr style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                          {['Project #', 'Name', 'Contact', 'Category', 'Status', 'Scheduled', 'Quote', 'Payment', 'Media', 'Created'].map(h => (
-                            <th key={h} style={{ padding: '5px 8px', textAlign: 'left', fontFamily: 'DM Mono', fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h} ⇅</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { proj: '#12', name: 'Sarah Kim', contact: '(555) 201-3847', cat: 'Renovation', status: 'Quoted', statusHex: '#f97316', scheduled: '—', quote: '$18,500', payment: '—', media: '2 photos', created: 'Mar 4' },
-                          { proj: '#11', name: 'James Park', contact: '(555) 948-2210', cat: 'HVAC', status: 'Scheduled', statusHex: '#22c55e', scheduled: 'Mar 6', quote: '$890', payment: 'Pending', media: '1 photo', created: 'Mar 3' },
-                        ].map((row, i) => (
-                          <tr key={i} style={{ background: i === 0 ? 'rgba(26,46,31,0.8)' : 'rgba(26,46,31,0.5)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <td style={{ padding: '5px 8px', color: '#4ade80', fontWeight: 700, fontFamily: 'DM Mono' }}>{row.proj}</td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.85)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.name}</td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{row.contact}</td>
-                            <td style={{ padding: '5px 8px' }}><span style={{ padding: '1px 5px', background: 'rgba(14,165,233,0.2)', color: 'white', fontWeight: 700, fontSize: 8 }}>{row.cat}</span></td>
-                            <td style={{ padding: '5px 8px' }}><span style={{ padding: '1px 5px', background: row.statusHex, color: 'white', fontWeight: 700, fontSize: 8 }}>{row.status}</span></td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{row.scheduled}</td>
-                            <td style={{ padding: '5px 8px', color: '#4ade80', fontWeight: 700, fontFamily: 'DM Mono' }}>{row.quote}</td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.35)' }}>{row.payment}</td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.5)' }}>{row.media}</td>
-                            <td style={{ padding: '5px 8px', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>{row.created}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
+                </tbody>
+              </table>
             </div>
+          )}
 
-            <div style={{ padding: '7px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>SHOWING 4 OF 47 LEADS · CARDS + TABLE VIEW</span>
-              <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(167,139,250,0.6)', letterSpacing: '0.05em' }}>✦ AI BRIEF ON EVERY LEAD</span>
+        </div>
+      </div>
+
+      <div style={{ padding: '7px 16px', background: 'rgba(0,0,0,0.02)', borderTop: '1px solid rgba(0,0,0,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(0,0,0,0.25)', letterSpacing: '0.1em' }}>SHOWING 4 OF 47 LEADS · {mockView === 'cards' ? 'CARDS' : 'TABLE'} VIEW</span>
+        <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(234,88,12,0.6)', letterSpacing: '0.05em' }}>✦ AI BRIEF ON EVERY LEAD</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+      {/* ── AI ASSISTANT LIVE DEMO ── */}
+      <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '80px 24px', background: 'rgba(255,255,255,0.005)', position: 'relative', overflow: 'hidden' }}>
+        {/* Background glow */}
+        <div style={{
+          position: 'absolute',
+          width: 500, height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+        }} />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-12">
+            <div className="section-label">AI Assistant</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12 }}>
+              Ask it anything. <span style={{ color: '#a78bfa' }}>Watch it work.</span>
+            </h2>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6, fontWeight: 300 }}>
+              The AI has full context of your pipeline — every lead, quote, and note. Ask a question, get a real answer in seconds using your actual data.
+            </p>
+          </div>
+
+          <AIChatDemo />
+
+          {/* More example questions */}
+          <div style={{ marginTop: 40, textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 14, fontWeight: 300, fontFamily: 'DM Mono', letterSpacing: '0.05em'}}>
+              AND HUNDREDS MORE...
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+              {[
+                '"Summarize the Johnson job"',
+                '"How much have I quoted this month?"',
+                '"Who\'s my biggest customer?"',
+                '"What\'s the pipeline total?"',
+                '"Which jobs need follow-ups?"',
+                '"Show me last week\'s activity"',
+              ].map(q => (
+                <span key={q} style={{
+                  fontFamily: 'DM Mono', fontSize: 10, padding: '5px 10px',
+                  border: '1px solid rgba(167,139,250,0.15)',
+                  background: 'rgba(167,139,250,0.04)',
+                  color: 'rgba(167,139,250,0.6)',
+                  borderRadius: 3,
+                }}>
+                  {q}
+                </span>
+              ))}
             </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <Link href="/signup?plan=pro" className="cta-primary px-8 py-3.5 text-base" style={{ borderRadius: 4, display: 'inline-block' }}>
+              Unlock AI Assistant →
+            </Link>
           </div>
         </div>
       </section>
