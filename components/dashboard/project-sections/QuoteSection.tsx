@@ -180,15 +180,25 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     <div className="overflow-hidden">
       {/* Header */}
       <div className="px-4 py-4 border-b border-gray-50 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-          <span className="w-5 h-5 bg-blue-50 flex items-center justify-center text-xs">💰</span>
-          Quote
-          {quoteData.length > 0 && (
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold">
-              {fmt(total)}
-            </span>
-          )}
-        </h3>
+      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+  <span className="w-5 h-5 bg-blue-50 flex items-center justify-center text-xs">💰</span>
+  Quote
+  {quoteData.length > 0 && (
+    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold">
+      {fmt(total)}
+    </span>
+  )}
+  {lead?.quote_accepted_at && (
+    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1">
+      ✅ Accepted
+    </span>
+  )}
+  {lead?.quote_declined_at && !lead?.quote_accepted_at && (
+    <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1">
+      ✗ Declined
+    </span>
+  )}
+</h3>
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {isEditing ? (

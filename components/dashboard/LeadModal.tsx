@@ -213,26 +213,33 @@ export default function LeadModal({
     return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
 
-  const handleStatusChange = async () => {
-    const oldStatus = lead.status || statusOptions[0]?.value;
-    if (isUpdatingStatus || selectedStatus === oldStatus) return;
-    setIsUpdatingStatus(true);
-    try {
-      const success = await onUpdateStatus(lead.id, selectedStatus, oldStatus);
-      if (success) {
-        toast.success('Status updated!');
-        await onRefresh();
-      } else {
-        toast.error('Failed to update status');
-        setSelectedStatus(oldStatus);
-      }
-    } catch {
+ const handleStatusChange = async () => {
+  const oldStatus = lead.status || statusOptions[0]?.value;
+  if (isUpdatingStatus || selectedStatus === oldStatus) return;
+  setIsUpdatingStatus(true);
+  try {
+    const success = await onUpdateStatus(lead.id, selectedStatus, oldStatus);
+    if (success) {
+      // ✅ Log the status change to activity
+      const oldStatusLabel = getStatusConfig(oldStatus)?.label || oldStatus;
+      const newStatusLabel = getStatusConfig(selectedStatus)?.label || selectedStatus;
+      const statusChangeNote = `Status changed from "${oldStatusLabel}" to "${newStatusLabel}"`;
+      
+      await onAddNote(lead.id, statusChangeNote);
+      
+      toast.success('Status updated!');
+      await onRefresh();
+    } else {
       toast.error('Failed to update status');
       setSelectedStatus(oldStatus);
-    } finally {
-      setIsUpdatingStatus(false);
     }
-  };
+  } catch {
+    toast.error('Failed to update status');
+    setSelectedStatus(oldStatus);
+  } finally {
+    setIsUpdatingStatus(false);
+  }
+};
 
   const handleSaveStatusWithCheck = () => {
     const oldStatus = lead.status || statusOptions[0]?.value;
@@ -474,6 +481,8 @@ export default function LeadModal({
                     ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
                     : 'bg-white/6 border border-white/12 text-white/50'
                 }`}>
+
+                  
                   <CreditCard className="w-3 h-3" />
                   {lead.payment_status === 'paid'
                     ? 'Paid in Full'
@@ -481,8 +490,11 @@ export default function LeadModal({
                     ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.payment_amount || 0))} paid`
                     : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} due`}
                 </div>
+                
               )}
             </div>
+
+            
 
             {/* Tab bar */}
             <div className="flex overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>

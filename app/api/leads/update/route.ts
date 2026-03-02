@@ -492,16 +492,28 @@ export async function POST(request: Request) {
       }
 
       try {
-        await sendQuoteToCustomer({
-          customerEmail: lead.email,
-          customerName: lead.name,
-          companyName: lead.company_name || 'Your Service Provider',
-          companyPhone: lead.company_phone,
-          companyId: lead.company_id,
-          quoteTotal: parseFloat(lead.quote_total),
-          quoteItems: quoteItems,
-          projectDescription: lead.category || 'Your project',
-        });
+    // Generate token
+const crypto = await import('crypto');
+const quoteToken = crypto.randomBytes(32).toString('hex');
+
+// Store token on project
+await sql`
+  UPDATE projects
+  SET quote_token = ${quoteToken}
+  WHERE id = ${lead.project_id}
+`;
+
+await sendQuoteToCustomer({
+  customerEmail: lead.email,
+  customerName: lead.name,
+  companyName: lead.company_name || 'Your Service Provider',
+  companyPhone: lead.company_phone,
+  companyId: lead.company_id,
+  quoteTotal: parseFloat(lead.quote_total),
+  quoteItems: quoteItems,
+  projectDescription: lead.category || 'Your project',
+  quoteToken: quoteToken,
+});
 
        await sql`
   UPDATE projects 

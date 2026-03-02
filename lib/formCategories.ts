@@ -18,6 +18,7 @@ export const BUSINESS_TYPES = [
   { value: 'real_estate', label: 'Real Estate', emoji: '🏘️' },
   { value: 'education_services', label: 'Education & Tutoring', emoji: '📚' },
   { value: 'food_services', label: 'Food Services', emoji: '🍽️' },
+  
 ];
 
 export const DEFAULT_STATUSES = [
@@ -88,6 +89,7 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'maintenance', label: 'Maintenance/Tune-up', emoji: '🔧' },
     { value: 'emergency', label: 'Emergency Service', emoji: '🚨' },
     { value: 'other', label: 'Other', emoji: '📋' },
+    
   ],
 
   electrical: [

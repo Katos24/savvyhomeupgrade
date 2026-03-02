@@ -25,6 +25,8 @@ export function middleware(request: NextRequest) {
     '/api/stripe/webhook',
     '/api/cron/check-trials',
     '/api/cron/send-reminders',
+    '/api/quotes/respond',
+
     '/api/upload',
     '/api/leads/preview-email',
 

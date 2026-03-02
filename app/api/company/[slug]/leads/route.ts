@@ -39,7 +39,6 @@ export async function GET(request: Request, { params }: Props) {
         p.quote_sent_at,
         p.quote_accepted_at,
         p.schedule_emails,
-        p.quote_accepted_at,
         p.payment_status,
         p.quote_emails,
         p.payment_amount,
