@@ -1377,7 +1377,7 @@ export default function Home() {
           </div>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Link href="/pricing" className="nav-link" style={{ display: 'none' }} className="nav-link hidden md:inline">Pricing</Link>
+            <Link href="/pricing"  style={{ display: 'none' }} className="nav-link hidden md:inline">Pricing</Link>
             <Link href="#features" className="nav-link hidden md:inline">Features</Link>
             <Link href="/login" className="nav-link hidden sm:inline" style={{ padding: '6px 10px' }}>Sign in</Link>
             <Link href="/signup" className="cta-primary" style={{ borderRadius: 4, padding: '8px 16px', fontSize: 14 }}>
