@@ -961,7 +961,6 @@ export default function LeadModal({
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-gray-50">
                       <span className={`text-xs font-semibold ${confidence ? 'text-amber-500' : 'text-gray-400'}`}>
-                        {confidence ? '✓ Name + City + Email' : '~ Name + City'}
                       </span>
                       {rl.project_id ? (
                         <span className="text-xs text-gray-400">Project #{rl.project_number || rl.project_id}</span>

@@ -162,7 +162,7 @@ export default function UploadFormStepOne({
               <option value="">Select a service...</option>
               {categories.map(cat => (
                 <option key={cat.value} value={cat.value}>
-                  {cat.emoji} {cat.label}
+                  {cat.label}
                 </option>
               ))}
             </select>
