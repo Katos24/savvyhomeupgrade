@@ -11,6 +11,7 @@ function AIChatDemo() {
   const [displayedA, setDisplayedA] = useState('');
   const [dotCount, setDotCount] = useState(1);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   const demos = [
     {
@@ -314,7 +315,7 @@ export default function Home() {
           position: absolute;
           width: 600px; height: 600px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(234,88,12,0.15) 0%, transparent 70%);
+background: radial-gradient(circle, rgba(92,203,58,0.15) 0%, transparent 70%);
           top: -100px; right: -100px;
           pointer-events: none;
         }
@@ -335,9 +336,9 @@ export default function Home() {
           transition: border-color 0.2s, background 0.2s;
         }
         .stat-card:hover {
-          border-color: rgba(234,88,12,0.3);
-          background: rgba(234,88,12,0.04);
-        }
+  border-color: rgba(92,203,58,0.3);
+  background: rgba(92,203,58,0.04);
+}
 
         .feature-card {
           border: 1px solid rgba(255,255,255,0.06);
@@ -351,7 +352,7 @@ export default function Home() {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(234,88,12,0.5), transparent);
+background: linear-gradient(90deg, transparent, rgba(92,203,58,0.5), transparent);
           opacity: 0;
           transition: opacity 0.2s;
         }
@@ -366,7 +367,7 @@ export default function Home() {
           font-family: 'DM Mono', monospace;
           font-size: 11px;
           letter-spacing: 0.15em;
-          color: rgba(234,88,12,0.8);
+color: rgba(92,203,58,0.9);
           text-transform: uppercase;
         }
 
@@ -376,26 +377,26 @@ export default function Home() {
         }
 
         .badge {
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: rgba(234,88,12,0.9);
-          border: 1px solid rgba(234,88,12,0.2);
-          background: rgba(234,88,12,0.06);
-          padding: 4px 12px;
-          display: inline-block;
-        }
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(92,203,58,0.95);
+  border: 1px solid rgba(92,203,58,0.25);
+  background: rgba(92,203,58,0.08);
+  padding: 4px 12px;
+  display: inline-block;
+}
 
         .cta-primary {
-          background: #ea580c;
+          background: #5CCB3A
           color: white;
           font-weight: 700;
           letter-spacing: 0.01em;
           transition: background 0.15s, transform 0.1s;
         }
         .cta-primary:hover {
-          background: #c2410c;
+  background: #3FAE2A;
           transform: translateY(-1px);
         }
 
@@ -421,9 +422,9 @@ export default function Home() {
           white-space: nowrap;
         }
         .industry-tag:hover {
-          border-color: rgba(234,88,12,0.3);
+          border-color: rgba(92,203,58,0.3);
+  background: rgba(92,203,58,0.05);
           color: white;
-          background: rgba(234,88,12,0.05);
         }
 
         .testimonial-card {
@@ -441,8 +442,8 @@ export default function Home() {
 
         .mono { font-family: 'DM Mono', monospace; }
 
-        .orange { color: #ea580c; }
-        .orange-dim { color: rgba(234,88,12,0.7); }
+        .orange { color: #5CCB3A; }
+.orange-dim { color: rgba(92,203,58,0.7); }
 
         .section-label {
           font-family: 'DM Mono', monospace;
@@ -516,7 +517,7 @@ export default function Home() {
       <header className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,13,13,0.85)', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div style={{ width: 32, height: 32, background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 32, height: 32, background: '#5CCB3A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontFamily: 'DM Mono', fontSize: 11, fontWeight: 700, color: 'white', letterSpacing: '0.05em' }}>L2P</span>
             </div>
             <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}>Lead2Project</span>
@@ -585,7 +586,7 @@ export default function Home() {
             { num: '100%', label: 'Leads captured & organized', sub: 'nothing falls through' },
           ].map(s => (
             <div key={s.num} className="stat-card p-5">
-              <div style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 900, letterSpacing: '-0.04em', color: '#ea580c', fontFamily: 'DM Mono' }}>{s.num}</div>
+              <div style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 900, letterSpacing: '-0.04em', color: '#5CCB3A', fontFamily: 'DM Mono' }}>{s.num}</div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, marginTop: 4, lineHeight: 1.4 }}>{s.label}</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 2, fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>{s.sub}</div>
             </div>
@@ -794,7 +795,7 @@ export default function Home() {
 
       <div style={{ padding: '7px 16px', background: 'rgba(0,0,0,0.02)', borderTop: '1px solid rgba(0,0,0,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(0,0,0,0.25)', letterSpacing: '0.1em' }}>SHOWING 4 OF 47 LEADS · {mockView === 'cards' ? 'CARDS' : 'TABLE'} VIEW</span>
-        <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(234,88,12,0.6)', letterSpacing: '0.05em' }}>✦ AI BRIEF ON EVERY LEAD</span>
+        <span style={{ fontFamily: 'DM Mono', fontSize: 9, color: 'rgba(92,203,58,0.8)', letterSpacing: '0.05em' }}>✦ AI BRIEF ON EVERY LEAD</span>
       </div>
     </div>
   </div>
