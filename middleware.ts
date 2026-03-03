@@ -5,8 +5,6 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token');
   const pathname = request.nextUrl.pathname;
 
-  console.log('Middleware checking:', { pathname, hasToken: !!token });
-
   const publicRoutes = [
     '/login',
     '/signup',
@@ -16,31 +14,20 @@ export function middleware(request: NextRequest) {
 
   const isApiRoute = pathname.startsWith('/api/');
 
-  const publicApiRoutes = [
-    '/api/auth/login',
-    '/api/auth/logout',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/signup',
-    '/api/stripe/webhook',
-    '/api/cron/check-trials',
-    '/api/cron/send-reminders',
-    '/api/quotes/respond',
+  // ✅ Stripe + public API bypass
+  const isPublicApiRoute =
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/signup') ||
+    pathname.startsWith('/api/stripe/webhook') ||
+    pathname.startsWith('/api/webhooks/stripe') || // covers both cases
+    pathname.startsWith('/api/cron/') ||
+    pathname.startsWith('/api/quotes/respond') ||
+    pathname.startsWith('/api/upload') ||
+    pathname.startsWith('/api/leads/preview-email');
 
-    '/api/upload',
-    '/api/leads/preview-email',
-
-  ];
-
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/api/cron/');
-
-  console.log('DEBUG:', { 
-    pathname, 
-    isApiRoute, 
-    isPublicApiRoute,
-    matchesCron: pathname.startsWith('/api/cron/')
-  });
+  const isPublicRoute = publicRoutes.some(route =>
+    pathname.startsWith(route)
+  );
 
   const isProtectedRoute =
     pathname.includes('/dashboard') ||
@@ -48,12 +35,10 @@ export function middleware(request: NextRequest) {
 
   if (isApiRoute) {
     if (isPublicApiRoute) {
-      console.log('Public API route - allowing through');
       return NextResponse.next();
     }
 
     if (!token) {
-      console.log('Protected API route without token, returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -61,7 +46,6 @@ export function middleware(request: NextRequest) {
   }
 
   if (isProtectedRoute && !token) {
-    console.log('No token found, redirecting to login');
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
