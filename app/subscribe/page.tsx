@@ -46,8 +46,6 @@ function SubscribePageContent() {
   const [loading, setLoading] = useState(true);
 
   const subscriptionStatus = searchParams.get('subscription');
-  const plan = (searchParams.get('plan') || 'basic') as 'basic' | 'pro';
-  const planConfig = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
 
   useEffect(() => {
     async function loadData() {
@@ -128,7 +126,7 @@ function SubscribePageContent() {
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
                 Back to Dashboard
               </button>
-              <button onClick={() => router.push(`/subscribe?plan=${plan}`)}
+              <button onClick={() => router.push('/subscribe')}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition">
                 Try Again
               </button>
@@ -139,7 +137,7 @@ function SubscribePageContent() {
     );
   }
 
-  // Default: show subscribe page
+  // Default: show subscribe page with both plans
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
@@ -171,72 +169,73 @@ function SubscribePageContent() {
             🚀 Almost There!
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6">Complete Your Signup</h1>
-          <p className="text-xl text-gray-600 mb-4 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Add your payment method to start your 14-day free trial. You won't be charged until the trial ends.
           </p>
-          {/* Plan switcher */}
-          <div className="inline-flex gap-2 bg-gray-100 p-1 rounded-lg mt-2">
-            <a href="/subscribe?plan=basic"
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition ${plan === 'basic' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              Basic — $49/mo
-            </a>
-            <a href="/subscribe?plan=pro"
-              className={`px-4 py-2 rounded-md text-sm font-semibold transition ${plan === 'pro' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              Pro — $99/mo
-            </a>
-          </div>
         </div>
 
-        {/* Pricing Card */}
-        <div className="max-w-md mx-auto mb-16">
-          <div className={`bg-white rounded-2xl shadow-2xl p-8 relative overflow-hidden border-4 ${plan === 'pro' ? 'border-indigo-400' : 'border-blue-200'}`}>
-            {plan === 'pro' && (
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 text-sm font-bold">
-                ⭐ MOST POPULAR
-              </div>
-            )}
+        {/* Both Plan Cards Side by Side */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+          {(['basic', 'pro'] as const).map((planKey) => {
+            const config = PLAN_CONFIG[planKey];
+            const isPro = planKey === 'pro';
 
-            <div className="text-center pt-4">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{planConfig.label} Plan</h3>
-              <div className="flex items-baseline justify-center gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-gray-900">{planConfig.price}</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-8">
-                <p className="text-green-800 font-semibold">🎉 First 14 days FREE</p>
-                <p className="text-green-700 text-sm">
-                  Card required — charged {planConfig.price}/mo after trial
-                </p>
-              </div>
-
-              <div className="text-left space-y-3 mb-8">
-                {planConfig.features.map(f => (
-                  <div key={f} className="flex items-start gap-3">
-                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                    <span className="text-gray-700">{f}</span>
+            return (
+              <div
+                key={planKey}
+                className={`bg-white rounded-2xl shadow-2xl p-8 relative overflow-hidden border-4 ${
+                  isPro ? 'border-indigo-400' : 'border-blue-200'
+                }`}
+              >
+                {isPro && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 text-sm font-bold">
+                    ⭐ MOST POPULAR
                   </div>
-                ))}
+                )}
+
+                <div className="text-center pt-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{config.label} Plan</h3>
+                  <div className="flex items-baseline justify-center gap-1 mb-6">
+                    <span className="text-5xl font-extrabold text-gray-900">{config.price}</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-8">
+                    <p className="text-green-800 font-semibold">🎉 First 14 days FREE</p>
+                    <p className="text-green-700 text-sm">
+                      Card required — charged {config.price}/mo after trial
+                    </p>
+                  </div>
+
+                  <div className="text-left space-y-3 mb-8">
+                    {config.features.map((f) => (
+                      <div key={f} className="flex items-start gap-3">
+                        <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                        <span className="text-gray-700">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {company && currentUser ? (
+                    <SubscribeButton
+                      companyId={company.id}
+                      companyEmail={company.email}
+                      subscriptionStatus={company.subscription_status}
+                      trialEndsAt={company.trial_ends_at}
+                      variant="banner"
+                      plan={planKey}
+                    />
+                  ) : (
+                    <div className="text-gray-500">Loading...</div>
+                  )}
+
+                  <p className="text-xs text-gray-500 mt-4">
+                    By subscribing, you agree to our Terms of Service
+                  </p>
+                </div>
               </div>
-
-              {company && currentUser ? (
-                <SubscribeButton
-                  companyId={company.id}
-                  companyEmail={company.email}
-                  subscriptionStatus={company.subscription_status}
-                  trialEndsAt={company.trial_ends_at}
-                  variant="banner"
-                  plan={plan}
-                />
-              ) : (
-                <div className="text-gray-500">Loading...</div>
-              )}
-
-              <p className="text-xs text-gray-500 mt-4">
-                By subscribing, you agree to our Terms of Service
-              </p>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* FAQ */}
@@ -244,7 +243,7 @@ function SubscribePageContent() {
           <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
           <div className="space-y-6">
             {[
-              { q: '💳 When will I be charged?', a: `Your card will be charged ${planConfig.price}/month after your 14-day free trial ends. Cancel anytime before then to avoid charges.` },
+              { q: '💳 When will I be charged?', a: 'Your card will be charged after your 14-day free trial ends. Cancel anytime before then to avoid charges.' },
               { q: '🔒 Can I cancel during the trial?', a: "Yes! Cancel anytime during your trial from billing settings. You won't be charged if you cancel before the trial ends." },
               { q: '🔄 Can I switch plans?', a: 'Yes — upgrade or downgrade anytime. Changes take effect immediately.' },
             ].map(({ q, a }) => (
