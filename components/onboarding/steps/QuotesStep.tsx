@@ -95,14 +95,22 @@ const QuotesStep = forwardRef<QuotesStepRef, { company: any; categories: Categor
     return (
       <div className="space-y-4">
         <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quote Templates</span>
-              {quoteTemplates.length > 0 && (
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{quoteTemplates.length}</span>
-              )}
-            </div>
+         <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quote Templates</span>
+                    {quoteTemplates.length > 0 && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{quoteTemplates.length}</span>}
+                  </div>
+                  <button onClick={() => setShowQuoteCatSelector(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Create Template</button>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Create reusable quote templates for each service category. When you send a quote for a roofing job, it auto-fills with your roofing prices — just adjust the amounts and send. No retyping every time.
+                </p>
+                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-base flex-shrink-0">💡</span>
+                  <p className="text-xs text-amber-800">Each template is tied to a category. When a lead comes in for "Kitchen Remodel," your Kitchen Remodel template is ready to go.</p>
+                </div>
             <button onClick={() => setShowQuoteCatSelector(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition">
               <Plus className="w-3 h-3" /> Create Template

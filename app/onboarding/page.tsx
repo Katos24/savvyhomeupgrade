@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCodeLib from 'qrcode';
+
 import {
   Building, Mail, Phone, Globe, Palette, Plus, X, Trash2, CheckSquare,
   Save, ChevronRight, ChevronLeft, Check, Copy, Link2, ChevronUp, ChevronDown,
@@ -43,6 +45,7 @@ const COLOR_PRESETS = [
   { name: 'Red', c1: '#ef4444', c2: '#dc2626' },
 ];
 
+
 const getColorHex = (name: string) => COLOR_OPTIONS.find(c => c.value === name)?.hex || '#3b82f6';
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 const formatPhone = (v: string) => {
@@ -69,6 +72,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<any>(null);
+  
 
   useEffect(() => {
     async function loadData() {
@@ -155,6 +159,8 @@ function OnboardingWizard({ company }: { company: any }) {
   const [showAddStatus, setShowAddStatus] = useState(false);
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [newStatusColor, setNewStatusColor] = useState('blue');
+  const [expandedStatusIdx, setExpandedStatusIdx] = useState<number | null>(null);
+
 
   // ── Step 4: Form ──
   const [ctaHeading, setCtaHeading] = useState(company.cta_heading || '');
@@ -178,11 +184,17 @@ function OnboardingWizard({ company }: { company: any }) {
   // ── Step 6: Done ──
   const [copied, setCopied] = useState(false);
   const publicLink = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : '';
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
-  useEffect(() => {
-    fetch(`/api/company/${company.slug}/quote-templates`)
-      .then(r => r.json()).then(d => { if (d.success) setTemplates(d.templates || []); }).catch(() => {});
-  }, [company.slug]);
+
+
+useEffect(() => {
+  const link = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : '';
+  if (link) {
+    QRCodeLib.toDataURL(link, { width: 300, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } })
+      .then(url => setQrCodeUrl(url));
+  }
+}, [company.slug]);
 
   const showErr = (msg: string) => { setError(msg); setTimeout(() => setError(''), 4000); };
   const isDone = currentStep === STEPS.length - 1;
@@ -424,89 +436,92 @@ function OnboardingWizard({ company }: { company: any }) {
           </div>
         </div>
 
-        {/* ═══════ STEP 1: COMPANY ═══════ */}
+{/* ═══════ STEP 1: COMPANY ═══════ */}
         {currentStep === 0 && (
-          <div className="space-y-4">
-            <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company Info</span>
-              </div>
-              <div className="p-5 space-y-5">
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Logo</label>
-                  <div className="flex items-center gap-4">
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain border border-gray-200 rounded-lg bg-gray-50" />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-2xl font-bold text-gray-400">
-                        {companyData.name.charAt(0) || '?'}
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <input type="file" accept="image/*" onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) { setLogoFile(f); const r = new FileReader(); r.onloadend = () => setLogoPreview(r.result as string); r.readAsDataURL(f); }
-                      }} className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:rounded-md cursor-pointer" />
-                      <p className="text-xs text-gray-400 mt-1">Shows in emails and your booking page</p>
+          <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company Info</span>
+            </div>
+            <div className="p-5 space-y-5">
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Logo</label>
+                <div className="flex items-center gap-4">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain border border-gray-200 rounded-lg bg-gray-50" />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-2xl font-bold text-gray-400">
+                      {companyData.name.charAt(0) || '?'}
                     </div>
+                  )}
+                  <div className="flex-1">
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) { setLogoFile(f); const r = new FileReader(); r.onloadend = () => setLogoPreview(r.result as string); r.readAsDataURL(f); }
+                    }} className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:rounded-md cursor-pointer" />
+                    <p className="text-xs text-gray-400 mt-1">Shows in emails and your booking page</p>
                   </div>
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span></label>
+                <input type="text" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="Your Company Name" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Mail className="w-3.5 h-3.5" /> Contact Email</label>
+                  <input type="email" value={companyData.email} onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="contact@company.com" />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span></label>
-                  <input type="text" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="Your Company Name" />
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Phone className="w-3.5 h-3.5" /> Phone</label>
+                  <input type="tel" value={companyData.phone} onChange={(e) => setCompanyData({ ...companyData, phone: formatPhone(e.target.value) })}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="(555) 123-4567" maxLength={14} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Mail className="w-3.5 h-3.5" /> Contact Email</label>
-                    <input type="email" value={companyData.email} onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="contact@company.com" />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Phone className="w-3.5 h-3.5" /> Phone</label>
-                    <input type="tel" value={companyData.phone} onChange={(e) => setCompanyData({ ...companyData, phone: formatPhone(e.target.value) })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="(555) 123-4567" maxLength={14} />
-                  </div>
-                </div>
+              </div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Globe className="w-3.5 h-3.5" /> Website</label>
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Globe className="w-3.5 h-3.5" /> Company Website</label>
                   <input type="url" value={companyData.website} onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="https://yourcompany.com" />
                 </div>
-              </div>
-            </div>
-            <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <Palette className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Email Branding</span>
-              </div>
-              <div className="p-5 space-y-4">
-                <p className="text-xs text-gray-400">These colors appear in the header of emails sent to customers</p>
-                <div className="h-12 w-full rounded-lg" style={{ background: `linear-gradient(135deg, ${companyData.email_brand_color_1}, ${companyData.email_brand_color_2})` }} />
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {COLOR_PRESETS.map(p => (
-                    <button key={p.name} onClick={() => setCompanyData({ ...companyData, email_brand_color_1: p.c1, email_brand_color_2: p.c2 })}
-                      className={`h-8 rounded-lg transition hover:scale-105 ${companyData.email_brand_color_1 === p.c1 ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
-                      style={{ background: `linear-gradient(135deg, ${p.c1}, ${p.c2})` }} title={p.name} />
-                  ))}
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Brand Colors</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={companyData.email_brand_color_1}
+                      onChange={(e) => setCompanyData({ ...companyData, email_brand_color_1: e.target.value })}
+                      className="w-10 h-10 cursor-pointer border-2 border-gray-200 rounded-xl p-0.5" />
+                    <input type="color" value={companyData.email_brand_color_2}
+                      onChange={(e) => setCompanyData({ ...companyData, email_brand_color_2: e.target.value })}
+                      className="w-10 h-10 cursor-pointer border-2 border-gray-200 rounded-xl p-0.5" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        {/* ═══════ STEP 2: CATEGORIES ═══════ */}
+        
+     {/* ═══════ STEP 2: CATEGORIES ═══════ */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
+              <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setCategories(defaultCats)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition"><RotateCcw className="w-3 h-3" /> Reset</button>
+                    {categories.length < 20 && <button onClick={() => setShowAddCat(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add</button>}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setCategories(defaultCats)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition"><RotateCcw className="w-3 h-3" /> Reset</button>
-                  {categories.length < 20 && <button onClick={() => setShowAddCat(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add</button>}
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  These are the types of jobs you offer — like "Roof Repair" or "Kitchen Remodel." When a customer submits a lead, they pick a category from this list. You can also add task templates to each category so a checklist is auto-created when a lead converts to a project.
+                </p>
+                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-base flex-shrink-0">💡</span>
+                  <p className="text-xs text-amber-800">Click "Tasks" on any category to set up a default checklist. Every new project in that category will start with those tasks ready to go.</p>
                 </div>
               </div>
               {showAddCat && (
@@ -542,14 +557,24 @@ function OnboardingWizard({ company }: { company: any }) {
             {editCatIdx !== null && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
                 <div className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl sm:rounded-xl">
-                  <div className="px-5 py-4 flex items-center justify-between flex-shrink-0" style={{ background: '#312e81' }}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <CheckSquare className="w-5 h-5 text-indigo-300 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Task Templates</p>
-                        <p className="text-white font-bold truncate">{categories[editCatIdx].label}</p>
-                      </div>
-                    </div>
+              <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setCategories(defaultCats)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition"><RotateCcw className="w-3 h-3" /> Reset</button>
+                    {categories.length < 20 && <button onClick={() => setShowAddCat(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add</button>}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  These are the types of jobs you offer — like "Roof Repair" or "Kitchen Remodel." When a customer submits a lead, they pick a category from this list. You can also add task templates to each category so a checklist is auto-created when a lead converts to a project.
+                </p>
+                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-base flex-shrink-0">💡</span>
+                  <p className="text-xs text-amber-800">Click "Tasks" on any category to set up a default checklist. Every new project in that category will start with those tasks ready to go.</p>
+                </div>
                     <button onClick={() => setEditCatIdx(null)} className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition"><X className="w-5 h-5" /></button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -591,18 +616,27 @@ function OnboardingWizard({ company }: { company: any }) {
           </div>
         )}
 
-        {/* ═══════ STEP 3: PIPELINE ═══════ */}
+{/* ═══════ STEP 3: PIPELINE ═══════ */}
         {currentStep === 2 && (
           <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Workflow className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pipeline Statuses</span>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{statuses.length}</span>
+         <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Workflow className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pipeline Statuses</span>
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{statuses.length}</span>
+                </div>
+                {statuses.length < 10 && !showAddStatus && (
+                  <button onClick={() => setShowAddStatus(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add Status</button>
+                )}
               </div>
-              {statuses.length < 10 && !showAddStatus && (
-                <button onClick={() => setShowAddStatus(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add Status</button>
-              )}
+              <p className="text-sm text-gray-700 leading-relaxed">
+                These are the stages a lead moves through — from the moment it comes in to when the job is done. Drag leads between columns on your dashboard or change status from the lead card. Add stages like "Awaiting Permit" or "Follow Up" to match how you actually work.
+              </p>
+              <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <span className="text-base flex-shrink-0">💡</span>
+                <p className="text-xs text-amber-800">"New" and "Completed" are locked — every lead starts as New and ends as Completed. Everything in between is up to you. Tap a status to change its color.</p>
+              </div>
             </div>
             {showAddStatus && (
               <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100 space-y-3">
@@ -623,16 +657,34 @@ function OnboardingWizard({ company }: { company: any }) {
             <div className="divide-y divide-gray-50">
               {statuses.map((s, i) => {
                 const locked = LOCKED_STATUSES.includes(s.value);
+                const isExpanded = expandedStatusIdx === i && !locked;
                 return (
-                  <div key={`${s.value}-${i}`} className={`flex items-center gap-3 px-5 py-3.5 group transition ${locked ? 'bg-gray-50/60' : 'hover:bg-gray-50'}`}>
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColorHex(s.color) }} />
-                    <span className={`flex-1 text-sm font-semibold ${locked ? 'text-gray-400' : 'text-gray-800'}`}>{s.label}</span>
-                    {locked && <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold px-2 py-0.5 bg-gray-100 rounded"><Lock className="w-3 h-3" /> Locked</span>}
-                    {!locked && (
-                      <div className="flex items-center gap-0.5">
-                        <button disabled={i <= 1} onClick={() => moveStatus(i, i - 1)} className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500"><ChevronUp className="w-4 h-4" /></button>
-                        <button disabled={i >= statuses.length - 2} onClick={() => moveStatus(i, i + 1)} className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500"><ChevronDown className="w-4 h-4" /></button>
-                        <button onClick={() => setStatuses(statuses.filter((_, idx) => idx !== i))} className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded transition"><X className="w-4 h-4" /></button>
+                  <div key={`${s.value}-${i}`}>
+                    <div
+                      className={`flex items-center gap-3 px-5 py-3.5 group transition ${locked ? 'bg-gray-50/60' : 'hover:bg-gray-50 cursor-pointer'}`}
+                      onClick={() => { if (!locked) setExpandedStatusIdx(isExpanded ? null : i); }}
+                    >
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColorHex(s.color) }} />
+                      <span className={`flex-1 text-sm font-semibold ${locked ? 'text-gray-400' : 'text-gray-800'}`}>{s.label}</span>
+                      {locked && <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold px-2 py-0.5 bg-gray-100 rounded"><Lock className="w-3 h-3" /> Locked</span>}
+                      {!locked && (
+                        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                          <button disabled={i <= 1} onClick={() => moveStatus(i, i - 1)} className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500"><ChevronUp className="w-4 h-4" /></button>
+                          <button disabled={i >= statuses.length - 2} onClick={() => moveStatus(i, i + 1)} className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500"><ChevronDown className="w-4 h-4" /></button>
+                          <button onClick={() => setStatuses(statuses.filter((_, idx) => idx !== i))} className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded transition"><X className="w-4 h-4" /></button>
+                        </div>
+                      )}
+                    </div>
+                    {isExpanded && (
+                      <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Color</p>
+                        <div className="flex flex-wrap gap-2">
+                          {COLOR_OPTIONS.map(c => (
+                            <button key={c.value} onClick={() => { const u = [...statuses]; u[i] = { ...u[i], color: c.value }; setStatuses(u); }}
+                              className={`w-7 h-7 rounded-full transition ${s.color === c.value ? 'ring-2 ring-offset-2 ring-gray-500 scale-110' : 'hover:scale-105'}`}
+                              style={{ backgroundColor: c.hex }} />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -640,100 +692,126 @@ function OnboardingWizard({ company }: { company: any }) {
               })}
             </div>
             <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
-              <p className="text-xs text-gray-400"><span className="font-bold text-gray-500">Tip:</span> Leads move through these stages. New and Completed are locked.</p>
+              <p className="text-xs text-gray-400"><span className="font-bold text-gray-500">Tip:</span> Tap a status to change its color. New and Completed are locked.</p>
             </div>
           </div>
         )}
-
-        {/* ═══════ STEP 4: FORM ═══════ */}
+{/* ═══════ STEP 4: FORM ═══════ */}
         {currentStep === 3 && (
-          <div className="space-y-4">
-            <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100"><span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Form Appearance</span></div>
-              <div className="p-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Form Heading</label>
-                  <input type="text" value={ctaHeading} onChange={(e) => setCtaHeading(e.target.value)} className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="Get Your Free Quote Today" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Success Message</label>
-                  <textarea value={ctaSuccess} onChange={(e) => setCtaSuccess(e.target.value)} rows={2} className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition resize-none" placeholder="Thank you! We'll get back to you within 24 hours." />
-                </div>
+          <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
+            <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Custom Questions</span>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Add extra questions to your customer booking form — like "What's your budget?" or "Is this urgent?" Customers fill these out when they submit a lead, and their answers show up right on the lead card in your dashboard.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-lg">✏️ Text — open-ended answer</span>
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-lg">📋 Dropdown — pick from a list</span>
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-lg">✅ Yes / No — simple checkbox</span>
               </div>
             </div>
-            <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Custom Questions</span>
-                  {questions.length > 0 && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{questions.length}</span>}
-                </div>
-                {!showAddQ && <button onClick={() => { setShowAddQ(true); setEditQId(null); setNewQ({ id: '', label: '', type: 'text', required: false, options: [] }); }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add Question</button>}
+
+            {/* Question list */}
+            {questions.length > 0 && (
+              <div className="divide-y divide-gray-50">
+                {questions.map(q => (
+                  <div key={q.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm truncate">{q.label}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded">{typeLabel(q.type)}</span>
+                        {q.required && <span className="text-xs font-bold text-red-500">Required</span>}
+                        {q.type === 'select' && (q.options?.length || 0) > 0 && (
+                          <span className="text-xs text-gray-400">{q.options?.length} options</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button onClick={() => { setNewQ({ ...q }); setEditQId(q.id); setShowAddQ(true); }}
+                        className="p-1.5 hover:bg-indigo-50 text-indigo-400 rounded-lg transition"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))}
+                        className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              {showAddQ && (
-                <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100 space-y-4">
-                  <input type="text" value={newQ.label} onChange={(e) => setNewQ({ ...newQ, label: e.target.value })} placeholder="e.g., What is your budget range?" autoFocus
+            )}
+
+            {/* Add/Edit form */}
+            {showAddQ && (
+              <div className="px-5 py-4 bg-indigo-50 border-y border-indigo-100 space-y-4">
+               <div>
+                  <p className="text-xs font-bold text-gray-500 mb-1.5">Question</p>
+                  <input type="text" value={newQ.label} onChange={(e) => setNewQ({ ...newQ, label: e.target.value })}
+                    placeholder="e.g., What's your budget?" autoFocus
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none bg-white transition" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-2">Answer type</p>
                   <div className="grid grid-cols-3 gap-2">
                     {(['text', 'select', 'checkbox'] as const).map(t => (
                       <button key={t} onClick={() => setNewQ({ ...newQ, type: t, options: [] })}
-                        className={`py-2 text-xs font-bold border rounded-lg transition ${newQ.type === t ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-200 text-gray-600'}`}>{typeLabel(t)}</button>
+                        className={`py-2.5 text-xs font-bold border rounded-lg transition ${newQ.type === t ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-200 text-gray-600'}`}>
+                        {t === 'text' && '✏️ '}
+                        {t === 'select' && '📋 '}
+                        {t === 'checkbox' && '✅ '}
+                        {typeLabel(t)}
+                      </button>
                     ))}
                   </div>
-                  {newQ.type === 'select' && (
-                    <div className="space-y-2">
-                      {newQ.options?.map((opt, i) => (
-                        <div key={i} className="flex items-center justify-between px-3 py-2 bg-white border border-gray-100 rounded-lg">
-                          <span className="text-sm text-gray-700">{opt}</span>
-                          <button onClick={() => setNewQ({ ...newQ, options: newQ.options?.filter((_, idx) => idx !== i) })} className="text-red-400"><X className="w-3.5 h-3.5" /></button>
-                        </div>
-                      ))}
-                      <div className="flex gap-2">
-                        <input type="text" value={newOpt} onChange={(e) => setNewOpt(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' && newOpt.trim()) { setNewQ({ ...newQ, options: [...(newQ.options || []), newOpt.trim()] }); setNewOpt(''); } }}
-                          placeholder="Add option..." className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none bg-white transition" />
-                        <button onClick={() => { if (newOpt.trim()) { setNewQ({ ...newQ, options: [...(newQ.options || []), newOpt.trim()] }); setNewOpt(''); } }}
-                          className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg transition">Add</button>
+                </div>
+
+                {newQ.type === 'select' && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-gray-500">Dropdown options</p>
+                    {newQ.options?.map((opt, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 bg-white border border-gray-100 rounded-lg">
+                        <span className="text-sm text-gray-700">{opt}</span>
+                        <button onClick={() => setNewQ({ ...newQ, options: newQ.options?.filter((_, idx) => idx !== i) })}
+                          className="text-red-400 hover:text-red-600 transition"><X className="w-3.5 h-3.5" /></button>
                       </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <input type="text" value={newOpt} onChange={(e) => setNewOpt(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && newOpt.trim()) { setNewQ({ ...newQ, options: [...(newQ.options || []), newOpt.trim()] }); setNewOpt(''); } }}
+                        placeholder="Type an option..." className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none bg-white transition" />
+                      <button onClick={() => { if (newOpt.trim()) { setNewQ({ ...newQ, options: [...(newQ.options || []), newOpt.trim()] }); setNewOpt(''); } }}
+                        className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg transition">Add</button>
                     </div>
-                  )}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={newQ.required} onChange={(e) => setNewQ({ ...newQ, required: e.target.checked })} className="w-4 h-4 text-indigo-600 rounded" />
-                    <span className="text-sm font-semibold text-gray-700">Required</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <button onClick={addQuestion} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">{editQId ? 'Update' : 'Add Question'}</button>
-                    <button onClick={() => { setShowAddQ(false); setEditQId(null); }} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition">Cancel</button>
                   </div>
+                )}
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={newQ.required} onChange={(e) => setNewQ({ ...newQ, required: e.target.checked })}
+                    className="w-4 h-4 text-indigo-600 rounded" />
+                  <span className="text-sm font-semibold text-gray-700">Required</span>
+                </label>
+
+                <div className="flex gap-2">
+                  <button onClick={addQuestion} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">
+                    {editQId ? 'Update Question' : 'Add Question'}
+                  </button>
+                  <button onClick={() => { setShowAddQ(false); setEditQId(null); }}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition">Cancel</button>
                 </div>
-              )}
-              {questions.length > 0 ? (
-                <div className="divide-y divide-gray-50">
-                  {questions.map(q => (
-                    <div key={q.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-800 text-sm truncate">{q.label}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-400">{typeLabel(q.type)}</span>
-                          {q.required && <span className="text-xs font-bold text-red-500">Required</span>}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                        <button onClick={() => { setNewQ({ ...q }); setEditQId(q.id); setShowAddQ(true); }} className="p-1.5 hover:bg-indigo-50 text-indigo-400 rounded-lg transition"><Edit2 className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setQuestions(questions.filter(x => x.id !== q.id))} className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : !showAddQ && (
-                <div className="py-10 text-center">
-                  <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-gray-400">No custom questions yet</p>
-                  <p className="text-xs text-gray-300 mt-1">Optional — add them later in Settings</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Empty state / Add button */}
+            {!showAddQ && (
+              <div className="px-5 py-5 flex items-center justify-between border-t border-gray-100">
+                {questions.length === 0 && (
+                  <p className="text-sm text-gray-400">No questions yet — totally optional</p>
+                )}
+                {questions.length > 0 && (
+                  <p className="text-xs text-gray-400">{questions.length} question{questions.length !== 1 ? 's' : ''} on your form</p>
+                )}
+                <button onClick={() => { setShowAddQ(true); setEditQId(null); setNewQ({ id: '', label: '', type: 'text', required: false, options: [] }); }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition">
+                  <Plus className="w-3 h-3" /> Add Question
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -741,13 +819,22 @@ function OnboardingWizard({ company }: { company: any }) {
         {currentStep === 4 && (
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quote Templates</span>
-                  {templates.length > 0 && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{templates.length}</span>}
+           <div className="px-5 py-5 border-b border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quote Templates</span>
+                    {templates.length > 0 && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{templates.length}</span>}
+                  </div>
+                  <button onClick={() => setShowCatPicker(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Create Template</button>
                 </div>
-                <button onClick={() => setShowCatPicker(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Create Template</button>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Create reusable quote templates for each service category. When you send a quote for a roofing job, it auto-fills with your roofing prices — just adjust the amounts and send. No retyping every time.
+                </p>
+                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-base flex-shrink-0">💡</span>
+                  <p className="text-xs text-amber-800">Each template is tied to a category. When a lead comes in for "Kitchen Remodel," your Kitchen Remodel template is ready to go.</p>
+                </div>
               </div>
               {templates.length > 0 ? (
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -858,7 +945,7 @@ function OnboardingWizard({ company }: { company: any }) {
           </div>
         )}
 
-        {/* ═══════ STEP 6: DONE ═══════ */}
+{/* ═══════ STEP 6: DONE ═══════ */}
         {currentStep === 5 && (
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl text-center">
@@ -880,6 +967,31 @@ function OnboardingWizard({ company }: { company: any }) {
                     className={`px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-2 ${copied ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
                     {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
                   </button>
+                </div>
+
+                {/* QR Code */}
+                <div className="border-t border-gray-100 pt-4 flex flex-col items-center gap-3">
+                  {qrCodeUrl ? (
+                    <div className="bg-white p-4 border-2 border-gray-200 rounded-xl inline-block">
+                      <img src={qrCodeUrl} alt="QR Code" className="w-40 h-40" />
+                    </div>
+                  ) : (
+                    <div className="w-40 h-40 bg-gray-100 rounded-xl flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400">Print on business cards, flyers, or storefronts</p>
+                  {qrCodeUrl && (
+                    <button onClick={() => {
+                      const link = document.createElement('a');
+                      link.download = `${company.slug}-qr-code.png`;
+                      link.href = qrCodeUrl;
+                      link.click();
+                    }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition">
+                      <ArrowRight className="w-3.5 h-3.5" /> Download QR Code
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

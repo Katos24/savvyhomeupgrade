@@ -19,6 +19,7 @@ const PipelineStep = forwardRef<PipelineStepRef, { company: any; showErr: (msg: 
     const [showAddStatus, setShowAddStatus] = useState(false);
     const [newStatusLabel, setNewStatusLabel] = useState('');
     const [newStatusColor, setNewStatusColor] = useState('blue');
+    const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
     useImperativeHandle(ref, () => ({ getData: () => ({ statuses }) }));
 
@@ -39,6 +40,13 @@ const PipelineStep = forwardRef<PipelineStepRef, { company: any; showErr: (msg: 
       const updated = [...statuses];
       const [moved] = updated.splice(from, 1);
       updated.splice(to, 0, moved);
+      setStatuses(updated);
+      setExpandedIdx(to);
+    };
+
+    const updateColor = (index: number, color: string) => {
+      const updated = [...statuses];
+      updated[index] = { ...updated[index], color };
       setStatuses(updated);
     };
 
@@ -82,29 +90,53 @@ const PipelineStep = forwardRef<PipelineStepRef, { company: any; showErr: (msg: 
         <div className="divide-y divide-gray-50">
           {statuses.map((s, i) => {
             const locked = LOCKED_STATUSES.includes(s.value);
+            const isExpanded = expandedIdx === i && !locked;
+
             return (
-              <div key={`${s.value}-${i}`} className={`flex items-center gap-3 px-5 py-3.5 group transition ${locked ? 'bg-gray-50/60' : 'hover:bg-gray-50'}`}>
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColorHex(s.color) }} />
-                <span className={`flex-1 text-sm font-semibold ${locked ? 'text-gray-400' : 'text-gray-800'}`}>{s.label}</span>
-                {locked && (
-                  <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold px-2 py-0.5 bg-gray-100 rounded">
-                    <Lock className="w-3 h-3" /> Locked
-                  </span>
-                )}
-                {!locked && (
-                  <div className="flex items-center gap-0.5">
-                    <button disabled={i <= 1} onClick={() => moveStatus(i, i - 1)}
-                      className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500">
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button disabled={i >= statuses.length - 2} onClick={() => moveStatus(i, i + 1)}
-                      className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500">
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setStatuses(statuses.filter((_, idx) => idx !== i))}
-                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded transition">
-                      <X className="w-4 h-4" />
-                    </button>
+              <div key={`${s.value}-${i}`}>
+                <div
+                  className={`flex items-center gap-3 px-5 py-3.5 group transition ${locked ? 'bg-gray-50/60' : 'hover:bg-gray-50 cursor-pointer'}`}
+                  onClick={() => {
+                    if (locked) return;
+                    setExpandedIdx(isExpanded ? null : i);
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColorHex(s.color) }} />
+                  <span className={`flex-1 text-sm font-semibold ${locked ? 'text-gray-400' : 'text-gray-800'}`}>{s.label}</span>
+                  {locked && (
+                    <span className="flex items-center gap-1 text-xs text-gray-400 font-semibold px-2 py-0.5 bg-gray-100 rounded">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  )}
+                  {!locked && (
+                    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                      <button disabled={i <= 1} onClick={() => moveStatus(i, i - 1)}
+                        className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button disabled={i >= statuses.length - 2} onClick={() => moveStatus(i, i + 1)}
+                        className="p-1.5 hover:bg-gray-200 rounded transition disabled:opacity-20 text-gray-500">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setStatuses(statuses.filter((_, idx) => idx !== i))}
+                        className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded transition">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Expanded color picker */}
+                {isExpanded && (
+                  <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Color</p>
+                    <div className="flex flex-wrap gap-2">
+                      {COLOR_OPTIONS.map(c => (
+                        <button key={c.value} onClick={() => updateColor(i, c.value)}
+                          className={`w-7 h-7 rounded-full transition ${s.color === c.value ? 'ring-2 ring-offset-2 ring-gray-500 scale-110' : 'hover:scale-105'}`}
+                          style={{ backgroundColor: c.hex }} />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -113,7 +145,7 @@ const PipelineStep = forwardRef<PipelineStepRef, { company: any; showErr: (msg: 
         </div>
 
         <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
-          <p className="text-xs text-gray-400"><span className="font-bold text-gray-500">Tip:</span> Leads move through these stages. New and Completed are locked.</p>
+          <p className="text-xs text-gray-400"><span className="font-bold text-gray-500">Tip:</span> Tap a status to change its color. New and Completed are locked.</p>
         </div>
       </div>
     );
