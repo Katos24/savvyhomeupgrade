@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import CompanyDashboardClient from './CompanyDashboardClient';
 
+
 interface Company {
   id: number;
   name: string;
@@ -18,6 +19,8 @@ interface Company {
   status_options?: any[];
   form_categories?: any[];
   custom_questions?: any[];
+    onboarding_completed?: boolean;
+
 }
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -37,7 +40,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       plan_tier,
       status_options,
       form_categories,
-      custom_questions
+      custom_questions,
+        onboarding_completed
     FROM companies 
     WHERE slug = ${slug}
   `;

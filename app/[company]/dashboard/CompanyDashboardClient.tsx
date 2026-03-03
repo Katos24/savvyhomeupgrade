@@ -18,6 +18,8 @@ type Company = {
   status_options?: StatusOption[]; form_categories?: any[]; custom_questions?: any[];
   subscription_status?: string; trial_ends_at?: string | null;
   plan_tier?: string;
+    onboarding_completed?: boolean;
+
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
@@ -418,6 +420,33 @@ const recentLeads = allLeads
         />
         <PaymentReminderBanner slug={company.slug} /> 
       </div>
+
+      {!company.onboarding_completed && (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
+    <div className="rounded-xl border border-indigo-500/30 overflow-hidden shadow-lg"
+      style={{ background: 'linear-gradient(135deg, #312e81, #1e1b4b)' }}>
+      <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg">Finish Setting Up Your Account</h3>
+            <p className="text-indigo-300 text-sm mt-0.5">
+              Set up your categories, pipeline, booking form, and quote templates — takes about 5 minutes.
+            </p>
+          </div>
+        </div>
+        <a href="/onboarding"
+          className="px-6 py-3 rounded-lg text-white font-bold text-sm transition hover:opacity-90 flex-shrink-0 flex items-center gap-2"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          Set Up Now <ChevronDown className="w-4 h-4 -rotate-90" />
+        </a>
+      </div>
+    </div>
+  </div>
+)}
 
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
 
