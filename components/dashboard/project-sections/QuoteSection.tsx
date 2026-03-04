@@ -468,6 +468,28 @@ quoteSentAt={(() => {
         `}</style>
       </div>
 
+      {isEditing && (
+  <div className="border-t border-gray-200 bg-gray-50 px-4 py-4 flex items-center justify-between gap-3">
+    <button
+      onClick={() => {
+        setQuoteData(lead?.quote_data || []);
+        setIsEditing(false);
+      }}
+      className="flex-1 px-4 py-2.5 text-sm font-bold bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+    >
+      Cancel
+    </button>
+
+    <button
+      onClick={handleSave}
+      disabled={saving}
+      className="flex-1 px-4 py-2.5 text-sm font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white transition"
+    >
+      {saving ? 'Saving...' : 'Save Quote'}
+    </button>
+  </div>
+)}
+
       {/* Email sent log */}
       {!isEditing && (() => {
         let emailLog: any[] = [];
