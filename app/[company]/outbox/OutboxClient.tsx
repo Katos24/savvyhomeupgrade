@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { ArrowLeft, Search, Mail, Calendar, DollarSign, AlertTriangle, ChevronDown, ExternalLink } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface QuoteLineItem {
@@ -69,6 +70,14 @@ function fmtTime(d: string | null | undefined): string {
   const dt = new Date(d)
   if (isNaN(dt.getTime())) return ''
   return dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
+function fmtScheduleTime(t: string | null | undefined): string {
+  if (!t) return ''
+  const [h, m] = t.split(':')
+  const hour = parseInt(h)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  return `${hour % 12 || 12}:${m} ${ampm}`
 }
 
 function timeAgo(d: string): string {
@@ -150,6 +159,7 @@ export default function OutboxClient({ company, projects }: Props) {
   const [dateRange, setDateRange] = useState('')
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [dupAlertDismissed, setDupAlertDismissed] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
 
   const allEmails = useMemo(() => buildEmailList(projects), [projects])
 
@@ -198,246 +208,314 @@ export default function OutboxClient({ company, projects }: Props) {
   const toggleRow = (idx: number) => setExpandedIdx(prev => prev === idx ? null : idx)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0c10', color: '#e8eaf0', fontFamily: 'system-ui, sans-serif' }}>
-      <main style={{ flex: 1 }}>
-        {/* Top bar */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(10,12,16,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #232731', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, gap: 16 }}>
-          <a
-            href={`/${company.slug}/dashboard`}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #232731', borderRadius: 6, padding: '6px 12px', color: '#6b7280', cursor: 'pointer', fontSize: 13, textDecoration: 'none', transition: 'color 0.12s' }}
-          >
-            ← Dashboard
-          </a>
-          <span style={{ fontSize: 13, color: '#3d4352' }}>›</span>
-          <span style={{ fontSize: 13, color: '#e8eaf0' }}>Outbox</span>
+    <div className="min-h-screen" style={{ background: '#0a0c10', color: '#e8eaf0' }}>
+      {/* Top bar */}
+      <div className="sticky top-0 z-40 border-b border-white/10 px-4 sm:px-6 flex items-center h-14 gap-3" style={{ background: 'rgba(10,12,16,0.9)', backdropFilter: 'blur(12px)' }}>
+        <a href={`/${company.slug}/dashboard`}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 border border-white/10 rounded-md text-gray-500 hover:text-white text-xs transition no-underline">
+          <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Dashboard</span>
+        </a>
+        <span className="text-gray-700 text-xs hidden sm:inline">›</span>
+        <span className="text-sm font-semibold text-white">Outbox</span>
+      </div>
+
+      <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Outbox</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">All customer-facing emails across every project</p>
         </div>
 
-        <div style={{ padding: '28px 32px' }}>
-          {/* Header */}
-          <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.6px' }}>Outbox</h1>
-            <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>All customer-facing emails across every project</p>
-          </div>
-
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-            {[
-              { label: 'Total sent', value: allEmails.length, sub: 'across all projects', color: '#e8eaf0' },
-              { label: 'Quote emails', value: allEmails.filter(e => e.type === 'quote').length, sub: fmtMoney(totalQuoteVal) + ' in quotes', color: '#f97316' },
-              { label: 'Schedule emails', value: allEmails.filter(e => e.type === 'schedule').length, sub: 'confirmations sent', color: '#60a5fa' },
-              { label: 'Possible duplicates', value: dupCount, sub: 'same content resent', color: dupCount > 0 ? '#f87171' : '#4ade80' },
-            ].map(s => (
-              <div key={s.label} style={{ background: '#111318', border: '1px solid #232731', borderRadius: 10, padding: '16px 18px' }}>
-                <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 500, marginBottom: 8 }}>{s.label}</div>
-                <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-1px', color: s.color, fontFamily: 'monospace' }}>{s.value}</div>
-                <div style={{ fontSize: 11.5, color: '#6b7280', marginTop: 4 }}>{s.sub}</div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Total sent', value: allEmails.length, sub: 'across all projects', color: '#e8eaf0', icon: <Mail className="w-4 h-4" /> },
+            { label: 'Quote emails', value: allEmails.filter(e => e.type === 'quote').length, sub: fmtMoney(totalQuoteVal) + ' in quotes', color: '#f97316', icon: <DollarSign className="w-4 h-4" /> },
+            { label: 'Schedule emails', value: allEmails.filter(e => e.type === 'schedule').length, sub: 'confirmations', color: '#60a5fa', icon: <Calendar className="w-4 h-4" /> },
+            { label: 'Duplicates', value: dupCount, sub: 'same content resent', color: dupCount > 0 ? '#f87171' : '#4ade80', icon: <AlertTriangle className="w-4 h-4" /> },
+          ].map(s => (
+            <div key={s.label} className="rounded-xl p-4" style={{ background: '#111318', border: '1px solid #232731' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span style={{ color: s.color }} className="opacity-60">{s.icon}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">{s.label}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Duplicate alert */}
-          {dupCount > 0 && !dupAlertDismissed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, marginBottom: 20, fontSize: 13, color: '#fbbf24' }}>
-              <span>⚠️</span>
-              <span><strong>{dupCount} emails</strong> may be accidental duplicate sends — same content sent within 10 minutes.</span>
-              <button onClick={() => setDupAlertDismissed(true)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}>✕</button>
+              <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-xs text-gray-600 mt-1 truncate">{s.sub}</div>
             </div>
-          )}
+          ))}
+        </div>
 
-          {/* Toolbar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: '#111318', border: '1px solid #232731', borderRadius: 6, padding: 3, gap: 1 }}>
+        {/* Duplicate alert */}
+        {dupCount > 0 && !dupAlertDismissed && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}>
+            <span>⚠️</span>
+            <span className="flex-1 text-xs sm:text-sm"><strong>{dupCount} emails</strong> may be accidental duplicate sends.</span>
+            <button onClick={() => setDupAlertDismissed(true)} className="text-amber-400 hover:text-amber-300 text-lg opacity-70">✕</button>
+          </div>
+        )}
+
+        {/* Toolbar */}
+        <div className="space-y-3 mb-4">
+          {/* Tabs + search row */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Tabs */}
+            <div className="flex rounded-lg p-1 gap-0.5 flex-shrink-0" style={{ background: '#111318', border: '1px solid #232731' }}>
               {(['all', 'quote', 'schedule'] as const).map(t => (
                 <button key={t} onClick={() => { setTab(t); setExpandedIdx(null) }}
-                  style={{ padding: '6px 14px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                    background: tab === t ? '#1c2029' : 'transparent',
-                    color: tab === t ? '#e8eaf0' : '#6b7280' }}>
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                  style={tab === t ? { background: '#1c2029' } : {}}>
                   {t === 'all' ? 'All' : t === 'quote' ? 'Quotes' : 'Schedules'}
-                  <span style={{ marginLeft: 6, fontFamily: 'monospace', fontSize: 10.5, padding: '1px 6px', borderRadius: 10,
-                    background: tab === t ? 'rgba(249,115,22,0.1)' : '#1c2029',
-                    color: tab === t ? '#f97316' : '#6b7280',
-                    border: tab === t ? '1px solid rgba(249,115,22,0.25)' : '1px solid #232731' }}>
+                  <span className="ml-1.5 font-mono text-xs px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: tab === t ? 'rgba(249,115,22,0.1)' : '#1c2029',
+                      color: tab === t ? '#f97316' : '#6b7280',
+                      border: `1px solid ${tab === t ? 'rgba(249,115,22,0.25)' : '#232731'}`,
+                    }}>
                     {t === 'all' ? allEmails.length : allEmails.filter(e => e.type === t).length}
                   </span>
                 </button>
               ))}
             </div>
 
-            <div style={{ flex: 1 }} />
+            <div className="flex-1" />
 
-            <div style={{ position: 'relative', width: 240 }}>
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#3d4352', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+            {/* Search */}
+            <div className="relative w-full sm:w-60">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 pointer-events-none" />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search customer…"
-                style={{ width: '100%', padding: '7px 12px 7px 32px', background: '#111318', border: '1px solid #232731', borderRadius: 6, color: '#e8eaf0', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+                className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
+                style={{ background: '#111318', border: '1px solid #232731', color: '#e8eaf0' }} />
             </div>
 
-            <select value={sentBy} onChange={e => setSentBy(e.target.value)}
-              style={{ padding: '7px 12px', background: '#111318', border: '1px solid #232731', borderRadius: 6, color: '#6b7280', fontSize: 12.5, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}>
-              <option value="">All senders</option>
-              {senders.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            {/* Filter toggle (mobile) */}
+            <button onClick={() => setShowFilters(!showFilters)}
+              className="sm:hidden px-3 py-2 rounded-lg text-xs font-medium text-gray-500 flex items-center gap-1.5"
+              style={{ background: '#111318', border: '1px solid #232731' }}>
+              Filters <ChevronDown className={`w-3.5 h-3.5 transition ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
 
-            <select value={dateRange} onChange={e => setDateRange(e.target.value)}
-              style={{ padding: '7px 12px', background: '#111318', border: '1px solid #232731', borderRadius: 6, color: '#6b7280', fontSize: 12.5, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}>
-              <option value="">All time</option>
-              <option value="today">Today</option>
-              <option value="week">This week</option>
-              <option value="month">This month</option>
-            </select>
-          </div>
-
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10 }}>
-            Showing <strong style={{ color: '#e8eaf0' }}>{filtered.length}</strong> of {allEmails.length} emails
-          </div>
-
-          {/* Email list */}
-          {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 20px', color: '#6b7280' }}>
-              <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.4 }}>📭</div>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>No emails found</div>
-              <div style={{ fontSize: 13, color: '#3d4352' }}>Try adjusting your search or filters</div>
+            {/* Filters (always visible on desktop) */}
+            <div className="hidden sm:flex items-center gap-2">
+              <select value={sentBy} onChange={e => setSentBy(e.target.value)}
+                className="px-3 py-2 rounded-lg text-xs outline-none cursor-pointer"
+                style={{ background: '#111318', border: '1px solid #232731', color: '#6b7280' }}>
+                <option value="">All senders</option>
+                {senders.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select value={dateRange} onChange={e => setDateRange(e.target.value)}
+                className="px-3 py-2 rounded-lg text-xs outline-none cursor-pointer"
+                style={{ background: '#111318', border: '1px solid #232731', color: '#6b7280' }}>
+                <option value="">All time</option>
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+                <option value="month">This month</option>
+              </select>
             </div>
-          ) : (
-            grouped.map(group => (
-              <div key={group.label} style={{ marginBottom: 4 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: '#3d4352', padding: '10px 2px 6px' }}>
-                  {group.label}
-                </div>
-                {group.emails.map(email => {
-                  const isExpanded = expandedIdx === email.globalIdx
-                  const isQ = email.type === 'quote'
-                  return (
-                    <div key={`${email.project_id}-${email.type}-${email.sent_at}`}
-                      style={{ background: '#111318', border: `1px solid ${isExpanded ? 'rgba(249,115,22,0.35)' : email.isDup ? 'rgba(251,191,36,0.25)' : '#232731'}`, borderRadius: 10, overflow: 'hidden', marginBottom: 3, transition: 'border-color 0.12s' }}>
+          </div>
 
-                      <div onClick={() => toggleRow(email.globalIdx)}
-                        style={{ display: 'grid', gridTemplateColumns: '42px 1fr auto', alignItems: 'center', gap: 14, padding: '13px 16px', cursor: 'pointer', userSelect: 'none' }}>
-                        <div style={{ width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+          {/* Mobile filters (collapsible) */}
+          {showFilters && (
+            <div className="flex gap-2 sm:hidden">
+              <select value={sentBy} onChange={e => setSentBy(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#111318', border: '1px solid #232731', color: '#6b7280' }}>
+                <option value="">All senders</option>
+                {senders.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select value={dateRange} onChange={e => setDateRange(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#111318', border: '1px solid #232731', color: '#6b7280' }}>
+                <option value="">All time</option>
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+                <option value="month">This month</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="text-xs text-gray-600 mb-3">
+          Showing <strong className="text-white">{filtered.length}</strong> of {allEmails.length} emails
+        </div>
+
+        {/* Email list */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-20 text-gray-500">
+            <div className="text-4xl mb-3 opacity-40">📭</div>
+            <div className="text-sm font-semibold mb-1">No emails found</div>
+            <div className="text-xs text-gray-700">Try adjusting your search or filters</div>
+          </div>
+        ) : (
+          grouped.map(group => (
+            <div key={group.label} className="mb-1">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-700 py-2.5 px-1">
+                {group.label}
+              </div>
+              {group.emails.map(email => {
+                const isExpanded = expandedIdx === email.globalIdx
+                const isQ = email.type === 'quote'
+                return (
+                  <div key={`${email.project_id}-${email.type}-${email.sent_at}`}
+                    className="rounded-xl overflow-hidden mb-1 transition-colors"
+                    style={{
+                      background: '#111318',
+                      border: `1px solid ${isExpanded ? 'rgba(249,115,22,0.35)' : email.isDup ? 'rgba(251,191,36,0.25)' : '#232731'}`,
+                    }}>
+
+                    {/* Row header */}
+                    <div onClick={() => toggleRow(email.globalIdx)}
+                      className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 cursor-pointer select-none">
+                      {/* Icon */}
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+                        style={{
                           background: isQ ? 'rgba(249,115,22,0.1)' : 'rgba(96,165,250,0.1)',
-                          border: `1px solid ${isQ ? 'rgba(249,115,22,0.25)' : 'rgba(96,165,250,0.2)'}` }}>
-                          {isQ ? '💰' : '📅'}
-                        </div>
+                          border: `1px solid ${isQ ? 'rgba(249,115,22,0.25)' : 'rgba(96,165,250,0.2)'}`,
+                        }}>
+                        {isQ ? '💰' : '📅'}
+                      </div>
 
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: 13.5, fontWeight: 500 }}>{email.customer_name}</span>
-                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-sm font-medium text-white truncate">{email.customer_name}</span>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{
                               background: isQ ? 'rgba(249,115,22,0.1)' : 'rgba(96,165,250,0.1)',
-                              color: isQ ? '#f97316' : '#60a5fa' }}>
-                              {isQ ? 'Quote' : 'Schedule'}
+                              color: isQ ? '#f97316' : '#60a5fa',
+                            }}>
+                            {isQ ? 'Quote' : 'Schedule'}
+                          </span>
+                          {email.isDup && (
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                              ⚠ dup
                             </span>
-                            {email.isDup && (
-                              <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 10, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
-                                ⚠ duplicate
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 12.5, color: '#6b7280' }}>
-                            {isQ
-                              ? <>Quote sent to <strong style={{ color: '#e8eaf0' }}>{email.customer_email}</strong></>
-                              : <>Schedule confirmation</>  
-                            }
-                          </div>
+                          )}
                         </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                          {isQ
-                            ? <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 500, color: '#f97316' }}>{fmtMoney(email.quote_total)}</span>
-                            : email.scheduled_date
-                              ? <span style={{ fontSize: 11, color: '#60a5fa', background: 'rgba(96,165,250,0.1)', padding: '2px 8px', borderRadius: 10 }}>{fmtDate(email.scheduled_date)}</span>
-                              : null
-                          }
-                          <span style={{ fontFamily: 'monospace', fontSize: 11.5, color: '#6b7280' }}>{timeAgo(email.sent_at)}</span>
-                          <span style={{ color: '#3d4352', fontSize: 11, display: 'inline-block', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▾</span>
+                        <div className="text-xs text-gray-500 truncate">
+                          {isQ ? <>Quote → <span className="text-gray-400">{email.customer_email}</span></> : 'Schedule confirmation'}
                         </div>
                       </div>
 
-                      {isExpanded && (
-                        <div style={{ borderTop: '1px solid #232731', display: 'grid', gridTemplateColumns: '1fr 260px' }}>
-                          <div style={{ padding: '20px 22px' }}>
-                            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#3d4352', marginBottom: 12 }}>
+                      {/* Right side */}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {isQ
+                          ? <span className="font-mono text-sm font-medium text-orange-400">{fmtMoney(email.quote_total)}</span>
+                          : email.scheduled_date
+                            ? <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: '#60a5fa', background: 'rgba(96,165,250,0.1)' }}>{fmtDate(email.scheduled_date)}</span>
+                            : null
+                        }
+                        <span className="font-mono text-xs text-gray-600">{timeAgo(email.sent_at)}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-gray-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
+
+                    {/* Expanded detail */}
+                    {isExpanded && (
+                      <div className="border-t" style={{ borderColor: '#232731' }}>
+                        <div className="flex flex-col lg:flex-row">
+                          {/* Main content */}
+                          <div className="flex-1 p-4 sm:p-5">
+                            <div className="text-xs font-semibold uppercase tracking-wider text-gray-700 mb-3">
                               {isQ ? 'Quote breakdown' : 'Schedule details'}
                             </div>
                             {isQ ? (
                               <>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                {/* Mobile: stacked cards */}
+                                <div className="sm:hidden space-y-2.5">
+                                  {(email.quote_data || []).map((item, i) => (
+                                    <div key={i} className="rounded-lg p-3" style={{ background: '#0a0c10', border: '1px solid #232731' }}>
+                                      <p className="text-sm text-white mb-2">{item.description || '—'}</p>
+                                      <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span>Qty: {item.quantity || 1}</span>
+                                        <span>@ {fmtMoney(item.unitPrice ?? item.amount / (item.quantity || 1))}</span>
+                                        <span className="font-mono font-semibold text-white">{fmtMoney(item.amount)}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Desktop: table */}
+                                <table className="hidden sm:table w-full" style={{ borderCollapse: 'collapse' }}>
                                   <thead>
                                     <tr>
                                       {['Description', 'Qty', 'Unit price', 'Amount'].map(h => (
-                                        <th key={h} style={{ fontSize: 10.5, color: '#3d4352', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h === 'Amount' ? 'right' : 'left', padding: '0 0 8px', borderBottom: '1px solid #232731' }}>{h}</th>
+                                        <th key={h} className="text-left text-xs text-gray-700 font-medium uppercase tracking-wider pb-2 border-b" style={{ borderColor: '#232731', textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
                                       ))}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {(email.quote_data || []).map((item, i) => (
                                       <tr key={i}>
-                                        <td style={{ padding: '9px 0', fontSize: 13, borderBottom: '1px solid #232731' }}>{item.description || '—'}</td>
-                                        <td style={{ padding: '9px 0', fontSize: 13, color: '#6b7280', borderBottom: '1px solid #232731' }}>{item.quantity || 1}</td>
-                                        <td style={{ padding: '9px 0', fontSize: 13, color: '#6b7280', borderBottom: '1px solid #232731' }}>{fmtMoney(item.unitPrice ?? item.amount / (item.quantity || 1))}</td>
-                                        <td style={{ padding: '9px 0', fontSize: 13, textAlign: 'right', fontFamily: 'monospace', borderBottom: '1px solid #232731' }}>{fmtMoney(item.amount)}</td>
+                                        <td className="py-2.5 text-sm border-b" style={{ borderColor: '#232731' }}>{item.description || '—'}</td>
+                                        <td className="py-2.5 text-sm text-gray-500 border-b" style={{ borderColor: '#232731' }}>{item.quantity || 1}</td>
+                                        <td className="py-2.5 text-sm text-gray-500 border-b" style={{ borderColor: '#232731' }}>{fmtMoney(item.unitPrice ?? item.amount / (item.quantity || 1))}</td>
+                                        <td className="py-2.5 text-sm text-right font-mono border-b" style={{ borderColor: '#232731' }}>{fmtMoney(item.amount)}</td>
                                       </tr>
                                     ))}
                                   </tbody>
                                 </table>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid #232731', marginTop: 2 }}>
-                                  <span style={{ fontSize: 13, fontWeight: 600 }}>Total</span>
-                                  <span style={{ fontSize: 20, fontWeight: 700, color: '#f97316', fontFamily: 'monospace' }}>{fmtMoney(email.quote_total)}</span>
+
+                                <div className="flex justify-between items-center pt-3 mt-1 border-t" style={{ borderColor: '#232731' }}>
+                                  <span className="text-sm font-semibold text-white">Total</span>
+                                  <span className="text-xl font-bold font-mono text-orange-400">{fmtMoney(email.quote_total)}</span>
                                 </div>
                               </>
                             ) : (
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {[
                                   { label: 'Date', value: fmtDate(email.scheduled_date) || 'Not set', highlight: true },
-                                  { label: 'Time', value: email.scheduled_time || 'Not set', highlight: true },
+                                  { label: 'Time', value: email.scheduled_time ? fmtScheduleTime(email.scheduled_time) : 'Not set', highlight: true },
                                   { label: 'Customer', value: email.customer_name, highlight: false },
                                 ].map(f => (
                                   <div key={f.label}>
-                                    <div style={{ fontSize: 10.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500, marginBottom: 3 }}>{f.label}</div>
-                                    <div style={{ fontSize: 14, fontWeight: 500, color: f.highlight ? '#60a5fa' : '#e8eaf0' }}>{f.value}</div>
+                                    <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">{f.label}</div>
+                                    <div className="text-sm font-medium" style={{ color: f.highlight ? '#60a5fa' : '#e8eaf0' }}>{f.value}</div>
                                   </div>
                                 ))}
                               </div>
                             )}
                           </div>
 
-                          <div style={{ padding: '20px', background: '#161921', borderLeft: '1px solid #232731' }}>
-                            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#3d4352', marginBottom: 12 }}>Details</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                          {/* Sidebar details */}
+                          <div className="p-4 sm:p-5 border-t lg:border-t-0 lg:border-l lg:w-64" style={{ background: '#161921', borderColor: '#232731' }}>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-gray-700 mb-3">Details</div>
+                            <div className="space-y-3">
                               {[
                                 { k: 'Sent', v: `${fmtDate(email.sent_at)} ${fmtTime(email.sent_at)}` },
                                 { k: 'From', v: email.sent_by_email },
                                 { k: 'To', v: email.customer_email },
                               ].map(m => (
-                                <div key={m.k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                  <span style={{ fontSize: 11, color: '#3d4352', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500 }}>{m.k}</span>
-                                  <span style={{ fontSize: 12.5, color: '#6b7280', textAlign: 'right', maxWidth: 160, wordBreak: 'break-all' }}>{m.v}</span>
+                                <div key={m.k} className="flex justify-between items-start gap-2">
+                                  <span className="text-xs text-gray-700 uppercase tracking-wider font-medium flex-shrink-0">{m.k}</span>
+                                  <span className="text-xs text-gray-500 text-right break-all">{m.v}</span>
                                 </div>
                               ))}
                               {email.isDup && (
                                 <>
                                   <hr style={{ border: 'none', borderTop: '1px solid #232731' }} />
-                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ fontSize: 11, color: '#3d4352', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500 }}>Note</span>
-                                    <span style={{ fontSize: 12.5, color: '#fbbf24', textAlign: 'right' }}>Possible duplicate</span>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-gray-700 uppercase tracking-wider font-medium">Note</span>
+                                    <span className="text-xs text-amber-400">Possible duplicate</span>
                                   </div>
                                 </>
                               )}
                             </div>
                             <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', marginTop: 14, background: '#1c2029', border: '1px solid #2e3340', borderRadius: 6, fontSize: 12.5, color: '#6b7280', textDecoration: 'none' }}>
-                              → Open Project #{email.project_id}
+                              className="flex items-center justify-center gap-1.5 px-3 py-2 mt-4 rounded-lg text-xs text-gray-500 hover:text-white no-underline transition"
+                              style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
+                              <ExternalLink className="w-3.5 h-3.5" /> Open Project #{email.project_id}
                             </a>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ))
-          )}
-        </div>
-      </main>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

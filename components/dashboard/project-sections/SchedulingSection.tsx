@@ -29,6 +29,10 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [estimatedHours, setEstimatedHours] = useState('');
   const [actualHours, setActualHours] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [showHours, setShowHours] = useState(false);
+  const [showConflictWarning, setShowConflictWarning] = useState(false);
+const [conflictJobs, setConflictJobs] = useState<any[]>([]);
+
 
   useEffect(() => {
     async function fetchTeamMembers() {
@@ -60,38 +64,45 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
 
-  useEffect(() => {
-setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
-    if (lead?.scheduled_time) {
-      const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
-      setTimeHour(hour);
-      setTimeMinute(minute);
-      setTimeAmPm(ampm);
-      setScheduledTime(lead.scheduled_time);
-    } else {
-      setTimeHour(''); setTimeMinute(''); setTimeAmPm('AM'); setScheduledTime('');
-    }
-    setAssignedTo(lead?.assigned_to || '');
-    setShowCustomAssignee(false);
-    setCustomAssignee('');
-    setEstimatedHours(lead?.estimated_hours || '');
-    setActualHours(lead?.actual_hours || '');
-  }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
 
-  useEffect(() => {
-    setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
-  }, [timeHour, timeMinute, timeAmPm]);
-
-  const scheduleEmailLog = useMemo(() => {
+  const checkForConflicts = async () => {
+    if (!scheduledDate || !assignedTo) return [];
     try {
-      const raw = lead?.schedule_emails;
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
-  }, [lead?.schedule_emails]);
+      const res = await fetch(`/api/company/${companySlug}/leads`);
+      const data = await res.json();
+      const leads = data.leads || [];
 
-  const handleSave = async () => {
+      const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
+      const selectedHour = scheduledTime ? parseInt(scheduledTime.split(':')[0]) : null;
+
+      return leads.filter((l: any) => {
+        if (l.id === lead.id || l.deleted) return false;
+        if (!l.scheduled_date || !l.assigned_to) return false;
+        if (l.assigned_to !== finalAssignee) return false;
+        const jobDate = l.scheduled_date.split('T')[0].split(' ')[0];
+        if (jobDate !== scheduledDate) return false;
+        if (selectedHour !== null && l.scheduled_time) {
+          const jobHour = parseInt(l.scheduled_time.split(':')[0]);
+          if (Math.abs(jobHour - selectedHour) < 1) return true;
+        }
+        // Same day, same person, no time set — still a soft conflict
+        return true;
+      });
+    } catch { return []; }
+  };
+
+  const handleSave = async (force = false) => {
     if (!hasProject) { toast.error('Convert to project first'); return; }
+
+    if (!force && scheduledDate && (showCustomAssignee ? customAssignee : assignedTo)) {
+      const conflicts = await checkForConflicts();
+      if (conflicts.length > 0) {
+        setConflictJobs(conflicts);
+        setShowConflictWarning(true);
+        return;
+      }
+    }
+
     const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
     setSaving(true);
     try {
@@ -124,6 +135,38 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
     }
   };
 
+  useEffect(() => {
+setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
+    if (lead?.scheduled_time) {
+      const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
+      setTimeHour(hour);
+      setTimeMinute(minute);
+      setTimeAmPm(ampm);
+      setScheduledTime(lead.scheduled_time);
+    } else {
+      setTimeHour(''); setTimeMinute(''); setTimeAmPm('AM'); setScheduledTime('');
+    }
+    setAssignedTo(lead?.assigned_to || '');
+    setShowCustomAssignee(false);
+    setCustomAssignee('');
+    setEstimatedHours(lead?.estimated_hours || '');
+    setActualHours(lead?.actual_hours || '');
+  }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
+
+  useEffect(() => {
+    setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
+  }, [timeHour, timeMinute, timeAmPm]);
+
+  const scheduleEmailLog = useMemo(() => {
+    try {
+      const raw = lead?.schedule_emails;
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  }, [lead?.schedule_emails]);
+
+
+
   const isCurrentAssigneeTeamMember = teamMembers.some(m => m.name === assignedTo);
 
   const handleCalendarSelection = (date: string, time: string) => {
@@ -155,7 +198,7 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
         {/* Save + More actions */}
         <div className="flex items-center gap-2">
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={saving}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition"
           >
@@ -188,133 +231,195 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
         </div>
       </div>
 
-      {/* Form */}
-      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-        {/* Assigned To */}
-        <div className="sm:col-span-2">
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-            Assigned To
-          </label>
-          {!showCustomAssignee ? (
-            <select
-              value={assignedTo}
-              onChange={(e) => {
-                if (e.target.value === '__custom__') { setShowCustomAssignee(true); setAssignedTo(''); }
-                else setAssignedTo(e.target.value);
-              }}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition"
-            >
-              <option value="">Select team member...</option>
-              {teamMembers.map((m) => (
-                <option key={m.id} value={m.name}>
-                  {m.name}{m.id === currentUser?.id ? ' (You)' : ''}
-                </option>
-              ))}
-              {assignedTo && !isCurrentAssigneeTeamMember && (
-                <option value={assignedTo}>{assignedTo} (Custom)</option>
-              )}
-              <option value="__custom__">Enter custom name...</option>
-            </select>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customAssignee}
-                onChange={(e) => setCustomAssignee(e.target.value)}
-                placeholder="e.g., Mike"
-                autoFocus
-                className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && customAssignee.trim()) { setAssignedTo(customAssignee); setShowCustomAssignee(false); }
-                  if (e.key === 'Escape') { setShowCustomAssignee(false); setCustomAssignee(''); }
-                }}
-              />
-              <button
-                onClick={() => { if (customAssignee.trim()) { setAssignedTo(customAssignee); setShowCustomAssignee(false); } }}
-                disabled={!customAssignee.trim()}
-                className="px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold transition"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }}
-                className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
-              >
-                Cancel
-              </button>
-            </div>
+
+{/* Form */}
+<div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  {/* LEFT COLUMN */}
+  <div className="space-y-4">
+
+    {/* Assigned To */}
+    <div>
+      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+        Assigned To
+      </label>
+      {!showCustomAssignee ? (
+        <select
+          value={assignedTo}
+          onChange={(e) => {
+            if (e.target.value === '__custom__') {
+              setShowCustomAssignee(true);
+              setAssignedTo('');
+            } else setAssignedTo(e.target.value);
+          }}
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition"
+        >
+          <option value="">Select team member...</option>
+          {teamMembers.map((m) => (
+            <option key={m.id} value={m.name}>
+              {m.name}{m.id === currentUser?.id ? ' (You)' : ''}
+            </option>
+          ))}
+          {assignedTo && !isCurrentAssigneeTeamMember && (
+            <option value={assignedTo}>{assignedTo} (Custom)</option>
           )}
-        </div>
-
-        {/* Date */}
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Date</label>
+          <option value="__custom__">Enter custom name...</option>
+        </select>
+      ) : (
+        <div className="flex gap-2">
           <input
-            type="date"
-            value={scheduledDate}
-            onChange={(e) => setScheduledDate(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+            type="text"
+            value={customAssignee}
+            onChange={(e) => setCustomAssignee(e.target.value)}
+            placeholder="e.g., Mike"
+            autoFocus
+            className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
           />
-        </div>
-
-        {/* Time */}
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Time</label>
-          <div className="flex items-center gap-1">
-            <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)}
-              className="flex-1 px-2 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition">
-              <option value="">HH</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                <option key={h} value={h}>{h}</option>
-              ))}
-            </select>
-            <span className="text-gray-300 font-bold">:</span>
-            <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)}
-              className="flex-1 px-2 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition">
-              <option value="">MM</option>
-              <option value="00">00</option>
-              <option value="15">15</option>
-              <option value="30">30</option>
-              <option value="45">45</option>
-            </select>
-            <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)}
-              className="flex-1 px-2 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition">
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Est Hours */}
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Est. Hours</label>
-          <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)}
-            placeholder="2.5"
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition" />
-        </div>
-
-        {/* Actual Hours */}
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Actual Hours</label>
-          <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)}
-            placeholder="3.0"
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition" />
-        </div>
-
-        {/* View Calendar */}
-        <div className="sm:col-span-2">
           <button
-            type="button"
-            onClick={() => setShowCalendarModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition text-gray-600 font-semibold"
+            onClick={() => {
+              if (customAssignee.trim()) {
+                setAssignedTo(customAssignee);
+                setShowCustomAssignee(false);
+              }
+            }}
+            disabled={!customAssignee.trim()}
+            className="px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold transition"
           >
-            <Calendar className="w-4 h-4 text-indigo-400" />
-            View Calendar
+            Add
+          </button>
+          <button
+            onClick={() => {
+              setShowCustomAssignee(false);
+              setCustomAssignee('');
+            }}
+            className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+          >
+            Cancel
           </button>
         </div>
+      )}
+    </div>
 
+    {/* Date */}
+    <div>
+      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+        Date
+      </label>
+      <input
+        type="date"
+        value={scheduledDate}
+        onChange={(e) => setScheduledDate(e.target.value)}
+        className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+      />
+    </div>
+
+  </div>
+
+  {/* RIGHT COLUMN */}
+  <div className="space-y-4">
+
+<div>
+  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+    Time
+  </label>
+
+  <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition">
+
+    <select
+      value={timeHour}
+      onChange={(e) => setTimeHour(e.target.value)}
+      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
+    >
+      <option value="">HH</option>
+      {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+        <option key={h} value={h}>{h}</option>
+      ))}
+    </select>
+
+    <span className="text-gray-400 font-semibold">:</span>
+
+    <select
+      value={timeMinute}
+      onChange={(e) => setTimeMinute(e.target.value)}
+      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
+    >
+      <option value="">MM</option>
+      <option value="00">00</option>
+      <option value="15">15</option>
+      <option value="30">30</option>
+      <option value="45">45</option>
+    </select>
+
+    <div className="h-5 w-px bg-gray-200 mx-2" />
+
+    <select
+      value={timeAmPm}
+      onChange={(e) => setTimeAmPm(e.target.value)}
+      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
+    >
+      <option value="AM">AM</option>
+      <option value="PM">PM</option>
+    </select>
+
+  </div>
+</div>
+
+    {/* View Calendar */}
+    <button
+      type="button"
+      onClick={() => setShowCalendarModal(true)}
+      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition text-gray-600 font-semibold"
+    >
+      <Calendar className="w-4 h-4 text-indigo-400" />
+      View Calendar
+    </button>
+
+    {/* Hours Toggle */}
+    <button
+      type="button"
+      onClick={() => setShowHours(!showHours)}
+      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition"
+    >
+      {showHours ? 'Hide Hours ▲' : 'Add Hours ▼'}
+    </button>
+
+  </div>
+
+  {/* Expandable Hours */}
+  {showHours && (
+    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+          Est. Hours
+        </label>
+        <input
+          type="number"
+          step="0.5"
+          value={estimatedHours}
+          onChange={(e) => setEstimatedHours(e.target.value)}
+          placeholder="2.5"
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+        />
       </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+          Actual Hours
+        </label>
+        <input
+          type="number"
+          step="0.5"
+          value={actualHours}
+          onChange={(e) => setActualHours(e.target.value)}
+          placeholder="3.0"
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
+        />
+      </div>
+    </div>
+  )}
+
+</div>
 
       {/* Email history */}
       {scheduleEmailLog.length > 0 && (
@@ -346,6 +451,55 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {showConflictWarning && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl">
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {showCustomAssignee ? customAssignee : assignedTo} already has {conflictJobs.length === 1 ? 'a job' : `${conflictJobs.length} jobs`} around this time:
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {conflictJobs.map((job: any) => (
+                  <div key={job.id} className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {job.scheduled_date && new Date(job.scheduled_date.split('T')[0].split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {job.scheduled_time && (() => {
+                          const [h, m] = job.scheduled_time.split(':');
+                          const hour = parseInt(h);
+                          return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setShowConflictWarning(false)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
+                  Go Back
+                </button>
+                <button onClick={() => { setShowConflictWarning(false); handleSave(true); }}
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition">
+                  Save Anyway
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -126,23 +126,36 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
 
       {/* Page header */}
       <div className="border-b border-gray-100 pb-5 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Service Categories</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {useDefaults
-              ? `Using default categories for ${company.business_type}. Customize below if needed.`
-              : 'Using custom categories with task templates.'}
-          </p>
-        </div>
-        {!useDefaults && (
-          <button
-            onClick={() => { setCategories(defaultCategories); setUseDefaults(true); }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition flex-shrink-0"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Restore Defaults
-          </button>
-        )}
-      </div>
+  <div>
+    <h2 className="text-xl font-bold text-gray-900">Service Categories</h2>
+    <p className="text-sm text-gray-500 mt-1">
+      {useDefaults
+        ? `Using default categories for ${company.business_type}. Customize below if needed.`
+        : 'Using custom categories with task templates.'}
+    </p>
+  </div>
+
+  <div className="flex items-center gap-2">
+    {!useDefaults && (
+      <button
+        onClick={() => { setCategories(defaultCategories); setUseDefaults(true); }}
+        className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition"
+      >
+        <RotateCcw className="w-3.5 h-3.5" />
+        Restore Defaults
+      </button>
+    )}
+
+    <button
+      onClick={handleSave}
+      disabled={loading}
+      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-bold transition"
+    >
+      <Save className="w-4 h-4" />
+      {loading ? 'Saving...' : 'Save'}
+    </button>
+  </div>
+</div>
 
       {/* Alerts */}
       {success && (

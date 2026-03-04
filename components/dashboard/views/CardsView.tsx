@@ -16,6 +16,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
   const [briefStates, setBriefStates] = useState<{ [key: number]: { loading: boolean; brief: any | null } }>({});
   const [activeBriefLead, setActiveBriefLead] = useState<any | null>(null);
   const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
+  
+  
 
   const formatCategory = (cat: string) => {
     if (!cat) return 'Uncategorized';
@@ -170,11 +172,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
                   )}
                 </div>
               )}
-              {isProject && (
-                <span className="px-2 py-0.5 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
-                  #{lead.project_number}
-                </span>
-              )}
+             {isProject && (
+  <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white/70 text-xs font-bold rounded-md">
+    #{lead.project_number}
+  </span>
+)}
             </div>
           </div>
 
@@ -194,8 +196,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
             </div>
           )}
 
-          {lead.quote_total && (
-            <div className="flex items-center gap-1.5 text-xs mb-3">
+  {lead.quote_total && (
+            <div className="flex items-center gap-1.5 text-xs mb-3 flex-wrap">
               <span className={`px-2 py-0.5 font-bold ${
                 lead.payment_status === 'paid'
                   ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
@@ -209,6 +211,19 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
                   ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.payment_amount || 0))} / ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} paid`
                   : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} due`}
               </span>
+              {lead.quote_accepted_at && (
+                <span className="px-2 py-0.5 font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">✅ Accepted</span>
+              )}
+              {lead.quote_declined_at && !lead.quote_accepted_at && (
+                <span className="px-2 py-0.5 font-bold bg-red-500/20 border border-red-500/30 text-red-300">✗ Declined</span>
+              )}
+              {!lead.quote_accepted_at && !lead.quote_declined_at && (() => {
+                try {
+                  const log = typeof lead.quote_emails === 'string' ? JSON.parse(lead.quote_emails) : lead.quote_emails || [];
+                  if (log.length > 0) return <span className="px-2 py-0.5 font-bold bg-amber-500/20 border border-amber-500/30 text-amber-300">📨 Sent</span>;
+                } catch {}
+                return null;
+              })()}
             </div>
           )}
 
@@ -216,10 +231,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
           <div className="flex items-center justify-between pt-3 border-t border-slate-700">
             <div className="flex items-center gap-2.5">
               <span className="text-gray-500 text-xs">{formatDate(lead.created_at)}</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-500 text-white text-xs font-bold">
-                <Tag className="w-3 h-3" />
-                {formatCategory(lead.category)}
-              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 border border-white/10 text-white/70 text-xs font-bold rounded-md">
+  <Tag className="w-3 h-3 opacity-70" />
+  {formatCategory(lead.category)}
+</span>
             </div>
             <button
               onClick={(e) => canUseAiBrief(planTier)
