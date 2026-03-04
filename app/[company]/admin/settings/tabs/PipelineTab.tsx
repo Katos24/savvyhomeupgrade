@@ -15,7 +15,6 @@ const DEFAULT_STATUSES: StatusOption[] = [
   { value: 'new', label: 'New', color: 'pink' },
   { value: 'contacted', label: 'Contacted', color: 'blue' },
   { value: 'quoted', label: 'Quoted', color: 'yellow' },
-  { value: 'scheduled', label: 'Scheduled', color: 'purple' },
   { value: 'in-progress', label: 'In Progress', color: 'orange' },
   { value: 'completed', label: 'Completed', color: 'green' },
 ];

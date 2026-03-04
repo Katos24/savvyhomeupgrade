@@ -119,13 +119,12 @@ ${leadsContext}`;
         content: m.content,
       }));
 
-      const chatResponse = await anthropic.messages.create({
-  model: 'claude-haiku-4-5-20251001',
-  max_tokens: 512,
-  system: systemPrompt,
-  messages,
-});
-
+   const chatResponse = await callClaude({
+        max_tokens: 512,
+        system: systemPrompt,
+        messages,
+      });
+      
       const replyContent = chatResponse.content[0];
       if (replyContent.type !== 'text') throw new Error('Unexpected response type');
 
