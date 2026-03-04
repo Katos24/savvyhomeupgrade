@@ -454,54 +454,73 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
         </div>
       )}
 
-      {showConflictWarning && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl">
-            <div className="p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">⚠️</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {showCustomAssignee ? customAssignee : assignedTo} already has {conflictJobs.length === 1 ? 'a job' : `${conflictJobs.length} jobs`} around this time:
-                  </p>
-                </div>
-              </div>
+{showConflictWarning && (
+<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4">
 
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {conflictJobs.map((job: any) => (
-                  <div key={job.id} className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {job.scheduled_date && new Date(job.scheduled_date.split('T')[0].split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {job.scheduled_time && (() => {
-                          const [h, m] = job.scheduled_time.split(':');
-                          const hour = parseInt(h);
-                          return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+    <div className="relative bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl">
+      <div className="p-6 space-y-4">
 
-              <div className="flex gap-2 pt-2">
-                <button onClick={() => setShowConflictWarning(false)}
-                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
-                  Go Back
-                </button>
-                <button onClick={() => { setShowConflictWarning(false); handleSave(true); }}
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition">
-                  Save Anyway
-                </button>
-              </div>
-            </div>
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-lg">⚠️</span>
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {showCustomAssignee ? customAssignee : assignedTo} already has
+              {conflictJobs.length === 1 ? ' a job' : ` ${conflictJobs.length} jobs`}
+              around this time.
+            </p>
           </div>
         </div>
-      )}
+
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {conflictJobs.map((job: any) => (
+            <div
+              key={job.id}
+              className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
+                <p className="text-xs text-gray-500">
+                  {job.scheduled_date
+                    ? new Date(job.scheduled_date.split('T')[0] + 'T00:00:00')
+                        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : ''}
+                  {job.scheduled_time && (() => {
+                    const [h, m] = job.scheduled_time.split(':');
+                    const hour = parseInt(h);
+                    return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+                  })()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={() => setShowConflictWarning(false)}
+            className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition"
+          >
+            Go Back
+          </button>
+
+          <button
+            onClick={() => {
+              setShowConflictWarning(false);
+              handleSave(true);
+            }}
+            className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition"
+          >
+            Save Anyway
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
 
       <SchedulingCalendarModal
         isOpen={showCalendarModal}

@@ -502,8 +502,7 @@ const recentLeads = allLeads
             <Filter className="w-4 h-4" /> Filters
             <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
-          <div className="flex rounded-xl overflow-hidden border border-slate-700">
-  <button
+<div className="hidden sm:flex rounded-xl overflow-hidden border border-slate-700">  <button
     onClick={() => setCurrentView('cards')}
     className={`px-4 py-2 text-sm font-semibold transition ${
       currentView === 'cards'
