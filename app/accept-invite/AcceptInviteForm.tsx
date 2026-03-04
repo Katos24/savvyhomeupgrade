@@ -131,9 +131,11 @@ export default function AcceptInviteForm() {
             <h1 className="text-2xl font-bold mb-2">Invalid Invitation</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <p className="text-sm text-gray-500">
-              This invite link may have expired or already been used.
-              Please contact your team admin for a new invitation.
-            </p>
+  This invitation link has expired (links are valid for 3 days) 
+  or has already been used.
+  <br /><br />
+  Please ask your team admin to resend a new invitation.
+</p>
           </div>
         </div>
       </div>

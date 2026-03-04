@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
       );
     }
 
-    // Generate invite token (valid for 24 hours)
+// Generate invite token (valid for 3 days)
     const inviteToken = crypto.randomBytes(32).toString('hex');
 
     // Create user with invite token (account not active yet)
@@ -68,7 +68,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
         ${company.id},
         ${role},
         ${inviteToken},
-        NOW() + INTERVAL '24 hours',
+NOW() + INTERVAL '3 days',
         false,
         NOW()
       )
