@@ -1394,7 +1394,7 @@ export default function Home() {
 
         <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 'clamp(20px, 4vw, 32px)', flexWrap: 'wrap' }} className="fade-up fade-up-1">
-            <span className="badge">CRM for Service Contractors</span>
+            <span className="badge">No‑Chaos Project Tracking</span>
             <span className="ai-pill">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
               AI-Powered
