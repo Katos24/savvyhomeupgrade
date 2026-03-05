@@ -31,7 +31,10 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showHours, setShowHours] = useState(false);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
-const [conflictJobs, setConflictJobs] = useState<any[]>([]);
+  const [conflictJobs, setConflictJobs] = useState<any[]>([]);
+  const [showSendPrompt, setShowSendPrompt] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [showMissingFields, setShowMissingFields] = useState(false);
 
 
   useEffect(() => {
@@ -91,49 +94,62 @@ const [conflictJobs, setConflictJobs] = useState<any[]>([]);
     } catch { return []; }
   };
 
-  const handleSave = async (force = false) => {
-    if (!hasProject) { toast.error('Convert to project first'); return; }
+const handleSave = async (force = false) => {
+  if (!hasProject) {
+    toast.error('Convert to project first');
+    return;
+  }
 
-    if (!force && scheduledDate && (showCustomAssignee ? customAssignee : assignedTo)) {
-      const conflicts = await checkForConflicts();
-      if (conflicts.length > 0) {
-        setConflictJobs(conflicts);
-        setShowConflictWarning(true);
-        return;
-      }
+  // ── CONFIRM IF MISSING REQUIRED FIELDS ──
+if (!force) {
+    const hasMissing = !scheduledDate || !assignedTo || !scheduledTime;
+    if (hasMissing) {
+      setShowMissingFields(true);
+      return;
     }
+  }
 
-    const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: lead.id,
-          action: 'update_project',
-          scheduled_date: scheduledDate || null,
-          scheduled_time: scheduledTime || null,
-          assigned_to: finalAssignee || null,
-          estimated_hours: estimatedHours || null,
-          actual_hours: actualHours || null,
-          user_name: currentUser?.name || 'Unknown',
-          user_email: currentUser?.email || '',
-        }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        toast.success('Scheduling saved!');
-        await onRefresh();
-      } else {
-        toast.error(result.error || 'Failed to save');
+  const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
+  setSaving(true);
+
+  try {
+    const res = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lead.id,
+        action: 'update_project',
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        assigned_to: finalAssignee || null,
+        estimated_hours: estimatedHours || null,
+        actual_hours: actualHours || null,
+        user_name: currentUser?.name || 'Unknown',
+        user_email: currentUser?.email || '',
+      }),
+    });
+
+    const result = await res.json();
+
+    if (res.ok && result.success) {
+      toast.success('Scheduling saved!');
+      await onRefresh();
+      const finalAssignee2 = showCustomAssignee ? customAssignee : assignedTo;
+     const lastSent = scheduleEmailLog.length > 0 ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at : null;
+      const recentlySent = lastSent && (Date.now() - new Date(lastSent).getTime()) < 30 * 60 * 1000; // 30 min
+      if (scheduledDate && scheduledTime && finalAssignee2 && !recentlySent) {
+        setShowMoreActions(false);
+        setTimeout(() => setShowSendPrompt(true), 500);
       }
-    } catch {
-      toast.error('Failed to save');
-    } finally {
-      setSaving(false);
+    } else {
+      toast.error(result.error || 'Failed to save');
     }
-  };
+  } catch {
+    toast.error('Failed to save');
+  } finally {
+    setSaving(false);
+  }
+};
 
   useEffect(() => {
 setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
@@ -454,73 +470,166 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
         </div>
       )}
 
-{showConflictWarning && (
-<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4">
-
-    <div className="relative bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl">
-      <div className="p-6 space-y-4">
-
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-lg">⚠️</span>
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              {showCustomAssignee ? customAssignee : assignedTo} already has
-              {conflictJobs.length === 1 ? ' a job' : ` ${conflictJobs.length} jobs`}
-              around this time.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {conflictJobs.map((job: any) => (
-            <div
-              key={job.id}
-              className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
-                <p className="text-xs text-gray-500">
-                  {job.scheduled_date
-                    ? new Date(job.scheduled_date.split('T')[0] + 'T00:00:00')
-                        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : ''}
-                  {job.scheduled_time && (() => {
-                    const [h, m] = job.scheduled_time.split(':');
-                    const hour = parseInt(h);
-                    return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-                  })()}
+{/* Conflict Warning */}
+      {showConflictWarning && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+          onClick={() => setShowConflictWarning(false)}>
+          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-start gap-3">
+              <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-lg">⚠️</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {showCustomAssignee ? customAssignee : assignedTo} already has
+                  {conflictJobs.length === 1 ? ' a job' : ` ${conflictJobs.length} jobs`} around this time.
                 </p>
               </div>
             </div>
-          ))}
+            <div className="px-5 py-4 space-y-2 max-h-48 overflow-y-auto">
+              {conflictJobs.map((job: any) => (
+                <div key={job.id} className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {job.scheduled_date && new Date(job.scheduled_date.split('T')[0].split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {job.scheduled_time && (() => {
+                        const [h, m] = job.scheduled_time.split(':');
+                        const hour = parseInt(h);
+                        return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+              <button onClick={() => setShowConflictWarning(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
+                Go Back
+              </button>
+              <button onClick={() => { setShowConflictWarning(false); handleSave(true); }}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition">
+                Save Anyway
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={() => setShowConflictWarning(false)}
-            className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition"
-          >
-            Go Back
-          </button>
-
-          <button
-            onClick={() => {
-              setShowConflictWarning(false);
-              handleSave(true);
-            }}
-            className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition"
-          >
-            Save Anyway
-          </button>
+      {/* Send Schedule Email Prompt */}
+      {showSendPrompt && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+          onClick={() => setShowSendPrompt(false)}>
+          <div className="bg-white rounded-xl border border-gray-200 max-w-sm w-full shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white">Notify Customer?</h3>
+                <p className="text-sm text-indigo-200 mt-0.5">Schedule is all set</p>
+              </div>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-600">
+                Send <strong className="text-gray-800">{lead.name}</strong> a confirmation email with their scheduled date and time?
+              </p>
+              <div className="mt-3 px-3 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <p className="text-xs font-semibold text-indigo-800">
+                  📅 {scheduledDate && new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {timeHour && timeMinute ? ` at ${timeHour}:${timeMinute} ${timeAmPm}` : ''}
+                </p>
+                {(showCustomAssignee ? customAssignee : assignedTo) && (
+                  <p className="text-xs text-indigo-600 mt-0.5">Assigned to {showCustomAssignee ? customAssignee : assignedTo}</p>
+                )}
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+              <button onClick={() => setShowSendPrompt(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
+                Not Now
+              </button>
+              <button
+                disabled={sendingEmail}
+                onClick={async () => {
+                  setSendingEmail(true);
+                  try {
+                    const res = await fetch('/api/leads/update', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: lead.id,
+                        action: 'send_schedule_to_customer',
+                        user_name: currentUser?.name || 'Unknown',
+                        user_email: currentUser?.email || '',
+                      }),
+                    });
+                    const result = await res.json();
+                    if (res.ok && result.success) {
+                      toast.success('Schedule email sent!');
+                      await onRefresh();
+                    } else {
+                      toast.error(result.error || 'Failed to send');
+                    }
+                  } catch {
+                    toast.error('Failed to send email');
+                  } finally {
+                    setSendingEmail(false);
+                    setShowSendPrompt(false);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition flex items-center justify-center gap-2">
+                {sendingEmail ? 'Sending...' : <><Mail className="w-3.5 h-3.5" /> Send Email</>}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-      </div>
-    </div>
-  </div>
-)}
+{/* Missing Fields Warning */}
+      {showMissingFields && (
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center p-4"
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowMissingFields(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3.5 space-y-2.5">
+              <p className="font-bold text-gray-900 text-sm">Missing info</p>
+              <div className="space-y-1.5">
+                {!assignedTo && (
+                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
+                    <span>👤</span> No one assigned
+                  </div>
+                )}
+                {!scheduledDate && (
+                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
+                    <span>📅</span> No date set
+                  </div>
+                )}
+                {!scheduledTime && (
+                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
+                    <span>🕐</span> No time set
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="px-4 pb-4 flex gap-2">
+              <button onClick={() => setShowMissingFields(false)}
+                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-lg transition">
+                Go Back
+              </button>
+              <button onClick={() => { setShowMissingFields(false); handleSave(true); }}
+                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition">
+                Save Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SchedulingCalendarModal
         isOpen={showCalendarModal}

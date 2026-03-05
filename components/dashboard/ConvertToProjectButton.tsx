@@ -9,10 +9,10 @@ type ConvertToProjectButtonProps = {
   onRefresh: () => Promise<void>;
 };
 
-export default function ConvertToProjectButton({ 
-  lead, 
-  currentUser, 
-  onRefresh 
+export default function ConvertToProjectButton({
+  lead,
+  currentUser,
+  onRefresh
 }: ConvertToProjectButtonProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -23,7 +23,7 @@ export default function ConvertToProjectButton({
 
   const handleConvert = async () => {
     setIsConverting(true);
-    
+
     try {
       const response = await fetch('/api/leads/update', {
         method: 'POST',
@@ -47,8 +47,10 @@ export default function ConvertToProjectButton({
           const companySlug = window.location.pathname.split('/')[1];
           const tmplRes = await fetch(`/api/company/${companySlug}/quote-templates`);
           const tmplData = await tmplRes.json();
+
           if (tmplData.success) {
             const match = (tmplData.templates || []).find((t: any) => t.category === lead.category);
+
             if (match) {
               const items = match.items.map((item: any, i: number) => ({
                 id: Date.now() + i,
@@ -57,13 +59,17 @@ export default function ConvertToProjectButton({
                 unitPrice: item.amount / (item.quantity || 1),
                 amount: item.amount,
               }));
+
               const total = items.reduce((s: number, i: any) => s + i.amount, 0);
+
               await fetch('/api/leads/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  id: lead.id, action: 'save_quote',
-                  quote_data: items, quote_total: total,
+                  id: lead.id,
+                  action: 'save_quote',
+                  quote_data: items,
+                  quote_total: total,
                   user_name: currentUser?.name || 'Unknown',
                   user_email: currentUser?.email || '',
                 }),
@@ -94,11 +100,20 @@ export default function ConvertToProjectButton({
             <span className="text-3xl">🚀</span>
             <div>
               <h3 className="text-lg font-bold text-gray-900">Ready to start work?</h3>
+
+              {/* Category display */}
+              {lead.category && (
+                <p className="text-sm text-indigo-600 font-semibold mt-1">
+                  Category: {lead.category}
+                </p>
+              )}
+
               <p className="text-sm text-gray-600 mt-1">
                 Convert this lead to an active project to schedule work, create quotes, and track payments.
               </p>
             </div>
           </div>
+
           <button
             onClick={() => setShowConfirm(true)}
             className="w-full sm:w-auto flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg hover:shadow-xl text-sm sm:text-base"
@@ -112,6 +127,14 @@ export default function ConvertToProjectButton({
             <span className="text-3xl">⚠️</span>
             <div>
               <h3 className="text-lg font-bold text-gray-900">Confirm Conversion</h3>
+
+              {/* Category reminder */}
+              {lead.category && (
+                <p className="text-sm text-indigo-600 font-semibold mt-1">
+                  This will be linked to category: {lead.category}
+                </p>
+              )}
+
               <p className="text-sm text-gray-600 mt-1">
                 This will create an active project for <strong>{lead.name}</strong>. You'll be able to:
               </p>
@@ -124,7 +147,7 @@ export default function ConvertToProjectButton({
               </ul>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleConvert}

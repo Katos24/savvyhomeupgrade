@@ -53,7 +53,6 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
       red: '#ef4444',
       gray: '#6b7280',
       indigo: '#6366f1',
-      pink: '#ec4899',
     };
     return colorMap[colorName] || '#3b82f6';
   };
@@ -259,23 +258,7 @@ const getStatusConfig = (statusValue: string) => {
         </button>
       </div>
 
- {/* Dynamic Legend based on statusOptions */}
-      <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2">
-        {safeStatusOptions.map((status) => (
-          <div key={status.value} className="flex items-center gap-1 sm:gap-2">
-                        <div 
-              className="w-3 h-3 sm:w-5 sm:h-5 rounded border-2"
-              style={{ 
-                backgroundColor: getStatusColorHex(status.color),
-                borderColor: getStatusColorHex(status.color)
-              }}
-            ></div>
-            <span className="text-xs sm:text-sm font-medium text-gray-700">
-             {status.label}
-            </span>
-          </div>
-        ))}
-      </div>
+
 
 {/* Views */}
       {view === 'list' && <ListView 
@@ -377,6 +360,7 @@ function ListView({ currentDate, events, formatTime, onSelectLead, getStatusColo
               )}
             </div>
             {event.assigned_to && (
+              
               <div className="text-sm opacity-90">
                 👤 {event.assigned_to}
               </div>

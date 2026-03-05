@@ -11,6 +11,8 @@ import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
 import QuoteTemplatesTab from './tabs/QuoteTemplatesTab';
 import NotificationsTab from './tabs/NotificationsTab';
+import { Trash2 } from 'lucide-react';
+
 
 type Tab = 'general' | 'form' | 'pipeline' | 'email-templates' | 'categories' | 'quote-templates' | 'team' | 'billing' | 'notifications';
 
@@ -174,10 +176,43 @@ export default function CompanySettingsClient({
                   </button>
                 );
               })}
+
+
             </div>
+            
           </div>
+          
         ))}
+                      {/* Deleted Items */}
+<div>
+  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">
+    Data
+  </p>
+
+  <div className="grid grid-cols-1">
+    <a
+      href={`/${company.slug}/dashboard/deleted-leads`}
+      className="bg-white border border-slate-200 rounded-xl p-5 hover:border-red-300 hover:shadow-md transition-all duration-200 text-left group flex flex-col"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-50">
+          <Trash2 className="w-5 h-5 text-red-600" />
+        </div>
+        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-red-400 transition mt-1" />
       </div>
+
+      <p className="text-sm font-bold text-slate-800 group-hover:text-red-600 transition">
+        Deleted Items
+      </p>
+      <p className="text-xs text-slate-400 mt-1">
+        View or restore deleted records
+      </p>
+    </a>
+  </div>
+</div>
+      </div>
+      
     </div>
+    
   );
 }

@@ -423,7 +423,7 @@ const lineItemsHtml = quoteItems.length > 0 ? `
   lineItemsHtml + acceptDeclineHtml,
 );
 
-    await resend.emails.send({
+    const emailResult = await resend.emails.send({
       from: `${company.name || companyName} <onboarding@resend.dev>`,
       to: customerEmail,
       subject: rendered.subject,
@@ -431,6 +431,8 @@ const lineItemsHtml = quoteItems.length > 0 ? `
     });
 
     console.log('✅ Quote email sent to customer:', customerEmail);
+    return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
+
   } catch (error) {
     console.error('❌ Failed to send quote email:', error);
     throw error;
@@ -511,14 +513,15 @@ export async function sendScheduleConfirmation({
   company.email_brand_color_2 || undefined
 );
 
-    await resend.emails.send({
+    const emailResult = await resend.emails.send({
       from: `${company.name || companyName} <onboarding@resend.dev>`,
       to: customerEmail,
       subject: rendered.subject,
       html: emailHtml,
     });
 
-    console.log('✅ Schedule confirmation sent to customer:', customerEmail);
+    console.log('✅ Schedule confirmation email sent to customer:', customerEmail);
+    return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
   } catch (error) {
     console.error('❌ Failed to send schedule confirmation:', error);
     throw error;

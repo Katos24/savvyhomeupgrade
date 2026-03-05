@@ -705,6 +705,7 @@ export default function LeadModal({
                         Customer's Message
                       </h3>
                     </div>
+                    
                     <div className="p-5">
                      {lead.description ? (
   <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
@@ -712,8 +713,11 @@ export default function LeadModal({
   <p className="text-sm text-gray-400 italic">No message provided</p>
 )}
 
+
+
 {(lead.preferred_date || lead.preferred_time) && (
   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+    
     {lead.preferred_date && (
       <div className="flex items-center gap-1.5 text-xs text-gray-600">
         <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
@@ -796,6 +800,7 @@ export default function LeadModal({
                         </button>
                       )}
                     </div>
+                    
                   </div>
                 </div>
 

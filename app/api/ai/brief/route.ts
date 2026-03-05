@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
         console.log('Trying claude-sonnet-4-20250514...');
         return await anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' });
       } catch (err: any) {
-        const isOverloaded = err?.status === 529 || err?.message?.includes('529') || err?.message?.includes('overloaded');
-        if (!isOverloaded) throw err;
-        console.log('Sonnet overloaded, falling back to Haiku immediately...');
+        const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
+        if (!isRetryable) throw err;
+        console.log(`Sonnet error (${err?.status}), falling back to Haiku...`);
       }
 
       for (let attempt = 0; attempt <= 1; attempt++) {
@@ -58,16 +58,16 @@ export async function POST(request: NextRequest) {
           console.log(`Trying claude-haiku-4-5-20251001, attempt: ${attempt + 1}`);
           return await anthropic.messages.create({ ...params, model: 'claude-haiku-4-5-20251001' });
         } catch (err: any) {
-          const isOverloaded = err?.status === 529 || err?.message?.includes('529') || err?.message?.includes('overloaded');
-          if (!isOverloaded) throw err;
+          const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
+          if (!isRetryable) throw err;
           if (attempt === 0) {
-            console.log('Haiku overloaded, retrying in 800ms...');
-            await new Promise(r => setTimeout(r, 800));
+            console.log(`Haiku error (${err?.status}), retrying in 2s...`);
+            await new Promise(r => setTimeout(r, 2000));
           }
         }
       }
 
-      throw new Error('All models overloaded. Please try again shortly.');
+      throw new Error('All models overloaded or rate limited. Please try again shortly.');
     }
 
     // ── CHAT MODE ──────────────────────────────────────────────
@@ -124,7 +124,7 @@ ${leadsContext}`;
         system: systemPrompt,
         messages,
       });
-      
+
       const replyContent = chatResponse.content[0];
       if (replyContent.type !== 'text') throw new Error('Unexpected response type');
 
@@ -282,8 +282,10 @@ customer_score rules:
 
     const isOverloaded =
       error?.status === 529 ||
+      error?.status === 429 ||
       error?.message?.includes('529') ||
       error?.message?.includes('overloaded') ||
+      error?.message?.includes('rate_limit') ||
       error?.message?.includes('All models overloaded');
 
     if (isOverloaded) {

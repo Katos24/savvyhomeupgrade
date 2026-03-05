@@ -102,47 +102,34 @@ export default function SendCustomerEmailButtons({
       </div>
 
       {/* Confirm popup */}
-      {showConfirm && (
+{showConfirm && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 flex items-end sm:items-center justify-center p-4"
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setShowConfirm(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="px-4 py-3.5 space-y-2">
               <p className="font-bold text-gray-900 text-sm">
-                {type === 'quote' ? 'Send Quote Email?' : 'Send Schedule Email?'}
-              </p>
-              <button onClick={() => setShowConfirm(false)} className="text-gray-400 hover:text-gray-600 transition">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="px-5 py-4">
-              <p className="text-sm text-gray-600">
-                This will email the {type === 'quote' ? 'quote' : 'schedule confirmation'} to the customer.
+                {type === 'quote' ? 'Send quote to customer?' : 'Send schedule to customer?'}
               </p>
               {sentAt && (
-                <p className="text-xs text-gray-400 mt-2">
-                  Last sent: <strong className="text-gray-600">{fmtDate(sentAt)}</strong>
+                <p className="text-xs text-gray-400">
+                  Last sent {fmtDate(sentAt)}
                 </p>
               )}
             </div>
-
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition"
-              >
+            <div className="px-4 pb-4 flex gap-2">
+              <button onClick={() => setShowConfirm(false)}
+                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-lg transition">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirm}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg transition"
-              >
-                Send
+              <button onClick={handleConfirm}
+                className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition">
+                {sending ? 'Sending...' : 'Send'}
               </button>
             </div>
           </div>

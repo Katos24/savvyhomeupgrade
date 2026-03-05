@@ -390,105 +390,137 @@ quoteSentAt={(() => {
           <span className="text-base font-extrabold text-green-600">{fmt(total)}</span>
         </div>
       </div>
+{/* ── DESKTOP: table layout ── */}
+<div className="hidden sm:block overflow-x-auto">
+  <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+    <thead>
+      <tr style={{ background: '#f8fafc' }}>
+        <th className="text-left py-2 px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+          Description
+        </th>
 
-      {/* ── DESKTOP: table layout ── */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100">Description</th>
-              <th className="text-center py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-20">Qty</th>
-              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">Unit Price</th>
-              <th className="text-right py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-32">Amount</th>
-              {isEditing && <th className="w-10 border-b border-gray-100" />}
-            </tr>
-          </thead>
-          <tbody>
-            {quoteData.map((item: any) => (
-              <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                <td className="p-0">
-                  {isEditing ? (
-                    <input type="text" value={item.description}
-                      onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                      className="w-full px-4 py-3 text-sm focus:outline-none focus:bg-blue-50 bg-transparent"
-                      placeholder="Description..." />
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-gray-900">{item.description}</div>
-                  )}
-                </td>
-                <td className="p-0 text-center">
-                  {isEditing ? (
-                    <input type="number" min="1" step="1" value={item.quantity || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                      className="w-full px-4 py-3 text-sm text-center focus:outline-none focus:bg-blue-50 bg-transparent"
-                      style={{ MozAppearance: 'textfield' } as any} />
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-gray-900">{item.quantity}</div>
-                  )}
-                </td>
-                <td className="p-0 text-right">
-                  {isEditing ? (
-                    <input type="number" step="0.01" min="0" value={item.unitPrice || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                      className="w-full px-4 py-3 text-sm text-right focus:outline-none focus:bg-blue-50 bg-transparent"
-                      style={{ MozAppearance: 'textfield' } as any}
-                      placeholder="0.00" />
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-gray-900">{fmt(item.unitPrice)}</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{fmt(item.amount)}</td>
-                {isEditing && (
-                  <td className="px-2 py-3 text-center">
-                    <button onClick={() => handleRemoveRow(item.id)}
-                      className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 transition">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr style={{ background: '#f0fdf4' }}>
-              <td colSpan={isEditing ? 4 : 3}
-                className="px-4 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-widest border-t-2 border-gray-200">
-                Total
-              </td>
-              <td className="px-4 py-4 text-right font-extrabold text-green-600 text-base border-t-2 border-gray-200">
-                {fmt(total)}
-              </td>
-              {isEditing && <td className="border-t-2 border-gray-200" />}
-            </tr>
-          </tfoot>
-        </table>
-        <style jsx>{`
-          input[type="number"]::-webkit-inner-spin-button,
-          input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        `}</style>
-      </div>
+        <th className="text-center py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-16">
+          Qty
+        </th>
 
-      {isEditing && (
-  <div className="border-t border-gray-200 bg-gray-50 px-4 py-4 flex items-center justify-between gap-3">
-    <button
-      onClick={() => {
-        setQuoteData(lead?.quote_data || []);
-        setIsEditing(false);
-      }}
-      className="flex-1 px-4 py-2.5 text-sm font-bold bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
-    >
-      Cancel
-    </button>
+        <th className="text-right py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-28">
+          Unit Price
+        </th>
 
-    <button
-      onClick={handleSave}
-      disabled={saving}
-      className="flex-1 px-4 py-2.5 text-sm font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white transition"
-    >
-      {saving ? 'Saving...' : 'Save Quote'}
-    </button>
-  </div>
-)}
+        <th className="text-right py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-28">
+          Amount
+        </th>
+
+        {isEditing && <th className="w-8 border-b border-gray-100" />}
+      </tr>
+    </thead>
+
+    <tbody>
+      {quoteData.map((item: any) => (
+        <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+          
+          {/* Description */}
+          <td className="p-0">
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.description}
+                onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                className="w-full px-3 py-1.5 text-sm focus:outline-none focus:bg-blue-50 bg-transparent"
+                placeholder="Description..."
+              />
+            ) : (
+              <div className="px-3 py-1.5 text-sm text-gray-900">
+                {item.description}
+              </div>
+            )}
+          </td>
+
+          {/* Qty */}
+          <td className="p-0 text-center">
+            {isEditing ? (
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={item.quantity || ''}
+                onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                className="w-full px-2 py-1.5 text-sm text-center focus:outline-none focus:bg-blue-50 bg-transparent"
+                style={{ MozAppearance: 'textfield' } as any}
+              />
+            ) : (
+              <div className="px-2 py-1.5 text-sm text-gray-900">
+                {item.quantity}
+              </div>
+            )}
+          </td>
+
+          {/* Unit Price */}
+          <td className="p-0 text-right">
+            {isEditing ? (
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={item.unitPrice || ''}
+                onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                className="w-full px-2 py-1.5 text-sm text-right focus:outline-none focus:bg-blue-50 bg-transparent"
+                style={{ MozAppearance: 'textfield' } as any}
+                placeholder="0.00"
+              />
+            ) : (
+              <div className="px-2 py-1.5 text-sm text-gray-900">
+                {fmt(item.unitPrice)}
+              </div>
+            )}
+          </td>
+
+          {/* Amount */}
+          <td className="px-2 py-1.5 text-sm text-right font-semibold text-gray-900">
+            {fmt(item.amount)}
+          </td>
+
+          {/* Delete */}
+          {isEditing && (
+            <td className="px-1 py-1.5 text-center">
+              <button
+                onClick={() => handleRemoveRow(item.id)}
+                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </td>
+          )}
+        </tr>
+      ))}
+    </tbody>
+
+    <tfoot>
+      <tr style={{ background: '#f0fdf4' }}>
+        <td
+          colSpan={isEditing ? 4 : 3}
+          className="px-3 py-2 text-right text-[11px] font-bold text-gray-500 uppercase tracking-widest border-t-2 border-gray-200"
+        >
+          Total
+        </td>
+
+        <td className="px-3 py-2 text-right font-extrabold text-green-600 text-sm border-t-2 border-gray-200">
+          {fmt(total)}
+        </td>
+
+        {isEditing && <td className="border-t-2 border-gray-200" />}
+      </tr>
+    </tfoot>
+  </table>
+
+  <style jsx>{`
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  `}</style>
+</div>
 
       {/* Email sent log */}
       {!isEditing && (() => {

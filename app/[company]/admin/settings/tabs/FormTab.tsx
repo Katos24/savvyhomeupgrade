@@ -25,14 +25,17 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
 
-  const handleSaveCTA = async () => {
+const handleSaveAll = async () => {
     setLoading(true); setError(''); setSuccess('');
     try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
+      await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update-cta', data: { cta_heading: ctaHeading, cta_button_text: company.cta_button_text, cta_success_message: ctaSuccessMessage } }),
       });
-      if (!res.ok) throw new Error('Failed to save');
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-custom-questions', data: { custom_questions: customQuestions } }),
+      });
       setSuccess('Form settings saved!');
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
@@ -264,10 +267,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         {/* Save footer */}
         {customQuestions.length > 0 && !showAddQuestion && (
           <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
-            <button onClick={handleSaveQuestions} disabled={loading}
-              className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition">
-              {loading ? 'Saving...' : 'Save Questions'}
-            </button>
+            {/* Single save button */}
+      <button onClick={handleSaveAll} disabled={loading}
+        className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition">
+        {loading ? 'Saving...' : 'Save All Form Settings'}
+      </button>
           </div>
         )}
       </div>
@@ -299,10 +303,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </div>
 
         <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
-          <button onClick={handleSaveCTA} disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition">
-            {loading ? 'Saving...' : 'Save Form Settings'}
-          </button>
+         
         </div>
       </div>
     </div>

@@ -218,34 +218,49 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </div>
         )}
 
-        {/* Category list */}
-        <div className="divide-y divide-gray-50">
-          {categories.map((cat, index) => (
-            <div key={index} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-800 text-sm truncate">{cat.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {cat.task_templates?.length || 0} task template{cat.task_templates?.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => openTaskEditor(index)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-100 transition"
-                >
-                  <CheckSquare className="w-3.5 h-3.5" />
-                  Tasks {cat.task_templates?.length ? `(${cat.task_templates.length})` : ''}
-                </button>
-                <button
-                  onClick={() => handleRemoveCategory(index)}
-                  className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+{/* Category list (grid if more than 8) */}
+<div
+  className={
+    categories.length > 8
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4"
+      : "divide-y divide-gray-50"
+  }
+>
+  {categories.map((cat, index) => (
+    <div
+      key={index}
+      className={
+        categories.length > 8
+          ? "bg-white border border-gray-200 p-4 flex flex-col justify-between hover:shadow-md transition"
+          : "flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition"
+      }
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-800 text-sm truncate">{cat.label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {cat.task_templates?.length || 0} task template
+          {cat.task_templates?.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0 mt-3">
+        <button
+          onClick={() => openTaskEditor(index)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-100 transition"
+        >
+          <CheckSquare className="w-3.5 h-3.5" />
+          Tasks {cat.task_templates?.length ? `(${cat.task_templates.length})` : ""}
+        </button>
+        <button
+          onClick={() => handleRemoveCategory(index)}
+          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 transition"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
 
         {/* Footer */}
         <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 space-y-4">
