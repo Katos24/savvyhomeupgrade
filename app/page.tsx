@@ -1414,9 +1414,7 @@ export default function Home() {
             <Link href="/signup" className="cta-primary" style={{ borderRadius: 4, padding: 'clamp(12px, 2vw, 14px) clamp(20px, 4vw, 32px)', fontSize: 'clamp(14px, 2vw, 16px)' }}>
               Start Free — 14 Days →
             </Link>
-            <Link href="/demo" className="cta-secondary" style={{ borderRadius: 4, padding: 'clamp(12px, 2vw, 14px) clamp(20px, 4vw, 32px)', fontSize: 'clamp(14px, 2vw, 16px)' }}>
-              See a Live Demo
-            </Link>
+            
           </div>
 
           <p className="fade-up fade-up-4" style={{ marginTop: 16, fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
