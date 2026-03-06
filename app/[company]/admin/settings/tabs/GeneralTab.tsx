@@ -125,30 +125,29 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
 
       {/* Page header */}
       <div className="border-b border-gray-100 pb-5 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">General Settings</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage your company information and branding</p>
-        </div>
+     
         {!isEditing ? (
           <button onClick={() => { setSavedData({ ...formData }); setIsEditing(true); }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
             <Pencil className="w-3.5 h-3.5" /> Edit
           </button>
+          
         ) : (
           <button onClick={handleCancelEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition">
             <X className="w-3.5 h-3.5" /> Cancel
           </button>
         )}
-      </div>
-
-      {/* Alerts */}
-      {!isEditing && !success && (
+          {!isEditing && !success && (
         <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 text-gray-500 text-sm">
           <Pencil className="w-3.5 h-3.5 flex-shrink-0" />
           Click <strong className="text-gray-700">Edit</strong> to make changes
         </div>
       )}
+      </div>
+
+      {/* Alerts */}
+   
       {success && (
         <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
           <Check className="w-4 h-4" /> {success}

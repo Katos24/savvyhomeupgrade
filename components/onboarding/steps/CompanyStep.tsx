@@ -92,6 +92,8 @@ const CompanyStep = forwardRef<CompanyStepRef, { company: any }>(({ company }, r
             placeholder="https://yourcompany.com" />
         </div>
 
+        
+
         {/* Brand Colors — same card, separated by a divider */}
         <div className="border-t border-gray-100 pt-5">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Brand Colors</label>

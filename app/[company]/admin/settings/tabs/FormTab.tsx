@@ -84,13 +84,11 @@ const handleSaveAll = async () => {
   const typeLabel = (t: string) => t === 'select' ? 'Dropdown' : t === 'checkbox' ? 'Yes / No' : 'Text';
 
   return (
-    <div className="space-y-6">
+    
+<div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6">
 
       {/* Page header */}
-      <div className="border-b border-gray-100 pb-5">
-        <h2 className="text-xl font-bold text-gray-900">Customer Intake Form</h2>
-        <p className="text-sm text-gray-500 mt-1">Customize the form customers fill out to request a quote</p>
-      </div>
+   
 
       {/* Alerts */}
       {success && (
@@ -263,6 +261,55 @@ const handleSaveAll = async () => {
             </p>
           </div>
         ) : null}
+
+        {/* Live Preview */}
+<div className="bg-white border border-gray-200">
+  <div className="px-5 py-4 border-b border-gray-100">
+    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Live Form Preview
+    </span>
+  </div>
+
+  <div className="p-5 space-y-4">
+    {customQuestions.length > 0 ? (
+      customQuestions.map((q) => (
+        <div key={q.id} className="space-y-1">
+          <label className="text-sm font-semibold text-gray-700">
+            {q.label}
+            {q.required && <span className="text-red-500"> *</span>}
+          </label>
+
+          {q.type === 'text' && (
+            <input
+              type="text"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200"
+              placeholder="Your answer..."
+            />
+          )}
+
+          {q.type === 'checkbox' && (
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" className="w-4 h-4" /> Yes
+            </label>
+          )}
+
+          {q.type === 'select' && (
+            <select className="w-full px-3 py-2.5 text-sm border border-gray-200">
+              <option value="">Select...</option>
+              {q.options?.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      ))
+    ) : (
+      <p className="text-sm text-gray-400">
+        No questions yet. Add questions to preview them here.
+      </p>
+    )}
+  </div>
+</div>
 
         {/* Save footer */}
         {customQuestions.length > 0 && !showAddQuestion && (

@@ -16,6 +16,7 @@ async function getCompany(slug: string) {
       slug, 
       logo_url, 
       phone,
+      website,
       cta_success_message 
     FROM companies 
     WHERE slug = ${slug}
@@ -32,16 +33,18 @@ export default async function SuccessPage({ params }: PageProps) {
     notFound();
   }
 
-  const successMessage = company.cta_success_message || "Your request has been received! We'll be in touch soon.";
+  const successMessage =
+    company.cta_success_message ||
+    "Your request has been received! We'll be in touch soon.";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        
+
         {company.logo_url && (
           <div className="mb-4 flex justify-center">
-            <img 
-              src={company.logo_url} 
+            <img
+              src={company.logo_url}
               alt={company.name}
               className="h-16 w-auto object-contain"
             />
@@ -69,7 +72,8 @@ export default async function SuccessPage({ params }: PageProps) {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link 
+
+          <Link
             href={`/${companySlug}`}
             className="flex-1 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
           >
@@ -77,13 +81,25 @@ export default async function SuccessPage({ params }: PageProps) {
           </Link>
 
           {company.phone && (
-            <a 
+            <a
               href={`tel:${company.phone}`}
               className="flex-1 inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
             >
               📞 Call Us
             </a>
           )}
+
+          {company.website && (
+            <a
+              href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 inline-block bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition"
+            >
+              Visit Website
+            </a>
+          )}
+
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-200">

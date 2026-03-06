@@ -46,10 +46,13 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json({
-      success: true,
-      company,
-    });
+   return NextResponse.json({
+  success: true,
+  company: {
+    ...company,
+    website: company.website
+  },
+});
 
   } catch (error) {
     console.error('Error fetching company settings:', error);

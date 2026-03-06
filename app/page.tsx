@@ -1558,7 +1558,7 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {[
               { step: '01', title: 'Create your account', desc: 'Sign up, set your company name, upload a logo, pick your brand colors. Done in under 2 minutes.', detail: 'No technical setup required.' },
-              { step: '02', title: 'Share your booking link', desc: 'You get a unique URL — put it in your Instagram bio, email signature, website, or business card QR code.', detail: 'yourcompany.lead2project.com' },
+              { step: '02', title: 'Share your booking link', desc: 'You get a unique URL — put it in your Instagram bio, email signature, website, or business card QR code.', detail: 'lead2project.com/yourcompany' },
               { step: '03', title: 'Customers submit leads', desc: 'They fill out a 2-step form — contact info, service type, description, photos, address, preferred dates.', detail: 'Saved instantly, even if they stop at step 1.' },
               { step: '04', title: 'You work your pipeline', desc: 'Leads land on your board. AI brief ready. Quote, schedule, track, and close — all in one place.', detail: 'Ask the AI anything about your jobs.' },
             ].map((s, i) => (

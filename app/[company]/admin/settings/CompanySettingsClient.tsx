@@ -36,7 +36,7 @@ const TAB_GROUPS = [
   {
     label: 'Customer-facing',
     items: [
-      { id: 'form' as Tab,            label: 'Lead Form',       desc: 'Public booking form settings',     icon: FileText,  color: '#f97316' },
+      { id: 'form' as Tab,            label: 'Customer Intake Form',       desc: 'Public booking form settings',     icon: FileText,  color: '#f97316' },
       { id: 'email-templates' as Tab, label: 'Email Templates', desc: 'Quotes, schedules, payments',      icon: Mail,      color: '#3b82f6' },
     ],
   },

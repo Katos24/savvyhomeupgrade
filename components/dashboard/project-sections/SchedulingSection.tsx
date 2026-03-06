@@ -68,31 +68,38 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   };
 
 
-  const checkForConflicts = async () => {
-    if (!scheduledDate || !assignedTo) return [];
-    try {
-      const res = await fetch(`/api/company/${companySlug}/leads`);
-      const data = await res.json();
-      const leads = data.leads || [];
+  
+const checkForConflicts = async () => {
+  if (!scheduledDate || !assignedTo) return [];
 
-      const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
-      const selectedHour = scheduledTime ? parseInt(scheduledTime.split(':')[0]) : null;
+  try {
+    const res = await fetch(`/api/company/${companySlug}/leads`);
+    const data = await res.json();
+    const leads = data.leads || [];
 
-      return leads.filter((l: any) => {
-        if (l.id === lead.id || l.deleted) return false;
-        if (!l.scheduled_date || !l.assigned_to) return false;
-        if (l.assigned_to !== finalAssignee) return false;
-        const jobDate = l.scheduled_date.split('T')[0].split(' ')[0];
-        if (jobDate !== scheduledDate) return false;
-        if (selectedHour !== null && l.scheduled_time) {
-          const jobHour = parseInt(l.scheduled_time.split(':')[0]);
-          if (Math.abs(jobHour - selectedHour) < 1) return true;
-        }
-        // Same day, same person, no time set — still a soft conflict
-        return true;
-      });
-    } catch { return []; }
-  };
+    const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
+    const selectedHour = scheduledTime ? parseInt(scheduledTime.split(':')[0]) : null;
+
+    return leads.filter((l: any) => {
+      if (l.id === lead.id || l.deleted) return false;
+      if (!l.scheduled_date || !l.assigned_to) return false;
+      if (l.assigned_to !== finalAssignee) return false;
+
+      const jobDate = l.scheduled_date.split('T')[0].split(' ')[0];
+      if (jobDate !== scheduledDate) return false;
+
+      // ── 2 HOUR WINDOW CONFLICT CHECK ──
+      if (!scheduledTime || !l.scheduled_time) return false;
+
+      const jobHour = parseInt(l.scheduled_time.split(':')[0]);
+      if (isNaN(jobHour) || selectedHour === null) return false;
+
+      return Math.abs(jobHour - selectedHour) < 2;
+    });
+  } catch {
+    return [];
+  }
+};
 
 const handleSave = async (force = false) => {
   if (!hasProject) {
@@ -100,6 +107,16 @@ const handleSave = async (force = false) => {
     return;
   }
 
+  // Only check conflicts if not forcing save
+  if (!force) {
+    const conflicts = await checkForConflicts();
+    if (conflicts.length > 0) {
+      setConflictJobs(conflicts);
+      setShowConflictWarning(true);
+      return;
+    }
+  }
+  
   // ── CONFIRM IF MISSING REQUIRED FIELDS ──
 if (!force) {
     const hasMissing = !scheduledDate || !assignedTo || !scheduledTime;

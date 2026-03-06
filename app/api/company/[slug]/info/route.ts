@@ -11,13 +11,13 @@ export async function GET(request: Request, { params }: Props) {
     const sql = neon(process.env.DATABASE_URL!);
 
     const companies = await sql`
-      SELECT 
-        id, name, slug, email, phone, business_type, logo_url, 
-        status_options, created_at,
-        subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id,
-        plan_tier
-      FROM companies 
-      WHERE slug = ${slug}
+     SELECT 
+  id, name, slug, email, phone, website, business_type, logo_url,
+  status_options, created_at,
+  subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id,
+  plan_tier
+FROM companies
+WHERE slug = ${slug}
     `;
 
     if (companies.length === 0) {
@@ -37,6 +37,7 @@ export async function GET(request: Request, { params }: Props) {
         slug: company.slug,
         email: company.email,
         phone: company.phone,
+        website: company.website,
         business_type: company.business_type,
         logo_url: company.logo_url,
         status_options: company.status_options,
