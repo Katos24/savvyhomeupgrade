@@ -1332,3 +1332,60 @@ export async function sendDailyDigestEmail({
     throw error;
   }
 }
+
+// ✅ Notify contractor when customer accepts a quote
+// ADD THIS to the end of lib/email.ts
+
+export async function sendQuoteAcceptedNotification({
+  companyEmail,
+  companyName,
+  companySlug,
+  customerName,
+  customerEmail,
+  quoteTotal,
+  projectId,
+}: {
+  companyEmail: string;
+  companyName: string;
+  companySlug: string;
+  customerName: string;
+  customerEmail: string;
+  quoteTotal: number;
+  projectId: number;
+}) {
+  const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard`;
+
+  await resend.emails.send({
+    from: 'Lead2Project <onboarding@resend.dev>',
+    to: companyEmail,
+    subject: `✅ ${customerName} accepted your quote — ${fmt(quoteTotal)}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f9fc;margin:0;padding:0;">
+          <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+            <div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px 32px;">
+              <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">✅ Quote Accepted!</h1>
+              <p style="margin:8px 0 0 0;color:#d1fae5;font-size:14px;">${customerName} just accepted your quote</p>
+            </div>
+            <div style="padding:32px;">
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin-bottom:24px;">
+                <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Quote Total</p>
+                <p style="margin:0;font-size:32px;font-weight:800;color:#10b981;">${fmt(quoteTotal)}</p>
+                <p style="margin:8px 0 0 0;font-size:14px;color:#374151;">Customer: <strong>${customerName}</strong> · ${customerEmail}</p>
+              </div>
+              <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Time to schedule their appointment. Click below to open their project.</p>
+              <div style="text-align:center;">
+                <a href="${dashboardUrl}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;">
+                  Schedule Now →
+                </a>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
