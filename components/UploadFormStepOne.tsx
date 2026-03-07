@@ -32,6 +32,7 @@ interface StepOneProps {
   brandColor1?: string | null;
   brandColor2?: string | null;
   showHeader?: boolean;
+  hasStep2?: boolean;
 }
 
 const formatPhoneNumber = (value: string): string => {
@@ -57,6 +58,7 @@ export default function UploadFormStepOne({
   brandColor1,
   brandColor2,
   showHeader = true,
+  hasStep2 = true,
 }: StepOneProps) {
   return (
     <div className="max-w-3xl mx-auto px-4 pb-10">
@@ -72,18 +74,20 @@ export default function UploadFormStepOne({
         </div>
       )}
 
-      {/* Step pill */}
-      <div className="flex items-center justify-center gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">1</div>
-          <span className="text-sm font-semibold text-blue-600">Your Info</span>
+      {/* Step pill — only show if there's a step 2 */}
+      {hasStep2 && (
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">1</div>
+            <span className="text-sm font-semibold text-blue-600">Your Info</span>
+          </div>
+          <div className="w-12 h-0.5 bg-gray-200" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-400 text-sm font-bold flex items-center justify-center">2</div>
+            <span className="text-sm text-gray-400">Optional Details</span>
+          </div>
         </div>
-        <div className="w-12 h-0.5 bg-gray-200" />
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-400 text-sm font-bold flex items-center justify-center">2</div>
-          <span className="text-sm text-gray-400">Optional Details</span>
-        </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8">
         {error && (
@@ -202,14 +206,18 @@ export default function UploadFormStepOne({
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Saving...
               </>
-            ) : (
+            ) : hasStep2 ? (
               'Submit & Add Details →'
+            ) : (
+              'Submit Request'
             )}
           </button>
 
-          <p className="text-center text-xs text-gray-400">
-            We'll save your info right away — step 2 lets you add photos, address & more (optional)
-          </p>
+          {hasStep2 && (
+            <p className="text-center text-xs text-gray-400">
+              We'll save your info right away — step 2 lets you add photos, address & more (optional)
+            </p>
+          )}
         </div>
       </div>
 

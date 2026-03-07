@@ -33,6 +33,7 @@ type CompanyDTO = {
   subscription_status: string | null;
   trial_ends_at: string | null;
   plan_tier: string;
+  form_field_config: any;
 };
 
 export default async function SettingsPage({
@@ -58,7 +59,7 @@ export default async function SettingsPage({
     const currentUser = users[0];
     if (!currentUser) redirect('/login');
 
-const companies = (await sql`
+    const companies = await sql`
       SELECT 
         id,
         name,
@@ -85,11 +86,12 @@ const companies = (await sql`
         custom_questions,
         subscription_status,
         trial_ends_at,
-        plan_tier
+        plan_tier,
+        form_field_config
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
-    `)
+    `;
 
     const company = companies[0];
     if (!company) redirect('/login');
@@ -98,7 +100,6 @@ const companies = (await sql`
       redirect(`/${resolvedParams.company}/dashboard`);
     }
 
-    // Explicit DTO mapping (clean contract)
     const dto = {
       id: company.id,
       name: company.name,
@@ -126,6 +127,7 @@ const companies = (await sql`
       subscription_status: company.subscription_status,
       trial_ends_at: company.trial_ends_at,
       plan_tier: company.plan_tier,
+      form_field_config: company.form_field_config,
     };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;

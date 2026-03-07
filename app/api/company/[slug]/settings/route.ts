@@ -168,17 +168,17 @@ export async function POST(
         `;
         break;
 
- case 'update-notifications':
-  await sql`
-  UPDATE companies
-  SET 
-    reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
-    notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb,
-    daily_digest_enabled = ${data.notification_preferences?.daily_digest?.enabled ?? false},
-    daily_digest_time = ${data.notification_preferences?.daily_digest?.time ?? '07:00'}
-  WHERE id = ${company.id}
-`;
-  break;
+      case 'update-notifications':
+        await sql`
+          UPDATE companies
+          SET 
+            reminder_settings = ${JSON.stringify(data.reminder_settings)}::jsonb,
+            notification_preferences = ${JSON.stringify(data.notification_preferences)}::jsonb,
+            daily_digest_enabled = ${data.notification_preferences?.daily_digest?.enabled ?? false},
+            daily_digest_time = ${data.notification_preferences?.daily_digest?.time ?? '07:00'}
+          WHERE id = ${company.id}
+        `;
+        break;
 
       case 'update-custom-questions':
         console.log('Updating custom questions for company:', company.id);
@@ -208,6 +208,32 @@ export async function POST(
         
         console.log('✅ CTA settings updated');
         break;
+
+      case 'update-form': {
+        console.log('Updating form settings for company:', company.id);
+
+        const ctaHeading = data.cta?.cta_heading ?? null;
+        const ctaSuccessMessage = data.cta?.cta_success_message ?? null;
+        const customQuestions = data.questions ?? [];
+        const fieldConfig = data.field_config ?? null;
+        const addressEnabled = fieldConfig?.address?.enabled ?? null;
+        const addressRequired = fieldConfig?.address?.required ?? false;
+
+        await sql`
+          UPDATE companies
+          SET
+            cta_heading = ${ctaHeading},
+            cta_success_message = ${ctaSuccessMessage},
+            custom_questions = ${JSON.stringify(customQuestions)}::jsonb,
+            form_field_config = ${fieldConfig ? JSON.stringify(fieldConfig) : null}::jsonb,
+            address_enabled = ${addressEnabled},
+            address_required = ${addressRequired}
+          WHERE id = ${company.id}
+        `;
+
+        console.log('✅ Form settings updated');
+        break;
+      }
 
       default:
         return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });

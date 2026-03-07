@@ -1,85 +1,89 @@
-'use client';
+import { neon } from '@neondatabase/serverless';
+import { notFound } from 'next/navigation';
 
-import { useRouter } from 'next/navigation';
-import { CheckCircle } from 'lucide-react';
-
-type Company = {
-  id: number;
-  name: string;
-  slug: string;
-  business_type?: string;
-  cta_success_message?: string | null;
-  logo_url?: string | null;
+type PageProps = {
+  params: Promise<{ company: string }>;
 };
 
-
-
-interface SuccessPageProps {
-  company?: Company;
-  headerTitle?: string;
-  showHomeButton?: boolean;
+async function getCompany(slug: string) {
+  const sql = neon(process.env.DATABASE_URL!);
+  const companies = await sql`
+    SELECT 
+      id, 
+      name, 
+      slug, 
+      logo_url, 
+      website,
+      cta_success_message,
+      email_brand_color_1,
+      email_brand_color_2
+    FROM companies 
+    WHERE slug = ${slug}
+  `;
+  return companies.length > 0 ? companies[0] : null;
 }
 
+export default async function SuccessPage({ params }: PageProps) {
+  const { company: companySlug } = await params;
+  const company = await getCompany(companySlug);
 
-export default function SuccessPage({
-  company,
-  headerTitle = "Submission Successful",
-  showHomeButton = true,
-}: SuccessPageProps) {
-  const router = useRouter();
+  if (!company) {
+    notFound();
+  }
 
-  const businessType = company?.business_type || 'general';
+  const successMessage =
+    company.cta_success_message || "You're all set! 🎉";
 
-  // Dynamically get success message
-  const getCtaSuccessMessage = () => {
-    if (company?.cta_success_message) return company.cta_success_message;
+  const websiteUrl = company.website
+    ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
+    : null;
 
-    switch (businessType) {
-      case 'restaurant':
-        return 'Your order has been received!';
-      case 'salon':
-        return 'Your appointment is booked!';
-      case 'photography':
-        return 'Your session request was submitted!';
-      default:
-        return 'Thank you! Your project was submitted successfully.';
-    }
-  };
-
-  const ctaSuccessMessage = getCtaSuccessMessage();
+  const brandColor1 = company.email_brand_color_1 || '#3b82f6';
+  const brandColor2 = company.email_brand_color_2 || '#8b5cf6';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
-      <div className="bg-white rounded-xl shadow-xl p-8 text-center">
-        {company?.logo_url && (
-          <div className="mb-6 flex justify-center">
-            <img
-              src={company.logo_url}
-              alt={company.name}
-              className="h-20 w-auto object-contain"
-            />
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f8fafc' }}>
+      <div className="max-w-md w-full text-center">
+        <div className="bg-white rounded-2xl shadow-xl p-10">
+          {company.logo_url && (
+            <div className="mb-6 flex justify-center">
+              <img
+                src={company.logo_url}
+                alt={company.name}
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+          )}
+
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
+            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-        )}
 
-        <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {successMessage}
+          </h2>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {headerTitle}
-        </h1>
-        <p className="text-lg text-gray-700 mb-6">
-          {ctaSuccessMessage}
-        </p>
+          <p className="text-gray-500 text-sm mb-6">
+            We've received your request and will be in touch shortly.
+          </p>
 
-        {showHomeButton && (
-          <button
-            onClick={() => router.push('/')}
-            className="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition"
-          >
-            Back to Home
-          </button>
-        )}
+          {websiteUrl && (
+            <a
+              href={websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
+              style={{
+                background: `linear-gradient(to right, ${brandColor1}, ${brandColor2})`,
+              }}
+            >
+              Visit {company.name} →
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

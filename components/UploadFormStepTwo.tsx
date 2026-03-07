@@ -26,6 +26,14 @@ type CustomQuestion = {
   options?: string[];
 };
 
+type FieldConfig = {
+  address: { enabled: boolean; required: boolean };
+  preferred_date: { enabled: boolean };
+  preferred_time: { enabled: boolean };
+  lead_source: { enabled: boolean };
+  file_upload: { enabled: boolean };
+};
+
 interface StepTwoProps {
   formData: {
     address_line_1: string;
@@ -45,6 +53,7 @@ interface StepTwoProps {
   uploadProgress: string;
   error: string;
   addressConfig: { show: boolean; required: boolean };
+  fieldConfig: FieldConfig;
   ctaButtonText: string;
   brandColor1?: string | null;
   brandColor2?: string | null;
@@ -74,6 +83,7 @@ export default function UploadFormStepTwo({
   uploadProgress,
   error,
   addressConfig,
+  fieldConfig,
   ctaButtonText,
   brandColor1,
   brandColor2,
@@ -92,6 +102,13 @@ export default function UploadFormStepTwo({
   onSkip,
 }: StepTwoProps) {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const showAddress = fieldConfig.address.enabled;
+  const showDate = fieldConfig.preferred_date.enabled;
+  const showTime = fieldConfig.preferred_time.enabled;
+  const showLeadSource = fieldConfig.lead_source.enabled;
+  const showFileUpload = fieldConfig.file_upload.enabled;
+
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
@@ -160,12 +177,12 @@ export default function UploadFormStepTwo({
           )}
 
           {/* Address */}
-          {addressConfig.show && isLoaded && !loadError && (
+          {showAddress && isLoaded && !loadError && (
             <>
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 text-red-500" />
-                  Address <span className="text-gray-400 font-normal">(optional)</span>
+                  Address {fieldConfig.address.required ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
                 </label>
                 <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
                   <input
@@ -213,35 +230,41 @@ export default function UploadFormStepTwo({
           )}
 
           {/* Preferred Date + Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 text-emerald-500" />
-                Preferred Date
-              </label>
-              <input
-                type="date"
-                value={formData.preferred_date}
-                onChange={e => onChange('preferred_date', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-                disabled={disabled}
-              />
+          {(showDate || showTime) && (
+            <div className={`grid gap-4 ${showDate && showTime ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {showDate && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                    <Calendar className="w-4 h-4 text-emerald-500" />
+                    Preferred Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.preferred_date}
+                    onChange={e => onChange('preferred_date', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                    disabled={disabled}
+                  />
+                </div>
+              )}
+              {showTime && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    Preferred Time
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.preferred_time}
+                    onChange={e => onChange('preferred_time', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                    placeholder="Morning, 2PM..."
+                    disabled={disabled}
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                Preferred Time
-              </label>
-              <input
-                type="text"
-                value={formData.preferred_time}
-                onChange={e => onChange('preferred_time', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-                placeholder="Morning, 2PM..."
-                disabled={disabled}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Custom Questions */}
           {customQuestions.length > 0 && (
@@ -251,7 +274,7 @@ export default function UploadFormStepTwo({
                 <div key={q.id}>
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                     <HelpCircle className="w-4 h-4 text-emerald-500" />
-                    {q.label}
+                    {q.label} {q.required && <span className="text-red-500">*</span>}
                   </label>
                   {q.type === 'text' && (
                     <input type="text" value={customAnswers[q.id] || ''}
@@ -286,82 +309,86 @@ export default function UploadFormStepTwo({
           )}
 
           {/* Lead Source */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <HelpCircle className="w-4 h-4 text-purple-500" />
-              How did you hear about us?
-            </label>
-            <select
-              value={formData.lead_source}
-              onChange={e => onChange('lead_source', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-              disabled={disabled}
-            >
-              <option value="">Select one...</option>
-              <option value="website">Website / Google Search</option>
-              <option value="facebook">Facebook</option>
-              <option value="instagram">Instagram</option>
-              <option value="google_ads">Google Ads</option>
-              <option value="referral">Referral from friend/family</option>
-              <option value="yard_sign">Yard Sign</option>
-              <option value="truck">Saw your truck</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+          {showLeadSource && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <HelpCircle className="w-4 h-4 text-purple-500" />
+                How did you hear about us?
+              </label>
+              <select
+                value={formData.lead_source}
+                onChange={e => onChange('lead_source', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                disabled={disabled}
+              >
+                <option value="">Select one...</option>
+                <option value="website">Website / Google Search</option>
+                <option value="facebook">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="google_ads">Google Ads</option>
+                <option value="referral">Referral from friend/family</option>
+                <option value="yard_sign">Yard Sign</option>
+                <option value="truck">Saw your truck</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
 
           {/* File Upload */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-              <ImageIcon className="w-4 h-4 text-pink-500" />
-              Photos or Videos <span className="text-gray-400 font-normal">(helps us quote faster)</span>
-            </label>
-            <div
-              onDragEnter={onDragEnter} onDragOver={onDragOver}
-              onDragLeave={onDragLeave} onDrop={onDrop}
-              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50'
-              }`}
-            >
-              <input type="file" id="step2-file-upload" multiple accept="image/*,video/*"
-                onChange={onFileChange} className="hidden" disabled={disabled} />
-              <label htmlFor="step2-file-upload"
-                className={`${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} block`}>
-                {compressing
-                  ? <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-2" />
-                  : <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
-                      <ImageIcon className="w-6 h-6 text-blue-600" />
-                    </div>
-                }
-                <p className="font-semibold text-gray-700 text-sm">
-                  {compressing ? 'Processing...' : 'Click or drag photos/videos here'}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">Max 50MB per file</p>
+          {showFileUpload && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                <ImageIcon className="w-4 h-4 text-pink-500" />
+                Photos or Videos <span className="text-gray-400 font-normal">(helps us quote faster)</span>
               </label>
-            </div>
-
-            {files.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                {files.map((file, i) => (
-                  <div key={i} className="relative rounded-lg overflow-hidden shadow group">
-                    {file.type.startsWith('image/') ? (
-                      <img src={filePreviews[i]} alt={file.name} className="w-full h-28 object-cover" />
-                    ) : (
-                      <div className="w-full h-28 bg-purple-100 flex items-center justify-center">
-                        <Video className="w-8 h-8 text-purple-500" />
+              <div
+                onDragEnter={onDragEnter} onDragOver={onDragOver}
+                onDragLeave={onDragLeave} onDrop={onDrop}
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                  isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50'
+                }`}
+              >
+                <input type="file" id="step2-file-upload" multiple accept="image/*,video/*"
+                  onChange={onFileChange} className="hidden" disabled={disabled} />
+                <label htmlFor="step2-file-upload"
+                  className={`${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} block`}>
+                  {compressing
+                    ? <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-2" />
+                    : <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+                        <ImageIcon className="w-6 h-6 text-blue-600" />
                       </div>
-                    )}
-                    <button type="button" onClick={() => onRemoveFile(i)} disabled={disabled}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition">
-                      <X className="w-3 h-3" />
-                    </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
-                      <p className="text-white text-xs truncate">{file.name}</p>
-                    </div>
-                  </div>
-                ))}
+                  }
+                  <p className="font-semibold text-gray-700 text-sm">
+                    {compressing ? 'Processing...' : 'Click or drag photos/videos here'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">Max 50MB per file</p>
+                </label>
               </div>
-            )}
-          </div>
+
+              {files.length > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {files.map((file, i) => (
+                    <div key={i} className="relative rounded-lg overflow-hidden shadow group">
+                      {file.type.startsWith('image/') ? (
+                        <img src={filePreviews[i]} alt={file.name} className="w-full h-28 object-cover" />
+                      ) : (
+                        <div className="w-full h-28 bg-purple-100 flex items-center justify-center">
+                          <Video className="w-8 h-8 text-purple-500" />
+                        </div>
+                      )}
+                      <button type="button" onClick={() => onRemoveFile(i)} disabled={disabled}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition">
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
+                        <p className="text-white text-xs truncate">{file.name}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Submit */}
           <div className="pt-2">
@@ -381,6 +408,18 @@ export default function UploadFormStepTwo({
               ) : (
                 <><Upload className="w-5 h-5" />Submit Details</>
               )}
+            </button>
+          </div>
+
+          {/* Skip link */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={onSkip}
+              disabled={disabled}
+              className="text-sm text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
+            >
+              Skip for now
             </button>
           </div>
 

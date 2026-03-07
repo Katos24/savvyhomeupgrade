@@ -22,6 +22,14 @@ type CustomQuestion = {
   options?: string[];
 };
 
+type FieldConfig = {
+  address: { enabled: boolean; required: boolean };
+  preferred_date: { enabled: boolean };
+  preferred_time: { enabled: boolean };
+  lead_source: { enabled: boolean };
+  file_upload: { enabled: boolean };
+};
+
 type Company = {
   id: number;
   name: string;
@@ -40,6 +48,7 @@ type Company = {
   custom_questions?: CustomQuestion[];
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
+  form_field_config?: FieldConfig | null;
 };
 
 interface UploadFormProps {
@@ -106,14 +115,26 @@ export default function UploadForm({
   const finalCompanyId = company?.id || companyId;
   const customQuestions = company?.custom_questions || [];
 
-  const getAddressConfig = () => {
-    if (company?.address_enabled !== null && company?.address_enabled !== undefined) {
-      return { show: company.address_enabled, required: false };
-    }
-    const config = ADDRESS_CONFIG[businessType] || { show: false, required: false };
-    return { ...config, required: false };
+  // ─── Field Config ───
+  // Use form_field_config if available, otherwise fall back to legacy fields
+  const fieldConfig: FieldConfig = company?.form_field_config || {
+    address: {
+      enabled: company?.address_enabled ?? (ADDRESS_CONFIG[businessType]?.show ?? false),
+      required: company?.address_required ?? false,
+    },
+    preferred_date: { enabled: true },
+    preferred_time: { enabled: true },
+    lead_source: { enabled: true },
+    file_upload: { enabled: true },
   };
-  const addressConfig = getAddressConfig();
+
+  // Check if step 2 has anything to show
+  const hasStep2Content = fieldConfig.address.enabled ||
+    fieldConfig.preferred_date.enabled ||
+    fieldConfig.preferred_time.enabled ||
+    fieldConfig.lead_source.enabled ||
+    fieldConfig.file_upload.enabled ||
+    customQuestions.length > 0;
 
   const getCtaHeading = () => {
     if (company?.cta_heading) return company.cta_heading;
@@ -215,6 +236,43 @@ export default function UploadForm({
       return;
     }
 
+    // If step 2 has nothing to show, skip straight to success
+    if (!hasStep2Content) {
+      setSubmittingStep1(true);
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: step1Data.name,
+            email: step1Data.email,
+            phone: rawPhone,
+            category: step1Data.category,
+            description: step1Data.description,
+            file_urls: [],
+            company_slug: finalCompanySlug,
+            company_id: finalCompanyId,
+            lead_source: null,
+            custom_answers: {},
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Submission failed (${res.status}). Please try again.`);
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error || 'Submission failed.');
+
+        setStep('success');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to submit. Please try again.';
+        setStep1Error(msg);
+        showToast(msg, 'error');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } finally {
+        setSubmittingStep1(false);
+      }
+      return;
+    }
+
     setSubmittingStep1(true);
     try {
       const res = await fetch('/api/upload', {
@@ -308,34 +366,44 @@ export default function UploadForm({
 
   // ─── Success screen ───
   if (step === 'success') {
+    const websiteUrl = company?.website
+      ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
+      : null;
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f8fafc' }}>
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-2xl shadow-xl p-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
-              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {company?.logo_url && (
+              <div className="mb-6 flex justify-center">
+                <img src={company.logo_url} alt={company.name} className="h-16 w-auto object-contain" />
+              </div>
+            )}
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
+              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {company?.cta_success_message || "You're all set! 🎉"}
             </h2>
-            <p className="text-gray-500 text-base mb-6">
+            <p className="text-gray-500 text-sm mb-6">
               We've received your request and will be in touch shortly.
             </p>
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-blue-700 text-sm font-medium">
-                📱 Keep an eye on your phone and email — we'll reach out soon!
-              </p>
-            </div>
-            {company?.website && (
+            {websiteUrl && (
               <a
-                href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                href={websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block mt-6 text-sm text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition"
+                style={{
+                  background: company?.email_brand_color_1 && company?.email_brand_color_2
+                    ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
+                    : '#3b82f6',
+                  color: '#fff',
+                }}
               >
-                Visit {company.name}'s website
+                Visit {company?.name || 'our website'} →
               </a>
             )}
           </div>
@@ -367,6 +435,7 @@ export default function UploadForm({
           brandColor1={company?.email_brand_color_1}
           brandColor2={company?.email_brand_color_2}
           showHeader={showHeader}
+          hasStep2={hasStep2Content}
         />
       </div>
 
@@ -382,7 +451,8 @@ export default function UploadForm({
           compressing={compressing}
           uploadProgress={uploadProgress}
           error={step2Error}
-          addressConfig={addressConfig}
+          addressConfig={{ show: fieldConfig.address.enabled, required: fieldConfig.address.required }}
+          fieldConfig={fieldConfig}
           ctaButtonText={getCtaButtonText()}
           brandColor1={company?.email_brand_color_1}
           brandColor2={company?.email_brand_color_2}

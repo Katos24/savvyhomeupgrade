@@ -22,6 +22,7 @@ type Company = {
   custom_questions?: any;
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
+  form_field_config?: any;
 };
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -44,7 +45,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       cta_success_message,
       custom_questions,
       email_brand_color_1,
-      email_brand_color_2
+      email_brand_color_2,
+      form_field_config
     FROM companies 
     WHERE slug = ${slug}
   `;
