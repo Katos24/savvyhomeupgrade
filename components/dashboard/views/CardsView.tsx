@@ -133,9 +133,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
         key={lead.id}
         className="group relative cursor-pointer border transition-all shadow-sm hover:shadow-md"
 style={{ 
-  backgroundColor: '#243447',
-  borderColor: isProject ? '#4f46e5' : '#354f6e'
-}}        onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
+  backgroundColor: lead.status === 'completed' ? '#1a1d23' : '#243447',
+  borderColor: lead.status === 'completed' ? '#2a2d35' : isProject ? '#4f46e5' : '#354f6e',
+  opacity: lead.status === 'completed' ? 0.6 : 1,
+}}
+onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = isProject ? '#2d5a3d' : '#354f6e')}
         onClick={() => onSelectLead(lead)}
       >
@@ -249,7 +251,7 @@ style={{
             <button
               onClick={(e) => canUseAiBrief(planTier)
                 ? handleGetBrief(e, lead)
-                : window.location.href = `/subscribe?upgrade=pro`}
+                : window.location.href = `/${window.location.pathname.split('/')[1]}/admin/settings`}
               disabled={briefState?.loading}
               className={`px-2 py-1 text-white text-xs font-bold transition disabled:opacity-50 ${
                 canUseAiBrief(planTier)

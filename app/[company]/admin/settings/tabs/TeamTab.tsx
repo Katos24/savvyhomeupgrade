@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Trash2 } from 'lucide-react';
+import { 
+  Users, UserPlus, Mail, Trash2, Crown, X, 
+  CheckCircle2, Loader2, Search, AlertCircle, 
+  ShieldCheck, UserCircle2, MoreHorizontal, ArrowRight
+} from 'lucide-react';
 
 type TeamMember = {
   id: number;
@@ -9,13 +13,14 @@ type TeamMember = {
   name: string;
   email: string;
   role: 'owner' | 'admin' | 'member';
-  status: 'active' | 'disabled';
+  status: 'active' | 'disabled' | 'pending';
   invited_at: string;
 };
 
 export default function TeamTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -35,32 +40,24 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
     try {
       const response = await fetch(`/api/company/${company.slug}/team`);
       const data = await response.json();
-      if (data.success) setTeamMembers(data.teamMembers || []);
-    } catch (error) {
-      console.error('Failed to fetch team data:', error);
-      setError('Failed to load team members');
+      if (data.success) {
+        setTeamMembers(data.teamMembers || []);
+      } else {
+        setError('Failed to fetch team');
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError('Connection lost. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSendInvite() {
-    if (!formData.name) {
-      setError('Name is required');
+    if (!formData.name || !formData.email) {
+      setError('Please provide both name and email.');
       return;
     }
-    
-    if (!formData.email) {
-      setError('Email is required');
-      return;
-    }
-
-    const emailExists = teamMembers.some(m => m.email.toLowerCase() === formData.email.toLowerCase());
-    if (emailExists) {
-      setError('This email is already a team member');
-      return;
-    }
-
     setSaving(true);
     setError('');
 
@@ -71,41 +68,41 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
         body: JSON.stringify(formData)
       });
       const result = await response.json();
-      if (response.ok && result.success) {
-        setSuccess(`✅ Invitation sent to ${formData.name} (${formData.email})!`);
+      if (result.success) {
+        setSuccess(`Invitation sent to ${formData.name}`);
         setFormData({ name: '', email: '', phone: '', role: 'member' });
         setShowInviteModal(false);
+        fetchTeamData();
         setTimeout(() => setSuccess(''), 5000);
-        await fetchTeamData(); // Refresh team list
-      } else setError(result.error || 'Failed to send invitation');
-    } catch (error) {
-      console.error('Invite error:', error);
-      setError('Failed to send invitation');
+      } else {
+        setError(result.error || 'Invitation failed');
+      }
+    } catch (err) {
+      setError('Something went wrong. Check your connection.');
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleUpdateRole(userId: number, newRole: 'admin' | 'member', memberName: string) {
+  async function handleUpdateRole(userId: number, newRole: 'admin' | 'member') {
     try {
       const response = await fetch(`/api/company/${company.slug}/team/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, role: newRole })
       });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        setSuccess(`${memberName}'s role updated!`);
-        await fetchTeamData();
+      if (response.ok) {
+        setSuccess(`Permissions updated successfully.`);
+        fetchTeamData();
         setTimeout(() => setSuccess(''), 3000);
-      } else setError('Failed to update role');
-    } catch {
-      setError('Failed to update role');
+      }
+    } catch (err) {
+      setError('Could not update role.');
     }
   }
 
   async function handleRemoveMember(userId: number, memberName: string) {
-    if (!confirm(`Remove ${memberName} from the team? They will lose access to the dashboard.`)) return;
+    if (!confirm(`Are you sure you want to remove ${memberName}? They will lose all access immediately.`)) return;
 
     try {
       const response = await fetch(`/api/company/${company.slug}/team/remove`, {
@@ -113,223 +110,243 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
       });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        setSuccess(`${memberName} removed from team`);
-        await fetchTeamData();
+      if (response.ok) {
+        setSuccess(`${memberName} has been removed.`);
+        fetchTeamData();
         setTimeout(() => setSuccess(''), 3000);
-      } else setError('Failed to remove team member');
-    } catch {
-      setError('Failed to remove team member');
+      }
+    } catch (err) {
+      setError('Failed to remove member.');
     }
   }
 
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case 'owner': return 'bg-purple-500 text-white';
-      case 'admin': return 'bg-blue-500 text-white';
-      case 'member': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'owner': return '👑';
-      case 'admin': return '⚙️';
-      case 'member': return '👤';
-      default: return '👤';
-    }
-  };
+  const filteredMembers = teamMembers.filter(m => 
+    m.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin text-4xl mb-3">⏳</div>
-          <p className="text-gray-600">Loading team members...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        <p className="text-slate-400 font-medium tracking-tight">Loading your team...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Team Members</h2>
-          <p className="text-sm sm:text-base text-slate-600">{teamMembers.length} active members</p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-10 pb-32 pt-4">
+      
+      {/* --- HEADER SECTION --- */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Team Management</h2>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-bold text-slate-500 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-indigo-500" />
+                {teamMembers.length} Members
+            </p>
+            <span className="w-1 h-1 rounded-full bg-slate-300" />
+            <p className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                Standard Plan
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => setShowInviteModal(true)}
-          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm text-sm sm:text-base"
+        
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <div className="relative flex-1 sm:min-w-[280px]">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm"
+                />
+            </div>
+            <button
+                onClick={() => setShowInviteModal(true)}
+                className="flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-200 transition-all active:scale-95 whitespace-nowrap"
+            >
+                <UserPlus className="w-4 h-4" />
+                Add Member
+            </button>
+        </div>
+      </div>
+
+      {/* --- FEEDBACK ALERTS --- */}
+      {(success || error) && (
+        <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl border animate-in slide-in-from-top-4 duration-500 ${
+            success ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800'
+        }`}>
+            {success ? <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> : <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />}
+            <span className="text-sm font-bold flex-1">{success || error}</span>
+            <button className="p-1 hover:bg-black/5 rounded-lg transition-colors" onClick={() => {setSuccess(''); setError('');}}>
+                <X className="w-4 h-4" />
+            </button>
+        </div>
+      )}
+
+      {/* --- TEAM GRID --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
+        {filteredMembers.map(member => {
+          const isYou = currentUser?.email === member.email;
+          const isOwner = member.role === 'owner';
+
+          return (
+            <div key={member.id} className="relative group flex flex-col bg-white border border-slate-200 rounded-[32px] p-6 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 overflow-hidden">
+              
+              {/* Card Top: Identity */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black shadow-inner ring-4 ring-white transition-transform group-hover:scale-110 ${
+                  isOwner ? 'bg-amber-100 text-amber-600' : 'bg-indigo-50 text-indigo-600'
+                }`}>
+                  {member.name?.charAt(0).toUpperCase()}
+                </div>
+                
+                <div className="flex flex-col items-end gap-1.5">
+                    <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${
+                        isOwner ? 'bg-amber-50 border-amber-200 text-amber-700' : 
+                        member.role === 'admin' ? 'bg-blue-50 border-blue-100 text-blue-600' : 
+                        'bg-slate-50 border-slate-200 text-slate-500'
+                    }`}>
+                        {member.role}
+                    </span>
+                    {isYou && (
+                        <div className="flex items-center gap-1 text-[9px] font-black text-indigo-400 uppercase tracking-tighter bg-indigo-50/50 px-2 py-0.5 rounded-full">
+                            <ShieldCheck className="w-3 h-3" /> 
+                            Logged In
+                        </div>
+                    )}
+                </div>
+              </div>
+
+              {/* Card Middle: Contact Info (Truncated to prevent overlap) */}
+              <div className="flex-1 min-w-0 mb-8">
+                <h4 className="text-lg font-black text-slate-900 truncate tracking-tight mb-1">
+                    {member.name || 'Anonymous'}
+                </h4>
+                <div className="flex items-center gap-2 text-slate-400 group-hover:text-indigo-400 transition-colors">
+                    <Mail className="w-3.5 h-3.5 shrink-0" />
+                    <p className="text-sm font-medium truncate">{member.email}</p>
+                </div>
+              </div>
+
+              {/* Card Bottom: Actions */}
+              <div className="pt-5 border-t border-slate-100 flex items-center justify-between gap-3 mt-auto">
+                {(!isOwner && !isYou) ? (
+                    <div className="flex items-center gap-2 w-full">
+                        <select 
+                            value={member.role}
+                            onChange={(e) => handleUpdateRole(member.user_id, e.target.value as any)}
+                            className="flex-1 bg-slate-50 border-none text-[11px] font-black uppercase text-slate-500 rounded-xl px-4 py-2.5 cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-all outline-none"
+                        >
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button 
+                            onClick={() => handleRemoveMember(member.user_id, member.name)}
+                            className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0"
+                            title="Remove Member"
+                        >
+                            <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-between w-full text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span className="flex items-center gap-1">
+                            Joined {new Date(member.invited_at).toLocaleDateString()}
+                        </span>
+                        {isOwner && <Crown className="w-4 h-4 text-amber-400 animate-pulse" />}
+                    </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Empty State / Add Member Trigger */}
+        <button 
+            onClick={() => setShowInviteModal(true)}
+            className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[32px] p-10 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group min-h-[220px]"
         >
-          <UserPlus className="w-4 h-4" />
-          Invite Team Member
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-all group-hover:rotate-12">
+                <UserPlus className="w-6 h-6 text-slate-400 group-hover:text-indigo-600" />
+            </div>
+            <p className="font-black text-slate-900 text-sm tracking-tight">Add Team Member</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-[160px] text-center leading-relaxed">
+                Grow your team and assign new leads instantly.
+            </p>
         </button>
       </div>
 
-      {/* Success/Error Messages */}
-      {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <span className="text-lg flex-shrink-0">✓</span>
-          <span className="flex-1">{success}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base">
-          <span className="text-lg flex-shrink-0">⚠</span>
-          <span className="flex-1">{error}</span>
-        </div>
-      )}
-
-      {/* Team Grid */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-        {teamMembers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {teamMembers.map(member => (
-              <div key={member.id} className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition flex flex-col items-center text-center">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl sm:text-2xl mb-3">
-                  {member.name?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">{member.name || 'Unknown User'}</h3>
-                <p className="text-slate-500 text-xs sm:text-sm mb-2 break-all">{member.email}</p>
-                <span className={`inline-block px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(member.role)} mb-3`}>
-                  {getRoleIcon(member.role)} {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                </span>
-                <p className="text-slate-400 text-xs mb-4">Added {new Date(member.invited_at).toLocaleDateString()}</p>
-
-                {/* Actions */}
-                {member.role !== 'owner' && currentUser?.email !== member.email && (
-                  <div className="flex flex-col sm:flex-row gap-2 w-full mt-auto">
-                    <select
-                      value={member.role}
-                      onChange={(e) => handleUpdateRole(member.user_id, e.target.value as 'admin' | 'member', member.name)}
-                      className="flex-1 text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    >
-                      <option value="admin">⚙️ Admin</option>
-                      <option value="member">👤 Member</option>
-                    </select>
-                    <button
-                      onClick={() => handleRemoveMember(member.user_id, member.name)}
-                      className="flex-1 text-xs sm:text-sm bg-red-50 hover:bg-red-100 text-red-700 py-2 rounded-lg font-medium transition"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-
-                {(member.role === 'owner' || currentUser?.email === member.email) && (
-                  <p className="text-xs text-slate-400 mt-3">{member.role === 'owner' ? '👑 Company Owner' : '✨ You'}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-4xl sm:text-5xl mb-4">👥</div>
-            <p className="text-slate-500 text-base sm:text-lg mb-4">No team members yet</p>
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm"
-            >
-              <UserPlus className="w-4 h-4" />
-              Invite Your First Team Member
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* INVITE MODAL */}
+      {/* --- MOBILE-OPTIMIZED MODAL --- */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl leading-none"
-            >
-              ×
-            </button>
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">📧 Invite Team Member</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="John Doe"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="teammate@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">They'll receive an email to set up their account</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => {
-                    const input = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                    if (input.length <= 10) {
-                      // Format as (XXX) XXX-XXXX
-                      let formatted = input;
-                      if (input.length > 6) {
-                        formatted = `(${input.slice(0, 3)}) ${input.slice(3, 6)}-${input.slice(6, 10)}`;
-                      } else if (input.length > 3) {
-                        formatted = `(${input.slice(0, 3)}) ${input.slice(3)}`;
-                      } else if (input.length > 0) {
-                        formatted = `(${input}`;
-                      }
-                      setFormData({...formData, phone: formatted});
-                    }
-                  }}
-                  placeholder="(555) 123-4567"
-                  maxLength={14}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">US format: (XXX) XXX-XXXX</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'member'})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div 
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
+            onClick={() => setShowInviteModal(false)}
+        >
+          <div 
+            className="bg-white rounded-t-[40px] sm:rounded-[48px] p-8 sm:p-12 w-full max-w-lg shadow-2xl relative animate-in slide-in-from-bottom-20 sm:zoom-in-95 duration-500 ease-out"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Visual Polish: Mobile Handle */}
+            <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-10 sm:hidden" />
+
+            <div className="flex items-center justify-between mb-10">
+                <div className="space-y-1">
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Invite Teammate</h3>
+                    <p className="text-sm text-slate-400 font-medium tracking-tight">Access will be sent via email.</p>
+                </div>
+                <button 
+                    onClick={() => setShowInviteModal(false)} 
+                    className="p-3 bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all"
                 >
-                  <option value="member">👤 Member - Can view and manage leads</option>
-                  <option value="admin">⚙️ Admin - Can manage team and settings</option>
-                </select>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                💡 <strong>How it works:</strong> They'll get an email with a link to create their account and set their own password.
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                <button
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition"
-                >
-                  Cancel
+                    <X className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={handleSendInvite}
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50"
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Full Name</label>
+                <div className="relative">
+                    <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                    <input 
+                        type="text"
+                        value={formData.name}
+                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        placeholder="John Doe"
+                        className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all font-bold placeholder:text-slate-300"
+                    />
+                </div>
+              </div>
+
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Email Address</label>
+                <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                    <input 
+                        type="email"
+                        value={formData.email}
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                        placeholder="john@company.com"
+                        className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all font-bold placeholder:text-slate-300"
+                    />
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button 
+                    onClick={handleSendInvite}
+                    disabled={saving}
+                    className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-base hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-slate-200"
                 >
-                  {saving ? '📧 Sending...' : '✅ Send Invite'}
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+                    {saving ? 'Sending Invitation...' : 'Send Invitation Link'}
                 </button>
+                <p className="text-center text-[11px] text-slate-400 mt-6 font-medium px-4 leading-relaxed">
+                    By inviting a member, you agree they will have access to company leads and customer communications.
+                </p>
               </div>
             </div>
           </div>

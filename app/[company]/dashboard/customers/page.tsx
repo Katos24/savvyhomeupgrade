@@ -44,48 +44,27 @@ async function verifyAuth(companySlug: string) {
   }
 }
 
-async function getCustomers(companyId: number) {
+// Simplified this function to just return the raw rows
+async function getRawProjects(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
 
   const rows = await sql`
     SELECT 
+      id,
       customer_name,
       customer_email,
       customer_phone,
       service_address,
-      city,
-      id AS project_id,
       status,
+      category,
+      updated_at,
       created_at
     FROM projects
     WHERE company_id = ${companyId}
     ORDER BY created_at DESC
   `;
 
-  // Group by customer_email
-  const map = new Map();
-
-  for (const row of rows) {
-    if (!map.has(row.customer_email)) {
-      map.set(row.customer_email, {
-        name: row.customer_name,
-        email: row.customer_email,
-        phone: row.customer_phone,
-        addresses: new Set(),
-        latest_project: row.project_id,
-        latest_status: row.status,
-        latest_date: row.created_at
-      });
-    }
-
-    const entry = map.get(row.customer_email);
-    if (row.service_address) entry.addresses.add(row.service_address);
-  }
-
-  return Array.from(map.values()).map(c => ({
-    ...c,
-    addresses: Array.from(c.addresses)
-  }));
+  return rows;
 }
 
 export default async function CustomerListPage({
@@ -104,7 +83,9 @@ export default async function CustomerListPage({
 
   if (company.length === 0) notFound();
 
-  const customers = await getCustomers(company[0].id);
+  // Fetch the raw flat list of projects
+  const projects = await getRawProjects(company[0].id);
 
-  return <CustomerListClient customers={customers} companySlug={companySlug} />;
+  // Pass 'projects' prop to match the CustomerListClient definition
+  return <CustomerListClient projects={projects as any} companySlug={companySlug} />;
 }

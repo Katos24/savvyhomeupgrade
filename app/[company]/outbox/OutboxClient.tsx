@@ -50,11 +50,37 @@ interface FlatEmail {
   scheduled_date?: string | null
   scheduled_time?: string | null
   assigned_to?: string | null
+  // New outbox fields
+  source: 'outbox' | 'legacy'
+  status?: 'sent' | 'failed'
+  error_message?: string | null
+  subject?: string | null
+  html_body?: string | null
+  outbox_id?: number
+}
+
+interface OutboxEmail {
+  id: number
+  type: string
+  to_email: string
+  to_name: string
+  subject: string | null
+  html_body: string | null
+  status: string
+  error_message: string | null
+  sent_by_email: string
+  sent_by_name: string | null
+  metadata: any
+  project_id: number | null
+  lead_id: number | null
+  created_at: string
+  sent_at: string | null
 }
 
 interface Props {
   company: { id: number; name: string; slug: string; logo_url: string | null }
   projects: Project[]
+  outboxEmails?: OutboxEmail[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -105,9 +131,40 @@ function fmtMoney(n: number | undefined): string {
   return '$' + Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function buildEmailList(projects: Project[]): FlatEmail[] {
+function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): FlatEmail[] {
   const all: FlatEmail[] = []
+  const outboxSentAts = new Set<string>()
 
+  // 1. Add outbox emails first (newer, richer data)
+  outboxEmails.forEach(e => {
+    const key = `${e.project_id}-${e.type}-${e.created_at}`
+    outboxSentAts.add(key)
+
+    const metadata = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata || {}
+
+    all.push({
+      type: e.type as 'quote' | 'schedule',
+      sent_at: e.created_at,
+      customer_name: e.to_name || '',
+      customer_email: e.to_email,
+      project_id: e.project_id || 0,
+      sent_by_email: e.sent_by_email,
+      isDup: false,
+      quote_data: metadata.quote_data || [],
+      quote_total: metadata.quote_total ? parseFloat(metadata.quote_total) : undefined,
+      scheduled_date: metadata.scheduled_date || null,
+      scheduled_time: metadata.scheduled_time || null,
+      assigned_to: metadata.assigned_to || null,
+      source: 'outbox',
+      status: e.status as 'sent' | 'failed',
+      error_message: e.error_message,
+      subject: e.subject,
+      html_body: e.html_body,
+      outbox_id: e.id,
+    })
+  })
+
+  // 2. Add legacy project emails (skip if already in outbox by matching timestamp within 5s)
   projects.forEach(p => {
     const qEmails = p.quote_emails || []
     const sEmails = p.schedule_emails || []
@@ -118,7 +175,16 @@ function buildEmailList(projects: Project[]): FlatEmail[] {
       return arr.some((o, j) => j !== idx && keyFn(o) === key && Math.abs(tThis - new Date(o.sent_at).getTime()) < 10 * 60 * 1000)
     }
 
+    const isInOutbox = (sentAt: string, projectId: number) => {
+      const t = new Date(sentAt).getTime()
+      return outboxEmails.some(oe =>
+        oe.project_id === projectId &&
+        Math.abs(new Date(oe.created_at).getTime() - t) < 5000
+      )
+    }
+
     qEmails.forEach((q, i) => {
+      if (isInOutbox(q.sent_at, p.id)) return
       all.push({
         type: 'quote',
         sent_at: q.sent_at,
@@ -129,10 +195,13 @@ function buildEmailList(projects: Project[]): FlatEmail[] {
         isDup: isDupInArray(qEmails, e => String(e.quote_total), i),
         quote_data: q.quote_data || [],
         quote_total: q.quote_total,
+        source: 'legacy',
+        status: 'sent',
       })
     })
 
     sEmails.forEach((s, i) => {
+      if (isInOutbox(s.sent_at, p.id)) return
       all.push({
         type: 'schedule',
         sent_at: s.sent_at,
@@ -144,6 +213,8 @@ function buildEmailList(projects: Project[]): FlatEmail[] {
         scheduled_date: s.scheduled_date,
         scheduled_time: s.scheduled_time,
         assigned_to: s.assigned_to,
+        source: 'legacy',
+        status: 'sent',
       })
     })
   })
@@ -152,7 +223,7 @@ function buildEmailList(projects: Project[]): FlatEmail[] {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function OutboxClient({ company, projects }: Props) {
+export default function OutboxClient({ company, projects, outboxEmails = [] }: Props) {
   const [tab, setTab] = useState<'all' | 'quote' | 'schedule'>('all')
   const [search, setSearch] = useState('')
   const [sentBy, setSentBy] = useState('')
@@ -160,8 +231,9 @@ export default function OutboxClient({ company, projects }: Props) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [dupAlertDismissed, setDupAlertDismissed] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
 
-  const allEmails = useMemo(() => buildEmailList(projects), [projects])
+const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [projects, outboxEmails])
 
   const senders = useMemo(() =>
     [...new Set(allEmails.map(e => e.sent_by_email))].sort(),
@@ -232,7 +304,7 @@ export default function OutboxClient({ company, projects }: Props) {
             { label: 'Total sent', value: allEmails.length, sub: 'across all projects', color: '#e8eaf0', icon: <Mail className="w-4 h-4" /> },
             { label: 'Quote emails', value: allEmails.filter(e => e.type === 'quote').length, sub: fmtMoney(totalQuoteVal) + ' in quotes', color: '#f97316', icon: <DollarSign className="w-4 h-4" /> },
             { label: 'Schedule emails', value: allEmails.filter(e => e.type === 'schedule').length, sub: 'confirmations', color: '#60a5fa', icon: <Calendar className="w-4 h-4" /> },
-            { label: 'Duplicates', value: dupCount, sub: 'same content resent', color: dupCount > 0 ? '#f87171' : '#4ade80', icon: <AlertTriangle className="w-4 h-4" /> },
+{ label: 'Failed', value: allEmails.filter(e => e.status === 'failed').length, sub: 'delivery errors', color: allEmails.filter(e => e.status === 'failed').length > 0 ? '#f87171' : '#4ade80', icon: <AlertTriangle className="w-4 h-4" /> },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-4" style={{ background: '#111318', border: '1px solid #232731' }}>
               <div className="flex items-center gap-2 mb-2">
@@ -385,7 +457,12 @@ export default function OutboxClient({ company, projects }: Props) {
                             }}>
                             {isQ ? 'Quote' : 'Schedule'}
                           </span>
-                          {email.isDup && (
+                          {email.status === 'failed' && (
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                              ✗ Failed
+                            </span>
+                          )}
+                          {email.isDup && email.status !== 'failed' && (
                             <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
                               ⚠ dup
                             </span>
@@ -500,11 +577,31 @@ export default function OutboxClient({ company, projects }: Props) {
                                 </>
                               )}
                             </div>
-                            <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
+                           <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
                               className="flex items-center justify-center gap-1.5 px-3 py-2 mt-4 rounded-lg text-xs text-gray-500 hover:text-white no-underline transition"
                               style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
                               <ExternalLink className="w-3.5 h-3.5" /> Open Project #{email.project_id}
                             </a>
+                            {email.subject && (
+                              <div className="mt-3 pt-3 border-t" style={{ borderColor: '#232731' }}>
+                                <div className="text-xs text-gray-700 uppercase tracking-wider font-medium mb-1">Subject</div>
+                                <div className="text-xs text-gray-400">{email.subject}</div>
+                              </div>
+                            )}
+                            {email.html_body && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body || ''); }}
+                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 mt-2 rounded-lg text-xs font-medium text-indigo-400 hover:text-white no-underline transition"
+                                style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
+                                👁 Preview Email
+                              </button>
+                            )}
+                            {email.error_message && (
+                              <div className="mt-3 pt-3 border-t" style={{ borderColor: '#232731' }}>
+                                <div className="text-xs text-red-400 uppercase tracking-wider font-medium mb-1">Error</div>
+                                <div className="text-xs text-red-300">{email.error_message}</div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -516,6 +613,28 @@ export default function OutboxClient({ company, projects }: Props) {
           ))
         )}
       </div>
+      {/* Email Preview Modal */}
+      {previewHtml && (
+        <div className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)' }}
+          onClick={() => setPreviewHtml(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <span className="text-sm font-bold text-gray-900">Email Preview</span>
+              <button onClick={() => setPreviewHtml(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-full min-h-[500px] border-0"
+                sandbox="allow-same-origin"
+                title="Email preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

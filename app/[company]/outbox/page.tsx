@@ -84,6 +84,16 @@ async function getCurrentUser(userId: number): Promise<CurrentUser | null> {
 
 async function getOutboxData(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
+
+  // Get new outbox table data
+  const outboxEmails = await sql`
+    SELECT * FROM email_outbox
+    WHERE company_id = ${companyId}
+    ORDER BY created_at DESC
+    LIMIT 500
+  `;
+
+  // Also get legacy data from projects (for emails sent before outbox table existed)
   const projects = await sql`
     SELECT
       id,
@@ -99,17 +109,17 @@ async function getOutboxData(companyId: number) {
       )
     ORDER BY updated_at DESC
   `;
-  return projects;
+
+  return { outboxEmails, projects };
 }
 
 export default async function OutboxPage({ params }: PageProps) {
   const { company: companySlug } = await params;
-
   const decoded = await verifyAuth(companySlug);
   const company = await getCompany(companySlug);
   if (!company) notFound();
 
-  const [currentUser, projects] = await Promise.all([
+  const [currentUser, outboxData] = await Promise.all([
     getCurrentUser(decoded.userId),
     getOutboxData(company.id),
   ]);
@@ -119,7 +129,8 @@ export default async function OutboxPage({ params }: PageProps) {
   return (
     <OutboxClient
       company={company}
-      projects={projects as any}
+      projects={outboxData.projects as any}
+      outboxEmails={outboxData.outboxEmails as any}
     />
   );
 }

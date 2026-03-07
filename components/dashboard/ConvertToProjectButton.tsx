@@ -139,7 +139,7 @@ export default function ConvertToProjectButton({
                 This will create an active project for <strong>{lead.name}</strong>. You'll be able to:
               </p>
               <ul className="text-sm text-gray-600 mt-2 space-y-1 ml-4">
-                <li>✅ Schedule work and assign technicians</li>
+                <li>✅ Schedule work and assign</li>
                 <li>✅ Create and send official quotes</li>
                 <li>✅ Track payments and invoices</li>
                 <li>✅ Upload before/after photos</li>

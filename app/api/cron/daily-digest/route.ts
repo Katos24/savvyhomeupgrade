@@ -14,13 +14,11 @@ export async function GET(request: NextRequest) {
 
     console.log('📧 Starting daily digest...');
 
-    // Only companies with digest enabled and active subscription
     const companies = await sql`
       SELECT id, name, slug, email, reminder_settings, notification_preferences
       FROM companies
-      WHERE
-  daily_digest_enabled = true
-  AND subscription_status IN ('active', 'trialing')
+      WHERE daily_digest_enabled = true
+        AND subscription_status IN ('active', 'trialing')
     `;
 
     console.log(`📊 ${companies.length} companies have daily digest enabled`);
@@ -36,6 +34,35 @@ export async function GET(request: NextRequest) {
         const schedFollowDays = rs.schedule_follow_up_days  || 1;
 
         const todayStr = new Date().toISOString().split('T')[0];
+
+        // ── Determine recipients ──
+        const prefs = company.notification_preferences || {};
+        const digestRecipient = prefs.digest_recipient || 'company';
+        const recipientEmails: string[] = [];
+
+        if (digestRecipient === 'company' || digestRecipient === 'both') {
+          if (company.email) recipientEmails.push(company.email);
+        }
+
+        if (digestRecipient === 'admin' || digestRecipient === 'both') {
+          const admins = await sql`
+            SELECT email
+            FROM users
+            WHERE company_id = ${company.id}
+              AND role IN ('owner', 'admin')
+              AND email IS NOT NULL
+            LIMIT 1
+          `;
+          if (admins.length > 0 && !recipientEmails.includes(admins[0].email)) {
+            recipientEmails.push(admins[0].email);
+          }
+        }
+
+        if (recipientEmails.length === 0) {
+          console.log(`⚠️ No recipient email for ${company.name}, skipping`);
+          skipped++;
+          continue;
+        }
 
         // ── TODAY'S JOBS ──
         const todayJobs = await sql`
@@ -54,20 +81,26 @@ export async function GET(request: NextRequest) {
           ORDER BY p.scheduled_time ASC NULLS LAST
         `;
 
-        // ── STALE LEADS (no project yet, inactive) ──
+        // ── STALE LEADS ──
+        const staleCutoff = new Date();
+        staleCutoff.setDate(staleCutoff.getDate() - followUpDays);
+
         const staleLeads = await sql`
           SELECT l.id, l.name, l.category, l.status, l.updated_at
           FROM leads l
           WHERE l.company_id = ${company.id}
             AND l.deleted = false
             AND l.project_id IS NULL
-            AND l.updated_at < NOW() - (${followUpDays} || ' days')::interval
+            AND l.updated_at < ${staleCutoff.toISOString()}
             AND l.status NOT IN ('completed', 'cancelled', 'lost')
           ORDER BY l.updated_at ASC
           LIMIT 10
         `;
 
         // ── QUOTES SENT, NO RESPONSE ──
+        const quoteCutoff = new Date();
+        quoteCutoff.setDate(quoteCutoff.getDate() - quoteFollowDays);
+
         const staleQuotes = await sql`
           SELECT
             l.name AS customer_name,
@@ -80,13 +113,16 @@ export async function GET(request: NextRequest) {
             AND l.deleted = false
             AND p.quote_sent_at IS NOT NULL
             AND p.quote_accepted_at IS NULL
-            AND p.quote_sent_at < NOW() - (${quoteFollowDays} || ' days')::interval
+            AND p.quote_sent_at < ${quoteCutoff.toISOString()}
             AND (p.payment_status IS NULL OR p.payment_status = 'unpaid')
           ORDER BY p.quote_sent_at ASC
           LIMIT 10
         `;
 
         // ── JOB DONE, NO PAYMENT ──
+        const schedCutoff = new Date();
+        schedCutoff.setDate(schedCutoff.getDate() - schedFollowDays);
+
         const unpaidJobs = await sql`
           SELECT
             l.name AS customer_name,
@@ -98,7 +134,7 @@ export async function GET(request: NextRequest) {
           WHERE l.company_id = ${company.id}
             AND l.deleted = false
             AND p.scheduled_date IS NOT NULL
-            AND p.scheduled_date < NOW() - (${schedFollowDays} || ' days')::interval
+            AND p.scheduled_date < ${schedCutoff.toISOString()}
             AND (p.payment_status IS NULL OR p.payment_status = 'unpaid')
             AND p.quote_total IS NOT NULL
           ORDER BY p.scheduled_date ASC
@@ -124,8 +160,9 @@ export async function GET(request: NextRequest) {
         `;
 
         // ── DUE THIS WEEK ──
-        const weekFromNow = new Date();
-        weekFromNow.setDate(weekFromNow.getDate() + 7);
+        const weekFromNowStr = new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString().split('T')[0];
 
         const dueSoon = await sql`
           SELECT
@@ -138,16 +175,38 @@ export async function GET(request: NextRequest) {
           JOIN leads l ON p.lead_id = l.id
           WHERE l.company_id = ${company.id}
             AND l.deleted = false
-            AND p.payment_due_date >= NOW()
-            AND p.payment_due_date <= ${weekFromNow.toISOString()}
+            AND p.payment_due_date >= ${todayStr}::date
+            AND p.payment_due_date <= ${weekFromNowStr}::date
             AND (p.payment_status IS NULL OR p.payment_status NOT IN ('paid'))
           ORDER BY p.payment_due_date ASC
           LIMIT 10
         `;
 
+        // ── FOLLOW-UP REMINDERS ──
+        const followUpReminders = await sql`
+          SELECT
+            p.id,
+            l.name AS customer_name,
+            l.phone AS customer_phone,
+            l.category,
+            p.project_number,
+            p.follow_up_date,
+            p.follow_up_notes
+          FROM projects p
+          JOIN leads l ON p.lead_id = l.id
+          WHERE l.company_id = ${company.id}
+            AND l.deleted = false
+            AND p.follow_up_date IS NOT NULL
+            AND p.follow_up_date::date <= ${todayStr}::date
+            AND p.status NOT IN ('completed', 'cancelled', 'lost')
+          ORDER BY p.follow_up_date ASC
+          LIMIT 10
+        `;
+
         const totalItems =
           todayJobs.length + staleLeads.length + staleQuotes.length +
-          unpaidJobs.length + overduePayments.length + dueSoon.length;
+          unpaidJobs.length + overduePayments.length + dueSoon.length +
+          followUpReminders.length;
 
         if (totalItems === 0) {
           console.log(`⏭ Skipping ${company.name} — nothing to report`);
@@ -155,29 +214,31 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        await sendDailyDigestEmail({
-          companyEmail: company.email,
-          companyName: company.name,
-          companySlug: company.slug,
-          todayJobs:        todayJobs        as any[],
-          staleLeads:       staleLeads       as any[],
-          staleQuotes:      staleQuotes      as any[],
-          unpaidJobs:       unpaidJobs       as any[],
-          overduePayments:  overduePayments  as any[],
-          dueSoon:          dueSoon          as any[],
-        });
+        for (const email of recipientEmails) {
+          await sendDailyDigestEmail({
+            companyEmail: email,
+            companyName: company.name,
+            companySlug: company.slug,
+            todayJobs:         todayJobs         as any[],
+            staleLeads:        staleLeads        as any[],
+            staleQuotes:       staleQuotes       as any[],
+            unpaidJobs:        unpaidJobs        as any[],
+            overduePayments:   overduePayments   as any[],
+            dueSoon:           dueSoon           as any[],
+            followUpReminders: followUpReminders as any[],
+          } as any);
+
+          console.log(`✅ Digest sent → ${company.name} (${email}) | ${totalItems} items`);
+          await delay(600);
+        }
 
         sent++;
-        console.log(`✅ Digest sent → ${company.name} (${company.email}) | ${totalItems} items`);
-        await delay(600);
-
       } catch (err) {
         console.error(`❌ Failed digest for ${company.name}:`, err);
       }
     }
 
     return NextResponse.json({ success: true, sent, skipped, total: companies.length });
-
   } catch (error) {
     console.error('❌ Daily digest cron error:', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

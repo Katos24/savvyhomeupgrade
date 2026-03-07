@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Mail, Clock } from 'lucide-react';
+import { Check, Mail, Clock, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function NotificationsTab({ company, currentUser }: { company: any; currentUser: any }) {
@@ -11,9 +11,12 @@ export default function NotificationsTab({ company, currentUser }: { company: an
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
+  const prefs = company.notification_preferences || {};
+
   const [digest, setDigest] = useState({
     enabled: company.daily_digest_enabled ?? false,
     time: company.daily_digest_time ?? '07:00',
+    recipient: prefs.digest_recipient ?? 'company',
   });
 
   const handleSave = async () => {
@@ -30,10 +33,12 @@ export default function NotificationsTab({ company, currentUser }: { company: an
           data: {
             reminder_settings: company.reminder_settings,
             notification_preferences: {
+              ...prefs,
               daily_digest: {
                 enabled: digest.enabled,
                 time: digest.time,
               },
+              digest_recipient: digest.recipient,
             },
           },
         }),
@@ -46,16 +51,14 @@ export default function NotificationsTab({ company, currentUser }: { company: an
         return;
       }
 
-      // Update UI immediately with server response
       setDigest({
         enabled: data.company.daily_digest_enabled,
         time: data.company.daily_digest_time ?? '07:00',
+        recipient: data.company.notification_preferences?.digest_recipient ?? digest.recipient,
       });
 
       setSuccess('Settings saved!');
       setTimeout(() => setSuccess(''), 3000);
-
-      // Refresh server data
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -83,10 +86,15 @@ export default function NotificationsTab({ company, currentUser }: { company: an
     </button>
   );
 
+  const recipientLabels: Record<string, string> = {
+    company: company.email,
+    admin: currentUser?.email || 'Admin email',
+    both: `${company.email} + admin`,
+  };
+  const recipientLabel = recipientLabels[digest.recipient] || company.email;
+
   return (
     <div className="space-y-6 max-w-2xl">
-
-  
 
       {/* Alerts */}
       {success && (
@@ -137,7 +145,7 @@ export default function NotificationsTab({ company, currentUser }: { company: an
 
               <p className="text-xs text-gray-400 mt-0.5">
                 {digest.enabled
-                  ? `On · sends to ${company.email}`
+                  ? `On · sends to ${recipientLabel}`
                   : 'Off · no emails will be sent'}
               </p>
             </div>
@@ -156,31 +164,65 @@ export default function NotificationsTab({ company, currentUser }: { company: an
             on days when there's actually something to act on — no noise on quiet days.
           </p>
 
-          {/* Send Time */}
+          {/* Send Time & Recipient */}
           {digest.enabled && (
-            <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
-              <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-3">
 
-              <div className="flex-1">
-                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-2">
-                  Send Time
-                </p>
-
-                <div className="flex items-center gap-3 flex-wrap">
+              {/* Send Time */}
+              <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-2">
+                    Send Time
+                  </p>
                   <input
                     type="time"
                     value={digest.time}
-                    onChange={(e) =>
-                      setDigest({ ...digest, time: e.target.value })
-                    }
+                    onChange={(e) => setDigest({ ...digest, time: e.target.value })}
                     className="px-3 py-2 text-sm border border-indigo-200 bg-white focus:border-indigo-500 focus:outline-none rounded-lg"
                   />
-
-                  <span className="text-xs text-indigo-500">
-                    → <strong className="text-indigo-700">{company.email}</strong>
-                  </span>
                 </div>
               </div>
+
+              {/* Recipient */}
+              <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <Users className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-2">
+                    Send To
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'company', label: 'Company email', desc: company.email },
+                      { value: 'admin', label: 'Account owner', desc: currentUser?.email || 'Admin email' },
+                      { value: 'both', label: 'Both', desc: 'Company email + account owner' },
+                    ].map((option) => (
+                      <label
+                        key={option.value}
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
+                          digest.recipient === option.value
+                            ? 'bg-white border-indigo-300 shadow-sm'
+                            : 'bg-transparent border-transparent hover:bg-indigo-100/50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="digest-recipient"
+                          value={option.value}
+                          checked={digest.recipient === option.value}
+                          onChange={(e) => setDigest({ ...digest, recipient: e.target.value })}
+                          className="accent-indigo-600"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{option.label}</p>
+                          <p className="text-xs text-gray-500">{option.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -196,8 +238,9 @@ export default function NotificationsTab({ company, currentUser }: { company: an
                 { icon: '🔴', label: 'Overdue payments' },
                 { icon: '💳', label: 'Jobs done, payment not recorded' },
                 { icon: '⏰', label: 'Payments due this week' },
-                { icon: '📬', label: 'Quotes with no response (3+ days)' },
-                { icon: '⚡', label: 'Leads with no activity (2+ days)' },
+                { icon: '📬', label: 'Quotes with no response' },
+                { icon: '⚡', label: 'Leads with no activity' },
+                { icon: '🔔', label: 'Follow-up reminders due' },
               ].map(({ icon, label }) => (
                 <div
                   key={label}

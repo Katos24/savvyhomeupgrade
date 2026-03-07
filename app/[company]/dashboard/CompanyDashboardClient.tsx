@@ -10,6 +10,7 @@ import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 import { canUseAiChat, canUseAiBrief, PLAN_ERRORS, PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
+import AISmartBanner from '@/components/dashboard/AISmartBanner';
 
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
@@ -79,6 +80,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     fetchCurrentUser();
     fetchTeamMembers();
   }, []);
+
+ const spotlightLead = useMemo(() => {
+  return allLeads.find(l => 
+    l.ai_analysis && // or whatever your DB field is named
+    (l.ai_analysis.urgency === 'Emergency' || l.status === 'new')
+  );
+}, [allLeads]);
 
   async function fetchLeads() {
     try {
@@ -759,7 +767,7 @@ style={{
         /* Locked FAB for basic plan */
 <div className="fixed bottom-6 right-6 z-[9999]">
           <button
-            onClick={() => window.location.href = `/subscribe?upgrade=pro&company=${company.slug}`}
+            onClick={() => window.location.href = `/${company.slug}/admin/settings#billing`}
             title="Upgrade to Pro for AI Assistant"
             className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 relative"
             style={{ background: '#1e293b', border: '2px solid #334155' }}

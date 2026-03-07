@@ -452,8 +452,7 @@ export async function POST(request: Request) {
       console.log('✅ Quote sent');
       return NextResponse.json({ success: true });
     }
-
-    // ==================== SEND QUOTE TO CUSTOMER 📧 ====================
+// ==================== SEND QUOTE TO CUSTOMER 📧 ====================
     else if (action === 'send_quote_to_customer') {
       console.log('📧 Sending quote to customer via email');
       
@@ -466,68 +465,71 @@ export async function POST(request: Request) {
       `;
 
       if (!leadCheck[0]) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Lead not found' 
-        }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
       }
 
       const lead = leadCheck[0];
 
       if (!lead.project_id || !lead.quote_data || !lead.quote_total) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No quote exists. Please create a quote first.' 
-        }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'No quote exists. Please create a quote first.' }, { status: 400 });
       }
 
       let quoteItems = [];
       try {
-        quoteItems = typeof lead.quote_data === 'string' 
-          ? JSON.parse(lead.quote_data) 
-          : lead.quote_data;
+        quoteItems = typeof lead.quote_data === 'string' ? JSON.parse(lead.quote_data) : lead.quote_data;
       } catch (error) {
         console.error('Failed to parse quote data:', error);
         quoteItems = [];
       }
 
       try {
-    // Generate token
-const crypto = await import('crypto');
-const quoteToken = crypto.randomBytes(32).toString('hex');
+        const crypto = await import('crypto');
+        const quoteToken = crypto.randomBytes(32).toString('hex');
 
-// Store token on project
-await sql`
-  UPDATE projects
-  SET quote_token = ${quoteToken}
-  WHERE id = ${lead.project_id}
-`;
+        await sql`UPDATE projects SET quote_token = ${quoteToken} WHERE id = ${lead.project_id}`;
 
-await sendQuoteToCustomer({
-  customerEmail: lead.email,
-  customerName: lead.name,
-  companyName: lead.company_name || 'Your Service Provider',
-  companyPhone: lead.company_phone,
-  companyId: lead.company_id,
-  quoteTotal: parseFloat(lead.quote_total),
-  quoteItems: quoteItems,
-  projectDescription: lead.category || 'Your project',
-  quoteToken: quoteToken,
-});
+        const emailResult = await sendQuoteToCustomer({
+          customerEmail: lead.email,
+          customerName: lead.name,
+          companyName: lead.company_name || 'Your Service Provider',
+          companyPhone: lead.company_phone,
+          companyId: lead.company_id,
+          quoteTotal: parseFloat(lead.quote_total),
+          quoteItems: quoteItems,
+          projectDescription: lead.category || 'Your project',
+          quoteToken: quoteToken,
+        });
 
-       await sql`
-  UPDATE projects 
-  SET quote_sent_at = NOW(),
-      quote_emails = COALESCE(quote_emails, '[]'::jsonb) || ${JSON.stringify([{
-        sent_at: new Date().toISOString(),
-        sent_by_name: user_name,
-        sent_by_email: user_email,
-        quote_total: parseFloat(lead.quote_total),
-        quote_data: quoteItems
-      }])}::jsonb,
-      updated_at = NOW()
-  WHERE id = ${lead.project_id}
-`;
+        // Log to outbox
+        try {
+          await sql`
+            INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, subject, html_body, status, sent_by_email, sent_by_name, metadata)
+            VALUES (
+              ${lead.company_id}, ${lead.project_id}, ${id}, 'quote',
+              ${lead.email}, ${lead.name},
+              ${emailResult?.subject || 'Quote'}, ${emailResult?.html || ''},
+              'sent', ${user_email}, ${user_name},
+              ${JSON.stringify({ quote_total: lead.quote_total, resend_id: emailResult?.resendId })}::jsonb
+            )
+          `;
+        } catch (outboxErr) {
+          console.error('⚠️ Failed to log to outbox (email still sent):', outboxErr);
+        }
+
+        // Keep existing quote_emails log
+        await sql`
+          UPDATE projects 
+          SET quote_sent_at = NOW(),
+              quote_emails = COALESCE(quote_emails, '[]'::jsonb) || ${JSON.stringify([{
+                sent_at: new Date().toISOString(),
+                sent_by_name: user_name,
+                sent_by_email: user_email,
+                quote_total: parseFloat(lead.quote_total),
+                quote_data: quoteItems
+              }])}::jsonb,
+              updated_at = NOW()
+          WHERE id = ${lead.project_id}
+        `;
 
         const quoteSentEntry = {
           type: 'quote_sent',
@@ -539,20 +541,26 @@ await sendQuoteToCustomer({
 
         await addActivityToProject(id, quoteSentEntry);
 
-
-
         console.log('✅ Quote email sent to customer');
         return NextResponse.json({ success: true, message: 'Quote sent to customer!' });
-      } catch (emailError) {
+      } catch (emailError: any) {
+        // Log failed attempt to outbox
+        try {
+          await sql`
+            INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, status, error_message, sent_by_email, sent_by_name, metadata)
+            VALUES (
+              ${lead.company_id}, ${lead.project_id}, ${id}, 'quote',
+              ${lead.email}, ${lead.name},
+              'failed', ${emailError.message || 'Unknown error'},
+              ${user_email}, ${user_name},
+              ${JSON.stringify({ quote_total: lead.quote_total })}::jsonb
+            )
+          `;
+        } catch {}
         console.error('❌ Failed to send quote email:', emailError);
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Failed to send email. Please try again.' 
-        }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to send email. Please try again.' }, { status: 500 });
       }
     }
-
-    
 
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
@@ -581,37 +589,22 @@ await sendQuoteToCustomer({
       `;
 
       if (!result[0]) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Lead not found' 
-        }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
       }
 
       const lead = result[0];
 
       if (!lead.project_id || !lead.scheduled_date) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No schedule exists. Please set a schedule date first.' 
-        }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'No schedule exists. Please set a schedule date first.' }, { status: 400 });
       }
 
-      // Build service address (now includes zip_code)
       let serviceAddress = lead.address_line_1 || '';
       if (lead.address_line_2) serviceAddress += `, ${lead.address_line_2}`;
       if (lead.city) serviceAddress += `, ${lead.city}`;
       if (lead.zip_code) serviceAddress += ` ${lead.zip_code}`;
 
-      console.log('📧 Email data:', {
-        scheduledDate: lead.scheduled_date,
-        scheduledTime: lead.scheduled_time,
-        assignedTo: lead.assigned_to,
-        email: lead.email,
-        companyId: lead.company_id
-      });
-
       try {
-        await sendScheduleConfirmation({
+        const emailResult = await sendScheduleConfirmation({
           customerEmail: lead.email,
           customerName: lead.name,
           companyName: lead.company_name || 'Your Service Provider',
@@ -623,6 +616,22 @@ await sendQuoteToCustomer({
           assignedTo: lead.assigned_to || undefined,
         });
 
+        // Log to outbox
+        try {
+          await sql`
+            INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, subject, html_body, status, sent_by_email, sent_by_name, metadata)
+            VALUES (
+              ${lead.company_id}, ${lead.project_id}, ${id}, 'schedule',
+              ${lead.email}, ${lead.name},
+              ${emailResult?.subject || 'Schedule Confirmation'}, ${emailResult?.html || ''},
+              'sent', ${user_email}, ${user_name},
+              ${JSON.stringify({ scheduled_date: lead.scheduled_date, scheduled_time: lead.scheduled_time, assigned_to: lead.assigned_to, resend_id: emailResult?.resendId })}::jsonb
+            )
+          `;
+        } catch (outboxErr) {
+          console.error('⚠️ Failed to log to outbox (email still sent):', outboxErr);
+        }
+
         const scheduleEntry = {
           type: 'schedule_sent',
           text: `Schedule confirmation emailed to customer (${lead.scheduled_date}${lead.scheduled_time ? ' at ' + lead.scheduled_time : ''})`,
@@ -631,34 +640,43 @@ await sendQuoteToCustomer({
           timestamp: new Date().toISOString()
         };
 
-await addActivityToProject(id, scheduleEntry);
+        await addActivityToProject(id, scheduleEntry);
 
-// ✅ Save to schedule_emails log
-await sql`
-  UPDATE projects 
-  SET schedule_emails = COALESCE(schedule_emails, '[]'::jsonb) || ${JSON.stringify([{
-    sent_at: new Date().toISOString(),
-    sent_by_name: user_name,
-    sent_by_email: user_email,
-    scheduled_date: lead.scheduled_date,
-    scheduled_time: lead.scheduled_time || null,
-  }])}::jsonb,
-  updated_at = NOW()
-  WHERE id = ${lead.project_id}
-`;
+        // Keep existing schedule_emails log
+        await sql`
+          UPDATE projects 
+          SET schedule_emails = COALESCE(schedule_emails, '[]'::jsonb) || ${JSON.stringify([{
+            sent_at: new Date().toISOString(),
+            sent_by_name: user_name,
+            sent_by_email: user_email,
+            scheduled_date: lead.scheduled_date,
+            scheduled_time: lead.scheduled_time || null,
+          }])}::jsonb,
+          updated_at = NOW()
+          WHERE id = ${lead.project_id}
+        `;
 
-console.log('✅ Schedule email sent to customer');
-return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
-
-      } catch (emailError) {
+        console.log('✅ Schedule email sent to customer');
+        return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
+      } catch (emailError: any) {
+        // Log failed attempt to outbox
+        try {
+          await sql`
+            INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, status, error_message, sent_by_email, sent_by_name, metadata)
+            VALUES (
+              ${lead.company_id}, ${lead.project_id}, ${id}, 'schedule',
+              ${lead.email}, ${lead.name},
+              'failed', ${emailError.message || 'Unknown error'},
+              ${user_email}, ${user_name},
+              ${JSON.stringify({ scheduled_date: lead.scheduled_date, scheduled_time: lead.scheduled_time })}::jsonb
+            )
+          `;
+        } catch {}
         console.error('❌ Failed to send schedule email:', emailError);
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Failed to send email. Please try again.' 
-        }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to send email. Please try again.' }, { status: 500 });
       }
     }
-
+    
     // ==================== UPDATE PAYMENT 💳 ====================
     else if (action === 'update_payment') {
       console.log('💳 Updating payment');

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { LayoutGrid, Table2, Calendar, Settings, LogOut, X, User, BarChart3, Mail } from 'lucide-react';
+import { LayoutGrid, Table2, Calendar, Settings, LogOut, X, User, BarChart3, Mail,Users as UsersIcon } from 'lucide-react';
 
 type SidebarProps = {
   companySlug: string;
@@ -36,7 +36,14 @@ export default function Sidebar({
   };
 
   const navItems = [
-    { href: `/${companySlug}/dashboard`, icon: LayoutGrid, label: 'Leads', exactMatch: true, color: '#60a5fa' },
+    { href: `/${companySlug}/dashboard`, icon: LayoutGrid, label: 'Dashboard', exactMatch: true, color: '#60a5fa' },
+    { 
+      href: `/${companySlug}/dashboard/customers`, // Your new route
+      icon: UsersIcon, 
+      label: 'Customers', 
+      exactMatch: false, 
+      color: '#fbbf24' // A nice amber/gold to match your "bulked" theme
+    },
     { href: `/${companySlug}/dashboard/analytics`, icon: BarChart3, label: 'Analytics', exactMatch: false, color: '#a78bfa' },
     { href: `/${companySlug}/dashboard/calendar`, icon: Calendar, label: 'Calendar', exactMatch: false, color: '#4ade80' },
     { href: `/${companySlug}/outbox`, icon: Mail, label: 'Outbox', exactMatch: false, color: '#f97316' },
