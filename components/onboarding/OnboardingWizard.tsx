@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { AlertCircle, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { STEPS } from './types';
-import type { Category } from './types';
 import CompanyStep, { type CompanyStepRef } from './steps/CompanyStep';
 import CategoriesStep, { type CategoriesStepRef } from './steps/CategoriesStep';
-import PipelineStep, { type PipelineStepRef } from './steps/PipelineStep';
-import FormStep, { type FormStepRef } from './steps/FormStep';
-import QuotesStep from './steps/QuotesStep';
 import DoneStep from './steps/DoneStep';
 
 export default function OnboardingWizard({ company }: { company: any }) {
@@ -16,15 +12,8 @@ export default function OnboardingWizard({ company }: { company: any }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Track categories for the quotes step (needs them for the category picker)
-  const [latestCategories, setLatestCategories] = useState<Category[]>(
-    company.form_categories?.length > 0 ? company.form_categories : []
-  );
-
   const companyRef = useRef<CompanyStepRef>(null);
   const categoriesRef = useRef<CategoriesStepRef>(null);
-  const pipelineRef = useRef<PipelineStepRef>(null);
-  const formRef = useRef<FormStepRef>(null);
 
   const showErr = (msg: string) => {
     setError(msg);
@@ -84,44 +73,6 @@ export default function OnboardingWizard({ company }: { company: any }) {
       });
       const result = await res.json();
       if (!result.success) { showErr(result.error || 'Failed to save'); return false; }
-      setLatestCategories(data.categories);
-      return true;
-    } catch { showErr('Failed to save'); return false; }
-    finally { setSaving(false); }
-  };
-
-  const savePipeline = async (): Promise<boolean> => {
-    const data = pipelineRef.current?.getData();
-    if (!data) return false;
-    setSaving(true); setError('');
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-pipeline', data: { status_options: data.statuses } }),
-      });
-      const result = await res.json();
-      if (!result.success) { showErr(result.error || 'Failed to save'); return false; }
-      return true;
-    } catch { showErr('Failed to save'); return false; }
-    finally { setSaving(false); }
-  };
-
-  const saveForm = async (): Promise<boolean> => {
-    const data = formRef.current?.getData();
-    if (!data) return false;
-    setSaving(true); setError('');
-    try {
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-cta', data: { cta_heading: data.ctaHeading, cta_success_message: data.ctaSuccessMessage } }),
-      });
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-custom-questions', data: { custom_questions: data.customQuestions } }),
-      });
       return true;
     } catch { showErr('Failed to save'); return false; }
     finally { setSaving(false); }
@@ -131,19 +82,11 @@ export default function OnboardingWizard({ company }: { company: any }) {
     let ok = true;
     if (currentStep === 0) ok = await saveCompanyInfo();
     else if (currentStep === 1) ok = await saveCategories();
-    else if (currentStep === 2) ok = await savePipeline();
-    else if (currentStep === 3) ok = await saveForm();
-    // Step 4 (quotes) saves inline via its own modal
     if (ok) setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
   };
 
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
   const handleSkip = () => {
-    // When skipping categories, still grab them for quotes step
-    if (currentStep === 1) {
-      const data = categoriesRef.current?.getData();
-      if (data) setLatestCategories(data.categories);
-    }
     setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
   };
 
@@ -221,10 +164,7 @@ export default function OnboardingWizard({ company }: { company: any }) {
         {/* Steps */}
         {currentStep === 0 && <CompanyStep ref={companyRef} company={company} />}
         {currentStep === 1 && <CategoriesStep ref={categoriesRef} company={company} showErr={showErr} />}
-        {currentStep === 2 && <PipelineStep ref={pipelineRef} company={company} showErr={showErr} />}
-        {currentStep === 3 && <FormStep ref={formRef} company={company} showErr={showErr} />}
-        {currentStep === 4 && <QuotesStep company={company} categories={latestCategories} showErr={showErr} />}
-        {currentStep === 5 && <DoneStep company={company} />}
+        {currentStep === 2 && <DoneStep company={company} />}
       </div>
 
       {/* ── BOTTOM NAV ── */}
@@ -244,8 +184,6 @@ export default function OnboardingWizard({ company }: { company: any }) {
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
               {saving ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-              ) : currentStep === 4 ? (
-                <>Finish Setup <ChevronRight className="w-4 h-4" /></>
               ) : (
                 <>Save & Continue <ChevronRight className="w-4 h-4" /></>
               )}

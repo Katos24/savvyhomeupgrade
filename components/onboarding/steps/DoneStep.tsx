@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Copy, Link2, ArrowRight, Sparkles } from 'lucide-react';
+import { Check, Copy, Link2, ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 
 interface Props {
   company: any;
@@ -10,6 +10,7 @@ interface Props {
 export default function DoneStep({ company }: Props) {
   const [copied, setCopied] = useState(false);
   const publicLink = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : `/${company.slug}`;
+  const settingsBase = `/${company.slug}/admin/settings`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(publicLink);
@@ -19,6 +20,7 @@ export default function DoneStep({ company }: Props) {
 
   return (
     <div className="space-y-6">
+
       {/* Success card */}
       <div className="bg-white border border-gray-200 overflow-hidden rounded-xl text-center">
         <div className="px-6 py-10">
@@ -27,7 +29,7 @@ export default function DoneStep({ company }: Props) {
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">You're All Set!</h3>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
-            Your account is configured and ready to go. Share your booking link with customers to start receiving leads.
+            Your account is ready. Share your booking link to start receiving leads. You can fine-tune everything else in Settings whenever you want.
           </p>
         </div>
       </div>
@@ -56,24 +58,30 @@ export default function DoneStep({ company }: Props) {
         </div>
       </div>
 
-      {/* Quick tips */}
+      {/* Customize in Settings */}
       <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
         <div className="px-5 py-4 border-b border-gray-100">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's Next</span>
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Customize Anytime in Settings</span>
+          <p className="text-xs text-gray-400 mt-1">These are all optional — your account works great out of the box.</p>
         </div>
         <div className="divide-y divide-gray-50">
           {[
-            { emoji: '🔗', title: 'Share your booking link', desc: 'Add it to your website, social media, or email signature' },
-            { emoji: '👥', title: 'Invite your team', desc: 'Add team members in Settings → Team to assign leads' },
-            { emoji: '⚙️', title: 'Fine-tune in Settings', desc: 'Adjust categories, pipeline, email templates, and more anytime' },
-          ].map((tip, i) => (
-            <div key={i} className="flex items-start gap-4 px-5 py-4">
-              <span className="text-xl flex-shrink-0 mt-0.5">{tip.emoji}</span>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">{tip.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{tip.desc}</p>
+            { emoji: '📝', title: 'Customer Form', desc: 'Toggle fields on/off, add custom questions, preview what customers see', tab: 'form' },
+            { emoji: '💰', title: 'Quote Templates', desc: 'Pre-fill quotes for each job type so you send them in seconds', tab: 'quote-templates' },
+            { emoji: '📊', title: 'Pipeline Stages', desc: 'Add custom stages like "Awaiting Permit" or "Follow Up"', tab: 'pipeline' },
+            { emoji: '✉️', title: 'Email Templates', desc: 'Customize the emails customers get for quotes, scheduling, and payments', tab: 'email-templates' },
+            { emoji: '👥', title: 'Team Members', desc: 'Invite crew or office staff to assign leads and get notified', tab: 'team' },
+            { emoji: '🔔', title: 'Notifications', desc: 'Set up daily digest emails and follow-up reminders', tab: 'notifications' },
+          ].map((item, i) => (
+            <a key={i} href={`${settingsBase}?tab=${item.tab}`}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition group">
+              <span className="text-xl flex-shrink-0">{item.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-800 text-sm group-hover:text-indigo-600 transition">{item.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
               </div>
-            </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition flex-shrink-0" />
+            </a>
           ))}
         </div>
       </div>

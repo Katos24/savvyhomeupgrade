@@ -34,7 +34,9 @@ export const COLOR_PRESETS = [
 ];
 
 export const getColorHex = (name: string) => COLOR_OPTIONS.find(c => c.value === name)?.hex || '#3b82f6';
+
 export const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
 export const formatPhone = (v: string) => {
   const d = v.replace(/\D/g, '');
   if (d.length <= 3) return d;
@@ -45,8 +47,5 @@ export const formatPhone = (v: string) => {
 export const STEPS = [
   { id: 'company', label: 'Company', icon: '🏢', desc: 'Basic info & branding' },
   { id: 'categories', label: 'Categories', icon: '🏷️', desc: 'Service types & tasks' },
-  { id: 'pipeline', label: 'Pipeline', icon: '📊', desc: 'Workflow stages' },
-  { id: 'form', label: 'Form', icon: '📝', desc: 'Customer questions' },
-  { id: 'quotes', label: 'Quotes', icon: '💰', desc: 'Quote templates' },
   { id: 'done', label: 'Done', icon: '🎉', desc: "You're all set" },
 ];
