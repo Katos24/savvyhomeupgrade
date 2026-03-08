@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FileText, Plus, Trash2, Save, X, Edit2, DollarSign, MoreVertical, Mail } from 'lucide-react';
+import { FileText, Plus, Trash2, Save, X, Edit2, DollarSign, MoreVertical, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
 
 type QuoteSectionProps = {
@@ -19,6 +19,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [expandedQty, setExpandedQty] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     async function fetchCustomTemplates() {
@@ -41,7 +42,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     if (customTemplates.length === 0 || !lead?.category) return;
     if (quoteData.length > 0 || lead?.quote_total) return;
 
-    const match = customTemplates.find(t => t.category === lead?.category);
+    const match = customTemplates.find((t: any) => t.category === lead?.category);
     if (match) {
       const items = match.items.map((item: any, i: number) => ({
         id: Date.now() + i,
@@ -71,11 +72,11 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     }
   }, [customTemplates, lead?.category, lead?.id, hasProject]);
 
-  const availableTemplates = customTemplates.filter(t => t.category === lead?.category);
+  const availableTemplates = customTemplates.filter((t: any) => t.category === lead?.category);
 
   const handleTemplateSelect = (templateId: string) => {
     if (!templateId) return;
-    const template = availableTemplates.find(t => t.id === templateId);
+    const template = availableTemplates.find((t: any) => t.id === templateId);
     if (!template) return;
     const items = template.items.map((item: any, i: number) => ({
       id: Date.now() + i,
@@ -130,6 +131,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
       if (res.ok && result.success) {
         toast.success('Quote saved!');
         setIsEditing(false);
+        setExpandedQty({});
         await onRefresh();
       } else {
         toast.error(result.error || 'Failed to save quote');
@@ -144,29 +146,41 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const total = quoteData.reduce((s: number, i: any) => s + i.amount, 0);
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-  // Empty state
+  const toggleQty = (id: number) => setExpandedQty(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const emailLog: any[] = (() => {
+    try {
+      const raw = lead?.quote_emails;
+      return typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+    } catch { return []; }
+  })();
+
+  // ── EMPTY STATE ──────────────────────────────────────────────────────────
   if (quoteData.length === 0 && !isEditing && !loadingTemplates) {
     return (
       <div className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-50">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <span className="w-5 h-5 bg-blue-50 flex items-center justify-center text-xs">💰</span>
+            <span className="w-5 h-5 bg-blue-50 flex items-center justify-center rounded text-xs">💰</span>
             Quote
           </h3>
         </div>
         <div className="p-10 flex flex-col items-center gap-3 text-center">
-          <div className="w-14 h-14 bg-blue-50 flex items-center justify-center">
-            <FileText className="w-7 h-7 text-blue-500" />
+          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
+            <FileText className="w-7 h-7 text-blue-400" />
           </div>
-          <p className="text-sm font-semibold text-gray-500">No quote yet</p>
+          <div>
+            <p className="text-sm font-bold text-gray-700">No quote yet</p>
+            <p className="text-xs text-gray-400 mt-1">Add line items to build a quote</p>
+          </div>
           {availableTemplates.length === 0 && (
-            <p className="text-xs text-gray-400 max-w-xs">
+            <p className="text-xs text-gray-400 max-w-xs bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
               💡 Create a quote template in Settings to auto-populate quotes for this category.
             </p>
           )}
           <button
             onClick={() => { handleAddRow(); setIsEditing(true); }}
-            className="mt-2 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 text-sm transition"
+            className="mt-1 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 text-sm rounded-xl transition shadow-sm shadow-blue-200"
           >
             <Plus className="w-4 h-4" />
             Create Quote
@@ -178,85 +192,88 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
 
   return (
     <div className="overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-4 border-b border-gray-50 flex items-center justify-between gap-2">
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-  <span className="w-5 h-5 bg-blue-50 flex items-center justify-center text-xs">💰</span>
-  Quote
-  {quoteData.length > 0 && (
-    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold">
-      {fmt(total)}
-    </span>
-  )}
-  {lead?.quote_accepted_at && (
-    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1">
-      ✅ Accepted
-    </span>
-  )}
-  {lead?.quote_declined_at && !lead?.quote_accepted_at && (
-    <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1">
-      ✗ Declined
-    </span>
-  )}
-</h3>
 
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2 bg-white sticky top-0 z-10">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-5 h-5 bg-blue-50 flex items-center justify-center rounded text-xs">💰</span>
+            Quote
+          </h3>
+          {quoteData.length > 0 && (
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-extrabold rounded-md">
+              {fmt(total)}
+            </span>
+          )}
+          {lead?.quote_accepted_at && (
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-md flex items-center gap-1">
+              <Check className="w-3 h-3" /> Accepted
+            </span>
+          )}
+          {lead?.quote_declined_at && !lead?.quote_accepted_at && (
+            <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-md">
+              ✗ Declined
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {isEditing ? (
             <>
               {availableTemplates.length > 1 && (
                 <select
                   onChange={(e) => handleTemplateSelect(e.target.value)}
-                  className="text-xs border border-gray-200 px-2 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600 max-w-[120px]"
+                  className="hidden sm:block text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600 max-w-[110px]"
                 >
                   <option value="">Template...</option>
-                  {availableTemplates.map((t) => (
+                  {availableTemplates.map((t: any) => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
               )}
-              <button onClick={handleAddRow}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
-                <Plus className="w-3 h-3" /> Row
+              <button
+                onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); setExpandedQty({}); }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X className="w-4 h-4" />
               </button>
-              <button onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-600 transition">
-                <X className="w-3 h-3" /> Cancel
-              </button>
-              <button onClick={handleSave} disabled={saving}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white transition">
-                <Save className="w-3 h-3" /> {saving ? 'Saving...' : 'Save'}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </>
           ) : (
             <>
-              <button onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+              >
                 <Edit2 className="w-3 h-3" /> Edit
               </button>
               <div className="relative">
-                <button onClick={() => setShowMoreActions(!showMoreActions)}
-                  className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                <button
+                  onClick={() => setShowMoreActions(!showMoreActions)}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+                >
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {showMoreActions && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 z-50 w-64 p-2">
-                        <SendCustomerEmailButtons
-                          leadId={lead.id}
-                          type="quote"
-                          currentUser={currentUser}
-                          onRefresh={onRefresh}
-                          hasQuote={quoteData.length > 0}
-quoteSentAt={(() => {
-  try {
-    const log = typeof lead?.quote_emails === 'string'
-      ? JSON.parse(lead.quote_emails)
-      : lead?.quote_emails || [];
-    return log.length > 0 ? log[log.length - 1].sent_at : null;
-  } catch { return null; }
-})()}                          disabled={!hasProject}
-                        />
+                    <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 rounded-xl z-50 w-64 p-2">
+                      <SendCustomerEmailButtons
+                        leadId={lead.id}
+                        type="quote"
+                        currentUser={currentUser}
+                        onRefresh={onRefresh}
+                        hasQuote={quoteData.length > 0}
+                        quoteSentAt={emailLog.length > 0 ? emailLog[emailLog.length - 1].sent_at : null}
+                        disabled={!hasProject}
+                      />
                     </div>
                   </>
                 )}
@@ -266,292 +283,150 @@ quoteSentAt={(() => {
         </div>
       </div>
 
-      {/* ── MOBILE: card per line item ── */}
-      <div className="sm:hidden">
-        <div className="divide-y divide-gray-50">
-          {quoteData.map((item: any, idx: number) => (
-            <div key={item.id} className="p-4 space-y-3">
-              {/* Description */}
+      {/* ── LINE ITEMS ──────────────────────────────────────────────────────── */}
+      <div className="divide-y divide-gray-50">
+        {quoteData.map((item: any, idx: number) => {
+          const isQtyExpanded = expandedQty[item.id];
+          const showQtyHint = item.quantity > 1 && !isEditing;
+
+          return (
+            <div key={item.id} className={`px-4 py-3.5 ${isEditing ? 'bg-blue-50/30' : 'bg-white hover:bg-gray-50/60'} transition`}>
+
               {isEditing ? (
-                <input
-                  type="text"
-                  value={item.description}
-                  onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                  placeholder="Description..."
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
-                />
+                /* ── EDIT MODE ── */
+                <div className="space-y-2.5">
+                  {/* Description input */}
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                    placeholder="Item description..."
+                    className="w-full px-3 py-2.5 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white placeholder-gray-300"
+                    autoFocus={idx === quoteData.length - 1 && !item.description}
+                  />
+
+                  {/* Price + Qty row */}
+                  <div className="flex gap-2 items-end">
+                    {/* Unit Price — hero field */}
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Price</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.unitPrice || ''}
+                          onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                          placeholder="0.00"
+                          className="w-full pl-7 pr-3 py-2.5 text-sm font-bold border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white"
+                          style={{ MozAppearance: 'textfield' } as any}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Qty — secondary */}
+                    <div className="w-20">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Qty</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={item.quantity || ''}
+                        onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm font-bold text-center border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white"
+                        style={{ MozAppearance: 'textfield' } as any}
+                      />
+                    </div>
+
+                    {/* Amount display */}
+                    <div className="w-24 text-right pb-0.5">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total</label>
+                      <p className="text-sm font-extrabold text-gray-800 py-2.5">{fmt(item.amount)}</p>
+                    </div>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => handleRemoveRow(item.id)}
+                      className="mb-0.5 p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
               ) : (
-                <p className="text-sm font-semibold text-gray-900">{item.description || '—'}</p>
+                /* ── VIEW MODE ── */
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{item.description || '—'}</p>
+                    {showQtyHint && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {item.quantity} × {fmt(item.unitPrice)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm font-extrabold text-gray-800 flex-shrink-0">{fmt(item.amount)}</p>
+                </div>
               )}
+            </div>
+          );
+        })}
+      </div>
 
-              {/* Qty / Unit Price / Amount row */}
-{/* Qty + Unit Price */}
-<div className="grid grid-cols-2 gap-3">
-  <div>
-    <p className="text-xs text-gray-400 mb-1">Qty</p>
-    {isEditing ? (
-      <input
-        type="number"
-        min="1"
-        step="1"
-        value={item.quantity || ''}
-        onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-        className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-center"
-        style={{ MozAppearance: 'textfield' } as any}
-      />
-    ) : (
-      <p className="text-sm text-gray-700">{item.quantity}</p>
-    )}
-  </div>
+      {/* ── ADD ROW BUTTON (editing) ────────────────────────────────────────── */}
+      {isEditing && (
+        <div className="px-4 py-3 border-t border-dashed border-blue-200 bg-blue-50/20">
+          <button
+            onClick={handleAddRow}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition border-2 border-dashed border-blue-200 hover:border-blue-300"
+          >
+            <Plus className="w-4 h-4" />
+            Add Item
+          </button>
+        </div>
+      )}
 
-  <div>
-    <p className="text-xs text-gray-400 mb-1">Unit Price</p>
-    {isEditing ? (
-      <input
-        type="number"
-        step="0.01"
-        min="0"
-        value={item.unitPrice || ''}
-        onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-        placeholder="0.00"
-        className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-right"
-        style={{ MozAppearance: 'textfield' } as any}
-      />
-    ) : (
-      <p className="text-sm text-gray-700 text-right">{fmt(item.unitPrice)}</p>
-    )}
-  </div>
-</div>
+      {/* ── TOTAL BAR ───────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-t-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-green-50">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total</span>
+        <span className="text-lg font-extrabold text-emerald-600">{fmt(total)}</span>
+      </div>
 
-{/* Amount + Delete */}
-<div className="flex items-center justify-between pt-1">
-  <div>
-    <p className="text-xs text-gray-400">Amount</p>
-    <p className="text-base font-bold text-gray-900">
-      {fmt(item.amount)}
-    </p>
-  </div>
-
-  {isEditing && (
-    <button
-      onClick={() => handleRemoveRow(item.id)}
-      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition"
-    >
-      <Trash2 className="w-5 h-5" />
-    </button>
-  )}
-            <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">Qty</p>
-                  {isEditing ? (
-                    <input
-                      type="number" min="1" step="1"
-                      value={item.quantity || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                      className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-center"
-                      style={{ MozAppearance: 'textfield' } as any}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-700">{item.quantity}</p>
-                  )}
+      {/* ── EMAIL HISTORY ───────────────────────────────────────────────────── */}
+      {!isEditing && emailLog.length > 0 && (
+        <div className="px-4 py-4 border-t border-gray-50 space-y-2 bg-gray-50/50">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mb-3">
+            <Mail className="w-3 h-3" /> Email History
+          </p>
+          {[...emailLog].reverse().map((entry: any, i: number) => (
+            <div key={i} className="flex items-center justify-between px-3 py-2.5 bg-white border border-blue-100 rounded-xl text-sm gap-2 shadow-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-3 h-3 text-blue-600" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">Unit Price</p>
-                  {isEditing ? (
-                    <input
-                      type="number" step="0.01" min="0"
-                      value={item.unitPrice || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400 text-right"
-                      style={{ MozAppearance: 'textfield' } as any}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-700 text-right">{fmt(item.unitPrice)}</p>
-                  )}
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 text-xs">{fmt(entry.quote_total)}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{entry.sent_by_email}</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">Amount</p>
-                  <p className="text-sm font-bold text-gray-900 text-right">{fmt(item.amount)}</p>
-                </div>
-                {isEditing && (
-                  <button onClick={() => handleRemoveRow(item.id)}
-                    className="mt-4 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition flex-shrink-0">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
               </div>
+              <span className="text-[10px] font-semibold text-gray-400 flex-shrink-0">
+                {new Date(entry.sent_at).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                })}
+              </span>
             </div>
           ))}
         </div>
+      )}
 
-        {/* Mobile total */}
-        <div className="flex items-center justify-between px-4 py-3 border-t-2 border-gray-200 bg-green-50">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total</span>
-          <span className="text-base font-extrabold text-green-600">{fmt(total)}</span>
-        </div>
-      </div>
-{/* ── DESKTOP: table layout ── */}
-<div className="hidden sm:block overflow-x-auto">
-  <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-    <thead>
-      <tr style={{ background: '#f8fafc' }}>
-        <th className="text-left py-2 px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100">
-          Description
-        </th>
-
-        <th className="text-center py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-16">
-          Qty
-        </th>
-
-        <th className="text-right py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-28">
-          Unit Price
-        </th>
-
-        <th className="text-right py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-b border-gray-100 w-28">
-          Amount
-        </th>
-
-        {isEditing && <th className="w-8 border-b border-gray-100" />}
-      </tr>
-    </thead>
-
-    <tbody>
-      {quoteData.map((item: any) => (
-        <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-          
-          {/* Description */}
-          <td className="p-0">
-            {isEditing ? (
-              <input
-                type="text"
-                value={item.description}
-                onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                className="w-full px-3 py-1.5 text-sm focus:outline-none focus:bg-blue-50 bg-transparent"
-                placeholder="Description..."
-              />
-            ) : (
-              <div className="px-3 py-1.5 text-sm text-gray-900">
-                {item.description}
-              </div>
-            )}
-          </td>
-
-          {/* Qty */}
-          <td className="p-0 text-center">
-            {isEditing ? (
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={item.quantity || ''}
-                onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                className="w-full px-2 py-1.5 text-sm text-center focus:outline-none focus:bg-blue-50 bg-transparent"
-                style={{ MozAppearance: 'textfield' } as any}
-              />
-            ) : (
-              <div className="px-2 py-1.5 text-sm text-gray-900">
-                {item.quantity}
-              </div>
-            )}
-          </td>
-
-          {/* Unit Price */}
-          <td className="p-0 text-right">
-            {isEditing ? (
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={item.unitPrice || ''}
-                onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                className="w-full px-2 py-1.5 text-sm text-right focus:outline-none focus:bg-blue-50 bg-transparent"
-                style={{ MozAppearance: 'textfield' } as any}
-                placeholder="0.00"
-              />
-            ) : (
-              <div className="px-2 py-1.5 text-sm text-gray-900">
-                {fmt(item.unitPrice)}
-              </div>
-            )}
-          </td>
-
-          {/* Amount */}
-          <td className="px-2 py-1.5 text-sm text-right font-semibold text-gray-900">
-            {fmt(item.amount)}
-          </td>
-
-          {/* Delete */}
-          {isEditing && (
-            <td className="px-1 py-1.5 text-center">
-              <button
-                onClick={() => handleRemoveRow(item.id)}
-                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 transition"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </td>
-          )}
-        </tr>
-      ))}
-    </tbody>
-
-    <tfoot>
-      <tr style={{ background: '#f0fdf4' }}>
-        <td
-          colSpan={isEditing ? 4 : 3}
-          className="px-3 py-2 text-right text-[11px] font-bold text-gray-500 uppercase tracking-widest border-t-2 border-gray-200"
-        >
-          Total
-        </td>
-
-        <td className="px-3 py-2 text-right font-extrabold text-green-600 text-sm border-t-2 border-gray-200">
-          {fmt(total)}
-        </td>
-
-        {isEditing && <td className="border-t-2 border-gray-200" />}
-      </tr>
-    </tfoot>
-  </table>
-
-  <style jsx>{`
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-  `}</style>
-</div>
-
-      {/* Email sent log */}
-      {!isEditing && (() => {
-        let emailLog: any[] = [];
-        try {
-          const raw = lead?.quote_emails;
-          emailLog = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
-        } catch { emailLog = []; }
-        if (emailLog.length === 0) return null;
-        return (
-          <div className="px-5 py-4 border-t border-gray-50 space-y-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <Mail className="w-3.5 h-3.5" /> Email History
-            </p>
-            {[...emailLog].reverse().map((entry: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 text-sm gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <DollarSign className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <span className="font-bold text-blue-900">{fmt(entry.quote_total)}</span>
-                  <span className="text-xs text-blue-500 truncate">by {entry.sent_by_email}</span>
-                </div>
-                <span className="text-xs text-blue-500 flex-shrink-0">
-                  {new Date(entry.sent_at).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-                  })}
-                </span>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+      <style jsx>{`
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      `}</style>
     </div>
   );
 }

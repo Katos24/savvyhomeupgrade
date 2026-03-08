@@ -27,63 +27,347 @@ export default async function SuccessPage({ params }: PageProps) {
   const { company: companySlug } = await params;
   const company = await getCompany(companySlug);
 
-  if (!company) {
-    notFound();
-  }
+  if (!company) notFound();
 
-  const successMessage =
-    company.cta_success_message || "You're all set! 🎉";
-
+  const successMessage = company.cta_success_message || "Request received!";
   const websiteUrl = company.website
     ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
     : null;
-
-  const brandColor1 = company.email_brand_color_1 || '#3b82f6';
-  const brandColor2 = company.email_brand_color_2 || '#8b5cf6';
+  const brandColor1 = company.email_brand_color_1 || '#2563eb';
+  const brandColor2 = company.email_brand_color_2 || '#7c3aed';
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f8fafc' }}>
-      <div className="max-w-md w-full text-center">
-        <div className="bg-white rounded-2xl shadow-xl p-10">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,wght@0,700;1,700&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          font-family: 'DM Sans', sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+          min-height: 100svh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 24px 16px;
+          position: relative;
+          overflow: hidden;
+          background: #fafaf9;
+        }
+
+        /* Soft background orbs using brand colors */
+        .orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.12;
+          pointer-events: none;
+        }
+        .orb-1 {
+          width: 500px;
+          height: 500px;
+          top: -150px;
+          right: -100px;
+          background: var(--brand1);
+          animation: drift1 12s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+          width: 400px;
+          height: 400px;
+          bottom: -100px;
+          left: -80px;
+          background: var(--brand2);
+          animation: drift2 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes drift1 {
+          from { transform: translate(0, 0) scale(1); }
+          to   { transform: translate(30px, 20px) scale(1.05); }
+        }
+        @keyframes drift2 {
+          from { transform: translate(0, 0) scale(1); }
+          to   { transform: translate(-20px, -30px) scale(1.08); }
+        }
+
+        /* Card */
+        .card {
+          position: relative;
+          width: 100%;
+          max-width: 440px;
+          background: #fff;
+          border-radius: 24px;
+          padding: 40px 32px 36px;
+          box-shadow:
+            0 1px 2px rgba(0,0,0,0.04),
+            0 4px 16px rgba(0,0,0,0.06),
+            0 24px 48px rgba(0,0,0,0.08);
+          animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+          text-align: center;
+        }
+
+        @keyframes rise {
+          from { opacity: 0; transform: translateY(32px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Logo */
+        .logo-wrap {
+          margin-bottom: 28px;
+          animation: fadein 0.5s 0.15s ease both;
+        }
+        .logo-wrap img {
+          height: 48px;
+          width: auto;
+          object-fit: contain;
+          max-width: 180px;
+        }
+
+        /* Checkmark */
+        .check-ring {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          margin: 0 auto 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          animation: pop 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          background: linear-gradient(135deg, var(--brand1), var(--brand2));
+          box-shadow: 0 8px 24px color-mix(in srgb, var(--brand1) 40%, transparent);
+        }
+
+        @keyframes pop {
+          from { opacity: 0; transform: scale(0.4); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+
+        .check-ring svg {
+          width: 32px;
+          height: 32px;
+          color: #fff;
+          animation: draw 0.4s 0.5s ease both;
+          stroke-dasharray: 40;
+          stroke-dashoffset: 40;
+        }
+
+        @keyframes draw {
+          to { stroke-dashoffset: 0; }
+        }
+
+        /* Confetti dots */
+        .dots {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .dot {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--brand1);
+          animation: burst 0.6s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+          opacity: 0;
+        }
+        .dot:nth-child(1)  { top: -12px; left: 50%; background: var(--brand1); --tx: -2px; --ty: -18px; }
+        .dot:nth-child(2)  { top: 10px; right: -14px; background: var(--brand2); --tx: 16px; --ty: -8px; }
+        .dot:nth-child(3)  { bottom: 10px; right: -12px; background: var(--brand1); --tx: 14px; --ty: 10px; }
+        .dot:nth-child(4)  { bottom: -12px; left: 50%; background: var(--brand2); --tx: 0px; --ty: 16px; }
+        .dot:nth-child(5)  { bottom: 10px; left: -14px; background: var(--brand1); --tx: -16px; --ty: 8px; }
+        .dot:nth-child(6)  { top: 10px; left: -12px; background: var(--brand2); --tx: -14px; --ty: -10px; }
+
+        @keyframes burst {
+          0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+          100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, 0)) scale(0); }
+        }
+
+        /* Text */
+        .headline {
+          font-family: 'Fraunces', Georgia, serif;
+          font-size: clamp(1.5rem, 5vw, 1.85rem);
+          font-weight: 700;
+          color: #111;
+          line-height: 1.2;
+          margin-bottom: 12px;
+          animation: fadein 0.5s 0.35s ease both;
+        }
+
+        .subtext {
+          font-size: 0.9375rem;
+          color: #6b7280;
+          line-height: 1.6;
+          margin-bottom: 32px;
+          animation: fadein 0.5s 0.45s ease both;
+        }
+
+        @keyframes fadein {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Steps */
+        .steps {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 32px;
+          text-align: left;
+          animation: fadein 0.5s 0.5s ease both;
+        }
+
+        .step {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 14px 16px;
+          background: #f9fafb;
+          border-radius: 12px;
+          border: 1px solid #f0f0f0;
+        }
+
+        .step-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 15px;
+          background: linear-gradient(135deg, color-mix(in srgb, var(--brand1) 15%, white), color-mix(in srgb, var(--brand2) 15%, white));
+        }
+
+        .step-text strong {
+          display: block;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: #111;
+          margin-bottom: 1px;
+        }
+
+        .step-text span {
+          font-size: 0.75rem;
+          color: #9ca3af;
+        }
+
+        /* CTA button */
+        .cta-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          padding: 14px 24px;
+          border-radius: 14px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: #fff;
+          text-decoration: none;
+          border: none;
+          cursor: pointer;
+          transition: opacity 0.2s, transform 0.15s;
+          background: linear-gradient(135deg, var(--brand1), var(--brand2));
+          box-shadow: 0 4px 16px color-mix(in srgb, var(--brand1) 35%, transparent);
+          animation: fadein 0.5s 0.6s ease both;
+        }
+
+        .cta-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+        .cta-btn:active { opacity: 0.95; transform: translateY(0); }
+
+        .cta-arrow {
+          transition: transform 0.2s;
+        }
+        .cta-btn:hover .cta-arrow {
+          transform: translateX(3px);
+        }
+
+        /* Footer */
+        .footer-note {
+          margin-top: 20px;
+          font-size: 0.75rem;
+          color: #d1d5db;
+          animation: fadein 0.5s 0.7s ease both;
+        }
+
+        @media (max-width: 480px) {
+          .card {
+            padding: 32px 20px 28px;
+            border-radius: 20px;
+          }
+        }
+      `}</style>
+
+      <div
+        className="page"
+        style={{
+          ['--brand1' as any]: brandColor1,
+          ['--brand2' as any]: brandColor2,
+        }}
+      >
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+
+        <div className="card">
           {company.logo_url && (
-            <div className="mb-6 flex justify-center">
-              <img
-                src={company.logo_url}
-                alt={company.name}
-                className="h-16 w-auto object-contain"
-              />
+            <div className="logo-wrap">
+              <img src={company.logo_url} alt={company.name} />
             </div>
           )}
 
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
-            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          {/* Animated checkmark */}
+          <div className="check-ring">
+            <div className="dots">
+              {[1,2,3,4,5,6].map(i => <div key={i} className="dot" />)}
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 13l4 4L19 7" />
             </svg>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {successMessage}
-          </h2>
-
-          <p className="text-gray-500 text-sm mb-6">
-            We've received your request and will be in touch shortly.
+          <h1 className="headline">{successMessage}</h1>
+          <p className="subtext">
+            We've got your request and will be in touch soon.
+            Keep an eye on your inbox for a confirmation.
           </p>
 
+          {/* What happens next */}
+          <div className="steps">
+            <div className="step">
+              <div className="step-icon">📬</div>
+              <div className="step-text">
+                <strong>Check your email</strong>
+                <span>Confirmation sent to your inbox</span>
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-icon">📞</div>
+              <div className="step-text">
+                <strong>We'll reach out shortly</strong>
+                <span>Our team reviews every request</span>
+              </div>
+            </div>
+          </div>
+
           {websiteUrl && (
-            <a
-              href={websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-              style={{
-                background: `linear-gradient(to right, ${brandColor1}, ${brandColor2})`,
-              }}
-            >
-              Visit {company.name} →
+            <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="cta-btn">
+              Visit {company.name}
+              <svg className="cta-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
             </a>
           )}
+
+          <p className="footer-note">Powered by SavvyHome CRM</p>
         </div>
       </div>
-    </div>
+    </>
   );
 }

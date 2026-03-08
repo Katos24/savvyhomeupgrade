@@ -15,16 +15,17 @@ export function middleware(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/');
 
   // ✅ Stripe + public API bypass
-  const isPublicApiRoute =
-    pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/signup') ||
-    pathname.startsWith('/api/stripe/webhook') ||
-    pathname.startsWith('/api/webhooks/stripe') || // covers both cases
-    pathname.startsWith('/api/cron/') ||
-    pathname.startsWith('/api/quotes/respond') ||
-    pathname.startsWith('/api/upload') ||
-    pathname.startsWith('/api/leads/preview-email') ||
-pathname.startsWith('/api/leads/update');
+const isPublicApiRoute =
+  pathname.startsWith('/api/auth/') ||
+  pathname.startsWith('/api/signup') ||
+  pathname.startsWith('/api/stripe/webhook') ||
+  pathname.startsWith('/api/webhooks/stripe') ||
+  pathname.startsWith('/api/cron/') ||
+  pathname.startsWith('/api/quotes/respond') ||
+  pathname.startsWith('/api/upload') ||
+  pathname.startsWith('/api/leads/preview-email') ||
+  pathname.startsWith('/api/leads/update') ||
+  pathname.startsWith('/api/subscription/status');
 
   const isPublicRoute = publicRoutes.some(route =>
     pathname.startsWith(route)

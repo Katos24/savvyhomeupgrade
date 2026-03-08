@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SubscribeButton from '@/components/SubscribeButton';
 
@@ -8,7 +8,6 @@ const PLAN_CONFIG = {
   basic: {
     label: 'Basic',
     price: '$49',
-    cents: '.00',
     features: [
       'Unlimited lead tracking',
       'Cards + table view',
@@ -23,7 +22,6 @@ const PLAN_CONFIG = {
   pro: {
     label: 'Pro',
     price: '$99',
-    cents: '.00',
     features: [
       'Everything in Basic',
       'Convert leads to projects',
@@ -38,6 +36,203 @@ const PLAN_CONFIG = {
   },
 };
 
+// ─── Secure polling success screen ───────────────────────────────────────────
+// Never trusts the ?subscription=success URL param for access.
+// Polls /api/subscription/status (auth-gated) until webhook confirms payment.
+
+function SuccessPolling() {
+  const router = useRouter();
+  const [status, setStatus] = useState<'polling' | 'confirmed' | 'timeout'>('polling');
+  const [dots, setDots] = useState(0);
+  const [slug, setSlug] = useState<string | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const attempts = useRef(0);
+  const MAX_ATTEMPTS = 20; // 20 × 3s = 60s max wait
+
+  // Animate dots
+  useEffect(() => {
+    const t = setInterval(() => setDots(d => (d + 1) % 4), 500);
+    return () => clearInterval(t);
+  }, []);
+
+  // Poll subscription status from server (uses auth cookie — not URL param)
+  useEffect(() => {
+    if (status !== 'polling') return;
+
+    const poll = async () => {
+      try {
+        attempts.current += 1;
+        const res = await fetch('/api/subscription/status', { cache: 'no-store' });
+        if (!res.ok) return; // keep retrying on server errors
+
+        const data = await res.json();
+
+        if (data.isActive) {
+          setSlug(data.slug);
+          setOnboardingCompleted(data.onboardingCompleted);
+          setStatus('confirmed');
+          return;
+        }
+
+        if (attempts.current >= MAX_ATTEMPTS) {
+          setStatus('timeout');
+        }
+      } catch {
+        // network error — keep trying
+      }
+    };
+
+    poll(); // immediate first check
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [status]);
+
+  // Auto-redirect 2s after confirmed
+  useEffect(() => {
+    if (status !== 'confirmed' || !slug) return;
+    const dest = onboardingCompleted ? `/${slug}/dashboard` : '/onboarding';
+    const t = setTimeout(() => router.push(dest), 2000);
+    return () => clearTimeout(t);
+  }, [status, slug, onboardingCompleted, router]);
+
+  if (status === 'confirmed') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+        <div style={{ textAlign: 'center', animation: 'fadeUp 0.5s ease both' }}>
+          <style>{`
+            @keyframes fadeUp { from { opacity:0; transform:translateY(20px);} to { opacity:1; transform:translateY(0);} }
+            @keyframes pop { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+            @keyframes ripple { 0%{transform:scale(1);opacity:0.4} 100%{transform:scale(2.2);opacity:0} }
+          `}</style>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: 32 }}>
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              background: 'rgba(99,102,241,0.3)',
+              animation: 'ripple 1.2s ease-out infinite',
+            }} />
+            <div style={{
+              width: 88, height: 88, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+              boxShadow: '0 0 40px rgba(99,102,241,0.5)',
+            }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+          <h1 style={{ color: '#fff', fontSize: 32, fontWeight: 800, marginBottom: 12 }}>You're in! 🎉</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, marginBottom: 8 }}>
+            Payment confirmed. Taking you to {onboardingCompleted ? 'your dashboard' : 'setup'}…
+          </p>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 24 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: i === dots % 3 ? '#6366f1' : 'rgba(255,255,255,0.2)',
+                transition: 'background 0.3s',
+              }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'timeout') {
+    // Webhook took too long — show manual continue option
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+        <div className="max-w-md w-full bg-white/10 border border-white/10 rounded-2xl p-8 text-center backdrop-blur-sm">
+          <div style={{ fontSize: 56, marginBottom: 16 }}>⏳</div>
+          <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 12 }}>
+            Almost there…
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+            Your payment was received but activation is taking a moment.
+            Check your email for confirmation, then head to your dashboard.
+          </p>
+          <button
+            onClick={() => router.push('/onboarding')}
+            style={{
+              width: '100%', padding: '14px 24px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff', fontWeight: 700, fontSize: 15,
+              border: 'none', cursor: 'pointer',
+            }}
+          >
+            Continue to Setup →
+          </button>
+          <button
+            onClick={() => { attempts.current = 0; setStatus('polling'); }}
+            style={{
+              marginTop: 12, background: 'none', border: 'none',
+              color: 'rgba(255,255,255,0.4)', fontSize: 13,
+              cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Polling state
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          border: '3px solid rgba(99,102,241,0.2)',
+          borderTop: '3px solid #6366f1',
+          animation: 'spin 0.9s linear infinite',
+          margin: '0 auto 28px',
+        }} />
+        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 10 }}>
+          Activating your account{'.'.repeat(dots)}
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
+          Confirming payment with Stripe…
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, marginTop: 8 }}>
+          This usually takes under 5 seconds
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Cancelled screen ─────────────────────────────────────────────────────────
+function CancelledScreen() {
+  const router = useRouter();
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+      <div className="max-w-md w-full bg-white/10 border border-white/10 rounded-2xl p-8 text-center backdrop-blur-sm">
+        <div style={{ fontSize: 56, marginBottom: 16 }}>😔</div>
+        <h1 style={{ color: '#fff', fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Checkout Cancelled</h1>
+        <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 28 }}>No worries — you can subscribe anytime.</p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={() => router.back()}
+            style={{ flex: 1, padding: '12px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: 600, fontSize: 14, border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer' }}>
+            ← Go Back
+          </button>
+          <button onClick={() => router.push('/subscribe')}
+            style={{ flex: 1, padding: '12px 20px', borderRadius: 10, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main subscribe page ──────────────────────────────────────────────────────
 function SubscribePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,8 +259,8 @@ function SubscribePageContent() {
         if (companyData.success && companyData.company) {
           setCompany(companyData.company);
         }
-      } catch (error) {
-        console.error('Error loading data:', error);
+      } catch (err) {
+        console.error('Error loading data:', err);
       } finally {
         setLoading(false);
       }
@@ -73,71 +268,19 @@ function SubscribePageContent() {
     loadData();
   }, []);
 
+  // These screens don't need company data loaded first
+  if (subscriptionStatus === 'success') return <SuccessPolling />;
+  if (subscriptionStatus === 'cancelled') return <CancelledScreen />;
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid #6366f1', animation: 'spin 0.9s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  // Success state
-  if (subscriptionStatus === 'success') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4">
-        <div className="max-w-2xl w-full">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
-            <div className="text-7xl mb-6">🎉</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to Lead2Project!</h1>
-            <p className="text-xl text-gray-600 mb-8">Your 14-day free trial is now active. Let's get started!</p>
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-8">
-              <h3 className="font-bold text-green-900 mb-2">What's Next?</h3>
-              <ul className="text-left text-green-800 space-y-2">
-                <li>✓ Start tracking leads</li>
-                <li>✓ Convert leads to projects</li>
-                <li>✓ Try the AI Assistant</li>
-                <li>✓ Get paid faster</li>
-              </ul>
-            </div>
-            <button onClick={() => router.push(`/${company?.slug}/dashboard`)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-xl text-lg shadow-lg transition">
-              Go to Dashboard →
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Cancelled state
-  if (subscriptionStatus === 'cancelled') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 flex items-center justify-center px-4">
-        <div className="max-w-2xl w-full">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
-            <div className="text-7xl mb-6">😔</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Checkout Cancelled</h1>
-            <p className="text-xl text-gray-600 mb-8">No worries! You can subscribe anytime.</p>
-            <div className="flex gap-4 justify-center">
-              <button onClick={() => router.push(`/${company?.slug}/dashboard`)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
-                Back to Dashboard
-              </button>
-              <button onClick={() => router.push('/subscribe')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition">
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Default: show subscribe page with both plans
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
@@ -162,8 +305,6 @@ function SubscribePageContent() {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-12 md:py-20">
-
-        {/* Hero */}
         <div className="text-center mb-16">
           <div className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold mb-6">
             🚀 Almost There!
@@ -174,39 +315,27 @@ function SubscribePageContent() {
           </p>
         </div>
 
-        {/* Both Plan Cards Side by Side */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
           {(['basic', 'pro'] as const).map((planKey) => {
             const config = PLAN_CONFIG[planKey];
             const isPro = planKey === 'pro';
-
             return (
-              <div
-                key={planKey}
-                className={`bg-white rounded-2xl shadow-2xl p-8 relative overflow-hidden border-4 ${
-                  isPro ? 'border-indigo-400' : 'border-blue-200'
-                }`}
-              >
+              <div key={planKey} className={`bg-white rounded-2xl shadow-2xl p-8 relative overflow-hidden border-4 ${isPro ? 'border-indigo-400' : 'border-blue-200'}`}>
                 {isPro && (
                   <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 text-sm font-bold">
                     ⭐ MOST POPULAR
                   </div>
                 )}
-
                 <div className="text-center pt-4">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{config.label} Plan</h3>
                   <div className="flex items-baseline justify-center gap-1 mb-6">
                     <span className="text-5xl font-extrabold text-gray-900">{config.price}</span>
                     <span className="text-gray-600">/month</span>
                   </div>
-
                   <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-8">
                     <p className="text-green-800 font-semibold">🎉 First 14 days FREE</p>
-                    <p className="text-green-700 text-sm">
-                      Card required — charged {config.price}/mo after trial
-                    </p>
+                    <p className="text-green-700 text-sm">Card required — charged {config.price}/mo after trial</p>
                   </div>
-
                   <div className="text-left space-y-3 mb-8">
                     {config.features.map((f) => (
                       <div key={f} className="flex items-start gap-3">
@@ -215,7 +344,6 @@ function SubscribePageContent() {
                       </div>
                     ))}
                   </div>
-
                   {company && currentUser ? (
                     <SubscribeButton
                       companyId={company.id}
@@ -226,19 +354,15 @@ function SubscribePageContent() {
                       plan={planKey}
                     />
                   ) : (
-                    <div className="text-gray-500">Loading...</div>
+                    <div className="text-gray-500">Loading…</div>
                   )}
-
-                  <p className="text-xs text-gray-500 mt-4">
-                    By subscribing, you agree to our Terms of Service
-                  </p>
+                  <p className="text-xs text-gray-500 mt-4">By subscribing, you agree to our Terms of Service</p>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* FAQ */}
         <div className="max-w-3xl mx-auto">
           <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
           <div className="space-y-6">
@@ -262,8 +386,9 @@ function SubscribePageContent() {
 export default function SubscribePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin text-6xl">⏳</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid #6366f1', animation: 'spin 0.9s linear infinite' }} />
       </div>
     }>
       <SubscribePageContent />
