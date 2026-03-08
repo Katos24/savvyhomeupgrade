@@ -308,19 +308,7 @@ export default function UploadForm({
     }
   };
 
-  // Fire confirmation email immediately — don't await, don't block UX
-fetch('/api/leads/send-confirmation', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    leadId: result.leadId,
-    name: step1Data.name,
-    email: step1Data.email,
-    category: step1Data.category,
-    description: step1Data.description,
-    companyId: finalCompanyId,
-  }),
-}).catch(() => {}); 
+
 
   // ─── Step 2: update existing lead ───
   const handleStep2Submit = async () => {
@@ -378,19 +366,6 @@ fetch('/api/leads/send-confirmation', {
 
   const handleSkip = () => setStep('success');
 
-  // Fire confirmation email immediately — don't await, don't block UX
-fetch('/api/leads/send-confirmation', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    leadId: result.leadId,
-    name: step1Data.name,
-    email: step1Data.email,
-    category: step1Data.category,
-    description: step1Data.description,
-    companyId: finalCompanyId,
-  }),
-}).catch(() => {}); // silently ignore — don't block the user
 
   // ─── Success screen ───
   if (step === 'success') {
