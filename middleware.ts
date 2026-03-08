@@ -23,7 +23,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/quotes/respond') ||
     pathname.startsWith('/api/upload') ||
-    pathname.startsWith('/api/leads/preview-email');
+    pathname.startsWith('/api/leads/preview-email') ||
+pathname.startsWith('/api/leads/update');
 
   const isPublicRoute = publicRoutes.some(route =>
     pathname.startsWith(route)
