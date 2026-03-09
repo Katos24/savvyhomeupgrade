@@ -1075,11 +1075,15 @@ export default function Home() {
           /* Mobile: explainer grid single col */
           .explainer-grid { grid-template-columns: 1fr !important; }
           .explainer-grid > div { border-radius: 8px !important; }
+
+          /* Mobile: footer grid */
+          .footer-grid { grid-template-columns: 1fr 1fr !important; }
         }
 
         @media (max-width: 480px) {
           .hero-badges { flex-direction: column; align-items: flex-start !important; }
           .stat-grid { grid-template-columns: 1fr 1fr !important; }
+          .footer-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -1121,8 +1125,8 @@ export default function Home() {
             <span className="orange">to disorganization.</span>
           </h1>
 
-          <p className="fade-up fade-up-3" style={{ fontSize: 'clamp(15px, 2.5vw, 18px)', color: 'rgba(255,255,255,0.5)', maxWidth: 520, lineHeight: 1.7, marginBottom: 'clamp(24px, 4vw, 36px)', fontWeight: 300 }}>
-            One link. Customers submit photos, details, and their info. You get a clean lead board, instant quotes, AI briefs, and full job tracking — without the chaos.
+          <p className="fade-up fade-up-3" style={{ fontSize: 'clamp(15px, 2.5vw, 18px)', color: 'rgba(255,255,255,0.5)', maxWidth: 480, lineHeight: 1.7, marginBottom: 'clamp(24px, 4vw, 36px)', fontWeight: 300 }}>
+            Share one link. Customers submit their info, photos, and job details. It lands on your board — ready to quote, track, and close.
           </p>
 
           <div className="fade-up fade-up-4" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
@@ -1174,7 +1178,7 @@ export default function Home() {
           {[
             { num: '$60K', label: 'Lost yearly from missed leads', sub: 'avg. contractor' },
             { num: '1 job', label: 'Pays for an entire year', sub: 'at $99/mo' },
-            { num: '30s', label: 'AI brief on any lead', sub: 'instant context' },
+            { num: '2 min', label: 'To set up your booking link', sub: 'no tech skills needed' },
             { num: '100%', label: 'Leads captured & organized', sub: 'nothing falls through' },
           ].map(s => (
             <div key={s.num} className="stat-card" style={{ padding: 'clamp(12px, 2vw, 20px)', borderRadius: 8 }}>
@@ -1530,22 +1534,84 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: '1px solid #e2e8f0', padding: '32px 16px', background: '#f8fafc' }}>
-        <div style={{ maxWidth: 1152, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 24, height: 24, background: '#5CCB3A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: 'DM Mono', fontSize: 8, fontWeight: 700, color: 'white' }}>L2P</span>
+      <footer style={{ borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+        <div style={{ maxWidth: 1152, margin: '0 auto', padding: 'clamp(32px, 5vw, 56px) 16px 24px' }}>
+
+          {/* Top row: brand + nav columns */}
+          <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 'clamp(24px, 4vw, 48px)', marginBottom: 48 }}>
+
+            {/* Brand */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 28, height: 28, background: '#5CCB3A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'DM Mono', fontSize: 9, fontWeight: 700, color: 'white' }}>L2P</span>
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', letterSpacing: '-0.02em' }}>Lead2Project</span>
+              </div>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, maxWidth: 260, marginBottom: 16 }}>
+                The job management tool built for service contractors. One link. Every lead. Full paper trail.
+              </p>
+              {/* Social links */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[
+                  { label: 'X', href: 'https://x.com', path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.717-8.813L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z' },
+                  { label: 'Instagram', href: 'https://instagram.com', path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z' },
+                ].map(s => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid #e2e8f0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#5CCB3A')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#64748b"><path d={s.path}/></svg>
+                  </a>
+                ))}
+              </div>
             </div>
-            <span style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>Lead2Project</span>
+
+            {/* Product */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'DM Mono', marginBottom: 14 }}>Product</div>
+              {[['Features', '#features'], ['Pricing', '/pricing'], ['Sign Up', '/signup'], ['Login', '/login']].map(([label, href]) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <Link href={href} style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0f172a')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{label}</Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Company */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'DM Mono', marginBottom: 14 }}>Company</div>
+              {[['About', '/about'], ['Contact', 'mailto:hello@lead2project.app'], ['Blog', '/blog']].map(([label, href]) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <Link href={href} style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0f172a')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{label}</Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Legal */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'DM Mono', marginBottom: 14 }}>Legal</div>
+              {[['Privacy Policy', '/privacy'], ['Terms of Service', '/terms']].map(([label, href]) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <Link href={href} style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#0f172a')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{label}</Link>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 24 }}>
-            {[['Pricing', '/pricing'], ['Login', '/login'], ['Sign Up', '/signup']].map(([label, href]) => (
-              <Link key={label} href={href} style={{ fontSize: 13, color: '#94a3b8', fontWeight: 400, textDecoration: 'none' }}>{label}</Link>
-            ))}
+
+          {/* Bottom bar */}
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <p style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'DM Mono', letterSpacing: '0.05em', margin: 0 }}>
+              © {new Date().getFullYear()} LEAD2PROJECT · BUILT FOR SERVICE PROS
+            </p>
+            <p style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'DM Mono', letterSpacing: '0.05em', margin: 0 }}>
+              MADE WITH ♥ FOR CONTRACTORS
+            </p>
           </div>
-          <p style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'DM Mono', letterSpacing: '0.05em' }}>
-            © {new Date().getFullYear()} LEAD2PROJECT
-          </p>
         </div>
       </footer>
 
