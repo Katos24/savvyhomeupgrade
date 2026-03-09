@@ -120,6 +120,7 @@ export default function LeadModal({
             created_at: r.created_at,
             description: r.description,
           })),
+photos: customerPhotos.filter((url: string) => typeof url === 'string' && url.startsWith('http')).slice(0, 4),
         }),
       });
       const data = await res.json();
@@ -160,7 +161,9 @@ export default function LeadModal({
   }, [lead.id]);
   const userRole = currentUser?.role || 'member';
   const canDelete = canDeleteLead(userRole);
-  const customerPhotos = Array.isArray(lead.file_urls) ? lead.file_urls : [];
+const customerPhotos = Array.isArray(lead.file_urls)
+  ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
+  : [];
 
   const getStatusColor = (colorName: string) => {
     const colorMap: Record<string, string> = {
@@ -737,6 +740,35 @@ export default function LeadModal({
     )}
   </div>
 )}
+      {/* Inline photo thumbnails */}
+                      {customerPhotos.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Image className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                              {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
+                            </span>
+                          </div>
+                     <div className="flex flex-wrap gap-1.5">
+  {customerPhotos.slice(0, 6).map((url: string, i: number) => (
+    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+      className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-indigo-400 transition group flex-shrink-0">
+      <img
+        src={url}
+        alt={`Photo ${i + 1}`}
+        className="w-full h-full object-cover group-hover:opacity-80 transition"
+      />
+    </a>
+  ))}
+  {customerPhotos.length > 6 && (
+    <div className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0">
+      <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
+    </div>
+  )}
+</div>
+                        </div>
+                      )}
+
                       {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
@@ -806,15 +838,134 @@ export default function LeadModal({
                   </div>
                 </div>
 
-                {/* Customer Photos */}
-                {customerPhotos.length > 0 && (
-                  <PhotoGallery title="Customer Photos" photos={customerPhotos} emoji="📷" />
-                )}
+          
 
-                {/* Convert to Project */}
-                {!isProject && (
-                  <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
-                )}
+{/* AI Brief */}
+<div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
+  <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+      <span className="w-5 h-5 bg-violet-50 flex items-center justify-center text-xs">✦</span>
+      AI Brief
+      {customerPhotos.length > 0 && (
+        <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-500 rounded-none">
+          includes photo analysis
+        </span>
+      )}
+    </h3>
+    {!aiSummary && (
+      <button
+        onClick={handleAiSummary}
+        disabled={loadingAi}
+        className="px-3 py-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 transition rounded-none"
+      >
+        {loadingAi ? 'Analyzing...' : 'Generate Brief'}
+      </button>
+    )}
+  </div>
+
+  {!aiSummary && !loadingAi && (
+    <div className="px-5 py-8 text-center">
+      <p className="text-sm text-gray-400">
+        {customerPhotos.length > 0
+          ? 'Generate a brief — photos will be analyzed automatically.'
+          : 'Generate an AI brief for this lead.'}
+      </p>
+    </div>
+  )}
+
+{loadingAi && (
+  <div className="px-5 py-10 flex flex-col items-center gap-4">
+    <div className="relative w-12 h-12">
+      <div className="absolute inset-0 rounded-full border-2 border-violet-100" />
+      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-violet-500 animate-spin" />
+      <div className="absolute inset-[6px] rounded-full border-2 border-transparent border-b-violet-300 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.6s' }} />
+      <div className="absolute inset-0 flex items-center justify-center text-sm text-violet-500">✦</div>
+    </div>
+    <div className="text-center space-y-1">
+      <p className="text-sm font-semibold text-gray-700">Analyzing your lead</p>
+      <p className="text-xs text-gray-400">
+        {customerPhotos.length > 0 ? 'Reading description and photos...' : 'Reading job details...'}
+      </p>
+    </div>
+  </div>
+)}
+
+  {aiSummary && (
+    <div className="p-5 space-y-4">
+      {aiSummary.headline && (
+        <div className="text-sm font-bold text-gray-900 border-l-4 border-violet-400 pl-3 leading-snug">
+          {aiSummary.headline}
+        </div>
+      )}
+      <div className="flex gap-2 flex-wrap">
+        {aiSummary.urgency && (
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-none ${
+            aiSummary.urgency === 'Emergency' ? 'bg-red-500 text-white' :
+            aiSummary.urgency === 'High Priority' ? 'bg-orange-500 text-white' :
+            aiSummary.urgency === 'Normal' ? 'bg-blue-500 text-white' :
+            'bg-gray-400 text-white'
+          }`}>{aiSummary.urgency}</span>
+        )}
+        {aiSummary.customer_score && (
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-none border ${
+            aiSummary.customer_score === 'VIP' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+            aiSummary.customer_score === 'Good' ? 'bg-green-100 text-green-800 border-green-300' :
+            aiSummary.customer_score === 'Risky' ? 'bg-red-100 text-red-800 border-red-300' :
+            'bg-gray-100 text-gray-700 border-gray-300'
+          }`}>{aiSummary.customer_score}</span>
+        )}
+      </div>
+      {aiSummary.summary && (
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-none">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</p>
+          <p className="text-sm text-gray-700 leading-relaxed">{aiSummary.summary}</p>
+        </div>
+      )}
+      {aiSummary.photo_observations && aiSummary.photo_observations !== 'null' && (
+        <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-none">
+          <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">📸 Photo Analysis</p>
+          <p className="text-sm text-indigo-900 leading-relaxed">{aiSummary.photo_observations}</p>
+        </div>
+      )}
+      {aiSummary.next_steps?.length > 0 && (
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-none">
+          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">Next Steps</p>
+          <ul className="space-y-2">
+            {aiSummary.next_steps.map((step: string, i: number) => (
+              <li key={i} className="flex gap-2.5 text-sm text-gray-700">
+                <span className="text-emerald-500 font-bold min-w-[1.25rem]">{i + 1}.</span>
+                <span className="leading-relaxed">{step}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aiSummary.critical_info?.length > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-none">
+          <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">⚠ Critical</p>
+          <ul className="space-y-1">
+            {aiSummary.critical_info.map((info: string, i: number) => (
+              <li key={i} className="flex gap-2 text-sm text-amber-800">
+                <span>•</span><span>{info}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <button
+        onClick={() => setAiSummary(null)}
+        className="text-xs text-gray-400 hover:text-gray-600 transition"
+      >
+        Regenerate
+      </button>
+    </div>
+  )}
+</div>
+
+{/* Convert to Project */}
+{!isProject && (
+  <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
+)}
               </>
             )}
 

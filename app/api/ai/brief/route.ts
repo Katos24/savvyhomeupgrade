@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       chat_history,
       all_leads_summary,
       plan_tier,
+      photos, // ← NEW: array of photo URLs from the lead submission
     } = body;
 
     if (plan_tier === 'basic') {
@@ -119,7 +120,7 @@ ${leadsContext}`;
         content: m.content,
       }));
 
-   const chatResponse = await callClaude({
+      const chatResponse = await callClaude({
         max_tokens: 512,
         system: systemPrompt,
         messages,
@@ -131,7 +132,7 @@ ${leadsContext}`;
       return NextResponse.json({ success: true, reply: replyContent.text });
     }
 
-    // ── Build context ──────────────────────────────────────────
+    // ── Build text context ─────────────────────────────────────
     const contextLines: string[] = [];
 
     contextLines.push(`COMPANY: ${company_name || 'Contractor'}`);
@@ -216,11 +217,24 @@ ${leadsContext}`;
 
     const context = contextLines.join('\n');
 
-    const prompt = `You are an expert assistant for a home services contractor business.
+    // ── Build photo note for prompt ────────────────────────────
+    // Cap at 4 photos to keep token cost reasonable
+    const validPhotos: string[] = Array.isArray(photos)
+      ? photos.filter((url: any) => typeof url === 'string' && url.startsWith('http')).slice(0, 4)
+      : [];
+
+    const photoNote = validPhotos.length > 0
+      ? `\nThe customer also submitted ${validPhotos.length} photo(s). They are included in this message. Describe what you see in each photo as it relates to the ${category || 'service'} request — visible damage, materials, access issues, scope indicators. Be specific and use trade-appropriate language. Add your photo observations to the "photo_observations" field in the JSON.`
+      : '';
+
+    // ── Build message content ──────────────────────────────────
+    // Start with the text prompt, then append images if present
+    const promptText = `You are an expert assistant for a home services contractor business.
 
 Here is everything you know about this lead/project:
 
 ${context}
+${photoNote}
 
 Write a fast, actionable brief that a busy contractor can scan in under 30 seconds.
 
@@ -231,6 +245,7 @@ Rules:
 - The headline should be a single punchy sentence capturing the situation
 - Next steps should be concrete actions, not generic advice
 - Flag anything that needs immediate attention in critical_info
+- If photos were provided, add specific observations from them — don't be vague ("looks damaged" is not useful; "missing shingles on south-facing slope, approx 2 squares" is useful)
 
 Respond ONLY with this JSON (no markdown, no extra text):
 {
@@ -239,7 +254,8 @@ Respond ONLY with this JSON (no markdown, no extra text):
   "next_steps": ["Specific action 1", "Specific action 2", "Specific action 3"],
   "critical_info": ["Urgent flag 1 if any", "Urgent flag 2 if any"],
   "urgency": "Emergency|High Priority|Normal|Low Priority",
-  "customer_score": "VIP|Good|New|Risky"
+  "customer_score": "VIP|Good|New|Risky",
+  "photo_observations": "What the photos show — specific, trade-appropriate observations. null if no photos."
 }
 
 customer_score rules:
@@ -248,9 +264,23 @@ customer_score rules:
 - New = first job, no history
 - Risky = payment issues or cancelled jobs in history`;
 
+    // Build content array — text first, then images
+    type ContentBlock =
+      | { type: 'text'; text: string }
+      | { type: 'image'; source: { type: 'url'; url: string } };
+
+    const messageContent: ContentBlock[] = [{ type: 'text', text: promptText }];
+
+    for (const url of validPhotos) {
+      messageContent.push({
+        type: 'image',
+        source: { type: 'url', url },
+      });
+    }
+
     const message = await callClaude({
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: messageContent }],
     });
 
     const content = message.content[0];
@@ -263,6 +293,7 @@ customer_score rules:
       brief.customer_name = customer_name;
       brief.is_project = !!project_id;
       brief.status = status;
+      brief.has_photos = validPhotos.length > 0;
       if (scheduled_date) brief.scheduled = { date: scheduled_date, time: scheduled_time };
     } catch {
       brief = {
@@ -272,6 +303,8 @@ customer_score rules:
         critical_info: [],
         urgency: 'Normal',
         customer_score: 'New',
+        photo_observations: null,
+        has_photos: validPhotos.length > 0,
       };
     }
 

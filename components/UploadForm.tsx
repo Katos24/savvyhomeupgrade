@@ -367,54 +367,105 @@ export default function UploadForm({
   const handleSkip = () => setStep('success');
 
 
-  // ─── Success screen ───
+
+// ─── Success screen ───
   if (step === 'success') {
     const websiteUrl = company?.website
       ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
       : null;
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#f8fafc' }}>
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-2xl shadow-xl p-10">
-            {company?.logo_url && (
-              <div className="mb-6 flex justify-center">
-                <img src={company.logo_url} alt={company.name} className="h-16 w-auto object-contain" />
-              </div>
-            )}
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
-              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-slate-50">
+        <div className="max-w-xl w-full">
+          {/* Confetti / Celebration Header */}
+          <div className="text-center mb-8 animate-in fade-in zoom-in duration-500">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4 shadow-sm">
+              <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {company?.cta_success_message || "You're all set! 🎉"}
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+              {company?.cta_success_message || "Request Received!"}
             </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              We've received your request and will be in touch shortly.
+            <p className="text-gray-500 font-medium">
+              Thanks, {step1Data.name.split(' ')[0]}! We've got everything we need.
             </p>
-            {websiteUrl && (
-              <a
-                href={websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition"
-                style={{
-                  background: company?.email_brand_color_1 && company?.email_brand_color_2
-                    ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
-                    : '#3b82f6',
-                  color: '#fff',
-                }}
-              >
-                Visit {company?.name || 'our website'} →
-              </a>
-            )}
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="p-8 sm:p-10">
+              {/* Branding */}
+              {company?.logo_url && (
+                <div className="mb-8 flex justify-center">
+                  <img src={company.logo_url} alt={company.name} className="h-12 w-auto object-contain opacity-90" />
+                </div>
+              )}
+
+              {/* What Happens Next Section */}
+              <div className="space-y-6 mb-10">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest text-center">What happens next?</h3>
+                
+                <div className="grid gap-4">
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">Reviewing Details</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Our team is reviewing your project details and photos right now.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">Fast Estimate</p>
+                      <p className="text-xs text-gray-500 mt-0.5">We'll reach out via {step1Data.phone ? 'text/call' : 'email'} with an initial quote or follow-up questions.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3">
+                {websiteUrl && (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-base font-bold shadow-lg transition active:scale-95"
+                    style={{
+                      background: company?.email_brand_color_1 && company?.email_brand_color_2
+                        ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
+                        : '#3b82f6',
+                      color: '#fff',
+                    }}
+                  >
+                    Visit {company?.name || 'Home'}
+                  </a>
+                )}
+                
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="w-full py-3 text-sm font-semibold text-gray-400 hover:text-gray-600 transition"
+                >
+                  Submit another request
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Trust Bar */}
+            <div className="bg-gray-50 border-t border-gray-100 px-8 py-4 flex items-center justify-center gap-2">
+              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-medium text-gray-400">Secure Submission via Lead2Project</span>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // ─── Default Return (Step 1 & 2) ───
   return (
     <>
       {toasts.map(toast => (
@@ -422,7 +473,7 @@ export default function UploadForm({
       ))}
 
       {/* Step 1 — always the base layer */}
-      <div className={step === 2 ? 'pointer-events-none select-none' : ''}>
+      <div className={step === 2 ? 'pointer-events-none select-none opacity-50' : ''}>
         <UploadFormStepOne
           formData={step1Data}
           categories={categories}

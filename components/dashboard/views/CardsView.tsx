@@ -85,6 +85,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
           repeat_customer: false,
           past_jobs: [],
           plan_tier: planTier,
+            photos: lead.photos?.map((p: any) => p.url) ?? [],  
+
         }),
       });
       const data = await res.json();
@@ -240,13 +242,18 @@ onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
           <div className="flex items-center justify-between pt-3 border-t border-slate-700">
             <div className="flex items-center gap-2.5">
               <span className="text-gray-500 text-xs">{formatDate(lead.created_at)}</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 border border-white/10 text-white/70 text-xs font-bold rounded-md">
+         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 border border-white/10 text-white/70 text-xs font-bold rounded-md">
   <Tag className="w-3 h-3 opacity-70" />
   {formatCategory(lead.category)}
- 
-   
-  
 </span>
+{lead.photos?.length > 0 && (
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold rounded-md">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><circle cx="12" cy="14" r="2"/>
+    </svg>
+    {lead.photos.length}
+  </span>
+)}
             </div>
             <button
               onClick={(e) => canUseAiBrief(planTier)
@@ -260,8 +267,12 @@ onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
               }`}
               title={canUseAiBrief(planTier) ? 'Generate AI Brief' : 'Upgrade to Pro for AI Brief'}
             >
-              {briefState?.loading ? '⏳' : canUseAiBrief(planTier) ? '✦' : '🔒'}
-            </button>
+{briefState?.loading ? (
+  <svg className="animate-spin w-3 h-3 text-white" viewBox="0 0 24 24" fill="none">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+  </svg>
+) : canUseAiBrief(planTier) ? '✦' : '🔒'}            </button>
           </div>
         </div>
       </div>
@@ -327,6 +338,12 @@ onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
                 <div className="bg-slate-800 border border-slate-700 p-4">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Summary</p>
                   <p className="text-white text-sm leading-relaxed">{brief.summary}</p>
+                </div>
+              )}
+              {brief.photo_observations && brief.photo_observations !== 'null' && (  // ← ADD THIS BLOCK
+                <div className="bg-slate-800 border border-indigo-900 p-4">
+                  <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">📸 Photo Analysis</p>
+                  <p className="text-white text-sm leading-relaxed">{brief.photo_observations}</p>
                 </div>
               )}
               {brief.next_steps?.length > 0 && (

@@ -966,6 +966,114 @@ function CustomizeDemo() {
 }
 
 
+/* ── PRICING SECTION ── */
+function PricingSection() {
+  const [annual, setAnnual] = useState(false);
+
+  const plans = [
+    {
+      name: 'Basic',
+      monthlyPrice: 49,
+      annualPrice: 39,
+      desc: 'Lead tracking for solo contractors',
+      features: ['Unlimited leads', 'Cards + table view', 'Status management', 'Customer booking form', 'Email / call / text actions', 'CSV export', 'Mobile friendly'],
+      cta: 'Start Free Trial',
+      href: '/signup?plan=basic',
+      highlight: false,
+    },
+    {
+      name: 'Pro',
+      monthlyPrice: 99,
+      annualPrice: 79,
+      desc: 'Full job management + AI',
+      features: ['Everything in Basic', 'Convert leads to projects', 'Quotes & payment tracking', 'Tasks & scheduling', 'Photo & doc management', 'Repeat customer detection', 'AI Brief on every lead', 'AI Assistant chat'],
+      cta: 'Start Free Trial',
+      href: '/signup?plan=pro',
+      highlight: true,
+    },
+  ];
+
+  return (
+    <section style={{ padding: 'clamp(48px, 8vw, 80px) 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+
+        {/* Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: !annual ? '#0f172a' : '#94a3b8', transition: 'color 0.2s' }}>Monthly</span>
+          <button
+            onClick={() => setAnnual(a => !a)}
+            style={{
+              width: 44, height: 24, borderRadius: 99, border: 'none', cursor: 'pointer', position: 'relative',
+              background: annual ? '#5CCB3A' : '#e2e8f0', transition: 'background 0.25s', padding: 0, flexShrink: 0,
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 3, left: annual ? 23 : 3,
+              width: 18, height: 18, borderRadius: '50%', background: 'white',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left 0.25s',
+            }} />
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: annual ? '#0f172a' : '#94a3b8', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}>
+            Annual
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+              background: annual ? '#5CCB3A' : '#e2e8f0', color: annual ? 'white' : '#94a3b8',
+              fontFamily: 'DM Mono', letterSpacing: '0.04em', transition: 'all 0.25s',
+            }}>SAVE 20%</span>
+          </span>
+        </div>
+
+        <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+          {plans.map(plan => {
+            const price = annual ? plan.annualPrice : plan.monthlyPrice;
+            return (
+              <div key={plan.name} style={{
+                border: plan.highlight ? '2px solid rgba(92,203,58,0.4)' : '1px solid #e2e8f0',
+                background: 'white', borderRadius: 8, padding: 'clamp(20px, 4vw, 32px)', position: 'relative',
+                boxShadow: plan.highlight ? '0 8px 32px rgba(92,203,58,0.12)' : 'none',
+              }}>
+                {plan.highlight && <div style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, #5CCB3A, transparent)', borderRadius: '8px 8px 0 0' }} />}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontFamily: 'DM Mono', fontSize: 10, letterSpacing: '0.2em', color: plan.highlight ? '#5CCB3A' : '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>{plan.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+                    <div style={{ fontSize: 'clamp(36px, 6vw, 48px)', fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'DM Mono', lineHeight: 1, color: '#0f172a' }}>
+                      ${price}
+                    </div>
+                    <div style={{ paddingBottom: 6 }}>
+                      <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 400 }}>/mo</span>
+                      {annual && (
+                        <div style={{ fontSize: 10, color: '#5CCB3A', fontFamily: 'DM Mono', fontWeight: 700 }}>billed annually</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>{plan.desc}</div>
+                </div>
+                <Link href={plan.href} className="cta-primary" style={{ display: 'block', textAlign: 'center', padding: '11px 20px', fontSize: 14, fontWeight: 600, borderRadius: 4, marginBottom: 24, background: plan.highlight ? '#5CCB3A' : '#1e293b' }}>
+                  {plan.cta}
+                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {plan.features.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                        <path d="M2 6L5 9L10 3" stroke={plan.highlight ? '#5CCB3A' : '#64748b'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span style={{ fontSize: 13, color: '#475569' }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
+          14-DAY FREE TRIAL · NO CREDIT CARD · CANCEL ANYTIME
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen text-white" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#0d0d0d' }}>
@@ -1341,7 +1449,7 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 4vw, 40px)' }}>
             <div className="section-label">The Core Flow</div>
             <h2 style={{ fontSize: 'clamp(24px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              Lead in. <span className="orange">Project out.</span>
+              One click. <span className="orange">Full job record.</span>
             </h2>
             <p style={{ fontSize: 'clamp(13px, 2vw, 15px)', color: 'rgba(255,255,255,0.45)', maxWidth: 520, margin: '12px auto 0', lineHeight: 1.6 }}>
               One click converts a lead into a full project — with auto-created tasks, quote templates, and a project number. That's the whole idea.
@@ -1397,7 +1505,7 @@ export default function Home() {
               { icon: <DollarSign size={20} strokeWidth={2} />, title: 'Quotes & Payments', desc: 'Build line-item quotes, send them via email, track payment status. Know exactly what\'s owed across every job.', tag: null },
               { icon: <CalendarDays size={20} strokeWidth={2} />, title: 'Scheduling & Calendar', desc: 'Assign jobs, set dates and times, send confirmations. See your whole week at a glance in calendar view.', tag: null },
               { icon: <Bot size={20} strokeWidth={2} />, title: 'AI Assistant', desc: "Ask it anything — \"who hasn't paid?\", \"what's scheduled this week?\", \"summarize this job.\" Real answers instantly.", tag: 'Pro' },
-              { icon: <BarChart2 size={20} strokeWidth={2} />, title: 'Pipeline Tracking', desc: 'Custom status stages. Move leads from New → Quoted → Scheduled → Completed. See your whole business at a glance.', tag: null },
+              { icon: <BarChart2 size={20} strokeWidth={2} />, title: 'Job Status Board', desc: 'See every job at a glance — New, Quoted, Scheduled, Done. Move cards as work progresses. Nothing falls through the cracks.', tag: null },
               { icon: <Mail size={20} strokeWidth={2} />, title: 'Branded Emails', desc: 'Quote, schedule, and payment emails sent with your logo and brand colors. Professional and automatic.', tag: null },
             ].map((f, i) => (
               <div key={i} className="feature-card" style={{ padding: 'clamp(16px, 3vw, 24px)', borderRadius: 8 }}>
@@ -1473,7 +1581,7 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
             {[
               {
-                quote: "Used to chase customers for photos over text for 3 days. Now they submit everything upfront. I save at least an hour per lead — and I look way more professional.",
+                quote: "Used to chase customers for photos over text for 3 days. Now they show up to the job already knowing the scope. No surprises on-site, no back-and-forth — it just works.",
                 name: 'Jake R.',
                 trade: 'Roofing Contractor',
                 location: 'Phoenix, AZ',
@@ -1525,48 +1633,7 @@ export default function Home() {
       </section>
 
       {/* ── PRICING ── */}
-      <section style={{ padding: 'clamp(48px, 8vw, 80px) 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
-            {[
-              { name: 'Basic', price: '$49', desc: 'Lead tracking for solo contractors', features: ['Unlimited leads', 'Cards + table view', 'Status management', 'Customer booking form', 'Email / call / text actions', 'CSV export', 'Mobile friendly'], cta: 'Start Free Trial', href: '/signup?plan=basic', highlight: false },
-              { name: 'Pro', price: '$99', desc: 'Full job management + AI', features: ['Everything in Basic', 'Convert leads to projects', 'Quotes & payment tracking', 'Tasks & scheduling', 'Photo & doc management', 'Repeat customer detection', 'AI Brief on every lead', 'AI Assistant chat'], cta: 'Start Free Trial', href: '/signup?plan=pro', highlight: true },
-            ].map(plan => (
-              <div key={plan.name} style={{
-                border: plan.highlight ? '2px solid rgba(92,203,58,0.4)' : '1px solid #e2e8f0',
-                background: plan.highlight ? 'white' : 'white',
-                borderRadius: 8, padding: 'clamp(20px, 4vw, 32px)', position: 'relative',
-                boxShadow: plan.highlight ? '0 8px 32px rgba(92,203,58,0.12)' : 'none',
-              }}>
-                {plan.highlight && <div style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, #5CCB3A, transparent)', borderRadius: '8px 8px 0 0' }} />}
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontFamily: 'DM Mono', fontSize: 10, letterSpacing: '0.2em', color: plan.highlight ? '#5CCB3A' : '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>{plan.name}</div>
-                  <div style={{ fontSize: 'clamp(36px, 6vw, 48px)', fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'DM Mono', lineHeight: 1, color: '#0f172a' }}>
-                    {plan.price}<span style={{ fontSize: 16, color: '#94a3b8', fontWeight: 400 }}>/mo</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>{plan.desc}</div>
-                </div>
-                <Link href={plan.href} className="cta-primary" style={{ display: 'block', textAlign: 'center', padding: '11px 20px', fontSize: 14, fontWeight: 600, borderRadius: 4, marginBottom: 24, background: plan.highlight ? '#5CCB3A' : '#1e293b' }}>
-                  {plan.cta}
-                </Link>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  {plan.features.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-                        <path d="M2 6L5 9L10 3" stroke={plan.highlight ? '#5CCB3A' : '#64748b'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span style={{ fontSize: 13, color: '#475569' }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono', letterSpacing: '0.08em' }}>
-            14-DAY FREE TRIAL · NO CREDIT CARD · CANCEL ANYTIME
-          </p>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ── FINAL CTA ── */}
       <section style={{ padding: 'clamp(48px, 8vw, 80px) 16px', textAlign: 'center', background: 'white' }}>
