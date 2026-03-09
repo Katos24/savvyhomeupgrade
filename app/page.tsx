@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { Link2, DollarSign, CalendarDays, Bot, BarChart2, Mail, Clipboard, FolderOpen, FileSpreadsheet, Layers, CheckSquare, FileText, User, Phone, HomeIcon, AlignLeft, Send, CheckCircle, LayoutDashboard, Clock, MapPin, MessageSquare, Lock, CreditCard, Image, Activity, Cpu } from 'lucide-react';
 
 /* ── FORM → BOARD ANIMATED DEMO ── */
 function Avatar({ blink, happy }: { blink: boolean; happy: boolean }) {
@@ -57,12 +58,12 @@ function FormToBoardDemo() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const blinkRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fields = [
-    { label: 'Name', value: 'Mike Torres', icon: '👤', isSelect: false },
-    { label: 'Email', value: 'mike@torresco.com', icon: '✉️', isSelect: false },
-    { label: 'Phone', value: '(555) 482-1930', icon: '📱', isSelect: false },
-    { label: 'Service', value: 'Roofing', icon: '🏠', isSelect: true },
-    { label: 'Details', value: 'Storm damage, shingles missing on south side.', icon: '📝', isSelect: false },
+  const fields: { label: string; value: string; icon: React.ReactNode; isSelect: boolean }[] = [
+    { label: 'Name',    value: 'Mike Torres',                              icon: <User    size={10} />, isSelect: false },
+    { label: 'Email',   value: 'mike@torresco.com',                        icon: <Mail    size={10} />, isSelect: false },
+    { label: 'Phone',   value: '(555) 482-1930',                           icon: <Phone   size={10} />, isSelect: false },
+    { label: 'Service', value: 'Roofing',                                  icon: <HomeIcon  size={10} />, isSelect: true  },
+    { label: 'Details', value: 'Storm damage, shingles missing on south side.', icon: <AlignLeft size={10} />, isSelect: false },
   ];
 
   // Blink loop
@@ -212,7 +213,7 @@ function FormToBoardDemo() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 14 }}>
               <Avatar blink={blink} happy={isHappy} />
               <div style={{ marginTop: 8, fontFamily: 'DM Mono', fontSize: 9, color: '#94a3b8', letterSpacing: '0.05em' }}>
-                {isHappy ? '🎉 Submitted!' : 'Mike Torres'}
+                {isHappy ? 'Submitted!' : 'Mike Torres'}
               </div>
             </div>
 
@@ -248,7 +249,11 @@ function FormToBoardDemo() {
                 fontSize: 11, fontWeight: 700, transition: 'all 0.3s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
-                {phase === 'flying' ? '✈ Sending...' : isBoard ? '✓ Sent!' : 'Submit Request'}
+                {phase === 'flying'
+                  ? <><Send size={11} style={{ flexShrink: 0 }} /> Sending...</>
+                  : isBoard
+                  ? <><CheckCircle size={11} style={{ flexShrink: 0 }} /> Sent!</>
+                  : 'Submit Request'}
               </div>
             </div>
           </div>
@@ -341,7 +346,7 @@ function FormToBoardDemo() {
       <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
         {[
           { label: 'Filling out form', active: phase === 'filling' },
-          { label: 'Submitting ✈', active: phase === 'flying' },
+          { label: 'Submitting', active: phase === 'flying' },
           { label: 'Live on your board', active: isBoard },
         ].map((s, i) => (
           <span key={i} style={{
@@ -375,12 +380,12 @@ function AIChatDemo() {
     },
     {
       question: "What's on the schedule this week?",
-      answer: `2 jobs scheduled this week:\n\n📅 Thu, Mar 6 · 9:00 AM\n  James Park — HVAC Repair\n  Quote: $890 · Confirmed\n\n📅 Sat, Mar 8 · 8:00 AM\n  Amanda Rodriguez — Deck Staining\n  Quote: $1,850 · Confirmed\n\n→ No conflicts detected.`,
+      answer: `2 jobs scheduled this week:\n\nThu, Mar 6 · 9:00 AM\n  James Park — HVAC Repair\n  Quote: $890 · Confirmed\n\nSat, Mar 8 · 8:00 AM\n  Amanda Rodriguez — Deck Staining\n  Quote: $1,850 · Confirmed\n\n→ No conflicts detected.`,
       color: '#22c55e', colorDim: 'rgba(34,197,94,0.7)',
     },
     {
       question: "Which leads went cold?",
-      answer: `5 leads inactive 7+ days:\n\n🔴 Mike Torres — Roofing — 14 days\n   Never responded to quote.\n\n🟠 Jennifer Mills — Tile — 9 days\n   Opened quote, no reply.\n\n🟠 Thomas Wright — Plumbing — 8 days\n   Called once, voicemail.\n\n→ Follow up with Mike & Jennifer first.`,
+      answer: `5 leads inactive 7+ days:\n\n[!] Mike Torres — Roofing — 14 days\n   Never responded to quote.\n\n[~] Jennifer Mills — Tile — 9 days\n   Opened quote, no reply.\n\n[~] Thomas Wright — Plumbing — 8 days\n   Called once, voicemail.\n\n→ Follow up with Mike & Jennifer first.`,
       color: '#f87171', colorDim: 'rgba(248,113,113,0.7)',
     },
   ];
@@ -531,19 +536,19 @@ function EmailPreviewDemo() {
 
   const emails = [
     {
-      type: 'Quote', icon: '💰', color: '#22c55e',
+      type: 'Quote', icon: <DollarSign size={14} />, color: '#22c55e',
       subject: 'Your Quote from Acme Roofing',
       lines: ['Hi Mike,', '', "Thank you for your inquiry! We've prepared a quote for your roofing project.", '', 'Quote Total: $4,850.00', '', 'Please review and let us know if you have any questions.', '', 'Best regards,', 'Acme Roofing', '(555) 234-5678'],
     },
     {
-      type: 'Schedule', icon: '📅', color: '#3b82f6',
+      type: 'Schedule', icon: <CalendarDays size={14} />, color: '#3b82f6',
       subject: 'Appointment Scheduled — Acme Roofing',
-      lines: ['Hi Mike,', '', 'Your appointment has been scheduled!', '', '📅 Date: Thursday, March 6, 2025', '🕐 Time: 9:00 AM', '📍 Address: 142 Oak Street, Anytown', '', 'We look forward to serving you!', '', 'Best regards,', 'Acme Roofing'],
+      lines: ['Hi Mike,', '', 'Your appointment has been scheduled!', '', 'Date: Thursday, March 6, 2025', 'Time: 9:00 AM', 'Address: 142 Oak Street, Anytown', '', 'We look forward to serving you!', '', 'Best regards,', 'Acme Roofing'],
     },
     {
-      type: 'Payment', icon: '💳', color: '#a855f7',
+      type: 'Payment', icon: <CreditCard size={14} />, color: '#a855f7',
       subject: 'Payment Reminder — Acme Roofing',
-      lines: ['Hi Mike,', '', 'This is a friendly reminder about your upcoming payment.', '', '💵 Amount Due: $4,850.00', '📅 Due Date: March 20, 2025', '', 'Please contact us if you have any questions.', '', 'Best regards,', 'Acme Roofing'],
+      lines: ['Hi Mike,', '', 'This is a friendly reminder about your upcoming payment.', '', 'Amount Due: $4,850.00', 'Due Date: March 20, 2025', '', 'Please contact us if you have any questions.', '', 'Best regards,', 'Acme Roofing'],
     },
   ];
 
@@ -626,13 +631,13 @@ function LeadToProjectDemo() {
   const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity'>('overview');
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '◉' },
-    { id: 'schedule', label: 'Schedule', icon: '📅' },
-    { id: 'quote',    label: 'Quote',    icon: '💰' },
-    { id: 'payment',  label: 'Payment',  icon: '💳' },
-    { id: 'tasks',    label: 'Tasks',    icon: '✅' },
-    { id: 'photos',   label: 'Media',    icon: '📷' },
-    { id: 'activity', label: 'Activity', icon: '💬' },
+    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={11} /> },
+    { id: 'schedule', label: 'Schedule', icon: <CalendarDays    size={11} /> },
+    { id: 'quote',    label: 'Quote',    icon: <DollarSign      size={11} /> },
+    { id: 'payment',  label: 'Payment',  icon: <CreditCard      size={11} /> },
+    { id: 'tasks',    label: 'Tasks',    icon: <CheckSquare     size={11} /> },
+    { id: 'photos',   label: 'Media',    icon: <Image           size={11} /> },
+    { id: 'activity', label: 'Activity', icon: <Activity        size={11} /> },
   ] as const;
 
   const quoteItems = [
@@ -663,10 +668,10 @@ function LeadToProjectDemo() {
     <div style={{ background: 'white', border: '1px solid #f1f5f9', overflow: 'hidden', ...style }}>{children}</div>
   );
 
-  const SectionHeader = ({ emoji, label, bg = '#eef2ff', extra }: { emoji: string; label: string; bg?: string; extra?: React.ReactNode }) => (
+  const SectionHeader = ({ icon, label, bg = '#eef2ff', extra }: { icon: React.ReactNode; label: string; bg?: string; extra?: React.ReactNode }) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #f8fafc' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ width: 20, height: 20, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>{emoji}</span>
+        <span style={{ width: 20, height: 20, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>{icon}</span>
         <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</span>
       </div>
       {extra}
@@ -691,9 +696,9 @@ function LeadToProjectDemo() {
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
             <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', background: 'rgba(234,179,8,0.2)', color: '#fde047', border: '1px solid rgba(234,179,8,0.3)' }}>Quoted</span>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc', display: 'flex', alignItems: 'center', gap: 4 }}>📅 Mar 10 · 9:00 AM</span>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}>👤 Jake R.</span>
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 4 }}>💳 {fmt(quoteTotal)} due</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc', display: 'flex', alignItems: 'center', gap: 4 }}><CalendarDays size={10} /> Mar 10 · 9:00 AM</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}><User size={10} /> Jake R.</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 4 }}><CreditCard size={10} /> {fmt(quoteTotal)} due</span>
           </div>
           <div style={{ display: 'flex', gap: 0, marginLeft: -20, marginRight: -20, paddingLeft: 20, overflowX: 'auto' }}>
             {tabs.map(tab => (
@@ -715,7 +720,7 @@ function LeadToProjectDemo() {
         {activeTab === 'overview' && (
           <>
             <Card>
-              <SectionHeader emoji="👤" label="Client Info" bg="#eef2ff" />
+              <SectionHeader icon={<User size={11} />} label="Client Info" bg="#eef2ff" />
               <div style={{ padding: '14px 16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 14 }}>
                   {[
@@ -743,16 +748,16 @@ function LeadToProjectDemo() {
             </Card>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Card>
-                <SectionHeader emoji="💬" label="Customer's Message" bg="#ecfdf5" />
+                <SectionHeader icon={<MessageSquare size={11} />} label="Customer's Message" bg="#ecfdf5" />
                 <div style={{ padding: '14px 16px', fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
                   Storm damage on south side, multiple shingles missing. Needs full inspection and repair estimate.
                   <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748b' }}>
-                    <span>📅</span> <span style={{ fontWeight: 700, color: '#94a3b8' }}>Preferred:</span> Mar 10
+                    <CalendarDays size={10} style={{ flexShrink: 0, color: '#94a3b8' }} /> <span style={{ fontWeight: 700, color: '#94a3b8' }}>Preferred:</span> Mar 10
                   </div>
                 </div>
               </Card>
               <Card>
-                <SectionHeader emoji="🔒" label="Internal Notes" bg="#fffbeb" />
+                <SectionHeader icon={<Lock size={11} />} label="Internal Notes" bg="#fffbeb" />
                 <div style={{ padding: '14px 16px', fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
                   Insurance adjuster visit scheduled for Mar 8. Customer wants full replacement quote.
                   <div style={{ marginTop: 10 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#6366f1' }}>Edit Notes</span></div>
@@ -764,10 +769,10 @@ function LeadToProjectDemo() {
 
         {activeTab === 'schedule' && (
           <Card>
-            <SectionHeader emoji="📅" label="Schedule" bg="#ecfdf5" />
+            <SectionHeader icon={<CalendarDays size={11} />} label="Schedule" bg="#ecfdf5" />
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[{ label: 'Date', value: 'March 10, 2025', icon: '📅' }, { label: 'Time', value: '9:00 AM', icon: '🕐' }, { label: 'Assigned To', value: 'Jake R.', icon: '👤' }, { label: 'Est. Hours', value: '6 hours', icon: '⏱' }].map(f => (
+                {[{ label: 'Date', value: 'March 10, 2025', icon: <CalendarDays size={11} /> }, { label: 'Time', value: '9:00 AM', icon: <Clock size={11} /> }, { label: 'Assigned To', value: 'Jake R.', icon: <User size={11} /> }, { label: 'Est. Hours', value: '6 hours', icon: <Clock size={11} /> }].map(f => (
                   <div key={f.label} style={{ padding: 12, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{f.label}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}><span>{f.icon}</span> {f.value}</div>
@@ -792,7 +797,7 @@ function LeadToProjectDemo() {
                 <span style={{ width: 20, height: 20, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>💰</span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Quote</span>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', background: '#dbeafe', color: '#2563eb' }}>{fmt(quoteTotal)}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>✅ Accepted</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Accepted</span>
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', background: '#f1f5f9', color: '#475569' }}>Edit</span>
             </div>
@@ -820,7 +825,7 @@ function LeadToProjectDemo() {
 
         {activeTab === 'payment' && (
           <Card>
-            <SectionHeader emoji="💳" label="Payment" bg="#fffbeb" />
+            <SectionHeader icon={<CreditCard size={11} />} label="Payment" bg="#fffbeb" />
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ padding: 14, background: '#fef9ee', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
@@ -851,7 +856,7 @@ function LeadToProjectDemo() {
           <Card>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 20, height: 20, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>✅</span>
+                <span style={{ width: 20, height: 20, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><CheckSquare size={11} /></span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Tasks</span>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', background: '#eef2ff', color: '#6366f1' }}>{tasks.filter(t => !t.done).length} remaining</span>
               </div>
@@ -861,7 +866,7 @@ function LeadToProjectDemo() {
               {tasks.map((task, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '1px solid #fafafa', background: task.done ? '#fafafa' : 'white' }}>
                   <div style={{ width: 18, height: 18, flexShrink: 0, border: task.done ? 'none' : '2px solid #e2e8f0', background: task.done ? '#6366f1' : 'white', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {task.done && <span style={{ color: 'white', fontSize: 11, fontWeight: 700 }}>✓</span>}
+                    {task.done && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </div>
                   <span style={{ fontSize: 13, color: task.done ? '#94a3b8' : '#334155', textDecoration: task.done ? 'line-through' : 'none', fontWeight: task.done ? 400 : 500 }}>{task.text}</span>
                 </div>
@@ -872,16 +877,16 @@ function LeadToProjectDemo() {
 
         {activeTab === 'photos' && (
           <Card>
-            <SectionHeader emoji="📷" label="Media" bg="#fdf4ff" />
+            <SectionHeader icon={<Image size={11} />} label="Media" bg="#fdf4ff" />
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {[{ label: 'Before Photos', color: '#fef2f2', border: '#fecaca', photos: ['🏠','🔨','📐'] }, { label: 'After Photos', color: '#f0fdf4', border: '#bbf7d0', photos: ['✨','🏠','🎉'] }].map(section => (
+              {[{ label: 'Before Photos', color: '#fef2f2', border: '#fecaca', count: 3 }, { label: 'After Photos', color: '#f0fdf4', border: '#bbf7d0', count: 3 }].map(section => (
                 <div key={section.label}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{section.label}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {section.photos.map((emoji, i) => (
-                      <div key={i} style={{ width: 72, height: 72, background: section.color, border: `1.5px solid ${section.border}`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{emoji}</div>
+                    {Array.from({ length: section.count }).map((_, i) => (
+                      <div key={i} style={{ width: 72, height: 72, background: section.color, border: `1.5px solid ${section.border}`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: section.border }}><Image size={22} strokeWidth={1.5} /></div>
                     ))}
-                    <div style={{ width: 72, height: 72, border: '2px dashed #e2e8f0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#cbd5e1' }}>+</div>
+                    <div style={{ width: 72, height: 72, border: '2px dashed #e2e8f0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>+</div>
                   </div>
                 </div>
               ))}
@@ -892,7 +897,7 @@ function LeadToProjectDemo() {
         {activeTab === 'activity' && (
           <Card>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 20, height: 20, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>💬</span>
+              <span style={{ width: 20, height: 20, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><MessageSquare size={11} /></span>
               <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Activity Log</span>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', background: '#f1f5f9', color: '#64748b', marginLeft: 'auto' }}>{notes.length}</span>
             </div>
@@ -943,13 +948,13 @@ function CustomizeDemo() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, textAlign: 'left' }}>
           {[
-            { num: '01', icon: '🗂️', title: 'Create your categories', desc: 'Add the services you offer — Roofing, HVAC, Plumbing, anything.' },
-            { num: '02', icon: '✅', title: 'Add tasks per category', desc: 'A checklist auto-creates every time a lead converts to a project.' },
-            { num: '03', icon: '💰', title: 'Build a quote template', desc: 'Pre-fill line items and prices. Edit per job, or send as-is.' },
+            { num: '01', icon: <Layers     size={20} strokeWidth={2} />, title: 'Create your categories', desc: 'Add the services you offer — Roofing, HVAC, Plumbing, anything.' },
+            { num: '02', icon: <CheckSquare size={20} strokeWidth={2} />, title: 'Add tasks per category', desc: 'A checklist auto-creates every time a lead converts to a project.' },
+            { num: '03', icon: <FileText    size={20} strokeWidth={2} />, title: 'Build a quote template', desc: 'Pre-fill line items and prices. Edit per job, or send as-is.' },
           ].map((step) => (
             <div key={step.num} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: 'clamp(16px, 2.5vw, 24px)' }}>
               <div style={{ fontFamily: 'DM Mono', fontSize: 11, fontWeight: 500, color: '#5CCB3A', marginBottom: 10, letterSpacing: '0.05em' }}>{step.num}</div>
-              <div style={{ fontSize: 24, marginBottom: 10 }}>{step.icon}</div>
+              <div style={{ width: 44, height: 44, background: 'rgba(92,203,58,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5CCB3A', marginBottom: 10 }}>{step.icon}</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{step.title}</div>
               <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{step.desc}</div>
             </div>
@@ -1113,10 +1118,9 @@ export default function Home() {
 
         <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 'clamp(20px, 4vw, 32px)', flexWrap: 'wrap' }} className="fade-up fade-up-1 hero-badges">
-            <span className="badge">No‑Chaos Project Tracking</span>
             <span className="ai-pill">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              AI-Powered
+              AI-Powered for Service Contractors
             </span>
           </div>
 
@@ -1176,7 +1180,7 @@ export default function Home() {
       <section style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
         <div className="stat-grid" style={{ maxWidth: 1152, margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
           {[
-            { num: '$60K', label: 'Lost yearly from missed leads', sub: 'avg. contractor' },
+            { num: '$60K', label: 'Lost yearly from missed leads', sub: 'industry estimate' },
             { num: '1 job', label: 'Pays for an entire year', sub: 'at $99/mo' },
             { num: '2 min', label: 'To set up your booking link', sub: 'no tech skills needed' },
             { num: '100%', label: 'Leads captured & organized', sub: 'nothing falls through' },
@@ -1214,7 +1218,7 @@ export default function Home() {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #5CCB3A, transparent)' }} />
               <div style={{ fontFamily: 'DM Mono', fontSize: 11, color: '#cbd5e1', letterSpacing: '0.15em', marginBottom: 16 }}>01</div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-                <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>🔗</span>
+                <div style={{ width: 40, height: 40, background: 'rgba(92,203,58,0.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5CCB3A', flexShrink: 0 }}><Link2 size={20} strokeWidth={2} /></div>
                 <h3 style={{ fontSize: 'clamp(16px, 2.5vw, 20px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2, color: '#0f172a' }}>Your link goes everywhere</h3>
               </div>
               <p style={{ fontSize: 'clamp(13px, 1.5vw, 14px)', color: '#64748b', lineHeight: 1.75, marginBottom: 20 }}>
@@ -1272,25 +1276,24 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Cards 02–04 */}
             {[
               {
-                num: '02', icon: '📋',
+                num: '02', icon: <Clipboard size={20} strokeWidth={2} />, accent: '#3b82f6',
                 title: 'They submit everything at once',
                 body: 'Name, phone, photos, job description — all in one form. No more texting back and forth asking for pictures. No more "can you send me more info?" emails.',
-                detail: 'No more chasing', detailLabel: 'photos via text', accent: '#3b82f6',
+                detail: 'No more chasing', detailLabel: 'photos via text',
               },
               {
-                num: '03', icon: '📁',
+                num: '03', icon: <FolderOpen size={20} strokeWidth={2} />, accent: '#a855f7',
                 title: 'Instant project. Full paper trail.',
                 body: "The moment they submit, a job card lands on your board. Add notes, quotes, tasks, and payments as the job progresses — tied to one place forever. You can also create jobs manually yourself.",
-                detail: 'Customer submits or', detailLabel: 'you create manually', accent: '#a855f7',
+                detail: 'Customer submits or', detailLabel: 'you create manually',
               },
               {
-                num: '04', icon: '📊',
+                num: '04', icon: <FileSpreadsheet size={20} strokeWidth={2} />, accent: '#f97316',
                 title: 'Reconcile in seconds',
                 body: "Every job, quote, and payment is logged automatically. At month end, download a CSV of everything — dates, amounts, statuses. Hand it to your accountant or keep it for records.",
-                detail: 'Export to CSV', detailLabel: 'anytime', accent: '#f97316',
+                detail: 'Export to CSV', detailLabel: 'anytime',
               },
             ].map((card, i) => (
               <div key={i} style={{
@@ -1301,7 +1304,7 @@ export default function Home() {
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${card.accent}, transparent)` }} />
                 <div style={{ fontFamily: 'DM Mono', fontSize: 11, color: '#cbd5e1', letterSpacing: '0.15em', marginBottom: 16 }}>{card.num}</div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-                  <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{card.icon}</span>
+                  <div style={{ width: 40, height: 40, background: `${card.accent}12`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.accent, flexShrink: 0 }}>{card.icon}</div>
                   <h3 style={{ fontSize: 'clamp(16px, 2.5vw, 20px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2, color: '#0f172a' }}>{card.title}</h3>
                 </div>
                 <p style={{ fontSize: 'clamp(13px, 1.5vw, 14px)', color: '#64748b', lineHeight: 1.75, marginBottom: 20 }}>{card.body}</p>
@@ -1355,10 +1358,10 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 4vw, 48px)' }}>
             <div className="section-label">AI Assistant</div>
             <h2 style={{ fontSize: 'clamp(24px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12 }}>
-              Ask it anything. <span style={{ color: '#6366f1' }}>Watch it work.</span>
+              Your business, on call <span style={{ color: '#6366f1' }}>24/7.</span>
             </h2>
             <p style={{ fontSize: 'clamp(13px, 2vw, 15px)', color: 'rgba(255,255,255,0.45)', maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
-              The AI has full context of your pipeline — every lead, quote, and note. Ask a question, get a real answer in seconds.
+              Ask plain-English questions about your jobs and get real answers instantly — who owes you money, what's scheduled, which leads went cold.
             </p>
           </div>
 
@@ -1390,16 +1393,16 @@ export default function Home() {
           </div>
           <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
             {[
-              { icon: '🔗', title: 'Custom Booking Link', desc: 'One shareable link. Customers submit photos, describe the job, and enter their contact info — straight to your board.', tag: null },
-              { icon: '💰', title: 'Quotes & Payments', desc: 'Build line-item quotes, send them via email, track payment status. Know exactly what\'s owed across every job.', tag: null },
-              { icon: '📅', title: 'Scheduling & Calendar', desc: 'Assign jobs, set dates and times, send confirmations. See your whole week at a glance in calendar view.', tag: null },
-              { icon: '🤖', title: 'AI Assistant', desc: "Ask it anything — \"who hasn't paid?\", \"what's scheduled this week?\", \"summarize this job.\" Real answers instantly.", tag: 'Pro' },
-              { icon: '📊', title: 'Pipeline Tracking', desc: 'Custom status stages. Move leads from New → Quoted → Scheduled → Completed. See your whole business at a glance.', tag: null },
-              { icon: '✉️', title: 'Branded Emails', desc: 'Quote, schedule, and payment emails sent with your logo and brand colors. Professional and automatic.', tag: null },
+              { icon: <Link2 size={20} strokeWidth={2} />, title: 'Custom Booking Link', desc: 'One shareable link. Customers submit photos, describe the job, and enter their contact info — straight to your board.', tag: null },
+              { icon: <DollarSign size={20} strokeWidth={2} />, title: 'Quotes & Payments', desc: 'Build line-item quotes, send them via email, track payment status. Know exactly what\'s owed across every job.', tag: null },
+              { icon: <CalendarDays size={20} strokeWidth={2} />, title: 'Scheduling & Calendar', desc: 'Assign jobs, set dates and times, send confirmations. See your whole week at a glance in calendar view.', tag: null },
+              { icon: <Bot size={20} strokeWidth={2} />, title: 'AI Assistant', desc: "Ask it anything — \"who hasn't paid?\", \"what's scheduled this week?\", \"summarize this job.\" Real answers instantly.", tag: 'Pro' },
+              { icon: <BarChart2 size={20} strokeWidth={2} />, title: 'Pipeline Tracking', desc: 'Custom status stages. Move leads from New → Quoted → Scheduled → Completed. See your whole business at a glance.', tag: null },
+              { icon: <Mail size={20} strokeWidth={2} />, title: 'Branded Emails', desc: 'Quote, schedule, and payment emails sent with your logo and brand colors. Professional and automatic.', tag: null },
             ].map((f, i) => (
               <div key={i} className="feature-card" style={{ padding: 'clamp(16px, 3vw, 24px)', borderRadius: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <span style={{ fontSize: 24 }}>{f.icon}</span>
+                  <div style={{ width: 36, height: 36, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569' }}>{f.icon}</div>
                   {f.tag && (
                     <span style={{ fontFamily: 'DM Mono', fontSize: 9, letterSpacing: '0.12em', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.06)', padding: '2px 7px' }}>{f.tag}</span>
                   )}
@@ -1448,24 +1451,74 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 4vw, 40px)' }}>
             <div className="section-label">Professional Emails</div>
             <h2 style={{ fontSize: 'clamp(24px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.03em', color: '#0f172a' }}>
-              Your brand. <span className="orange">Every email.</span>
+              Customers think you have <span className="orange">a whole office.</span>
             </h2>
             <p style={{ fontSize: 'clamp(13px, 2vw, 15px)', color: '#64748b', maxWidth: 520, margin: '12px auto 0', lineHeight: 1.6 }}>
-              Quotes, schedule confirmations, and payment reminders — all sent automatically with your logo and brand colors.
+              Quotes, confirmations, and payment reminders go out automatically — with your logo, brand colors, and name on every one.
             </p>
           </div>
           <EmailPreviewDemo />
         </div>
       </section>
 
-      {/* ── INDUSTRIES ── */}
-      <section style={{ padding: 'clamp(40px, 6vw, 64px) 16px', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ padding: 'clamp(40px, 6vw, 72px) 16px', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 1152, margin: '0 auto' }}>
-          <div className="section-label" style={{ textAlign: 'center' }}>Industries</div>
-          <p style={{ textAlign: 'center', fontSize: 'clamp(13px, 2vw, 15px)', color: '#64748b', marginBottom: 24 }}>Built for anyone who does service work.</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-            {['General Contractors', 'HVAC', 'Plumbing', 'Electrical', 'Roofing', 'Landscaping', 'Cleaning', 'Painting', 'Flooring', 'Fencing', 'Handyman', 'Pest Control', 'Pool Service', 'Solar', 'Remodeling', 'Moving'].map(ind => (
-              <span key={ind} className="industry-tag" style={{ borderRadius: 4 }}>{ind}</span>
+          <div style={{ textAlign: 'center', marginBottom: 'clamp(28px, 4vw, 48px)' }}>
+            <div className="section-label">From the Field</div>
+            <h2 style={{ fontSize: 'clamp(22px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: '-0.03em', color: '#0f172a' }}>
+              Contractors who stopped <span className="orange">losing jobs to chaos.</span>
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            {[
+              {
+                quote: "Used to chase customers for photos over text for 3 days. Now they submit everything upfront. I save at least an hour per lead — and I look way more professional.",
+                name: 'Jake R.',
+                trade: 'Roofing Contractor',
+                location: 'Phoenix, AZ',
+                initials: 'JR',
+                color: '#5CCB3A',
+              },
+              {
+                quote: "I was using a notebook and spreadsheets. A customer asked me for a quote I sent 3 weeks ago and I had no idea where it was. Lead2Project fixed that in the first week.",
+                name: 'Maria C.',
+                trade: 'HVAC & Plumbing',
+                location: 'Dallas, TX',
+                initials: 'MC',
+                color: '#3b82f6',
+              },
+              {
+                quote: "The AI assistant is wild. I asked it who hasn't paid and it gave me a list with amounts and how many days overdue. That used to take me 20 minutes to figure out.",
+                name: 'Darnell W.',
+                trade: 'General Contractor',
+                location: 'Atlanta, GA',
+                initials: 'DW',
+                color: '#a855f7',
+              },
+            ].map((t, i) => (
+              <div key={i} style={{ padding: 'clamp(20px, 3vw, 28px)', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+                {/* Quote mark */}
+                <div style={{ position: 'absolute', top: 16, right: 20, fontFamily: 'Georgia, serif', fontSize: 48, color: '#f1f5f9', lineHeight: 1, userSelect: 'none' }}>"</div>
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {Array.from({ length: 5 }).map((_, s) => (
+                    <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  ))}
+                </div>
+                {/* Quote */}
+                <p style={{ fontSize: 'clamp(13px, 1.8vw, 15px)', color: '#334155', lineHeight: 1.75, fontStyle: 'italic', flex: 1, position: 'relative', zIndex: 1 }}>"{t.quote}"</p>
+                {/* Author */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${t.color}20`, border: `2px solid ${t.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'DM Mono', fontSize: 10, fontWeight: 700, color: t.color }}>{t.initials}</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{t.name}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono', letterSpacing: '0.04em' }}>{t.trade} · {t.location}</div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
