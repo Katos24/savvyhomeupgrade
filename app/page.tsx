@@ -6,6 +6,7 @@ import {
   Zap, ArrowRight, Check, Link2, DollarSign, CalendarDays,
   Bot, BarChart2, Mail, User, Phone, HomeIcon, AlignLeft,
   Send, CheckCircle, Menu, X, Play, Star, Video, FileText,
+  Inbox, Users,
 } from 'lucide-react';
 import { Image } from 'lucide-react';
 
@@ -643,14 +644,16 @@ export default function Home() {
               <span className="text-slate-400 font-light">Nothing you don't.</span>
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon:<Link2 size={22}/>,       title:'Custom Booking Link',   desc:'One link. Customers submit name, contact info, photos, and short videos — straight to your board. No app needed.',       tag:null  },
-              { icon:<DollarSign size={22}/>,  title:'Quotes & Payments',     desc:'Build line-item quotes, send via email, collect deposits. Know exactly what\'s paid and pending across every job.',      tag:null  },
-              { icon:<CalendarDays size={22}/>,title:'Scheduling',            desc:'Assign jobs to crew with dates and times. Confirmation emails go out automatically. Everyone knows what\'s next.',       tag:null  },
-              { icon:<Bot size={22}/>,         title:'AI Brief + Assistant',  desc:'Every lead gets an AI summary — scope, urgency, next steps. Ask "Who hasn\'t paid?" and get an instant answer.',       tag:'Pro' },
-              { icon:<BarChart2 size={22}/>,   title:'Lead & Project Board',  desc:'Cards view, table view. Track status from New to Done. Add photos, videos, and docs directly to any project file.',    tag:null  },
-              { icon:<Mail size={22}/>,        title:'Branded Emails',        desc:'Quotes, schedules, and payment requests with your logo. Customers think you have a whole front office.',               tag:null  },
+              { icon:<Link2 size={22}/>,        title:'Custom Booking Link',    desc:'One link. Customers submit name, contact info, photos, and short videos — straight to your board. No app needed.',        tag:null  },
+              { icon:<DollarSign size={22}/>,   title:'Quotes & Payments',      desc:'Build line-item quotes, send via email, collect deposits. Know exactly what\'s paid and pending across every job.',       tag:null  },
+              { icon:<CalendarDays size={22}/>, title:'Scheduling',             desc:'Assign jobs to crew with dates and times. Confirmation emails go out automatically. Everyone knows what\'s next.',        tag:null  },
+              { icon:<Bot size={22}/>,          title:'AI Brief + Assistant',   desc:'Every lead gets an AI summary — scope, urgency, next steps. Ask "Who hasn\'t paid?" and get an instant answer.',        tag:'Pro' },
+              { icon:<BarChart2 size={22}/>,    title:'Lead & Project Board',   desc:'Cards view, table view. Track every job from New to Done. Add photos, videos, and docs directly to any project.',       tag:null  },
+              { icon:<Inbox size={22}/>,        title:'Email Outbox',           desc:'See every email you\'ve ever sent — quotes, confirmations, payment requests, reminders. Full log, always there.',        tag:null  },
+              { icon:<Users size={22}/>,        title:'Team & Crew Access',     desc:'Invite crew members, assign jobs, set permissions. Everyone sees what they need — nothing more.',                        tag:null  },
+              { icon:<Mail size={22}/>,         title:'Branded Emails',         desc:'Every email goes out with your logo and colors. Customers think you have a whole front office.',                         tag:null  },
             ].map((f, i) => (
               <div key={i} className="bg-white border border-slate-200 rounded-2xl p-7 hover:shadow-md hover:-translate-y-0.5 transition-all group">
                 <div className="flex items-start justify-between mb-5">
@@ -692,6 +695,136 @@ export default function Home() {
             <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-700 px-8 py-4 rounded-2xl font-extrabold text-base hover:bg-blue-50 transition shadow-lg">
               Start Free — 14 Days <ArrowRight size={16}/>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── OUTBOX CALLOUT ── */}
+      <section className="py-20 px-6 bg-slate-50 border-t border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
+            <div className="grid md:grid-cols-2 gap-0">
+              {/* Left: copy */}
+              <div className="p-10 md:p-14 flex flex-col justify-center">
+                <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Email Outbox</p>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+                  Every email, logged.<br/>Nothing goes missing.
+                </h2>
+                <p className="text-slate-500 text-base leading-relaxed mb-6">
+                  See every email you've ever sent — quotes, booking confirmations, payment requests, and reminders. Know exactly what went out, when, and to who. No more "did that quote even send?"
+                </p>
+                <div className="space-y-3">
+                  {[
+                    'Quote sent confirmations',
+                    'Appointment reminders',
+                    'Payment request emails',
+                    'Payment reminder follow-ups',
+                    'Lead confirmation receipts',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-green-500 flex-shrink-0"/>
+                      <span className="text-sm font-medium text-slate-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: outbox mockup */}
+              <div className="bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200 p-8 flex flex-col justify-center gap-3">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Outbox</span>
+                  <span className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-full">6 sent today</span>
+                </div>
+                {[
+                  { type:'Quote Sent',             to:'Mike Torres',   sub:'Roofing Repair — $4,200',        time:'2:14 PM', color:'bg-blue-500',   dot:'bg-blue-100 text-blue-600'   },
+                  { type:'Payment Request',        to:'Sarah Kim',     sub:'Renovation deposit — $3,000',    time:'11:52 AM', color:'bg-green-500',  dot:'bg-green-100 text-green-600' },
+                  { type:'Payment Reminder',       to:'James Park',    sub:'Balance due — $890 overdue 5d',  time:'10:30 AM', color:'bg-orange-500', dot:'bg-orange-100 text-orange-600' },
+                  { type:'Booking Confirmation',   to:'Lisa Morgan',   sub:'Job confirmed — Tue Mar 12',     time:'9:05 AM',  color:'bg-purple-500', dot:'bg-purple-100 text-purple-600' },
+                  { type:'Quote Sent',             to:'David Chen',    sub:'Electrical panel — $2,450',      time:'Yesterday', color:'bg-blue-500',  dot:'bg-blue-100 text-blue-600'   },
+                ].map((email, i) => (
+                  <div key={i} className="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3 hover:border-slate-300 transition">
+                    <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${email.color}`}/>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${email.dot}`}>{email.type}</span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-800 truncate">{email.to}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{email.sub}</div>
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-medium flex-shrink-0">{email.time}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TEAM SECTION ── */}
+      <section className="py-20 px-6 bg-white border-t border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <div className="grid md:grid-cols-2 gap-0">
+              {/* Left: team roster mockup */}
+              <div className="p-10 md:p-14 border-b md:border-b-0 md:border-r border-white/10">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Team Members</span>
+                  <div className="text-[10px] font-bold px-2 py-1 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-full">3 active</div>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { name:'Alex Torres',  role:'Owner',       status:'Online', color:'bg-orange-500', initials:'AT', perms:'Full access' },
+                    { name:'Chris Mena',   role:'Field Tech',  status:'Online', color:'bg-blue-500',   initials:'CM', perms:'Assigned jobs only' },
+                    { name:'Diana Ruiz',   role:'Office',      status:'Away',   color:'bg-purple-500', initials:'DR', perms:'Quotes & leads' },
+                  ].map((member, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                      <div className={`w-9 h-9 rounded-full ${member.color} flex items-center justify-center text-white text-xs font-black flex-shrink-0`}>
+                        {member.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-white">{member.name}</div>
+                        <div className="text-[10px] text-slate-500">{member.role} · {member.perms}</div>
+                      </div>
+                      <div className={`flex items-center gap-1 text-[9px] font-bold ${member.status === 'Online' ? 'text-green-400' : 'text-slate-500'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${member.status === 'Online' ? 'bg-green-400' : 'bg-slate-600'}`}/>
+                        {member.status}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-3 border border-dashed border-white/20 rounded-2xl px-4 py-3 cursor-default hover:border-blue-500/50 transition">
+                    <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-slate-400 flex-shrink-0">
+                      <Users size={14}/>
+                    </div>
+                    <span className="text-sm text-slate-500">+ Invite team member</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: copy */}
+              <div className="p-10 md:p-14 flex flex-col justify-center">
+                <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Team & Crew</p>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4">
+                  Invite your crew.<br/>Everyone stays aligned.
+                </h2>
+                <p className="text-slate-400 text-base leading-relaxed mb-8">
+                  Add team members and control exactly what they can see. Field techs see their assigned jobs. Office staff manage quotes and leads. You keep full control as the owner.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    'Role-based permissions per member',
+                    'Field techs see assigned jobs only',
+                    'Owner keeps full admin control',
+                    'Invite via email in seconds',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-blue-400 flex-shrink-0"/>
+                      <span className="text-sm font-medium text-slate-300">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

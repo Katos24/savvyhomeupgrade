@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ArrowLeft, Search, Mail, Calendar, DollarSign, AlertTriangle, ChevronDown, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Search, Mail, Calendar, DollarSign, AlertTriangle, ChevronDown, ExternalLink, Bell } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface QuoteLineItem {
@@ -38,7 +38,7 @@ interface Project {
 }
 
 interface FlatEmail {
-  type: 'quote' | 'schedule'
+  type: 'quote' | 'schedule' | 'payment_reminder' | string
   sent_at: string
   customer_name: string
   customer_email: string
@@ -50,13 +50,16 @@ interface FlatEmail {
   scheduled_date?: string | null
   scheduled_time?: string | null
   assigned_to?: string | null
-  // New outbox fields
+  // outbox fields
   source: 'outbox' | 'legacy'
   status?: 'sent' | 'failed'
   error_message?: string | null
   subject?: string | null
   html_body?: string | null
   outbox_id?: number
+  // payment reminder fields
+  amount_due?: number | null
+  days_overdue?: number | null
 }
 
 interface OutboxEmail {
@@ -127,23 +130,32 @@ function groupLabel(d: string): string {
   return dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
-function fmtMoney(n: number | undefined): string {
+function fmtMoney(n: number | undefined | null): string {
   return '$' + Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+// ── Email type config ─────────────────────────────────────────────────────────
+function getTypeConfig(type: string) {
+  switch (type) {
+    case 'quote':
+      return { label: 'Quote', emoji: '💰', color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' }
+    case 'schedule':
+      return { label: 'Schedule', emoji: '📅', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.2)' }
+    case 'payment_reminder':
+      return { label: 'Payment Reminder', emoji: '🔔', color: '#fb923c', bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.25)' }
+    default:
+      return { label: type, emoji: '📧', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)' }
+  }
 }
 
 function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): FlatEmail[] {
   const all: FlatEmail[] = []
-  const outboxSentAts = new Set<string>()
 
-  // 1. Add outbox emails first (newer, richer data)
+  // 1. Add all outbox emails (richer data, includes payment_reminder)
   outboxEmails.forEach(e => {
-    const key = `${e.project_id}-${e.type}-${e.created_at}`
-    outboxSentAts.add(key)
-
     const metadata = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata || {}
-
     all.push({
-      type: e.type as 'quote' | 'schedule',
+      type: e.type,
       sent_at: e.created_at,
       customer_name: e.to_name || '',
       customer_email: e.to_email,
@@ -155,6 +167,8 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
       scheduled_date: metadata.scheduled_date || null,
       scheduled_time: metadata.scheduled_time || null,
       assigned_to: metadata.assigned_to || null,
+      amount_due: metadata.amount_due ? parseFloat(metadata.amount_due) : null,
+      days_overdue: metadata.days_overdue ? parseInt(metadata.days_overdue) : null,
       source: 'outbox',
       status: e.status as 'sent' | 'failed',
       error_message: e.error_message,
@@ -164,16 +178,10 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
     })
   })
 
-  // 2. Add legacy project emails (skip if already in outbox by matching timestamp within 5s)
+  // 2. Add legacy project emails (skip if already in outbox by close timestamp)
   projects.forEach(p => {
     const qEmails = p.quote_emails || []
     const sEmails = p.schedule_emails || []
-
-    const isDupInArray = <T extends { sent_at: string }>(arr: T[], keyFn: (e: T) => string, idx: number) => {
-      const key = keyFn(arr[idx])
-      const tThis = new Date(arr[idx].sent_at).getTime()
-      return arr.some((o, j) => j !== idx && keyFn(o) === key && Math.abs(tThis - new Date(o.sent_at).getTime()) < 10 * 60 * 1000)
-    }
 
     const isInOutbox = (sentAt: string, projectId: number) => {
       const t = new Date(sentAt).getTime()
@@ -181,6 +189,11 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
         oe.project_id === projectId &&
         Math.abs(new Date(oe.created_at).getTime() - t) < 5000
       )
+    }
+
+    const isDupInArray = <T extends { sent_at: string }>(arr: T[], keyFn: (e: T) => string, idx: number) => {
+      const tThis = new Date(arr[idx].sent_at).getTime()
+      return arr.some((o, j) => j !== idx && keyFn(o) === keyFn(arr[idx]) && Math.abs(tThis - new Date(o.sent_at).getTime()) < 10 * 60 * 1000)
     }
 
     qEmails.forEach((q, i) => {
@@ -224,7 +237,7 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function OutboxClient({ company, projects, outboxEmails = [] }: Props) {
-  const [tab, setTab] = useState<'all' | 'quote' | 'schedule'>('all')
+  const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder'>('all')
   const [search, setSearch] = useState('')
   const [sentBy, setSentBy] = useState('')
   const [dateRange, setDateRange] = useState('')
@@ -233,7 +246,7 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
   const [showFilters, setShowFilters] = useState(false)
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
 
-const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [projects, outboxEmails])
+  const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [projects, outboxEmails])
 
   const senders = useMemo(() =>
     [...new Set(allEmails.map(e => e.sent_by_email))].sort(),
@@ -243,8 +256,7 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
   const filtered = useMemo(() => {
     const now = new Date()
     return allEmails.filter(e => {
-      if (tab === 'quote' && e.type !== 'quote') return false
-      if (tab === 'schedule' && e.type !== 'schedule') return false
+      if (tab !== 'all' && e.type !== tab) return false
       if (search && !e.customer_name.toLowerCase().includes(search.toLowerCase()) &&
           !e.customer_email.toLowerCase().includes(search.toLowerCase())) return false
       if (sentBy && e.sent_by_email !== sentBy) return false
@@ -276,13 +288,23 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
 
   const dupCount = allEmails.filter(e => e.isDup).length
   const totalQuoteVal = allEmails.filter(e => e.type === 'quote').reduce((s, e) => s + (e.quote_total ?? 0), 0)
+  const reminderCount = allEmails.filter(e => e.type === 'payment_reminder').length
+  const failedCount = allEmails.filter(e => e.status === 'failed').length
+
+  const tabs = [
+    { key: 'all',              label: 'All',              count: allEmails.length },
+    { key: 'quote',            label: 'Quotes',           count: allEmails.filter(e => e.type === 'quote').length },
+    { key: 'schedule',         label: 'Schedules',        count: allEmails.filter(e => e.type === 'schedule').length },
+    { key: 'payment_reminder', label: 'Pay Reminders',    count: reminderCount },
+  ] as const
 
   const toggleRow = (idx: number) => setExpandedIdx(prev => prev === idx ? null : idx)
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0c10', color: '#e8eaf0' }}>
       {/* Top bar */}
-      <div className="sticky top-0 z-40 border-b border-white/10 px-4 sm:px-6 flex items-center h-14 gap-3" style={{ background: 'rgba(10,12,16,0.9)', backdropFilter: 'blur(12px)' }}>
+      <div className="sticky top-0 z-40 border-b border-white/10 px-4 sm:px-6 flex items-center h-14 gap-3"
+        style={{ background: 'rgba(10,12,16,0.9)', backdropFilter: 'blur(12px)' }}>
         <a href={`/${company.slug}/dashboard`}
           className="flex items-center gap-1.5 px-2.5 py-1.5 border border-white/10 rounded-md text-gray-500 hover:text-white text-xs transition no-underline">
           <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Dashboard</span>
@@ -301,10 +323,10 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Total sent', value: allEmails.length, sub: 'across all projects', color: '#e8eaf0', icon: <Mail className="w-4 h-4" /> },
-            { label: 'Quote emails', value: allEmails.filter(e => e.type === 'quote').length, sub: fmtMoney(totalQuoteVal) + ' in quotes', color: '#f97316', icon: <DollarSign className="w-4 h-4" /> },
-            { label: 'Schedule emails', value: allEmails.filter(e => e.type === 'schedule').length, sub: 'confirmations', color: '#60a5fa', icon: <Calendar className="w-4 h-4" /> },
-{ label: 'Failed', value: allEmails.filter(e => e.status === 'failed').length, sub: 'delivery errors', color: allEmails.filter(e => e.status === 'failed').length > 0 ? '#f87171' : '#4ade80', icon: <AlertTriangle className="w-4 h-4" /> },
+            { label: 'Total sent',        value: allEmails.length,                                     sub: 'across all projects',      color: '#e8eaf0', icon: <Mail className="w-4 h-4" /> },
+            { label: 'Quote emails',      value: allEmails.filter(e => e.type === 'quote').length,      sub: fmtMoney(totalQuoteVal) + ' in quotes', color: '#f97316', icon: <DollarSign className="w-4 h-4" /> },
+            { label: 'Pay reminders',     value: reminderCount,                                         sub: reminderCount === 1 ? '1 sent' : `${reminderCount} sent`, color: '#fb923c', icon: <Bell className="w-4 h-4" /> },
+            { label: 'Failed',            value: failedCount,                                           sub: 'delivery errors',          color: failedCount > 0 ? '#f87171' : '#4ade80', icon: <AlertTriangle className="w-4 h-4" /> },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-4" style={{ background: '#111318', border: '1px solid #232731' }}>
               <div className="flex items-center gap-2 mb-2">
@@ -319,7 +341,8 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
 
         {/* Duplicate alert */}
         {dupCount > 0 && !dupAlertDismissed && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm"
+            style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}>
             <span>⚠️</span>
             <span className="flex-1 text-xs sm:text-sm"><strong>{dupCount} emails</strong> may be accidental duplicate sends.</span>
             <button onClick={() => setDupAlertDismissed(true)} className="text-amber-400 hover:text-amber-300 text-lg opacity-70">✕</button>
@@ -328,22 +351,22 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
 
         {/* Toolbar */}
         <div className="space-y-3 mb-4">
-          {/* Tabs + search row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* Tabs */}
-            <div className="flex rounded-lg p-1 gap-0.5 flex-shrink-0" style={{ background: '#111318', border: '1px solid #232731' }}>
-              {(['all', 'quote', 'schedule'] as const).map(t => (
-                <button key={t} onClick={() => { setTab(t); setExpandedIdx(null) }}
-                  className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                  style={tab === t ? { background: '#1c2029' } : {}}>
-                  {t === 'all' ? 'All' : t === 'quote' ? 'Quotes' : 'Schedules'}
+            <div className="flex rounded-lg p-1 gap-0.5 flex-shrink-0 overflow-x-auto"
+              style={{ background: '#111318', border: '1px solid #232731' }}>
+              {tabs.map(t => (
+                <button key={t.key} onClick={() => { setTab(t.key); setExpandedIdx(null) }}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${tab === t.key ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                  style={tab === t.key ? { background: '#1c2029' } : {}}>
+                  {t.label}
                   <span className="ml-1.5 font-mono text-xs px-1.5 py-0.5 rounded-full"
                     style={{
-                      background: tab === t ? 'rgba(249,115,22,0.1)' : '#1c2029',
-                      color: tab === t ? '#f97316' : '#6b7280',
-                      border: `1px solid ${tab === t ? 'rgba(249,115,22,0.25)' : '#232731'}`,
+                      background: tab === t.key ? 'rgba(249,115,22,0.1)' : '#1c2029',
+                      color: tab === t.key ? '#f97316' : '#6b7280',
+                      border: `1px solid ${tab === t.key ? 'rgba(249,115,22,0.25)' : '#232731'}`,
                     }}>
-                    {t === 'all' ? allEmails.length : allEmails.filter(e => e.type === t).length}
+                    {t.count}
                   </span>
                 </button>
               ))}
@@ -366,7 +389,7 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
               Filters <ChevronDown className={`w-3.5 h-3.5 transition ${showFilters ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Filters (always visible on desktop) */}
+            {/* Filters desktop */}
             <div className="hidden sm:flex items-center gap-2">
               <select value={sentBy} onChange={e => setSentBy(e.target.value)}
                 className="px-3 py-2 rounded-lg text-xs outline-none cursor-pointer"
@@ -385,7 +408,7 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
             </div>
           </div>
 
-          {/* Mobile filters (collapsible) */}
+          {/* Mobile filters */}
           {showFilters && (
             <div className="flex gap-2 sm:hidden">
               <select value={sentBy} onChange={e => setSentBy(e.target.value)}
@@ -425,13 +448,17 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
               </div>
               {group.emails.map(email => {
                 const isExpanded = expandedIdx === email.globalIdx
+                const cfg = getTypeConfig(email.type)
+                const isReminder = email.type === 'payment_reminder'
                 const isQ = email.type === 'quote'
+                const isSched = email.type === 'schedule'
+
                 return (
                   <div key={`${email.project_id}-${email.type}-${email.sent_at}`}
                     className="rounded-xl overflow-hidden mb-1 transition-colors"
                     style={{
                       background: '#111318',
-                      border: `1px solid ${isExpanded ? 'rgba(249,115,22,0.35)' : email.isDup ? 'rgba(251,191,36,0.25)' : '#232731'}`,
+                      border: `1px solid ${isExpanded ? cfg.border : email.isDup ? 'rgba(251,191,36,0.25)' : '#232731'}`,
                     }}>
 
                     {/* Row header */}
@@ -439,11 +466,8 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                       className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 cursor-pointer select-none">
                       {/* Icon */}
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                        style={{
-                          background: isQ ? 'rgba(249,115,22,0.1)' : 'rgba(96,165,250,0.1)',
-                          border: `1px solid ${isQ ? 'rgba(249,115,22,0.25)' : 'rgba(96,165,250,0.2)'}`,
-                        }}>
-                        {isQ ? '💰' : '📅'}
+                        style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                        {cfg.emoji}
                       </div>
 
                       {/* Info */}
@@ -451,36 +475,47 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
                           <span className="text-sm font-medium text-white truncate">{email.customer_name}</span>
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                            style={{
-                              background: isQ ? 'rgba(249,115,22,0.1)' : 'rgba(96,165,250,0.1)',
-                              color: isQ ? '#f97316' : '#60a5fa',
-                            }}>
-                            {isQ ? 'Quote' : 'Schedule'}
+                            style={{ background: cfg.bg, color: cfg.color }}>
+                            {cfg.label}
                           </span>
                           {email.status === 'failed' && (
-                            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
                               ✗ Failed
                             </span>
                           )}
                           {email.isDup && email.status !== 'failed' && (
-                            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+                              style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
                               ⚠ dup
                             </span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {isQ ? <>Quote → <span className="text-gray-400">{email.customer_email}</span></> : 'Schedule confirmation'}
+                          {isQ && <>Quote → <span className="text-gray-400">{email.customer_email}</span></>}
+                          {isSched && 'Schedule confirmation'}
+                          {isReminder && (
+                            <span>
+                              Payment reminder
+                              {email.amount_due && <span className="text-orange-400 font-semibold ml-1">{fmtMoney(email.amount_due)} due</span>}
+                              {email.days_overdue && <span className="text-red-400 ml-1">· {email.days_overdue}d overdue</span>}
+                            </span>
+                          )}
+                          {!isQ && !isSched && !isReminder && <span className="text-gray-400">{email.customer_email}</span>}
                         </div>
                       </div>
 
                       {/* Right side */}
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        {isQ
-                          ? <span className="font-mono text-sm font-medium text-orange-400">{fmtMoney(email.quote_total)}</span>
-                          : email.scheduled_date
-                            ? <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: '#60a5fa', background: 'rgba(96,165,250,0.1)' }}>{fmtDate(email.scheduled_date)}</span>
-                            : null
-                        }
+                        {isQ && <span className="font-mono text-sm font-medium text-orange-400">{fmtMoney(email.quote_total)}</span>}
+                        {isSched && email.scheduled_date && (
+                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: '#60a5fa', background: 'rgba(96,165,250,0.1)' }}>
+                            {fmtDate(email.scheduled_date)}
+                          </span>
+                        )}
+                        {isReminder && email.amount_due && (
+                          <span className="font-mono text-sm font-medium text-orange-400">{fmtMoney(email.amount_due)}</span>
+                        )}
                         <span className="font-mono text-xs text-gray-600">{timeAgo(email.sent_at)}</span>
                         <ChevronDown className={`w-3.5 h-3.5 text-gray-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </div>
@@ -493,9 +528,10 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                           {/* Main content */}
                           <div className="flex-1 p-4 sm:p-5">
                             <div className="text-xs font-semibold uppercase tracking-wider text-gray-700 mb-3">
-                              {isQ ? 'Quote breakdown' : 'Schedule details'}
+                              {isQ ? 'Quote breakdown' : isSched ? 'Schedule details' : isReminder ? 'Reminder details' : 'Details'}
                             </div>
-                            {isQ ? (
+
+                            {isQ && (
                               <>
                                 {/* Mobile: stacked cards */}
                                 <div className="sm:hidden space-y-2.5">
@@ -510,13 +546,13 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                                     </div>
                                   ))}
                                 </div>
-
                                 {/* Desktop: table */}
                                 <table className="hidden sm:table w-full" style={{ borderCollapse: 'collapse' }}>
                                   <thead>
                                     <tr>
                                       {['Description', 'Qty', 'Unit price', 'Amount'].map(h => (
-                                        <th key={h} className="text-left text-xs text-gray-700 font-medium uppercase tracking-wider pb-2 border-b" style={{ borderColor: '#232731', textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
+                                        <th key={h} className="text-left text-xs text-gray-700 font-medium uppercase tracking-wider pb-2 border-b"
+                                          style={{ borderColor: '#232731', textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
                                       ))}
                                     </tr>
                                   </thead>
@@ -531,18 +567,19 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                                     ))}
                                   </tbody>
                                 </table>
-
                                 <div className="flex justify-between items-center pt-3 mt-1 border-t" style={{ borderColor: '#232731' }}>
                                   <span className="text-sm font-semibold text-white">Total</span>
                                   <span className="text-xl font-bold font-mono text-orange-400">{fmtMoney(email.quote_total)}</span>
                                 </div>
                               </>
-                            ) : (
+                            )}
+
+                            {isSched && (
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {[
-                                  { label: 'Date', value: fmtDate(email.scheduled_date) || 'Not set', highlight: true },
-                                  { label: 'Time', value: email.scheduled_time ? fmtScheduleTime(email.scheduled_time) : 'Not set', highlight: true },
-                                  { label: 'Customer', value: email.customer_name, highlight: false },
+                                  { label: 'Date',     value: fmtDate(email.scheduled_date) || 'Not set',                           highlight: true  },
+                                  { label: 'Time',     value: email.scheduled_time ? fmtScheduleTime(email.scheduled_time) : 'Not set', highlight: true  },
+                                  { label: 'Customer', value: email.customer_name,                                                   highlight: false },
                                 ].map(f => (
                                   <div key={f.label}>
                                     <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">{f.label}</div>
@@ -551,16 +588,36 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                                 ))}
                               </div>
                             )}
+
+                            {isReminder && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {[
+                                  { label: 'Amount Due',   value: email.amount_due ? fmtMoney(email.amount_due) : '—',              color: '#fb923c' },
+                                  { label: 'Days Overdue', value: email.days_overdue ? `${email.days_overdue} days` : '—',          color: '#f87171' },
+                                  { label: 'Customer',     value: email.customer_name,                                              color: '#e8eaf0' },
+                                ].map(f => (
+                                  <div key={f.label}>
+                                    <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">{f.label}</div>
+                                    <div className="text-sm font-semibold" style={{ color: f.color }}>{f.value}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {!isQ && !isSched && !isReminder && (
+                              <p className="text-sm text-gray-500">No additional details available.</p>
+                            )}
                           </div>
 
-                          {/* Sidebar details */}
-                          <div className="p-4 sm:p-5 border-t lg:border-t-0 lg:border-l lg:w-64" style={{ background: '#161921', borderColor: '#232731' }}>
+                          {/* Sidebar */}
+                          <div className="p-4 sm:p-5 border-t lg:border-t-0 lg:border-l lg:w-64"
+                            style={{ background: '#161921', borderColor: '#232731' }}>
                             <div className="text-xs font-semibold uppercase tracking-wider text-gray-700 mb-3">Details</div>
                             <div className="space-y-3">
                               {[
                                 { k: 'Sent', v: `${fmtDate(email.sent_at)} ${fmtTime(email.sent_at)}` },
                                 { k: 'From', v: email.sent_by_email },
-                                { k: 'To', v: email.customer_email },
+                                { k: 'To',   v: email.customer_email },
                               ].map(m => (
                                 <div key={m.k} className="flex justify-between items-start gap-2">
                                   <span className="text-xs text-gray-700 uppercase tracking-wider font-medium flex-shrink-0">{m.k}</span>
@@ -577,7 +634,7 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                                 </>
                               )}
                             </div>
-                           <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
+                            <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
                               className="flex items-center justify-center gap-1.5 px-3 py-2 mt-4 rounded-lg text-xs text-gray-500 hover:text-white no-underline transition"
                               style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
                               <ExternalLink className="w-3.5 h-3.5" /> Open Project #{email.project_id}
@@ -590,8 +647,8 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
                             )}
                             {email.html_body && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body || ''); }}
-                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 mt-2 rounded-lg text-xs font-medium text-indigo-400 hover:text-white no-underline transition"
+                                onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body || '') }}
+                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 mt-2 rounded-lg text-xs font-medium text-indigo-400 hover:text-white transition"
                                 style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
                                 👁 Preview Email
                               </button>
@@ -613,6 +670,7 @@ const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [project
           ))
         )}
       </div>
+
       {/* Email Preview Modal */}
       {previewHtml && (
         <div className="fixed inset-0 flex items-center justify-center p-4"

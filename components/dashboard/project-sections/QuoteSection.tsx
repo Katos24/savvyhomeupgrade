@@ -254,30 +254,44 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
               >
                 <Edit2 className="w-3 h-3" /> Edit
               </button>
-              <div className="relative">
-                <button
-                  onClick={() => setShowMoreActions(!showMoreActions)}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                {showMoreActions && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 rounded-xl z-50 w-64 p-2">
-                      <SendCustomerEmailButtons
-                        leadId={lead.id}
-                        type="quote"
-                        currentUser={currentUser}
-                        onRefresh={onRefresh}
-                        hasQuote={quoteData.length > 0}
-                        quoteSentAt={emailLog.length > 0 ? emailLog[emailLog.length - 1].sent_at : null}
-                        disabled={!hasProject}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+             <div className="relative">
+  <button
+    onClick={(e) => {
+      e.stopPropagation(); // Prevents the click from hitting parent containers
+      setShowMoreActions(!showMoreActions);
+    }}
+    className="p-3 bg-gray-100 active:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+  >
+    <MoreVertical className="w-5 h-5 sm:w-4 sm:h-4" /> 
+    {/* Slightly larger icon for mobile thumb-tap targets */}
+  </button>
+
+  {showMoreActions && (
+    <>
+      {/* Increased Z-Index and added a slight background tint for better mobile UX */}
+      <div 
+        className="fixed inset-0 z-[80] bg-black/5 sm:bg-transparent" 
+        onClick={() => setShowMoreActions(false)} 
+      />
+      
+      {/* Added pointer-events-auto and extra padding for touch targets */}
+      <div 
+        className="absolute right-0 top-full mt-2 bg-white shadow-2xl border border-gray-100 rounded-xl z-[90] w-64 p-3 pointer-events-auto"
+        onClick={(e) => e.stopPropagation()} // CRITICAL: Prevents menu from closing when clicking inside it
+      >
+        <SendCustomerEmailButtons
+          leadId={lead.id}
+          type="quote"
+          currentUser={currentUser}
+          onRefresh={onRefresh}
+          hasQuote={quoteData.length > 0}
+          quoteSentAt={emailLog.length > 0 ? emailLog[emailLog.length - 1].sent_at : null}
+          disabled={!hasProject}
+        />
+      </div>
+    </>
+  )}
+</div>
             </>
           )}
         </div>

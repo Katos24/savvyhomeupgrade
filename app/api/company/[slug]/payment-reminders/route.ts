@@ -11,6 +11,7 @@ export async function GET(_req: Request, { params }: Props) {
 
     const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
     if (!companies[0]) return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
+
     const companyId = companies[0].id;
 
     const reminders = await sql`
@@ -60,6 +61,8 @@ export async function POST(req: Request, { params }: Props) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
+    // ── Fetch project + company data ──────────────────────────────────────────
+    // NOTE: added c.id as company_id so we can log to email_outbox
     const result = await sql`
       SELECT
         l.name as customer_name,
@@ -67,6 +70,7 @@ export async function POST(req: Request, { params }: Props) {
         p.payment_due_date::text as payment_due_date,
         p.payment_amount,
         p.quote_total,
+        c.id as company_id,
         c.name as company_name,
         c.phone as company_phone
       FROM projects p
@@ -78,24 +82,98 @@ export async function POST(req: Request, { params }: Props) {
       LIMIT 1
     `;
 
-    if (!result[0]) return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
+    if (!result[0]) {
+      return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
+    }
 
     const r = result[0];
-const quoteTotal = parseFloat(r.quote_total || '0');
-const paid = parseFloat(r.payment_amount || '0');
-const amountDue = paid > 0 ? Math.max(quoteTotal - paid, 0) : quoteTotal;
-    const isOverdue = new Date(r.payment_due_date) < new Date();
 
-    await sendPaymentReminderEmail({
-      customerEmail: r.customer_email,
-      customerName: r.customer_name,
-      companyName: r.company_name,
-      companyPhone: r.company_phone,
-      amountDue,
-      dueDate: r.payment_due_date,
-      isOverdue,
-    });
+    // ── Calculate amount due ──────────────────────────────────────────────────
+    const quoteTotal  = parseFloat(r.quote_total  || '0');
+    const paid        = parseFloat(r.payment_amount || '0');
+    const amountDue   = paid > 0 ? Math.max(quoteTotal - paid, 0) : quoteTotal;
+    const isOverdue   = new Date(r.payment_due_date) < new Date();
+    const daysOverdue = isOverdue
+      ? Math.floor((Date.now() - new Date(r.payment_due_date).getTime()) / 86400000)
+      : 0;
 
+    // ── Send the email ────────────────────────────────────────────────────────
+    let emailResult: any = null;
+    try {
+      emailResult = await sendPaymentReminderEmail({
+        customerEmail: r.customer_email,
+        customerName:  r.customer_name,
+        companyName:   r.company_name,
+        companyPhone:  r.company_phone,
+        amountDue,
+        dueDate:       r.payment_due_date,
+        isOverdue,
+      });
+    } catch (emailError: any) {
+      // ── Log failed send to outbox ─────────────────────────────────────────
+      try {
+        await sql`
+          INSERT INTO email_outbox (
+            company_id, project_id, lead_id,
+            type, to_email, to_name,
+            status, error_message,
+            sent_by_email, sent_by_name,
+            metadata
+          ) VALUES (
+            ${r.company_id}, ${project_id}, ${lead_id},
+            'payment_reminder',
+            ${r.customer_email}, ${r.customer_name},
+            'failed', ${emailError?.message || 'Unknown error'},
+            'system', 'Automated Reminder',
+            ${JSON.stringify({
+              amount_due:   amountDue,
+              days_overdue: daysOverdue,
+              due_date:     r.payment_due_date,
+              is_overdue:   isOverdue,
+            })}::jsonb
+          )
+        `;
+      } catch (outboxErr) {
+        console.error('⚠️ Failed to log failed reminder to outbox:', outboxErr);
+      }
+
+      console.error('❌ Failed to send payment reminder email:', emailError);
+      return NextResponse.json({ success: false, error: 'Failed to send reminder' }, { status: 500 });
+    }
+
+    // ── Log successful send to outbox ─────────────────────────────────────────
+    try {
+      await sql`
+        INSERT INTO email_outbox (
+          company_id, project_id, lead_id,
+          type, to_email, to_name,
+          subject, html_body,
+          status,
+          sent_by_email, sent_by_name,
+          metadata
+        ) VALUES (
+          ${r.company_id}, ${project_id}, ${lead_id},
+          'payment_reminder',
+          ${r.customer_email}, ${r.customer_name},
+          ${emailResult?.subject || `Payment Reminder — $${amountDue.toFixed(2)} due`},
+          ${emailResult?.html    || ''},
+          'sent',
+          'system', 'Automated Reminder',
+          ${JSON.stringify({
+            amount_due:   amountDue,
+            days_overdue: daysOverdue,
+            due_date:     r.payment_due_date,
+            is_overdue:   isOverdue,
+            resend_id:    emailResult?.resendId || null,
+          })}::jsonb
+        )
+      `;
+    } catch (outboxErr) {
+      // Don't fail the request — email already sent
+      console.error('⚠️ Failed to log reminder to outbox (email still sent):', outboxErr);
+    }
+
+    // ── Update reminder_sent_at on the project ────────────────────────────────
     await sql`
       UPDATE projects
       SET reminder_sent_at = NOW(), updated_at = NOW()
@@ -103,6 +181,7 @@ const amountDue = paid > 0 ? Math.max(quoteTotal - paid, 0) : quoteTotal;
     `;
 
     return NextResponse.json({ success: true, message: 'Reminder sent!' });
+
   } catch (error) {
     console.error('❌ Error sending payment reminder:', error);
     return NextResponse.json({ success: false, error: 'Failed to send reminder' }, { status: 500 });
