@@ -25,7 +25,9 @@ const isPublicApiRoute =
   pathname.startsWith('/api/upload') ||
   pathname.startsWith('/api/leads/preview-email') ||
   pathname.startsWith('/api/leads/update') ||
-  pathname.startsWith('/api/subscription/status');
+  pathname.startsWith('/api/subscription/status') ||
+  pathname.startsWith('/api/blob-upload');
+  
 
   const isPublicRoute = publicRoutes.some(route =>
     pathname.startsWith(route)
