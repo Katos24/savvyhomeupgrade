@@ -19,8 +19,9 @@ export async function POST(request: Request) {
 
     // Upload to Vercel Blob
     const blob = await put(`logos/${companySlug}-${file.name}`, file, {
-      access: 'public',
-    });
+  access: 'public',
+  allowOverwrite: true, // This tells Vercel: "I know it exists, do it anyway"
+});
 
     // Update database with logo URL
     const sql = neon(process.env.DATABASE_URL!);
