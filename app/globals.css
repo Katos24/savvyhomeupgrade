@@ -239,3 +239,18 @@ background-clip: text;
 background: rgba(255, 255, 255, 0.8);
 backdrop-filter: blur(12px);
 }
+
+
+/* Add this to the bottom of your globals.css */
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}

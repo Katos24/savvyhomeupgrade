@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X, RotateCcw, CheckSquare, Trash2, Save, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Plus, X, RotateCcw, CheckSquare, Trash2, Save, AlertCircle, AlertTriangle, Layers } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 
 type TaskTemplate = {
@@ -13,12 +13,10 @@ type TaskTemplate = {
 type Category = {
   value: string;
   label: string;
-  emoji?: string;
   task_templates?: TaskTemplate[];
 };
 
-export default function CategoriesTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const [loading, setLoading] = useState(false);
+export default function CategoriesTab({ company, currentUser }: { company: any; currentUser?: any }) {  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -33,23 +31,10 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
-
-  const handleRemoveCategory = (index: number) => {
-    if (categories.length <= 3) { setError('You must have at least 3 categories'); setTimeout(() => setError(''), 3000); return; }
-    setDeleteConfirm({ type: 'category', index, label: categories[index].label });
-  };
-
-  const confirmRemoveCategory = () => {
-    if (deleteConfirm?.type === 'category' && deleteConfirm.index !== undefined) {
-      setCategories(categories.filter((_, i) => i !== deleteConfirm.index));
-      setUseDefaults(false);
-      setDeleteConfirm(null);
-    }
-  };
+  const [inputError, setInputError] = useState(false);
 
   const handleAddCategory = () => {
-    if (!newCategory.label.trim()) { setError('Please enter a category label'); setTimeout(() => setError(''), 3000); return; }
-    if (categories.length >= 20) { setError('Maximum 20 categories allowed'); setTimeout(() => setError(''), 3000); return; }
+    if (!newCategory.label.trim()) return;
     const value = newCategory.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     setCategories([...categories, { value, label: newCategory.label.trim(), task_templates: [] }]);
     setNewCategory({ label: '' });
@@ -61,53 +46,35 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     setEditingCategoryIndex(index);
     setEditingTasks(categories[index].task_templates || []);
     setNewTaskLabel('');
+    setInputError(false);
   };
-
-  const closeTaskEditor = () => { setEditingCategoryIndex(null); setEditingTasks([]); setNewTaskLabel(''); };
 
   const addTask = () => {
     if (!newTaskLabel.trim()) return;
     setEditingTasks([...editingTasks, { id: `task_${Date.now()}`, label: newTaskLabel.trim(), order: editingTasks.length + 1 }]);
     setNewTaskLabel('');
-  };
-
-  const removeTask = (id: string, label: string) => setDeleteConfirm({ type: 'task', id, label });
-
-  const confirmRemoveTask = () => {
-    if (deleteConfirm?.type === 'task' && deleteConfirm.id) {
-      setEditingTasks(editingTasks.filter(t => t.id !== deleteConfirm.id));
-      setDeleteConfirm(null);
-    }
-  };
-
-  const updateTaskLabel = (id: string, label: string) =>
-    setEditingTasks(editingTasks.map(t => t.id === id ? { ...t, label } : t));
-
-  const moveTask = (id: string, dir: 'up' | 'down') => {
-    const i = editingTasks.findIndex(t => t.id === id);
-    if (i === -1 || (dir === 'up' && i === 0) || (dir === 'down' && i === editingTasks.length - 1)) return;
-    const tasks = [...editingTasks];
-    const swap = dir === 'up' ? i - 1 : i + 1;
-    [tasks[i], tasks[swap]] = [tasks[swap], tasks[i]];
-    tasks.forEach((t, idx) => { t.order = idx + 1; });
-    setEditingTasks(tasks);
+    setInputError(false);
   };
 
   const saveTaskTemplates = () => {
+    // BLOCK SAVE IF TEXT IS PENDING
+    if (newTaskLabel.trim()) {
+      setInputError(true);
+      return;
+    }
+
     if (editingCategoryIndex === null) return;
     const updated = [...categories];
     updated[editingCategoryIndex] = { ...updated[editingCategoryIndex], task_templates: editingTasks };
     setCategories(updated);
     setUseDefaults(false);
-    closeTaskEditor();
-    setSuccess("Task templates updated! Don't forget to save categories.");
+    setEditingCategoryIndex(null);
+    setSuccess("Checklist updated locally. Remember to Save Changes.");
     setTimeout(() => setSuccess(''), 3000);
   };
 
   const handleSave = async () => {
-    if (categories.length < 3) { setError('You must have at least 3 categories'); return; }
-    if (categories.length > 20) { setError('Maximum 20 categories allowed'); return; }
-    setLoading(true); setError(''); setSuccess('');
+    setLoading(true);
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
@@ -115,282 +82,143 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         body: JSON.stringify({ action: 'update-categories', data: { form_categories: useDefaults ? null : categories } }),
       });
       const data = await res.json();
-      if (data.success) { setSuccess('Categories saved! Refreshing...'); setTimeout(() => window.location.reload(), 1500); }
-      else setError(data.error || 'Failed to save categories');
-    } catch { setError('Failed to save categories'); }
-    finally { setLoading(false); }
+      if (data.success) {
+        setSuccess('Settings saved successfully');
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch {
+      setError('Failed to save categories');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-
-      {/* Page header */}
-      <div className="border-b border-gray-100 pb-5 flex items-start justify-between gap-4">
-  <div>
-    <h2 className="text-xl font-bold text-gray-900">Service Categories</h2>
-    <p className="text-sm text-gray-500 mt-1">
-      {useDefaults
-        ? `Using default categories for ${company.business_type}. Customize below if needed.`
-        : 'Using custom categories with task templates.'}
-    </p>
-  </div>
-
-  <div className="flex items-center gap-2">
-    {!useDefaults && (
-      <button
-        onClick={() => { setCategories(defaultCategories); setUseDefaults(true); }}
-        className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition"
-      >
-        <RotateCcw className="w-3.5 h-3.5" />
-        Restore Defaults
-      </button>
-    )}
-
-    <button
-      onClick={handleSave}
-      disabled={loading}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-bold transition"
-    >
-      <Save className="w-4 h-4" />
-      {loading ? 'Saving...' : 'Save'}
-    </button>
-  </div>
-</div>
-
-      {/* Alerts */}
-      {success && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
-          <span>✓</span> {success}
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 px-2">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight">Service Categories</h2>
+          <p className="text-sm text-gray-500 font-medium">Manage trade trades and checklists</p>
         </div>
-      )}
-      {error && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
-        </div>
-      )}
-
-      {/* Card */}
-      <div className="bg-white border border-gray-200 overflow-hidden">
-
-        {/* Card header */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold">
-              {categories.length} / 20
-            </span>
-          </div>
-          {categories.length < 20 && !showAddForm && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Category
-            </button>
+        <div className="flex gap-2">
+          {!useDefaults && (
+            <button onClick={() => { setCategories(defaultCategories); setUseDefaults(true); }} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:text-gray-600 transition"><RotateCcw className="w-5 h-5" /></button>
           )}
-        </div>
-
-        {/* Add form */}
-        {showAddForm && (
-          <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100">
-            <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">New Category</p>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={newCategory.label}
-                onChange={(e) => setNewCategory({ label: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                placeholder="e.g., Emergency Repair"
-                autoFocus
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition"
-              />
-              <div className="flex gap-2">
-                <button onClick={handleAddCategory}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">
-                  Add Category
-                </button>
-                <button onClick={() => { setShowAddForm(false); setNewCategory({ label: '' }); }}
-                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold transition">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-{/* Category list (grid if more than 8) */}
-<div
-  className={
-    categories.length > 8
-      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4"
-      : "divide-y divide-gray-50"
-  }
->
-  {categories.map((cat, index) => (
-    <div
-      key={index}
-      className={
-        categories.length > 8
-          ? "bg-white border border-gray-200 p-4 flex flex-col justify-between hover:shadow-md transition"
-          : "flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition"
-      }
-    >
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-800 text-sm truncate">{cat.label}</p>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {cat.task_templates?.length || 0} task template
-          {cat.task_templates?.length !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0 mt-3">
-        <button
-          onClick={() => openTaskEditor(index)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-100 transition"
-        >
-          <CheckSquare className="w-3.5 h-3.5" />
-          Tasks {cat.task_templates?.length ? `(${cat.task_templates.length})` : ""}
-        </button>
-        <button
-          onClick={() => handleRemoveCategory(index)}
-          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 transition"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
-
-        {/* Footer */}
-        <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 space-y-4">
-          <p className="text-xs text-gray-400 leading-relaxed">
-            <span className="font-bold text-gray-500">Tip:</span> Task templates automatically create a checklist when a project is created — ensuring consistent workflow every time.
-          </p>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm transition"
-          >
-            {loading ? 'Saving...' : 'Save Categories'}
+          <button onClick={handleSave} disabled={loading} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-indigo-100 flex items-center gap-2 active:scale-95 transition">
+            <Save className="w-5 h-5" /> {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
 
-      {/* Delete confirm */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-gray-200 max-w-sm w-full shadow-2xl">
-            <div className="p-6">
-              <div className="flex items-start gap-4 mb-5">
-                <div className="w-10 h-10 bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
+      {success && <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 font-bold animate-in slide-in-from-top-2">✓ {success}</div>}
+
+      {/* Add Category Section */}
+      <div className="bg-white border-2 border-dashed border-gray-200 rounded-[2rem] p-4">
+        {showAddForm ? (
+          <div className="space-y-4">
+            <input value={newCategory.label} onChange={(e) => setNewCategory({ label: e.target.value })} className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-indigo-100" placeholder="New category name..." autoFocus />
+            <div className="flex gap-2">
+              <button onClick={handleAddCategory} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-md">Add Now</button>
+              <button onClick={() => setShowAddForm(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddForm(true)} className="w-full py-4 flex items-center justify-center gap-2 text-indigo-500 font-black hover:bg-indigo-50/50 rounded-2xl transition-all">
+            <Plus className="w-5 h-5" /> Add A New Trade Category
+          </button>
+        )}
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {categories.map((cat, index) => (
+          <div key={index} className="bg-white border border-gray-200 rounded-[2rem] p-6 hover:shadow-xl transition-all group">
+            <div className="flex items-start justify-between mb-4">
+              <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600"><Layers className="w-6 h-6" /></div>
+              <button onClick={() => setDeleteConfirm({ type: 'category', index, label: cat.label })} className="p-2 text-gray-300 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+            </div>
+            <h3 className="text-lg font-black text-gray-900 leading-tight mb-1">{cat.label}</h3>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">{cat.task_templates?.length || 0} Checklist Items</p>
+            <button onClick={() => openTaskEditor(index)} className="w-full py-3 bg-gray-50 hover:bg-indigo-600 text-gray-500 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+              <CheckSquare className="w-4 h-4" /> Edit Checklist
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* TASK EDITOR MODAL */}
+      {editingCategoryIndex !== null && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full max-w-2xl sm:rounded-[3rem] h-[90vh] sm:h-auto overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
+            
+            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+              <div><h3 className="text-xl font-black text-gray-900">Task Checklist</h3><p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{categories[editingCategoryIndex].label}</p></div>
+              <button onClick={() => setEditingCategoryIndex(null)} className="p-3 bg-gray-100 rounded-2xl"><X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Input Area with Warning Logic */}
+              <div className="space-y-2">
+                <div className={`flex gap-2 p-2 rounded-[2rem] border-2 transition-all duration-300 ${
+                  inputError 
+                    ? 'bg-red-50 border-red-500 animate-pulse' 
+                    : newTaskLabel.trim() 
+                      ? 'bg-amber-50 border-amber-300' 
+                      : 'bg-indigo-50/50 border-indigo-100 border-dashed'
+                }`}>
+                  <input 
+                    value={newTaskLabel} 
+                    onChange={(e) => { setNewTaskLabel(e.target.value); setInputError(false); }} 
+                    onKeyDown={(e) => e.key === 'Enter' && addTask()} 
+                    placeholder="New checklist item..." 
+                    className="flex-1 bg-transparent border-none font-bold text-gray-900 focus:ring-0 px-4" 
+                  />
+                  <button onClick={addTask} className="bg-indigo-600 text-white p-3 rounded-2xl shadow-md active:scale-90 transition-all">
+                    <Plus className="w-6 h-6" />
+                  </button>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1">
-                    Delete {deleteConfirm.type === 'category' ? 'Category' : 'Task'}?
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    "{deleteConfirm.label}" will be permanently removed.
+                {inputError && (
+                  <p className="text-xs font-black text-red-600 uppercase tracking-widest ml-4 animate-bounce flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Click the + button to add your task!
                   </p>
-                </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm transition">Cancel</button>
-                <button
-                  onClick={deleteConfirm.type === 'category' ? confirmRemoveCategory : confirmRemoveTask}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition">Delete</button>
+
+              <div className="space-y-3">
+                {editingTasks.map((task) => (
+                  <div key={task.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3 group">
+                    <span className="text-gray-900 font-bold flex-1">{task.label}</span>
+                    <button onClick={() => setEditingTasks(editingTasks.filter(t => t.id !== task.id))} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                ))}
               </div>
+            </div>
+
+            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex gap-3">
+              <button onClick={() => setEditingCategoryIndex(null)} className="flex-1 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-500">Cancel</button>
+              <button onClick={saveTaskTemplates} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl">Apply Tasks</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Task editor modal */}
-      {editingCategoryIndex !== null && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-
-            {/* Modal header */}
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0" style={{ background: '#312e81' }}>
-              <div className="flex items-center gap-3 min-w-0">
-                <CheckSquare className="w-5 h-5 text-indigo-300 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Task Templates</p>
-                  <p className="text-white font-bold truncate">{categories[editingCategoryIndex].label}</p>
-                </div>
-              </div>
-              <button onClick={closeTaskEditor} className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 transition">
-                <X className="w-5 h-5" />
-              </button>
+      {/* Delete Confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[120] flex items-center justify-center p-4 text-center">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl">
+            <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center mb-6 mx-auto">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
             </div>
-
-            {/* Modal body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-
-              {/* Add task */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTaskLabel}
-                  onChange={(e) => setNewTaskLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addTask()}
-                  placeholder="Add a task ..."
-                  className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-                />
-                <button onClick={addTask}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition">
-                  Add
-                </button>
-              </div>
-
-              {/* Task list */}
-              {editingTasks.length > 0 ? (
-                <div className="border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                  {editingTasks.map((task, idx) => (
-                    <div key={task.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 group transition">
-                      <span className="text-xs font-bold text-gray-300 w-5 text-center flex-shrink-0">
-                        {idx + 1}
-                      </span>
-                      <div className="flex flex-col gap-0.5 flex-shrink-0">
-                        <button onClick={() => moveTask(task.id, 'up')} disabled={idx === 0}
-                          className="text-gray-300 hover:text-gray-500 disabled:opacity-20 leading-none">▲</button>
-                        <button onClick={() => moveTask(task.id, 'down')} disabled={idx === editingTasks.length - 1}
-                          className="text-gray-300 hover:text-gray-500 disabled:opacity-20 leading-none">▼</button>
-                      </div>
-                      <input
-                        type="text"
-                        value={task.label}
-                        onChange={(e) => updateTaskLabel(task.id, e.target.value)}
-                        className="flex-1 min-w-0 px-2 py-1 text-sm border-b-2 border-transparent hover:border-gray-200 focus:border-indigo-400 focus:outline-none bg-transparent transition"
-                      />
-                      <button onClick={() => removeTask(task.id, task.label)}
-                        className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-400 transition flex-shrink-0">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center border border-dashed border-gray-200">
-                  <CheckSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-gray-400">No tasks yet</p>
-                  <p className="text-xs text-gray-300 mt-1">Add your first task template above</p>
-                </div>
-              )}
-            </div>
-
-            {/* Modal footer */}
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2 flex-shrink-0">
-              <button onClick={closeTaskEditor}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm transition">
-                Cancel
-              </button>
-              <button onClick={saveTaskTemplates}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center justify-center gap-2">
-                <Save className="w-4 h-4" /> Save Templates
-              </button>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Delete this?</h3>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed">Are you sure you want to remove <span className="text-gray-900 font-bold">"{deleteConfirm.label}"</span>?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl">Keep it</button>
+              <button onClick={() => {
+                if(deleteConfirm.type === 'category') setCategories(categories.filter((_, i) => i !== deleteConfirm.index));
+                setDeleteConfirm(null);
+              }} className="flex-1 py-4 bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100">Delete</button>
             </div>
           </div>
         </div>
