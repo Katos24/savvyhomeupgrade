@@ -367,164 +367,213 @@ export default function UploadForm({
   const handleSkip = () => setStep('success');
 
 
+// ─── Success screen (Full Page Takeover) ───
+if (step === 'success') {
+  const brandColor1 = company?.email_brand_color_1 || '#2563eb';
+  const brandColor2 = company?.email_brand_color_2 || '#7c3aed';
+  const websiteUrl = company?.website
+    ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
+    : null;
 
-// ─── Success screen ───
-  if (step === 'success') {
-    const websiteUrl = company?.website
-      ? (company.website.startsWith('http') ? company.website : `https://${company.website}`)
-      : null;
+  return (
+    // We use fixed inset-0 to ensure it covers EVERY header/hero from the previous steps
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fafaf9] overflow-y-auto py-12">
+      
+      {/* --- Massive Background Orbs (Higher Opacity) --- */}
+      <div 
+        className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-[0.2] pointer-events-none animate-pulse"
+        style={{ background: brandColor1 }}
+      />
+      <div 
+        className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.2] pointer-events-none animate-pulse"
+        style={{ background: brandColor2 }}
+      />
 
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-slate-50">
-        <div className="max-w-xl w-full">
-          {/* Confetti / Celebration Header */}
-          <div className="text-center mb-8 animate-in fade-in zoom-in duration-500">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4 shadow-sm">
-              <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="relative w-full max-w-xl px-6 text-center animate-in fade-in zoom-in-95 duration-700">
+        
+        {/* Logo at the top */}
+        {company?.logo_url && (
+          <div className="mb-10 flex justify-center">
+            <img src={company.logo_url} alt={company.name} className="h-12 w-auto object-contain" />
+          </div>
+        )}
+
+        {/* Animated Checkmark Circle */}
+        <div className="relative w-24 h-24 mx-auto mb-8 flex items-center justify-center rounded-full shadow-2xl"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
+          <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" className="animate-[draw_0.6s_ease-out_forwards]" style={{ strokeDasharray: 50, strokeDashoffset: 50 }} />
+          </svg>
+        </div>
+
+        <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tighter">
+          {company?.cta_success_message || "Request Received!"}
+        </h2>
+        
+        <p className="text-gray-500 text-lg md:text-xl font-medium mb-12">
+          Thanks, {step1Data.name.split(' ')[0]}! We're on it.
+        </p>
+
+        {/* Info Cards - Simplified & Modern */}
+        <div className="grid gap-4 mb-12">
+          <div className="flex items-center gap-5 p-6 rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 text-left">
+            <div className="text-3xl">📬</div>
+            <div>
+              <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Confirmation Sent</p>
+              <p className="text-gray-500">Check your email for project details.</p>
             </div>
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-              {company?.cta_success_message || "Request Received!"}
-            </h2>
-            <p className="text-gray-500 font-medium">
-              Thanks, {step1Data.name.split(' ')[0]}! We've got everything we need.
-            </p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="p-8 sm:p-10">
-              {/* Branding */}
-              {company?.logo_url && (
-                <div className="mb-8 flex justify-center">
-                  <img src={company.logo_url} alt={company.name} className="h-12 w-auto object-contain opacity-90" />
-                </div>
-              )}
-
-              {/* What Happens Next Section */}
-              <div className="space-y-6 mb-10">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest text-center">What happens next?</h3>
-                
-                <div className="grid gap-4">
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">Reviewing Details</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Our team is reviewing your project details and photos right now.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">Fast Estimate</p>
-                      <p className="text-xs text-gray-500 mt-0.5">We'll reach out via {step1Data.phone ? 'text/call' : 'email'} with an initial quote or follow-up questions.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                {websiteUrl && (
-                  <a
-                    href={websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-base font-bold shadow-lg transition active:scale-95"
-                    style={{
-                      background: company?.email_brand_color_1 && company?.email_brand_color_2
-                        ? `linear-gradient(to right, ${company.email_brand_color_1}, ${company.email_brand_color_2})`
-                        : '#3b82f6',
-                      color: '#fff',
-                    }}
-                  >
-                    Visit {company?.name || 'Home'}
-                  </a>
-                )}
-                
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="w-full py-3 text-sm font-semibold text-gray-400 hover:text-gray-600 transition"
-                >
-                  Submit another request
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom Trust Bar */}
-            <div className="bg-gray-50 border-t border-gray-100 px-8 py-4 flex items-center justify-center gap-2">
-              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              <span className="text-xs font-medium text-gray-400">Secure Submission via Lead2Project</span>
+          <div className="flex items-center gap-5 p-6 rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 text-left">
+            <div className="text-3xl">📞</div>
+            <div>
+              <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Fast Estimate</p>
+              <p className="text-gray-500">We'll reach out to your {step1Data.phone ? 'phone' : 'email'} shortly.</p>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  // ─── Default Return (Step 1 & 2) ───
+        {/* Action Buttons */}
+        <div className="space-y-4">
+          {websiteUrl && (
+            <a
+              href={websiteUrl}
+              className="group w-full inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl text-white text-lg font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-xl hover:shadow-2xl"
+              style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+            >
+              Visit {company?.name || 'Home'}
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+          )}
+          
+          <button 
+            onClick={() => window.location.reload()}
+            className="block w-full py-4 text-xs font-bold text-gray-400 hover:text-gray-900 transition tracking-[0.2em] uppercase"
+          >
+            Submit Another Request
+          </button>
+        </div>
+
+        <div className="mt-16 flex items-center justify-center gap-2 text-gray-300">
+           <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Secure Submission • Lead2Project</span>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+      `}</style>
+    </div>
+  );
+}
+
+  // ─── Default Return (Header + Hero + Steps) ───
   return (
-    <>
+    <div className="min-h-screen bg-slate-50">
       {toasts.map(toast => (
         <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
       ))}
 
-      {/* Step 1 — always the base layer */}
-      <div className={step === 2 ? 'pointer-events-none select-none opacity-50' : ''}>
-        <UploadFormStepOne
-          formData={step1Data}
-          categories={categories}
-          onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
-          onSubmit={handleStep1Submit}
-          submitting={submittingStep1}
-          error={step1Error}
-          ctaHeading={getCtaHeading()}
-          headerSubtitle={headerSubtitle}
-          logoUrl={company?.logo_url}
-          companyName={company?.name}
-          companyWebsite={company?.website}
-          brandColor1={company?.email_brand_color_1}
-          brandColor2={company?.email_brand_color_2}
-          showHeader={showHeader}
-          hasStep2={hasStep2Content}
-        />
-      </div>
-
-      {/* Step 2 — modal overlay */}
-      {step === 2 && (
-        <UploadFormStepTwo
-          formData={step2Data}
-          customAnswers={customAnswers}
-          customQuestions={customQuestions}
-          files={files}
-          filePreviews={filePreviews}
-          submitting={submittingStep2}
-          compressing={compressing}
-          uploadProgress={uploadProgress}
-          error={step2Error}
-          addressConfig={{ show: fieldConfig.address.enabled, required: fieldConfig.address.required }}
-          fieldConfig={fieldConfig}
-          ctaButtonText={getCtaButtonText()}
-          brandColor1={company?.email_brand_color_1}
-          brandColor2={company?.email_brand_color_2}
-          companyWebsite={company?.website}
-          companyName={company?.name}
-          isDragging={isDragging}
-          onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
-          onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
-          onFileChange={handleFileChange}
-          onDrop={handleDrop}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onRemoveFile={removeFile}
-          onSubmit={handleStep2Submit}
-          onSkip={handleSkip}
-        />
+      {/* Branded Header */}
+      {showHeader && company && (
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              {company.logo_url ? (
+                <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain" />
+              ) : (
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                  {company.name.charAt(0)}
+                </div>
+              )}
+              <h1 className="text-xl font-bold text-gray-900">{company.name}</h1>
+            </div>
+            <span className="hidden md:block text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Powered by Lead2Project
+            </span>
+          </div>
+        </header>
       )}
-    </>
+
+      {/* Branded Hero */}
+      {showHeader && company && (
+        <div 
+          className="text-white py-16 px-6"
+          style={{
+            background: `linear-gradient(to right, ${company.email_brand_color_1 || '#3b82f6'}, ${company.email_brand_color_2 || '#8b5cf6'})`
+          }}
+        >
+          <div className="max-w-3xl mx-auto text-center animate-in fade-in slide-in-from-top-4 duration-500">
+            <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+              {getCtaHeading()}
+            </h1>
+            <p className="text-xl opacity-90 font-medium">
+              {headerSubtitle}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Form Steps */}
+      <main className="py-12 px-4 max-w-4xl mx-auto">
+        <div className={step === 2 ? 'pointer-events-none opacity-20 blur-sm scale-95 transition-all duration-500' : 'transition-all duration-500'}>
+          <UploadFormStepOne
+            formData={step1Data}
+            categories={categories}
+            onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
+            onSubmit={handleStep1Submit}
+            submitting={submittingStep1}
+            error={step1Error}
+            ctaHeading={getCtaHeading()}
+            headerSubtitle={headerSubtitle}
+            logoUrl={company?.logo_url}
+            companyName={company?.name}
+            companyWebsite={company?.website}
+            brandColor1={company?.email_brand_color_1}
+            brandColor2={company?.email_brand_color_2}
+            showHeader={false} // Disable internal header to use parent header
+            hasStep2={hasStep2Content}
+          />
+        </div>
+
+        {step === 2 && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <UploadFormStepTwo
+                formData={step2Data}
+                customAnswers={customAnswers}
+                customQuestions={customQuestions}
+                files={files}
+                filePreviews={filePreviews}
+                submitting={submittingStep2}
+                compressing={compressing}
+                uploadProgress={uploadProgress}
+                error={step2Error}
+                addressConfig={{ show: fieldConfig.address.enabled, required: fieldConfig.address.required }}
+                fieldConfig={fieldConfig}
+                ctaButtonText={getCtaButtonText()}
+                brandColor1={company?.email_brand_color_1}
+                brandColor2={company?.email_brand_color_2}
+                companyWebsite={company?.website}
+                companyName={company?.name}
+                isDragging={isDragging}
+                onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
+                onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
+                onFileChange={handleFileChange}
+                onDrop={handleDrop}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onRemoveFile={removeFile}
+                onSubmit={handleStep2Submit}
+                onSkip={handleSkip}
+              />
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
+
 }

@@ -8,6 +8,7 @@ import {
   Building,
   CheckCircle,
   Loader2,
+  ChevronRight
 } from 'lucide-react';
 import type { Category } from '@/lib/formCategories';
 
@@ -55,185 +56,171 @@ export default function UploadFormStepOne({
   logoUrl,
   companyName,
   companyWebsite,
-  brandColor1,
-  brandColor2,
-  showHeader = true,
+  brandColor1 = '#3b82f6',
+  brandColor2 = '#8b5cf6',
+  showHeader = false, // Default to false since we moved it to the parent
   hasStep2 = true,
 }: StepOneProps) {
+  
+  const accentColor = brandColor1 || '#3b82f6';
+
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-10">
+    <div className="w-full">
+      {/* 1. Header Logic (Only shows if explicitly passed, otherwise parent handles it) */}
       {showHeader && (
-        <div className="text-center mb-8">
+        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
           {logoUrl && (
             <div className="mb-6 flex justify-center">
-              <img src={logoUrl} alt={companyName || 'Logo'} className="h-20 w-auto object-contain" />
+              <img src={logoUrl} alt={companyName || 'Logo'} className="h-16 w-auto object-contain" />
             </div>
           )}
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">{ctaHeading}</h1>
-          <p className="text-lg text-gray-600">{headerSubtitle}</p>
+          <h1 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">{ctaHeading}</h1>
+          <p className="text-lg text-gray-500 font-medium">{headerSubtitle}</p>
         </div>
       )}
 
-      {/* Step pill — only show if there's a step 2 */}
+      {/* 2. Step Progress Pill */}
       {hasStep2 && (
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">1</div>
-            <span className="text-sm font-semibold text-blue-600">Your Info</span>
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100">
+            <div 
+              className="w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+              style={{ background: accentColor }}
+            >
+              1
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">Contact Info</span>
           </div>
-          <div className="w-12 h-0.5 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-400 text-sm font-bold flex items-center justify-center">2</div>
-            <span className="text-sm text-gray-400">Optional Details</span>
+          <div className="w-8 h-[2px] bg-gray-100" />
+          <div className="flex items-center gap-2 opacity-40">
+            <div className="w-6 h-6 rounded-full bg-gray-200 text-[10px] font-black flex items-center justify-center text-gray-500">2</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Project Details</span>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+      {/* 3. The Form Body */}
+      <div className="bg-white p-1 sm:p-2 rounded-[2rem]">
         {error && (
-          <div className="mb-6 bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl text-sm">
-            <p className="font-semibold">Please fix the following:</p>
-            <p className="mt-1">{error}</p>
+          <div className="mb-6 bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl text-sm font-medium animate-in shake duration-500">
+            {error}
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
           {/* Name */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <User className="w-4 h-4 text-blue-500" />
-              Your Name *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={e => onChange('name', e.target.value)}
-              disabled={submitting}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
-              placeholder="John Smith"
-            />
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Name</label>
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
+              <input
+                type="text"
+                value={formData.name}
+                onChange={e => onChange('name', e.target.value)}
+                disabled={submitting}
+                className="w-full pl-11 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-gray-900 font-medium placeholder:text-gray-300"
+                placeholder="Full Name"
+              />
+            </div>
           </div>
 
           {/* Email */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Mail className="w-4 h-4 text-blue-500" />
-              Email *
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={e => onChange('email', e.target.value)}
-              disabled={submitting}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
-              placeholder="john@example.com"
-            />
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Email</label>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={e => onChange('email', e.target.value)}
+                disabled={submitting}
+                className="w-full pl-11 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-gray-900 font-medium placeholder:text-gray-300"
+                placeholder="email@example.com"
+              />
+            </div>
           </div>
 
           {/* Phone */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Phone className="w-4 h-4 text-green-500" />
-              Phone *
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={e => onChange('phone', formatPhoneNumber(e.target.value))}
-              disabled={submitting}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
-              placeholder="(555) 123-4567"
-              maxLength={14}
-            />
-            <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" />
-              {formData.phone.replace(/\D/g, '').length}/10 digits
-            </p>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Phone</label>
+            <div className="relative group">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={e => onChange('phone', formatPhoneNumber(e.target.value))}
+                disabled={submitting}
+                className="w-full pl-11 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-gray-900 font-medium placeholder:text-gray-300"
+                placeholder="(555) 000-0000"
+                maxLength={14}
+              />
+            </div>
           </div>
 
           {/* Category */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Building className="w-4 h-4 text-amber-500" />
-              Service Type *
-            </label>
-            <select
-              value={formData.category}
-              onChange={e => onChange('category', e.target.value)}
-              disabled={submitting}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
-            >
-              <option value="">Select a service...</option>
-              {categories.map(cat => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Service</label>
+            <div className="relative group">
+              <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
+              <select
+                value={formData.category}
+                onChange={e => onChange('category', e.target.value)}
+                disabled={submitting}
+                className="w-full pl-11 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-gray-900 font-medium appearance-none cursor-pointer"
+              >
+                <option value="">Select Service...</option>
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <FileText className="w-4 h-4 text-purple-500" />
-              Description *
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={e => onChange('description', e.target.value)}
-              disabled={submitting}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:opacity-50"
-              placeholder="Describe your project in detail..."
-            />
+          {/* Description - Full Width */}
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Project Details</label>
+            <div className="relative group">
+              <FileText className="absolute left-4 top-5 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
+              <textarea
+                value={formData.description}
+                onChange={e => onChange('description', e.target.value)}
+                disabled={submitting}
+                rows={4}
+                className="w-full pl-11 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-gray-900 font-medium placeholder:text-gray-300 resize-none"
+                placeholder="Briefly describe what you need help with..."
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Submit */}
+        {/* 4. Action Area */}
+        <div className="p-6 pt-0">
           <button
             type="button"
             onClick={onSubmit}
             disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:opacity-90"
+            className="group w-full flex items-center justify-center gap-3 text-white py-5 px-8 rounded-2xl font-black text-xl transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl hover:shadow-2xl"
             style={{
-              background:
-                brandColor1 && brandColor2
-                  ? `linear-gradient(to right, ${brandColor1}, ${brandColor2})`
-                  : '#3b82f6',
+              background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`,
             }}
           >
             {submitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
-              </>
-            ) : hasStep2 ? (
-              'Submit & Add Details →'
+              <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
-              'Submit Request'
+              <>
+                {hasStep2 ? 'Continue to Photos' : 'Submit Request'}
+                <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </>
             )}
           </button>
-
+          
           {hasStep2 && (
-            <p className="text-center text-xs text-gray-400">
-              We'll save your info right away — step 2 lets you add photos, address & more (optional)
+            <p className="text-center mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Photos & Address are optional in the next step
             </p>
           )}
         </div>
       </div>
-
-      {/* Company website link */}
-      {companyWebsite && (
-        <div className="text-center mt-6">
-          <a
-            href={companyWebsite.startsWith('http') ? companyWebsite : `https://${companyWebsite}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
-          >
-            {companyName ? `Visit ${companyName}'s website` : 'Visit our website'}
-          </a>
-        </div>
-      )}
     </div>
   );
 }

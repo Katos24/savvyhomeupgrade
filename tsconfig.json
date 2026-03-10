@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/dashboard/page.tsx.bak"  ],
+, "app/dashboard/page.tsx.bak", "app/api/ai/generate-completion-report/route.ts.bak"  ],
   "exclude": ["node_modules"]
 }

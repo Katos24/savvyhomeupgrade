@@ -20,6 +20,8 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [expandedQty, setExpandedQty] = useState<Record<number, boolean>>({});
+  const [showAISuggestion, setShowAISuggestion] = useState(!!lead?.ai_brief_json);
+const aiData = lead?.ai_brief_json; // Assuming this is where you stored the Claude result
 
   useEffect(() => {
     async function fetchCustomTemplates() {
@@ -88,6 +90,24 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
     setQuoteData(items);
     toast.success('Template loaded!');
   };
+
+
+  const handleApplyAISuggestion = () => {
+  if (!aiData?.items) return;
+  
+  const mappedItems = aiData.items.map((item: any, i: number) => ({
+    id: Date.now() + i,
+    description: item.description,
+    quantity: item.quantity || 1,
+    unitPrice: item.unitPrice || 0,
+    amount: (item.quantity || 1) * (item.unitPrice || 0),
+  }));
+
+  setQuoteData(mappedItems);
+  setIsEditing(true);
+  setShowAISuggestion(false);
+  toast.success('AI Draft Applied! Please review and save.');
+};
 
   const handleAddRow = () => {
     setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]);
@@ -296,6 +316,50 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
           )}
         </div>
       </div>
+
+
+{/* ── AI SUGGESTION BANNER ────────────────────────────────────────── */}
+{showAISuggestion && !isEditing && (
+  <div className="mx-4 my-3 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 shadow-sm">
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex gap-3">
+        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+          <span className="text-xl">✨</span>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-indigo-900">AI Scout Draft Ready</p>
+          <p className="text-xs text-indigo-600/80 mt-0.5 leading-relaxed">
+            Claude analyzed the {lead?.photos?.length || 0} photos and drafted a 
+            <span className="font-bold"> {fmt(aiData?.estimated_total || 0)}</span> quote.
+          </p>
+        </div>
+      </div>
+      <button 
+        onClick={() => setShowAISuggestion(false)}
+        className="text-indigo-300 hover:text-indigo-500 transition"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+    
+    <div className="mt-4 flex gap-2">
+      <button
+        onClick={handleApplyAISuggestion}
+        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-md shadow-indigo-200 flex items-center justify-center gap-2"
+      >
+        <Check className="w-3.5 h-3.5" />
+        Apply Draft
+      </button>
+      <button
+        onClick={() => { /* Logic to open a small "View Details" modal */ }}
+        className="px-4 py-2.5 bg-white border border-indigo-100 text-indigo-600 text-xs font-bold rounded-xl hover:bg-indigo-50 transition"
+      >
+        Review First
+      </button>
+    </div>
+  </div>
+)}
+
 
       {/* ── LINE ITEMS ──────────────────────────────────────────────────────── */}
       <div className="divide-y divide-gray-50">

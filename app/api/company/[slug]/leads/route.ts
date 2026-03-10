@@ -35,6 +35,7 @@ export async function GET(request: Request, { params }: Props) {
         p.estimated_hours,
         p.actual_hours,
         p.quote_data,
+        p.ai_brief,
         p.quote_total,
         p.quote_sent_at,
         p.quote_accepted_at,

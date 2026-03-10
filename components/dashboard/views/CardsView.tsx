@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Calendar, Bell, Tag, X } from 'lucide-react';
+import { Calendar, Bell, Tag, X, Sparkles, Image as ImageIcon, User, CheckCircle2, AlertCircle, DollarSign, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { canUseAiBrief, PlanTier } from '@/lib/permissions';
 
@@ -16,8 +16,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
   const [briefStates, setBriefStates] = useState<{ [key: number]: { loading: boolean; brief: any | null } }>({});
   const [activeBriefLead, setActiveBriefLead] = useState<any | null>(null);
   const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
-  
-  
 
   const formatCategory = (cat: string) => {
     if (!cat) return 'Uncategorized';
@@ -30,7 +28,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
   const getStatusColorHex = (colorName: string) => {
     const map: Record<string, string> = {
       blue: '#3b82f6', yellow: '#eab308', purple: '#a855f7', orange: '#f97316',
-      green: '#22c55e', red: '#ef4444', gray: '#6b7280', indigo: '#6366f1', pink: '#ec4899',
+      green: '#10b981', red: '#ef4444', gray: '#64748b', indigo: '#6366f1', pink: '#ec4899',
     };
     return map[colorName] || '#3b82f6';
   };
@@ -38,13 +36,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    if (isToday) {
-      let h = date.getHours();
-      const m = date.getMinutes();
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-      return `${h}:${m < 10 ? '0' + m : m} ${ampm}`;
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
@@ -85,8 +78,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
           repeat_customer: false,
           past_jobs: [],
           plan_tier: planTier,
-            photos: lead.photos?.map((p: any) => p.url) ?? [],  
-
+          photos: lead.photos?.map((p: any) => p.url) ?? [],  
         }),
       });
       const data = await res.json();
@@ -101,23 +93,14 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
       toast.error('Failed to generate AI brief');
       setBriefStates(prev => ({ ...prev, [lead.id]: { loading: false, brief: null } }));
     }
-  }, [briefStates]);
+  }, [briefStates, planTier]);
 
   const getCustomerScoreStyle = (score: string) => {
     switch (score) {
-      case 'VIP': return { bg: 'bg-amber-500', text: 'text-white', label: '⭐ VIP' };
-      case 'Good': return { bg: 'bg-emerald-600', text: 'text-white', label: '✓ Good' };
-      case 'Risky': return { bg: 'bg-red-600', text: 'text-white', label: '⚠ Risky' };
-      default: return { bg: 'bg-slate-600', text: 'text-white', label: '· New' };
-    }
-  };
-
-  const getUrgencyStyle = (urgency: string) => {
-    switch (urgency) {
-      case 'Emergency': return 'bg-red-600 text-white';
-      case 'High Priority': return 'bg-orange-500 text-white';
-      case 'Normal': return 'bg-indigo-600 text-white';
-      default: return 'bg-slate-600 text-white';
+      case 'VIP': return { bg: 'bg-amber-100', border: 'border-amber-200', text: 'text-amber-700', label: '⭐ VIP' };
+      case 'Good': return { bg: 'bg-emerald-100', border: 'border-emerald-200', text: 'text-emerald-700', label: '✓ Good' };
+      case 'Risky': return { bg: 'bg-red-100', border: 'border-red-200', text: 'text-red-700', label: '⚠ Risky' };
+      default: return { bg: 'bg-slate-100', border: 'border-slate-200', text: 'text-slate-700', label: 'New' };
     }
   };
 
@@ -126,153 +109,151 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
     const statusHex = getStatusColorHex(statusConfig.color);
     const isProject = !!lead.project_id;
     const briefState = briefStates[lead.id];
-    const description = lead.description?.trim()
-      ? lead.description.length > 80 ? lead.description.slice(0, 80) + '…' : lead.description
-      : null;
+    const description = lead.description?.trim();
 
     return (
       <div
         key={lead.id}
-        className="group relative cursor-pointer border transition-all shadow-sm hover:shadow-md"
-style={{ 
-  backgroundColor: lead.status === 'completed' ? '#1a1d23' : '#243447',
-  borderColor: lead.status === 'completed' ? '#2a2d35' : isProject ? '#4f46e5' : '#354f6e',
-  opacity: lead.status === 'completed' ? 0.6 : 1,
-}}
-onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = isProject ? '#2d5a3d' : '#354f6e')}
         onClick={() => onSelectLead(lead)}
+        className={`group relative bg-white border rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer overflow-hidden ${
+          lead.status === 'completed' ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
+        }`}
+        style={{ borderColor: isProject ? `${statusHex}40` : '#e2e8f0' }}
       >
-        <div className="h-1 w-full" style={{ backgroundColor: statusHex }} />
+        {/* Status Accent Bar */}
+        <div className="h-1.5 w-full" style={{ backgroundColor: statusHex }} />
 
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <span
-              className="px-2.5 py-1 text-xs font-bold border"
+              className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border"
               style={{
-                backgroundColor: `grey` === statusConfig.color ? '#374151' : `${statusHex}20`,
-                color: statusConfig.color === 'yellow' ? '#fbbf24' : statusHex,
-                borderColor: `${statusHex}50`,
-                fontSize: '10px',
+                backgroundColor: `${statusHex}10`,
+                color: statusHex,
+                borderColor: `${statusHex}30`,
               }}
             >
               {statusConfig.label}
             </span>
+            
             <div className="flex items-center gap-2">
               {lead.follow_up_date && (
-                <div
-                  className="relative"
+                <div 
+                  className="relative flex items-center"
                   onMouseEnter={() => setHoveredReminder(lead.id)}
                   onMouseLeave={() => setHoveredReminder(null)}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Bell className="w-3.5 h-3.5 text-red-400" />
+                  <Bell className="w-4 h-4 text-red-500 animate-pulse" />
                   {hoveredReminder === lead.id && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-slate-700 p-3 shadow-xl z-10 min-w-[180px]">
-                      <p className="text-xs text-red-300 font-bold mb-1">
-                        Follow-up: {new Date(lead.follow_up_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <div className="absolute bottom-full right-0 mb-2 bg-white border border-slate-200 p-3 shadow-xl z-10 min-w-[200px] rounded-lg">
+                      <p className="text-xs text-red-600 font-bold mb-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> 
+                        Follow-up: {new Date(lead.follow_up_date).toLocaleDateString()}
                       </p>
-                      {lead.follow_up_notes && (
-                        <p className="text-xs text-gray-400">{lead.follow_up_notes}</p>
-                      )}
+                      {lead.follow_up_notes && <p className="text-[11px] text-slate-500 italic">"{lead.follow_up_notes}"</p>}
                     </div>
                   )}
                 </div>
               )}
-             {isProject && (
-<span className="text-gray-400 text-xs">
-  {lead.project_number}
-</span>
-)}
+              {isProject && <span className="text-slate-400 text-[10px] font-mono font-bold">#{lead.project_number}</span>}
             </div>
           </div>
 
-          <h3 className="text-white font-bold text-base mb-1.5 line-clamp-1">{lead.name}</h3>
+          <h3 className="text-slate-900 font-bold text-base mb-1 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+            {lead.name}
+          </h3>
 
           {description && (
-            <p className="text-white/70 text-xs mb-3 line-clamp-2 leading-relaxed">{description}</p>
+            <p className="text-slate-500 text-xs mb-3 line-clamp-2 leading-relaxed h-8">
+              {description}
+            </p>
           )}
 
+          {/* Schedule Info */}
           {lead.scheduled_date && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
-              <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 font-medium mb-3 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <span>
-                {new Date(lead.scheduled_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                {lead.scheduled_time && ` · ${formatScheduledTime(lead.scheduled_time)}`}
+                {new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {lead.scheduled_time && ` at ${formatScheduledTime(lead.scheduled_time)}`}
               </span>
             </div>
           )}
 
-  {lead.quote_total && (
-            <div className="flex items-center gap-1.5 text-xs mb-3 flex-wrap">
-              <span className={`px-2 py-0.5 font-bold ${
-                lead.payment_status === 'paid'
-                  ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
-                  : lead.payment_status === 'partial'
-                  ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
-                  : 'bg-white/5 border border-white/10 text-white/50'
-              }`}>
-                {lead.payment_status === 'paid'
-                  ? `✓ ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} Paid`
-                  : lead.payment_status === 'partial'
-                  ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.payment_amount || 0))} / ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} paid`
-                  : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} due`}
-              </span>
-                
-              {lead.quote_accepted_at && (
-                <span className="px-2 py-0.5 font-bold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">✅ Accepted</span>
-              )}
-              {lead.quote_declined_at && !lead.quote_accepted_at && (
-                <span className="px-2 py-0.5 font-bold bg-red-500/20 border border-red-500/30 text-red-300">✗ Declined</span>
-              )}
-              {!lead.quote_accepted_at && !lead.quote_declined_at && (() => {
-                try {
-                  const log = typeof lead.quote_emails === 'string' ? JSON.parse(lead.quote_emails) : lead.quote_emails || [];
-                  if (log.length > 0) return <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 text-amber-300">📨 Sent</span>;
-                } catch {}
-                return null;
-              })()}
-            </div>
-          )}
-           <span className="text-gray-400 text-xs">
-      @{lead.assigned_to || 'Unassigned'}
+          {/* Payment Status Pill */}
+       {/* Payment & Quote Status */}
+{lead.quote_total && (
+  <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+    {/* Price / Payment Status */}
+    <span className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 border ${
+      lead.payment_status === 'paid'
+        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+        : lead.payment_status === 'partial'
+        ? 'bg-orange-50 border-orange-200 text-orange-700'
+        : 'bg-slate-50 border-slate-200 text-slate-600'
+    }`}>
+      {lead.payment_status === 'paid' ? <CheckCircle2 className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
+      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))}
     </span>
-
-
-          <div className="flex items-center justify-between pt-3 border-t border-slate-700">
-            <div className="flex items-center gap-2.5">
-              <span className="text-gray-500 text-xs">{formatDate(lead.created_at)}</span>
-         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 border border-white/10 text-white/70 text-xs font-bold rounded-md">
-  <Tag className="w-3 h-3 opacity-70" />
-  {formatCategory(lead.category)}
-</span>
-{lead.photos?.length > 0 && (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold rounded-md">
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><circle cx="12" cy="14" r="2"/>
-    </svg>
-    {lead.photos.length}
-  </span>
+    
+    {/* Accepted / Declined / Sent Status */}
+    {lead.quote_accepted_at ? (
+      <span className="px-2 py-1 rounded text-[10px] font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center gap-1">
+        <CheckCircle2 className="w-3 h-3" /> Accepted
+      </span>
+    ) : lead.quote_declined_at ? (
+      <span className="px-2 py-1 rounded text-[10px] font-bold bg-red-50 border border-red-100 text-red-700">
+        ✗ Declined
+      </span>
+    ) : (() => {
+      try {
+        const log = typeof lead.quote_emails === 'string' ? JSON.parse(lead.quote_emails) : lead.quote_emails || [];
+        if (log.length > 0) return (
+          <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-50 border border-amber-100 text-amber-700 flex items-center gap-1">
+            <Mail className="w-3 h-3" /> Sent
+          </span>
+        );
+      } catch {}
+      return null;
+    })()}
+  </div>
 )}
+
+          {/* Card Footer */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-slate-400 text-[10px] font-medium">
+                <User className="w-3 h-3" />
+                {lead.assigned_to || 'Unassigned'}
+              </div>
+              <div className="flex items-center gap-1 text-slate-400 text-[10px] font-medium">
+                <Tag className="w-3 h-3" />
+                {formatCategory(lead.category)}
+              </div>
             </div>
+
             <button
-              onClick={(e) => canUseAiBrief(planTier)
-                ? handleGetBrief(e, lead)
-                : window.location.href = `/${window.location.pathname.split('/')[1]}/admin/settings`}
-              disabled={briefState?.loading}
-              className={`px-2 py-1 text-white text-xs font-bold transition disabled:opacity-50 ${
+              onClick={(e) => {
+                e.stopPropagation();
                 canUseAiBrief(planTier)
-                  ? 'bg-violet-600 hover:bg-violet-700'
-                  : 'bg-slate-600 hover:bg-amber-500'
+                  ? handleGetBrief(e, lead)
+                  : window.location.href = `/${window.location.pathname.split('/')[1]}/admin/settings`;
+              }}
+              disabled={briefState?.loading}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                canUseAiBrief(planTier)
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-110'
+                  : 'bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-600'
               }`}
-              title={canUseAiBrief(planTier) ? 'Generate AI Brief' : 'Upgrade to Pro for AI Brief'}
             >
-{briefState?.loading ? (
-  <svg className="animate-spin w-3 h-3 text-white" viewBox="0 0 24 24" fill="none">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-  </svg>
-) : canUseAiBrief(planTier) ? '✦' : '🔒'}            </button>
+              {briefState?.loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : canUseAiBrief(planTier) ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <X className="w-4 h-4 rotate-45" />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -286,111 +267,121 @@ onMouseEnter={(e) => (e.currentTarget.style.borderColor = statusHex)}
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {leads.map(lead => renderLeadCard(lead))}
       </div>
 
-      {/* ── AI BRIEF MODAL ── */}
+      {/* ── AI BRIEF MODAL (LIGHT THEME) ── */}
       {activeBriefLead && brief && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center z-[100] p-4"
           onClick={() => setActiveBriefLead(null)}
         >
           <div
-            className="bg-slate-900 border border-slate-700 w-full sm:max-w-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl w-full sm:max-w-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 py-4 border-b border-slate-700 flex items-start justify-between"
-              style={{ background: '#312e81' }}>
-              <div className="flex-1 min-w-0 mr-3">
-                {brief.headline && (
-                  <p className="text-white font-bold text-base leading-snug mb-2">{brief.headline}</p>
-                )}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-indigo-300 text-xs">{activeBriefLead.name}</p>
-                  {brief.customer_score && (() => {
-                    const s = getCustomerScoreStyle(brief.customer_score);
-                    return (
-                      <span className={`px-2 py-0.5 text-xs font-bold ${s.bg} ${s.text}`}>
-                        {s.label}
-                      </span>
-                    );
-                  })()}
-                  {brief.urgency && (
-                    <span className={`px-2 py-0.5 text-xs font-bold ${getUrgencyStyle(brief.urgency)}`}>
-                      {brief.urgency}
-                    </span>
-                  )}
+            <div className="px-6 py-5 border-b border-slate-100 bg-indigo-600 text-white">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                  <Sparkles className="w-4 h-4 text-white" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">AI Project Intelligence</span>
                 </div>
+                <button onClick={() => setActiveBriefLead(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                onClick={() => setActiveBriefLead(null)}
-                className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 transition flex-shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              
+              <h2 className="text-xl font-black leading-tight mb-2">{brief.headline || 'Lead Analysis'}</h2>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-indigo-100 text-sm font-medium">{activeBriefLead.name}</span>
+                {brief.customer_score && (() => {
+                  const s = getCustomerScoreStyle(brief.customer_score);
+                  return (
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${s.bg} ${s.text} ${s.border}`}>
+                      {s.label}
+                    </span>
+                  );
+                })()}
+                {brief.urgency && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/20 border border-white/30">
+                    {brief.urgency} Urgency
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
               {brief.summary && (
-                <div className="bg-slate-800 border border-slate-700 p-4">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Summary</p>
-                  <p className="text-white text-sm leading-relaxed">{brief.summary}</p>
-                </div>
+                <section>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Executive Summary</label>
+                  <div className="bg-white border border-slate-200 p-4 rounded-xl text-slate-700 text-sm leading-relaxed shadow-sm">
+                    {brief.summary}
+                  </div>
+                </section>
               )}
-              {brief.photo_observations && brief.photo_observations !== 'null' && (  // ← ADD THIS BLOCK
-                <div className="bg-slate-800 border border-indigo-900 p-4">
-                  <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">📸 Photo Analysis</p>
-                  <p className="text-white text-sm leading-relaxed">{brief.photo_observations}</p>
-                </div>
+
+              {brief.photo_observations && brief.photo_observations !== 'null' && (
+                <section>
+                  <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 block flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" /> Photo Intelligence
+                  </label>
+                  <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl text-indigo-900 text-sm leading-relaxed">
+                    {brief.photo_observations}
+                  </div>
+                </section>
               )}
-              {brief.next_steps?.length > 0 && (
-                <div className="bg-slate-800 border border-emerald-900 p-4">
-                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Next Steps</p>
-                  <ul className="space-y-2">
-                    {brief.next_steps.map((step: string, i: number) => (
-                      <li key={i} className="flex gap-2.5 text-sm text-white">
-                        <span className="text-emerald-400 font-bold min-w-[1.25rem]">{i + 1}.</span>
-                        <span className="leading-relaxed">{step}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {brief.critical_info?.length > 0 && (
-                <div className="bg-slate-800 border border-amber-900 p-4">
-                  <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-3">⚠ Critical</p>
-                  <ul className="space-y-2">
-                    {brief.critical_info.map((info: string, i: number) => (
-                      <li key={i} className="flex gap-2 text-sm text-amber-100">
-                        <span className="text-amber-400 flex-shrink-0">•</span>
-                        <span className="leading-relaxed">{info}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {brief.next_steps?.length > 0 && (
+                  <section>
+                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2 block">Action Plan</label>
+                    <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl space-y-3">
+                      {brief.next_steps.map((step: string, i: number) => (
+                        <div key={i} className="flex gap-2 text-xs font-bold text-emerald-800">
+                          <span className="opacity-50">{i + 1}.</span>
+                          <span>{step}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {brief.critical_info?.length > 0 && (
+                  <section>
+                    <label className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2 block">Critical Alerts</label>
+                    <div className="bg-red-50 border border-red-100 p-4 rounded-xl space-y-3">
+                      {brief.critical_info.map((info: string, i: number) => (
+                        <div key={i} className="flex gap-2 text-xs font-bold text-red-800">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{info}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-slate-700 flex gap-3">
+            <div className="px-6 py-5 border-t border-slate-100 flex gap-3 bg-white">
               <button
                 onClick={() => {
                   setBriefStates(prev => ({ ...prev, [activeBriefLead.id]: { loading: false, brief: null } }));
                   setActiveBriefLead(null);
                 }}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white/60 font-bold py-2.5 text-xs transition"
+                className="flex-1 px-4 py-3 border border-slate-200 text-slate-500 font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors"
               >
                 Regenerate
               </button>
               <button
                 onClick={() => { setActiveBriefLead(null); onSelectLead(activeBriefLead); }}
-                className="flex-[2] text-white font-bold py-2.5 text-sm transition"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                className="flex-[2] px-4 py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
               >
-                Open Lead →
+                Go to Project Dashboard →
               </button>
             </div>
           </div>

@@ -27,13 +27,14 @@ export async function POST(request: NextRequest) {
       tasks,
       internal_notes,
       company_name,
+      company_slug, // ← Added for Team Context
       repeat_customer,
       past_jobs,
       chat_mode,
       chat_history,
       all_leads_summary,
       plan_tier,
-      photos, // ← NEW: array of photo URLs from the lead submission
+      photos,
     } = body;
 
     if (plan_tier === 'basic') {
@@ -42,6 +43,22 @@ export async function POST(request: NextRequest) {
         error: 'AI features are available on Pro and Business plans',
         upgrade_required: true,
       }, { status: 403 });
+    }
+
+    // ── NEW: FETCH TEAM FOR ACTIONABLE UPDATES ──
+    let teamListString = "No team members found.";
+    if (company_slug) {
+      try {
+        const teamRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/team/members?slug=${company_slug}`);
+        const teamData = await teamRes.json();
+        if (teamData.success && Array.isArray(teamData.members)) {
+          teamListString = teamData.members
+            .map((m: any) => `ID: ${m.id} | Name: ${m.name} | Role: ${m.role || 'Tech'}`)
+            .join('\n');
+        }
+      } catch (err) {
+        console.error("Failed to fetch team for AI context:", err);
+      }
     }
 
     async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
@@ -67,11 +84,10 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-
       throw new Error('All models overloaded or rate limited. Please try again shortly.');
     }
 
-    // ── CHAT MODE ──────────────────────────────────────────────
+    // ── CHAT MODE ──
     if (chat_mode) {
       const ctx = all_leads_summary;
       const leadsContext = ctx
@@ -132,13 +148,14 @@ ${leadsContext}`;
       return NextResponse.json({ success: true, reply: replyContent.text });
     }
 
-    // ── Build text context ─────────────────────────────────────
+    // ── Build text context ──
     const contextLines: string[] = [];
 
     contextLines.push(`COMPANY: ${company_name || 'Contractor'}`);
     contextLines.push(`CUSTOMER: ${customer_name || 'Unknown'}`);
     contextLines.push(`SERVICE CATEGORY: ${category || 'Not specified'}`);
     contextLines.push(`CURRENT STATUS: ${status || 'New lead'}`);
+    contextLines.push(`TODAY'S DATE: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`);
 
     if (repeat_customer && past_jobs?.length > 0) {
       const lifetimeValue = past_jobs
@@ -217,69 +234,76 @@ ${leadsContext}`;
 
     const context = contextLines.join('\n');
 
-    // ── Build photo note for prompt ────────────────────────────
-    // Cap at 4 photos to keep token cost reasonable
+    // ── Build photo note ──
     const validPhotos: string[] = Array.isArray(photos)
       ? photos.filter((url: any) => typeof url === 'string' && url.startsWith('http')).slice(0, 4)
       : [];
 
     const photoNote = validPhotos.length > 0
-      ? `\nThe customer also submitted ${validPhotos.length} photo(s). They are included in this message. Describe what you see in each photo as it relates to the ${category || 'service'} request — visible damage, materials, access issues, scope indicators. Be specific and use trade-appropriate language. Add your photo observations to the "photo_observations" field in the JSON.`
+      ? `\nThe customer also submitted ${validPhotos.length} photo(s). Describe what you see in each photo as it relates to the ${category || 'service'} request — visible damage, materials, access issues, scope indicators. Be specific and use trade-appropriate language.`
       : '';
 
-    // ── Build message content ──────────────────────────────────
-    // Start with the text prompt, then append images if present
+    // ── THE FULL ACTIONABLE PROMPT ──
     const promptText = `You are an expert assistant for a home services contractor business.
 
-Here is everything you know about this lead/project:
+AVAILABLE TEAM MEMBERS:
+${teamListString}
 
+DATA CONTEXT:
 ${context}
 ${photoNote}
 
-Write a fast, actionable brief that a busy contractor can scan in under 30 seconds.
-
 Rules:
-- Be specific to the service category (roofing, HVAC, plumbing, etc) — use industry-appropriate language
-- If it's a repeat customer, acknowledge the relationship and factor in their history
-- Calculate urgency from the scheduling and payment data — don't be vague
-- The headline should be a single punchy sentence capturing the situation
-- Next steps should be concrete actions, not generic advice
-- Flag anything that needs immediate attention in critical_info
-- If photos were provided, add specific observations from them — don't be vague ("looks damaged" is not useful; "missing shingles on south-facing slope, approx 2 squares" is useful)
+- Be specific to the service category.
+- If it's a repeat customer, factor in history.
+- The headline should capture the core situation.
+- SUGGESTED UPDATES: Based on the request, suggest a schedule (YYYY-MM-DD), a quote total, and an assignee ID from the list above.
 
-Respond ONLY with this JSON (no markdown, no extra text):
+Respond ONLY with this JSON (all fields required):
 {
-  "headline": "One punchy sentence — the situation in a nutshell",
-  "summary": "2-3 sentence paragraph with the full context",
-  "next_steps": ["Specific action 1", "Specific action 2", "Specific action 3"],
-  "critical_info": ["Urgent flag 1 if any", "Urgent flag 2 if any"],
+  "headline": "punchy status sentence",
+  "summary": "2-3 sentence context paragraph",
+  "next_steps": ["step 1", "step 2", "step 3"],
+  "critical_info": ["flag 1", "flag 2"],
   "urgency": "Emergency|High Priority|Normal|Low Priority",
   "customer_score": "VIP|Good|New|Risky",
-  "photo_observations": "What the photos show — specific, trade-appropriate observations. null if no photos."
-}
+  "photo_observations": "forensic trade-appropriate details",
+  "complexity": "Simple|Moderate|Complex",
+  "damage_assessment": "trade-specific assessment",
+  "estimated_scope": "what needs to be done",
+  "recommended_action": "what should happen next",
+  "safety_concerns": "any risks",
+  "estimated_time": "time to complete",
+  "whatYouSee": "detailed visual report",
+  "condition": "Excellent|Good|Fair|Poor|Critical",
+  "costBreakdown": {
+    "materials": "est cost",
+    "labor": "est cost",
+    "totalLow": "est",
+    "totalMid": "est",
+    "totalHigh": "est"
+  },
+  "safetyConsiderations": ["item 1", "item 2"],
+  "suggested_updates": {
+    "assigned_to_id": number | null,
+    "assigned_to_name": "name | null",
+    "scheduled_date": "YYYY-MM-DD | null",
+    "quote_total": number | null,
+    "status": "string | null"
+  }
+}`;
 
-customer_score rules:
-- VIP = repeat customer, always paid, multiple jobs
-- Good = paid on time, no issues
-- New = first job, no history
-- Risky = payment issues or cancelled jobs in history`;
-
-    // Build content array — text first, then images
     type ContentBlock =
       | { type: 'text'; text: string }
       | { type: 'image'; source: { type: 'url'; url: string } };
 
     const messageContent: ContentBlock[] = [{ type: 'text', text: promptText }];
-
     for (const url of validPhotos) {
-      messageContent.push({
-        type: 'image',
-        source: { type: 'url', url },
-      });
+      messageContent.push({ type: 'image', source: { type: 'url', url } });
     }
 
     const message = await callClaude({
-      max_tokens: 1024,
+      max_tokens: 1500, // Higher for full detail
       messages: [{ role: 'user', content: messageContent }],
     });
 
@@ -296,39 +320,13 @@ customer_score rules:
       brief.has_photos = validPhotos.length > 0;
       if (scheduled_date) brief.scheduled = { date: scheduled_date, time: scheduled_time };
     } catch {
-      brief = {
-        headline: `${customer_name} — ${category || 'New lead'}`,
-        summary: content.text,
-        next_steps: ['Review this lead'],
-        critical_info: [],
-        urgency: 'Normal',
-        customer_score: 'New',
-        photo_observations: null,
-        has_photos: validPhotos.length > 0,
-      };
+      brief = { headline: "Error", summary: content.text };
     }
 
     return NextResponse.json({ success: true, brief });
 
   } catch (error: any) {
     console.error('AI Brief Error:', error.message);
-
-    const isOverloaded =
-      error?.status === 529 ||
-      error?.status === 429 ||
-      error?.message?.includes('529') ||
-      error?.message?.includes('overloaded') ||
-      error?.message?.includes('rate_limit') ||
-      error?.message?.includes('All models overloaded');
-
-    if (isOverloaded) {
-      return NextResponse.json({
-        success: false,
-        error: 'AI is busy right now — please try again in a moment.',
-        overloaded: true,
-      }, { status: 503 });
-    }
-
-    return NextResponse.json({ success: false, error: error.message || 'Failed to generate brief' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
