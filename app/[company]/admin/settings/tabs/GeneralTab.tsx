@@ -174,7 +174,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
                 )}
             </Field>
 
-            <Field label="Phone" icon={<Phone className="w-3" />} isEditing={isEditing}>
+            <Field label="Business Phone" icon={<Phone className="w-3" />} isEditing={isEditing}>
                 {isEditing ? (
                     <input value={formData.phone} onChange={e => setFormData({...formData, phone: formatPhone(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition" />
                 ) : (
@@ -182,7 +182,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
                 )}
             </Field>
 
-            <Field label="Website" icon={<Globe className="w-3" />} isEditing={isEditing}>
+            <Field label="Business Website" icon={<Globe className="w-3" />} isEditing={isEditing}>
                 {isEditing ? (
                     <input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition" />
                 ) : (
@@ -326,7 +326,7 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
             )}
         </div>
       </div>
-      
+
       {/* ── MODALS (Glassmorphism) ── */}
       {showQrModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
