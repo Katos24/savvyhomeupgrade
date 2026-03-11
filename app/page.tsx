@@ -393,7 +393,7 @@ export default function Home() {
             <div className="flex gap-1.5">
               {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-3 h-3 rounded-full" style={{ background: c }}/>)}
             </div>
-            <div className="bg-slate-800 rounded px-3 py-1 text-[11px] text-slate-400 mx-auto font-mono">lead2project.app/dashboard</div>
+            <div className="bg-slate-800 rounded px-3 py-1 text-[11px] text-slate-400 mx-auto font-mono">lead2project.com/dashboard</div>
             <div className="w-2 h-2 rounded-full bg-green-400" style={{ boxShadow:'0 0 6px rgba(74,222,128,0.8)' }}/>
           </div>
 
@@ -545,7 +545,7 @@ export default function Home() {
                       {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-2 h-2 rounded-full" style={{ background: c }}/>)}
                     </div>
                     <div className="flex-1 bg-white rounded px-2 py-0.5 text-[9px] text-slate-400 font-mono text-center truncate">
-                      lead2project.app/torres-roofing
+                      lead2project.com/torres-roofing
                     </div>
                   </div>
 
@@ -590,7 +590,7 @@ export default function Home() {
 
                   <div className="text-center">
                     <p className="text-xs font-bold text-slate-900">Torres Roofing</p>
-                    <p className="text-[10px] text-blue-600 font-mono font-semibold">lead2project.app/torres-roofing</p>
+                    <p className="text-[10px] text-blue-600 font-mono font-semibold">lead2project.com/torres-roofing</p>
                   </div>
 
                   <div className="w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl text-center">
@@ -904,7 +904,7 @@ export default function Home() {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Legal</p>
-              {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.app']].map(([l,h]) => (
+              {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.com']].map(([l,h]) => (
                 <div key={l} className="mb-2.5"><Link href={h} className="text-sm text-slate-600 hover:text-blue-600 font-medium transition">{l}</Link></div>
               ))}
             </div>

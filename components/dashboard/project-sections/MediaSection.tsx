@@ -2,6 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
+import { 
+  Camera, FileText, UploadCloud, File, FileCode, 
+  FileSpreadsheet, Download, Plus, Loader2, AlertCircle 
+} from 'lucide-react';
 import PhotoUpload from '../PhotoUpload';
 
 type MediaSectionProps = {
@@ -17,17 +21,19 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const beforePhotos = lead?.before_photos
-    ? typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos
-    : [];
-  const afterPhotos = lead?.after_photos
-    ? typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos
-    : [];
-  const photoCount = beforePhotos.length + afterPhotos.length;
+  // Parse photos safely
+  const parseJson = (val: any) => {
+    if (!val) return [];
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch { return []; }
+    }
+    return val;
+  };
 
-  const documents: any[] = lead?.documents
-    ? typeof lead.documents === 'string' ? JSON.parse(lead.documents) : lead.documents
-    : [];
+  const beforePhotos = parseJson(lead?.before_photos);
+  const afterPhotos = parseJson(lead?.after_photos);
+  const photoCount = beforePhotos.length + afterPhotos.length;
+  const documents = parseJson(lead?.documents);
 
   const MAX_SIZE = 15 * 1024 * 1024;
 
@@ -35,9 +41,9 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].size > MAX_SIZE) {
-        toast.error(`${files[i].name} is too large! Max 15MB.`);
+    for (const file of Array.from(files)) {
+      if (file.size > MAX_SIZE) {
+        toast.error(`${file.name} exceeds 15MB limit.`);
         if (inputRef.current) inputRef.current.value = '';
         return;
       }
@@ -51,26 +57,26 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
       formData.append('leadId', lead.id.toString());
       formData.append('docType', 'other');
       formData.append('uploadType', 'document');
-      formData.append('userName', currentUser?.name || currentUser?.email || 'Unknown');
-      for (let i = 0; i < files.length; i++) formData.append('documents', files[i]);
+      formData.append('userName', currentUser?.name || currentUser?.email || 'System');
+      Array.from(files).forEach(file => formData.append('documents', file));
 
+      // Simple simulated progress
       const interval = setInterval(() => {
-        setUploadProgress((p) => (p >= 90 ? p : p + 10));
-      }, 500);
+        setUploadProgress((p) => (p >= 90 ? p : p + 5));
+      }, 300);
 
       const res = await fetch('/api/leads/upload-photos', { method: 'POST', body: formData });
       clearInterval(interval);
-      setUploadProgress(100);
-
+      
       const result = await res.json();
       if (res.ok && result.success) {
-        toast.success(`${files.length} document${files.length > 1 ? 's' : ''} uploaded!`);
+        toast.success(`Successfully uploaded ${files.length} file(s)`);
         await onRefresh();
       } else {
         toast.error(result.error || 'Upload failed');
       }
     } catch {
-      toast.error('Upload failed');
+      toast.error('Network error during upload');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -80,57 +86,64 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
 
   const getDocIcon = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return '📕';
-    if (ext === 'doc' || ext === 'docx') return '📘';
-    if (ext === 'xls' || ext === 'xlsx') return '📊';
-    if (ext === 'txt') return '📄';
-    return '📎';
+    switch (ext) {
+      case 'pdf': return <FileText className="w-5 h-5 text-rose-500" />;
+      case 'xls':
+      case 'xlsx': return <FileSpreadsheet className="w-5 h-5 text-emerald-500" />;
+      case 'doc':
+      case 'docx': return <FileCode className="w-5 h-5 text-blue-500" />;
+      default: return <File className="w-5 h-5 text-slate-400" />;
+    }
   };
 
   return (
-    <div className="overflow-hidden">
-      {/* Header with sub-tabs */}
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <div className="flex gap-1">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      {/* Tab Navigation */}
+      <div className="px-5 pt-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="flex gap-6">
           <button
             onClick={() => setActiveTab('photos')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition ${
-              activeTab === 'photos'
-                ? 'bg-pink-100 text-pink-700'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            className={`pb-3 text-xs font-black uppercase tracking-widest transition-all relative ${
+              activeTab === 'photos' ? 'text-pink-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            📷 Photos
-            {photoCount > 0 && (
-              <span className={`px-1.5 py-0.5 text-xs font-bold rounded-full ${
-                activeTab === 'photos' ? 'bg-pink-200 text-pink-800' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {photoCount}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <Camera className="w-3.5 h-3.5" />
+              Photos
+              {photoCount > 0 && (
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                  activeTab === 'photos' ? 'bg-pink-100 text-pink-700' : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {photoCount}
+                </span>
+              )}
+            </div>
+            {activeTab === 'photos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600 rounded-t-full" />}
           </button>
+
           <button
             onClick={() => setActiveTab('docs')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition ${
-              activeTab === 'docs'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            className={`pb-3 text-xs font-black uppercase tracking-widest transition-all relative ${
+              activeTab === 'docs' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            📁 Docs
-            {documents.length > 0 && (
-              <span className={`px-1.5 py-0.5 text-xs font-bold rounded-full ${
-                activeTab === 'docs' ? 'bg-indigo-200 text-indigo-800' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {documents.length}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5" />
+              Documents
+              {documents.length > 0 && (
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                  activeTab === 'docs' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {documents.length}
+                </span>
+              )}
+            </div>
+            {activeTab === 'docs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-t-full" />}
           </button>
         </div>
 
-        {/* Upload button for docs tab */}
         {activeTab === 'docs' && (
-          <div>
+          <div className="pb-3">
             <input
               ref={inputRef}
               type="file"
@@ -139,82 +152,91 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               onChange={handleUpload}
               disabled={uploading}
               className="hidden"
-              id={`doc-upload-${lead.id}`}
+              id="doc-upload"
             />
             <label
-              htmlFor={`doc-upload-${lead.id}`}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              htmlFor="doc-upload"
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 uploading
-                  ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400'
-                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'
+                  ? 'bg-slate-100 text-slate-400'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
               }`}
             >
-              📤 {uploading ? `Uploading ${uploadProgress}%` : 'Upload'}
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+              {uploading ? 'Uploading...' : 'Add Doc'}
             </label>
           </div>
         )}
       </div>
 
-      {/* Progress bar */}
+      {/* Progress Bar Overlay */}
       {uploading && (
-        <div className="w-full bg-indigo-100 h-1">
-          <div className="bg-indigo-500 h-1 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
-        </div>
-      )}
-
-      {/* Photos tab */}
-      {activeTab === 'photos' && (
-        <div className="p-5">
-          <PhotoUpload
-            leadId={lead.id}
-            currentUser={currentUser}
-            onUploadComplete={onRefresh}
-            beforePhotos={beforePhotos}
-            afterPhotos={afterPhotos}
-            hasProject={hasProject}
+        <div className="h-1 w-full bg-slate-100 overflow-hidden">
+          <div 
+            className="h-full bg-indigo-500 transition-all duration-300 ease-out" 
+            style={{ width: `${uploadProgress}%` }} 
           />
         </div>
       )}
 
-      {/* Docs tab */}
-      {activeTab === 'docs' && (
-        <div className="p-5">
-          {documents.length > 0 ? (
-            <div className="space-y-2">
-              {documents.map((doc: any, i: number) => (
-                <a
-                  key={i}
-                  href={doc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 p-3 border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition"
-                >
-                  <span className="text-xl flex-shrink-0">{getDocIcon(doc.name)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition">
-                      {doc.name}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {doc.uploadedBy} ·{' '}
-                      {new Date(doc.uploadedAt).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                  <span className="text-gray-300 group-hover:text-indigo-400 transition text-lg flex-shrink-0">⬇️</span>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div className="py-10 flex flex-col items-center gap-2 text-center">
-              <span className="text-4xl">📂</span>
-              <p className="text-sm font-semibold text-gray-500">No documents yet</p>
-              <p className="text-xs text-gray-400">Upload contracts, invoices, or other files</p>
-              <p className="text-xs text-gray-300 mt-1">PDF, Word, Excel, TXT · Max 15MB</p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="min-h-[300px]">
+        {activeTab === 'photos' ? (
+          <div className="p-6">
+            <PhotoUpload
+              leadId={lead.id}
+              currentUser={currentUser}
+              onUploadComplete={onRefresh}
+              beforePhotos={beforePhotos}
+              afterPhotos={afterPhotos}
+              hasProject={hasProject}
+            />
+          </div>
+        ) : (
+          <div className="p-6">
+            {documents.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {documents.map((doc: any, i: number) => (
+                  <a
+                    key={i}
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:border-indigo-200 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                        {getDocIcon(doc.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                          {doc.name}
+                        </p>
+                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">
+                          {doc.uploadedBy} • {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <Download className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-4">
+                  <UploadCloud className="w-8 h-8 text-slate-300" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-900">No documents found</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-[200px] text-center leading-relaxed">
+                  Store contracts, site plans, and permits here for easy access.
+                </p>
+                <label htmlFor="doc-upload" className="mt-6 text-xs font-black text-indigo-600 hover:text-indigo-700 cursor-pointer uppercase tracking-widest">
+                  Choose Files
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

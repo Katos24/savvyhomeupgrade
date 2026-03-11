@@ -286,7 +286,6 @@ export default function CardsView({ leads, onSelectLead, statusOptions, planTier
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
                   <Sparkles className="w-4 h-4 text-white" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">AI Project Intelligence</span>
                 </div>
                 <button onClick={() => setActiveBriefLead(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
                   <X className="w-6 h-6" />

@@ -225,35 +225,108 @@ export default function GeneralTab({ company, currentUser }: { company: any; cur
         </div>
       </div>
 
-      {/* ── BRANDING SECTION ── */}
+{/* ── BRANDING SECTION ── */}
       <div className="bg-white border border-slate-200/60 rounded-[2rem] p-8 shadow-sm">
-        <div className="flex items-center gap-2 mb-8">
-            <Palette className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Visual Identity</h3>
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-slate-400" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Visual Identity</h3>
+            </div>
+            {isEditing && (
+                <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md uppercase">Brand Colors</span>
+            )}
         </div>
         
-        <div className="space-y-6">
-            <div className="h-24 w-full rounded-2xl shadow-inner relative overflow-hidden group" style={{ background: `linear-gradient(135deg, ${formData.email_brand_color_1} 0%, ${formData.email_brand_color_2} 100%)` }}>
+        <div className="space-y-8">
+            {/* Gradient Preview */}
+            <div 
+              className="h-32 w-full rounded-[2rem] shadow-inner relative overflow-hidden group border-4 border-white transition-all duration-500" 
+              style={{ background: `linear-gradient(135deg, ${formData.email_brand_color_1} 0%, ${formData.email_brand_color_2} 100%)` }}
+            >
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-white/20 font-black text-4xl uppercase tracking-[0.5em] select-none">PREVIEW</span>
+                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
+                        <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] select-none">Email Branding Preview</span>
+                    </div>
                 </div>
             </div>
 
-            {isEditing && (
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 animate-in fade-in zoom-in-95">
-                    {colorPresets.map((p) => (
-                        <button 
-                            key={p.name}
-                            onClick={() => setFormData({ ...formData, email_brand_color_1: p.color1, email_brand_color_2: p.color2 })}
-                            className={`h-10 rounded-xl border-2 transition-all ${formData.email_brand_color_1 === p.color1 ? 'border-slate-900 scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                            style={{ background: `linear-gradient(135deg, ${p.color1} 0%, ${p.color2} 100%)` }}
-                        />
-                    ))}
+            {isEditing ? (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                    {/* Manual Color Pickers */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Color</label>
+                            <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-2xl">
+                                <input 
+                                    type="color" 
+                                    value={formData.email_brand_color_1} 
+                                    onChange={e => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                                    className="w-10 h-10 rounded-xl cursor-pointer border-none bg-transparent"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={formData.email_brand_color_1} 
+                                    onChange={e => setFormData({ ...formData, email_brand_color_1: e.target.value })}
+                                    className="bg-transparent text-xs font-mono font-bold text-slate-600 outline-none w-full"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Secondary Color</label>
+                            <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-2xl">
+                                <input 
+                                    type="color" 
+                                    value={formData.email_brand_color_2} 
+                                    onChange={e => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                                    className="w-10 h-10 rounded-xl cursor-pointer border-none bg-transparent"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={formData.email_brand_color_2} 
+                                    onChange={e => setFormData({ ...formData, email_brand_color_2: e.target.value })}
+                                    className="bg-transparent text-xs font-mono font-bold text-slate-600 outline-none w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Presets */}
+                    <div className="pt-4 border-t border-slate-50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Quick Presets</p>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                            {colorPresets.map((p) => (
+                                <button 
+                                    key={p.name}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, email_brand_color_1: p.color1, email_brand_color_2: p.color2 })}
+                                    className={`group relative h-12 rounded-2xl border-2 transition-all ${formData.email_brand_color_1 === p.color1 ? 'border-slate-900 scale-105 shadow-md' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'}`}
+                                    style={{ background: `linear-gradient(135deg, ${p.color1} 0%, ${p.color2} 100%)` }}
+                                >
+                                    {formData.email_brand_color_1 === p.color1 && (
+                                        <div className="absolute -top-1 -right-1 bg-slate-900 text-white rounded-full p-0.5 shadow-sm">
+                                            <Check className="w-2.5 h-2.5" />
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex gap-8 px-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: formData.email_brand_color_1 }} />
+                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{formData.email_brand_color_1}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: formData.email_brand_color_2 }} />
+                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{formData.email_brand_color_2}</span>
+                    </div>
                 </div>
             )}
         </div>
       </div>
-
+      
       {/* ── MODALS (Glassmorphism) ── */}
       {showQrModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

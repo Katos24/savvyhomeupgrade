@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, DollarSign, Layers } from 'lucide-react';
+import { CATEGORY_MAP } from '@/lib/formCategories';
+
 
 type LineItem = {
   id: string;
@@ -39,7 +41,12 @@ export default function QuoteTemplatesTab({ company, currentUser }: { company: a
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [newItem, setNewItem] = useState({ description: '', quantity: '1', unitPrice: '' });
 
-  const categories = company.form_categories || [];
+  const defaultCategories =
+  CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
+
+const categories =
+  company.form_categories?.length > 0 ? company.form_categories : defaultCategories;
+
 
   useEffect(() => { loadTemplates(); }, []);
 

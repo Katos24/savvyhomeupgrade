@@ -105,7 +105,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
             <div style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', padding: 28 }}>
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  lead2project.app/your-business
+                  lead2project.com/your-business
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>New {content.name} Request</div>
               </div>

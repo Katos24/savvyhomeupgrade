@@ -13,6 +13,7 @@ import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import AISmartBanner from '@/components/dashboard/AISmartBanner';
 
 
+
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
 type Company = {
   id: number; name: string; slug: string; logo_url?: string | null;
@@ -59,6 +60,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  
 
   const handleChatScroll = () => {
     const el = chatScrollRef.current;
@@ -81,12 +83,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     fetchTeamMembers();
   }, []);
 
- const spotlightLead = useMemo(() => {
-  return allLeads.find(l => 
-    l.ai_analysis && // or whatever your DB field is named
-    (l.ai_analysis.urgency === 'Emergency' || l.status === 'new')
-  );
-}, [allLeads]);
+  
 
   async function fetchLeads() {
     try {
