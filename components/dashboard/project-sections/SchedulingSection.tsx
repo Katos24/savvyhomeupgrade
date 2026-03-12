@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Mail, MoreVertical, Calendar } from 'lucide-react';
+import { Mail, MoreVertical, Calendar, Clock, AlertCircle, CheckCircle2, User, Hash, ChevronRight, X, Eye } from 'lucide-react';
 import SendCustomerEmailButtons from '@/components/dashboard/SendCustomerEmailButtons';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 
@@ -18,6 +18,9 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [saving, setSaving] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [previewEmail, setPreviewEmail] = useState<any>(null); // State for the preview modal
+  
+  // Form States
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [timeHour, setTimeHour] = useState('');
@@ -30,26 +33,8 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [actualHours, setActualHours] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showHours, setShowHours] = useState(false);
-  const [showConflictWarning, setShowConflictWarning] = useState(false);
-  const [conflictJobs, setConflictJobs] = useState<any[]>([]);
-  const [showSendPrompt, setShowSendPrompt] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [showMissingFields, setShowMissingFields] = useState(false);
 
-
-  useEffect(() => {
-    async function fetchTeamMembers() {
-      try {
-        const res = await fetch('/api/team/members');
-        const data = await res.json();
-        if (data.success) setTeamMembers(data.members);
-      } catch (e) {
-        console.error('Failed to fetch team members:', e);
-      }
-    }
-    fetchTeamMembers();
-  }, []);
-
+  // --- Logic Helpers ---
   const parseTimeString = (time24: string) => {
     if (!time24) return { hour: '', minute: '', ampm: 'AM' };
     const [hours, minutes] = time24.split(':');
@@ -67,124 +52,29 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
 
-
-  
-const checkForConflicts = async () => {
-  if (!scheduledDate || !assignedTo) return [];
-
-  try {
-    const res = await fetch(`/api/company/${companySlug}/leads`);
-    const data = await res.json();
-    const leads = data.leads || [];
-
-    const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
-    const selectedHour = scheduledTime ? parseInt(scheduledTime.split(':')[0]) : null;
-
-    return leads.filter((l: any) => {
-      if (l.id === lead.id || l.deleted) return false;
-      if (!l.scheduled_date || !l.assigned_to) return false;
-      if (l.assigned_to !== finalAssignee) return false;
-
-      const jobDate = l.scheduled_date.split('T')[0].split(' ')[0];
-      if (jobDate !== scheduledDate) return false;
-
-      // ── 2 HOUR WINDOW CONFLICT CHECK ──
-      if (!scheduledTime || !l.scheduled_time) return false;
-
-      const jobHour = parseInt(l.scheduled_time.split(':')[0]);
-      if (isNaN(jobHour) || selectedHour === null) return false;
-
-      return Math.abs(jobHour - selectedHour) < 2;
-    });
-  } catch {
-    return [];
-  }
-};
-
-const handleSave = async (force = false) => {
-  if (!hasProject) {
-    toast.error('Convert to project first');
-    return;
-  }
-
-  // Only check conflicts if not forcing save
-  if (!force) {
-    const conflicts = await checkForConflicts();
-    if (conflicts.length > 0) {
-      setConflictJobs(conflicts);
-      setShowConflictWarning(true);
-      return;
+  // --- Core Data Fetching ---
+  useEffect(() => {
+    async function fetchTeamMembers() {
+      try {
+        const res = await fetch('/api/team/members');
+        const data = await res.json();
+        if (data.success) setTeamMembers(data.members);
+      } catch (e) { console.error('Failed to fetch team members:', e); }
     }
-  }
-  
-  // ── CONFIRM IF MISSING REQUIRED FIELDS ──
-if (!force) {
-    const hasMissing = !scheduledDate || !assignedTo || !scheduledTime;
-    if (hasMissing) {
-      setShowMissingFields(true);
-      return;
-    }
-  }
-
-  const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
-  setSaving(true);
-
-  try {
-    const res = await fetch('/api/leads/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: lead.id,
-        action: 'update_project',
-        scheduled_date: scheduledDate || null,
-        scheduled_time: scheduledTime || null,
-        assigned_to: finalAssignee || null,
-        estimated_hours: estimatedHours || null,
-        actual_hours: actualHours || null,
-        user_name: currentUser?.name || 'Unknown',
-        user_email: currentUser?.email || '',
-      }),
-    });
-
-    const result = await res.json();
-
-    if (res.ok && result.success) {
-      toast.success('Scheduling saved!');
-      await onRefresh();
-      const finalAssignee2 = showCustomAssignee ? customAssignee : assignedTo;
-     const lastSent = scheduleEmailLog.length > 0 ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at : null;
-      const recentlySent = lastSent && (Date.now() - new Date(lastSent).getTime()) < 30 * 60 * 1000; // 30 min
-      if (scheduledDate && scheduledTime && finalAssignee2 && !recentlySent) {
-        setShowMoreActions(false);
-        setTimeout(() => setShowSendPrompt(true), 500);
-      }
-    } else {
-      toast.error(result.error || 'Failed to save');
-    }
-  } catch {
-    toast.error('Failed to save');
-  } finally {
-    setSaving(false);
-  }
-};
+    fetchTeamMembers();
+  }, []);
 
   useEffect(() => {
-setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
+    setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
     if (lead?.scheduled_time) {
       const { hour, minute, ampm } = parseTimeString(lead.scheduled_time);
-      setTimeHour(hour);
-      setTimeMinute(minute);
-      setTimeAmPm(ampm);
+      setTimeHour(hour); setTimeMinute(minute); setTimeAmPm(ampm);
       setScheduledTime(lead.scheduled_time);
-    } else {
-      setTimeHour(''); setTimeMinute(''); setTimeAmPm('AM'); setScheduledTime('');
     }
     setAssignedTo(lead?.assigned_to || '');
-    setShowCustomAssignee(false);
-    setCustomAssignee('');
     setEstimatedHours(lead?.estimated_hours || '');
     setActualHours(lead?.actual_hours || '');
-  }, [lead?.id, lead?.assigned_to, lead?.scheduled_time, teamMembers]);
+  }, [lead]);
 
   useEffect(() => {
     setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
@@ -198,65 +88,113 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
     } catch { return []; }
   }, [lead?.schedule_emails]);
 
-
-
-  const isCurrentAssigneeTeamMember = teamMembers.some(m => m.name === assignedTo);
-
-  const handleCalendarSelection = (date: string, time: string) => {
-    setScheduledDate(date);
-    const { hour, minute, ampm } = parseTimeString(time);
-    setTimeHour(hour); setTimeMinute(minute); setTimeAmPm(ampm);
-    setScheduledTime(time);
-  };
-
-  const scheduledLabel = scheduledDate
-    ? `${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${timeHour && timeMinute ? ` at ${timeHour}:${timeMinute} ${timeAmPm}` : ''}`
+  const lastEmailSentAt = scheduleEmailLog.length > 0 
+    ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at 
     : null;
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'update_project',
+          scheduled_date: scheduledDate || null,
+          scheduled_time: scheduledTime || null,
+          assigned_to: finalAssignee || null,
+          estimated_hours: estimatedHours || null,
+          actual_hours: actualHours || null,
+        }),
+      });
+      if (res.ok) {
+        toast.success('Scheduling updated');
+        await onRefresh();
+      }
+    } catch { toast.error('Failed to save'); } 
+    finally { setSaving(false); }
+  };
+
   return (
-    <div className="overflow-hidden">
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative">
+      
+      {/* EMAIL PREVIEW OVERLAY (The "Read Only" Email View) */}
+      {previewEmail && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-2xl h-[80vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            <div className="px-6 py-4 border-b flex items-center justify-between bg-white">
+              <div>
+                <h4 className="text-xs font-black uppercase text-gray-400 tracking-widest">Sent Email Preview</h4>
+                <p className="text-sm font-bold text-gray-800">{previewEmail.subject}</p>
+              </div>
+              <button onClick={() => setPreviewEmail(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-50 p-4">
+              <iframe 
+                title="Email Preview"
+                srcDoc={previewEmail.html_body} 
+                className="w-full h-full border-0 rounded-xl shadow-inner bg-white"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Section header */}
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <span className="w-5 h-5 bg-emerald-50 flex items-center justify-center text-xs">📅</span>
-          Scheduling
-          {scheduledLabel && (
-            <span className="px-2 py-0.5 bg-sky-100 text-sky-700 text-xs font-bold">
-              {scheduledLabel}
-            </span>
-          )}
-        </h3>
+      {/* HEADER SECTION */}
+      <div className="px-6 py-5 border-b border-gray-50 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+            <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.15em]">Project Schedule</h3>
+          </div>
+          <div className="flex items-center">
+            {lastEmailSentAt ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Confirmed {new Date(lastEmailSentAt).toLocaleDateString()}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-100">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-tight">Notification Pending</span>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {/* Save + More actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={() => handleSave()}
+            onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition"
+            className="flex-1 sm:flex-none h-10 px-6 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-indigo-100 uppercase tracking-wider"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : 'Save Updates'}
           </button>
+          
           <div className="relative">
             <button
               onClick={() => setShowMoreActions(!showMoreActions)}
-              className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+              className="h-10 w-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-gray-200 rounded-xl transition-colors"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
             {showMoreActions && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-white shadow-2xl border border-gray-100 z-50 w-64 p-2">
+                <div className="absolute right-0 top-full mt-2 bg-white shadow-2xl border border-gray-100 z-50 w-64 p-2 rounded-2xl animate-in fade-in zoom-in-95">
                   <SendCustomerEmailButtons
-  leadId={lead.id}
-  type="schedule"
-  currentUser={currentUser}
-  onRefresh={onRefresh}
-  hasSchedule={!!scheduledDate}
-  disabled={!hasProject}
-  scheduleSentAt={scheduleEmailLog.length > 0 ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at : null}
-/>
+                    leadId={lead.id}
+                    type="schedule"
+                    currentUser={currentUser}
+                    onRefresh={onRefresh}
+                    hasSchedule={!!scheduledDate}
+                    disabled={!hasProject}
+                    scheduleSentAt={lastEmailSentAt}
+                  />
                 </div>
               </>
             )}
@@ -264,386 +202,143 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
         </div>
       </div>
 
+      {/* FORM CONTENT */}
+      <div className="p-6 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+              <User className="w-3 h-3 text-indigo-400" /> Team Assignment
+            </label>
+            {!showCustomAssignee ? (
+              <div className="relative group">
+                <select
+                  value={assignedTo}
+                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
+                  className="w-full h-12 pl-4 pr-10 text-sm font-bold bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all appearance-none"
+                >
+                  <option value="">Choose team member...</option>
+                  {teamMembers.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  <option value="__custom__" className="text-indigo-600">+ Add Custom Name</option>
+                </select>
+                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none rotate-90" />
+              </div>
+            ) : (
+              <div className="flex gap-2 animate-in slide-in-from-left-2">
+                <input
+                  type="text"
+                  value={customAssignee}
+                  onChange={(e) => setCustomAssignee(e.target.value)}
+                  className="flex-1 h-12 px-4 text-sm font-bold bg-gray-50 border border-indigo-200 rounded-xl outline-none"
+                  autoFocus
+                />
+                <button onClick={() => { setAssignedTo(customAssignee); setShowCustomAssignee(false); }} className="h-12 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black">ADD</button>
+              </div>
+            )}
+          </div>
 
-
-{/* Form */}
-<div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-  {/* LEFT COLUMN */}
-  <div className="space-y-4">
-
-    {/* Assigned To */}
-    <div>
-      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-        Assigned To
-      </label>
-      {!showCustomAssignee ? (
-        <select
-          value={assignedTo}
-          onChange={(e) => {
-            if (e.target.value === '__custom__') {
-              setShowCustomAssignee(true);
-              setAssignedTo('');
-            } else setAssignedTo(e.target.value);
-          }}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none bg-white transition"
-        >
-          <option value="">Select team member...</option>
-          {teamMembers.map((m) => (
-            <option key={m.id} value={m.name}>
-              {m.name}{m.id === currentUser?.id ? ' (You)' : ''}
-            </option>
-          ))}
-          {assignedTo && !isCurrentAssigneeTeamMember && (
-            <option value={assignedTo}>{assignedTo} (Custom)</option>
-          )}
-          <option value="__custom__">Enter custom name...</option>
-        </select>
-      ) : (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={customAssignee}
-            onChange={(e) => setCustomAssignee(e.target.value)}
-            placeholder="e.g., Mike"
-            autoFocus
-            className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-          />
-          <button
-            onClick={() => {
-              if (customAssignee.trim()) {
-                setAssignedTo(customAssignee);
-                setShowCustomAssignee(false);
-              }
-            }}
-            disabled={!customAssignee.trim()}
-            className="px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold transition"
-          >
-            Add
-          </button>
-          <button
-            onClick={() => {
-              setShowCustomAssignee(false);
-              setCustomAssignee('');
-            }}
-            className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
-          >
-            Cancel
-          </button>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+              <Calendar className="w-3 h-3 text-indigo-400" /> Date of Service
+            </label>
+            <input
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => setScheduledDate(e.target.value)}
+              className="w-full h-12 px-4 text-sm font-bold bg-gray-50 border border-gray-100 rounded-xl focus:bg-white outline-none"
+            />
+          </div>
         </div>
-      )}
-    </div>
 
-    {/* Date */}
-    <div>
-      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-        Date
-      </label>
-      <input
-        type="date"
-        value={scheduledDate}
-        onChange={(e) => setScheduledDate(e.target.value)}
-        className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-      />
-    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+              <Clock className="w-3 h-3 text-indigo-400" /> Start Time
+            </label>
+            <div className="flex items-center h-12 px-4 bg-gray-50 border border-gray-100 rounded-xl focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+              <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-sm font-bold w-full outline-none">
+                <option value="">HH</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <span className="text-gray-300 font-black px-2">:</span>
+              <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-sm font-bold w-full outline-none">
+                <option value="">MM</option>
+                {['00','15','30','45'].map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <div className="h-6 w-px bg-gray-200 mx-3" />
+              <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-transparent text-xs font-black text-indigo-600 outline-none">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
 
-  </div>
+          <div className="flex items-end gap-3">
+            <button
+              onClick={() => setShowCalendarModal(true)}
+              className="flex-1 h-12 flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-xs font-black text-gray-600 transition-all"
+            >
+              <Calendar className="w-4 h-4 text-indigo-500" /> OPEN CALENDAR
+            </button>
+            <button
+              onClick={() => setShowHours(!showHours)}
+              className={`flex-1 h-12 text-xs font-black rounded-xl transition-all ${showHours ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-gray-900 text-white'}`}
+            >
+              {showHours ? 'HIDE HOURS' : 'SET HOURS'}
+            </button>
+          </div>
+        </div>
 
-  {/* RIGHT COLUMN */}
-  <div className="space-y-4">
-
-<div>
-  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-    Time
-  </label>
-
-  <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500 transition">
-
-    <select
-      value={timeHour}
-      onChange={(e) => setTimeHour(e.target.value)}
-      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
-    >
-      <option value="">HH</option>
-      {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-        <option key={h} value={h}>{h}</option>
-      ))}
-    </select>
-
-    <span className="text-gray-400 font-semibold">:</span>
-
-    <select
-      value={timeMinute}
-      onChange={(e) => setTimeMinute(e.target.value)}
-      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
-    >
-      <option value="">MM</option>
-      <option value="00">00</option>
-      <option value="15">15</option>
-      <option value="30">30</option>
-      <option value="45">45</option>
-    </select>
-
-    <div className="h-5 w-px bg-gray-200 mx-2" />
-
-    <select
-      value={timeAmPm}
-      onChange={(e) => setTimeAmPm(e.target.value)}
-      className="appearance-none bg-transparent text-sm px-2 py-1 focus:outline-none"
-    >
-      <option value="AM">AM</option>
-      <option value="PM">PM</option>
-    </select>
-
-  </div>
-</div>
-
-    {/* View Calendar */}
-    <button
-      type="button"
-      onClick={() => setShowCalendarModal(true)}
-      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition text-gray-600 font-semibold"
-    >
-      <Calendar className="w-4 h-4 text-indigo-400" />
-      View Calendar
-    </button>
-
-    {/* Hours Toggle */}
-    <button
-      type="button"
-      onClick={() => setShowHours(!showHours)}
-      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition"
-    >
-      {showHours ? 'Hide Hours ▲' : 'Add Hours ▼'}
-    </button>
-
-  </div>
-
-  {/* Expandable Hours */}
-  {showHours && (
-    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-          Est. Hours
-        </label>
-        <input
-          type="number"
-          step="0.5"
-          value={estimatedHours}
-          onChange={(e) => setEstimatedHours(e.target.value)}
-          placeholder="2.5"
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-          Actual Hours
-        </label>
-        <input
-          type="number"
-          step="0.5"
-          value={actualHours}
-          onChange={(e) => setActualHours(e.target.value)}
-          placeholder="3.0"
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 focus:border-indigo-400 focus:outline-none transition"
-        />
-      </div>
-    </div>
-  )}
-
-</div>
-
-      {/* Email history */}
-      {scheduleEmailLog.length > 0 && (
-        <div className="px-5 pb-5 space-y-2">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <Mail className="w-3.5 h-3.5" /> Email History
-          </p>
-          {[...scheduleEmailLog].reverse().map((entry: any, i: number) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 text-sm">
+        {showHours && (
+          <div className="pt-2 grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-3">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-2">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Est. Duration</label>
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-500" />
-                <span className="font-bold text-emerald-900">
-  {entry.scheduled_date
-  ? (() => {
-      const dateOnly = entry.scheduled_date.split(' ')[0]; // Gets '2026-03-25'
-      const d = new Date(dateOnly + 'T00:00:00');
-      return isNaN(d.getTime()) ? dateOnly : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    })()
-  : 'No date'}
-{entry.scheduled_time ? ` at ${(() => {
-  const [h, m] = entry.scheduled_time.split(':');
-  const hour = parseInt(h);
-  return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-})()}` : ''}                </span>
-                <span className="text-xs text-emerald-500">by {entry.sent_by_email}</span>
+                <Hash className="w-3.5 h-3.5 text-gray-300" />
+                <input type="number" step="0.5" value={estimatedHours} onChange={e => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full bg-transparent text-sm font-black outline-none" />
               </div>
-              <span className="text-xs text-emerald-500">
-                {new Date(entry.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-              </span>
             </div>
-          ))}
-        </div>
-      )}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-2">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Actual Time</label>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-gray-300" />
+                <input type="number" step="0.5" value={actualHours} onChange={e => setActualHours(e.target.value)} placeholder="0.0" className="w-full bg-transparent text-sm font-black outline-none" />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-{/* Conflict Warning */}
-      {showConflictWarning && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-          onClick={() => setShowConflictWarning(false)}>
-          <div className="bg-white rounded-xl border border-gray-200 max-w-md w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-gray-100 flex items-start gap-3">
-              <div className="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">⚠️</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900">Scheduling Conflict</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {showCustomAssignee ? customAssignee : assignedTo} already has
-                  {conflictJobs.length === 1 ? ' a job' : ` ${conflictJobs.length} jobs`} around this time.
-                </p>
-              </div>
-            </div>
-            <div className="px-5 py-4 space-y-2 max-h-48 overflow-y-auto">
-              {conflictJobs.map((job: any) => (
-                <div key={job.id} className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-lg">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{job.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {job.scheduled_date && new Date(job.scheduled_date.split('T')[0].split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      {job.scheduled_time && (() => {
-                        const [h, m] = job.scheduled_time.split(':');
-                        const hour = parseInt(h);
-                        return ` at ${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-                      })()}
-                    </p>
+      {/* FOOTER: HISTORY LOG WITH PREVIEW CLICKS */}
+      {scheduleEmailLog.length > 0 && (
+        <div className="px-6 py-5 bg-gray-50/50 border-t border-gray-50">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="w-3 h-3 text-indigo-500" />
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Sent Email History</span>
+          </div>
+          <div className="space-y-2">
+            {[...scheduleEmailLog].reverse().map((entry: any, i: number) => (
+              <button 
+                key={i} 
+                onClick={() => setPreviewEmail(entry)}
+                className="w-full flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-indigo-400 hover:shadow-md transition-all group"
+              >
+                <div className="flex flex-col items-start gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black text-gray-800 uppercase">Notification Sent</span>
+                    <Eye className="w-3 h-3 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
+                  <span className="text-[10px] text-gray-400 font-medium">By {entry.sent_by_email}</span>
                 </div>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
-              <button onClick={() => setShowConflictWarning(false)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
-                Go Back
+                <div className="text-right">
+                  <span className="block text-[10px] font-black text-indigo-600">
+                    {new Date(entry.sent_at).toLocaleDateString()}
+                  </span>
+                  <span className="text-[9px] text-gray-400 font-bold">
+                    {new Date(entry.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </button>
-              <button onClick={() => { setShowConflictWarning(false); handleSave(true); }}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition">
-                Save Anyway
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Send Schedule Email Prompt */}
-      {showSendPrompt && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-          onClick={() => setShowSendPrompt(false)}>
-          <div className="bg-white rounded-xl border border-gray-200 max-w-sm w-full shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Mail className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white">Notify Customer?</h3>
-                <p className="text-sm text-indigo-200 mt-0.5">Schedule is all set</p>
-              </div>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-sm text-gray-600">
-                Send <strong className="text-gray-800">{lead.name}</strong> a confirmation email with their scheduled date and time?
-              </p>
-              <div className="mt-3 px-3 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg">
-                <p className="text-xs font-semibold text-indigo-800">
-                  📅 {scheduledDate && new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  {timeHour && timeMinute ? ` at ${timeHour}:${timeMinute} ${timeAmPm}` : ''}
-                </p>
-                {(showCustomAssignee ? customAssignee : assignedTo) && (
-                  <p className="text-xs text-indigo-600 mt-0.5">Assigned to {showCustomAssignee ? customAssignee : assignedTo}</p>
-                )}
-              </div>
-            </div>
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
-              <button onClick={() => setShowSendPrompt(false)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">
-                Not Now
-              </button>
-              <button
-                disabled={sendingEmail}
-                onClick={async () => {
-                  setSendingEmail(true);
-                  try {
-                    const res = await fetch('/api/leads/update', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        id: lead.id,
-                        action: 'send_schedule_to_customer',
-                        user_name: currentUser?.name || 'Unknown',
-                        user_email: currentUser?.email || '',
-                      }),
-                    });
-                    const result = await res.json();
-                    if (res.ok && result.success) {
-                      toast.success('Schedule email sent!');
-                      await onRefresh();
-                    } else {
-                      toast.error(result.error || 'Failed to send');
-                    }
-                  } catch {
-                    toast.error('Failed to send email');
-                  } finally {
-                    setSendingEmail(false);
-                    setShowSendPrompt(false);
-                  }
-                }}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition flex items-center justify-center gap-2">
-                {sendingEmail ? 'Sending...' : <><Mail className="w-3.5 h-3.5" /> Send Email</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-{/* Missing Fields Warning */}
-      {showMissingFields && (
-        <div className="fixed inset-0 flex items-end sm:items-center justify-center p-4"
-          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setShowMissingFields(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3.5 space-y-2.5">
-              <p className="font-bold text-gray-900 text-sm">Missing info</p>
-              <div className="space-y-1.5">
-                {!assignedTo && (
-                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
-                    <span>👤</span> No one assigned
-                  </div>
-                )}
-                {!scheduledDate && (
-                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
-                    <span>📅</span> No date set
-                  </div>
-                )}
-                {!scheduledTime && (
-                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg">
-                    <span>🕐</span> No time set
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="px-4 pb-4 flex gap-2">
-              <button onClick={() => setShowMissingFields(false)}
-                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-lg transition">
-                Go Back
-              </button>
-              <button onClick={() => { setShowMissingFields(false); handleSave(true); }}
-                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition">
-                Save Anyway
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       )}
@@ -651,7 +346,11 @@ setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(
       <SchedulingCalendarModal
         isOpen={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}
-        onSelectDateTime={handleCalendarSelection}
+        onSelectDateTime={(d, t) => {
+          setScheduledDate(d);
+          const { hour, minute, ampm } = parseTimeString(t);
+          setTimeHour(hour); setTimeMinute(minute); setTimeAmPm(ampm);
+        }}
         companySlug={companySlug}
         currentScheduledDate={scheduledDate}
         currentScheduledTime={scheduledTime}
