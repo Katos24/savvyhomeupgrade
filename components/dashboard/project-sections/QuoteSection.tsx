@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, X, Edit2, MoreVertical, Mail, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, X, Edit2, MoreVertical, Mail, Check, AlertCircle, Loader2, LayoutGrid } from 'lucide-react';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
 
 type QuoteSectionProps = {
@@ -17,8 +17,24 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [isEditing, setIsEditing] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
 
-  // --- Logic Persistence ---
+  // Fetch templates from your database
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch('/api/settings/quote-templates');
+        if (res.ok) {
+          const data = await res.json();
+          setTemplates(data);
+        }
+      } catch (err) {
+        console.error("Failed to load templates", err);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
   useEffect(() => {
     setQuoteData(lead?.quote_data || []);
   }, [lead?.quote_data]);
@@ -26,6 +42,18 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const handleAddRow = () => {
     setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]);
     setIsEditing(true);
+  };
+
+  const handleAddTemplate = (template: any) => {
+    const newRow = {
+      id: Date.now(),
+      description: template.name,
+      quantity: 1,
+      unitPrice: template.price || 0,
+      amount: template.price || 0
+    };
+    setQuoteData([...quoteData, newRow]);
+    toast.success(`Added ${template.name}`);
   };
 
   const handleUpdateCell = (id: number, field: string, value: any) => {
@@ -82,20 +110,33 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
       
-      {/* HEADER: SIMPLE & FLAT WITH BADGE */}
+      {/* HEADER */}
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
         <div className="flex items-center gap-3">
           <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Quote Sheet</h3>
-          {/* BADGES RESTORED */}
           {lead?.quote_accepted_at && (
             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">Accepted</span>
-          )}
-          {lead?.quote_declined_at && !lead?.quote_accepted_at && (
-            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">Declined</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
+          {/* TEMPLATE DROPDOWN (ONLY IN EDIT MODE) */}
+          {isEditing && templates.length > 0 && (
+            <select 
+              onChange={(e) => {
+                const t = templates.find(tpl => tpl.id === e.target.value);
+                if (t) handleAddTemplate(t);
+                e.target.value = "";
+              }}
+              className="text-[10px] font-black uppercase tracking-tight bg-white border border-gray-200 rounded-lg px-2 h-8 outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">+ Add Template</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+
           {!isEditing ? (
             <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors">
               <Edit2 className="w-4 h-4" />
@@ -144,7 +185,6 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
                 </td>
                 <td className="px-2 py-1">
                   <div className="relative flex items-center justify-end">
-                    {/* DOLLAR SIGN ADDED NEXT TO AMOUNT */}
                     <span className="text-sm font-black text-gray-400 mr-0.5">$</span>
                     <input
                       type="number"
@@ -177,7 +217,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         </table>
       </div>
 
-      {/* FOOTER ACTIONS: BIG & CLEAR */}
+      {/* FOOTER ACTIONS */}
       <div className="p-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row gap-3">
         <button
           onClick={handleAddRow}
@@ -198,7 +238,6 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         )}
       </div>
 
-      {/* SUMMARY BAR */}
       <div className="px-4 py-4 bg-gray-900 text-white flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Quote Total</span>
         <span className="text-xl font-black">{fmt(total)}</span>

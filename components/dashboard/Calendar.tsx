@@ -45,14 +45,33 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
 
   const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES;
 
-  // Extract unique assignees for the filter dropdown
+  // --- NAVIGATION LOGIC ---
+  const handleNext = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'month') {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else {
+      newDate.setDate(newDate.getDate() + 7);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const handlePrev = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'month') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setDate(newDate.getDate() - 7);
+    }
+    setCurrentDate(newDate);
+  };
+
   const assignees = useMemo(() => {
     const names = new Set<string>();
     events.forEach(e => { if (e.assigned_to) names.add(e.assigned_to); });
     return Array.from(names).sort();
   }, [events]);
 
-  // Filtered Events logic
   const filteredEvents = useMemo(() => {
     if (filterAssignee === 'all') return events;
     return events.filter(e => e.assigned_to === filterAssignee);
@@ -109,7 +128,6 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
 
   return (
     <div className="max-w-full overflow-hidden bg-slate-50 min-h-screen">
-      {/* ── MODERN STICKY HEADER ── */}
       <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-4 py-4 sm:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -135,19 +153,22 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
 
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex items-center justify-between flex-1 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - (view === 'month' ? 1 : 0))))} 
-                className="p-2 hover:bg-slate-50 rounded-xl"
-              >
+              <button onClick={handlePrev} className="p-2 hover:bg-slate-50 rounded-xl transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">
-                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </h2>
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + (view === 'month' ? 1 : 0))))} 
-                className="p-2 hover:bg-slate-50 rounded-xl"
-              >
+              
+              <div className="text-center">
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest italic leading-none">
+                  {view === 'week' ? 'Week View' : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </h2>
+                {view === 'week' && (
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+                    {currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+
+              <button onClick={handleNext} className="p-2 hover:bg-slate-50 rounded-xl transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -164,12 +185,11 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
               </select>
             </div>
             
-            <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition shadow-lg shadow-blue-200">Today</button>
+            <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition shadow-lg active:scale-95">Today</button>
           </div>
         </div>
       </div>
 
-      {/* ── VIEW RENDERING ── */}
       <div className="max-w-7xl mx-auto p-4 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {view === 'month' && (
           <MonthView 
@@ -209,12 +229,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
 
 function TabBtn({ active, onClick, icon: Icon, label }: any) {
   return (
-    <button 
-      onClick={onClick} 
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-        active ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'
-      }`}
-    >
+    <button onClick={onClick} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}>
       <Icon className="w-3.5 h-3.5" /> 
       <span className="hidden sm:inline">{label}</span>
     </button>
@@ -228,43 +243,41 @@ function MonthView({ currentDate, getEventsForDate, getStatusConfig, getStatusCo
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl">
-      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
-        {dayNames.map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>)}
-      </div>
-      <div className="grid grid-cols-7">
-        {cells.map((day, i) => {
-          if (!day) return <div key={`empty-${i}`} className="min-h-[120px] bg-slate-50/20 border-b border-r border-slate-50" />;
-          
-          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-          const evs = getEventsForDate(date);
-          const isToday = new Date().toDateString() === date.toDateString();
-
-          return (
-            <div key={day} className={`min-h-[120px] border-b border-r border-slate-100 p-2 transition-all ${isToday ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'}`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className={`text-xs font-black ${isToday ? 'bg-blue-600 text-white px-2 py-0.5 rounded-lg shadow-md' : 'text-slate-400'}`}>{day}</span>
-                {evs.length > 0 && <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
-              </div>
-              <div className="space-y-1">
-                {evs.map((e: any) => {
-                  const color = getStatusColorHex(getStatusConfig(e.job_status || e.status).color);
-                  return (
-                    <button 
-                      key={e.id} 
-                      onClick={() => onSelectLead(e)}
-                      className="w-full text-left p-1.5 rounded-xl border text-white shadow-sm transition hover:scale-[1.03] active:scale-95 group relative"
-                      style={{ backgroundColor: color, borderColor: color }}
-                    >
-                      <p className="text-[9px] font-black truncate leading-tight uppercase">{e.name}</p>
-                      {e.is_pending && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full ring-2 ring-red-500" title="Pending Invite" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+    /* Added min-w-[700px] and overflow wrapper so it doesn't squish on phones */
+    <div className="rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden bg-white">
+      <div className="overflow-x-auto"> 
+        <div className="min-w-[600px]"> 
+          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
+            {dayNames.map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7">
+            {cells.map((day, i) => {
+              if (!day) return <div key={`empty-${i}`} className="min-h-[100px] bg-slate-50/10 border-b border-r border-slate-50" />;
+              const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+              const evs = getEventsForDate(date);
+              const isToday = new Date().toDateString() === date.toDateString();
+              return (
+                <div key={day} className={`min-h-[100px] border-b border-r border-slate-100 p-1 transition-all ${isToday ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'}`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`text-[10px] font-black ${isToday ? 'bg-blue-600 text-white px-1.5 py-0.5 rounded-md' : 'text-slate-400'}`}>{day}</span>
+                  </div>
+                  <div className="space-y-1">
+                    {evs.map((e: any) => (
+                      <button 
+                        key={e.id} 
+                        onClick={() => onSelectLead(e)} 
+                        className="w-full text-[8px] font-black p-1 rounded-lg border text-white truncate uppercase" 
+                        style={{ backgroundColor: getStatusColorHex(getStatusConfig(e.job_status || e.status).color) }}
+                      >
+                        {e.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -282,7 +295,6 @@ function WeekView({ currentDate, getEventsForDate, getStatusConfig, getStatusCol
       {days.map((d, i) => {
         const evs = getEventsForDate(d);
         const isToday = new Date().toDateString() === d.toDateString();
-        
         return (
           <div key={i} className={`rounded-[2.5rem] border-2 transition-all overflow-hidden ${isToday ? 'border-blue-500 bg-white shadow-2xl' : 'border-slate-100 bg-white shadow-sm'}`}>
             <div className={`px-8 py-4 border-b flex justify-between items-center ${isToday ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-900'}`}>
@@ -300,29 +312,16 @@ function WeekView({ currentDate, getEventsForDate, getStatusConfig, getStatusCol
                   {evs.map((e: any) => {
                     const color = getStatusColorHex(getStatusConfig(e.job_status || e.status).color);
                     return (
-                      <button 
-                        key={e.id} 
-                        onClick={() => onSelectLead(e)}
-                        className="group flex items-center gap-6 p-6 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-blue-400 hover:shadow-xl transition-all duration-300 relative"
-                      >
+                      <button key={e.id} onClick={() => onSelectLead(e)} className="group flex items-center gap-6 p-6 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-blue-400 hover:shadow-xl transition-all duration-300 relative">
                         <div className="w-2 h-12 rounded-full shrink-0 shadow-lg" style={{ backgroundColor: color }} />
                         <div className="flex-1 text-left">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-black text-slate-900 text-lg tracking-tight">{e.name}</h4>
-                            {e.is_pending && <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[8px] font-black uppercase ring-1 ring-amber-200">Pending</span>}
-                          </div>
+                          <h4 className="font-black text-slate-900 text-lg tracking-tight">{e.name}</h4>
                           <div className="grid grid-cols-2 gap-y-2 mt-4">
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic">
-                               <Clock className="w-3 h-3 text-blue-500" /> {formatTime(e.scheduled_time)}
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic">
-                               <User className="w-3 h-3 text-indigo-500" /> {e.assigned_to || 'Unassigned'}
-                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic"><Clock className="w-3 h-3 text-blue-500" /> {formatTime(e.scheduled_time)}</div>
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic"><User className="w-3 h-3 text-indigo-500" /> {e.assigned_to || 'Unassigned'}</div>
                           </div>
                         </div>
-                        <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <ChevronRight className="w-5 h-5" />
-                        </div>
+                        <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors"><ChevronRight className="w-5 h-5" /></div>
                       </button>
                     );
                   })}
@@ -338,54 +337,22 @@ function WeekView({ currentDate, getEventsForDate, getStatusConfig, getStatusCol
 
 function ListView({ events, getStatusConfig, getStatusColorHex, onSelectLead, formatTime }: any) {
   if (events.length === 0) return <div className="p-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200"><p className="text-slate-400 font-black uppercase text-xs tracking-widest">No matching jobs found</p></div>;
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {events.map((e: any) => {
         const config = getStatusConfig(e.job_status || e.status);
         const color = getStatusColorHex(config.color);
         return (
-          <button 
-            key={e.id}
-            onClick={() => onSelectLead(e)}
-            className="group relative bg-white border border-slate-200 p-8 rounded-[3rem] text-left hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500"
-          >
+          <button key={e.id} onClick={() => onSelectLead(e)} className="group relative bg-white border border-slate-200 p-8 rounded-[3rem] text-left hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500">
             <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: color }}>
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Job Label</p>
-                <div className="mt-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter" style={{ color: color, backgroundColor: `${color}15` }}>
-                  {config.label}
-                </div>
-              </div>
+              <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: color }}><Briefcase className="w-6 h-6" /></div>
+              <div className="text-right px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter" style={{ color: color, backgroundColor: `${color}15` }}>{config.label}</div>
             </div>
-            
-            <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-              {e.name}
-            </h3>
-            
+            <h3 className="text-xl font-black text-slate-900 mb-2 group-hover:text-blue-600">{e.name}</h3>
             <div className="space-y-3 mt-6">
-               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
-                  <CalendarIcon className="w-4 h-4 text-slate-400" />
-                  {new Date(e.scheduled_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-               </div>
-               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  {formatTime(e.scheduled_time)}
-               </div>
-               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
-                  <User className="w-4 h-4 text-slate-400" />
-                  {e.assigned_to || 'Assignee Required'}
-               </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-               <span className="text-[10px] font-black text-slate-900 uppercase italic">View Details</span>
-               <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                 <ChevronRight className="w-4 h-4" />
-               </div>
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500"><CalendarIcon className="w-4 h-4 text-slate-400" />{new Date(e.scheduled_date).toLocaleDateString()}</div>
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500"><Clock className="w-4 h-4 text-slate-400" />{formatTime(e.scheduled_time)}</div>
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500"><User className="w-4 h-4 text-slate-400" />{e.assigned_to || 'Assignee Required'}</div>
             </div>
           </button>
         );
