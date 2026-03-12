@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { 
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
+  List, CalendarDays, LayoutGrid, ArrowLeft, Filter, User, Clock,
+  Briefcase, Phone, Mail, MapPin
+} from 'lucide-react';
 
 type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: any) => void;
-  statusOptions: any[]; // Add this
+  statusOptions: any[];
 };
 
 type CalendarEvent = {
@@ -20,6 +25,7 @@ type CalendarEvent = {
   category: string;
   phone: string;
   email: string;
+  is_pending?: boolean;
 };
 
 export default function Calendar({ companySlug, onSelectLead, statusOptions }: CalendarProps) {
@@ -27,8 +33,8 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'list'>('month');
+  const [filterAssignee, setFilterAssignee] = useState<string>('all');
 
-    // Add default statuses if none provided
   const DEFAULT_STATUSES = [
     { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
     { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
@@ -37,36 +43,32 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
     { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
   ];
 
-    // Use provided statusOptions or fallback to defaults
-  const safeStatusOptions = statusOptions && statusOptions.length > 0 
-    ? statusOptions 
-    : DEFAULT_STATUSES;
-  
-  // Helper to get status color from statusOptions
+  const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES;
+
+  // Extract unique assignees for the filter dropdown
+  const assignees = useMemo(() => {
+    const names = new Set<string>();
+    events.forEach(e => { if (e.assigned_to) names.add(e.assigned_to); });
+    return Array.from(names).sort();
+  }, [events]);
+
+  // Filtered Events logic
+  const filteredEvents = useMemo(() => {
+    if (filterAssignee === 'all') return events;
+    return events.filter(e => e.assigned_to === filterAssignee);
+  }, [events, filterAssignee]);
+
   const getStatusColorHex = (colorName: string) => {
     const colorMap: Record<string, string> = {
-      blue: '#3b82f6',
-      yellow: '#eab308',
-      purple: '#a855f7',
-      orange: '#f97316',
-      green: '#22c55e',
-      red: '#ef4444',
-      gray: '#6b7280',
-      indigo: '#6366f1',
+      blue: '#3b82f6', yellow: '#eab308', purple: '#a855f7',
+      orange: '#f97316', green: '#22c55e', red: '#ef4444',
+      gray: '#6b7280', indigo: '#6366f1',
     };
     return colorMap[colorName] || '#3b82f6';
   };
 
-const getStatusConfig = (statusValue: string) => {
-  return safeStatusOptions.find((s: any) => s.value === statusValue) || safeStatusOptions[0];
-};
-
-  // Generate Tailwind-compatible classes from hex colors
-  const getStatusClasses = (statusValue: string) => {
-    const config = getStatusConfig(statusValue);
-    const hex = getStatusColorHex(config.color);
-    // Return inline style instead
-    return hex;
+  const getStatusConfig = (statusValue: string) => {
+    return safeStatusOptions.find((s: any) => s.value === statusValue) || safeStatusOptions[0];
   };
 
   useEffect(() => {
@@ -77,652 +79,317 @@ const getStatusConfig = (statusValue: string) => {
     try {
       const response = await fetch(`/api/company/${companySlug}/leads`);
       const data = await response.json();
-      
       const scheduledLeads = (data.leads || []).filter((lead: any) => {
-        const hasScheduledDate = lead.scheduled_date && lead.scheduled_date.trim() !== '';
-        const notDeleted = !lead.deleted;
-        
-        return hasScheduledDate && notDeleted;
+        return lead.scheduled_date && lead.scheduled_date.trim() !== '' && !lead.deleted;
       });
-      
       setEvents(scheduledLeads);
     } catch (error) {
-      console.error('Failed to fetch scheduled jobs:', error);
       toast.error('Failed to load calendar');
     } finally {
       setLoading(false);
     }
   }
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    return { daysInMonth, startingDayOfWeek, firstDay, lastDay };
-  };
-
-  const getWeekDays = (date: Date) => {
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay());
-    
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const getEventsForDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-    return events.filter(event => {
-      const eventDate = event.scheduled_date ? event.scheduled_date.split('T')[0] : null;
-      return eventDate === dateStr;
-    });
-  };
-
-  const goToPreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
-  const goToPreviousWeek = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() - 7);
-    setCurrentDate(newDate);
-  };
-
-  const goToNextWeek = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + 7);
-    setCurrentDate(newDate);
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
-
   const formatTime = (time: string) => {
     if (!time) return '';
-    try {
-      const [hours, minutes] = time.split(':');
-      const hour = parseInt(hours);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const displayHour = hour % 12 || 12;
-      return `${displayHour}:${minutes} ${ampm}`;
-    } catch {
-      return time;
-    }
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    return `${hour % 12 || 12}:${minutes} ${ampm}`;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin text-4xl">📅</div>
+      <div className="flex flex-col items-center justify-center h-96 gap-4 text-slate-400">
+        <div className="animate-spin text-4xl">⏳</div>
+        <p className="font-black uppercase tracking-widest text-[10px]">Syncing Schedule...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
-{/* Back to Leads Button */}
-      <div className="mb-4">
-        <a  // ✅ Has 
-    href={`/${companySlug}/dashboard`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-semibold transition border border-gray-300"
-        >
-          Back to Dashboard
-        </a>
-      </div>
+    <div className="max-w-full overflow-hidden bg-slate-50 min-h-screen">
+      {/* ── MODERN STICKY HEADER ── */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-4 py-4 sm:px-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <a href={`/${companySlug}/dashboard`} className="p-2.5 hover:bg-slate-100 rounded-2xl transition border border-slate-200 shadow-sm bg-white">
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              </a>
+              <div>
+                <h1 className="text-xl font-black text-slate-900 tracking-tighter flex items-center gap-2 uppercase">
+                  <CalendarIcon className="w-6 h-6 text-blue-600" /> 
+                  Schedule
+                </h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Job & Team Management</p>
+              </div>
+            </div>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center justify-between sm:justify-start gap-4">
-          <h2 className="text-xl sm:text-3xl font-bold text-gray-900">
-            📅 {view === 'month' ? 'Monthly' : view === 'week' ? 'Weekly' : 'List'}
-          </h2>
-          <button
-            onClick={goToToday}
-            className="px-3 sm:px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-sm text-sm sm:text-base"
-          >
-            Today
-          </button>
+            <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
+              <TabBtn active={view === 'list'} onClick={() => setView('list')} icon={List} label="List" />
+              <TabBtn active={view === 'week'} onClick={() => setView('week')} icon={LayoutGrid} label="Week" />
+              <TabBtn active={view === 'month'} onClick={() => setView('month')} icon={CalendarDays} label="Month" />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center justify-between flex-1 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+              <button 
+                onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - (view === 'month' ? 1 : 0))))} 
+                className="p-2 hover:bg-slate-50 rounded-xl"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">
+                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button 
+                onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + (view === 'month' ? 1 : 0))))} 
+                className="p-2 hover:bg-slate-50 rounded-xl"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <select 
+                value={filterAssignee}
+                onChange={(e) => setFilterAssignee(e.target.value)}
+                className="text-xs font-black uppercase bg-transparent outline-none text-slate-600 cursor-pointer min-w-[120px]"
+              >
+                <option value="all">Every Assignee</option>
+                {assignees.map(name => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </div>
+            
+            <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition shadow-lg shadow-blue-200">Today</button>
+          </div>
         </div>
-
-        <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setView('list')}
-            className={`flex-1 px-3 sm:px-5 py-2 rounded-md font-semibold transition text-sm sm:text-base ${
-              view === 'list' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            📋 List
-          </button>
-          <button
-            onClick={() => setView('week')}
-            className={`flex-1 px-3 sm:px-5 py-2 rounded-md font-semibold transition text-sm sm:text-base ${
-              view === 'week' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            📅 Week
-          </button>
-          <button
-            onClick={() => setView('month')}
-            className={`flex-1 px-3 sm:px-5 py-2 rounded-md font-semibold transition text-sm sm:text-base ${
-              view === 'month' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            🗓️ Month
-          </button>
-        </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={view === 'month' ? goToPreviousMonth : goToPreviousWeek}
-          className="p-2 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
-        >
-          ←
-        </button>
-        <span className="text-lg sm:text-xl font-bold text-gray-900 text-center">
-          {currentDate.toLocaleDateString('en-US', { 
-            month: 'long', 
-            year: 'numeric',
-            ...(view === 'week' ? { day: 'numeric' } : {})
-          })}
-        </span>
-        <button
-          onClick={view === 'month' ? goToNextMonth : goToNextWeek}
-          className="p-2 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
-        >
-          →
-        </button>
+      {/* ── VIEW RENDERING ── */}
+      <div className="max-w-7xl mx-auto p-4 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {view === 'month' && (
+          <MonthView 
+            currentDate={currentDate} 
+            getEventsForDate={(date: Date) => filteredEvents.filter(e => e.scheduled_date?.split('T')[0] === date.toISOString().split('T')[0])} 
+            getStatusConfig={getStatusConfig} 
+            getStatusColorHex={getStatusColorHex}
+            onSelectLead={onSelectLead}
+            formatTime={formatTime}
+          />
+        )}
+        {view === 'week' && (
+          <WeekView 
+            currentDate={currentDate} 
+            getEventsForDate={(date: Date) => filteredEvents.filter(e => e.scheduled_date?.split('T')[0] === date.toISOString().split('T')[0])} 
+            getStatusConfig={getStatusConfig} 
+            getStatusColorHex={getStatusColorHex}
+            onSelectLead={onSelectLead}
+            formatTime={formatTime}
+          />
+        )}
+        {view === 'list' && (
+          <ListView 
+            events={filteredEvents} 
+            getStatusConfig={getStatusConfig} 
+            getStatusColorHex={getStatusColorHex}
+            onSelectLead={onSelectLead}
+            formatTime={formatTime}
+          />
+        )}
       </div>
-
-
-
-{/* Views */}
-      {view === 'list' && <ListView 
-        events={events}
-        formatTime={formatTime}
-        onSelectLead={onSelectLead}
-        getStatusColorHex={getStatusColorHex}
-        getStatusConfig={getStatusConfig}
-        currentDate={currentDate}
-      />}
-
-   {view === 'month' && <MonthView 
-        currentDate={currentDate}
-        events={events}
-        getEventsForDate={getEventsForDate}
-        getDaysInMonth={getDaysInMonth}
-        formatTime={formatTime}
-        onSelectLead={onSelectLead}
-        getStatusColorHex={getStatusColorHex}
-        getStatusConfig={getStatusConfig}
-        onSwitchToWeek={(date) => {
-          setCurrentDate(date);
-          setView('week');
-        }}
-      />}
-
-      {view === 'week' && <WeekView 
-        currentDate={currentDate}
-        events={events}
-        getEventsForDate={getEventsForDate}
-        getWeekDays={getWeekDays}
-        formatTime={formatTime}
-        onSelectLead={onSelectLead}
-        getStatusColorHex={getStatusColorHex}
-        getStatusConfig={getStatusConfig}
-      />}
     </div>
   );
 }
 
-// List View Component
-type ListViewProps = {
-  currentDate: Date;
-  events: CalendarEvent[];
-  formatTime: (time: string) => string;
-  onSelectLead: (lead: any) => void;
-  getStatusColorHex: (colorName: string) => string;
-  getStatusConfig: (statusValue: string) => any;
-};
+// ── SUBCOMPONENTS ──
 
-function ListView({ currentDate, events, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: ListViewProps) {
-  const monthEvents = events.filter(event => {
-    const eventDate = new Date(event.scheduled_date);
-    return eventDate.getMonth() === currentDate.getMonth() && 
-           eventDate.getFullYear() === currentDate.getFullYear();
-  }).sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime());
+function TabBtn({ active, onClick, icon: Icon, label }: any) {
+  return (
+    <button 
+      onClick={onClick} 
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+        active ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'
+      }`}
+    >
+      <Icon className="w-3.5 h-3.5" /> 
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
 
-  if (monthEvents.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">📅</div>
-        <p className="text-gray-500 text-lg">No scheduled jobs this month</p>
-      </div>
-    );
-  }
+function MonthView({ currentDate, getEventsForDate, getStatusConfig, getStatusColorHex, onSelectLead, formatTime }: any) {
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const startDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  const cells = [...Array(startDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="space-y-3">
-      {monthEvents.map((event: CalendarEvent) => {
-        const statusToUse = event.job_status || event.status || 'new';
-        const statusConfig = getStatusConfig(statusToUse);
-        const bgColor = getStatusColorHex(statusConfig.color);
+    <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl">
+      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
+        {dayNames.map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`empty-${i}`} className="min-h-[120px] bg-slate-50/20 border-b border-r border-slate-50" />;
+          
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+          const evs = getEventsForDate(date);
+          const isToday = new Date().toDateString() === date.toDateString();
+
+          return (
+            <div key={day} className={`min-h-[120px] border-b border-r border-slate-100 p-2 transition-all ${isToday ? 'bg-blue-50/30' : 'hover:bg-slate-50/50'}`}>
+              <div className="flex justify-between items-center mb-2">
+                <span className={`text-xs font-black ${isToday ? 'bg-blue-600 text-white px-2 py-0.5 rounded-lg shadow-md' : 'text-slate-400'}`}>{day}</span>
+                {evs.length > 0 && <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
+              </div>
+              <div className="space-y-1">
+                {evs.map((e: any) => {
+                  const color = getStatusColorHex(getStatusConfig(e.job_status || e.status).color);
+                  return (
+                    <button 
+                      key={e.id} 
+                      onClick={() => onSelectLead(e)}
+                      className="w-full text-left p-1.5 rounded-xl border text-white shadow-sm transition hover:scale-[1.03] active:scale-95 group relative"
+                      style={{ backgroundColor: color, borderColor: color }}
+                    >
+                      <p className="text-[9px] font-black truncate leading-tight uppercase">{e.name}</p>
+                      {e.is_pending && <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full ring-2 ring-red-500" title="Pending Invite" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekView({ currentDate, getEventsForDate, getStatusConfig, getStatusColorHex, onSelectLead, formatTime }: any) {
+  const start = new Date(currentDate);
+  start.setDate(currentDate.getDate() - currentDate.getDay());
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start); d.setDate(start.getDate() + i); return d;
+  });
+
+  return (
+    <div className="space-y-6">
+      {days.map((d, i) => {
+        const evs = getEventsForDate(d);
+        const isToday = new Date().toDateString() === d.toDateString();
         
         return (
-          <button
-            key={event.id}
-            onClick={() => onSelectLead(event)}
-            className="w-full text-left p-4 rounded-lg border-2 hover:shadow-md transition text-white"
-            style={{ 
-              backgroundColor: bgColor,
-              borderColor: bgColor
-            }}
-          >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex-1">
-                <div className="font-bold text-base sm:text-lg mb-1">{event.name}</div>
-                <div className="text-sm opacity-90">
-                  📅 {new Date(event.scheduled_date).toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
+          <div key={i} className={`rounded-[2.5rem] border-2 transition-all overflow-hidden ${isToday ? 'border-blue-500 bg-white shadow-2xl' : 'border-slate-100 bg-white shadow-sm'}`}>
+            <div className={`px-8 py-4 border-b flex justify-between items-center ${isToday ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-900'}`}>
+               <div>
+                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">{d.toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                 <h3 className="text-2xl font-black italic">{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</h3>
+               </div>
+               {isToday && <span className="bg-white/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/30 backdrop-blur-md">Active Today</span>}
+            </div>
+            <div className="p-4 sm:p-8">
+              {evs.length === 0 ? (
+                <div className="text-center py-10 opacity-20"><Briefcase className="w-12 h-12 mx-auto mb-2" /><p className="text-xs font-black uppercase">Open Availability</p></div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {evs.map((e: any) => {
+                    const color = getStatusColorHex(getStatusConfig(e.job_status || e.status).color);
+                    return (
+                      <button 
+                        key={e.id} 
+                        onClick={() => onSelectLead(e)}
+                        className="group flex items-center gap-6 p-6 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-blue-400 hover:shadow-xl transition-all duration-300 relative"
+                      >
+                        <div className="w-2 h-12 rounded-full shrink-0 shadow-lg" style={{ backgroundColor: color }} />
+                        <div className="flex-1 text-left">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-black text-slate-900 text-lg tracking-tight">{e.name}</h4>
+                            {e.is_pending && <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[8px] font-black uppercase ring-1 ring-amber-200">Pending</span>}
+                          </div>
+                          <div className="grid grid-cols-2 gap-y-2 mt-4">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic">
+                               <Clock className="w-3 h-3 text-blue-500" /> {formatTime(e.scheduled_time)}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 italic">
+                               <User className="w-3 h-3 text-indigo-500" /> {e.assigned_to || 'Unassigned'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </button>
+                    );
                   })}
-                </div>
-              </div>
-              {event.scheduled_time && (
-                <div className="text-sm font-semibold opacity-90 whitespace-nowrap">
-                  ⏰ {formatTime(event.scheduled_time)}
                 </div>
               )}
             </div>
-            {event.assigned_to && (
-              
-              <div className="text-sm opacity-90">
-                👤 {event.assigned_to}
-              </div>
-            )}
-          </button>
+          </div>
         );
       })}
     </div>
   );
 }
 
-// Month View Component
-type MonthViewProps = {
-  currentDate: Date;
-  events: CalendarEvent[];
-  getEventsForDate: (date: Date) => CalendarEvent[];
-  getDaysInMonth: (date: Date) => { daysInMonth: number; startingDayOfWeek: number };
-  formatTime: (time: string) => string;
-  onSelectLead: (lead: any) => void;
-  getStatusColorHex: (colorName: string) => string;
-  getStatusConfig: (statusValue: string) => any;
-    onSwitchToWeek: (date: Date) => void;
-
-};
-
-function MonthView({ currentDate, getEventsForDate, getDaysInMonth, formatTime, onSelectLead, getStatusColorHex, getStatusConfig, onSwitchToWeek }: MonthViewProps) {
-  const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
-  
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-  const calendarCells = [];
-  
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    calendarCells.push({ type: 'empty', key: `empty-${i}` });
-  }
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendarCells.push({ type: 'day', day, key: `day-${day}` });
-  }
-  
-  const remainingCells = 42 - calendarCells.length;
-  for (let i = 0; i < remainingCells; i++) {
-    calendarCells.push({ type: 'empty', key: `empty-end-${i}` });
-  }
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function ListView({ events, getStatusConfig, getStatusColorHex, onSelectLead, formatTime }: any) {
+  if (events.length === 0) return <div className="p-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200"><p className="text-slate-400 font-black uppercase text-xs tracking-widest">No matching jobs found</p></div>;
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {dayNames.map(day => (
-          <div 
-            key={day} 
-            className="text-center font-bold text-xs sm:text-sm text-gray-700 py-2 bg-gray-100 rounded-lg border border-gray-200"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 sm:gap-2 sm:items-start">
-  {calendarCells.map((cell) => {
-          if (cell.type === 'empty') {
-            return (
-              <div 
-  key={cell.key} 
-  className="aspect-square sm:aspect-auto sm:min-h-[120px] min-h-[60px] bg-gray-50 rounded-lg border border-gray-200"
-/>
-            );
-          }
-
-          const day = cell.day!;
-          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-          
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const dayStr = String(date.getDate()).padStart(2, '0');
-          const dateStr = `${year}-${month}-${dayStr}`;
-          
-          const dayEvents = getEventsForDate(date);
-          const isToday = dateStr === today;
-
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {events.map((e: any) => {
+        const config = getStatusConfig(e.job_status || e.status);
+        const color = getStatusColorHex(config.color);
         return (
-            <div
-  key={cell.key}
-  onClick={() => dayEvents.length > 0 && onSwitchToWeek(date)}
-className={`aspect-square sm:aspect-auto min-h-[60px] sm:min-h-fit rounded-lg border-2 p-1 sm:p-2 transition-all flex flex-col sm:cursor-default ${
-                isToday 
-                  ? 'border-blue-500 bg-blue-50 shadow-lg' 
-                  : dayEvents.length > 0
-                    ? 'border-gray-300 bg-white active:bg-blue-50 active:border-blue-400 cursor-pointer'
-                    : 'border-gray-300 bg-white'
-              }`}
-            >
-              <div className={`text-sm sm:text-base font-bold mb-1 ${
-                isToday ? 'text-blue-600' : 'text-gray-700'
-              }`}>
-                {day}
+          <button 
+            key={e.id}
+            onClick={() => onSelectLead(e)}
+            className="group relative bg-white border border-slate-200 p-8 rounded-[3rem] text-left hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500"
+          >
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl" style={{ backgroundColor: color }}>
+                <Briefcase className="w-6 h-6" />
               </div>
-              
-<div className="flex-1 sm:overflow-visible overflow-hidden">
-               {/* Mobile: tap date to jump to week view */}
-<div className="sm:hidden flex flex-wrap gap-0.5">
-  {dayEvents.slice(0, 6).map((event: CalendarEvent) => {
-    const statusToUse = event.job_status || event.status || 'new';
-    const statusConfig = getStatusConfig(statusToUse);
-    const dotColor = getStatusColorHex(statusConfig.color);
-    
-    return (
-      <div
-        key={event.id}
-        className="w-2 h-2 rounded-full"
-        style={{ backgroundColor: dotColor }}
-      />
-    );
-  })}
-</div>
-                
-                {/* Desktop: cards */}
-<div className="hidden sm:block space-y-1 pb-1">
-                  {dayEvents.map((event: CalendarEvent) => {
-                    const statusToUse = event.job_status || event.status || 'new';
-                    const statusConfig = getStatusConfig(statusToUse);
-                    const bgColor = getStatusColorHex(statusConfig.color);
-                    
-                    return (
-                      <button
-                        key={event.id}
-                        onClick={() => onSelectLead(event)}
-                        className="w-full text-left px-2 py-1 rounded text-xs font-medium border hover:opacity-80 hover:shadow transition text-white"
-                        style={{ 
-                          backgroundColor: bgColor,
-                          borderColor: bgColor
-                        }}
-                      >
-                        <div className="truncate font-semibold">{event.name}</div>
-                        {event.scheduled_time && (
-                          <div className="text-[10px] opacity-90 mt-0.5">
-                            ⏰ {formatTime(event.scheduled_time)}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                  
-                 
+              <div className="text-right">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Job Label</p>
+                <div className="mt-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter" style={{ color: color, backgroundColor: `${color}15` }}>
+                  {config.label}
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+            
+            <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+              {e.name}
+            </h3>
+            
+            <div className="space-y-3 mt-6">
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
+                  <CalendarIcon className="w-4 h-4 text-slate-400" />
+                  {new Date(e.scheduled_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+               </div>
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  {formatTime(e.scheduled_time)}
+               </div>
+               <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500">
+                  <User className="w-4 h-4 text-slate-400" />
+                  {e.assigned_to || 'Assignee Required'}
+               </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+               <span className="text-[10px] font-black text-slate-900 uppercase italic">View Details</span>
+               <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                 <ChevronRight className="w-4 h-4" />
+               </div>
+            </div>
+          </button>
+        );
+      })}
     </div>
-  );
-}
-
-// Week View Component - MOBILE FRIENDLY VERSION
-type WeekViewProps = {
-  currentDate: Date;
-  events: CalendarEvent[];
-  getEventsForDate: (date: Date) => CalendarEvent[];
-  getWeekDays: (date: Date) => Date[];
-  formatTime: (time: string) => string;
-  onSelectLead: (lead: any) => void;
-  getStatusColorHex: (colorName: string) => string;
-  getStatusConfig: (statusValue: string) => any;
-  
-};
-
-function WeekView({ currentDate, getEventsForDate, getWeekDays, formatTime, onSelectLead, getStatusColorHex, getStatusConfig }: WeekViewProps) {
-  const weekDays = getWeekDays(currentDate);
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-  // Contractor hours: 7 AM to 7 PM
-  const timeSlots = [];
-  for (let hour = 7; hour <= 19; hour++) {
-    timeSlots.push(hour);
-  }
-
-  const getEventTimeSlot = (time: string) => {
-    if (!time) return null;
-    const [hours] = time.split(':');
-    return parseInt(hours);
-  };
-
-  return (
-    <>
-      {/* MOBILE VIEW - List of days with events */}
-      <div className="lg:hidden space-y-4">
-        {weekDays.map((date: Date, dayIndex: number) => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const dateStr = `${year}-${month}-${day}`;
-          const isToday = dateStr === today;
-          const dayEvents = getEventsForDate(date).sort((a, b) => {
-            const timeA = a.scheduled_time || '00:00';
-            const timeB = b.scheduled_time || '00:00';
-            return timeA.localeCompare(timeB);
-          });
-
-          return (
-            <div key={dayIndex} className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
-              {/* Day header */}
-              <div className={`p-3 border-b-2 ${
-                isToday ? 'bg-blue-600 border-blue-700' : 'bg-gray-100 border-gray-300'
-              }`}>
-                <div className={`text-sm font-medium ${isToday ? 'text-blue-100' : 'text-gray-600'}`}>
-                  {date.toLocaleDateString('en-US', { weekday: 'long' })}
-                </div>
-                <div className={`text-2xl font-bold ${isToday ? 'text-white' : 'text-gray-900'}`}>
-                  {date.getDate()}
-                </div>
-              </div>
-
-              {/* Events for this day */}
-              <div className="p-3">
-                {dayEvents.length === 0 ? (
-                  <p className="text-gray-400 text-sm text-center py-4">No jobs scheduled</p>
-                ) : (
-                  <div className="space-y-2">
-                    {dayEvents.map((event: CalendarEvent) => {
-                      const statusToUse = event.job_status || event.status || 'new';
-                      const statusConfig = getStatusConfig(statusToUse);
-                      const bgColor = getStatusColorHex(statusConfig.color);
-
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={() => onSelectLead(event)}
-                          className="w-full text-left p-3 rounded-lg border-2 text-white hover:shadow-md transition-all"
-                          style={{ 
-                            backgroundColor: bgColor,
-                            borderColor: bgColor
-                          }}
-                        >
-                          <div className="font-bold text-base mb-1">{event.name}</div>
-                          <div className="text-sm opacity-90">
-                            ⏰ {formatTime(event.scheduled_time)}
-                          </div>
-                          {event.assigned_to && (
-                            <div className="text-sm opacity-90 mt-1">
-                              👤 {event.assigned_to}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* DESKTOP VIEW - Grid with time slots */}
-      <div className="hidden lg:block bg-white rounded-lg border border-gray-300 overflow-hidden">
-        {/* Week header */}
-        <div className="grid border-b-2 border-gray-300 bg-gray-50" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-          <div className="p-2 text-center text-xs font-bold text-gray-600 border-r border-gray-300">
-            Time
-          </div>
-          {weekDays.map((date: Date, i: number) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
-            const isToday = dateStr === today;
-
-            return (
-              <div 
-                key={i} 
-                className={`p-2 text-center border-r border-gray-300 last:border-r-0 ${
-                  isToday ? 'bg-blue-100' : ''
-                }`}
-              >
-                <div className="text-xs font-medium text-gray-600">
-                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                </div>
-                <div className={`text-base font-bold ${
-                  isToday ? 'text-blue-600' : 'text-gray-900'
-                }`}>
-                  {date.getDate()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Time slots grid */}
-        <div>
-          {timeSlots.map((hour) => (
-            <div 
-              key={hour} 
-              className="grid border-b border-gray-200" 
-              style={{ 
-                gridTemplateColumns: '60px repeat(7, 1fr)',
-                minHeight: '50px' 
-              }}
-            >
-              {/* Time label */}
-              <div className="p-1 text-xs font-semibold text-gray-600 border-r border-gray-300 bg-gray-50 flex items-start justify-center">
-                {hour % 12 || 12}{hour < 12 ? 'a' : 'p'}
-              </div>
-
-              {/* Day columns */}
-              {weekDays.map((date: Date, dayIndex: number) => {
-                const dayEvents = getEventsForDate(date);
-                const hourEvents = dayEvents.filter(event => {
-                  const eventHour = getEventTimeSlot(event.scheduled_time);
-                  return eventHour === hour;
-                });
-
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const dateStr = `${year}-${month}-${day}`;
-                const isToday = dateStr === today;
-
-                return (
-                  <div 
-                    key={dayIndex} 
-                    className={`p-0.5 border-r border-gray-200 last:border-r-0 ${
-                      isToday ? 'bg-blue-50/30' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {hourEvents.map((event: CalendarEvent) => {
-                      const statusToUse = event.job_status || event.status || 'new';
-                      const statusConfig = getStatusConfig(statusToUse);
-                      const bgColor = getStatusColorHex(statusConfig.color);
-
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={() => onSelectLead(event)}
-                          className="w-full text-left px-1.5 py-1 rounded text-white text-xs font-medium border-l-2 hover:shadow-md hover:scale-[1.01] transition-all mb-0.5"
-                          style={{ 
-                            backgroundColor: bgColor,
-                            borderLeftColor: bgColor,
-                            opacity: 0.95
-                          }}
-                          title={`${event.name} - ${formatTime(event.scheduled_time)}${event.assigned_to ? ' - ' + event.assigned_to : ''}`}
-                        >
-                          <div className="font-bold truncate leading-tight">{event.name}</div>
-                          {event.scheduled_time && (
-                            <div className="opacity-90 truncate leading-tight text-[10px]">
-                              {formatTime(event.scheduled_time).replace(' ', '')}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
   );
 }
