@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Mail, MoreVertical, Calendar, Clock, AlertCircle, CheckCircle2, User, Hash, ChevronRight, X, Eye } from 'lucide-react';
+import { Mail, MoreVertical, Calendar, Clock, AlertCircle, CheckCircle2, User, Hash, ChevronRight, X, Eye, Loader2 } from 'lucide-react';
 import SendCustomerEmailButtons from '@/components/dashboard/SendCustomerEmailButtons';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 
@@ -18,7 +18,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [saving, setSaving] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [previewEmail, setPreviewEmail] = useState<any>(null); // State for the preview modal
+  const [previewEmail, setPreviewEmail] = useState<any>(null);
   
   // Form States
   const [scheduledDate, setScheduledDate] = useState('');
@@ -92,10 +92,16 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     ? scheduleEmailLog[scheduleEmailLog.length - 1].sent_at 
     : null;
 
-  const handleSave = async () => {
+  // Optimized Save Logic
+  const handleSave = async (overrideAssignee?: string) => {
     setSaving(true);
     try {
-      const finalAssignee = showCustomAssignee ? customAssignee : assignedTo;
+      // Determine the final name: 
+      // 1. Explicit override (from "ADD" button)
+      // 2. Custom input (if currently visible)
+      // 3. Dropdown value
+      const finalAssignee = overrideAssignee || (showCustomAssignee ? customAssignee : assignedTo);
+
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,16 +117,26 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
       });
       if (res.ok) {
         toast.success('Scheduling updated');
+        setShowCustomAssignee(false);
+        setCustomAssignee('');
         await onRefresh();
       }
     } catch { toast.error('Failed to save'); } 
     finally { setSaving(false); }
   };
 
+  const handleAddCustomName = () => {
+    if (!customAssignee.trim()) {
+      toast.error("Please enter a name");
+      return;
+    }
+    handleSave(customAssignee);
+  };
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative">
       
-      {/* EMAIL PREVIEW OVERLAY (The "Read Only" Email View) */}
+      {/* EMAIL PREVIEW OVERLAY */}
       {previewEmail && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-2xl h-[80vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
@@ -168,7 +184,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={saving}
             className="flex-1 sm:flex-none h-10 px-6 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-indigo-100 uppercase tracking-wider"
           >
@@ -213,12 +229,18 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               <div className="relative group">
                 <select
                   value={assignedTo}
-                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') {
+                      setShowCustomAssignee(true);
+                    } else {
+                      setAssignedTo(e.target.value);
+                    }
+                  }}
                   className="w-full h-12 pl-4 pr-10 text-sm font-bold bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all appearance-none"
                 >
                   <option value="">Choose team member...</option>
                   {teamMembers.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
-                  <option value="__custom__" className="text-indigo-600">+ Add Custom Name</option>
+                  <option value="__custom__" className="text-indigo-600 font-black">+ Add Custom Name</option>
                 </select>
                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none rotate-90" />
               </div>
@@ -226,12 +248,26 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               <div className="flex gap-2 animate-in slide-in-from-left-2">
                 <input
                   type="text"
+                  placeholder="Enter name..."
                   value={customAssignee}
                   onChange={(e) => setCustomAssignee(e.target.value)}
                   className="flex-1 h-12 px-4 text-sm font-bold bg-gray-50 border border-indigo-200 rounded-xl outline-none"
                   autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustomName()}
                 />
-                <button onClick={() => { setAssignedTo(customAssignee); setShowCustomAssignee(false); }} className="h-12 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black">ADD</button>
+                <button 
+                  onClick={handleAddCustomName} 
+                  disabled={saving}
+                  className="h-12 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-2"
+                >
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'ADD'}
+                </button>
+                <button 
+                  onClick={() => setShowCustomAssignee(false)} 
+                  className="h-12 w-12 flex items-center justify-center bg-gray-100 text-gray-400 rounded-xl"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
@@ -308,7 +344,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
         )}
       </div>
 
-      {/* FOOTER: HISTORY LOG WITH PREVIEW CLICKS */}
+      {/* FOOTER: HISTORY LOG */}
       {scheduleEmailLog.length > 0 && (
         <div className="px-6 py-5 bg-gray-50/50 border-t border-gray-50">
           <div className="flex items-center gap-2 mb-4">
