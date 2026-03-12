@@ -196,7 +196,7 @@ function SignupForm() {
                   className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer text-base"
                 >
                   {BUSINESS_TYPES.map(type => (
-                    <option key={type.value} value={type.value}>{type.emoji} {type.label}</option>
+                    <option key={type.value} value={type.value}> {type.label}</option>
                   ))}
                 </select>
               </div>
