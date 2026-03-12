@@ -110,7 +110,7 @@ export default function UploadFormStepOne({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
           {/* Name */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Name</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
               <input

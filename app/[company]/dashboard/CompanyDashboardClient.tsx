@@ -13,6 +13,7 @@ import TrialBanner from '@/components/TrialBanner';
 import { canUseAiChat, canUseAiBrief, PLAN_ERRORS, PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import AISmartBanner from '@/components/dashboard/AISmartBanner';
+import CreateLeadModal from '@/components/dashboard/CreateLeadModal'; // Add this
 
 
 
@@ -62,6 +63,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
 
   const handleChatScroll = () => {
@@ -506,10 +508,11 @@ return (
 </div>
             </div>
 
-            <a href={`/${company.slug}`}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-slate-950 hover:bg-indigo-50 rounded-2xl font-bold transition-all shadow-xl hover:-translate-y-0.5 active:translate-y-0">
-              <Plus className="w-5 h-5 stroke-[3px]" /> New Lead
-            </a>
+          <button 
+  onClick={() => setIsCreateModalOpen(true)}
+  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-slate-950 hover:bg-indigo-50 rounded-2xl font-bold transition-all shadow-xl hover:-translate-y-0.5 active:translate-y-0">
+  <Plus className="w-5 h-5 stroke-[3px]" /> New Lead
+</button>
           </div>
         </div>
 {/* Search & Filter Controls - Fixed Scaling */}
@@ -655,16 +658,32 @@ return (
         )}
       </div>
 
+    {/* Existing Lead View Modal */}
       {selectedLead && (
         <LeadModal
-          lead={selectedLead} onClose={() => setSelectedLead(null)}
-          onUpdateStatus={updateLeadStatus} onAddNote={addNote}
-          onDeleteLead={deleteLead} onRefresh={refreshModalLead}
-          currentUser={currentUser} statusOptions={statusOptions}
+          lead={selectedLead} 
+          onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus} 
+          onAddNote={addNote}
+          onDeleteLead={deleteLead} 
+          onRefresh={refreshModalLead}
+          currentUser={currentUser} 
+          statusOptions={statusOptions}
           categories={company.form_categories || []}
-          company={company} companySlug={company.slug}
+          company={company} 
+          companySlug={company.slug}
         />
       )}
+
+      {/* Quick Add Lead Modal */}
+      <CreateLeadModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchLeads}
+        companySlug={company.slug}
+        companyId={company.id}
+        categories={company.form_categories || []}
+      />
 
       {/* Floating AI Assistant */}
       {canUseAiChat(company.plan_tier as any) ? (
