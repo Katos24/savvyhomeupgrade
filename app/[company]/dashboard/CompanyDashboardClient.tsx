@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, X, Plus, Menu, Filter, ChevronDown, Download, Loader2, Inbox, Send, Sparkles } from 'lucide-react';
-import CardsView from '@/components/dashboard/views/CardsView';
+import { 
+  Search, X, Plus, Menu, Filter, ChevronDown, Download, 
+  Loader2, Inbox, Send, Sparkles, LayoutGrid, List, RotateCcw 
+} from 'lucide-react';import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
 import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -412,10 +414,24 @@ const recentLeads = allLeads
       </div>
     </div>
   ));
+return (
+    <div className="min-h-screen relative selection:bg-indigo-500/30" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
+      <Toaster position="top-right" richColors />
 
-  return (
-    <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
-      <Toaster position="top-right" />
+      {/* Sidebar Overlay Fix */}
+      <div className={`fixed inset-0 z-[100] transition-all duration-300 ${sidebarOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'}`}>
+        <div 
+          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} 
+          onClick={() => setSidebarOpen(false)} 
+        />
+        <aside className={`absolute left-0 top-0 bottom-0 z-[110] w-72 transition-transform duration-300 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <Sidebar
+            companySlug={company.slug} companyName={company.name} companyLogoUrl={company.logo_url}
+            currentUser={currentUser} onLogout={handleLogout} isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)} currentView={currentView} onViewChange={setCurrentView}
+          />
+        </aside>
+      </div>
 
       <div className="relative z-10">
         <TrialBanner
@@ -426,142 +442,154 @@ const recentLeads = allLeads
         <PaymentReminderBanner slug={company.slug} /> 
       </div>
 
+      {/* Onboarding Banner */}
       {!company.onboarding_completed && (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
-    <div className="rounded-xl border border-indigo-500/30 overflow-hidden shadow-lg"
-      style={{ background: 'linear-gradient(135deg, #312e81, #1e1b4b)' }}>
-      <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg">Finish Setting Up Your Account</h3>
-            <p className="text-indigo-300 text-sm mt-0.5">
-              Set up your categories, pipeline, booking form, and quote templates — takes about 5 minutes.
-            </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
+          <div className="rounded-3xl border border-indigo-500/30 overflow-hidden shadow-2xl"
+            style={{ background: 'linear-gradient(135deg, #312e81, #1e1b4b)' }}>
+            <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg">Finish Setting Up Your Account</h3>
+                  <p className="text-indigo-300 text-sm mt-0.5">
+                    Set up categories, booking forms, and templates — takes 5 minutes.
+                  </p>
+                </div>
+              </div>
+              <a href="/onboarding"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl text-white font-bold text-sm transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/20"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                Set Up Now <ChevronDown className="w-4 h-4 -rotate-90" />
+              </a>
+            </div>
           </div>
         </div>
-        <a href="/onboarding"
-          className="px-6 py-3 rounded-lg text-white font-bold text-sm transition hover:opacity-90 flex-shrink-0 flex items-center gap-2"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-          Set Up Now <ChevronDown className="w-4 h-4 -rotate-90" />
-        </a>
-      </div>
-    </div>
-  </div>
-)}
-
-      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
-
-      <Sidebar
-        companySlug={company.slug} companyName={company.name} companyLogoUrl={company.logo_url}
-        currentUser={currentUser} onLogout={handleLogout} isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)} currentView={currentView} onViewChange={setCurrentView}
-      />
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-
-        {/* Top bar */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 mb-6 border border-white/20 shadow-xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition text-white border border-white/20">
-                <Menu className="w-6 h-6" />
+{/* Top bar - Clean Glass UI (Removed background glow) */}
+        <div className="relative bg-white/[0.03] backdrop-blur-2xl rounded-[2rem] p-4 sm:p-5 mb-8 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]">
+          <div className="relative flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <button onClick={() => setSidebarOpen(true)}
+                className="group p-3 bg-white/5 hover:bg-indigo-600/20 rounded-2xl transition-all border border-white/10">
+                <Menu className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               </button>
-              {company.logo_url ? (
-                <img src={company.logo_url} alt={company.name} className="h-10 sm:h-12 w-auto object-contain" />
-              ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20">
-                  {company.name.charAt(0)}
-                </div>
-              )}
-              <h1 className="text-xl sm:text-2xl font-bold text-white">{company.name}</h1>
+              
+          <div className="flex items-center gap-6"> {/* Increased gap from 3.5 to 6 */}
+  {company.logo_url ? (
+    <div className="p-1.5 bg-white rounded-xl shadow-sm flex items-center justify-center">
+      <img 
+        src={company.logo_url} 
+        alt={company.name} 
+        className="h-8 w-auto max-w-[120px] sm:max-w-[150px] object-contain" 
+      />
+    </div>
+  ) : (
+    <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-500/20">
+      {company.name.charAt(0)}
+    </div>
+  )}
+  
+  <div className="flex flex-col justify-center border-l border-white/10 pl-6"> {/* Added a subtle divider and padding */}
+    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight leading-none truncate max-w-[150px] sm:max-w-none">
+      {company.name}
+    </h1>
+    <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold mt-2">
+      Dashboard
+    </span>
+  </div>
+</div>
             </div>
+
             <a href={`/${company.slug}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition shadow-lg shadow-purple-600/20">
-              <Plus className="w-5 h-5" /> Create
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-slate-950 hover:bg-indigo-50 rounded-2xl font-bold transition-all shadow-xl hover:-translate-y-0.5 active:translate-y-0">
+              <Plus className="w-5 h-5 stroke-[3px]" /> New Lead
             </a>
           </div>
         </div>
+{/* Search & Filter Controls - Fixed Scaling */}
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
+              <input
+                type="text" 
+                placeholder="Search leads..."
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                /* Increased py-4 to ensure it's not "tiny" */
+                className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/5 border border-white/10 focus:border-indigo-500 focus:outline-none text-white placeholder-white/40 text-base font-medium transition-all"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            
+            <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`p-4 rounded-2xl border transition-all ${showAdvancedFilters ? 'bg-indigo-600 border-indigo-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+              <Filter className="w-6 h-6 text-white" />
+            </button>
 
-        {/* Search + filter toggle */}
-        <div className="mb-4 flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-            <input
-              type="text" placeholder="Search by name, email, or phone..."
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-4 rounded-xl bg-white/10 backdrop-blur-xl border-2 border-white/20 focus:border-purple-500 focus:outline-none text-white placeholder-white/60 text-base sm:text-lg font-medium shadow-lg transition-colors"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition">
-                <X className="w-5 h-5 text-white/60 hover:text-white" />
-              </button>
-            )}
+            <div className="hidden md:flex bg-white/5 border border-white/10 rounded-2xl p-1">
+              <button onClick={() => setCurrentView('cards')} className={`p-2.5 rounded-xl transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : 'text-white/40'}`}><LayoutGrid className="w-5 h-5" /></button>
+              <button onClick={() => setCurrentView('table')} className={`p-2.5 rounded-xl transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : 'text-white/40'}`}><List className="w-5 h-5" /></button>
+            </div>
           </div>
-          <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold transition shadow-lg">
-            <Filter className="w-4 h-4" /> Filters
-            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-          </button>
-<div className="hidden sm:flex rounded-xl overflow-hidden border border-slate-700">  <button
-    onClick={() => setCurrentView('cards')}
-    className={`px-4 py-2 text-sm font-semibold transition ${
-      currentView === 'cards'
-        ? 'bg-indigo-600 text-white'
-        : 'bg-slate-800 text-white/50 hover:bg-slate-700'
-    }`}
-  >
-    ⊞ Cards
-  </button>
-  <button
-    onClick={() => setCurrentView('table')}
-    className={`px-4 py-2 text-sm font-semibold transition ${
-      currentView === 'table'
-        ? 'bg-indigo-600 text-white'
-        : 'bg-slate-800 text-white/50 hover:bg-slate-700'
-    }`}
-  >
-    ≡ Table
-  </button>
-</div>
+
+          {/* Optimized Filter Row - Standardized height */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <select 
+                value={timeFilter} 
+                onChange={(e) => setTimeFilter(e.target.value as any)} 
+                className="w-full appearance-none px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-sm font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all cursor-pointer"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            </div>
+
+            <div className="relative flex-1 sm:flex-[1.5]">
+              <select 
+                value={filterStatus} 
+                onChange={(e) => setFilterStatus(e.target.value)} 
+                className="w-full appearance-none px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-sm font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all cursor-pointer"
+              >
+                <option value="all">All Statuses ({allLeads.length})</option>
+                {statusOptions.map(s => (
+                  <option key={s.value} value={s.value}>{s.label} ({statusCounts[s.value] || 0})</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        {/* Quick filters */}
-        <div className="flex flex-col sm:flex-row justify-end gap-2 mb-4">
-          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value as any)} className={selectClass}>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="all">All Time</option>
-          </select>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass}>
-            <option value="all">All Statuses</option>
-            {statusOptions.map(s => (
-              <option key={s.value} value={s.value}>{s.label} ({statusCounts[s.value] || 0})</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Advanced filters */}
+        {/* Advanced Filters Panel */}
         {showAdvancedFilters && (
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 mb-6 border border-slate-700 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-indigo-950/20 backdrop-blur-xl rounded-3xl p-6 mb-8 border border-indigo-500/20 shadow-2xl animate-in fade-in slide-in-from-top-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {[
                 { label: 'Category', value: filterCategory, onChange: setFilterCategory,
                   options: [{ value: 'all', label: 'All Categories' }, ...categories.map(c => ({ value: c, label: c }))] },
                 { label: 'Assigned To', value: filterAssignee, onChange: setFilterAssignee,
-                  options: [{ value: 'all', label: 'All Team Members' }, { value: 'unassigned', label: 'Unassigned' },
-                    ...teamMembers.map(m => ({ value: m.name, label: m.name }))] },
+                  options: [{ value: 'all', label: 'Everyone' }, { value: 'unassigned', label: 'Unassigned' }, ...teamMembers.map(m => ({ value: m.name, label: m.name }))] },
                 { label: 'Payment', value: filterPayment, onChange: setFilterPayment,
                   options: [{ value: 'all', label: 'All' }, { value: 'paid', label: 'Paid' }, { value: 'unpaid', label: 'Unpaid' }] },
               ].map(({ label, value, onChange, options }) => (
                 <div key={label}>
-                  <label className="block text-xs font-semibold text-white/80 mb-2">{label}</label>
-                  <select value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClass}`}>
+                  <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 ml-1">{label}</label>
+                  <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 outline-none">
                     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
@@ -571,58 +599,58 @@ const recentLeads = allLeads
                 { label: 'End Date', value: endDate, onChange: setEndDate },
               ].map(({ label, value, onChange }) => (
                 <div key={label}>
-                  <label className="block text-xs font-semibold text-white/80 mb-2">{label}</label>
-                  <input type="date" value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClass}`} />
+                  <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 ml-1">{label}</label>
+                  <input type="date" value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 outline-none" />
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex justify-end">
-              <button onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg font-semibold transition border border-red-500/30">
-                <X className="w-4 h-4" /> Clear All Filters
+            <div className="mt-6 flex justify-end">
+              <button onClick={clearFilters} className="px-5 py-2.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-bold transition border border-red-500/20 flex items-center gap-2">
+                <X className="w-3.5 h-3.5" /> Reset Filters
               </button>
             </div>
           </div>
         )}
 
-        {/* Leads */}
+        {/* Leads Display */}
         {filteredLeads.length === 0 ? (
-          <div className="bg-white/10 backdrop-blur-xl rounded-xl p-12 text-center border border-white/20 shadow-xl">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-700/50 mb-4">
-              <Inbox className="w-10 h-10 text-gray-400" />
+          <div className="bg-white/5 rounded-[2.5rem] p-24 text-center border border-dashed border-white/10">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/5 mb-6">
+              <Inbox className="w-10 h-10 text-white/20" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">No leads found</h3>
-            <p className="text-white/70">Try adjusting your filters or search query</p>
+            <h3 className="text-2xl font-black text-white mb-2">No leads match.</h3>
+            <p className="text-white/40">Try adjusting your filters or search query.</p>
           </div>
         ) : currentView === 'cards' ? (
-          <div>
+          <div className="space-y-12">
             {groups.map(({ title, leads }) => leads.length > 0 && (
-              <div key={title} className="mb-8">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  {title} <span className="text-white/60 text-base">({leads.length})</span>
-                </h3>
+              <div key={title}>
+                <div className="flex items-center gap-4 mb-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400">{title}</h3>
+                  <div className="h-px flex-1 bg-white/5" />
+                  <span className="text-[10px] font-black bg-white/5 px-2 py-1 rounded-md text-slate-500">{leads.length}</span>
+                </div>
                 <CardsView leads={leads} onSelectLead={setSelectedLead} statusOptions={statusOptions} planTier={(company.plan_tier as PlanTier) || 'basic'} />
               </div>
             ))}
           </div>
         ) : (
-          <div key={`table-${refreshKey}`}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                All Leads <span className="text-white/60 text-base">({filteredLeads.length})</span>
-              </h3>
+          <div key={`table-${refreshKey}`} className="animate-in fade-in duration-500">
+            <div className="mb-6 flex items-center justify-between px-2">
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400">Database View</h3>
               <a href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({ status: filterStatus, time: timeFilter, category: filterCategory, search: searchQuery })}`}
-                download={`${company.slug}_${new Date().toISOString().split('T')[0]}.csv`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition border border-white/20 shadow-lg">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg">
                 <Download className="w-4 h-4" /> Export CSV
               </a>
             </div>
-            <TableView
-              leads={filteredLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions}
-              onBulkUpdate={handleBulkUpdate} onBulkDelete={handleBulkDelete}
-              teamMembers={teamMembers} categories={company.form_categories || []}
-              customQuestions={company.custom_questions || []}
-            />
+            <div className="bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+              <TableView
+                leads={filteredLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions}
+                onBulkUpdate={handleBulkUpdate} onBulkDelete={handleBulkDelete}
+                teamMembers={teamMembers} categories={company.form_categories || []}
+                customQuestions={company.custom_questions || []}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -638,141 +666,59 @@ const recentLeads = allLeads
         />
       )}
 
-      {/* ── FLOATING AI ASSISTANT ── */}
+      {/* Floating AI Assistant */}
       {canUseAiChat(company.plan_tier as any) ? (
-<div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
-          {/* Chat Panel */}
+        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
           {showAiChat && (
-            <div
-          className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col"
-style={{ 
-  background: '#0f172a', 
-  borderRadius: '16px', 
-  maxHeight: '70vh',
-  width: 'calc(100vw - 48px)',
-  maxWidth: '420px',
-}}
->
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0"
-                style={{ background: '#312e81' }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+            <div className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-5"
+              style={{ background: '#0f172a', borderRadius: '24px', maxHeight: '70vh', width: 'calc(100vw - 48px)', maxWidth: '420px' }}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0" style={{ background: '#312e81' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">AI Assistant</p>
-                    <p className="text-indigo-300 text-xs">{company.name}</p>
-                  </div>
+                  <p className="text-white font-bold text-sm">Magic Assistant</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  {aiMessages.length > 0 && (
-                    <button onClick={() => setAiMessages([])}
-                      className="text-white/40 hover:text-white/70 text-xs font-semibold transition px-2 py-1 rounded hover:bg-white/10">
-                      Clear
-                    </button>
-                  )}
-                  <button onClick={() => setShowAiChat(false)}
-                    className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded transition">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <button onClick={() => setShowAiChat(false)} className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded-full transition">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-
-     {/* Messages */}
-<div className="relative flex-1 overflow-hidden">
-  <div
-    ref={chatScrollRef}
-    onScroll={handleChatScroll}
-    className="overflow-y-auto p-4 space-y-3"
-    style={{ height: 'calc(70vh - 130px)', maxHeight: '320px' }}
-  >
-    {aiMessages.length === 0 && (
-      <div className="space-y-2">
-        <p className="text-slate-400 text-xs text-center pt-1">Ask me anything about your jobs</p>
-        <div className="grid grid-cols-2 gap-2">
-          {aiStarterQuestions.map(q => (
-            <button key={q} onClick={() => sendAiMessage(q)}
-              className="text-left px-3 py-2 text-xs text-slate-300 border border-slate-700 rounded-lg hover:border-indigo-500 hover:bg-indigo-500/10 transition leading-snug">
-              {q}
-            </button>
-          ))}
-        </div>
-      </div>
-    )}
-                  {renderAiMessages()}
-                  {aiLoading && (
-                    <div className="flex justify-start">
-                      <div className="px-3 py-2 border border-slate-700 bg-slate-800 rounded-xl">
-                        <div className="flex gap-1 items-center">
-                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
+              <div className="relative flex-1 overflow-hidden">
+                <div ref={chatScrollRef} onScroll={handleChatScroll} className="overflow-y-auto p-5 space-y-4" style={{ height: 'calc(70vh - 140px)', maxHeight: '350px' }}>
+                  {aiMessages.length === 0 && (
+                    <div className="space-y-3">
+                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">Quick Insights</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {aiStarterQuestions.map(q => (
+                          <button key={q} onClick={() => sendAiMessage(q)} className="text-left px-4 py-3 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-2xl hover:border-indigo-500 hover:bg-indigo-500/10 transition">
+                            {q}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
+                  {renderAiMessages()}
+                  {aiLoading && <div className="p-3 bg-white/5 rounded-2xl w-fit"><Loader2 className="w-4 h-4 animate-spin text-indigo-500" /></div>}
                   <div ref={chatBottomRef} />
                 </div>
-                {showScrollDown && (
-                  <button onClick={scrollToBottom}
-                    className="absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border border-slate-600 transition hover:scale-110"
-                    style={{ background: '#312e81' }}>
-                    <ChevronDown className="w-4 h-4 text-white" />
-                  </button>
-                )}
               </div>
-
-              {/* Input */}
-              <div className="p-3 border-t border-slate-700 flex gap-2 flex-shrink-0">
-                <input
-                  type="text"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
-                  placeholder="Ask about your jobs..."
-                  className="flex-1 px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  onClick={() => sendAiMessage(aiInput)}
-                  disabled={!aiInput.trim() || aiLoading}
-                  className="px-3 py-2 rounded-lg disabled:opacity-40 text-white transition hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+              <div className="p-4 border-t border-slate-700 flex gap-2 flex-shrink-0 bg-[#0f172a]">
+                <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
+                  placeholder="Ask about your leads..." className="flex-1 px-4 py-3 text-sm bg-slate-900 border border-white/10 rounded-2xl text-white focus:border-indigo-500 outline-none" />
+                <button onClick={() => sendAiMessage(aiInput)} disabled={!aiInput.trim() || aiLoading} className="p-3 rounded-2xl bg-indigo-600 disabled:opacity-40 text-white transition hover:scale-105"><Send className="w-5 h-5" /></button>
               </div>
             </div>
           )}
-
-          {/* FAB Toggle Button */}
-          <button
-            onClick={() => setShowAiChat(!showAiChat)}
-            className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
-            style={{
-              background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
-            }}
-          >
-            {showAiChat
-              ? <X className="w-6 h-6 text-white" />
-              : <Sparkles className="w-6 h-6 text-white" />
-            }
+          <button onClick={() => setShowAiChat(!showAiChat)} className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+            style={{ background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)' }}>
+            {showAiChat ? <X className="w-7 h-7 text-white" /> : <Sparkles className="w-7 h-7 text-white" />}
           </button>
         </div>
       ) : (
-        /* Locked FAB for basic plan */
-<div className="fixed bottom-6 right-6 z-[9999]">
-          <button
-            onClick={() => window.location.href = `/${company.slug}/admin/settings#billing`}
-            title="Upgrade to Pro for AI Assistant"
-            className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 relative"
-            style={{ background: '#1e293b', border: '2px solid #334155' }}
-          >
-            <Sparkles className="w-6 h-6 text-slate-500" />
-            <span className="absolute -top-1 -right-1 text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold leading-none">
-              Pro
-            </span>
+        <div className="fixed bottom-6 right-6 z-[9999]">
+          <button onClick={() => window.location.href = `/${company.slug}/admin/settings#billing`} className="w-16 h-16 rounded-3xl flex flex-col items-center justify-center bg-slate-900 border-2 border-slate-800 shadow-2xl transition-all hover:scale-110 active:scale-95">
+            <Sparkles className="w-6 h-6 text-slate-600" />
+            <span className="text-[9px] font-black text-amber-500 mt-1 uppercase">Pro</span>
           </button>
         </div>
       )}
