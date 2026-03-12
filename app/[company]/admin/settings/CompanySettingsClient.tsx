@@ -285,14 +285,16 @@ const [publicLink, setPublicLink] = useState('');
                       />
                     )}
                     
-                  <div className="group flex items-center gap-2 text-slate-400 bg-slate-50 w-fit px-3 py-1.5 rounded-lg border border-slate-100">
-  <Globe className="w-3 h-3 text-indigo-500" />
-  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Customer Form:</span>
-<span className="text-[10px] sm:text-xs font-mono text-slate-900 break-all">
-  {publicLink || 'Loading...'}
-</span>
-
+          <div className="group flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 w-full max-w-md">
+  <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+    <Globe className="w-3 h-3 text-indigo-500 shrink-0" />
+    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Customer Form:</span>
+  </div>
+  <span className="text-[10px] sm:text-xs font-mono text-slate-900 break-words truncate w-full sm:w-auto" title={publicLink}>
+    {publicLink || 'Loading...'}
+  </span>
 </div>
+
                   </div>
                   
                   {!isEditing ? (
