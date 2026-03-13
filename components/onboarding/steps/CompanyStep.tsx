@@ -12,7 +12,8 @@ const CompanyStep = forwardRef<CompanyStepRef, { company: any }>(({ company }, r
   const [data, setData] = useState({
     name: company.name || '',
     email: company.email || '',
-    phone: company.phone || '',
+    // Apply formatting here for the initial load
+    phone: formatPhone(company.phone || ''), 
     website: company.website || '',
     email_brand_color_1: company.email_brand_color_1 || '#667eea',
     email_brand_color_2: company.email_brand_color_2 || '#764ba2',
@@ -23,118 +24,171 @@ const CompanyStep = forwardRef<CompanyStepRef, { company: any }>(({ company }, r
   useImperativeHandle(ref, () => ({ getData: () => ({ ...data, logoFile }) }));
 
   return (
-    <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company Info</span>
+    <div className="bg-white border border-gray-200 overflow-hidden rounded-xl shadow-sm">
+      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Company Profile</span>
       </div>
-      <div className="p-5 space-y-5">
+      
+      <div className="p-6 space-y-6">
 
-        {/* Logo */}
+        {/* Logo Section */}
         <div>
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Logo</label>
-          <div className="flex items-center gap-4">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Brand Logo</label>
+          <div className="flex items-center gap-5">
             {logoPreview ? (
-              <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain border border-gray-200 rounded-lg bg-gray-50" />
+              <div className="relative group">
+                <img src={logoPreview} alt="Logo" className="w-20 h-20 object-contain border border-gray-200 rounded-2xl bg-white p-2 shadow-sm" />
+              </div>
             ) : (
-              <div className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-2xl font-bold text-gray-400">
+              <div className="w-20 h-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center text-3xl font-black text-gray-300">
                 {data.name.charAt(0) || '?'}
               </div>
             )}
-            <div className="flex-1">
-              <input type="file" accept="image/*"
+            <div className="flex-1 max-w-xs">
+              <input 
+                type="file" 
+                accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) { setLogoFile(file); const r = new FileReader(); r.onloadend = () => setLogoPreview(r.result as string); r.readAsDataURL(file); }
+                  if (file) { 
+                    setLogoFile(file); 
+                    const r = new FileReader(); 
+                    r.onloadend = () => setLogoPreview(r.result as string); 
+                    r.readAsDataURL(file); 
+                  }
                 }}
-                className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:rounded-md cursor-pointer" />
-              <p className="text-xs text-gray-400 mt-1">Shows in emails and your booking page</p>
+                className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:rounded-xl cursor-pointer" 
+              />
+              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">Recommended: Square PNG or SVG with a transparent background.</p>
             </div>
           </div>
         </div>
 
-        {/* Company Name */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-            <Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span>
-          </label>
-          <input type="text" value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })}
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-            placeholder="Your Company Name" />
-        </div>
-
-        {/* Email + Phone */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Company Identity */}
+        <div className="space-y-4">
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-              <Mail className="w-3.5 h-3.5" /> Contact Email
+            <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+              <Building className="w-3.5 h-3.5 text-indigo-500" /> Business Name <span className="text-rose-500">*</span>
             </label>
-            <input type="email" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-              placeholder="contact@company.com" />
+            <input 
+              type="text" 
+              value={data.name} 
+              onChange={(e) => setData({ ...data, name: e.target.value })}
+              className="w-full px-4 py-3 text-sm font-medium border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-gray-300"
+              placeholder="e.g. Acme Electrical" 
+            />
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                <Mail className="w-3.5 h-3.5 text-indigo-500" /> Public Email
+              </label>
+              <input 
+                type="email" 
+                value={data.email} 
+                onChange={(e) => setData({ ...data, email: e.target.value })}
+                className="w-full px-4 py-3 text-sm font-medium border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all"
+                placeholder="hello@company.com" 
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                <Phone className="w-3.5 h-3.5 text-indigo-500" /> Business Phone
+              </label>
+              <input 
+                type="tel" 
+                value={data.phone} 
+                onChange={(e) => setData({ ...data, phone: formatPhone(e.target.value) })}
+                className="w-full px-4 py-3 text-sm font-medium border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all"
+                placeholder="(555) 000-0000" 
+                maxLength={14} 
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-              <Phone className="w-3.5 h-3.5" /> Phone
+            <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+              <Globe className="w-3.5 h-3.5 text-indigo-500" /> Website URL
             </label>
-            <input type="tel" value={data.phone} onChange={(e) => setData({ ...data, phone: formatPhone(e.target.value) })}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-              placeholder="(555) 123-4567" maxLength={14} />
+            <input 
+              type="url" 
+              value={data.website} 
+              onChange={(e) => setData({ ...data, website: e.target.value })}
+              className="w-full px-4 py-3 text-sm font-medium border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all"
+              placeholder="https://acme-electrical.com" 
+            />
           </div>
         </div>
 
-        {/* Website */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-            <Globe className="w-3.5 h-3.5" /> Website
-          </label>
-          <input type="url" value={data.website} onChange={(e) => setData({ ...data, website: e.target.value })}
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-            placeholder="https://yourcompany.com" />
-        </div>
+        {/* Brand Customization */}
+        <div className="border-t border-gray-100 pt-6">
+          <div className="mb-5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Visual Branding</label>
+            <p className="text-[11px] text-gray-400 leading-relaxed">Choose your signature colors. These will be used for gradients in emails and your online booking portal.</p>
+          </div>
 
-        
+          {/* Live Gradient Preview */}
+          <div className="relative group overflow-hidden h-16 w-full rounded-2xl mb-5 shadow-inner border border-gray-100 transition-transform active:scale-[0.99]" 
+               style={{ background: `linear-gradient(135deg, ${data.email_brand_color_1}, ${data.email_brand_color_2})` }}>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-white/40 text-[10px] font-black tracking-[0.3em] uppercase">Brand Preview</span>
+            </div>
+          </div>
 
-        {/* Brand Colors — same card, separated by a divider */}
-        <div className="border-t border-gray-100 pt-5">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Brand Colors</label>
-          <p className="text-xs text-gray-400 mb-3">Pick 2 colors for the gradient in your customer emails and booking page</p>
-
-          {/* Live preview */}
-          <div className="h-10 w-full rounded-lg mb-3" style={{ background: `linear-gradient(135deg, ${data.email_brand_color_1}, ${data.email_brand_color_2})` }} />
-
-          {/* Preset swatches */}
-          <div className="grid grid-cols-6 gap-2 mb-4">
+          {/* Swatches */}
+          <div className="grid grid-cols-6 sm:grid-cols-12 gap-2 mb-6">
             {COLOR_PRESETS.map(p => (
-              <button key={p.name} onClick={() => setData({ ...data, email_brand_color_1: p.c1, email_brand_color_2: p.c2 })}
-                className={`h-8 rounded-lg transition hover:scale-105 ${data.email_brand_color_1 === p.c1 && data.email_brand_color_2 === p.c2 ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
-                style={{ background: `linear-gradient(135deg, ${p.c1}, ${p.c2})` }} title={p.name} />
+              <button 
+                key={p.name} 
+                type="button"
+                onClick={() => setData({ ...data, email_brand_color_1: p.c1, email_brand_color_2: p.c2 })}
+                className={`h-8 rounded-lg transition-all hover:scale-110 active:scale-90 ${data.email_brand_color_1 === p.c1 ? 'ring-2 ring-indigo-500 ring-offset-2 scale-105' : 'border border-black/5'}`}
+                style={{ background: `linear-gradient(135deg, ${p.c1}, ${p.c2})` }} 
+                title={p.name} 
+              />
             ))}
           </div>
 
-          {/* Two color pickers inline */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <input type="color" value={data.email_brand_color_1}
+          {/* Precision Controls */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-3 w-full sm:flex-1">
+              <div className="relative">
+                <input 
+                  type="color" 
+                  value={data.email_brand_color_1}
+                  onChange={(e) => setData({ ...data, email_brand_color_1: e.target.value })}
+                  className="w-10 h-10 cursor-pointer rounded-xl border-0 p-0 overflow-hidden shadow-sm" 
+                />
+              </div>
+              <input 
+                type="text" 
+                value={data.email_brand_color_1}
                 onChange={(e) => setData({ ...data, email_brand_color_1: e.target.value })}
-                className="w-9 h-9 cursor-pointer border border-gray-200 rounded-lg flex-shrink-0 p-0.5" />
-              <input type="text" value={data.email_brand_color_1}
-                onChange={(e) => setData({ ...data, email_brand_color_1: e.target.value })}
-                className="flex-1 min-w-0 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-                placeholder="#667eea" />
+                className="flex-1 px-3 py-2 text-xs font-mono font-bold text-gray-600 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500"
+              />
             </div>
-            <span className="text-gray-300 text-sm font-bold flex-shrink-0">→</span>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <input type="color" value={data.email_brand_color_2}
+            
+            <div className="hidden sm:block text-gray-300 font-bold">→</div>
+            
+            <div className="flex items-center gap-3 w-full sm:flex-1">
+              <div className="relative">
+                <input 
+                  type="color" 
+                  value={data.email_brand_color_2}
+                  onChange={(e) => setData({ ...data, email_brand_color_2: e.target.value })}
+                  className="w-10 h-10 cursor-pointer rounded-xl border-0 p-0 overflow-hidden shadow-sm" 
+                />
+              </div>
+              <input 
+                type="text" 
+                value={data.email_brand_color_2}
                 onChange={(e) => setData({ ...data, email_brand_color_2: e.target.value })}
-                className="w-9 h-9 cursor-pointer border border-gray-200 rounded-lg flex-shrink-0 p-0.5" />
-              <input type="text" value={data.email_brand_color_2}
-                onChange={(e) => setData({ ...data, email_brand_color_2: e.target.value })}
-                className="flex-1 min-w-0 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition"
-                placeholder="#764ba2" />
+                className="flex-1 px-3 py-2 text-xs font-mono font-bold text-gray-600 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500"
+              />
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

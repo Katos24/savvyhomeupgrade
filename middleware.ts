@@ -26,6 +26,7 @@ const isPublicApiRoute =
   pathname.startsWith('/api/leads/preview-email') ||
   pathname.startsWith('/api/leads/update') ||
   pathname.startsWith('/api/subscription/status') ||
+  pathname.startsWith('/api/leads/') ||
   pathname.startsWith('/api/blob-upload');
   
 

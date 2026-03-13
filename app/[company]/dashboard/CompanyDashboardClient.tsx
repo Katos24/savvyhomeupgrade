@@ -511,7 +511,7 @@ return (
           <button 
   onClick={() => setIsCreateModalOpen(true)}
   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-slate-950 hover:bg-indigo-50 rounded-2xl font-bold transition-all shadow-xl hover:-translate-y-0.5 active:translate-y-0">
-  <Plus className="w-5 h-5 stroke-[3px]" /> New Lead
+  <Plus className="w-5 h-5 stroke-[3px]" /> Create
 </button>
           </div>
         </div>
@@ -685,62 +685,113 @@ return (
         categories={company.form_categories || []}
       />
 
-      {/* Floating AI Assistant */}
-      {canUseAiChat(company.plan_tier as any) ? (
-        <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
-          {showAiChat && (
-            <div className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-5"
-              style={{ background: '#0f172a', borderRadius: '24px', maxHeight: '70vh', width: 'calc(100vw - 48px)', maxWidth: '420px' }}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0" style={{ background: '#312e81' }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-white font-bold text-sm">Magic Assistant</p>
-                </div>
-                <button onClick={() => setShowAiChat(false)} className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded-full transition">
-                  <X className="w-5 h-5" />
-                </button>
+{/* Floating AI Assistant */}
+{!selectedLead && !isCreateModalOpen && (
+  canUseAiChat(company.plan_tier as any) ? (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
+      {showAiChat && (
+        <div className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-5"
+          style={{ background: '#0f172a', borderRadius: '24px', maxHeight: '70vh', width: 'calc(100vw - 48px)', maxWidth: '420px' }}>
+          
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0" style={{ background: '#312e81' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <div className="relative flex-1 overflow-hidden">
-                <div ref={chatScrollRef} onScroll={handleChatScroll} className="overflow-y-auto p-5 space-y-4" style={{ height: 'calc(70vh - 140px)', maxHeight: '350px' }}>
-                  {aiMessages.length === 0 && (
-                    <div className="space-y-3">
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">Quick Insights</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {aiStarterQuestions.map(q => (
-                          <button key={q} onClick={() => sendAiMessage(q)} className="text-left px-4 py-3 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-2xl hover:border-indigo-500 hover:bg-indigo-500/10 transition">
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {renderAiMessages()}
-                  {aiLoading && <div className="p-3 bg-white/5 rounded-2xl w-fit"><Loader2 className="w-4 h-4 animate-spin text-indigo-500" /></div>}
-                  <div ref={chatBottomRef} />
-                </div>
-              </div>
-              <div className="p-4 border-t border-slate-700 flex gap-2 flex-shrink-0 bg-[#0f172a]">
-                <input type="text" value={aiInput} onChange={(e) => setAiInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
-                  placeholder="Ask about your leads..." className="flex-1 px-4 py-3 text-sm bg-slate-900 border border-white/10 rounded-2xl text-white focus:border-indigo-500 outline-none" />
-                <button onClick={() => sendAiMessage(aiInput)} disabled={!aiInput.trim() || aiLoading} className="p-3 rounded-2xl bg-indigo-600 disabled:opacity-40 text-white transition hover:scale-105"><Send className="w-5 h-5" /></button>
-              </div>
+              <p className="text-white font-bold text-sm">Magic Assistant</p>
             </div>
-          )}
-          <button onClick={() => setShowAiChat(!showAiChat)} className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
-            style={{ background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)' }}>
-            {showAiChat ? <X className="w-7 h-7 text-white" /> : <Sparkles className="w-7 h-7 text-white" />}
-          </button>
-        </div>
-      ) : (
-        <div className="fixed bottom-6 right-6 z-[9999]">
-          <button onClick={() => window.location.href = `/${company.slug}/admin/settings#billing`} className="w-16 h-16 rounded-3xl flex flex-col items-center justify-center bg-slate-900 border-2 border-slate-800 shadow-2xl transition-all hover:scale-110 active:scale-95">
-            <Sparkles className="w-6 h-6 text-slate-600" />
-            <span className="text-[9px] font-black text-amber-500 mt-1 uppercase">Pro</span>
-          </button>
+            <button onClick={() => setShowAiChat(false)} className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded-full transition">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="relative flex-1 overflow-hidden">
+            <div ref={chatScrollRef} onScroll={handleChatScroll} className="overflow-y-auto p-5 space-y-4"
+              style={{ height: 'calc(70vh - 140px)', maxHeight: '350px' }}>
+              {aiMessages.length === 0 && (
+                <div className="space-y-3">
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center">
+                    Quick Insights
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {aiStarterQuestions.map(q => (
+                      <button
+                        key={q}
+                        onClick={() => sendAiMessage(q)}
+                        className="text-left px-4 py-3 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-2xl hover:border-indigo-500 hover:bg-indigo-500/10 transition">
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {renderAiMessages()}
+
+              {aiLoading && (
+                <div className="p-3 bg-white/5 rounded-2xl w-fit">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                </div>
+              )}
+
+              <div ref={chatBottomRef} />
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-slate-700 flex gap-2 flex-shrink-0 bg-[#0f172a]">
+            <input
+              type="text"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendAiMessage(aiInput);
+                }
+              }}
+              placeholder="Ask about your leads..."
+              className="flex-1 px-4 py-3 text-sm bg-slate-900 border border-white/10 rounded-2xl text-white focus:border-indigo-500 outline-none"
+            />
+
+            <button
+              onClick={() => sendAiMessage(aiInput)}
+              disabled={!aiInput.trim() || aiLoading}
+              className="p-3 rounded-2xl bg-indigo-600 disabled:opacity-40 text-white transition hover:scale-105">
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       )}
+
+      <button
+        onClick={() => setShowAiChat(!showAiChat)}
+        className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+        style={{
+          background: showAiChat
+            ? '#4f46e5'
+            : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
+        }}>
+        {showAiChat ? (
+          <X className="w-7 h-7 text-white" />
+        ) : (
+          <Sparkles className="w-7 h-7 text-white" />
+        )}
+      </button>
+    </div>
+  ) : (
+    <div className="fixed bottom-6 right-6 z-[9999]">
+      <button
+        onClick={() => window.location.href = `/${company.slug}/admin/settings#billing`}
+        className="w-16 h-16 rounded-3xl flex flex-col items-center justify-center bg-slate-900 border-2 border-slate-800 shadow-2xl transition-all hover:scale-110 active:scale-95">
+        <Sparkles className="w-6 h-6 text-slate-600" />
+        <span className="text-[9px] font-black text-amber-500 mt-1 uppercase">
+          Pro
+        </span>
+      </button>
+    </div>
+  )
+)}
     </div>
   );
 }

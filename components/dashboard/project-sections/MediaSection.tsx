@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { 
   Camera, FileText, UploadCloud, File, FileCode, 
-  FileSpreadsheet, Download, Plus, Loader2, AlertCircle 
+  FileSpreadsheet, Download, Plus, Loader2, Trash2
 } from 'lucide-react';
 import PhotoUpload from '../PhotoUpload';
 
@@ -21,7 +21,6 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Parse photos safely
   const parseJson = (val: any) => {
     if (!val) return [];
     if (typeof val === 'string') {
@@ -60,17 +59,22 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
       formData.append('userName', currentUser?.name || currentUser?.email || 'System');
       Array.from(files).forEach(file => formData.append('documents', file));
 
-      // Simple simulated progress
+      // Simulating progress for UX
       const interval = setInterval(() => {
         setUploadProgress((p) => (p >= 90 ? p : p + 5));
       }, 300);
 
-      const res = await fetch('/api/leads/upload-photos', { method: 'POST', body: formData });
-      clearInterval(interval);
+      // POINTING TO NEW DYNAMIC ROUTE TO AVOID 404
+      const res = await fetch(`/api/leads/${lead.id}/upload-docs`, { 
+        method: 'POST', 
+        body: formData 
+      });
       
+      clearInterval(interval);
       const result = await res.json();
+
       if (res.ok && result.success) {
-        toast.success(`Successfully uploaded ${files.length} file(s)`);
+        toast.success(`Uploaded ${files.length} file(s)`);
         await onRefresh();
       } else {
         toast.error(result.error || 'Upload failed');
@@ -83,6 +87,33 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
       if (inputRef.current) inputRef.current.value = '';
     }
   };
+
+const deleteDocument = async (index: number) => {
+  if (!confirm("Delete this document?")) return;
+
+  try {
+    const res = await fetch(`/api/leads/${lead.id}/delete-media`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'document',
+        index
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      toast.success('Document deleted');
+      await onRefresh();
+    } else {
+      toast.error(result.error || 'Delete failed');
+    }
+
+  } catch {
+    toast.error('Delete failed');
+  }
+};
 
   const getDocIcon = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
@@ -98,7 +129,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-      {/* Tab Navigation */}
+      {/* Tabs Header */}
       <div className="px-5 pt-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
         <div className="flex gap-6">
           <button
@@ -111,14 +142,14 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               <Camera className="w-3.5 h-3.5" />
               Photos
               {photoCount > 0 && (
-                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                <span className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] ${
                   activeTab === 'photos' ? 'bg-pink-100 text-pink-700' : 'bg-slate-200 text-slate-500'
                 }`}>
                   {photoCount}
                 </span>
               )}
             </div>
-            {activeTab === 'photos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600 rounded-t-full" />}
+            {activeTab === 'photos' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600" />}
           </button>
 
           <button
@@ -131,14 +162,14 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               <FileText className="w-3.5 h-3.5" />
               Documents
               {documents.length > 0 && (
-                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                <span className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] ${
                   activeTab === 'docs' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'
                 }`}>
                   {documents.length}
                 </span>
               )}
             </div>
-            {activeTab === 'docs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-t-full" />}
+            {activeTab === 'docs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />}
           </button>
         </div>
 
@@ -156,30 +187,26 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
             />
             <label
               htmlFor="doc-upload"
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                uploading
-                  ? 'bg-slate-100 text-slate-400'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
-              }`}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 shadow-md cursor-pointer transition-all active:scale-95 disabled:opacity-50"
             >
               {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-              {uploading ? 'Uploading...' : 'Add Doc'}
+              {uploading ? 'Uploading' : 'Add Document'}
             </label>
           </div>
         )}
       </div>
 
-      {/* Progress Bar Overlay */}
+      {/* Progress Bar */}
       {uploading && (
-        <div className="h-1 w-full bg-slate-100 overflow-hidden">
+        <div className="h-1 w-full bg-slate-100">
           <div 
-            className="h-full bg-indigo-500 transition-all duration-300 ease-out" 
-            style={{ width: `${uploadProgress}%` }} 
+            className="h-full bg-indigo-500 transition-all duration-300"
+            style={{ width: `${uploadProgress}%` }}
           />
         </div>
       )}
 
-      <div className="min-h-[300px]">
+      <div className="min-h-[400px]">
         {activeTab === 'photos' ? (
           <div className="p-6">
             <PhotoUpload
@@ -194,43 +221,58 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
         ) : (
           <div className="p-6">
             {documents.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {documents.map((doc: any, i: number) => (
-                  <a
+                  <div
                     key={i}
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white hover:border-indigo-200 hover:shadow-md transition-all"
+                    className="group relative flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 min-w-0 flex-1"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
                         {getDocIcon(doc.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                        <p className="text-sm font-black text-slate-800 truncate pr-4">
                           {doc.name}
                         </p>
-                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter mt-0.5">
-                          {doc.uploadedBy} • {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                          {new Date(doc.uploadedAt).toLocaleDateString()} • {doc.uploadedBy}
                         </p>
                       </div>
+                    </a>
+
+                    <div className="flex items-center gap-2 ml-2">
+                       <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          deleteDocument(i);
+                        }}
+                        className="p-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <Download className="w-4 h-4 text-slate-300" />
                     </div>
-                    <Download className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                  </a>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
-                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-4">
-                  <UploadCloud className="w-8 h-8 text-slate-300" />
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">No documents found</h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-[200px] text-center leading-relaxed">
-                  Store contracts, site plans, and permits here for easy access.
+              <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                <UploadCloud className="w-10 h-10 text-slate-200 mb-4" />
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Project Documents</h4>
+                <p className="text-[11px] text-slate-400 mt-2 text-center max-w-[240px] font-medium leading-relaxed">
+                  Upload contracts, permits, or insurance docs to keep the project organized.
                 </p>
-                <label htmlFor="doc-upload" className="mt-6 text-xs font-black text-indigo-600 hover:text-indigo-700 cursor-pointer uppercase tracking-widest">
-                  Choose Files
+                <label
+                  htmlFor="doc-upload"
+                  className="mt-8 px-6 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white hover:border-indigo-300 hover:text-indigo-600 transition-all cursor-pointer shadow-sm"
+                >
+                  Browse Files
                 </label>
               </div>
             )}
