@@ -37,6 +37,8 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [actualHours, setActualHours] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
+  const [outboxLog, setOutboxLog] = useState<any[]>([]);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   const parseTimeString = (time24: string) => {
     if (!time24) return { hour: '', minute: '', ampm: 'AM' };
@@ -66,19 +68,26 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeam();
   }, []);
 
-  // Fetch latest html_body from email_outbox for this lead/type
+  // Fetch outbox log entries for this lead (schedule type)  includes status + html_body
   useEffect(() => {
     if (!lead?.id) return;
-    async function fetchLatestHtml() {
+    async function fetchOutbox() {
       try {
         const res = await fetch(
           `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=schedule`
         );
         const data = await res.json();
-        if (data.html_body) setLastHtmlBody(data.html_body);
+        if (data.entries) {
+          setOutboxLog(data.entries);
+          const latest = data.entries.find((e: any) => e.html_body);
+          if (latest) setLastHtmlBody(latest.html_body);
+        } else if (data.html_body) {
+          // fallback for old single-entry route
+          setLastHtmlBody(data.html_body);
+        }
       } catch {}
     }
-    fetchLatestHtml();
+    fetchOutbox();
   }, [lead?.id, companySlug]);
 
   useEffect(() => {
@@ -147,21 +156,34 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
   return (
     <>
-      {/* Email preview overlay */}
-      {previewEmail && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl h-[80vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Email Preview</p>
-                <p className="text-sm font-bold text-slate-800">{previewEmail.subject}</p>
+      {/* EMAIL CONTENT PREVIEW */}
+      {previewHtml && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setPreviewHtml(null)}
+        >
+          <div
+            className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+            style={{ height: '88vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-400" />
+                <p className="text-sm font-black text-slate-800 uppercase tracking-tight">Email Preview</p>
               </div>
-              <button onClick={() => setPreviewEmail(null)} className="p-2 hover:bg-slate-100 rounded-full transition">
-                <X className="w-5 h-5 text-slate-500" />
+              <button onClick={() => setPreviewHtml(null)} className="p-2 hover:bg-slate-100 rounded-full transition">
+                <X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
-            <div className="flex-1 bg-slate-50 p-4">
-              <iframe title="Email Preview" srcDoc={previewEmail.html_body} className="w-full h-full border-0 rounded-xl bg-white" />
+            <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
+              <iframe
+                title="Email Preview"
+                srcDoc={previewHtml}
+                className="w-full border-0 rounded-xl bg-white"
+                style={{ height: '100%', width: '100%', display: 'block' }}
+                sandbox="allow-same-origin"
+              />
             </div>
           </div>
         </div>
@@ -385,35 +407,50 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             )}
           </div>
 
-          {/* Email history toggle */}
-          {scheduleEmailLog.length > 0 && (
+          {/* Email history  from outbox, shows status + preview */}
+          {outboxLog.length > 0 && (
             <div className="pt-0 border-t border-slate-100">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-3 mb-2 flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5" /> Sent History
               </p>
               <div className="space-y-2">
-                {scheduleEmailLog.map((entry: any, i: number) => (
-                  <button
+                {outboxLog.map((entry: any, i: number) => (
+                  <div
                     key={i}
-                    onClick={() => setPreviewEmail(entry)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 hover:border-indigo-300 hover:shadow-sm rounded-xl transition group"
+                    className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3"
                   >
-                    <div className="flex flex-col items-start gap-0.5">
-                      <span className="text-xs font-black text-slate-700">Notification Sent</span>
-                      <span className="text-[10px] text-slate-400">{entry.sent_by_email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <span className="block text-xs font-black text-indigo-600">
-                          {new Date(entry.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          entry.status === 'failed'
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {entry.status === 'failed' ? 'Failed' : 'Sent'}
+                        </span>
+                        <span className="text-xs font-black text-slate-700">
+                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          {new Date(entry.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <Eye className="w-3.5 h-3.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition" />
+                      {entry.sent_by_email && (
+                        <span className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</span>
+                      )}
+                      {entry.status === 'failed' && entry.error_message && (
+                        <span className="text-[10px] text-red-500 font-bold truncate">{entry.error_message}</span>
+                      )}
                     </div>
-                  </button>
+                    {entry.html_body && (
+                      <button
+                        onClick={() => setPreviewHtml(entry.html_body)}
+                        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition"
+                      >
+                        <Eye className="w-3 h-3" /> Preview
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

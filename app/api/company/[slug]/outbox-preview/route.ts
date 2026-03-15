@@ -22,7 +22,6 @@ export async function GET(request: Request, { params }: Props) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
-    // Verify user belongs to company
     const company = await sql`
       SELECT c.id FROM companies c
       JOIN users u ON u.company_id = c.id
@@ -39,23 +38,21 @@ export async function GET(request: Request, { params }: Props) {
       return NextResponse.json({ error: 'Missing lead_id or type' }, { status: 400 });
     }
 
-    // Fetch the most recent html_body for this lead + type from email_outbox
-    const rows = await sql`
-      SELECT html_body, created_at
+    const entries = await sql`
+      SELECT
+        id, status, error_message,
+        sent_by_email, sent_by_name,
+        subject, html_body,
+        created_at, sent_at
       FROM email_outbox
       WHERE lead_id = ${parseInt(leadId)}
         AND type = ${type}
         AND company_id = ${company[0].id}
-        AND html_body IS NOT NULL
       ORDER BY created_at DESC
-      LIMIT 1
+      LIMIT 20
     `;
 
-    if (!rows.length) {
-      return NextResponse.json({ html_body: null });
-    }
-
-    return NextResponse.json({ html_body: rows[0].html_body, sent_at: rows[0].created_at });
+    return NextResponse.json({ entries });
 
   } catch (error) {
     console.error('outbox-preview error:', error);

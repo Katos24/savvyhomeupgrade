@@ -180,15 +180,6 @@ export default function SendEmailModal({
                 </>
               )}
             </div>
-            {/* Preview button if html_body available */}
-            {lastHtmlBody && (
-              <button
-                onClick={() => setShowPreview(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-current font-black transition hover:opacity-80 shrink-0"
-              >
-                <Eye className="w-3 h-3" /> View Last
-              </button>
-            )}
           </div>
 
           {/* Actions */}
@@ -223,7 +214,7 @@ export default function SendEmailModal({
         >
           <div
             className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl"
-            style={{ maxHeight: '88vh' }}
+            style={{ height: '88vh', maxHeight: '88vh' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
@@ -235,12 +226,12 @@ export default function SendEmailModal({
                 <X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
-            <div className="flex-1 bg-slate-50 p-3 overflow-hidden">
+            <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
               <iframe
                 title="Email Preview"
                 srcDoc={lastHtmlBody}
-                className="w-full h-full border-0 rounded-xl bg-white"
-                style={{ minHeight: '400px' }}
+                className="w-full border-0 rounded-xl bg-white"
+                style={{ height: '100%', width: '100%', display: 'block' }}
                 sandbox="allow-same-origin"
               />
             </div>

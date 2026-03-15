@@ -7,7 +7,7 @@ import {
   Pencil, X, Save, Phone, ExternalLink, Palette, Globe, Download
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
-import { useRouter } from 'next/navigation';
+
 
 // Sub-tab imports
 import FormTab from './tabs/FormTab';
@@ -31,7 +31,6 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 export default function CompanySettingsClient({ company, currentUser }: { company: any; currentUser: any }) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -153,9 +152,11 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         }),
       });
       if (res.ok) {
+        // Just close edit mode - formData already has the updated values in state
+        // No reload needed, no flash
+        if (finalLogoUrl !== company.logo_url) setLogoPreview(finalLogoUrl || '');
+        setLogoFile(null);
         setIsEditing(false);
-        // Soft refresh - revalidate without full page reload
-        router.refresh();
       }
     } catch (err) { console.error('Save failed:', err); }
     finally { setLoading(false); }
@@ -220,167 +221,178 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         <section className="bg-white border border-slate-200 rounded-3xl sm:rounded-[3rem] shadow-xl shadow-indigo-100/50 overflow-hidden">
           <div className="h-2 sm:h-3 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
 
-          <div className="p-5 sm:p-8 lg:p-12">
-            {/* Mobile: stacked layout / Desktop: side by side */}
-            <div className="flex flex-col gap-6 sm:gap-8">
+          <div className="p-5 sm:p-8 lg:p-12 space-y-5 sm:space-y-6">
 
-              {/* Top row: logo + QR + edit button */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  {/* Logo */}
-                  <div className="relative">
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-50 rounded-2xl sm:rounded-[2rem] border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
-                      {logoPreview
-                        ? <img src={logoPreview} className="w-full h-full object-contain p-2 sm:p-3" />
-                        : <span className="text-2xl sm:text-4xl font-black text-slate-200">{formData.name.charAt(0)}</span>
-                      }
-                    </div>
-                    {isEditing && (
-                      <label className="absolute -bottom-1.5 -right-1.5 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
-                        <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setLogoFile(file);
-                            const reader = new FileReader();
-                            reader.onloadend = () => setLogoPreview(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }} />
-                      </label>
-                    )}
-                  </div>
-
-                  {/* Company name */}
-                  <div className="flex-1 min-w-0">
-                    {!isEditing
-                      ? <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight truncate">{formData.name}</h2>
-                      : <input
-                          value={formData.name}
-                          onChange={e => setFormData({ ...formData, name: e.target.value })}
-                          className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-indigo-200 focus:border-indigo-500 w-full bg-transparent"
-                          placeholder="Company Name"
-                        />
-                    }
-                    {/* Public link pill */}
-                    <div className="mt-1.5 flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 w-fit max-w-full">
-                      <Globe className="w-3 h-3 text-indigo-500 shrink-0" />
-                      <span className="text-[10px] font-mono text-slate-600 truncate max-w-[180px] sm:max-w-xs">{publicLink || 'Loading...'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Edit / Save buttons */}
-                <div className="shrink-0">
-                  {!isEditing
-                    ? <button onClick={() => setIsEditing(true)} className="flex items-center gap-1.5 px-3 py-2 sm:px-5 sm:py-2.5 bg-slate-900 text-white rounded-xl sm:rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition shadow-md">
-                        <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
-                      </button>
-                    : <div className="flex gap-2">
-                        <button onClick={() => setIsEditing(false)} className="p-2 text-slate-400 hover:text-slate-600 transition"><X className="w-5 h-5" /></button>
-                        <button onClick={handleSaveIdentity} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg transition">
-                          <Save className="w-3.5 h-3.5" /> {loading ? 'Saving...' : 'Save'}
-                        </button>
-                      </div>
+            {/* Row 1: Logo + Name + Edit button */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Logo */}
+              <div className="relative shrink-0">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
+                  {logoPreview
+                    ? <img src={logoPreview} className="w-full h-full object-contain p-2" alt="Logo" />
+                    : <span className="text-2xl sm:text-3xl font-black text-slate-200">{formData.name.charAt(0)}</span>
                   }
                 </div>
-              </div>
-
-              {/* QR Code - inline on mobile */}
-              {!isEditing && (
-                <button
-                  onClick={() => setShowQrModal(true)}
-                  className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all w-full sm:w-auto"
-                >
-                  {qrCodeUrl && <img src={qrCodeUrl} className="w-10 h-10 sm:w-12 sm:h-12" />}
-                  <div className="text-left">
-                    <p className="text-xs font-black text-slate-700">Customer QR Code</p>
-                    <p className="text-[10px] text-slate-400 font-medium">Tap to download</p>
-                  </div>
-                </button>
-              )}
-
-              {/* Fields grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
-                  {isEditing
-                    ? <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-2 ring-indigo-500/10 outline-none" />
-                    : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                        <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="truncate">{formData.email || 'Not set'}</span>
-                      </div>
-                  }
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
-                  {isEditing
-                    ? <input type="text" value={formData.phone} placeholder="(555) 555-5555"
-                        onChange={e => {
-                          const input = e.target.value.replace(/\D/g, '');
-                          if (input.length <= 10) setFormData({ ...formData, phone: formatPhone(input) });
-                        }}
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition-all font-medium"
-                      />
-                    : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                        <Phone className="w-4 h-4 text-slate-400 shrink-0" /> {formData.phone || 'Not set'}
-                      </div>
-                  }
-                </div>
-
-                {/* Website */}
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
-                  {isEditing
-                    ? <input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition-all"
-                        placeholder="https://yourwebsite.com"
-                      />
-                    : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                        <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="truncate">{formData.website || 'Not set'}</span>
-                        {formData.website && (
-                          <a href={formData.website} target="_blank" className="ml-auto text-indigo-500 hover:text-indigo-600 shrink-0">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                  }
-                </div>
-
-                {/* Brand colors - edit mode only */}
                 {isEditing && (
-                  <div className="sm:col-span-2 space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <Palette className="w-3 h-3" /> Brand Colors
-                    </label>
-                    <div className="flex gap-4">
-                      <input type="color" value={formData.color1} onChange={e => setFormData({ ...formData, color1: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
-                      <input type="color" value={formData.color2} onChange={e => setFormData({ ...formData, color2: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
-                    </div>
-                  </div>
+                  <label className="absolute -bottom-1 -right-1 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
+                    <Camera className="w-3.5 h-3.5" />
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setLogoFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => setLogoPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
                 )}
               </div>
 
-              {/* Action buttons */}
+              {/* Name + link */}
+              <div className="flex-1 min-w-0">
+                {!isEditing
+                  ? <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate leading-tight">{formData.name}</h2>
+                  : <input
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-indigo-200 focus:border-indigo-500 w-full bg-transparent leading-tight pb-1"
+                      placeholder="Company Name"
+                    />
+                }
+                <div className="mt-1.5 flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-full max-w-[260px]">
+                  <Globe className="w-3 h-3 text-indigo-500 shrink-0" />
+                  <span className="text-[10px] font-mono text-slate-500 truncate">{publicLink || 'Loading...'}</span>
+                </div>
+              </div>
+
+              {/* Edit button  always visible, icon-only on mobile */}
               {!isEditing && (
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                    className="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-white bg-indigo-600 px-5 py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 w-full sm:w-auto"
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copied ? 'Copied!' : 'Copy Link'}
-                  </button>
-                  <a href={publicLink} target="_blank" className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 px-4 py-3 rounded-xl hover:bg-slate-100 transition border border-slate-100 w-full sm:w-auto">
-                    <ExternalLink className="w-4 h-4" /> View Portal
-                  </a>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition shadow-md"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Edit</span>
+                </button>
+              )}
+            </div>
+
+            {/* Fields grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
+                {isEditing
+                  ? <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition" />
+                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+                      <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="truncate">{formData.email || 'Not set'}</span>
+                    </div>
+                }
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
+                {isEditing
+                  ? <input type="text" value={formData.phone} placeholder="(555) 555-5555"
+                      onChange={e => {
+                        const input = e.target.value.replace(/\D/g, '');
+                        if (input.length <= 10) setFormData({ ...formData, phone: formatPhone(input) });
+                      }}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition font-medium"
+                    />
+                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span>{formData.phone || 'Not set'}</span>
+                    </div>
+                }
+              </div>
+
+              {/* Website */}
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
+                {isEditing
+                  ? <input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition"
+                      placeholder="https://yourwebsite.com"
+                    />
+                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+                      <Globe className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="truncate flex-1">{formData.website || 'Not set'}</span>
+                      {formData.website && (
+                        <a href={formData.website} target="_blank" className="text-indigo-500 hover:text-indigo-600 shrink-0">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                }
+              </div>
+
+              {/* Brand colors  edit mode only */}
+              {isEditing && (
+                <div className="sm:col-span-2 space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <Palette className="w-3 h-3" /> Brand Colors
+                  </label>
+                  <div className="flex gap-4">
+                    <input type="color" value={formData.color1} onChange={e => setFormData({ ...formData, color1: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
+                    <input type="color" value={formData.color2} onChange={e => setFormData({ ...formData, color2: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Edit mode: full-width save/cancel bar */}
+            {isEditing && (
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+                <button
+                  onClick={handleSaveIdentity}
+                  disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]"
+                >
+                  <Save className="w-4 h-4" /> {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+
+            {/* View mode: QR + action buttons */}
+            {!isEditing && (
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  onClick={() => setShowQrModal(true)}
+                  className="flex items-center gap-2.5 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
+                >
+                  {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
+                  <div className="text-left">
+                    <p className="text-xs font-black text-slate-700 leading-tight">QR Code</p>
+                    <p className="text-[10px] text-slate-400">Tap to download</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  className="flex-1 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-white bg-indigo-600 px-5 py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? 'Copied!' : 'Copy Booking Link'}
+                </button>
+                <a
+                  href={publicLink}
+                  target="_blank"
+                  className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 px-4 py-3 rounded-xl hover:bg-slate-100 transition border border-slate-100"
+                >
+                  <ExternalLink className="w-4 h-4" /> View
+                </a>
+              </div>
+            )}
           </div>
         </section>
 
