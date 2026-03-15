@@ -23,8 +23,9 @@ type Company = {
   status_options?: StatusOption[]; form_categories?: any[]; custom_questions?: any[];
   subscription_status?: string; trial_ends_at?: string | null;
   plan_tier?: string;
-    onboarding_completed?: boolean;
-
+  onboarding_completed?: boolean;
+  cancel_at_period_end?: boolean;
+  subscription_cancel_at?: string | null;
 };
 
 const DEFAULT_STATUSES: StatusOption[] = [
@@ -63,8 +64,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
+const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleChatScroll = () => {
     const el = chatScrollRef.current;
@@ -89,21 +90,28 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   
 
-  async function fetchLeads() {
-    try {
-      const res = await fetch(`/api/company/${company.slug}/leads`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
-      });
-      const data = await res.json();
-      setAllLeads((data.leads || []).filter((l: any) => !l.deleted));
-      setRefreshKey(prev => prev + 1);
-    } catch (e) {
-      console.error('Failed to fetch leads:', e);
-    } finally {
-      setLoading(false);
+ async function fetchLeads(page = 1) {
+  try {
+    if (page === 1) setLoading(true);
+    const res = await fetch(`/api/company/${company.slug}/leads?page=${page}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+    });
+    const data = await res.json();
+    const fresh = (data.leads || []).filter((l: any) => !l.deleted);
+    if (page === 1) {
+      setAllLeads(fresh);
+    } else {
+      setAllLeads(prev => [...prev, ...fresh]);
     }
+    setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
+    setRefreshKey(prev => prev + 1);
+  } catch (e) {
+    console.error('Failed to fetch leads:', e);
+  } finally {
+    setLoading(false);
   }
+}
 
   async function fetchCurrentUser() {
     try {
@@ -208,7 +216,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   }
 
   async function refreshModalLead() {
-    await fetchLeads();
+  await fetchLeads(1);
     if (!selectedLead) return;
     try {
       const res = await fetch(`/api/company/${company.slug}/leads`);
@@ -437,11 +445,14 @@ return (
 
       <div className="relative z-10">
         <TrialBanner
-          subscriptionStatus={company.subscription_status || 'inactive'}
-          trialEndsAt={company.trial_ends_at || null}
-          companySlug={company.slug}
-        />
-        <PaymentReminderBanner slug={company.slug} /> 
+  subscriptionStatus={company.subscription_status || 'inactive'}
+  trialEndsAt={company.trial_ends_at || null}
+  companySlug={company.slug}
+  cancelAtPeriodEnd={company.cancel_at_period_end}
+  subscriptionCancelAt={company.subscription_cancel_at}
+/>
+
+<PaymentReminderBanner slug={company.slug} />
       </div>
 
       {/* Onboarding Banner */}
@@ -486,7 +497,7 @@ return (
   {company.logo_url ? (
     <div className="p-1.5 bg-white rounded-xl shadow-sm flex items-center justify-center">
       <img 
-        src={company.logo_url} 
+        src={company.logo_url ?? undefined}
         alt={company.name} 
         className="h-8 w-auto max-w-[120px] sm:max-w-[150px] object-contain" 
       />
@@ -654,6 +665,18 @@ return (
                 customQuestions={company.custom_questions || []}
               />
             </div>
+          </div>
+       )}
+
+        {/* Load More */}
+        {pagination.page < pagination.pages && (
+          <div className="flex justify-center pt-8 pb-4">
+            <button
+              onClick={() => fetchLeads(pagination.page + 1)}
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-2xl transition"
+            >
+              {`Load More (${pagination.total - allLeads.length} remaining)`}
+            </button>
           </div>
         )}
       </div>

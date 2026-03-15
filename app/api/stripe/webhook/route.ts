@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { neon } from '@neondatabase/serverless';
 import { headers } from 'next/headers';
-import { sendSubscriptionActivatedEmail, sendSubscriptionCancelledEmail, sendPaymentFailedEmail } from '@/lib/email';
+import { sendSubscriptionActivatedEmail, sendSubscriptionCancelledEmail, sendPaymentFailedEmail, sendCancellationScheduledEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -112,22 +112,43 @@ export async function POST(req: NextRequest) {
       }
 
       if (subscription.cancel_at_period_end === true) {
-        try {
-          const company = await sql`
-            SELECT name, email FROM companies 
-            WHERE stripe_customer_id = ${subscription.customer as string}
-          `;
-          if (company[0]) {
-            await sendSubscriptionCancelledEmail({
-              companyEmail: company[0].email,
-              companyName: company[0].name
-            });
-            console.log('✅ Cancellation email sent (cancel at period end)');
-          }
-        } catch (emailError) {
-          console.error('Failed to send cancellation email:', emailError);
-        }
+  try {
+    const company = await sql`
+      SELECT name, email, subscription_status, trial_ends_at FROM companies 
+      WHERE stripe_customer_id = ${subscription.customer as string}
+    `;
+    if (company[0]) {
+      const isTrialing = company[0].subscription_status === 'trialing';
+      const sub = subscription as any;
+      let accessUntil: Date;
+      if (isTrialing && company[0].trial_ends_at) {
+        accessUntil = new Date(company[0].trial_ends_at);
+      } else if (sub.current_period_end) {
+        accessUntil = new Date(sub.current_period_end * 1000);
+      } else {
+        accessUntil = new Date();
       }
+      const formattedDate = accessUntil.toLocaleDateString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric',
+      });
+      await sql`
+        UPDATE companies SET
+          subscription_cancel_at = ${accessUntil},
+          cancel_at_period_end = true
+        WHERE stripe_customer_id = ${subscription.customer as string}
+      `;
+      await sendCancellationScheduledEmail({
+        companyEmail: company[0].email,
+        companyName: company[0].name,
+        accessUntil: formattedDate,
+        isTrialing,
+      });
+      console.log('✅ Cancellation scheduled email sent, access until:', formattedDate);
+    }
+  } catch (emailError) {
+    console.error('Failed to send cancellation scheduled email:', emailError);
+  }
+}
 
       break;
     }
@@ -136,14 +157,16 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object;
 
       const result = await sql`
-        UPDATE companies 
-        SET 
-          subscription_status = 'canceled',
-          plan_tier = 'basic'
-        WHERE stripe_customer_id = ${subscription.customer as string}
-           OR stripe_subscription_id = ${subscription.id}
-        RETURNING id
-      `;
+  UPDATE companies 
+  SET 
+    subscription_status = 'canceled',
+    plan_tier = 'basic',
+    cancel_at_period_end = false,
+    subscription_cancel_at = NULL
+  WHERE stripe_customer_id = ${subscription.customer as string}
+     OR stripe_subscription_id = ${subscription.id}
+  RETURNING id
+`;
 
       if (result.length === 0) {
         console.error('❌ No company found for deleted subscription:', subscription.id);

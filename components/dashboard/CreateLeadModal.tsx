@@ -22,6 +22,8 @@ export default function CreateLeadModal({
   categories 
 }: CreateLeadModalProps) {
   const [loading, setLoading] = useState(false);
+  const [notifyCustomer, setNotifyCustomer] = useState(false);
+  const [notifyOwner, setNotifyOwner] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -74,6 +76,9 @@ export default function CreateLeadModal({
           company_id: companyId,
           lead_source: 'dashboard_manual',
           custom_answers: {},
+          created_by: 'team',
+          notify_customer: notifyCustomer,
+          notify_owner: notifyOwner,
         }),
       });
 
@@ -213,6 +218,28 @@ export default function CreateLeadModal({
                   className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 sm:py-4 text-white focus:border-indigo-500 focus:outline-none transition-all text-base resize-none"
                 />
               </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="flex flex-col gap-2 pt-1">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div
+                  onClick={() => setNotifyOwner(!notifyOwner)}
+                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyOwner ? 'bg-indigo-600' : 'bg-white/10'}`}
+                >
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyOwner ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </div>
+                <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Notify owner</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div
+                  onClick={() => setNotifyCustomer(!notifyCustomer)}
+                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyCustomer ? 'bg-indigo-600' : 'bg-white/10'}`}
+                >
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyCustomer ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </div>
+                <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Send confirmation to customer</span>
+              </label>
             </div>
 
             {/* Actions */}

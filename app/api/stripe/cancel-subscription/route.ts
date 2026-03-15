@@ -1,7 +1,7 @@
-// app/api/stripe/cancel-subscription/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { neon } from '@neondatabase/serverless';
+import { sendCancellationScheduledEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,65 +11,77 @@ const sql = neon(process.env.DATABASE_URL!);
 export async function POST(req: NextRequest) {
   try {
     const { companyId } = await req.json();
+    if (!companyId) return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
 
-    if (!companyId) {
-      return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
-    }
-
-    // Fetch company info from DB
     const companies = await sql`
-      SELECT stripe_subscription_id, subscription_status, trial_ends_at
+      SELECT id, name, email, stripe_subscription_id, subscription_status, trial_ends_at
       FROM companies
       WHERE id = ${companyId}
     `;
 
-    if (companies.length === 0) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-    }
+    if (companies.length === 0) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     const company = companies[0];
 
     if (!company.stripe_subscription_id) {
-      return NextResponse.json(
-        { error: 'No active subscription found' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No active subscription found' }, { status: 400 });
     }
 
-    // Retrieve subscription from Stripe
-    const subscription = await stripe.subscriptions.retrieve(
-      company.stripe_subscription_id
-    );
-
-    // Cancel at end of period or trial
-    const canceledSubscription = await stripe.subscriptions.update(
+    // Cancel at period end — they keep access until then
+    const canceled = await stripe.subscriptions.update(
       company.stripe_subscription_id,
       { cancel_at_period_end: true }
-    );
+    ) as any;
 
-    const periodEnd = canceledSubscription.current_period_end
-      ? new Date(canceledSubscription.current_period_end * 1000)
-      : company.trial_ends_at; // fallback to trial end if no current_period_end
+    // Determine access end date
+    // If in trial, use trial_ends_at. If paid, use current_period_end.
+    const isTrialing = company.subscription_status === 'trialing';
+    let periodEnd: Date;
 
-    // Update DB
+    if (isTrialing && company.trial_ends_at) {
+      periodEnd = new Date(company.trial_ends_at);
+    } else if (canceled.current_period_end) {
+      periodEnd = new Date(canceled.current_period_end * 1000);
+    } else {
+      periodEnd = new Date(); // fallback
+    }
+
+    const formattedDate = periodEnd.toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+    });
+
+    // Update DB — keep status as-is (trialing/active) so they retain access
+    // Set cancel_at so we know when to deactivate
     await sql`
       UPDATE companies
-      SET 
-        subscription_status = 'canceled',
-        subscription_current_period_end = ${periodEnd}
+      SET
+        subscription_cancel_at = ${periodEnd},
+        cancel_at_period_end = true
       WHERE id = ${companyId}
     `;
 
+    // Send cancellation confirmation email
+    if (company.email) {
+      try {
+        await sendCancellationScheduledEmail({
+          companyEmail: company.email,
+          companyName: company.name,
+          accessUntil: formattedDate,
+          isTrialing,
+        });
+      } catch (emailErr) {
+        console.error('Failed to send cancellation email:', emailErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      subscription_status: 'canceled',
-      subscription_current_period_end: periodEnd,
+      message: `Subscription will cancel on ${formattedDate}`,
+      access_until: periodEnd,
     });
+
   } catch (error: any) {
     console.error('Cancel subscription error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to cancel subscription' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Failed to cancel' }, { status: 500 });
   }
 }

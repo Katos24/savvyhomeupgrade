@@ -10,6 +10,9 @@ export async function POST(request: Request) {
     const contentType = request.headers.get('content-type') || '';
     let name, email, phone, address_line_1, address_line_2, city, zip_code, category, description, fileUrls, companySlug, companyId, lead_source, preferred_date, preferred_time;
     let customAnswers: Record<string, any> = {};
+    let notify_customer = true;
+let notify_owner = true;
+let created_by = 'customer';
 
     // Helper function to format category
     const formatCategory = (cat: string) => {
@@ -37,6 +40,9 @@ export async function POST(request: Request) {
       customAnswers = body.custom_answers || {};
       preferred_date = body.preferred_date || null;
       preferred_time = body.preferred_time || null;
+      notify_customer = body.notify_customer ?? true;
+notify_owner = body.notify_owner ?? true;
+created_by = body.created_by || 'customer';
 
       console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
@@ -78,10 +84,10 @@ export async function POST(request: Request) {
     const [lead] = await sql`
       INSERT INTO leads (
         name, email, phone, address_line_1, address_line_2, city, zip_code, category, description,
-        company_id, status, file_urls, lead_source, custom_answers, preferred_date, preferred_time
+        company_id, status, file_urls, lead_source, custom_answers, preferred_date, preferred_time, created_by
       ) VALUES (
         ${name}, ${email}, ${phone}, ${address_line_1}, ${address_line_2}, ${city}, ${zip_code}, ${category}, ${description},
-        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}, ${preferred_date}, ${preferred_time}
+        ${companyId}, 'new', ${JSON.stringify(fileUrls)}, ${lead_source}, ${JSON.stringify(customAnswers)}, ${preferred_date}, ${preferred_time}, ${created_by}
       )
       RETURNING id
     `;
@@ -97,7 +103,7 @@ export async function POST(request: Request) {
         const companyName = company[0].name;
         const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${companySlug}/dashboard`;
 
-        sendNewLeadAlertEmail({
+        if (notify_owner) sendNewLeadAlertEmail({
           contractorEmail,
           customerName: name,
           customerEmail: email,
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
         });
         console.log(`📧 Contractor email alert queued for ${contractorEmail}`);
 
-        sendLeadConfirmationEmail({
+        if (notify_customer && email) sendLeadConfirmationEmail({
           customerEmail: email,
           customerName: name,
           category: formatCategory(category),

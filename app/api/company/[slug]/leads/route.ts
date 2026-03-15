@@ -1,5 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -8,26 +10,54 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
-    const sql = neon(process.env.DATABASE_URL!);
 
-    // Get company ID from slug
-    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
-    
-    if (companies.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Company not found' },
-        { status: 404 }
-      );
+    // ── Auth check ──────────────────────────────────────────
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
+    const sql = neon(process.env.DATABASE_URL!);
+
+    // ── Verify user belongs to this company ─────────────────
+    const companies = await sql`
+      SELECT c.id FROM companies c
+      JOIN users u ON u.company_id = c.id
+      WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
+      LIMIT 1
+    `;
+    if (companies.length === 0) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
     const companyId = companies[0].id;
 
-    // LEFT JOIN with projects to get all project data
+    // ── Pagination ───────────────────────────────────────────
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const limit = 25;
+    const offset = (page - 1) * limit;
+
+    // ── Count total ──────────────────────────────────────────
+    const countResult = await sql`
+      SELECT COUNT(*) as total FROM leads
+      WHERE company_id = ${companyId} AND deleted = false
+    `;
+    const total = parseInt(countResult[0].total);
+    const pages = Math.ceil(total / limit);
+
+    // ── Fetch page ───────────────────────────────────────────
     const leads = await sql`
       SELECT 
         l.*,
         p.id as project_id,
-            p.project_number, 
+        p.project_number,
         p.status as job_status,
         p.scheduled_date,
         p.scheduled_time,
@@ -45,9 +75,9 @@ export async function GET(request: Request, { params }: Props) {
         p.quote_emails,
         p.payment_amount,
         p.paid_at,
-        p.payment_date, 
-        p.payment_method, 
-        p.payment_notes,  
+        p.payment_date,
+        p.payment_method,
+        p.payment_notes,
         p.payment_due_date,
         p.invoice_data,
         p.invoice_sent_at,
@@ -57,59 +87,47 @@ export async function GET(request: Request, { params }: Props) {
         p.completed_at as job_completed_at,
         p.notes as project_notes,
         p.tasks as project_tasks,
-         p.follow_up_date, 
-         p.internal_notes as project_internal_notes,
-
-    p.follow_up_notes  
-
+        p.follow_up_date,
+        p.internal_notes as project_internal_notes,
+        p.follow_up_notes
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = ${companyId}
         AND l.deleted = false
       ORDER BY l.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // 🔥 Use project_notes ONLY - no more merging!
+    // ── Process notes ────────────────────────────────────────
     const processedLeads = leads.map(lead => {
-
-      
-      let notes = [];
-      
-
-      // Only use project notes if they exist
+      let notes: any[] = [];
       if (lead.project_notes) {
         try {
-          notes = typeof lead.project_notes === 'string' 
-            ? JSON.parse(lead.project_notes) 
+          notes = typeof lead.project_notes === 'string'
+            ? JSON.parse(lead.project_notes)
             : lead.project_notes;
-        } catch (e) {
-          console.warn('Failed to parse project notes:', e);
+        } catch {
           notes = [];
         }
       }
-
-      // Sort notes by timestamp (oldest first)
-      notes.sort((a: any, b: any) => {
-        const timeA = new Date(a.timestamp || 0).getTime();
-        const timeB = new Date(b.timestamp || 0).getTime();
-        return timeA - timeB;
-      });
-
-      // Remove project_notes from returned object
+      notes.sort((a: any, b: any) =>
+        new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime()
+      );
       const { project_notes, ...leadWithoutProjectNotes } = lead;
-
       return {
         ...leadWithoutProjectNotes,
-        notes: JSON.stringify(notes)
+        notes: JSON.stringify(notes),
       };
     });
 
-    return NextResponse.json({ success: true, leads: processedLeads });
+    return NextResponse.json({
+      success: true,
+      leads: processedLeads,
+      pagination: { page, pages, total, limit },
+    });
+
   } catch (error) {
     console.error('Error fetching leads:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch leads' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to fetch leads' }, { status: 500 });
   }
 }

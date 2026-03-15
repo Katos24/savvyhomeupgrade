@@ -1399,3 +1399,59 @@ export async function sendQuoteAcceptedNotification({
     `,
   });
 }
+
+
+
+export async function sendCancellationScheduledEmail({
+  companyEmail,
+  companyName,
+  accessUntil,
+  isTrialing,
+}: {
+  companyEmail: string;
+  companyName: string;
+  accessUntil: string;
+  isTrialing: boolean;
+}) {
+  const resubUrl = `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`;
+
+  await resend.emails.send({
+    from: 'Lead2Project <onboarding@resend.dev>',
+    to: companyEmail,
+    subject: `Your Lead2Project subscription has been cancelled`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f9fc;margin:0;padding:0;">
+          <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+            <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px 32px;">
+              <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">Subscription Cancelled</h1>
+              <p style="margin:8px 0 0 0;color:#94a3b8;font-size:14px;">We're sorry to see you go, ${companyName}</p>
+            </div>
+            <div style="padding:32px;">
+              <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;margin-bottom:24px;">
+                <p style="margin:0 0 6px 0;font-size:13px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+                  ${isTrialing ? 'Trial Access Until' : 'Full Access Until'}
+                </p>
+                <p style="margin:0;font-size:24px;font-weight:800;color:#78350f;">${accessUntil}</p>
+                <p style="margin:8px 0 0 0;font-size:13px;color:#92400e;">
+                  You can continue using all features until this date. No further charges will occur.
+                </p>
+              </div>
+              <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:24px;">
+                After ${accessUntil}, your dashboard will be deactivated and you won't be able to receive new leads or access your data.
+              </p>
+              <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Changed your mind? You can reactivate anytime before your access ends.</p>
+              <div style="text-align:center;">
+                <a href="${resubUrl}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;">
+                  Reactivate Subscription →
+                </a>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}
