@@ -79,6 +79,7 @@ export async function GET(request: Request, { params }: Props) {
         p.payment_method,
         p.payment_notes,
         p.payment_due_date,
+        p.reminder_sent_at,
         p.invoice_data,
         p.invoice_sent_at,
         p.before_photos,
