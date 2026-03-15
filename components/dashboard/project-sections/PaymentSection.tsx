@@ -27,12 +27,17 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setPaymentAmount(lead?.payment_amount || '');
+    const amount = lead?.payment_amount || '';
+    const total = parseFloat(lead?.quote_total || '0');
+    const paid = parseFloat(amount || '0');
+
+    setPaymentAmount(amount);
     setPaymentMethod(lead?.payment_method || '');
-   setPaymentDate(lead?.payment_date ? String(lead.payment_date).split('T')[0] : '');
-setPaymentNotes(lead?.payment_notes || '');
-setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
-    setMarkPaidInFull(false);
+    setPaymentDate(lead?.payment_date ? String(lead.payment_date).split('T')[0] : '');
+    setPaymentNotes(lead?.payment_notes || '');
+    setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
+    // Initialize checked if already paid in full from saved data
+    setMarkPaidInFull(total > 0 && paid >= total);
   }, [lead?.id]);
 
   useEffect(() => {
@@ -78,7 +83,7 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
       const result = await res.json();
       if (res.ok && result.success) {
         toast.success('Payment updated!');
-        setMarkPaidInFull(false);
+        // Do NOT reset markPaidInFull here - let it reflect the saved state
         await onRefresh();
       } else {
         toast.error(result.error || 'Failed to update payment');
@@ -92,7 +97,7 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Header with Glass Effect */}
+      {/* Header */}
       <div className="px-6 py-5 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-indigo-200 shadow-lg">
@@ -108,7 +113,7 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
         )}
       </div>
 
-      {/* Dynamic Status Progress Bar */}
+      {/* Progress Bar */}
       {total > 0 && (
         <div className="px-6 py-4 bg-white border-b border-slate-50">
           <div className="flex justify-between items-end mb-2">
@@ -129,10 +134,10 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
         </div>
       )}
 
-      {/* Form Grid */}
+      {/* Form */}
       <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {/* Amount Input */}
+          {/* Amount */}
           <div className="relative group">
             <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
               Amount
@@ -143,15 +148,20 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
                 type="number"
                 step="0.01"
                 value={paymentAmount}
-                onChange={(e) => { setPaymentAmount(e.target.value); if (markPaidInFull) setMarkPaidInFull(false); }}
-                disabled={markPaidInFull}
-                className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all disabled:opacity-50"
+                onChange={(e) => {
+                  setPaymentAmount(e.target.value);
+                  // Uncheck if user manually changes the amount away from the total
+                  if (markPaidInFull && e.target.value !== lead?.quote_total?.toString()) {
+                    setMarkPaidInFull(false);
+                  }
+                }}
+                className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all"
                 placeholder="0.00"
               />
             </div>
           </div>
 
-          {/* Method Selector */}
+          {/* Method */}
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
               Method
@@ -162,17 +172,17 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all appearance-none cursor-pointer"
             >
               <option value="">Select...</option>
-              <option value="cash">💵 Cash</option>
-              <option value="check">✍️ Check</option>
-              <option value="credit_card">💳 Credit Card</option>
-              <option value="zelle">📱 Zelle</option>
-              <option value="venmo">✌️ Venmo</option>
-              <option value="stripe">💳 Stripe</option>
-              <option value="other">⚙️ Other</option>
+              <option value="cash">Cash</option>
+              <option value="check">Check</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="zelle">Zelle</option>
+              <option value="venmo">Venmo</option>
+              <option value="stripe">Stripe</option>
+              <option value="other">Other</option>
             </select>
           </div>
 
-          {/* Date Picker */}
+          {/* Payment Date */}
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
               Payment Date
@@ -188,7 +198,7 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
             </div>
           </div>
 
-          {/* Due Date Picker */}
+          {/* Due Date */}
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
               Due Date
@@ -205,10 +215,10 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
           </div>
         </div>
 
-        {/* Paid in Full Toggle */}
+        {/* Mark Paid in Full toggle */}
         {total > 0 && (
-          <div 
-            onClick={() => setMarkPaidInFull(!markPaidInFull)}
+          <div
+            onClick={() => setMarkPaidInFull(v => !v)}
             className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
               markPaidInFull ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-emerald-200'
             }`}
@@ -227,17 +237,16 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
           </div>
         )}
 
-        {/* Notes Toggle */}
+        {/* Notes */}
         <div className="pt-2">
           <button
-            onClick={() => setShowNotes(!showNotes)}
+            onClick={() => setShowNotes(v => !v)}
             className="flex items-center gap-2 text-xs font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest transition-colors"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             {showNotes ? 'Hide Notes' : 'Add Internal Notes'}
             {showNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
-          
           {showNotes && (
             <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
               <textarea
@@ -258,50 +267,47 @@ setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('
           </div>
         )}
 
-        {/* Action Button */}
+        {/* Save */}
         <button
           onClick={handleSave}
           disabled={saving}
-          className="group relative w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-[0.98] overflow-hidden"
+          className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-[0.98]"
         >
           {saving ? (
             <span className="flex items-center justify-center gap-2">
               <Clock className="w-4 h-4 animate-spin" />
               Processing...
             </span>
-          ) : (
-            'Sync Payment Data'
-          )}
+          ) : 'Sync Payment Data'}
         </button>
+
+        {/* Payment reminder */}
         {!isPaid && total > 0 && (
-  <button
-    onClick={async () => {
-      setSaving(true);
-      try {
-        const slug = window.location.pathname.split('/')[1];
-const res = await fetch(`/api/company/${slug}/payment-reminders`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lead_id: lead.id,
-            project_id: lead.project_id,
-          }),
-        });
-        const data = await res.json();
-        if (data.success) toast.success('Payment reminder sent!');
-        else toast.error(data.error || 'Failed to send reminder');
-      } catch {
-        toast.error('Failed to send reminder');
-      } finally {
-        setSaving(false);
-      }
-    }}
-    disabled={saving || !lead.project_id}
-    className="w-full border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50 text-slate-600 hover:text-indigo-600 font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] transition-all"
-  >
-    Send Payment Reminder
-  </button>
-)}
+          <button
+            onClick={async () => {
+              setSaving(true);
+              try {
+                const slug = window.location.pathname.split('/')[1];
+                const res = await fetch(`/api/company/${slug}/payment-reminders`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ lead_id: lead.id, project_id: lead.project_id }),
+                });
+                const data = await res.json();
+                if (data.success) toast.success('Payment reminder sent!');
+                else toast.error(data.error || 'Failed to send reminder');
+              } catch {
+                toast.error('Failed to send reminder');
+              } finally {
+                setSaving(false);
+              }
+            }}
+            disabled={saving || !lead.project_id}
+            className="w-full border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50 text-slate-600 hover:text-indigo-600 font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] transition-all"
+          >
+            Send Payment Reminder
+          </button>
+        )}
       </div>
     </div>
   );
