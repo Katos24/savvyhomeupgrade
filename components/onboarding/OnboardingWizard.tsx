@@ -78,12 +78,25 @@ export default function OnboardingWizard({ company }: { company: any }) {
     finally { setSaving(false); }
   };
 
-  const handleNext = async () => {
-    let ok = true;
-    if (currentStep === 0) ok = await saveCompanyInfo();
-    else if (currentStep === 1) ok = await saveCategories();
-    if (ok) setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
-  };
+  const completeOnboarding = async () => {
+  try {
+    await fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: company.id, skipped: false }),
+    });
+  } catch {}
+};
+
+const handleNext = async () => {
+  let ok = true;
+  if (currentStep === 0) ok = await saveCompanyInfo();
+  else if (currentStep === 1) {
+    ok = await saveCategories();
+    if (ok) await completeOnboarding();
+  }
+  if (ok) setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
+};
 
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
   const handleSkip = () => {
@@ -179,15 +192,17 @@ export default function OnboardingWizard({ company }: { company: any }) {
             ) : (
               <div />
             )}
-            <button onClick={handleNext} disabled={saving}
-              className="px-8 py-2.5 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              {saving ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-              ) : (
-                <>Save & Continue <ChevronRight className="w-4 h-4" /></>
-              )}
-            </button>
+           <button onClick={handleNext} disabled={saving}
+  className="px-8 py-2.5 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+  {saving ? (
+    <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+  ) : currentStep === 1 ? (
+    <>Finish Setup <ChevronRight className="w-4 h-4" /></>
+  ) : (
+    <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+  )}
+</button>
           </div>
         </div>
       )}

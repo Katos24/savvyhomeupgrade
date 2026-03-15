@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       follow_up_date,  
       follow_up_notes,
       internal_notes,
+      payment_date,
       payment_due_date, 
     } = body;
 

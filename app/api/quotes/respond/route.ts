@@ -96,13 +96,12 @@ export async function GET(request: NextRequest) {
 
     if (action === 'decline') {
       await sql`
-        UPDATE projects
-        SET 
-          quote_declined_at = NOW(),
-          quote_token = NULL,
-          updated_at = NOW()
-        WHERE id = ${project.id}
-      `;
+  UPDATE projects
+  SET 
+    quote_declined_at = NOW(),
+    updated_at = NOW()
+  WHERE id = ${project.id}
+`;
 
       return new NextResponse(
         renderPage(

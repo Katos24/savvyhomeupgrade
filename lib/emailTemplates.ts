@@ -9,13 +9,11 @@ export async function getCompanyEmailTemplates(companyId: number) {
   `;
   
   const company = companies[0];
-  
-  // If company has custom templates, return them
+
   if (company?.email_templates) {
     return company.email_templates;
   }
-  
-  // Otherwise return defaults
+
   return {
     quote: {
       subject: 'Your Quote from {{company_name}}',
@@ -23,9 +21,9 @@ export async function getCompanyEmailTemplates(companyId: number) {
 
 Thank you for reaching out! We're excited to work with you on your {{project_description}} project.
 
-QUOTE TOTAL: ${'{{quote_total}}'}
+{{line_items}}
 
-We've prepared a detailed quote for your review. Our team is ready to get started as soon as you're ready!
+QUOTE TOTAL: {{quote_total}}
 
 What's Next?
 Simply reply to this email or give us a call if you have any questions. We're here to help make your project a success.
@@ -61,7 +59,7 @@ Best regards,
 This is a friendly reminder about your upcoming payment.
 
 PAYMENT DETAILS:
-💰 Amount Due: ${'{{payment_amount}}'}
+💰 Amount Due: {{payment_amount}}
 📅 Due Date: {{due_date}}
 
 We appreciate your business! If you have any questions about this payment or need to discuss payment options, please don't hesitate to reach out.
@@ -76,22 +74,53 @@ Best regards,
 // Replace template variables with actual values
 export function renderEmailTemplate(
   template: { subject: string; body: string },
-  variables: Record<string, string>
+  variables: Record<string, any> // allow array for line items
 ): { subject: string; body: string } {
   let subject = template.subject;
   let body = template.body;
-  
-  // Replace all {{variable}} with actual values
+
   Object.keys(variables).forEach(key => {
+    let value = variables[key];
+
+    if (key === 'line_items' && Array.isArray(value)) {
+      value = formatLineItems(value);
+    }
+
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    subject = subject.replace(regex, variables[key] || '');
-    body = body.replace(regex, variables[key] || '');
+    subject = subject.replace(regex, value || '');
+    body = body.replace(regex, value || '');
   });
-  
+
   return { subject, body };
 }
 
-// Convert plain text body to beautiful branded HTML
+// Format line items as an HTML table
+function formatLineItems(items: { description: string; amount: number }[]) {
+  if (!items.length) return '';
+
+  const rows = items.map(item => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${item.description}</td>
+      <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e2e8f0;">$${item.amount}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 16px 0;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #cbd5e1;">Description</th>
+          <th style="text-align: right; padding: 8px; border-bottom: 2px solid #cbd5e1;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+}
+
+// Convert plain text body to branded HTML
 export function textToHtml(
   text: string, 
   companyName: string,
@@ -101,16 +130,12 @@ export function textToHtml(
   brandColor2?: string,
   extraHtml?: string
 ): string {
-  // Use custom colors or defaults
   const color1 = brandColor1 || '#667eea';
   const color2 = brandColor2 || '#764ba2';
 
-  // Enhanced text parsing with better formatting
   const paragraphs = text.split('\n\n');
   const bodyHtml = paragraphs.map(paragraph => {
     const trimmed = paragraph.trim();
-    
-    // Check if it's a heading (ALL CAPS followed by colon)
     if (/^[A-Z\s]+:/.test(trimmed)) {
       const [heading, ...content] = trimmed.split('\n');
       const contentHtml = content.join('<br>');
@@ -125,8 +150,6 @@ export function textToHtml(
         </div>
       `;
     }
-    
-    // Regular paragraph
     return `<p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">${trimmed.replace(/\n/g, '<br>')}</p>`;
   }).join('');
 
@@ -138,39 +161,29 @@ export function textToHtml(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Email from ${companyName}</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background-color: #f6f9fc; line-height: 1.6;">
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background-color: #f6f9fc; line-height: 1.6;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f9fc; padding: 40px 0;">
           <tr>
             <td align="center">
-              <!-- Main Container -->
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 15px rgba(0, 0, 0, 0.1); overflow: hidden;">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 10px 15px rgba(0,0,0,0.1); overflow: hidden;">
                 
-                <!-- Header with Logo/Branding -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); padding: 40px 40px; text-align: center; position: relative;">
-                    <!-- Decorative elements -->
+                  <td style="background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); padding: 40px; text-align: center; position: relative;">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: rgba(255,255,255,0.3);"></div>
-                    
-                    ${companyLogo ? `
-                      <img src="${companyLogo}" alt="${companyName}" style="max-height: 70px; max-width: 220px; display: block; margin: 0 auto 20px auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
-                    ` : ''}
-                    <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); letter-spacing: -0.5px;">
-                      ${companyName}
-                    </h1>
+                    ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 70px; max-width: 220px; display: block; margin: 0 auto 20px auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">` : ''}
+                    <h1 style="margin: 0; color: #fff; font-size: 32px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); letter-spacing: -0.5px;">${companyName}</h1>
                   </td>
                 </tr>
                 
-                <!-- Content Body -->
                 <tr>
                   <td style="padding: 48px 40px;">
                     <div style="color: #334155;">
-  ${bodyHtml}
-  ${extraHtml || ''}
-</div>
+                      ${bodyHtml}
+                      ${extraHtml || ''}
+                    </div>
                   </td>
                 </tr>
                 
-                <!-- Call to Action (optional separator) -->
                 <tr>
                   <td style="padding: 0 40px 40px 40px;">
                     <div style="border-top: 2px solid #e2e8f0; padding-top: 32px;">
@@ -180,9 +193,7 @@ export function textToHtml(
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td align="center">
-                            <a href="tel:${companyPhone}" style="display: inline-block; background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                              📞 Call Us Now
-                            </a>
+                            <a href="tel:${companyPhone}" style="display: inline-block; background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📞 Call Us Now</a>
                           </td>
                         </tr>
                       </table>
@@ -190,23 +201,14 @@ export function textToHtml(
                   </td>
                 </tr>
                 
-                <!-- Footer -->
                 <tr>
                   <td style="background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%); padding: 32px 40px; border-top: 1px solid #e2e8f0;">
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="text-align: center;">
-                          <p style="margin: 0 0 8px 0; color: #475569; font-size: 16px; font-weight: 600;">
-                            ${companyName}
-                          </p>
-                          ${companyPhone ? `
-                            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 15px;">
-                              📞 ${companyPhone}
-                            </p>
-                          ` : ''}
-                          <p style="margin: 0; color: #94a3b8; font-size: 13px;">
-                            Questions? Simply reply to this email.
-                          </p>
+                          <p style="margin: 0 0 8px 0; color: #475569; font-size: 16px; font-weight: 600;">${companyName}</p>
+                          ${companyPhone ? `<p style="margin: 0 0 16px 0; color: #64748b; font-size: 15px;">📞 ${companyPhone}</p>` : ''}
+                          <p style="margin: 0; color: #94a3b8; font-size: 13px;">Questions? Simply reply to this email.</p>
                         </td>
                       </tr>
                     </table>
@@ -214,8 +216,7 @@ export function textToHtml(
                 </tr>
                 
               </table>
-              
-              <!-- Legal Footer -->
+
               <table width="600" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
                 <tr>
                   <td style="text-align: center; padding: 0 40px;">
@@ -226,7 +227,7 @@ export function textToHtml(
                   </td>
                 </tr>
               </table>
-              
+
             </td>
           </tr>
         </table>

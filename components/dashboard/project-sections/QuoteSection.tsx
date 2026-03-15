@@ -101,11 +101,12 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   const emailLog = useMemo(() => {
-    try {
-      const raw = lead?.quote_emails;
-      return (typeof raw === 'string' ? JSON.parse(raw) : raw || []).reverse();
-    } catch { return []; }
-  }, [lead?.quote_emails]);
+  try {
+    const raw = lead?.quote_emails;
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+    return [...parsed].reverse(); // newest first for display
+  } catch { return []; }
+}, [lead?.quote_emails]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -115,8 +116,11 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         <div className="flex items-center gap-3">
           <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Quote Sheet</h3>
           {lead?.quote_accepted_at && (
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">Accepted</span>
-          )}
+  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">✓ Accepted</span>
+)}
+{lead?.quote_declined_at && !lead?.quote_accepted_at && (
+  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">✗ Declined</span>
+)}
         </div>
 
         <div className="flex items-center gap-2">
@@ -124,7 +128,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
           {isEditing && templates.length > 0 && (
             <select 
               onChange={(e) => {
-                const t = templates.find(tpl => tpl.id === e.target.value);
+  const t = templates.find(tpl => String(tpl.id) === e.target.value);
                 if (t) handleAddTemplate(t);
                 e.target.value = "";
               }}

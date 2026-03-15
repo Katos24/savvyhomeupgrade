@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 
 export async function POST(
   request: Request,
-{ params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
@@ -13,34 +13,35 @@ export async function POST(
 
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     jwt.verify(token, process.env.JWT_SECRET!)
 
     const sql = neon(process.env.DATABASE_URL!)
 
-    const lead = await sql`
-      SELECT before_photos, after_photos, documents
-      FROM leads
-      WHERE id = ${id}
+    // Fetch photos from leads, documents from projects
+    const rows = await sql`
+      SELECT 
+        l.before_photos,
+        l.after_photos,
+        p.documents,
+        p.id as project_id
+      FROM leads l
+      LEFT JOIN projects p ON l.id = p.lead_id
+      WHERE l.id = ${id}
     `
 
-    if (lead.length === 0) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
+    if (rows.length === 0) return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
 
     const parse = (val: any) => {
       if (!val) return []
-      if (typeof val === 'string') return JSON.parse(val)
+      if (typeof val === 'string') { try { return JSON.parse(val) } catch { return [] } }
       return val
     }
 
-    let before = parse(lead[0].before_photos)
-    let after = parse(lead[0].after_photos)
-    let documents = parse(lead[0].documents)
+    let before = parse(rows[0].before_photos)
+    let after = parse(rows[0].after_photos)
+    let documents = parse(rows[0].documents)
+    const projectId = rows[0].project_id
 
     // PHOTO DELETE
     if (body.photoUrl) {
@@ -53,21 +54,25 @@ export async function POST(
       documents.splice(body.index, 1)
     }
 
+    // Always update photos on leads
     await sql`
       UPDATE leads
       SET
         before_photos = ${JSON.stringify(before)},
-        after_photos = ${JSON.stringify(after)},
-        documents = ${JSON.stringify(documents)}
+        after_photos = ${JSON.stringify(after)}
       WHERE id = ${id}
     `
 
-    return NextResponse.json({
-      success: true,
-      before,
-      after,
-      documents
-    })
+    // Update documents on projects if project exists
+    if (projectId) {
+      await sql`
+        UPDATE projects
+        SET documents = ${JSON.stringify(documents)}
+        WHERE id = ${projectId}
+      `
+    }
+
+    return NextResponse.json({ success: true, before, after, documents })
 
   } catch (err) {
     console.error(err)

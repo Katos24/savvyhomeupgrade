@@ -1050,12 +1050,12 @@ export async function sendFollowUpReminderEmail({
 }
 
 
-// 💳 Send payment reminder to customer
 export async function sendPaymentReminderEmail({
   customerEmail,
   customerName,
   companyName,
   companyPhone,
+  companyId,
   amountDue,
   dueDate,
   isOverdue,
@@ -1064,61 +1064,71 @@ export async function sendPaymentReminderEmail({
   customerName: string;
   companyName: string;
   companyPhone?: string;
+  companyId?: number;
   amountDue: number;
   dueDate: string;
   isOverdue: boolean;
 }) {
   try {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-    const formattedDate = new Date(dueDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
-    const label = isOverdue ? '⚠️ Payment Overdue' : '💳 Payment Reminder';
+   const [year, month, day] = String(dueDate).split('T')[0].split('-').map(Number);
+const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
+  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+});
 
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; }
-            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
-            .amount-box { background-color: #f9fafb; border-left: 4px solid ${accentColor}; padding: 24px; margin: 24px 0; text-align: center; }
-            .amount { font-size: 42px; font-weight: bold; color: ${accentColor}; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1 style="color: ${accentColor}; font-size: 24px; margin-bottom: 8px;">${label}</h1>
-            <p>Hi ${customerName},</p>
-            <p>${isOverdue
-              ? `This is a reminder that your payment to <strong>${companyName}</strong> was due on <strong>${formattedDate}</strong> and has not yet been received.`
-              : `This is a friendly reminder that you have a payment due to <strong>${companyName}</strong> on <strong>${formattedDate}</strong>.`
-            }</p>
-            <div class="amount-box">
-              <div style="font-size: 13px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                ${isOverdue ? 'Amount Overdue' : 'Amount Due'}
-              </div>
-              <div class="amount">${fmt(amountDue)}</div>
-              <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">Due: ${formattedDate}</div>
-            </div>
-            <p>Please reach out if you have any questions about your invoice.</p>
-            ${companyPhone ? `<p style="font-size: 14px; color: #6b7280;">📞 <a href="tel:${companyPhone}" style="color: #3b82f6;">${companyPhone}</a></p>` : ''}
-            <div class="footer">${companyName}</div>
-          </div>
-        </body>
-      </html>
-    `;
+    let company: any = {};
+    let emailHtml: string;
+    let subject: string;
 
-    await resend.emails.send({
-      from: `${companyName} <onboarding@resend.dev>`,
+    if (companyId) {
+      company = await getCompanyDetails(companyId);
+      const templates = await getCompanyEmailTemplates(companyId);
+      const paymentTemplate = templates.payment;
+
+      const variables = {
+        company_name: company.name || companyName,
+        company_phone: company.phone || companyPhone || '',
+        customer_name: customerName,
+        payment_amount: fmt(amountDue),
+        amount_due: fmt(amountDue),
+        due_date: formattedDate,
+      };
+
+      const rendered = renderEmailTemplate(paymentTemplate, variables);
+      subject = rendered.subject;
+      emailHtml = textToHtml(
+        rendered.body,
+        company.name || companyName,
+        company.logo_url || undefined,
+        company.phone || companyPhone,
+        company.email_brand_color_1 || undefined,
+        company.email_brand_color_2 || undefined,
+      );
+    } else {
+      // Fallback if no companyId
+      const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
+      subject = isOverdue
+        ? `Payment Overdue - ${companyName}`
+        : `Payment Reminder - ${companyName}`;
+      emailHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;">
+        <h2 style="color:${accentColor};">${isOverdue ? 'Payment Overdue' : 'Payment Reminder'}</h2>
+        <p>Hi ${customerName},</p>
+        <p>Amount due: <strong>${fmt(amountDue)}</strong> by ${formattedDate}</p>
+        <p>${companyPhone ? `Call us: ${companyPhone}` : ''}</p>
+        <p>${companyName}</p>
+      </body></html>`;
+    }
+
+    const emailResult = await resend.emails.send({
+      from: `${company.name || companyName} <onboarding@resend.dev>`,
       to: customerEmail,
-      subject: isOverdue ? `⚠️ Overdue Payment - ${companyName}` : `💳 Payment Reminder - ${companyName}`,
+      subject,
       html: emailHtml,
     });
 
     console.log('✅ Payment reminder sent to:', customerEmail);
+    return { subject, html: emailHtml, resendId: emailResult?.data?.id };
+
   } catch (error) {
     console.error('❌ Failed to send payment reminder:', error);
     throw error;

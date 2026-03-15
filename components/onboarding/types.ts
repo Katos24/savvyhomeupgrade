@@ -45,7 +45,7 @@ export const formatPhone = (v: string) => {
 };
 
 export const STEPS = [
-  { id: 'company', label: 'Company', icon: '🏢', desc: 'Basic info & branding' },
-  { id: 'categories', label: 'Categories', icon: '🏷️', desc: 'Service types & tasks' },
-  { id: 'done', label: 'Done', icon: '🎉', desc: "You're all set" },
+  { id: 'company',    label: 'Company',    icon: '🏢', desc: 'Basic info & branding' },
+  { id: 'categories', label: 'Categories', icon: '🏷️', desc: 'Your service types' },
+  { id: 'done',       label: 'Done',       icon: '🎉', desc: "You're all set" },
 ];

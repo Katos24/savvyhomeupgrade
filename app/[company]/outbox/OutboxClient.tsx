@@ -646,13 +646,16 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
                               </div>
                             )}
                             {email.html_body && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body || '') }}
-                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 mt-2 rounded-lg text-xs font-medium text-indigo-400 hover:text-white transition"
-                                style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
-                                👁 Preview Email
-                              </button>
-                            )}
+  <button
+    onClick={(e) => { 
+      e.stopPropagation(); 
+      setPreviewHtml(email.html_body ?? null) 
+    }}
+    className="flex items-center justify-center gap-1.5 px-3 py-2 mt-4 rounded-lg text-xs text-gray-500 hover:text-white no-underline transition"
+    style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
+    Preview Email
+  </button>
+)}
                             {email.error_message && (
                               <div className="mt-3 pt-3 border-t" style={{ borderColor: '#232731' }}>
                                 <div className="text-xs text-red-400 uppercase tracking-wider font-medium mb-1">Error</div>
@@ -672,27 +675,36 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
       </div>
 
       {/* Email Preview Modal */}
-      {previewHtml && (
-        <div className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)' }}
-          onClick={() => setPreviewHtml(null)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-              <span className="text-sm font-bold text-gray-900">Email Preview</span>
-              <button onClick={() => setPreviewHtml(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <iframe
-                srcDoc={previewHtml}
-                className="w-full h-full min-h-[500px] border-0"
-                sandbox="allow-same-origin"
-                title="Email preview"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+    {previewHtml && (
+  <div
+    className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+    onClick={() => setPreviewHtml(null)} // click outside closes
+  >
+    <div
+      className="bg-[#111318] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-auto p-4 relative"
+      onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+    >
+      {/* Close button */}
+      <button
+        onClick={() => setPreviewHtml(null)}
+        className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg"
+      >
+        ✕
+      </button>
+
+      {/* Email content */}
+      <div
+        className="w-full overflow-auto border rounded p-2"
+        style={{
+          background: '#111318',
+          color: '#e8eaf0',
+          pointerEvents: 'none', // disables links/buttons
+        }}
+        dangerouslySetInnerHTML={{ __html: previewHtml }}
+      />
+    </div>
+  </div>
+)}
     </div>
   )
 }

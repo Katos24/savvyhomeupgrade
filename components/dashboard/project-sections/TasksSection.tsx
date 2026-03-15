@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Plus, Loader2, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 
@@ -30,6 +30,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   const [saving, setSaving] = useState(false);
   const [companyCategories, setCompanyCategories] = useState<any[]>([]);
   const [templatesLoaded, setTemplatesLoaded] = useState(false);
+  const templateCreatedRef = useRef(false);
 
   useEffect(() => {
     async function fetchCompanyCategories() {
@@ -55,11 +56,15 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   }, [lead.project_id, hasProject]);
 
   useEffect(() => {
-    if (!templatesLoaded || !hasProject || !lead.project_id) return;
-    if (tasks.length > 0 || !lead?.category) return;
-    const match = companyCategories.find(c => c.value === lead?.category);
-    if (match?.task_templates?.length > 0) createTasksFromTemplate(match.task_templates);
-  }, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
+  if (!templatesLoaded || !hasProject || !lead.project_id) return;
+  if (tasks.length > 0 || !lead?.category) return;
+  if (templateCreatedRef.current) return;
+  const match = companyCategories.find(c => c.value === lead?.category);
+  if (match?.task_templates?.length > 0) {
+    templateCreatedRef.current = true;
+    createTasksFromTemplate(match.task_templates);
+  }
+}, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
 
   const fetchTasks = async () => {
     try {

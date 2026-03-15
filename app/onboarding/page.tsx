@@ -1,53 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeLib from 'qrcode';
-
 import {
-  Building, Mail, Phone, Globe, Palette, Plus, X, Trash2, CheckSquare,
-  Save, ChevronRight, ChevronLeft, Check, Copy, Link2, ChevronUp, ChevronDown,
-  Lock, Workflow, Users, Edit2, FileText, DollarSign, AlertCircle, Sparkles,
-  ArrowRight, RotateCcw, Loader2,
+  Building, Mail, Phone, Globe, Plus, Trash2, Check, Copy, Link2,
+  ChevronRight, ChevronLeft, AlertCircle, Sparkles, ArrowRight, RotateCcw, Loader2, X
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 
-// ─── TYPES ────────────────────────────────────────────
-type TaskTemplate = { id: string; label: string; order: number };
-type Category = { value: string; label: string; emoji?: string; task_templates?: TaskTemplate[] };
-type StatusOption = { value: string; label: string; color: string };
-type CustomQuestion = { id: string; label: string; type: 'text' | 'select' | 'checkbox'; required: boolean; options?: string[] };
-type LineItem = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
-type QuoteTemplate = { id: string; name: string; category: string; items: LineItem[]; total: number; notes?: string; created_at?: string; updated_at?: string };
+type Category = { value: string; label: string; emoji?: string };
 
-const LOCKED_STATUSES = ['new', 'completed'];
-const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'pink' },
-  { value: 'contacted', label: 'Contacted', color: 'blue' },
-  { value: 'quoted', label: 'Quoted', color: 'yellow' },
-  { value: 'scheduled', label: 'Scheduled', color: 'purple' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange' },
-  { value: 'completed', label: 'Completed', color: 'green' },
-];
-const COLOR_OPTIONS = [
-  { value: 'blue', hex: '#3b82f6' }, { value: 'yellow', hex: '#eab308' },
-  { value: 'purple', hex: '#a855f7' }, { value: 'orange', hex: '#f97316' },
-  { value: 'green', hex: '#22c55e' }, { value: 'red', hex: '#ef4444' },
-  { value: 'gray', hex: '#6b7280' }, { value: 'indigo', hex: '#6366f1' },
-  { value: 'pink', hex: '#ec4899' },
-];
-const COLOR_PRESETS = [
-  { name: 'Purple', c1: '#667eea', c2: '#764ba2' },
-  { name: 'Blue', c1: '#2196F3', c2: '#1976D2' },
-  { name: 'Green', c1: '#10b981', c2: '#059669' },
-  { name: 'Orange', c1: '#f97316', c2: '#ea580c' },
-  { name: 'Pink', c1: '#ec4899', c2: '#db2777' },
-  { name: 'Red', c1: '#ef4444', c2: '#dc2626' },
+const STEPS = [
+  { id: 'company',    label: 'Company',    icon: '🏢', desc: 'Basic info & branding' },
+  { id: 'categories', label: 'Categories', icon: '🏷️', desc: 'Your service types' },
+  { id: 'done',       label: 'Done',       icon: '🎉', desc: "You're all set" },
 ];
 
-
-const getColorHex = (name: string) => COLOR_OPTIONS.find(c => c.value === name)?.hex || '#3b82f6';
-const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 const formatPhone = (v: string) => {
   const d = v.replace(/\D/g, '');
   if (d.length <= 3) return d;
@@ -55,24 +24,14 @@ const formatPhone = (v: string) => {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
 };
 
-const STEPS = [
-  { id: 'company', label: 'Company', icon: '🏢', desc: 'Basic info & branding' },
-  { id: 'categories', label: 'Categories', icon: '🏷️', desc: 'Service types & tasks' },
-  { id: 'pipeline', label: 'Pipeline', icon: '📊', desc: 'Workflow stages' },
-  { id: 'form', label: 'Form', icon: '📝', desc: 'Customer questions' },
-  { id: 'quotes', label: 'Quotes', icon: '💰', desc: 'Quote templates' },
-  { id: 'done', label: 'Done', icon: '🎉', desc: "You're all set" },
-];
-
 // ═══════════════════════════════════════════════════════
-// MAIN PAGE (keeps your existing auth/loading logic)
+// MAIN PAGE
 // ═══════════════════════════════════════════════════════
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<any>(null);
-  
 
   useEffect(() => {
     async function loadData() {
@@ -101,21 +60,17 @@ export default function OnboardingPage() {
     loadData();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
-        <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
+      <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
+    </div>
+  );
 
-  if (!company) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
-        <p className="text-red-400">Error loading company data</p>
-      </div>
-    );
-  }
+  if (!company) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
+      <p className="text-red-400">Error loading company data</p>
+    </div>
+  );
 
   return <OnboardingWizard company={company} />;
 }
@@ -125,14 +80,15 @@ export default function OnboardingPage() {
 // ═══════════════════════════════════════════════════════
 
 function OnboardingWizard({ company }: { company: any }) {
-  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Step 1: Company ──
+  // Step 1: Company
   const [companyData, setCompanyData] = useState({
-    name: company.name || '', email: company.email || '', phone: company.phone || '',
+    name: company.name || '',
+    email: company.email || '',
+    phone: company.phone || '',
     website: company.website || '',
     email_brand_color_1: company.email_brand_color_1 || '#667eea',
     email_brand_color_2: company.email_brand_color_2 || '#764ba2',
@@ -140,76 +96,42 @@ function OnboardingWizard({ company }: { company: any }) {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
 
-  // ── Step 2: Categories ──
-  const defaultCats = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
+  // Step 2: Categories
+  const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
   const [categories, setCategories] = useState<Category[]>(
     company.form_categories?.length > 0 ? company.form_categories : defaultCats
   );
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState('');
-  const [editCatIdx, setEditCatIdx] = useState<number | null>(null);
-  const [editTasks, setEditTasks] = useState<TaskTemplate[]>([]);
-  const [newTaskLabel, setNewTaskLabel] = useState('');
 
-  // ── Step 3: Pipeline ──
-  const [statuses, setStatuses] = useState<StatusOption[]>(() => {
-    if (Array.isArray(company.status_options) && company.status_options.length > 0) return company.status_options;
-    return DEFAULT_STATUSES;
-  });
-  const [showAddStatus, setShowAddStatus] = useState(false);
-  const [newStatusLabel, setNewStatusLabel] = useState('');
-  const [newStatusColor, setNewStatusColor] = useState('blue');
-  const [expandedStatusIdx, setExpandedStatusIdx] = useState<number | null>(null);
-
-
-  // ── Step 4: Form ──
-  const [ctaHeading, setCtaHeading] = useState(company.cta_heading || '');
-  const [ctaSuccess, setCtaSuccess] = useState(company.cta_success_message || '');
-  const [questions, setQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
-  const [showAddQ, setShowAddQ] = useState(false);
-  const [editQId, setEditQId] = useState<string | null>(null);
-  const [newQ, setNewQ] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
-  const [newOpt, setNewOpt] = useState('');
-
-  // ── Step 5: Quotes ──
-  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
-  const [showQuoteEditor, setShowQuoteEditor] = useState(false);
-  const [showCatPicker, setShowCatPicker] = useState(false);
-  const [tplName, setTplName] = useState('');
-  const [tplCat, setTplCat] = useState('');
-  const [tplNotes, setTplNotes] = useState('');
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
-  const [newLI, setNewLI] = useState({ description: '', quantity: '1', unitPrice: '' });
-
-  // ── Step 6: Done ──
+  // Step 3: Done
   const [copied, setCopied] = useState(false);
-  const publicLink = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : '';
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const publicLink = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : '';
 
-
-
-useEffect(() => {
-  const link = typeof window !== 'undefined' ? `${window.location.origin}/${company.slug}` : '';
-  if (link) {
-    QRCodeLib.toDataURL(link, { width: 300, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } })
+  useEffect(() => {
+    if (!publicLink) return;
+    QRCodeLib.toDataURL(publicLink, { width: 300, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } })
       .then(url => setQrCodeUrl(url));
-  }
-}, [company.slug]);
+  }, [publicLink]);
 
   const showErr = (msg: string) => { setError(msg); setTimeout(() => setError(''), 4000); };
   const isDone = currentStep === STEPS.length - 1;
 
   // ── SAVE FUNCTIONS ──
 
-  const saveCompany = async () => {
+  const saveCompany = async (): Promise<boolean> => {
     if (!companyData.name.trim()) { showErr('Company name is required'); return false; }
     setSaving(true); setError('');
     try {
       let logoUrl = company.logo_url;
       if (logoFile) {
-        const fd = new FormData(); fd.append('logo', logoFile); fd.append('companySlug', company.slug);
+        const fd = new FormData();
+        fd.append('logo', logoFile);
+        fd.append('companySlug', company.slug);
         const r = await fetch('/api/upload-logo', { method: 'POST', body: fd });
-        const d = await r.json(); if (d.success) logoUrl = d.logoUrl;
+        const d = await r.json();
+        if (d.success) logoUrl = d.logoUrl;
       }
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -218,10 +140,11 @@ useEffect(() => {
       const data = await res.json();
       if (!data.success) { showErr(data.error || 'Failed to save'); return false; }
       return true;
-    } catch { showErr('Failed to save'); return false; } finally { setSaving(false); }
+    } catch { showErr('Failed to save'); return false; }
+    finally { setSaving(false); }
   };
 
-  const saveCats = async () => {
+  const saveCategories = async (): Promise<boolean> => {
     if (categories.length < 3) { showErr('Need at least 3 categories'); return false; }
     setSaving(true); setError('');
     try {
@@ -231,151 +154,32 @@ useEffect(() => {
       });
       const data = await res.json();
       if (!data.success) { showErr(data.error || 'Failed to save'); return false; }
-      return true;
-    } catch { showErr('Failed to save'); return false; } finally { setSaving(false); }
-  };
-
-  const savePipeline = async () => {
-    setSaving(true); setError('');
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-pipeline', data: { status_options: statuses } }),
-      });
-      const data = await res.json();
-      if (!data.success) { showErr(data.error || 'Failed to save'); return false; }
-      return true;
-    } catch { showErr('Failed to save'); return false; } finally { setSaving(false); }
-  };
-
-  const saveForm = async () => {
-    setSaving(true); setError('');
-    try {
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-cta', data: { cta_heading: ctaHeading, cta_success_message: ctaSuccess } }),
-      });
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-custom-questions', data: { custom_questions: questions } }),
-      });
-      return true;
-    } catch { showErr('Failed to save'); return false; } finally { setSaving(false); }
-  };
-
-  const completeOnboarding = async () => {
-    try {
       await fetch('/api/onboarding/complete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyId: company.id, skipped: false }),
       });
-    } catch {}
+      return true;
+    } catch { showErr('Failed to save'); return false; }
+    finally { setSaving(false); }
   };
 
   const handleNext = async () => {
     let ok = true;
     if (currentStep === 0) ok = await saveCompany();
-    else if (currentStep === 1) ok = await saveCats();
-    else if (currentStep === 2) ok = await savePipeline();
-    else if (currentStep === 3) ok = await saveForm();
-    else if (currentStep === 4) { await completeOnboarding(); }
+    else if (currentStep === 1) ok = await saveCategories();
     if (ok) setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
   };
 
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
   const handleSkip = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
 
-  const skipAll = async () => {
-    try {
-      await fetch('/api/onboarding/complete', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId: company.id, skipped: true }),
-      });
-      router.push(`/${company.slug}/dashboard`);
-    } catch {}
-  };
-
-  // ── HELPERS ──
-  const typeLabel = (t: string) => t === 'select' ? 'Dropdown' : t === 'checkbox' ? 'Yes / No' : 'Text';
-
   const addCat = () => {
     if (!newCatLabel.trim()) return;
     if (categories.length >= 20) { showErr('Max 20 categories'); return; }
     const val = newCatLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    setCategories([...categories, { value: val, label: newCatLabel.trim(), task_templates: [] }]);
+    setCategories([...categories, { value: val, label: newCatLabel.trim() }]);
     setNewCatLabel(''); setShowAddCat(false);
   };
-
-  const addStatus = () => {
-    if (!newStatusLabel.trim()) return;
-    if (statuses.length >= 10) { showErr('Max 10 statuses'); return; }
-    const val = newStatusLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const u = [...statuses]; u.splice(u.length - 1, 0, { value: val, label: newStatusLabel.trim(), color: newStatusColor });
-    setStatuses(u); setNewStatusLabel(''); setNewStatusColor('blue'); setShowAddStatus(false);
-  };
-
-  const moveStatus = (from: number, to: number) => {
-    if (to < 0 || to >= statuses.length || to === 0 || to === statuses.length - 1) return;
-    if (LOCKED_STATUSES.includes(statuses[from].value)) return;
-    const u = [...statuses]; const [m] = u.splice(from, 1); u.splice(to, 0, m); setStatuses(u);
-  };
-
-  const addQuestion = () => {
-    if (!newQ.label.trim()) { showErr('Question required'); return; }
-    if (newQ.type === 'select' && !newQ.options?.length) { showErr('Add options'); return; }
-    if (editQId) { setQuestions(questions.map(q => q.id === editQId ? newQ : q)); }
-    else { setQuestions([...questions, { ...newQ, id: `q_${Date.now()}` }]); }
-    setNewQ({ id: '', label: '', type: 'text', required: false, options: [] });
-    setNewOpt(''); setShowAddQ(false); setEditQId(null);
-  };
-
-  const closeQuoteEditor = () => {
-    setShowQuoteEditor(false); setShowCatPicker(false); setTplName(''); setTplCat('');
-    setTplNotes(''); setLineItems([]); setNewLI({ description: '', quantity: '1', unitPrice: '' });
-  };
-
-  const addLineItem = () => {
-    if (!newLI.description || !newLI.unitPrice) return;
-    const qty = parseFloat(newLI.quantity) || 1;
-    const price = parseFloat(newLI.unitPrice);
-    if (isNaN(price) || price <= 0) return;
-    setLineItems([...lineItems, { id: `li_${Date.now()}`, description: newLI.description, quantity: qty, unitPrice: price, amount: qty * price }]);
-    setNewLI({ description: '', quantity: '1', unitPrice: '' });
-  };
-
-  const saveTemplate = async () => {
-    if (!tplName.trim()) { showErr('Template name required'); return; }
-    if (lineItems.length === 0) { showErr('Add at least one item'); return; }
-    setSaving(true);
-    const total = lineItems.reduce((s, i) => s + i.amount, 0);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          template: { id: `custom_${Date.now()}`, name: tplName.trim(), category: tplCat, items: lineItems, total, notes: tplNotes.trim(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        const r2 = await fetch(`/api/company/${company.slug}/quote-templates`);
-        const d2 = await r2.json(); if (d2.success) setTemplates(d2.templates || []);
-        closeQuoteEditor();
-      } else showErr(result.error || 'Failed to save');
-    } catch { showErr('Failed to save'); } finally { setSaving(false); }
-  };
-
-  const deleteTemplate = async (id: string) => {
-    try {
-      await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', templateId: id }),
-      });
-      setTemplates(templates.filter(t => t.id !== id));
-    } catch {}
-  };
-
-  const runningTotal = lineItems.reduce((s, i) => s + i.amount, 0);
 
   // ═══════════════════════════════════════════════════════
   // RENDER
@@ -384,7 +188,7 @@ useEffect(() => {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div className="sticky top-0 z-40 border-b border-white/10" style={{ background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -417,7 +221,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* ── ERROR ── */}
+      {/* ERROR */}
       {error && (
         <div className="max-w-3xl mx-auto px-4 pt-4">
           <div className="flex items-center gap-3 px-4 py-3 bg-red-500/15 border border-red-500/30 text-red-300 text-sm font-medium rounded-lg">
@@ -426,7 +230,7 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── BODY ── */}
+      {/* BODY */}
       <div className="max-w-3xl mx-auto px-4 py-6 pb-32">
         <div className="mb-6 flex items-center gap-3">
           <span className="text-2xl">{STEPS[currentStep].icon}</span>
@@ -436,7 +240,7 @@ useEffect(() => {
           </div>
         </div>
 
-{/* ═══════ STEP 1: COMPANY ═══════ */}
+        {/* STEP 1: COMPANY */}
         {currentStep === 0 && (
           <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
             <div className="px-5 py-4 border-b border-gray-100">
@@ -463,7 +267,9 @@ useEffect(() => {
                 </div>
               </div>
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span></label>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
+                  <Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span>
+                </label>
                 <input type="text" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="Your Company Name" />
               </div>
@@ -479,9 +285,9 @@ useEffect(() => {
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="(555) 123-4567" maxLength={14} />
                 </div>
               </div>
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Globe className="w-3.5 h-3.5" /> Company Website</label>
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5"><Globe className="w-3.5 h-3.5" /> Website</label>
                   <input type="url" value={companyData.website} onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
                     className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="https://yourcompany.com" />
                 </div>
@@ -500,126 +306,64 @@ useEffect(() => {
             </div>
           </div>
         )}
-        
-     {/* ═══════ STEP 2: CATEGORIES ═══════ */}
+
+        {/* STEP 2: CATEGORIES */}
         {currentStep === 1 && (
-          <div className="space-y-4">
-            <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-5 border-b border-gray-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setCategories(defaultCats)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition"><RotateCcw className="w-3 h-3" /> Reset</button>
-                    {categories.length < 20 && <button onClick={() => setShowAddCat(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add</button>}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  These are the types of jobs you offer — like "Roof Repair" or "Kitchen Remodel." When a customer submits a lead, they pick a category from this list. You can also add task templates to each category so a checklist is auto-created when a lead converts to a project.
-                </p>
-                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                  <span className="text-base flex-shrink-0">💡</span>
-                  <p className="text-xs text-amber-800">Click "Tasks" on any category to set up a default checklist. Every new project in that category will start with those tasks ready to go.</p>
-                </div>
+          <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Service Categories</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
               </div>
-              {showAddCat && (
-                <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100">
-                  <div className="flex gap-2">
-                    <input type="text" value={newCatLabel} onChange={(e) => setNewCatLabel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCat()}
-                      placeholder="e.g., Emergency Repair" autoFocus className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none bg-white transition" />
-                    <button onClick={addCat} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">Add</button>
-                    <button onClick={() => { setShowAddCat(false); setNewCatLabel(''); }} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition">Cancel</button>
-                  </div>
-                </div>
-              )}
-              <div className="divide-y divide-gray-50">
-                {categories.map((cat, idx) => (
-                  <div key={idx} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 group transition">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm truncate">{cat.label}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{cat.task_templates?.length || 0} task{cat.task_templates?.length !== 1 ? 's' : ''}</p>
-                    </div>
-                    <button onClick={() => { setEditCatIdx(idx); setEditTasks(cat.task_templates || []); setNewTaskLabel(''); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-100 rounded-lg transition"><CheckSquare className="w-3.5 h-3.5" /> Tasks</button>
-                    <button onClick={() => { if (categories.length <= 3) { showErr('Min 3 categories'); return; } setCategories(categories.filter((_, i) => i !== idx)); }}
-                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-500 rounded-lg transition"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-              </div>
-              <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
-                <p className="text-xs text-gray-400"><span className="font-bold text-gray-500">Tip:</span> Add task templates to auto-create checklists when leads convert to projects.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setCategories(defaultCats)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition">
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                {categories.length < 20 && (
+                  <button onClick={() => setShowAddCat(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition">
+                    <Plus className="w-3 h-3" /> Add
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Task editor modal */}
-            {editCatIdx !== null && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
-                <div className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl sm:rounded-xl">
-              <div className="px-5 py-5 border-b border-gray-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</span>
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">{categories.length}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setCategories(defaultCats)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-lg transition"><RotateCcw className="w-3 h-3" /> Reset</button>
-                    {categories.length < 20 && <button onClick={() => setShowAddCat(true)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"><Plus className="w-3 h-3" /> Add</button>}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  These are the types of jobs you offer — like "Roof Repair" or "Kitchen Remodel." When a customer submits a lead, they pick a category from this list. You can also add task templates to each category so a checklist is auto-created when a lead converts to a project.
-                </p>
-                <div className="flex items-start gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                  <span className="text-base flex-shrink-0">💡</span>
-                  <p className="text-xs text-amber-800">Click "Tasks" on any category to set up a default checklist. Every new project in that category will start with those tasks ready to go.</p>
-                </div>
-                    <button onClick={() => setEditCatIdx(null)} className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition"><X className="w-5 h-5" /></button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                    <div className="flex gap-2">
-                      <input type="text" value={newTaskLabel} onChange={(e) => setNewTaskLabel(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && newTaskLabel.trim()) { setEditTasks([...editTasks, { id: `t_${Date.now()}`, label: newTaskLabel.trim(), order: editTasks.length + 1 }]); setNewTaskLabel(''); } }}
-                        placeholder="Add a task..." className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" />
-                      <button onClick={() => { if (newTaskLabel.trim()) { setEditTasks([...editTasks, { id: `t_${Date.now()}`, label: newTaskLabel.trim(), order: editTasks.length + 1 }]); setNewTaskLabel(''); } }}
-                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">Add</button>
-                    </div>
-                    {editTasks.length > 0 ? (
-                      <div className="border border-gray-100 divide-y divide-gray-50 overflow-hidden rounded-lg">
-                        {editTasks.map((task, idx) => (
-                          <div key={task.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 group transition">
-                            <span className="text-xs font-bold text-gray-300 w-5 text-center flex-shrink-0">{idx + 1}</span>
-                            <input type="text" value={task.label} onChange={(e) => setEditTasks(editTasks.map(t => t.id === task.id ? { ...t, label: e.target.value } : t))}
-                              className="flex-1 min-w-0 px-2 py-1 text-sm border-b-2 border-transparent hover:border-gray-200 focus:border-indigo-400 focus:outline-none bg-transparent transition" />
-                            <button onClick={() => setEditTasks(editTasks.filter(t => t.id !== task.id))}
-                              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-400 rounded-lg transition flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 text-center border border-dashed border-gray-200 rounded-lg">
-                        <CheckSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-gray-400">No tasks yet</p>
-                        <p className="text-xs text-gray-300 mt-1">Type above and press Enter</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-5 py-4 border-t border-gray-100 flex gap-2 flex-shrink-0">
-                    <button onClick={() => setEditCatIdx(null)} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-lg transition">Cancel</button>
-                    <button onClick={() => { if (editCatIdx === null) return; const u = [...categories]; u[editCatIdx] = { ...u[editCatIdx], task_templates: editTasks }; setCategories(u); setEditCatIdx(null); }}
-                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg transition flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save Tasks</button>
-                  </div>
+            {showAddCat && (
+              <div className="px-5 py-4 bg-indigo-50 border-b border-indigo-100">
+                <div className="flex gap-2">
+                  <input type="text" value={newCatLabel} onChange={(e) => setNewCatLabel(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addCat()}
+                    placeholder="e.g., Emergency Repair" autoFocus
+                    className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none bg-white transition" />
+                  <button onClick={addCat} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">Add</button>
+                  <button onClick={() => { setShowAddCat(false); setNewCatLabel(''); }}
+                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition">Cancel</button>
                 </div>
               </div>
             )}
+
+          <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+  {categories.map((cat, idx) => (
+    <div key={idx}
+      className="group relative flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-50 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-200 rounded-lg transition">
+      <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-700 truncate">{cat.label}</span>
+      <button onClick={() => { if (categories.length <= 3) { showErr('Min 3 categories'); return; } setCategories(categories.filter((_, i) => i !== idx)); }}
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-600 transition">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  ))}
+</div>
+
+            <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
+              <p className="text-xs text-gray-400">These appear as options when customers submit a lead. Min 3, max 20.</p>
+            </div>
           </div>
         )}
 
-
-
-{/* ═══════ STEP 6: DONE ═══════ */}
-        {currentStep === 5 && (
+        {/* STEP 3: DONE */}
+        {currentStep === 2 && (
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl text-center">
               <div className="px-6 py-10">
@@ -630,8 +374,12 @@ useEffect(() => {
                 <p className="text-gray-500 text-sm max-w-md mx-auto">Your account is configured. Share your booking link with customers to start receiving leads.</p>
               </div>
             </div>
+
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2"><Link2 className="w-4 h-4 text-gray-400" /><span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Booking Link</span></div>
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-gray-400" />
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Booking Link</span>
+              </div>
               <div className="p-5 space-y-4">
                 <p className="text-xs text-gray-400">Customers use this link to submit leads directly to your dashboard</p>
                 <div className="flex items-center gap-2">
@@ -641,8 +389,6 @@ useEffect(() => {
                     {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
                   </button>
                 </div>
-
-                {/* QR Code */}
                 <div className="border-t border-gray-100 pt-4 flex flex-col items-center gap-3">
                   {qrCodeUrl ? (
                     <div className="bg-white p-4 border-2 border-gray-200 rounded-xl inline-block">
@@ -655,12 +401,7 @@ useEffect(() => {
                   )}
                   <p className="text-xs text-gray-400">Print on business cards, flyers, or storefronts</p>
                   {qrCodeUrl && (
-                    <button onClick={() => {
-                      const link = document.createElement('a');
-                      link.download = `${company.slug}-qr-code.png`;
-                      link.href = qrCodeUrl;
-                      link.click();
-                    }}
+                    <button onClick={() => { const a = document.createElement('a'); a.download = `${company.slug}-qr-code.png`; a.href = qrCodeUrl; a.click(); }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition">
                       <ArrowRight className="w-3.5 h-3.5" /> Download QR Code
                     </button>
@@ -668,10 +409,14 @@ useEffect(() => {
                 </div>
               </div>
             </div>
+
             <div className="bg-white border border-gray-200 overflow-hidden rounded-xl">
-              <div className="px-5 py-4 border-b border-gray-100"><span className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's Next</span></div>
+              <div className="px-5 py-4 border-b border-gray-100">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's Next</span>
+              </div>
               <div className="divide-y divide-gray-50">
-                {[{ emoji: '🔗', title: 'Share your booking link', desc: 'Add it to your website, social media, or email signature' },
+                {[
+                  { emoji: '🔗', title: 'Share your booking link', desc: 'Add it to your website, social media, or email signature' },
                   { emoji: '👥', title: 'Invite your team', desc: 'Add team members in Settings → Team to assign leads' },
                   { emoji: '⚙️', title: 'Fine-tune in Settings', desc: 'Adjust categories, pipeline, email templates, and more anytime' },
                 ].map((tip, i) => (
@@ -682,23 +427,35 @@ useEffect(() => {
                 ))}
               </div>
             </div>
-            <a href={`/${company.slug}/dashboard`} className="w-full py-4 rounded-xl text-white font-bold text-base flex items-center justify-center gap-3 transition hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>Go to Your Dashboard <ArrowRight className="w-5 h-5" /></a>
+
+            <a href={`/${company.slug}/dashboard`}
+              className="w-full py-4 rounded-xl text-white font-bold text-base flex items-center justify-center gap-3 transition hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+              Go to Your Dashboard <ArrowRight className="w-5 h-5" />
+            </a>
           </div>
         )}
       </div>
 
-      {/* ── BOTTOM NAV ── */}
+      {/* BOTTOM NAV */}
       {!isDone && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10" style={{ background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(12px)' }}>
           <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
             {currentStep > 0 ? (
-              <button onClick={handleBack} className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white text-sm font-bold rounded-lg transition flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={handleBack} className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white text-sm font-bold rounded-lg transition flex items-center gap-2">
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
             ) : <div />}
             <button onClick={handleNext} disabled={saving}
               className="px-8 py-2.5 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : currentStep === 4 ? <>Finish Setup <ChevronRight className="w-4 h-4" /></> : <>Save & Continue <ChevronRight className="w-4 h-4" /></>}
+              {saving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+              ) : currentStep === 1 ? (
+                <>Finish Setup <ChevronRight className="w-4 h-4" /></>
+              ) : (
+                <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+              )}
             </button>
           </div>
         </div>

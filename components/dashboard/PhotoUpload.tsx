@@ -89,11 +89,11 @@ export default function PhotoUpload({
     
     setDeletingId(index);
     try {
-      const res = await fetch(`/api/leads/${leadId}/delete-photo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoUrl, type: 'before' })
-      });
+      const res = await fetch(`/api/leads/${leadId}/delete-media`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ photoUrl }),
+});
       
       const data = await res.json();
       

@@ -699,6 +699,11 @@ const customerPhotos = Array.isArray(lead.file_urls)
                     </>
                   )}
                 </div>
+                 {/* Convert to Project — shown prominently before content cards */}
+          {!isProject && (
+            <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
+          )}
+
 
                 {/* Two-col: Message + Notes */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -962,10 +967,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
   )}
 </div>
 
-{/* Convert to Project */}
-{!isProject && (
-  <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
-)}
+
               </>
             )}
 

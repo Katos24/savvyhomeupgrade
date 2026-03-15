@@ -105,6 +105,7 @@ export async function POST(req: Request, { params }: Props) {
         customerName:  r.customer_name,
         companyName:   r.company_name,
         companyPhone:  r.company_phone,
+        companyId: r.company_id,
         amountDue,
         dueDate:       r.payment_due_date,
         isOverdue,
