@@ -396,13 +396,43 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </section>
 
+        {/* HOW IT WORKS */}
+        <section className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">How It Works</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+            <div className="p-5 flex items-start gap-4">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">1</div>
+              <div>
+                <p className="text-sm font-black text-slate-900 leading-tight">Set up your identity</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Your logo, colors, and contact info appear on every customer email and your booking form.</p>
+              </div>
+            </div>
+            <div className="p-5 flex items-start gap-4">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">2</div>
+              <div>
+                <p className="text-sm font-black text-slate-900 leading-tight">Share your booking link</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Send the link above or print the QR code. Customers tap it, fill out a quick form, and submit a project request.</p>
+              </div>
+            </div>
+            <div className="p-5 flex items-start gap-4">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">3</div>
+              <div>
+                <p className="text-sm font-black text-slate-900 leading-tight">Manage in your dashboard</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Every submission lands as a lead. Quote it, schedule it, assign your team, and collect payment  all in one place.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* MODULE GRID */}
         <div>
           <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <MenuCard icon={Workflow} label="Pipeline" desc="Stages & statuses" color="#f59e0b" onClick={() => openTab('pipeline')} />
             <MenuCard icon={Grid} label="Categories" desc="Job types, tasks & pricing" color="#8b5cf6" onClick={() => openTab('categories')} />
-            <MenuCard icon={FileText} label="Booking Form" desc="Customer intake" color="#f97316" onClick={() => openTab('form')} />
+            <MenuCard icon={FileText} label="Booking Form" desc="Customize what customers fill out" color="#f97316" onClick={() => openTab('form')} />
             <MenuCard icon={Mail} label="Automations" desc="Email templates" color="#3b82f6" onClick={() => openTab('email-templates')} />
             <MenuCard icon={Users} label="Team" desc="Staff permissions" color="#0ea5e9" onClick={() => openTab('team')} />
             <MenuCard icon={CreditCard} label="Billing" desc="Plan & subscription" color="#10b981" onClick={() => openTab('billing')} />

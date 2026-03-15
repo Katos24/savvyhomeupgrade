@@ -365,7 +365,7 @@ export default async function SuccessPage({ params }: PageProps) {
             </a>
           )}
 
-          <p className="footer-note">Powered by SavvyHome CRM</p>
+          <p className="footer-note">Powered by Lead2Project</p>
         </div>
       </div>
     </>
