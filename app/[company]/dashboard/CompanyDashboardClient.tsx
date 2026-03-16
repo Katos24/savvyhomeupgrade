@@ -856,7 +856,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     leads={leads}
                     onSelectLead={setSelectedLead}
                     statusOptions={statusOptions}
-                    planTier={(company.plan_tier as PlanTier) || 'basic'}
                   />
                 </section>
               ))}
