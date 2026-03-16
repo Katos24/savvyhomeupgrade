@@ -80,10 +80,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     generateQR();
   }, [publicLink, qrStyle, formData.color1]);
 
-  // Navigate into a tab - use router.push so back button works naturally
   const openTab = useCallback((tab: Tab) => {
     setActiveTab(tab);
-    // Scroll to top when opening a tab on mobile
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -152,8 +150,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         }),
       });
       if (res.ok) {
-        // Just close edit mode - formData already has the updated values in state
-        // No reload needed, no flash
         if (finalLogoUrl !== company.logo_url) setLogoPreview(finalLogoUrl || '');
         setLogoFile(null);
         setIsEditing(false);
@@ -169,47 +165,48 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
   };
 
-  // SUB-TAB VIEW
   if (activeTab) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-50">
+      <div className="min-h-screen bg-slate-900">
+        <header className="bg-slate-800/50 backdrop-blur-md border-b border-white/10 px-4 py-4 sticky top-0 z-50">
           <div className="max-w-4xl mx-auto flex items-center gap-3">
             <button
               onClick={closeTab}
-              className="flex items-center gap-1.5 text-indigo-600 font-black text-xs uppercase tracking-widest hover:text-indigo-700 transition"
+              className="flex items-center gap-1.5 text-indigo-400 font-black text-xs uppercase tracking-widest hover:text-indigo-300 transition"
             >
               <ArrowLeft className="w-4 h-4" /> Settings
             </button>
-            <span className="text-slate-300">/</span>
-            <span className="font-black text-slate-900 text-xs uppercase tracking-widest">
+            <span className="text-white/20">/</span>
+            <span className="font-black text-white text-xs uppercase tracking-widest">
               {TAB_LABELS[activeTab]}
             </span>
           </div>
         </header>
 
         <div className="max-w-4xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          {activeTab === 'form' && <FormTab company={company} currentUser={currentUser} />}
-          {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
-          {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
-          {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
-          {activeTab === 'team' && <TeamTab company={company} currentUser={currentUser} />}
-          {activeTab === 'billing' && <BillingTab company={company} currentUser={currentUser} />}
-          {activeTab === 'notifications' && <NotificationsTab company={company} currentUser={currentUser} />}
+          <div className="bg-white rounded-[2rem] p-6 shadow-2xl">
+            {activeTab === 'form' && <FormTab company={company} currentUser={currentUser} />}
+            {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
+            {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
+            {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
+            {activeTab === 'team' && <TeamTab company={company} currentUser={currentUser} />}
+            {activeTab === 'billing' && <BillingTab company={company} currentUser={currentUser} />}
+            {activeTab === 'notifications' && <NotificationsTab company={company} currentUser={currentUser} />}
+          </div>
         </div>
       </div>
     );
   }
 
-  // MAIN SETTINGS VIEW
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/30 pb-20">
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 sticky top-0 z-40">
+    <div className="min-h-screen bg-[#0F172A] pb-20 selection:bg-indigo-500/30">
+      {/* HEADER - Updated to dark translucent */}
+      <header className="bg-slate-900/40 backdrop-blur-md border-b border-white/5 px-4 py-4 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <h1 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-[0.15em] sm:tracking-[0.2em] italic underline decoration-indigo-500 decoration-2 underline-offset-4 truncate">
+          <h1 className="text-xs sm:text-sm font-black text-white uppercase tracking-[0.15em] sm:tracking-[0.2em] italic underline decoration-indigo-500 decoration-2 underline-offset-4 truncate">
             Lead2Project
           </h1>
-          <a href={`/${company.slug}/dashboard`} className="text-xs font-bold text-slate-500 flex items-center gap-1 hover:text-indigo-600 transition">
+          <a href={`/${company.slug}/dashboard`} className="text-xs font-bold text-slate-400 flex items-center gap-1 hover:text-white transition">
             <ArrowLeft className="w-3 h-3" /> Dashboard
           </a>
         </div>
@@ -217,15 +214,12 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-12">
 
-        {/* IDENTITY HERO */}
-        <section className="bg-white border border-slate-200 rounded-3xl sm:rounded-[3rem] shadow-xl shadow-indigo-100/50 overflow-hidden">
+        {/* IDENTITY HERO - Stays white */}
+        <section className="bg-white rounded-3xl sm:rounded-[3rem] shadow-2xl shadow-black/20 overflow-hidden">
           <div className="h-2 sm:h-3 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
 
           <div className="p-5 sm:p-8 lg:p-12 space-y-5 sm:space-y-6">
-
-            {/* Row 1: Logo + Name + Edit button */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Logo */}
               <div className="relative shrink-0">
                 <div className="w-14 h-14 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
                   {logoPreview
@@ -249,7 +243,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 )}
               </div>
 
-              {/* Name + link */}
               <div className="flex-1 min-w-0">
                 {!isEditing
                   ? <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate leading-tight">{formData.name}</h2>
@@ -266,7 +259,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 </div>
               </div>
 
-              {/* Edit button  always visible, icon-only on mobile */}
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -278,9 +270,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               )}
             </div>
 
-            {/* Fields grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-              {/* Email */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
                 {isEditing
@@ -293,7 +283,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 }
               </div>
 
-              {/* Phone */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
                 {isEditing
@@ -311,7 +300,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 }
               </div>
 
-              {/* Website */}
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
                 {isEditing
@@ -331,7 +319,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 }
               </div>
 
-              {/* Brand colors  edit mode only */}
               {isEditing && (
                 <div className="sm:col-span-2 space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -345,7 +332,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               )}
             </div>
 
-            {/* Edit mode: full-width save/cancel bar */}
             {isEditing && (
               <div className="flex gap-3 pt-1">
                 <button
@@ -364,7 +350,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               </div>
             )}
 
-            {/* View mode: QR + action buttons */}
             {!isEditing && (
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
@@ -396,8 +381,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
-        <section className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl overflow-hidden">
+        {/* HOW IT WORKS - Stays white but darker border contrast */}
+        <section className="bg-white border border-white/10 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
             <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">How It Works</p>
           </div>
@@ -426,9 +411,9 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </section>
 
-        {/* MODULE GRID */}
+        {/* MODULE GRID - Updated Section Header */}
         <div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
+          <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <MenuCard icon={Workflow} label="Pipeline" desc="Stages & statuses" color="#f59e0b" onClick={() => openTab('pipeline')} />
             <MenuCard icon={Grid} label="Categories" desc="Job types, tasks & pricing" color="#8b5cf6" onClick={() => openTab('categories')} />
@@ -439,67 +424,68 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </div>
 
-        {/* QR MODAL */}
-        {showQrModal && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
-            <div className="relative bg-white rounded-t-[2rem] sm:rounded-[3rem] p-6 sm:p-8 w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
-              <div className={`p-6 rounded-[2rem] mb-6 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
-                <div className="relative">
-                  <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
-                  {includeLogo && logoPreview && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-white rounded-xl p-1 shadow-xl border border-slate-100">
-                        <img src={logoPreview} className="w-full h-full object-contain" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  {['standard', 'brand', 'dark'].map(s => (
-                    <button key={s} onClick={() => setQrStyle(s as any)}
-                      className={`flex-1 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${qrStyle === s ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
-                    >{s}</button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-sm font-bold text-slate-700">Embed Company Logo</span>
-                  <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-indigo-600' : 'bg-slate-300'}`}>
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setShowQrModal(false)} className="py-3.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition bg-slate-50 rounded-2xl">Cancel</button>
-                  <button onClick={downloadStyledQR} className="py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg">
-                    <Download className="w-4 h-4" /> Export PNG
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* FOOTER - Adapted for Dark BG */}
+        <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 shadow-sm shrink-0">
               <Bell className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800">System Notifications</p>
-              <button onClick={() => openTab('notifications')} className="text-xs text-indigo-600 font-bold hover:underline">
+              <p className="text-sm font-bold text-white">System Notifications</p>
+              <button onClick={() => openTab('notifications')} className="text-xs text-indigo-400 font-bold hover:underline">
                 Manage preferences
               </button>
             </div>
           </div>
-          <a href={`/${company.slug}/dashboard/deleted-leads`} className="flex items-center gap-3 px-5 py-3 border border-red-100 bg-red-50/20 rounded-2xl group transition hover:bg-red-50">
-            <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-600" />
-            <span className="text-xs font-black text-red-800 uppercase tracking-widest">Recovery Center</span>
+          <a href={`/${company.slug}/dashboard/deleted-leads`} className="flex items-center gap-3 px-5 py-3 border border-red-500/10 bg-red-500/5 rounded-2xl group transition hover:bg-red-500/10">
+            <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-300" />
+            <span className="text-xs font-black text-red-200 uppercase tracking-widest">Recovery Center</span>
           </a>
         </div>
       </div>
+      
+      {/* QR MODAL stays the same visually as it is an overlay */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
+          <div className="relative bg-white rounded-t-[2rem] sm:rounded-[3rem] p-6 sm:p-8 w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
+            {/* Modal Content... same as before */}
+            <div className={`p-6 rounded-[2rem] mb-6 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
+              <div className="relative">
+                <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
+                {includeLogo && logoPreview && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 bg-white rounded-xl p-1 shadow-xl border border-slate-100">
+                      <img src={logoPreview} className="w-full h-full object-contain" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                {['standard', 'brand', 'dark'].map(s => (
+                  <button key={s} onClick={() => setQrStyle(s as any)}
+                    className={`flex-1 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${qrStyle === s ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
+                  >{s}</button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-sm font-bold text-slate-700">Embed Company Logo</span>
+                <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setShowQrModal(false)} className="py-3.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition bg-slate-50 rounded-2xl">Cancel</button>
+                <button onClick={downloadStyledQR} className="py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg">
+                  <Download className="w-4 h-4" /> Export PNG
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -508,7 +494,7 @@ function MenuCard({ icon: Icon, label, desc, color, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className="bg-white border border-slate-200 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-100/40 transition-all duration-300 flex flex-col h-full active:scale-[0.98]"
+      className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 flex flex-col h-full active:scale-[0.98] border border-white/10"
     >
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] flex items-center justify-center mb-3 sm:mb-4 transition-all group-hover:scale-110 group-hover:-rotate-3" style={{ backgroundColor: `${color}15` }}>
         <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color }} />
