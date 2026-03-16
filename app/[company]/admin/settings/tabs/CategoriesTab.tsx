@@ -438,15 +438,7 @@ export default function CategoriesTab({
 
       {/* ── SAVE / RESET FOOTER ── */}
       <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-2xl px-4 py-4 flex gap-3 sm:static sm:bg-transparent sm:border-0 sm:shadow-none sm:px-0 sm:py-0 sm:flex">
-        {!useDefaults && (
-          <button
-            onClick={handleReset}
-            className="p-4 bg-gray-100 text-gray-400 rounded-2xl hover:text-gray-600 transition"
-            title="Reset to defaults"
-          >
-            <RotateCcw className="w-5 h-5" />
-          </button>
-        )}
+     
         <button
           onClick={handleSave}
           disabled={saving}

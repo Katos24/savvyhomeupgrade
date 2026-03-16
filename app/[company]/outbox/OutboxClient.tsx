@@ -673,35 +673,53 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
           ))
         )}
       </div>
-
-      {/* Email Preview Modal */}
-    {previewHtml && (
+{/* Email Preview Modal */}
+{previewHtml && (
   <div
-    className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-    onClick={() => setPreviewHtml(null)} // click outside closes
+    className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center"
+    onClick={() => setPreviewHtml(null)}
   >
     <div
-      className="bg-[#111318] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-auto p-4 relative"
-      onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+      className="relative w-full sm:max-w-3xl flex flex-col"
+      style={{
+        background: '#111318',
+        border: '1px solid #232731',
+        borderRadius: '12px 12px 0 0',
+        maxHeight: '92dvh',
+        height: '92dvh',
+      }}
+      onClick={(e) => e.stopPropagation()}
     >
-      {/* Close button */}
-      <button
-        onClick={() => setPreviewHtml(null)}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg"
-      >
-        ✕
-      </button>
-
-      {/* Email content */}
+      {/* Header bar */}
       <div
-        className="w-full overflow-auto border rounded p-2"
-        style={{
-          background: '#111318',
-          color: '#e8eaf0',
-          pointerEvents: 'none', // disables links/buttons
-        }}
-        dangerouslySetInnerHTML={{ __html: previewHtml }}
-      />
+        className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+        style={{ borderBottom: '1px solid #232731' }}
+      >
+        <span className="text-sm font-semibold text-white">Email Preview</span>
+        <button
+          onClick={() => setPreviewHtml(null)}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white transition"
+          style={{ background: '#1c2029' }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Scrollable email body */}
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '8px',
+            pointerEvents: 'none',
+            color: '#111',
+          }}
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
+        />
+      </div>
     </div>
   </div>
 )}
