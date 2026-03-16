@@ -853,11 +853,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     <span className="text-[10px] font-black bg-white/5 px-2 py-1 rounded-md text-slate-500">{leads.length}</span>
                   </div>
                   <CardsView
-                    leads={leads}
-                    onSelectLead={setSelectedLead}
-                    statusOptions={statusOptions}
-                    planTier={(company.plan_tier as PlanTier) || 'basic'}
-                  />
+  leads={leads}
+  onSelectLead={setSelectedLead}
+  statusOptions={statusOptions}
+/>
                 </section>
               ))}
             </div>

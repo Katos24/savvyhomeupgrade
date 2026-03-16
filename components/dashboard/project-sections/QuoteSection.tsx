@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, X, Edit2, MoreVertical, Mail, Check, AlertCircle, Loader2, LayoutGrid } from 'lucide-react';
+import { Plus, Trash2, Save, X, Edit2, MoreVertical, Mail, Loader2 } from 'lucide-react';
 import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
 
 type QuoteSectionProps = {
@@ -10,26 +10,31 @@ type QuoteSectionProps = {
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
+  activeCategory?: string;
 };
 
-export default function QuoteSection({ lead, currentUser, onRefresh, hasProject }: QuoteSectionProps) {
+export default function QuoteSection({ lead, currentUser, onRefresh, hasProject, activeCategory }: QuoteSectionProps) {
   const [saving, setSaving] = useState(false);
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [isEditing, setIsEditing] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
 
-  // Fetch templates from your database
+  const category = activeCategory || lead?.category;
+  const prevCategoryRef = React.useRef(category);
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await fetch('/api/settings/quote-templates');
+        const companySlug = lead?.company_slug || lead?.slug;
+        if (!companySlug) return;
+        const res = await fetch(`/api/company/${companySlug}/quote-templates`);
         if (res.ok) {
           const data = await res.json();
-          setTemplates(data);
+          if (data.success) setTemplates(data.templates || []);
         }
       } catch (err) {
-        console.error("Failed to load templates", err);
+        console.error('Failed to load templates', err);
       }
     };
     fetchTemplates();
@@ -38,6 +43,30 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   useEffect(() => {
     setQuoteData(lead?.quote_data || []);
   }, [lead?.quote_data]);
+
+  useEffect(() => {
+    if (!category) return;
+    if (templates.length === 0) return;
+
+    const categoryChanged = prevCategoryRef.current !== category;
+    prevCategoryRef.current = category;
+
+    setQuoteData((current: any[]) => {
+      if (current.length > 0 && !categoryChanged) return current;
+
+      const match = templates.find((t: any) => t.category === category);
+      if (!match?.items?.length) return categoryChanged ? [] : current;
+
+      toast.success('Pricing template loaded');
+      return match.items.map((item: any) => ({
+        id: Date.now() + Math.random(),
+        description: item.description || '',
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice || 0,
+        amount: item.amount || (item.quantity || 1) * (item.unitPrice || 0),
+      }));
+    });
+  }, [category, templates]);
 
   const handleAddRow = () => {
     setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]);
@@ -50,7 +79,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
       description: template.name,
       quantity: 1,
       unitPrice: template.price || 0,
-      amount: template.price || 0
+      amount: template.price || 0,
     };
     setQuoteData([...quoteData, newRow]);
     toast.success(`Added ${template.name}`);
@@ -93,7 +122,7 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         setIsEditing(false);
         await onRefresh();
       }
-    } catch { toast.error('Save failed'); } 
+    } catch { toast.error('Save failed'); }
     finally { setSaving(false); }
   };
 
@@ -101,36 +130,35 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   const emailLog = useMemo(() => {
-  try {
-    const raw = lead?.quote_emails;
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
-    return [...parsed].reverse(); // newest first for display
-  } catch { return []; }
-}, [lead?.quote_emails]);
+    try {
+      const raw = lead?.quote_emails;
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || [];
+      return [...parsed].reverse();
+    } catch { return []; }
+  }, [lead?.quote_emails]);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-      
+
       {/* HEADER */}
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
         <div className="flex items-center gap-3">
           <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Quote Sheet</h3>
           {lead?.quote_accepted_at && (
-  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">✓ Accepted</span>
-)}
-{lead?.quote_declined_at && !lead?.quote_accepted_at && (
-  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">✗ Declined</span>
-)}
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">✓ Accepted</span>
+          )}
+          {lead?.quote_declined_at && !lead?.quote_accepted_at && (
+            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">✗ Declined</span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* TEMPLATE DROPDOWN (ONLY IN EDIT MODE) */}
           {isEditing && templates.length > 0 && (
-            <select 
+            <select
               onChange={(e) => {
-  const t = templates.find(tpl => String(tpl.id) === e.target.value);
+                const t = templates.find(tpl => String(tpl.id) === e.target.value);
                 if (t) handleAddTemplate(t);
-                e.target.value = "";
+                e.target.value = '';
               }}
               className="text-[10px] font-black uppercase tracking-tight bg-white border border-gray-200 rounded-lg px-2 h-8 outline-none focus:ring-1 focus:ring-indigo-500"
             >
@@ -247,7 +275,6 @@ export default function QuoteSection({ lead, currentUser, onRefresh, hasProject 
         <span className="text-xl font-black">{fmt(total)}</span>
       </div>
 
-      {/* COMPACT EMAIL HISTORY */}
       {emailLog.length > 0 && (
         <div className="p-4 bg-gray-50/50 border-t border-gray-100">
           <div className="flex items-center gap-2 mb-3">
