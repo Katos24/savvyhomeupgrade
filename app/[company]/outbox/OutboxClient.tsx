@@ -706,20 +706,29 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
       </div>
 
       {/* Scrollable email body */}
-      <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '8px',
-            pointerEvents: 'none',
-            color: '#111',
-          }}
-          dangerouslySetInnerHTML={{ __html: previewHtml }}
-        />
-      </div>
+     <div
+  className="flex-1 overflow-y-auto p-4"
+  style={{ WebkitOverflowScrolling: 'touch' }}
+>
+  <div
+    style={{
+      background: '#ffffff',
+      borderRadius: '8px',
+      pointerEvents: 'none',
+      color: '#111',
+    }}
+  >
+    <style>{`
+      .email-preview-body * { max-width: 100% !important; box-sizing: border-box !important; }
+      .email-preview-body table { width: 100% !important; table-layout: fixed !important; }
+      .email-preview-body img { height: auto !important; }
+    `}</style>
+    <div
+      className="email-preview-body"
+      dangerouslySetInnerHTML={{ __html: previewHtml }}
+    />
+  </div>
+</div>
     </div>
   </div>
 )}
