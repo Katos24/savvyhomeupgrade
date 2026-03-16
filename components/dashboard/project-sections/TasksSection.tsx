@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Plus, Loader2, CheckCircle2, Circle, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 
 type Task = {
   id: number;
@@ -21,10 +21,9 @@ type TasksSectionProps = {
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
-  activeCategory?: string;
 };
 
-export default function TasksSection({ lead, currentUser, onRefresh, hasProject, activeCategory }: TasksSectionProps) {
+export default function TasksSection({ lead, currentUser, onRefresh, hasProject }: TasksSectionProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTaskLabel, setNewTaskLabel] = useState('');
@@ -32,9 +31,6 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
   const [companyCategories, setCompanyCategories] = useState<any[]>([]);
   const [templatesLoaded, setTemplatesLoaded] = useState(false);
   const templateCreatedRef = useRef(false);
-  const prevCategoryRef = useRef(activeCategory || lead?.category);
-
-  const category = activeCategory || lead?.category;
 
   useEffect(() => {
     async function fetchCompanyCategories() {
@@ -59,31 +55,16 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
     else setLoading(false);
   }, [lead.project_id, hasProject]);
 
-  // Auto-load tasks from template when category changes
   useEffect(() => {
-    if (!templatesLoaded || !hasProject || !lead.project_id) return;
-    if (!category) return;
-
-    const categoryChanged = prevCategoryRef.current !== category;
-    prevCategoryRef.current = category;
-
-    // On initial load only apply if no tasks exist
-    // On category change always apply
-    if (!categoryChanged && tasks.length > 0) return;
-    if (templateCreatedRef.current && !categoryChanged) return;
-
-    const match = companyCategories.find(c => c.value === category);
-    if (!match?.task_templates?.length) return;
-
-    // If category changed, delete existing tasks first then load new ones
-    if (categoryChanged && tasks.length > 0) {
-      templateCreatedRef.current = false;
-      deleteAllAndCreateFromTemplate(match.task_templates);
-    } else if (!templateCreatedRef.current) {
-      templateCreatedRef.current = true;
-      createTasksFromTemplate(match.task_templates);
-    }
-  }, [templatesLoaded, category, hasProject, tasks.length]);
+  if (!templatesLoaded || !hasProject || !lead.project_id) return;
+  if (tasks.length > 0 || !lead?.category) return;
+  if (templateCreatedRef.current) return;
+  const match = companyCategories.find(c => c.value === lead?.category);
+  if (match?.task_templates?.length > 0) {
+    templateCreatedRef.current = true;
+    createTasksFromTemplate(match.task_templates);
+  }
+}, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
 
   const fetchTasks = async () => {
     try {
@@ -95,43 +76,6 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
       toast.error('Failed to load tasks');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const deleteAllAndCreateFromTemplate = async (templates: any[]) => {
-    setSaving(true);
-    try {
-      // Delete all existing tasks
-      for (const task of tasks) {
-        await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', task_id: task.id }),
-        });
-      }
-      // Create new ones from template
-      const sorted = [...templates].sort((a, b) => a.order - b.order);
-      for (let i = 0; i < sorted.length; i++) {
-        await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'create',
-            project_id: lead.project_id,
-            company_id: lead.company_id,
-            label: sorted[i].label,
-            task_order: sorted[i].order,
-          }),
-        });
-      }
-      templateCreatedRef.current = true;
-      await fetchTasks();
-      await onRefresh();
-      toast.success('Tasks updated for new category');
-    } catch (e) {
-      console.error('Failed to update tasks:', e);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -248,9 +192,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
       {/* Section header */}
       <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <span className="w-5 h-5 bg-violet-50 flex items-center justify-center">
-            <CheckSquare className="w-3 h-3 text-violet-400" />
-          </span>
+          <span className="w-5 h-5 bg-violet-50 flex items-center justify-center text-xs">✅</span>
           Tasks
           {totalCount > 0 && (
             <span className="px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold">
@@ -276,6 +218,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
         )}
       </div>
 
+      {/* Loading */}
       {loading ? (
         <div className="py-10 flex justify-center">
           <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
@@ -287,6 +230,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
       ) : (
         <div className="divide-y divide-gray-50">
 
+          {/* Task list */}
           {sortedTasks.map((task) => (
             <div
               key={task.id}
@@ -313,14 +257,16 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject,
             </div>
           ))}
 
+          {/* Empty state */}
           {tasks.length === 0 && (
             <div className="py-10 flex flex-col items-center gap-2 text-center">
-              <CheckSquare className="w-8 h-8 text-gray-200" />
+              <span className="text-3xl">📋</span>
               <p className="text-sm font-semibold text-gray-400">No tasks yet</p>
               <p className="text-xs text-gray-300">Add a task below</p>
             </div>
           )}
 
+          {/* Add task input */}
           <div className="flex items-center gap-3 px-5 py-3">
             <Plus className="w-4 h-4 text-gray-300 flex-shrink-0" />
             <input

@@ -138,13 +138,13 @@ function fmtMoney(n: number | undefined | null): string {
 function getTypeConfig(type: string) {
   switch (type) {
     case 'quote':
-      return { label: 'Quote', icon: DollarSign, color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' }
+      return { label: 'Quote', emoji: '💰', color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' }
     case 'schedule':
-      return { label: 'Schedule', icon: Calendar, color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.2)' }
+      return { label: 'Schedule', emoji: '📅', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.2)' }
     case 'payment_reminder':
-      return { label: 'Payment Reminder', icon: Bell, color: '#fb923c', bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.25)' }
+      return { label: 'Payment Reminder', emoji: '🔔', color: '#fb923c', bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.25)' }
     default:
-      return { label: type, icon: Mail, color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)' }
+      return { label: type, emoji: '📧', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)' }
   }
 }
 
@@ -465,10 +465,10 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
                     <div onClick={() => toggleRow(email.globalIdx)}
                       className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 cursor-pointer select-none">
                       {/* Icon */}
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-  style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-  <cfg.icon className="w-4 h-4" style={{ color: cfg.color }} />
-</div>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+                        style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                        {cfg.emoji}
+                      </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">

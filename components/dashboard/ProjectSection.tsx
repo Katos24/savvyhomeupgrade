@@ -17,7 +17,6 @@ type ProjectSectionProps = {
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
   companySlug: string;
   defaultTab?: string;
-  activeCategory?: string;
 };
 
 export default function ProjectSection({
@@ -28,7 +27,6 @@ export default function ProjectSection({
   onUpdateStatus,
   companySlug,
   defaultTab,
-  activeCategory,
 }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
 
@@ -181,30 +179,13 @@ export default function ProjectSection({
           )}
 
           {planningTab === 'schedule' && (
-            <SchedulingSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-              companySlug={companySlug}
-            />
+            <SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} />
           )}
           {planningTab === 'tasks' && (
-            <TasksSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-              activeCategory={activeCategory}
-            />
+            <TasksSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
           {planningTab === 'reminders' && (
-            <RemindersSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-            />
+            <RemindersSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
         </div>
       )}
@@ -251,29 +232,13 @@ export default function ProjectSection({
           )}
 
           {financialsTab === 'quote' && (
-            <QuoteSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-              activeCategory={activeCategory}
-            />
+            <QuoteSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
           {financialsTab === 'payment' && (
-            <PaymentSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-            />
+            <PaymentSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
           {financialsTab === 'media' && (
-            <MediaSection
-              lead={lead}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-            />
+            <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
         </div>
       )}
