@@ -149,13 +149,14 @@ export default function CreateLeadModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
-                    type="email"
-                    inputMode="email"
-                    placeholder="john@email.com"
+  required
+  type="email"
+  inputMode="email"
+  placeholder="john@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 sm:py-4 text-white focus:border-indigo-500 focus:outline-none transition-all text-base"
@@ -207,16 +208,15 @@ export default function CreateLeadModal({
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Project Details</label>
-              <div className="relative">
+<label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Project Details</label>          <div className="relative">
                 <AlignLeft className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
                 <textarea
-                  rows={2}
-                  placeholder="What needs to be done?"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 sm:py-4 text-white focus:border-indigo-500 focus:outline-none transition-all text-base resize-none"
-                />
+  rows={2}
+  placeholder="What needs to be done?"
+  value={formData.description}
+  onChange={(e) => setFormData({...formData, description: e.target.value})}
+  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 sm:py-4 text-white focus:border-indigo-500 focus:outline-none transition-all text-base resize-none"
+/>
               </div>
             </div>
 

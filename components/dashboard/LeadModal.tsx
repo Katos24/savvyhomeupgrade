@@ -1,30 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
-  Mail,
-  Phone,
-  MessageSquare,
-  Navigation,
-  X,
-  Calendar,
-  Edit2,
-  MoreVertical,
-  Trash2,
-  ChevronDown,
-  FileText,
-  CheckSquare,
-  Bell,
-  CreditCard,
-  Image,
-  FileIcon,
-  Clock,
-  MapPin,
-  User,
-  Hash,
-  ArrowLeft,
-  History,
+  Mail, Phone, MessageSquare, Navigation, X, Calendar, Edit2, MoreVertical,
+  Trash2, ChevronDown, FileText, CheckSquare, Bell, CreditCard, Image,
+  FileIcon, Clock, MapPin, User, Hash, ArrowLeft, History,
+  UserCircle, MessageCircle, Lock, NotebookPen, Sparkles, Activity, AlertTriangle,
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoGallery from '@/components/dashboard/PhotoGallery';
@@ -313,17 +295,16 @@ const customerPhotos = Array.isArray(lead.file_urls)
   const currentStatusConfig = getStatusConfig(selectedStatus);
   const statusHex = getStatusColor(currentStatusConfig?.color);
 
-  const tabs: { id: TopTab; label: string; icon: string; show: boolean }[] = [
-    { id: 'overview', label: 'Overview', icon: '◉', show: true },
-    { id: 'schedule', label: 'Schedule', icon: '📅', show: isProject },
-    { id: 'quote', label: 'Quote', icon: '💰', show: isProject },
-    { id: 'payment', label: 'Payment', icon: '💳', show: isProject },
-    { id: 'tasks', label: 'Tasks', icon: '✅', show: isProject },
-    { id: 'photos', label: 'Media', icon: '📷', show: isProject },
-{ id: 'activity', label: 'Activity', icon: '💬', show: isProject },
-{ id: 'reminders', label: 'Reminders', icon: '🔔', show: isProject },
-
-  ];
+const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean }[] = [
+  { id: 'overview', label: 'Overview', icon: User, show: true },
+  { id: 'schedule', label: 'Schedule', icon: Calendar, show: isProject },
+  { id: 'quote', label: 'Quote', icon: FileText, show: isProject },
+  { id: 'payment', label: 'Payment', icon: CreditCard, show: isProject },
+  { id: 'tasks', label: 'Tasks', icon: CheckSquare, show: isProject },
+  { id: 'photos', label: 'Media', icon: Image, show: isProject },
+  { id: 'activity', label: 'Activity', icon: MessageCircle, show: isProject },
+  { id: 'reminders', label: 'Reminders', icon: Bell, show: isProject },
+];
 
   return (
     <div
@@ -503,21 +484,24 @@ const customerPhotos = Array.isArray(lead.file_urls)
 
             {/* Tab bar */}
             <div className="flex overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
-              {tabs.filter(t => t.show).map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
-                  style={{
-                    color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.4)',
-                    borderBottomColor: activeTab === tab.id ? '#a5b4fc' : 'transparent',
-                    background: 'transparent',
-                  }}
-                >
-                  <span>{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
+              {tabs.filter(t => t.show).map((tab) => {
+  const Icon = tab.icon;
+  return (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id)}
+      className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
+      style={{
+        color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.4)',
+        borderBottomColor: activeTab === tab.id ? '#a5b4fc' : 'transparent',
+        background: 'transparent',
+      }}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {tab.label}
+    </button>
+  );
+})}
             </div>
           </div>
         </div>
@@ -533,7 +517,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
                 <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center text-xs">👤</span>
+<span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-indigo-400" /></span>
                       Client Info
                       {relatedLeads.length > 0 && (
                         <button
@@ -711,8 +695,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
                   <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-50">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center text-xs">💬</span>
-                        Customer's Message
+<span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>                        Customer's Message
                       </h3>
                     </div>
                     
@@ -804,7 +787,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
                   <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-50">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center text-xs">🔒</span>
+<span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
                         Internal Notes
                       </h3>
                     </div>
@@ -834,7 +817,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
                       ) : (
                         <button onClick={() => setIsEditingNotes(true)}
                           className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-indigo-300 hover:bg-indigo-50/30 transition flex flex-col items-center gap-2">
-                          <span className="text-2xl">📝</span>
+<NotebookPen className="w-6 h-6 text-gray-300" />
                           <span className="text-xs font-semibold text-gray-400 hover:text-indigo-500">Add internal notes</span>
                         </button>
                       )}
@@ -849,8 +832,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
 <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
   <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-      <span className="w-5 h-5 bg-violet-50 flex items-center justify-center text-xs">✦</span>
-      AI Brief
+<span className="w-5 h-5 bg-violet-50 flex items-center justify-center"><Sparkles className="w-3 h-3 text-violet-400" /></span>      AI Brief
       {customerPhotos.length > 0 && (
         <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-500 rounded-none">
           includes photo analysis
@@ -884,7 +866,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
       <div className="absolute inset-0 rounded-full border-2 border-violet-100" />
       <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-violet-500 animate-spin" />
       <div className="absolute inset-[6px] rounded-full border-2 border-transparent border-b-violet-300 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.6s' }} />
-      <div className="absolute inset-0 flex items-center justify-center text-sm text-violet-500">✦</div>
+<div className="absolute inset-0 flex items-center justify-center"><Sparkles className="w-3 h-3 text-violet-500" /></div>
     </div>
     <div className="text-center space-y-1">
       <p className="text-sm font-semibold text-gray-700">Analyzing your lead</p>
@@ -928,7 +910,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
       )}
       {aiSummary.photo_observations && aiSummary.photo_observations !== 'null' && (
         <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-none">
-          <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">📸 Photo Analysis</p>
+<p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Image className="w-3.5 h-3.5" /> Photo Analysis</p>
           <p className="text-sm text-indigo-900 leading-relaxed">{aiSummary.photo_observations}</p>
         </div>
       )}
@@ -989,8 +971,7 @@ const customerPhotos = Array.isArray(lead.file_urls)
               <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-50">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center text-xs">💬</span>
-                    Activity Log
+<span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>                    Activity Log
                     {notesArray.length > 0 && (
                       <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-none">
                         {notesArray.length}
