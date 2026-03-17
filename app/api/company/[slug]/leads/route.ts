@@ -38,67 +38,127 @@ export async function GET(request: Request, { params }: Props) {
     }
     const companyId = companies[0].id;
 
-    // ── Pagination ───────────────────────────────────────────
-    const url = new URL(request.url);
-    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
-    const limit = 25;
-    const offset = (page - 1) * limit;
+// ── Pagination + search ──────────────────────────────────
+const url = new URL(request.url);
+const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+const search = url.searchParams.get('search')?.trim() || '';
+const limit = 25;
+const offset = (page - 1) * limit;
 
-    // ── Count total ──────────────────────────────────────────
-    const countResult = await sql`
-      SELECT COUNT(*) as total FROM leads
-      WHERE company_id = ${companyId} AND deleted = false
-    `;
-    const total = parseInt(countResult[0].total);
-    const pages = Math.ceil(total / limit);
+// ── Count total ──────────────────────────────────────────
+const countResult = search ? await sql`
+  SELECT COUNT(*) as total FROM leads
+  WHERE company_id = ${companyId}
+    AND deleted = false
+    AND (
+      name ILIKE ${'%' + search + '%'} OR
+      email ILIKE ${'%' + search + '%'} OR
+      phone ILIKE ${'%' + search + '%'} OR
+      description ILIKE ${'%' + search + '%'}
+    )
+` : await sql`
+  SELECT COUNT(*) as total FROM leads
+  WHERE company_id = ${companyId} AND deleted = false
+`;
+const total = parseInt(countResult[0].total);
+const pages = Math.ceil(total / limit);
 
-    // ── Fetch page ───────────────────────────────────────────
-    const leads = await sql`
-      SELECT 
-        l.*,
-        p.id as project_id,
-        p.project_number,
-        p.status as job_status,
-        p.scheduled_date,
-        p.scheduled_time,
-        p.assigned_to,
-        p.estimated_hours,
-        p.actual_hours,
-        p.quote_data,
-        p.ai_brief,
-        p.quote_total,
-        p.quote_sent_at,
-        p.quote_accepted_at,
-        p.quote_declined_at,
-        p.schedule_emails,
-        p.payment_status,
-        p.quote_emails,
-        p.payment_amount,
-        p.paid_at,
-        p.payment_date,
-        p.payment_method,
-        p.payment_notes,
-        p.payment_due_date,
-        p.reminder_sent_at,
-        p.invoice_data,
-        p.invoice_sent_at,
-        p.before_photos,
-        p.after_photos,
-        p.documents,
-        p.completed_at as job_completed_at,
-        p.notes as project_notes,
-        p.tasks as project_tasks,
-        p.follow_up_date,
-        p.internal_notes as project_internal_notes,
-        p.follow_up_notes
-      FROM leads l
-      LEFT JOIN projects p ON l.id = p.lead_id
-      WHERE l.company_id = ${companyId}
-        AND l.deleted = false
-      ORDER BY l.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-
+// ── Fetch page ───────────────────────────────────────────
+const leads = search ? await sql`
+  SELECT
+    l.*,
+    p.id as project_id,
+    p.project_number,
+    p.status as job_status,
+    p.scheduled_date,
+    p.scheduled_time,
+    p.assigned_to,
+    p.estimated_hours,
+    p.actual_hours,
+    p.quote_data,
+    p.ai_brief,
+    p.quote_total,
+    p.quote_sent_at,
+    p.quote_accepted_at,
+    p.quote_declined_at,
+    p.schedule_emails,
+    p.payment_status,
+    p.quote_emails,
+    p.payment_amount,
+    p.paid_at,
+    p.payment_date,
+    p.payment_method,
+    p.payment_notes,
+    p.payment_due_date,
+    p.reminder_sent_at,
+    p.invoice_data,
+    p.invoice_sent_at,
+    p.before_photos,
+    p.after_photos,
+    p.documents,
+    p.completed_at as job_completed_at,
+    p.notes as project_notes,
+    p.tasks as project_tasks,
+    p.follow_up_date,
+    p.internal_notes as project_internal_notes,
+    p.follow_up_notes
+  FROM leads l
+  LEFT JOIN projects p ON l.id = p.lead_id
+  WHERE l.company_id = ${companyId}
+    AND l.deleted = false
+    AND (
+      l.name ILIKE ${'%' + search + '%'} OR
+      l.email ILIKE ${'%' + search + '%'} OR
+      l.phone ILIKE ${'%' + search + '%'} OR
+      l.description ILIKE ${'%' + search + '%'}
+    )
+  ORDER BY l.created_at DESC
+  LIMIT 50
+` : await sql`
+  SELECT
+    l.*,
+    p.id as project_id,
+    p.project_number,
+    p.status as job_status,
+    p.scheduled_date,
+    p.scheduled_time,
+    p.assigned_to,
+    p.estimated_hours,
+    p.actual_hours,
+    p.quote_data,
+    p.ai_brief,
+    p.quote_total,
+    p.quote_sent_at,
+    p.quote_accepted_at,
+    p.quote_declined_at,
+    p.schedule_emails,
+    p.payment_status,
+    p.quote_emails,
+    p.payment_amount,
+    p.paid_at,
+    p.payment_date,
+    p.payment_method,
+    p.payment_notes,
+    p.payment_due_date,
+    p.reminder_sent_at,
+    p.invoice_data,
+    p.invoice_sent_at,
+    p.before_photos,
+    p.after_photos,
+    p.documents,
+    p.completed_at as job_completed_at,
+    p.notes as project_notes,
+    p.tasks as project_tasks,
+    p.follow_up_date,
+    p.internal_notes as project_internal_notes,
+    p.follow_up_notes
+  FROM leads l
+  LEFT JOIN projects p ON l.id = p.lead_id
+  WHERE l.company_id = ${companyId}
+    AND l.deleted = false
+  ORDER BY l.created_at DESC
+  LIMIT ${limit} OFFSET ${offset}
+`;
     // ── Process notes ────────────────────────────────────────
     const processedLeads = leads.map(lead => {
       let notes: any[] = [];

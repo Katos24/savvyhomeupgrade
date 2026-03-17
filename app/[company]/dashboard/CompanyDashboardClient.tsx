@@ -130,6 +130,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const [isSearching, setIsSearching] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -160,14 +162,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   // Data fetching
   // -------------------------------------------------------------------------
 
-  const fetchLeads = useCallback(async (page = 1, silent = false) => {
-    try {
-      if (page === 1 && isInitialLoad) {
-        // Only show full loading screen on very first ever load
-      } else if (!silent) {
-        setIsRefreshing(true);
-      }
-      const res = await fetch(`/api/company/${company.slug}/leads?page=${page}`, {
+ const fetchLeads = useCallback(async (page = 1, silent = false, search = '') => {
+  try {
+    if (page === 1 && isInitialLoad) {
+    } else if (!silent) {
+      setIsRefreshing(true);
+    }
+    const params = new URLSearchParams({ page: String(page) });
+    if (search) params.set('search', search);
+    const res = await fetch(`/api/company/${company.slug}/leads?${params}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
       });
@@ -307,38 +310,19 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } else throw new Error(result.error || 'Bulk delete failed');
   }, [currentUser]);
 
- const refreshModalLead = useCallback(async () => {
-  if (!selectedLead) return;
-  try {
-    // Fetch just this one lead directly
-    const res = await fetch(`/api/leads/${selectedLead.id}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    if (res.ok) {
+  const refreshModalLead = useCallback(async () => {
+    await fetchLeads(1, true);
+    if (!selectedLead) return;
+    try {
+      const res = await fetch(`/api/company/${company.slug}/leads`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       const data = await res.json();
-      if (data.lead) {
-        // Update modal immediately
-        setSelectedLead(data.lead);
-        // Also update the card in the list
-        setAllLeads(prev =>
-          prev.map(l => l.id === selectedLead.id ? data.lead : l)
-        );
-        setRefreshKey(k => k + 1);
-        return;
-      }
-    }
-  } catch (e) {
-    console.error('refreshModalLead single fetch failed:', e);
-  }
-  // Fallback — full list refetch
-  await fetchLeads(1, true);
-  setAllLeads(prev => {
-    const updated = prev.find(l => l.id === selectedLead.id);
-    if (updated) setSelectedLead(updated);
-    return prev;
-  });
-}, [fetchLeads, selectedLead, company.slug]);
+      const updated = data.leads?.find((l: any) => l.id === selectedLead.id);
+      if (updated) setSelectedLead(updated);
+    } catch (e) { console.error('refreshModalLead:', e); }
+  }, [fetchLeads, selectedLead, company.slug]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
@@ -694,19 +678,35 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           {/* Search row */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" aria-hidden />
-              <input
+{isSearching
+  ? <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
+  : <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" aria-hidden />
+}              <input
                 type="search"
                 placeholder="Search by name, email or phone..."
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                aria-label="Search leads"
+onChange={e => {
+  const val = e.target.value;
+  setSearchQuery(val);
+  if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  if (val.trim().length >= 2) {
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      await fetchLeads(1, true, val.trim());
+      setIsSearching(false);
+    }, 400);
+  } else if (val.trim() === '') {
+    fetchLeads(1, true, '');
+  }
+}}                aria-label="Search leads"
                 className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500 focus:outline-none text-white placeholder-white/30 text-sm font-medium transition-all"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
+onClick={() => {
+  setSearchQuery('');
+  fetchLeads(1, true, '');
+}}                  aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40 transition"
                 >
                   <X className="w-3.5 h-3.5" aria-hidden />

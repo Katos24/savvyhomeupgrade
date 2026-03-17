@@ -102,8 +102,7 @@ export default function ConvertToProjectButton({
       {/* ── Trigger button ── */}
       <button
         onClick={() => setShowConfirm(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-black rounded-lg transition active:scale-95"
-      >
+className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black rounded-lg transition active:scale-95 shadow-lg shadow-emerald-500/30"      >
         <Rocket className="w-3.5 h-3.5" />
         Convert to Project
       </button>
