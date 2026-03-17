@@ -104,7 +104,7 @@ const getStatusColor = (colorName: string) => {
 
 
 
-export default function AdminPageContent({ onLogout }: { onLogout: () => void }) {
+export default function AdminPageContent({ onLogout }: { onLogout?: () => void }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);

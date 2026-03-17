@@ -1,17 +1,36 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+async function verifyAdmin(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('auth-token');
+    if (!authToken) return false;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return false;
+    const decoded: any = jwt.verify(authToken.value, secret);
+    return decoded.role === 'super_admin';
+  } catch {
+    return false;
+  }
+}
 
 export async function GET() {
+  if (!await verifyAdmin()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const sql = neon(process.env.DATABASE_URL!);
-    
-    // Simple query without aggregates - we'll count leads separately
+
     const companies = await sql`
       SELECT * FROM companies 
       ORDER BY created_at DESC
     `;
-    
-    // Get lead counts for each company
+
     const companiesWithStats = await Promise.all(
       companies.map(async (company) => {
         const leadStats = await sql`
@@ -21,15 +40,14 @@ export async function GET() {
           FROM leads 
           WHERE company_id = ${company.id}
         `;
-        
         return {
           ...company,
           lead_count: parseInt(leadStats[0]?.lead_count || '0'),
-          last_lead_at: leadStats[0]?.last_lead_at || null
+          last_lead_at: leadStats[0]?.last_lead_at || null,
         };
       })
     );
-    
+
     return NextResponse.json({ success: true, companies: companiesWithStats });
   } catch (error) {
     console.error('Error fetching companies:', error);
@@ -38,17 +56,19 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!await verifyAdmin()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { name, slug, email, phone, password, business_type, logo_url, status_options, form_categories } = await request.json();
     const sql = neon(process.env.DATABASE_URL!);
-    
-    // Check if slug already exists
+
     const existing = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
     if (existing.length > 0) {
       return NextResponse.json({ success: false, error: 'Company slug already exists' }, { status: 400 });
     }
-    
-    // Create company with status_options AND form_categories
+
     const company = await sql`
       INSERT INTO companies (name, slug, email, phone, business_type, logo_url, status_options, form_categories, created_at)
       VALUES (
@@ -64,19 +84,15 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `;
-    
-    // Create user for the company (if you have users table)
+
     if (password) {
-      try {
-        await sql`
-          INSERT INTO users (email, password, company_id, role)
-          VALUES (${email}, ${password}, ${company[0].id}, 'contractor')
-        `;
-      } catch (e) {
-        console.log('Users table might not exist:', e);
-      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await sql`
+        INSERT INTO users (email, password, company_id, role)
+        VALUES (${email}, ${hashedPassword}, ${company[0].id}, 'contractor')
+      `;
     }
-    
+
     return NextResponse.json({ success: true, company: company[0] });
   } catch (error) {
     console.error('Error creating company:', error);
@@ -85,16 +101,19 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  if (!await verifyAdmin()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { id, name, email, phone, business_type, logo_url, password, status_options, form_categories } = await request.json();
-    
+
     if (!id) {
       return NextResponse.json({ success: false, error: 'Company ID required' }, { status: 400 });
     }
-    
+
     const sql = neon(process.env.DATABASE_URL!);
-    
-    // Update company INCLUDING status_options AND form_categories
+
     const company = await sql`
       UPDATE companies 
       SET 
@@ -108,24 +127,20 @@ export async function PUT(request: Request) {
       WHERE id = ${id}
       RETURNING *
     `;
-    
+
     if (company.length === 0) {
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
-    
-    // Update password in users table if provided
+
     if (password && password.trim() !== '') {
-      try {
-        await sql`
-          UPDATE users 
-          SET password = ${password}
-          WHERE company_id = ${id}
-        `;
-      } catch (e) {
-        console.log('Could not update user password:', e);
-      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await sql`
+        UPDATE users 
+        SET password = ${hashedPassword}
+        WHERE company_id = ${id}
+      `;
     }
-    
+
     return NextResponse.json({ success: true, company: company[0] });
   } catch (error) {
     console.error('Error updating company:', error);
@@ -134,36 +149,32 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (!await verifyAdmin()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { id } = await request.json();
-    
+
     if (!id) {
       return NextResponse.json({ success: false, error: 'Company ID required' }, { status: 400 });
     }
-    
+
     const sql = neon(process.env.DATABASE_URL!);
-    
-    // Delete all leads first
+
     await sql`DELETE FROM leads WHERE company_id = ${id}`;
-    
-    // Delete users for this company
-    try {
-      await sql`DELETE FROM users WHERE company_id = ${id}`;
-    } catch (e) {
-      console.log('Could not delete users:', e);
-    }
-    
-    // Delete company
+    await sql`DELETE FROM users WHERE company_id = ${id}`;
+
     const company = await sql`
       DELETE FROM companies 
       WHERE id = ${id}
       RETURNING *
     `;
-    
+
     if (company.length === 0) {
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({ success: true, message: 'Company and all leads deleted' });
   } catch (error) {
     console.error('Error deleting company:', error);

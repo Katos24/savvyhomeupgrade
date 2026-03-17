@@ -20,10 +20,10 @@ export async function GET() {
     // Verify JWT
     let decoded;
     try {
-      decoded = jwt.verify(
-        token.value, 
-        process.env.JWT_SECRET || 'your-secret-key-change-this'
-      ) as any;
+      const secret = process.env.JWT_SECRET;
+if (!secret) throw new Error('JWT_SECRET is not set');
+decoded = jwt.verify(token.value, secret) as any;
+
       console.log('Token decoded:', decoded); // DEBUG
     } catch (jwtError) {
       console.error('JWT verification failed:', jwtError); // DEBUG

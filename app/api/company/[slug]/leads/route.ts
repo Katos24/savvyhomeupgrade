@@ -19,8 +19,9 @@ export async function GET(request: Request, { params }: Props) {
     }
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    } catch {
+const secret = process.env.JWT_SECRET;
+if (!secret) throw new Error('JWT_SECRET is not set');
+decoded = jwt.verify(token, secret);    } catch {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
@@ -113,7 +114,7 @@ const leads = search ? await sql`
       l.description ILIKE ${'%' + search + '%'}
     )
   ORDER BY l.created_at DESC
-  LIMIT 50
+  LIMIT ${limit} OFFSET ${offset}
 ` : await sql`
   SELECT
     l.*,
