@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/dashboard/page.tsx.bak", "app/api/ai/generate-completion-report/route.ts.bak"  ],
+, "app/dashboard/page.tsx.bak", "app/api/ai/generate-completion-report/route.ts.bak", "components/onboarding/steps/DoneStep.tsx.bak", "components/onboarding/OnboardingWizard.tsx.bak", "app/[company]/admin/settings/tabs/QuoteTemplatesTab.tsx.bak", "app/[company]/admin/settings/tabs/QuoteTemplatesTab.tsx.bak", "app/[company]/admin/settings/tabs/GeneralTab.tsx.bak", "app/[company]/admin/settings/tabs/CustomQuestionsTab.tsx.bak", "components/onboarding/steps/QuotesStep.tsx.bak", "components/onboarding/steps/PipelineStep.tsx.bak", "components/onboarding/steps/FormStep.tsx.bak", "components/dashboard/project-sections/PhotosSection.tsx.bak", "components/dashboard/project-sections/DocumentsSection.tsx.bak"  ],
   "exclude": ["node_modules"]
 }

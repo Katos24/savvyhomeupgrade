@@ -381,6 +381,21 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </section>
 
+
+        {/* MODULE GRID - Updated Section Header */}
+        <div>
+          <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} />
+<MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} />
+<MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} />
+<MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} />
+<MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
+<MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
+          </div>
+        </div>
+
+
         {/* HOW IT WORKS - Stays white but darker border contrast */}
         <section className="bg-white border border-white/10 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -410,19 +425,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             </div>
           </div>
         </section>
-
-        {/* MODULE GRID - Updated Section Header */}
-        <div>
-          <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <MenuCard icon={Workflow} label="Pipeline" desc="Stages & statuses" color="#f59e0b" onClick={() => openTab('pipeline')} />
-            <MenuCard icon={Grid} label="Categories" desc="Job types, tasks & pricing" color="#8b5cf6" onClick={() => openTab('categories')} />
-            <MenuCard icon={FileText} label="Booking Form" desc="Customize what customers fill out" color="#f97316" onClick={() => openTab('form')} />
-            <MenuCard icon={Mail} label="Automations" desc="Email templates" color="#3b82f6" onClick={() => openTab('email-templates')} />
-            <MenuCard icon={Users} label="Team" desc="Staff permissions" color="#0ea5e9" onClick={() => openTab('team')} />
-            <MenuCard icon={CreditCard} label="Billing" desc="Plan & subscription" color="#10b981" onClick={() => openTab('billing')} />
-          </div>
-        </div>
 
         {/* FOOTER - Adapted for Dark BG */}
         <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -482,8 +484,11 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                   <Download className="w-4 h-4" /> Export PNG
                 </button>
               </div>
+              
             </div>
+            
           </div>
+          
         </div>
       )}
     </div>
@@ -499,10 +504,10 @@ function MenuCard({ icon: Icon, label, desc, color, onClick }: any) {
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] flex items-center justify-center mb-3 sm:mb-4 transition-all group-hover:scale-110 group-hover:-rotate-3" style={{ backgroundColor: `${color}15` }}>
         <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color }} />
       </div>
-      <p className="text-xs sm:text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">{label}</p>
-      <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 font-medium leading-relaxed">{desc}</p>
-      <div className="mt-auto pt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0">
-        Open <ChevronRight className="w-3 h-3" />
+      <p className="text-xs sm:text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight mb-1.5">{label}</p>
+      <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-relaxed flex-1">{desc}</p>
+      <div className="mt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0">
+        Configure <ChevronRight className="w-3 h-3" />
       </div>
     </button>
   );

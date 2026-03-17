@@ -16,18 +16,18 @@ export function middleware(request: NextRequest) {
 
   // ✅ Stripe + public API bypass
 const isPublicApiRoute =
-  pathname.startsWith('/api/auth/') ||
-  pathname.startsWith('/api/signup') ||
-  pathname.startsWith('/api/stripe/webhook') ||
-  pathname.startsWith('/api/webhooks/stripe') ||
-  pathname.startsWith('/api/cron/') ||
-  pathname.startsWith('/api/quotes/respond') ||
-  pathname.startsWith('/api/upload') ||
-  pathname.startsWith('/api/leads/preview-email') ||
-  pathname.startsWith('/api/leads/update') ||
-  pathname.startsWith('/api/subscription/status') ||
-  pathname.startsWith('/api/leads/') ||
-  pathname.startsWith('/api/blob-upload');
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/signup') ||
+    pathname.startsWith('/api/stripe/webhook') ||
+    pathname.startsWith('/api/webhooks/stripe') ||
+    pathname.startsWith('/api/cron/') ||
+    pathname.startsWith('/api/quotes/respond') ||
+    pathname.startsWith('/api/leads/preview-email') ||
+    pathname.startsWith('/api/subscription/status') ||
+    pathname.startsWith('/api/upload') ||
+    pathname.startsWith('/api/blob-upload') ||
+    pathname.startsWith('/api/get-upload-url') ||
+    pathname.startsWith('/api/leads/update');
   
 
   const isPublicRoute = publicRoutes.some(route =>
@@ -37,6 +37,7 @@ const isPublicApiRoute =
   const isProtectedRoute =
     pathname.includes('/dashboard') ||
     pathname.includes('/admin');
+    pathname.includes('/profile');
 
   if (isApiRoute) {
     if (isPublicApiRoute) {

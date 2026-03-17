@@ -20,10 +20,10 @@ export async function getSession(): Promise<SessionData | null> {
       return null;
     }
     
-    const decoded = jwt.verify(
-      token, 
-      process.env.JWT_SECRET || 'your-secret-key-change-this'
-    ) as SessionData;
+    const secret = process.env.JWT_SECRET;
+if (!secret) throw new Error('JWT_SECRET is not set');
+
+const decoded = jwt.verify(token, secret) as SessionData;
     
     // Check if token is expired (extra safety check)
     if (decoded.exp && decoded.exp < Date.now() / 1000) {
