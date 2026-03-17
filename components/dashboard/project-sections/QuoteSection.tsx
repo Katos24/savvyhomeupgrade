@@ -79,11 +79,20 @@ export default function QuoteSection({
 
   // Derive photos from lead
   const leadPhotos: string[] = useMemo(() => {
-    if (!Array.isArray(lead?.file_urls)) return [];
-    return lead.file_urls
+  const parse = (val: any): string[] => {
+    if (!val) return [];
+    const arr = typeof val === 'string' ? JSON.parse(val) : val;
+    if (!Array.isArray(arr)) return [];
+    return arr
       .map((f: any) => (typeof f === 'string' ? f : f?.url || f?.path || ''))
       .filter(Boolean);
-  }, [lead?.file_urls]);
+  };
+
+  return [
+    ...parse(lead?.file_urls),      // customer submitted photos
+    ...parse(lead?.before_photos),   // company added job site photos
+  ];
+}, [lead?.file_urls, lead?.before_photos]);
 
   const handleAddRow = () => {
     setQuoteData([
