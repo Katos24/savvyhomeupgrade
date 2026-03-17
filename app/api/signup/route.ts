@@ -120,12 +120,15 @@ try {
     userEmail: email,
     userName: ownerName,
     companyName: companyName,
-    subscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
+    companySlug: slug,
+    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard`,
+    formUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
   });
 } catch (emailError) {
   console.error('Failed to send welcome email:', emailError);
-  // Don't block signup if email fails
 }
+  // Don't block signup if email fails
+
 
     // Create JWT token
     const jwt = require('jsonwebtoken');

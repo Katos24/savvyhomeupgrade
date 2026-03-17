@@ -8,11 +8,12 @@ import {
   ShieldCheck, 
   Zap, 
   Clock, 
-  ChevronLeft,
   Lock,
   Loader2,
   X,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  Link2
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -22,11 +23,12 @@ interface CustomInputProps {
   placeholder: string;
   type?: string;
   hint?: string;
+  important?: boolean;
 }
 
 function SignupForm() {
   const searchParams = useSearchParams();
-  const plan = searchParams.get('plan') || 'basic'; // Still capture it to pass it forward
+  const plan = searchParams.get('plan') || 'basic';
   
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -93,7 +95,6 @@ function SignupForm() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Step 1 Complete -> Move to Plan Selection/Payment
         window.location.href = `/subscribe?plan=${plan}`;
       } else {
         setError(data.error || 'Failed to create account');
@@ -107,7 +108,7 @@ function SignupForm() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-      {/* Sidebar: Branding (Desktop) */}
+      {/* Sidebar: Branding */}
       <div className="hidden lg:flex lg:w-[400px] bg-slate-900 p-12 flex-col justify-between text-white sticky top-0 h-screen">
         <div>
           <div className="flex items-center gap-3 mb-16 cursor-pointer" onClick={() => router.push('/')}>
@@ -147,14 +148,11 @@ function SignupForm() {
           {/* Mobile Header */}
           <div className="flex lg:hidden items-center justify-between mb-10">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm text-white">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm">
                 L2P
               </div>
               <span className="font-black tracking-tighter text-slate-900">Lead2Project</span>
             </div>
-            <button onClick={() => router.push('/')} className="text-slate-400 text-[10px] font-black uppercase tracking-widest border border-slate-200 px-3 py-1.5 rounded-full">
-              Exit
-            </button>
           </div>
 
           <div className="mb-10">
@@ -179,12 +177,31 @@ function SignupForm() {
                 placeholder="e.g. Blueline Mechanical" 
                 value={formData.companyName}
                 onChange={handleCompanyNameChange}
+                important
               />
               
+              {/* THE SLUG WARNING SECTION */}
               {formData.slug && (
-                <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 border-dashed transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Your unique URL</p>
-                  <p className="text-sm font-bold text-indigo-600 truncate">lead2project.com/{formData.slug}</p>
+                <div className="relative group">
+                  <div className="px-4 py-4 bg-indigo-600 rounded-2xl border border-indigo-500 shadow-md shadow-indigo-100 transition-all">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-white/10 rounded-lg">
+                            <Link2 className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest leading-none mb-1">Permanent Portal URL</p>
+                            <p className="text-base font-bold text-white truncate">lead2project.com/<span className="underline decoration-indigo-400 underline-offset-4">{formData.slug}</span></p>
+                        </div>
+                    </div>
+                  </div>
+                  
+                  {/* Warning Callout */}
+                  <div className="mt-2 flex items-center gap-2 px-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-tighter">
+                      Attention: This URL is permanent and cannot be changed later.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -279,11 +296,13 @@ function SignupForm() {
   );
 }
 
-function CustomInput({ label, value, onChange, placeholder, type = "text", hint }: CustomInputProps) {
+function CustomInput({ label, value, onChange, placeholder, type = "text", hint, important }: CustomInputProps) {
   return (
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
-        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider">{label}</label>
+        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-400'}`}>
+            {label} {important && "— Check spelling"}
+        </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}
       </div>
       <input 
@@ -292,7 +311,7 @@ function CustomInput({ label, value, onChange, placeholder, type = "text", hint 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium text-base shadow-sm"
+        className={`w-full px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium text-base shadow-sm ${important ? 'border-indigo-200' : 'border-slate-200'}`}
       />
     </div>
   );

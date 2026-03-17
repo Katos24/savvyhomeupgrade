@@ -780,47 +780,124 @@ export async function sendWelcomeEmail({
   userEmail,
   userName,
   companyName,
-  subscribeUrl,
+  companySlug,
+  dashboardUrl,
+  formUrl,
 }: {
   userEmail: string;
   userName: string;
   companyName: string;
-  subscribeUrl: string;
+  companySlug: string;
+  dashboardUrl: string;
+  formUrl: string;
 }) {
   try {
+    const settingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/admin/settings`;
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
-            h1 { color: #333; font-size: 28px; margin-bottom: 20px; }
-            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
-            .button { background-color: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
-          </style>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>
-        <body>
-          <div class="container">
-            <h1>🎉 Welcome to Lead2Project, ${userName}!</h1>
-            
-            <p>Your account for <strong>${companyName}</strong> has been created successfully!</p>
-            
-            <p>Next step: Complete your setup by adding your payment method to start your 14-day free trial.</p>
-            
-            <center>
-              <a href="${subscribeUrl}" class="button">Complete Your Signup →</a>
-            </center>
-            
-            <p>You won't be charged until after your trial ends. Cancel anytime!</p>
-            
-            <div class="footer">
-              Lead2Project<br>
-              Questions? Reply to this email!
-            </div>
-          </div>
+        <body style="margin:0;padding:0;background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fc;padding:32px 16px;">
+            <tr><td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);max-width:600px;width:100%;">
+
+                <!-- Header -->
+                <tr>
+                  <td style="background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);padding:36px 40px;text-align:center;">
+                    <p style="margin:0 0 8px 0;color:#a5b4fc;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Welcome to Lead2Project</p>
+                    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;line-height:1.3;">You're all set, ${userName}!</h1>
+                    <p style="margin:12px 0 0 0;color:#c7d2fe;font-size:15px;">Here's everything you need to get started with <strong>${companyName}</strong>.</p>
+                  </td>
+                </tr>
+
+                <!-- Your two URLs -->
+                <tr>
+                  <td style="padding:32px 40px 0;">
+                    <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Your two most important links</h2>
+
+                    <!-- Customer Form URL -->
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:12px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#166534;">Customer Booking Form</p>
+                      <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">Share this link with customers. They fill it out, and the lead lands straight in your dashboard.</p>
+                      <a href="${formUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;">
+                        ${formUrl}
+                      </a>
+                    </div>
+
+                    <!-- Dashboard URL -->
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#1e40af;">Your Dashboard</p>
+                      <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">This is where you manage all your leads, quotes, schedules, and payments.</p>
+                      <a href="${dashboardUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;">
+                        ${dashboardUrl}
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- What you can set up -->
+                <tr>
+                  <td style="padding:28px 40px 0;">
+                    <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Set up your account in 5 minutes</h2>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+
+                      ${[
+                        { emoji: '📂', title: 'Add service categories', desc: 'Create categories like Roofing, Plumbing, or HVAC — each can have its own task checklist and pricing template that auto-load when you create a project.' },
+                        { emoji: '💰', title: 'Set up pricing templates', desc: 'Pre-fill quote line items per category. When a new job comes in, your quote is already half-built.' },
+                        { emoji: '✅', title: 'Build task checklists', desc: 'Add steps your team should complete for each job type. They auto-load when you convert a lead to a project.' },
+                        { emoji: '🎨', title: 'Add your logo and brand colors', desc: 'Your logo and colors appear on every customer email — quotes, schedules, and payment reminders all look like they came from you.' },
+                        { emoji: '📋', title: 'Customize your booking form', desc: 'Turn on address collection, photo uploads, preferred date — whatever makes sense for your business.' },
+                        { emoji: '📧', title: 'Update your email templates', desc: 'Personalize the messages your customers receive when you send a quote, confirm a schedule, or request payment.' },
+                      ].map(item => `
+                        <tr>
+                          <td style="padding:0 0 16px 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;overflow:hidden;">
+                              <tr>
+                                <td style="padding:16px;width:44px;vertical-align:top;">
+                                  <span style="font-size:22px;">${item.emoji}</span>
+                                </td>
+                                <td style="padding:16px 16px 16px 0;vertical-align:top;">
+                                  <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e293b;">${item.title}</p>
+                                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.5;">${item.desc}</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      `).join('')}
+
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- CTA -->
+                <tr>
+                  <td style="padding:28px 40px 36px;text-align:center;">
+                    <a href="${settingsUrl}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:10px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(99,102,241,0.3);">
+                      Complete Your Setup
+                    </a>
+                    <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;">Takes about 5 minutes. You can always change things later.</p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;">
+                    <p style="margin:0;color:#94a3b8;font-size:12px;">
+                      Lead2Project — built for contractors who want to work smarter.<br>
+                      Questions? Reply to this email and we'll help you out.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td></tr>
+          </table>
         </body>
       </html>
     `;
@@ -828,7 +905,7 @@ export async function sendWelcomeEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: userEmail,
-      subject: `🎉 Welcome to Lead2Project - Complete Your Signup`,
+      subject: `Welcome to Lead2Project — here's your booking link`,
       html: emailHtml,
     });
 
