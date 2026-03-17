@@ -19,6 +19,8 @@ import {
 export type Category = {
   value: string;
   label: string;
+    emoji?: string;
+
 };
 
 export type BusinessType = {
