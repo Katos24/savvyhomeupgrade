@@ -6,7 +6,7 @@ import {
   Mail, Phone, MessageSquare, Navigation, X, Calendar, Edit2, MoreVertical,
   Trash2, ChevronDown, FileText, CheckSquare, Bell, CreditCard, Image,
   FileIcon, Clock, MapPin, User, Hash, ArrowLeft, History,
-  UserCircle, MessageCircle, Lock, NotebookPen, Sparkles, Activity, AlertTriangle,
+  UserCircle, MessageCircle, Lock, NotebookPen, Sparkles, Activity, AlertTriangle, LayoutGrid,
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoGallery from '@/components/dashboard/PhotoGallery';
@@ -60,7 +60,15 @@ export default function LeadModal({
   const [relatedLeads, setRelatedLeads] = useState<any[]>([]);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [aiSummary, setAiSummary] = useState<any>(null);
-  const [loadingAi, setLoadingAi] = useState(false);
+const [loadingAi, setLoadingAi] = useState(false);
+
+// Quote templates (fetched once for category-change logic)
+const [quoteTemplates, setQuoteTemplates] = useState<any[]>([]);
+const [pendingCategoryChange, setPendingCategoryChange] = useState<{
+  newCategory: string;
+  newLabel: string;
+  template: any | null;
+} | null>(null);
 
   const getTimeAgo = (dateStr: string) => {
     const months = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24 * 30));
@@ -141,8 +149,16 @@ photos: customerPhotos.filter((url: string) => typeof url === 'string' && url.st
       .then(data => { if (data.leads?.length) setRelatedLeads(data.leads); })
       .catch(() => {});
   }, [lead.id]);
-  const userRole = currentUser?.role || 'member';
-  const canDelete = canDeleteLead(userRole);
+  // Fetch quote templates so we can react to category changes
+useEffect(() => {
+  fetch(`/api/company/${companySlug}/quote-templates`)
+    .then((r) => r.json())
+    .then((data) => { if (data.success) setQuoteTemplates(data.templates || []); })
+    .catch(() => {});
+}, [companySlug]);
+
+const userRole = currentUser?.role || 'member';
+const canDelete = canDeleteLead(userRole);
 const customerPhotos = Array.isArray(lead.file_urls)
   ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
   : [];
@@ -255,25 +271,99 @@ const customerPhotos = Array.isArray(lead.file_urls)
     finally { setSaving(false); }
   };
 
-  const handleSaveDetails = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch('/api/leads/update', {
+ // The actual save — called directly or after modal confirmation
+const executeSaveDetails = async (overrideQuote?: any[] | null) => {
+  setSaving(true);
+  try {
+    // 1️⃣ Save lead details (name, email, category, etc.)
+    const res = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lead.id, action: 'update_details',
+        ...editedDetails, category: selectedCategory,
+        description: lead.description,
+        user_name: currentUser?.name || currentUser?.email,
+        user_email: currentUser?.email,
+      }),
+    });
+    if (!res.ok) { toast.error('Failed to update details'); return; }
+
+    // 2️⃣ If category changed → always replace tasks silently
+    if (selectedCategory !== lead.category && lead.project_id) {
+      const newCat = categories.find((c: any) => c.value === selectedCategory);
+      const newTasks = (newCat?.task_templates || []).map((t: any, i: number) => ({
+        id: `task_${Date.now()}_${i}`,
+        label: t.label,
+        completed: false,
+        order: i,
+      }));
+      await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id, action: 'update_details',
-          ...editedDetails, category: selectedCategory,
-          description: lead.description,
+          id: lead.id, action: 'update_tasks',
+          tasks: newTasks,
           user_name: currentUser?.name || currentUser?.email,
           user_email: currentUser?.email,
         }),
       });
-      if (res.ok) { toast.success('Details updated!'); setIsEditingDetails(false); await onRefresh(); }
-      else toast.error('Failed to update details');
-    } catch { toast.error('Failed to update details'); }
-    finally { setSaving(false); }
-  };
+    }
+
+    // 3️⃣ If caller passed replacement quote items, save them too
+    if (overrideQuote) {
+      const total = overrideQuote.reduce((s: number, i: any) => s + i.amount, 0);
+      await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id, action: 'save_quote',
+          quote_data: overrideQuote, quote_total: total,
+          user_name: currentUser?.name || currentUser?.email,
+          user_email: currentUser?.email,
+        }),
+      });
+    }
+
+    toast.success('Details updated!');
+    setIsEditingDetails(false);
+    await onRefresh();
+  } catch { toast.error('Failed to update details'); }
+  finally { setSaving(false); }
+};
+
+const handleSaveDetails = async () => {
+  const categoryChanged = selectedCategory !== lead.category;
+
+  if (categoryChanged) {
+    // Check if the new category has a quote template
+    const template = quoteTemplates.find((t: any) => t.category === selectedCategory) || null;
+    const hasExistingQuote = (lead.quote_data || []).length > 0;
+
+    if (template && hasExistingQuote) {
+      // Ask the user — modal will call executeSaveDetails with the right args
+      const newCat = categories.find((c: any) => c.value === selectedCategory);
+      setPendingCategoryChange({
+        newCategory: selectedCategory,
+        newLabel: newCat?.label || selectedCategory,
+        template,
+      });
+      return; // wait for modal response
+    }
+
+    // No existing quote but template exists → auto-load silently
+    if (template && !hasExistingQuote) {
+      const items = template.items.map((item: any, i: number) => ({
+        ...item, id: `item_${Date.now()}_${i}`,
+      }));
+      await executeSaveDetails(items);
+      return;
+    }
+  }
+
+  // No category change or no template → plain save
+  await executeSaveDetails(null);
+};
 
   const handleDelete = async () => {
     setSaving(true);
@@ -1116,9 +1206,46 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
           </div>
         </div>
       )}
+{pendingCategoryChange && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+    <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+      <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
+        <LayoutGrid className="w-8 h-8 text-indigo-500" />
+      </div>
+      <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
+      <p className="text-sm text-gray-500 leading-relaxed mb-6">
+        <span className="font-bold text-gray-800">{pendingCategoryChange.newLabel}</span> has a
+        pricing template. Replace your current quote items with it?
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={async () => {
+            setPendingCategoryChange(null);
+            await executeSaveDetails(null); // keep existing quote
+          }}
+          className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm"
+        >
+          Keep Current
+        </button>
+        <button
+          onClick={async () => {
+            const items = pendingCategoryChange.template.items.map((item: any, i: number) => ({
+              ...item, id: `item_${Date.now()}_${i}`,
+            }));
+            setPendingCategoryChange(null);
+            await executeSaveDetails(items); // replace with template
+          }}
+          className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition text-sm"
+        >
+          Use Template
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-      {showCompletionSummary && (
-        <CompletionSummaryModal
+{showCompletionSummary && (
+  <CompletionSummaryModal
           lead={lead}
           onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(); }}
           onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}

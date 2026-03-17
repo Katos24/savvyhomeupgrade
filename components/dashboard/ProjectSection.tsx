@@ -232,8 +232,14 @@ export default function ProjectSection({
           )}
 
           {financialsTab === 'quote' && (
-            <QuoteSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-          )}
+  <QuoteSection
+    lead={lead}
+    currentUser={currentUser}
+    onRefresh={onRefresh}
+    hasProject={hasProject}
+    companySlug={companySlug}
+  />
+)}
           {financialsTab === 'payment' && (
             <PaymentSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
