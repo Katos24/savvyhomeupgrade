@@ -71,7 +71,7 @@ export default function FormTab({ company }: { company: any; currentUser: any })
     };
   });
 
-  const [previewStep, setPreviewStep] = useState<1 | 2>(1);
+const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
@@ -384,8 +384,13 @@ export default function FormTab({ company }: { company: any; currentUser: any })
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm"
                 placeholder='e.g. "Thanks! We will review your request and reach out within 24 hours."'
               />
-              <p className="text-[11px] text-gray-400 mt-2">Leave blank to use the default message.</p>
-            </div>
+<p className="text-[11px] text-gray-400 mt-2">Leave blank to use the default message.</p>
+<div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-2">
+  <Mail className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+  <p className="text-xs text-indigo-700 leading-relaxed">
+    A confirmation email is automatically sent to the customer when they submit. This message appears on screen after submission.
+  </p>
+</div>            </div>
           </div>
         </div>
 
@@ -412,48 +417,57 @@ export default function FormTab({ company }: { company: any; currentUser: any })
               </a>
             </div>
 
-            {/* Step tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPreviewStep(1)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-                  previewStep === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Step 1  Basic Info
-              </button>
-              <button
-                onClick={() => setPreviewStep(2)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-                  previewStep === 2 ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                Step 2  Extra Details
-              </button>
-            </div>
+       {/* Step tabs */}
+<div className="flex gap-1.5">
+  {[
+    { step: 1, label: 'Step 1' },
+    { step: 2, label: 'Step 2' },
+    { step: 3, label: 'Confirmation' },
+  ].map(({ step, label }) => (
+    <button
+      key={step}
+      onClick={() => setPreviewStep(step as 1 | 2 | 3)}
+      className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+        previewStep === step ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+      }`}
+    >
+      {label}
+    </button>
+  ))}
+</div>
 
             {/* Phone frame */}
             <div className="bg-gray-900 rounded-[2.5rem] p-4 border-[8px] border-gray-800 shadow-2xl overflow-hidden aspect-[9/16] max-h-[680px] flex flex-col">
               <div className="bg-white rounded-[1.5rem] flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                {previewStep === 1 ? (
-                  <PreviewStep1
-                    heading={company.cta_heading || ''}
-                    categories={categories}
-                    brandColor1={brandColor1}
-                    brandColor2={brandColor2}
-                    logoUrl={company.logo_url}
-                    companyName={company.name}
-                  />
-                ) : (
-                  <PreviewStep2
-                    fieldConfig={fieldConfig}
-                    customQuestions={customQuestions}
-                    brandColor1={brandColor1}
-                    brandColor2={brandColor2}
-                    companyWebsite={company.website}
-                    companyName={company.name}
-                  />
-                )}
+        {previewStep === 1 && (
+  <PreviewStep1
+    heading={company.cta_heading || ''}
+    categories={categories}
+    brandColor1={brandColor1}
+    brandColor2={brandColor2}
+    logoUrl={company.logo_url}
+    companyName={company.name}
+  />
+)}
+{previewStep === 2 && (
+  <PreviewStep2
+    fieldConfig={fieldConfig}
+    customQuestions={customQuestions}
+    brandColor1={brandColor1}
+    brandColor2={brandColor2}
+    companyWebsite={company.website}
+    companyName={company.name}
+  />
+)}
+{previewStep === 3 && (
+  <PreviewStep3
+    message={ctaSuccessMessage}
+    brandColor1={brandColor1}
+    brandColor2={brandColor2}
+    companyName={company.name}
+    logoUrl={company.logo_url}
+  />
+)}
               </div>
             </div>
           </div>
@@ -729,6 +743,80 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
     </div>
   );
 }
+
+
+
+/* ---- Preview Step 3 / Confirmation ---- */
+function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl }: {
+  message: string; brandColor1: string; brandColor2: string; companyName?: string; logoUrl?: string | null;
+}) {
+  const b1 = brandColor1 || '#2563eb';
+  const b2 = brandColor2 || '#7c3aed';
+  const subtext = message || "We've got your request and will be in touch soon. Keep an eye on your inbox for a confirmation.";
+
+  return (
+    <div style={{ background: '#fafaf9', minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', borderRadius: '1.5rem' }}>
+      <div style={{ width: '100%', background: '#fff', borderRadius: '20px', padding: '32px 20px 28px', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+
+        {/* Logo */}
+        {logoUrl && (
+          <div style={{ marginBottom: '20px' }}>
+            <img src={logoUrl} alt={companyName} style={{ height: '36px', width: 'auto', objectFit: 'contain', maxWidth: '140px', margin: '0 auto' }} />
+          </div>
+        )}
+
+        {/* Check circle */}
+        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `linear-gradient(135deg, ${b1}, ${b2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 8px 20px ${b1}40` }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        {/* Headline */}
+        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111', marginBottom: '10px', fontFamily: 'Georgia, serif' }}>
+          Request Received!
+        </h1>
+
+        {/* Subtext */}
+        <p style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.6, marginBottom: '24px' }}>
+          {subtext}
+        </p>
+
+        {/* Steps */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px', textAlign: 'left' }}>
+          {[
+            { icon: '📬', title: 'Check your email', sub: 'Confirmation sent to your inbox' },
+            { icon: '⏳', title: "We'll reach out shortly", sub: 'Our team reviews every request' },
+          ].map((s) => (
+            <div key={s.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', background: `linear-gradient(135deg, ${b1}18, ${b2}18)` }}>
+                {s.icon}
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#111', marginBottom: '1px' }}>{s.title}</div>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{s.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA button */}
+        <div style={{ width: '100%', padding: '12px 20px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600, color: '#fff', background: `linear-gradient(135deg, ${b1}, ${b2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          Visit Confirmation Email
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </div>
+
+        {/* Footer */}
+        <p style={{ marginTop: '18px', fontSize: '0.65rem', color: '#d1d5db', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          Powered by Lead2Project
+        </p>
+      </div>
+    </div>
+  );
+}
+
 
 /* ---- Preview Field Helper ---- */
 function PreviewField({ icon, label, required, children }: {

@@ -28,7 +28,6 @@ export async function POST(request: Request) {
       follow_up_date,  
       follow_up_notes,
       internal_notes,
-      payment_date,
       payment_due_date, 
     } = body;
 
@@ -395,14 +394,28 @@ export async function POST(request: Request) {
         }, { status: 400 });
       }
 
-      await sql`
-        UPDATE projects 
-        SET 
-          quote_data = ${JSON.stringify(quote_data)},
-          quote_total = ${quote_total},
-          updated_at = NOW()
-        WHERE id = ${projectId}
-      `;
+   // Get current payment amount before updating
+const currentProject = await sql`
+  SELECT payment_amount FROM projects WHERE id = ${projectId}
+`;
+const paid = parseFloat(currentProject[0]?.payment_amount || '0');
+const newTotal = parseFloat(quote_total || '0');
+
+let newPaymentStatus = 'unpaid';
+if (paid > 0 && newTotal > 0) {
+  if (paid >= newTotal) newPaymentStatus = 'paid';
+  else newPaymentStatus = 'partial';
+}
+
+await sql`
+  UPDATE projects 
+  SET 
+    quote_data = ${JSON.stringify(quote_data)},
+    quote_total = ${quote_total},
+    payment_status = ${newPaymentStatus},
+    updated_at = NOW()
+  WHERE id = ${projectId}
+`;
 
       const quoteEntry = {
         type: 'quote_created',

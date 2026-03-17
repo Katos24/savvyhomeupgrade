@@ -15,7 +15,10 @@ interface Company {
   name: string;
   slug: string;
   email: string;
-  phone: string;
+  phone: string | null;
+  website: string | null;
+  email_brand_color_1: string | null;
+  email_brand_color_2: string | null;
   logo_url: string | null;
   created_at: Date;
   subscription_status?: string;
@@ -56,8 +59,9 @@ export async function generateMetadata(
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const rows = await sql`
-    SELECT
-      id, name, slug, email, phone, logo_url, created_at,
+ SELECT
+      id, name, slug, email, phone, website, logo_url, created_at,
+      email_brand_color_1, email_brand_color_2,
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,
       onboarding_completed, cancel_at_period_end, subscription_cancel_at

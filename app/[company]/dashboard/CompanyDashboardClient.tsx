@@ -6,6 +6,7 @@ import {
 import {
   Search, X, Plus, Menu, Filter, ChevronDown, Download,
   Loader2, Inbox, Send, Sparkles, LayoutGrid, List, ArrowUp,
+  Check, ChevronRight,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import CardsView from '@/components/dashboard/views/CardsView';
@@ -29,6 +30,10 @@ type Company = {
   name: string;
   slug: string;
   logo_url?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  email_brand_color_1?: string | null;
+  email_brand_color_2?: string | null;
   status_options?: StatusOption[];
   form_categories?: any[];
   custom_questions?: any[];
@@ -480,8 +485,18 @@ const [isSearching, setIsSearching] = useState(false);
 
   const categories = useMemo(() => [...new Set(allLeads.map(l => l.category).filter(Boolean))], [allLeads]);
 
-  const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
+const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
     || filterPayment !== 'all' || timeFilter !== 'all' || startDate || endDate || searchQuery;
+
+  // Setup checklist
+  const setupItems = [
+    !!company.logo_url,
+    (company.form_categories?.length || 0) >= 3,
+    !!company.phone,
+    !!company.website,
+  ];
+  const setupDoneCount = setupItems.filter(Boolean).length;
+  const setupComplete = setupDoneCount === setupItems.length;
 
   // -------------------------------------------------------------------------
   // Loading screen (first load only)
@@ -563,36 +578,38 @@ const [isSearching, setIsSearching] = useState(false);
       </div>
 
       {/* Onboarding banner */}
-      {!company.onboarding_completed && (
+{/* Setup checklist */}
+      {!setupComplete && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-10">
           <div
-            className="rounded-3xl border border-indigo-500/30 overflow-hidden shadow-xl"
-            style={{ background: 'linear-gradient(135deg, #312e81, #1e1b4b)' }}
-            role="banner"
-            aria-label="Onboarding prompt"
+            className="rounded-2xl border border-white/10 px-5 py-4 flex items-center gap-4"
+            style={{ background: 'rgba(255,255,255,0.03)' }}
           >
-            <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-2">
+                Account setup
+              </p>
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-                  aria-hidden
-                >
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-white font-bold text-base sm:text-lg">Finish Setting Up Your Account</h2>
-                  <p className="text-indigo-300 text-xs sm:text-sm mt-0.5">Set up categories, booking forms, and templates  takes 5 minutes.</p>
-                </div>
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(setupDoneCount / setupItems.length) * 100}%`,
+                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                  }}
+                />
               </div>
-              <a
-                href="/onboarding"
-                className="w-full sm:w-auto px-5 py-3 rounded-xl text-white font-bold text-sm transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-              >
-                Set Up Now <ChevronDown className="w-4 h-4 -rotate-90" aria-hidden />
-              </a>
+              <p className="text-xs text-white/30 mt-1.5">
+                {setupDoneCount} of {setupItems.length} complete
+              </p>
             </div>
+            <a
+                      
+              href={`/${company.slug}/admin/settings`}
+              className="shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white rounded-xl transition hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+            >
+              Finish Setup
+            </a>
           </div>
         </div>
       )}
