@@ -304,36 +304,38 @@ export default function QuoteSection({
             {quoteData.map((item: any) => (
               <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
                 <td className="px-2 py-1">
-                  <input
-                    type="text"
-                    disabled={!isEditing}
-                    value={item.description}
-                    onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                    placeholder="Enter item name..."
-                    className="w-full px-2 py-2 text-sm font-medium bg-transparent border-0 focus:ring-1 focus:ring-indigo-500 rounded outline-none disabled:text-gray-900"
-                  />
-                </td>
+  <input
+    type="text"
+    disabled={!isEditing}
+    value={item.description}
+    onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+    placeholder="Enter item name..."
+    className={`w-full px-2 py-2 text-sm font-medium bg-transparent border outline-none rounded-lg transition-colors disabled:text-gray-900 disabled:border-transparent ${isEditing ? 'border-gray-200 focus:border-indigo-400 focus:bg-indigo-50/30' : 'border-transparent'}`}
+  />
+</td>
+              <td className="px-2 py-1">
+  <div className={`flex items-center justify-end rounded-lg border transition-colors ${isEditing ? 'border-gray-200 focus-within:border-indigo-400 focus-within:bg-indigo-50/30' : 'border-transparent'}`}>
+    <span className="text-sm font-black text-gray-400 pl-2">$</span>
+    <input
+      type="number"
+      disabled={!isEditing}
+      value={item.unitPrice || ''}
+      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+      className={`w-24 px-2 py-2 text-sm font-black text-right bg-transparent border-0 focus:ring-0 outline-none disabled:text-gray-900 ${noSpinners}`}
+    />
+  </div>
+</td>
                 <td className="px-2 py-1">
-                  <div className="relative flex items-center justify-end">
-                    <span className="text-sm font-black text-gray-400 mr-0.5">$</span>
-                    <input
-                      type="number"
-                      disabled={!isEditing}
-                      value={item.unitPrice || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                      className={`w-24 px-1 py-2 text-sm font-black text-right bg-transparent border-0 focus:ring-1 focus:ring-indigo-500 rounded outline-none disabled:text-gray-900 ${noSpinners}`}
-                    />
-                  </div>
-                </td>
-                <td className="px-2 py-1 bg-gray-50/80">
-                  <input
-                    type="number"
-                    disabled={!isEditing}
-                    value={item.quantity || ''}
-                    onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                    className={`w-full px-2 py-2 text-sm font-bold text-right bg-transparent border-0 focus:ring-1 focus:ring-indigo-500 rounded outline-none disabled:text-gray-500 ${noSpinners}`}
-                  />
-                </td>
+  <div className={`flex items-center justify-end rounded-lg border transition-colors ${isEditing ? 'border-gray-200 focus-within:border-indigo-400 focus-within:bg-indigo-50/30' : 'border-transparent'}`}>
+    <input
+      type="number"
+      disabled={!isEditing}
+      value={item.quantity || ''}
+      onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+      className={`w-full px-2 py-2 text-sm font-bold text-right bg-transparent border-0 focus:ring-0 outline-none disabled:text-gray-500 ${noSpinners}`}
+    />
+  </div>
+</td>
                 {isEditing && (
                   <td className="px-2 py-1">
                     <button
@@ -350,26 +352,26 @@ export default function QuoteSection({
         </table>
       </div>
 
-      {/* ── FOOTER ACTIONS ── */}
-      <div className="p-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handleAddRow}
-          className="flex-1 h-12 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-black rounded-xl transition-all uppercase tracking-widest border border-indigo-100"
-        >
-          <Plus className="w-4 h-4" /> Add Line Item
-        </button>
+     {/* ── FOOTER ACTIONS ── */}
+<div className="p-3 bg-white border-t border-gray-100 flex flex-col gap-2">
+  <button
+    onClick={handleAddRow}
+    className="w-full h-12 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-black rounded-xl transition-all uppercase tracking-widest border border-indigo-100"
+  >
+    <Plus className="w-4 h-4" /> Add Line Item
+  </button>
 
-        {isEditing && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 h-12 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-indigo-100 uppercase tracking-widest"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes ({fmt(total)})
-          </button>
-        )}
-      </div>
+  {isEditing && (
+    <button
+      onClick={handleSave}
+      disabled={saving}
+      className="w-full h-14 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-indigo-100 uppercase tracking-widest"
+    >
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+      Save Changes · {fmt(total)}
+    </button>
+  )}
+</div>
 
       {/* ── TOTAL BAR ── */}
       <div className="px-4 py-4 bg-gray-900 text-white flex items-center justify-between">
