@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Rocket } from 'lucide-react';
 
 type ConvertToProjectButtonProps = {
   lead: any;
@@ -12,18 +13,22 @@ type ConvertToProjectButtonProps = {
 export default function ConvertToProjectButton({
   lead,
   currentUser,
-  onRefresh
+  onRefresh,
 }: ConvertToProjectButtonProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  if (lead.project_id) {
-    return null;
-  }
+  if (lead.project_id) return null;
+
+  const category = lead.category || '';
+
+  const categoryDisplay = category
+    .split('_')
+    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 
   const handleConvert = async () => {
     setIsConverting(true);
-
     try {
       const response = await fetch('/api/leads/update', {
         method: 'POST',
@@ -31,37 +36,37 @@ export default function ConvertToProjectButton({
         body: JSON.stringify({
           id: lead.id,
           action: 'create_project',
+          category,
           user_name: currentUser?.name || 'Unknown User',
-          user_email: currentUser?.email || ''
-        })
+          user_email: currentUser?.email || '',
+        }),
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(`✅ Project #${result.project_number} created! You can now schedule work, create quotes, and track payments.`);
+        toast.success(`Project #${result.project_number} created!`);
         setShowConfirm(false);
 
-        // ── Auto-save quote template if one matches this category ──
+        // Auto-load matching quote template if category has one
         try {
           const companySlug = window.location.pathname.split('/')[1];
           const tmplRes = await fetch(`/api/company/${companySlug}/quote-templates`);
           const tmplData = await tmplRes.json();
 
           if (tmplData.success) {
-            const match = (tmplData.templates || []).find((t: any) => t.category === lead.category);
-
+            const match = (tmplData.templates || []).find(
+              (t: any) => t.category === category
+            );
             if (match) {
               const items = match.items.map((item: any, i: number) => ({
                 id: Date.now() + i,
                 description: item.description,
                 quantity: item.quantity || 1,
-                unitPrice: item.amount / (item.quantity || 1),
+                unitPrice: item.unitPrice || item.amount / (item.quantity || 1),
                 amount: item.amount,
               }));
-
               const total = items.reduce((s: number, i: any) => s + i.amount, 0);
-
               await fetch('/api/leads/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -93,79 +98,69 @@ export default function ConvertToProjectButton({
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6 mb-6">
-      {!showConfirm ? (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">🚀</span>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">Ready to start work?</h3>
+    <>
+      {/* ── Trigger button ── */}
+      <button
+        onClick={() => setShowConfirm(true)}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-black rounded-lg transition active:scale-95"
+      >
+        <Rocket className="w-3.5 h-3.5" />
+        Convert to Project
+      </button>
 
-              {/* Category display */}
-              {lead.category && (
-                <p className="text-sm text-indigo-600 font-semibold mt-1">
-                  Category: {lead.category}
-                </p>
-              )}
-
-              <p className="text-sm text-gray-600 mt-1">
-                Convert this lead to an active project to schedule work, create quotes, and track payments.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowConfirm(true)}
-            className="w-full sm:w-auto flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-lg hover:shadow-xl text-sm sm:text-base"
+      {/* ── Confirm modal ── */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div
+            className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            🎯 Convert to Project
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">⚠️</span>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">Confirm Conversion</h3>
-
-              {/* Category reminder */}
-              {lead.category && (
-                <p className="text-sm text-indigo-600 font-semibold mt-1">
-                  This will be linked to category: {lead.category}
-                </p>
-              )}
-
-              <p className="text-sm text-gray-600 mt-1">
-                This will create an active project for <strong>{lead.name}</strong>. You'll be able to:
+            {/* Header */}
+            <div className="px-8 pt-8 pb-6 text-center">
+              <div className="w-14 h-14 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                <Rocket className="w-7 h-7 text-indigo-500" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-1">Create Project</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                For <span className="font-bold text-gray-700">{lead.name}</span>
               </p>
-              <ul className="text-sm text-gray-600 mt-2 space-y-1 ml-4">
-                <li>✅ Schedule work and assign</li>
-                <li>✅ Create and send official quotes</li>
-                <li>✅ Track payments and invoices</li>
-                <li>✅ Upload before/after photos</li>
-                <li>✅ Mark job as complete</li>
-              </ul>
+              {categoryDisplay && (
+                <span className="inline-block mt-3 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-black text-indigo-600">
+                  {categoryDisplay}
+                </span>
+              )}
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleConvert}
-              disabled={isConverting}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition text-sm sm:text-base"
-            >
-              {isConverting ? '⏳ Creating Project...' : '✅ Yes, Create Project'}
-            </button>
-            <button
-              onClick={() => setShowConfirm(false)}
-              disabled={isConverting}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-lg transition text-sm sm:text-base"
-            >
-              ❌ Cancel
-            </button>
+            {/* Actions */}
+            <div className="px-6 pb-6 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={isConverting}
+                className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConvert}
+                disabled={isConverting}
+                className="py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isConverting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="w-4 h-4" />
+                    Create
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

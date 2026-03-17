@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, X, Calendar, Edit2, MoreVertical,
@@ -131,7 +131,6 @@ photos: customerPhotos.filter((url: string) => typeof url === 'string' && url.st
     city: lead.city || '',
   });
 
-  const notesArray = parseNotes(lead.notes);
   const isProject = !!lead.project_id;
 
   // Fetch related leads (repeat customer detection)
@@ -159,9 +158,29 @@ useEffect(() => {
 
 const userRole = currentUser?.role || 'member';
 const canDelete = canDeleteLead(userRole);
-const customerPhotos = Array.isArray(lead.file_urls)
-  ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
-  : [];
+
+const customerPhotos = useMemo(() =>
+  Array.isArray(lead.file_urls)
+    ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
+    : [],
+[lead.file_urls]);
+
+const notesArray = useMemo(() => parseNotes(lead.notes), [lead.notes]);
+
+// Sync local state when lead prop updates after refresh
+useEffect(() => {
+  setSelectedCategory(lead.category || '');
+  setSelectedStatus(lead.status || statusOptions[0]?.value);
+  setInternalNotesText(lead.project_internal_notes || '');
+  setEditedDetails({
+    name: lead.name || '',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    address_line_1: lead.address_line_1 || '',
+    address_line_2: lead.address_line_2 || '',
+    city: lead.city || '',
+  });
+}, [lead.id, lead.category, lead.status, lead.project_internal_notes]);
 
   const getStatusColor = (colorName: string) => {
     const colorMap: Record<string, string> = {
@@ -214,20 +233,17 @@ const customerPhotos = Array.isArray(lead.file_urls)
     return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
 
- const handleStatusChange = async () => {
+const handleStatusChange = async (newStatus: string) => {
   const oldStatus = lead.status || statusOptions[0]?.value;
-  if (isUpdatingStatus || selectedStatus === oldStatus) return;
+  if (isUpdatingStatus || newStatus === oldStatus) return;
   setIsUpdatingStatus(true);
+  setSelectedStatus(newStatus);
   try {
-    const success = await onUpdateStatus(lead.id, selectedStatus, oldStatus);
+    const success = await onUpdateStatus(lead.id, newStatus, oldStatus);
     if (success) {
-      // ✅ Log the status change to activity
       const oldStatusLabel = getStatusConfig(oldStatus)?.label || oldStatus;
-      const newStatusLabel = getStatusConfig(selectedStatus)?.label || selectedStatus;
-      const statusChangeNote = `Status changed from "${oldStatusLabel}" to "${newStatusLabel}"`;
-      
-      await onAddNote(lead.id, statusChangeNote);
-      
+      const newStatusLabel = getStatusConfig(newStatus)?.label || newStatus;
+      await onAddNote(lead.id, `Status changed from "${oldStatusLabel}" to "${newStatusLabel}"`);
       toast.success('Status updated!');
       await onRefresh();
     } else {
@@ -242,14 +258,15 @@ const customerPhotos = Array.isArray(lead.file_urls)
   }
 };
 
-  const handleSaveStatusWithCheck = () => {
-    const oldStatus = lead.status || statusOptions[0]?.value;
-    if (selectedStatus === 'completed' && selectedStatus !== oldStatus) {
-      setShowCompletionSummary(true);
-      return;
-    }
-    handleStatusChange();
-  };
+const handleSaveStatusWithCheck = (newStatus: string) => {
+  const oldStatus = lead.status || statusOptions[0]?.value;
+  if (newStatus === 'completed' && newStatus !== oldStatus) {
+    setSelectedStatus(newStatus);
+    setShowCompletionSummary(true);
+    return;
+  }
+  handleStatusChange(newStatus);
+};
 
   const handleSaveInternalNotes = async () => {
     if (!lead.project_id) { toast.error('Project not found'); return; }
@@ -422,13 +439,19 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0 mr-4">
                 {/* Project number only */}
-                {isProject && (
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      #{lead.project_number}
-                    </span>
-                  </div>
-                )}
+              {isProject ? (
+  <div className="mb-2">
+    <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+      #{lead.project_number}
+    </span>
+  </div>
+) : (
+  <div className="mb-2">
+    <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+      Lead
+    </span>
+  </div>
+)}
 
                 {/* Name */}
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight truncate">
@@ -496,32 +519,26 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
               {/* Status selector */}
               <div className="relative flex items-center gap-2">
                 <div className="relative">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-1.5 rounded-none text-xs font-bold cursor-pointer focus:outline-none"
-                    style={{
-                      background: `${statusHex}25`,
-                      color: statusHex,
-                      border: `1px solid ${statusHex}40`,
-                    }}
-                  >
-                    {statusOptions.map((o: any) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: statusHex }} />
-                </div>
-                {selectedStatus !== lead.status && (
-                  <button
-                    onClick={handleSaveStatusWithCheck}
-                    disabled={isUpdatingStatus}
-                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-none transition"
-                  >
-                    {isUpdatingStatus ? '...' : 'Save'}
-                  </button>
-                )}
+                <select
+  value={selectedStatus}
+  onChange={(e) => handleSaveStatusWithCheck(e.target.value)}
+  disabled={isUpdatingStatus}
+  className="appearance-none pl-3 pr-8 py-1.5 rounded-none text-xs font-bold cursor-pointer focus:outline-none disabled:opacity-60"
+  style={{
+    background: `${statusHex}25`,
+    color: statusHex,
+    border: `1px solid ${statusHex}40`,
+  }}
+>
+  {statusOptions.map((o: any) => (
+    <option key={o.value} value={o.value}>{o.label}</option>
+  ))}
+</select>
+{isUpdatingStatus
+  ? <span className="text-xs text-white/50 animate-pulse">Saving...</span>
+  : <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: statusHex }} />
+}
+</div>
               </div>
 
               {/* Schedule chip */}
@@ -572,9 +589,9 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
 
             
 
-            {/* Tab bar */}
-            <div className="flex overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
-              {tabs.filter(t => t.show).map((tab) => {
+           {/* Tab bar */}
+<div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
+  {tabs.filter(t => t.show).map((tab) => {
   const Icon = tab.icon;
   return (
     <button
@@ -592,9 +609,21 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
     </button>
   );
 })}
-            </div>
+  {!isProject && (
+    <div className="flex-shrink-0 flex items-center pl-3 pb-1">
+     <ConvertToProjectButton
+  lead={lead}
+  currentUser={currentUser}
+  onRefresh={onRefresh}
+/>
+    </div>
+  )}
+</div>
+
           </div>
+          
         </div>
+        
 
         {/* ── BODY ──────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto" style={{ background: '#f6f6fa' }}>
@@ -602,6 +631,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
 
             {/* ── OVERVIEW TAB ── */}
             {activeTab === 'overview' && (
+              
               <>
                 {/* Client Card */}
                 <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
@@ -774,9 +804,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
                   )}
                 </div>
                  {/* Convert to Project — shown prominently before content cards */}
-          {!isProject && (
-            <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
-          )}
+         
 
 
                 {/* Two-col: Message + Notes */}
@@ -1246,11 +1274,11 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean 
 
 {showCompletionSummary && (
   <CompletionSummaryModal
-          lead={lead}
-          onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(); }}
-          onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
-        />
-      )}
+    lead={lead}
+    onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(selectedStatus); }}
+    onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
+  />
+)}
     </div>
   );
 }

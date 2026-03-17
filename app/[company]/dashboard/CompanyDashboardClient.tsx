@@ -307,19 +307,38 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } else throw new Error(result.error || 'Bulk delete failed');
   }, [currentUser]);
 
-  const refreshModalLead = useCallback(async () => {
-    await fetchLeads(1, true);
-    if (!selectedLead) return;
-    try {
-      const res = await fetch(`/api/company/${company.slug}/leads`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
+ const refreshModalLead = useCallback(async () => {
+  if (!selectedLead) return;
+  try {
+    // Fetch just this one lead directly
+    const res = await fetch(`/api/leads/${selectedLead.id}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    if (res.ok) {
       const data = await res.json();
-      const updated = data.leads?.find((l: any) => l.id === selectedLead.id);
-      if (updated) setSelectedLead(updated);
-    } catch (e) { console.error('refreshModalLead:', e); }
-  }, [fetchLeads, selectedLead, company.slug]);
+      if (data.lead) {
+        // Update modal immediately
+        setSelectedLead(data.lead);
+        // Also update the card in the list
+        setAllLeads(prev =>
+          prev.map(l => l.id === selectedLead.id ? data.lead : l)
+        );
+        setRefreshKey(k => k + 1);
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('refreshModalLead single fetch failed:', e);
+  }
+  // Fallback — full list refetch
+  await fetchLeads(1, true);
+  setAllLeads(prev => {
+    const updated = prev.find(l => l.id === selectedLead.id);
+    if (updated) setSelectedLead(updated);
+    return prev;
+  });
+}, [fetchLeads, selectedLead, company.slug]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
