@@ -29,8 +29,6 @@ export default async function SuccessPage({ params }: PageProps) {
 
   if (!company) notFound();
 
-  // THE LOGIC FLIP: 
-  // Header stays consistent. Dashboard text becomes the detailed subtext.
   const headline = "Request Received!";
   const subtext = company.cta_success_message || "We've got your request and will be in touch soon. Keep an eye on your inbox for a confirmation.";
 
@@ -43,12 +41,10 @@ export default async function SuccessPage({ params }: PageProps) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,wght@0,700;1,700&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-          font-family: 'DM Sans', sans-serif;
+          font-family: var(--font-dm-sans), sans-serif;
           -webkit-font-smoothing: antialiased;
         }
 
@@ -72,24 +68,18 @@ export default async function SuccessPage({ params }: PageProps) {
           pointer-events: none;
         }
         .orb-1 {
-          width: 500px;
-          height: 500px;
-          top: -150px;
-          right: -100px;
+          width: 500px; height: 500px; top: -150px; right: -100px;
           background: var(--brand1);
           animation: drift1 12s ease-in-out infinite alternate;
         }
         .orb-2 {
-          width: 400px;
-          height: 400px;
-          bottom: -100px;
-          left: -80px;
+          width: 400px; height: 400px; bottom: -100px; left: -80px;
           background: var(--brand2);
           animation: drift2 10s ease-in-out infinite alternate;
         }
 
-        @keyframes drift1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(30px, 20px) scale(1.05); } }
-        @keyframes drift2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-20px, -30px) scale(1.08); } }
+        @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.05); } }
+        @keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-20px,-30px) scale(1.08); } }
 
         .card {
           position: relative;
@@ -99,26 +89,22 @@ export default async function SuccessPage({ params }: PageProps) {
           border-radius: 24px;
           padding: 40px 32px 36px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06), 0 24px 48px rgba(0,0,0,0.08);
-          animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: rise 0.4s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both;
           text-align: center;
           z-index: 10;
         }
 
         @keyframes rise { from { opacity: 0; transform: translateY(32px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        .logo-wrap { margin-bottom: 28px; animation: fadein 0.5s 0.15s ease both; }
+        .logo-wrap { margin-bottom: 28px; animation: fadein 0.4s 0.1s ease both; }
         .logo-wrap img { height: 48px; width: auto; object-fit: contain; max-width: 180px; }
 
         .check-ring {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
+          width: 72px; height: 72px; border-radius: 50%;
           margin: 0 auto 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           position: relative;
-          animation: pop 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          animation: pop 0.5s 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) both;
           background: linear-gradient(135deg, var(--brand1), var(--brand2));
           box-shadow: 0 8px 24px color-mix(in srgb, var(--brand1) 30%, transparent);
         }
@@ -126,19 +112,16 @@ export default async function SuccessPage({ params }: PageProps) {
         @keyframes pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
 
         .check-ring svg {
-          width: 32px;
-          height: 32px;
-          color: #fff;
-          stroke-dasharray: 40;
-          stroke-dashoffset: 40;
-          animation: draw 0.4s 0.5s ease both;
+          width: 32px; height: 32px; color: #fff;
+          stroke-dasharray: 40; stroke-dashoffset: 40;
+          animation: draw 0.4s 0.4s ease both;
           filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
         @keyframes draw { to { stroke-dashoffset: 0; } }
 
         .dots { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
-        .dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--brand1); animation: burst 0.6s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; opacity: 0; }
+        .dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--brand1); animation: burst 0.6s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; opacity: 0; }
         .dot:nth-child(1) { top: -12px; left: 50%; --tx: -2px; --ty: -18px; }
         .dot:nth-child(2) { top: 10px; right: -14px; --tx: 16px; --ty: -8px; }
         .dot:nth-child(3) { bottom: 10px; right: -12px; --tx: 14px; --ty: 10px; }
@@ -146,55 +129,44 @@ export default async function SuccessPage({ params }: PageProps) {
         .dot:nth-child(5) { bottom: 10px; left: -14px; --tx: -16px; --ty: 8px; }
         .dot:nth-child(6) { top: 10px; left: -12px; --tx: -14px; --ty: -10px; }
 
-        @keyframes burst { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx, 0), var(--ty, 0)) scale(0); } }
+        @keyframes burst { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx,0), var(--ty,0)) scale(0); } }
 
         .headline {
-          font-family: 'Fraunces', Georgia, serif;
+          font-family: var(--font-fraunces), Georgia, serif;
           font-size: clamp(1.5rem, 5vw, 1.85rem);
-          font-weight: 700;
-          color: #111;
+          font-weight: 700; color: #111;
           margin-bottom: 12px;
-          animation: fadein 0.5s 0.35s ease both;
+          animation: fadein 0.4s 0.2s ease both;
         }
 
         .subtext {
-          font-size: 0.9375rem;
-          color: #6b7280;
-          line-height: 1.6;
+          font-size: 0.9375rem; color: #6b7280; line-height: 1.6;
           margin-bottom: 32px;
-          animation: fadein 0.5s 0.45s ease both;
+          animation: fadein 0.4s 0.25s ease both;
         }
 
         @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; text-align: left; animation: fadein 0.5s 0.5s ease both; }
+        .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; text-align: left; animation: fadein 0.4s 0.3s ease both; }
         .step { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: #f9fafb; border-radius: 12px; border: 1px solid #f0f0f0; }
         .step-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: linear-gradient(135deg, color-mix(in srgb, var(--brand1) 12%, white), color-mix(in srgb, var(--brand2) 12%, white)); }
         .step-text strong { display: block; font-size: 0.8125rem; font-weight: 600; color: #111; margin-bottom: 1px; }
         .step-text span { font-size: 0.75rem; color: #9ca3af; }
 
         .cta-btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          padding: 14px 24px;
-          border-radius: 14px;
-          font-size: 0.9375rem;
-          font-weight: 600;
-          color: #fff;
-          text-decoration: none;
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          width: 100%; padding: 14px 24px; border-radius: 14px;
+          font-size: 0.9375rem; font-weight: 600; color: #fff; text-decoration: none;
           background: linear-gradient(135deg, var(--brand1), var(--brand2));
           box-shadow: 0 4px 16px color-mix(in srgb, var(--brand1) 35%, transparent);
           transition: 0.2s;
-          animation: fadein 0.5s 0.6s ease both;
+          animation: fadein 0.4s 0.35s ease both;
         }
         .cta-btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .cta-arrow { transition: transform 0.2s; }
         .cta-btn:hover .cta-arrow { transform: translateX(3px); }
 
-        .footer-note { margin-top: 24px; font-size: 0.75rem; color: #d1d5db; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; animation: fadein 0.5s 0.7s ease both; }
+        .footer-note { margin-top: 24px; font-size: 0.75rem; color: #d1d5db; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; animation: fadein 0.4s 0.4s ease both; }
 
         @media (max-width: 480px) { .card { padding: 32px 20px 28px; border-radius: 20px; } }
       `}</style>

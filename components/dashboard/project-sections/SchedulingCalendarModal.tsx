@@ -103,27 +103,33 @@ export default function SchedulingCalendarModal({
     });
   };
 
-  const isTimeSlotAvailable = (time: string) => {
-    if (!selectedDate) return false;
-    
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-    const jobsOnDate = scheduledJobs.filter(job => {
-      const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
-      
-      // If filtering by team member, only check their availability
-      if (selectedTeamMember) {
-        return jobDate === dateStr && job.scheduled_time === time && job.assigned_to === selectedTeamMember;
-      }
-      
-      return jobDate === dateStr && job.scheduled_time === time;
-    });
-    
-    return jobsOnDate.length === 0;
+const isTimeSlotAvailable = (time: string) => {
+  if (!selectedDate) return false;
+
+  const year = selectedDate.getFullYear();
+  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+  const day = String(selectedDate.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
+
+  const toMinutes = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
   };
+
+  const slotMinutes = toMinutes(time);
+
+  const conflicting = scheduledJobs.find(job => {
+    const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
+    if (jobDate !== dateStr) return false;
+    if (!job.scheduled_time) return false;
+    if (selectedTeamMember && job.assigned_to !== selectedTeamMember) return false;
+
+    const jobMinutes = toMinutes(job.scheduled_time);
+    return Math.abs(slotMinutes - jobMinutes) < 60;
+  });
+
+  return !conflicting;
+};
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -380,10 +386,12 @@ export default function SchedulingCalendarModal({
     const day = String(selectedDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
     
-    const bookedJob = scheduledJobs.find(job => {
-      const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
-      return jobDate === dateStr && job.scheduled_time === time;
-    });
+   const bookedJob = scheduledJobs.find(job => {
+  const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
+  if (jobDate !== dateStr || !job.scheduled_time) return false;
+  const toMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  return Math.abs(toMinutes(time) - toMinutes(job.scheduled_time)) < 60;
+});
     
     return (
       <div className="text-xs text-red-600 font-semibold">
