@@ -27,6 +27,7 @@ interface Company {
   status_options?: any[];
   form_categories?: any[];
   custom_questions?: any[];
+  form_field_config?: any;
   onboarding_completed?: boolean;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
@@ -59,11 +60,12 @@ export async function generateMetadata(
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const rows = await sql`
- SELECT
+    SELECT
       id, name, slug, email, phone, website, logo_url, created_at,
       email_brand_color_1, email_brand_color_2,
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,
+      form_field_config,
       onboarding_completed, cancel_at_period_end, subscription_cancel_at
     FROM companies
     WHERE slug = ${slug}
@@ -77,6 +79,7 @@ async function getCompany(slug: string): Promise<Company | null> {
     status_options: c.status_options || [],
     form_categories: c.form_categories || [],
     custom_questions: c.custom_questions || [],
+    form_field_config: c.form_field_config || {},
   } as Company;
 }
 
@@ -99,13 +102,11 @@ async function verifyAuth(companySlug: string): Promise<void> {
       process.env.JWT_SECRET || 'your-secret-key-change-this'
     );
   } catch {
-    // Invalid / expired token
     redirect('/login');
   }
 
   const sql = neon(process.env.DATABASE_URL!);
 
-  // Confirm user belongs to this company
   const access = await sql`
     SELECT c.slug
     FROM users u
@@ -116,7 +117,6 @@ async function verifyAuth(companySlug: string): Promise<void> {
   `;
 
   if (!access.length) {
-    // Redirect to their actual company
     const own = await sql`
       SELECT c.slug
       FROM users u
@@ -139,13 +139,11 @@ export default async function CompanyDashboardPage({
 }) {
   const { company: companySlug } = await params;
 
-  // Auth check  redirects automatically if invalid
   await verifyAuth(companySlug);
 
   const company = await getCompany(companySlug);
   if (!company) notFound();
 
-  // Subscription gate
   const isTrialExpired =
     company.subscription_status === 'trialing' &&
     company.trial_ends_at &&

@@ -36,6 +36,7 @@ type Company = {
   email_brand_color_2?: string | null;
   status_options?: StatusOption[];
   form_categories?: any[];
+  form_field_config?: any;
   custom_questions?: any[];
   subscription_status?: string;
   trial_ends_at?: string | null;
@@ -966,6 +967,8 @@ onClick={() => {
         companySlug={company.slug}
         companyId={company.id}
         categories={company.form_categories || []}
+          company={company}
+
       />
 
       {/* ------------------------------------------------------------------ */}

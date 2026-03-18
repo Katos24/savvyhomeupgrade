@@ -177,13 +177,13 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               </button>
             </div>
             <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
-              <iframe
-                title="Email Preview"
-                srcDoc={previewHtml}
-                className="w-full border-0 rounded-xl bg-white"
-                style={{ height: '100%', width: '100%', display: 'block' }}
-                sandbox="allow-same-origin"
-              />
+             <iframe
+  title="Email Preview"
+  srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
+  className="w-full border-0 rounded-xl bg-white"
+  style={{ height: '100%', width: '100%', display: 'block' }}
+  sandbox="allow-same-origin"
+/>
             </div>
           </div>
         </div>
