@@ -56,11 +56,14 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   }, [lead?.id, companySlug]);
 
   useEffect(() => {
-    if (markPaidInFull && lead?.quote_total) {
-      setPaymentAmount(lead.quote_total.toString());
+  if (markPaidInFull && lead?.quote_total) {
+    setPaymentAmount(lead.quote_total.toString());
+    // Only default to today if no date is already saved
+    if (!paymentDate) {
       setPaymentDate(new Date().toISOString().split('T')[0]);
     }
-  }, [markPaidInFull, lead?.quote_total]);
+  }
+}, [markPaidInFull, lead?.quote_total]);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);

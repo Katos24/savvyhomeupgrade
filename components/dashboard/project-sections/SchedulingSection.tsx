@@ -69,26 +69,24 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   }, []);
 
   // Fetch outbox log entries for this lead (schedule type)  includes status + html_body
-  useEffect(() => {
-    if (!lead?.id) return;
-    async function fetchOutbox() {
-      try {
-        const res = await fetch(
-          `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=schedule`
-        );
-        const data = await res.json();
-        if (data.entries) {
-          setOutboxLog(data.entries);
-          const latest = data.entries.find((e: any) => e.html_body);
-          if (latest) setLastHtmlBody(latest.html_body);
-        } else if (data.html_body) {
-          // fallback for old single-entry route
-          setLastHtmlBody(data.html_body);
-        }
-      } catch {}
+  const fetchOutbox = async () => {
+  if (!lead?.id) return;
+  try {
+    const res = await fetch(
+      `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=schedule`
+    );
+    const data = await res.json();
+    if (data.entries) {
+      setOutboxLog(data.entries);
+      const latest = data.entries.find((e: any) => e.html_body);
+      if (latest) setLastHtmlBody(latest.html_body);
+    } else if (data.html_body) {
+      setLastHtmlBody(data.html_body);
     }
-    fetchOutbox();
-  }, [lead?.id, companySlug]);
+  } catch {}
+};
+
+useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
 
   useEffect(() => {
     setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
@@ -475,7 +473,8 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
       <SendEmailModal
         open={showEmailModal}
         onClose={() => setShowEmailModal(false)}
-        onSuccess={onRefresh}
+        onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
+
         type="schedule"
         leadId={lead.id}
         currentUser={currentUser}

@@ -209,7 +209,7 @@ export default function UploadFormStepOne({
           </button>
           {hasStep2 && (
             <p className="text-center mt-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-              Photos and address are optional on the next step
+              Continue To Additional Details (Optional)
             </p>
           )}
         </div>
