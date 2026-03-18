@@ -241,8 +241,14 @@ export default function ProjectSection({
   />
 )}
           {financialsTab === 'payment' && (
-            <PaymentSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
-          )}
+  <PaymentSection 
+    lead={lead} 
+    currentUser={currentUser} 
+    onRefresh={onRefresh} 
+    hasProject={hasProject}
+    companySlug={companySlug}  // 👈 add this
+  />
+)}
           {financialsTab === 'media' && (
             <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}

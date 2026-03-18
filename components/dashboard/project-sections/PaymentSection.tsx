@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   CheckCircle, AlertCircle, Clock,
   CreditCard, Calendar, MessageSquare,
-  ChevronDown, ChevronUp, DollarSign, Send, X
+  ChevronDown, ChevronUp, DollarSign, Send, X, Mail, Eye,
 } from 'lucide-react';
 
 type PaymentUpdateProps = {
@@ -13,9 +13,10 @@ type PaymentUpdateProps = {
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
+  companySlug: string;
 };
 
-export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject }: PaymentUpdateProps) {
+export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject, companySlug }: PaymentUpdateProps) {
   const [saving, setSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -27,6 +28,8 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const [error, setError] = useState('');
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [outboxLog, setOutboxLog] = useState<any[]>([]);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   useEffect(() => {
     const amount = lead?.payment_amount || '';
@@ -39,6 +42,18 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
     setPaymentDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
     setMarkPaidInFull(total > 0 && paid >= total);
   }, [lead?.id]);
+
+  useEffect(() => {
+    if (!lead?.id || !companySlug) return;
+    async function fetchOutbox() {
+      try {
+        const res = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`);
+        const data = await res.json();
+        if (data.entries) setOutboxLog(data.entries);
+      } catch {}
+    }
+    fetchOutbox();
+  }, [lead?.id, companySlug]);
 
   useEffect(() => {
     if (markPaidInFull && lead?.quote_total) {
@@ -106,8 +121,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const handleSendReminder = async () => {
     setSendingReminder(true);
     try {
-      const slug = window.location.pathname.split('/')[1];
-      const res = await fetch(`/api/company/${slug}/payment-reminders`, {
+      const res = await fetch(`/api/company/${companySlug}/payment-reminders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lead_id: lead.id, project_id: lead.project_id }),
@@ -117,6 +131,10 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
         toast.success('Payment reminder sent!');
         setShowReminderConfirm(false);
         await onRefresh();
+        // Refresh outbox log after sending
+        const res2 = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`);
+        const data2 = await res2.json();
+        if (data2.entries) setOutboxLog(data2.entries);
       } else {
         toast.error(data.error || 'Failed to send reminder');
       }
@@ -129,6 +147,35 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
 
   return (
     <>
+      {/* Email preview modal */}
+      {previewHtml && (
+        <div
+          className="fixed inset-0 z-[10000] bg-black/70 flex items-end sm:items-center justify-center"
+          onClick={() => setPreviewHtml(null)}
+        >
+          <div
+            className="relative w-full sm:max-w-2xl flex flex-col bg-white rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
+            style={{ maxHeight: '92dvh', height: '92dvh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-400" />
+                <p className="text-sm font-black text-slate-800 uppercase tracking-tight">Email Preview</p>
+              </div>
+              <button onClick={() => setPreviewHtml(null)} className="p-2 hover:bg-slate-100 rounded-full transition">
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ background: '#fff', borderRadius: '8px', pointerEvents: 'none', color: '#111' }}>
+                <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
         {/* Header */}
@@ -318,7 +365,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
             </button>
           )}
 
-          {/* Notes - below buttons */}
+          {/* Notes */}
           <div className="pt-1 border-t border-slate-100">
             <button
               onClick={() => setShowNotes(v => !v)}
@@ -340,10 +387,54 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
               </div>
             )}
           </div>
+
+          {/* Email history */}
+          {outboxLog.length > 0 && (
+            <div className="pt-0 border-t border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-3 mb-2 flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5" /> Sent History
+              </p>
+              <div className="space-y-2">
+                {outboxLog.map((entry: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {entry.status === 'failed' ? 'Failed' : 'Sent'}
+                        </span>
+                        <span className="text-xs font-black text-slate-700">
+                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {entry.sent_by_email && (
+                        <span className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</span>
+                      )}
+                      {entry.status === 'failed' && entry.error_message && (
+                        <span className="text-[10px] text-red-500 font-bold truncate">{entry.error_message}</span>
+                      )}
+                    </div>
+                    {entry.html_body && (
+                      <button
+                        onClick={() => setPreviewHtml(entry.html_body)}
+                        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition"
+                      >
+                        <Eye className="w-3 h-3" /> Preview
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* REMINDER CONFIRM MODAL */}
+      {/* Reminder confirm modal */}
       {showReminderConfirm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div
@@ -351,7 +442,6 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
             onClick={() => !sendingReminder && setShowReminderConfirm(false)}
           />
           <div className="relative bg-white rounded-3xl w-full max-w-sm p-7 shadow-2xl animate-in zoom-in-95 duration-200">
-
             <button
               onClick={() => setShowReminderConfirm(false)}
               disabled={sendingReminder}
@@ -359,11 +449,9 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
             >
               <X className="w-4 h-4" />
             </button>
-
             <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-5">
               <Send className="w-5 h-5 text-indigo-600" />
             </div>
-
             <h3 className="text-lg font-black text-slate-900 mb-1">Send Payment Reminder?</h3>
             <p className="text-sm text-slate-500 mb-5 leading-relaxed">
               A reminder will be sent to{' '}
@@ -375,8 +463,6 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
                 </>
               ) : null}.
             </p>
-
-            {/* Reminder history chip */}
             <div className={`rounded-xl p-3.5 mb-5 text-xs font-bold flex items-start gap-2.5 ${
               !lastReminderSent
                 ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
@@ -393,7 +479,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
                     <p className="font-black">Last reminder: {fmtDate(lastReminderSent)}</p>
                     <p className="font-medium mt-0.5">
                       {daysSinceReminder === 0
-                        ? 'Already sent today  are you sure you want to send another?'
+                        ? 'Already sent today — are you sure you want to send another?'
                         : `${daysSinceReminder} day${daysSinceReminder !== 1 ? 's' : ''} ago`
                       }
                     </p>
@@ -401,7 +487,6 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
                 )}
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowReminderConfirm(false)}
