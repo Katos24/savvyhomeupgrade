@@ -28,15 +28,53 @@ export async function GET(request: NextRequest) {
 
     for (const company of companies) {
       try {
-        const rs = company.reminder_settings || {};
-        const followUpDays    = rs.follow_up_days           || 3;
-        const quoteFollowDays = rs.quote_follow_up_days     || 2;
-        const schedFollowDays = rs.schedule_follow_up_days  || 1;
-
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        // ── Determine recipients ──
+        // ── Timezone & time matching ──────────────────────────────────────────
         const prefs = company.notification_preferences || {};
+
+        // Support both formats:
+        //   New: { daily_digest: { time: "09:59", enabled: true } }
+        //   Old: { timezone: "America/New_York", email_time: "09:00" }
+        const digestTime: string =
+          prefs?.daily_digest?.time ||
+          prefs?.email_time ||
+          '09:00';
+
+        const timezone: string =
+          prefs?.timezone ||
+          'America/New_York'; // safe default for all existing customers
+
+        // Get the current hour in the company's timezone
+        const nowInTz = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: false,
+        }).format(new Date());
+
+        // nowInTz is like "09:47" or "14:03"
+        const [currentHour] = nowInTz.split(':').map(Number);
+        const [targetHour]  = digestTime.split(':').map(Number);
+
+        if (currentHour !== targetHour) {
+          console.log(
+            `⏭ Skipping ${company.name} — their digest time is ${digestTime} ${timezone}, current hour is ${currentHour}`
+          );
+          skipped++;
+          continue;
+        }
+
+        // ── Reminder settings ─────────────────────────────────────────────────
+        const rs = company.reminder_settings || {};
+        const followUpDays    = rs.follow_up_days          || 3;
+        const quoteFollowDays = rs.quote_follow_up_days    || 2;
+        const schedFollowDays = rs.schedule_follow_up_days || 1;
+
+        // Use today's date in the company's timezone
+        const todayStr = new Intl.DateTimeFormat('en-CA', {
+          timeZone: timezone,
+        }).format(new Date()); // en-CA gives YYYY-MM-DD
+
+        // ── Determine recipients ──────────────────────────────────────────────
         const digestRecipient = prefs.digest_recipient || 'company';
         const recipientEmails: string[] = [];
 
@@ -64,7 +102,7 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // ── TODAY'S JOBS ──
+        // ── TODAY'S JOBS ──────────────────────────────────────────────────────
         const todayJobs = await sql`
           SELECT
             l.name  AS customer_name,
@@ -81,7 +119,7 @@ export async function GET(request: NextRequest) {
           ORDER BY p.scheduled_time ASC NULLS LAST
         `;
 
-        // ── STALE LEADS ──
+        // ── STALE LEADS ───────────────────────────────────────────────────────
         const staleCutoff = new Date();
         staleCutoff.setDate(staleCutoff.getDate() - followUpDays);
 
@@ -97,7 +135,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── QUOTES SENT, NO RESPONSE ──
+        // ── QUOTES SENT, NO RESPONSE ──────────────────────────────────────────
         const quoteCutoff = new Date();
         quoteCutoff.setDate(quoteCutoff.getDate() - quoteFollowDays);
 
@@ -119,7 +157,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── JOB DONE, NO PAYMENT ──
+        // ── JOB DONE, NO PAYMENT ──────────────────────────────────────────────
         const schedCutoff = new Date();
         schedCutoff.setDate(schedCutoff.getDate() - schedFollowDays);
 
@@ -141,7 +179,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── OVERDUE PAYMENTS ──
+        // ── OVERDUE PAYMENTS ──────────────────────────────────────────────────
         const overduePayments = await sql`
           SELECT
             l.name AS customer_name,
@@ -159,10 +197,10 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── DUE THIS WEEK ──
-        const weekFromNowStr = new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ).toISOString().split('T')[0];
+        // ── DUE THIS WEEK ─────────────────────────────────────────────────────
+        const weekFromNowStr = new Intl.DateTimeFormat('en-CA', {
+          timeZone: timezone,
+        }).format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
         const dueSoon = await sql`
           SELECT
@@ -182,7 +220,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── FOLLOW-UP REMINDERS ──
+        // ── FOLLOW-UP REMINDERS ───────────────────────────────────────────────
         const followUpReminders = await sql`
           SELECT
             p.id,
@@ -216,9 +254,9 @@ export async function GET(request: NextRequest) {
 
         for (const email of recipientEmails) {
           await sendDailyDigestEmail({
-            companyEmail: email,
-            companyName: company.name,
-            companySlug: company.slug,
+            companyEmail:      email,
+            companyName:       company.name,
+            companySlug:       company.slug,
             todayJobs:         todayJobs         as any[],
             staleLeads:        staleLeads        as any[],
             staleQuotes:       staleQuotes       as any[],

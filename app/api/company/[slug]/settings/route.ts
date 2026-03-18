@@ -18,7 +18,9 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
+const secret = process.env.JWT_SECRET;
+if (!secret) throw new Error('JWT_SECRET is not set');
+const decoded = jwt.verify(token, secret) as any;
 
     const users = await sql`
       SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1
