@@ -28,51 +28,14 @@ export async function GET(request: NextRequest) {
 
     for (const company of companies) {
       try {
-        // ── Timezone & time matching ──────────────────────────────────────────
         const prefs = company.notification_preferences || {};
-
-        // Support both formats:
-        //   New: { daily_digest: { time: "09:59", enabled: true } }
-        //   Old: { timezone: "America/New_York", email_time: "09:00" }
-        const digestTime: string =
-          prefs?.daily_digest?.time ||
-          prefs?.email_time ||
-          '09:00';
-
-        const timezone: string =
-          prefs?.timezone ||
-          'America/New_York'; // safe default for all existing customers
-
-        // Get the current hour in the company's timezone
-        const nowInTz = new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-          hour: 'numeric',
-          minute: 'numeric',
-          hour12: false,
-        }).format(new Date());
-
-        // nowInTz is like "09:47" or "14:03"
-        const [currentHour] = nowInTz.split(':').map(Number);
-        const [targetHour]  = digestTime.split(':').map(Number);
-
-        if (currentHour !== targetHour) {
-          console.log(
-            `⏭ Skipping ${company.name} — their digest time is ${digestTime} ${timezone}, current hour is ${currentHour}`
-          );
-          skipped++;
-          continue;
-        }
-
-        // ── Reminder settings ─────────────────────────────────────────────────
         const rs = company.reminder_settings || {};
+
         const followUpDays    = rs.follow_up_days          || 3;
         const quoteFollowDays = rs.quote_follow_up_days    || 2;
         const schedFollowDays = rs.schedule_follow_up_days || 1;
 
-        // Use today's date in the company's timezone
-        const todayStr = new Intl.DateTimeFormat('en-CA', {
-          timeZone: timezone,
-        }).format(new Date()); // en-CA gives YYYY-MM-DD
+        const todayStr = new Date().toISOString().split('T')[0];
 
         // ── Determine recipients ──────────────────────────────────────────────
         const digestRecipient = prefs.digest_recipient || 'company';
@@ -198,9 +161,8 @@ export async function GET(request: NextRequest) {
         `;
 
         // ── DUE THIS WEEK ─────────────────────────────────────────────────────
-        const weekFromNowStr = new Intl.DateTimeFormat('en-CA', {
-          timeZone: timezone,
-        }).format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+        const weekFromNowStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString().split('T')[0];
 
         const dueSoon = await sql`
           SELECT
