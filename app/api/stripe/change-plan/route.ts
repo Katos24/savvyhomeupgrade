@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import type Stripe from 'stripe';
 import { neon } from '@neondatabase/serverless';
 
 export const runtime = 'nodejs';
@@ -31,7 +32,6 @@ export async function POST(req: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
-    // Get the company's current Stripe subscription
     const companies = await sql`
       SELECT stripe_subscription_id, stripe_customer_id, plan_tier
       FROM companies
@@ -58,12 +58,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Retrieve the subscription to get the current item ID
     const subscription = await stripe.subscriptions.retrieve(
       company.stripe_subscription_id
-    );
+    ) as unknown as Stripe.Subscription;
 
-    if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
+    if (
+      subscription.status === 'canceled' ||
+      subscription.status === 'incomplete_expired'
+    ) {
       return NextResponse.json(
         { error: 'Subscription is no longer active. Please subscribe again.' },
         { status: 400 }
@@ -71,7 +73,6 @@ export async function POST(req: NextRequest) {
     }
 
     const currentItem = subscription.items.data[0];
-
     if (!currentItem) {
       return NextResponse.json(
         { error: 'No subscription item found' },
@@ -79,37 +80,97 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update the subscription: swap the price, prorate immediately
-    const updatedSubscription = await stripe.subscriptions.update(
-      company.stripe_subscription_id,
-      {
-        items: [
-          {
-            id: currentItem.id,
-            price: newPriceId,
-          },
-        ],
-        proration_behavior: 'create_prorations',
+    // current_period_end lives on the item in newer SDK versions, with a
+    // fallback to the subscription root for older versions
+    const currentPeriodEnd =
+      (currentItem as any).current_period_end ??
+      (subscription as any).current_period_end;
+
+    const isDowngrade = newPlan === 'basic';
+
+    if (isDowngrade) {
+      // ── DOWNGRADE: schedule change for end of current billing period ──
+      // Prevents users from using Pro then immediately switching to Basic.
+
+      // Release any existing schedule first to avoid conflicts
+      if ((subscription as any).schedule) {
+        await stripe.subscriptionSchedules.release(
+          (subscription as any).schedule as string
+        );
       }
-    );
 
-    // Update plan_tier locally right away (webhook will also fire, but this keeps UI snappy)
-    await sql`
-      UPDATE companies
-      SET plan_tier = ${newPlan}
-      WHERE id = ${companyId}
-    `;
+      const schedule = await stripe.subscriptionSchedules.create({
+  from_subscription: company.stripe_subscription_id,
+});
 
-    console.log(
-      `✅ Plan changed for company ${companyId}: ${company.plan_tier} → ${newPlan}`
-    );
+await stripe.subscriptionSchedules.update(schedule.id, {
+  phases: [
+    {
+      // Phase 1: keep Pro until current period ends
+      start_date: (schedule as any).phases[0].start_date,
+      items: [{ price: currentItem.price.id }],
+      end_date: currentPeriodEnd,
+    },
+    {
+      // Phase 2: switch to Basic from next billing cycle
+      items: [{ price: newPriceId }],
+    },
+  ],
+});
 
-    return NextResponse.json({
-      success: true,
-      previousPlan: company.plan_tier,
-      newPlan,
-      subscriptionStatus: updatedSubscription.status,
-    });
+      // ⚠️ Do NOT update plan_tier in DB here.
+      // The webhook (customer.subscription.updated) will handle it
+      // when the schedule fires at period end.
+
+      const periodEndDate = new Date(currentPeriodEnd * 1000);
+
+await sql`
+  UPDATE companies
+  SET pending_downgrade_at = ${periodEndDate}
+  WHERE id = ${companyId}
+`;
+
+console.log(
+  `⏳ Downgrade scheduled for company ${companyId}: ${company.plan_tier} → ${newPlan} at period end (${periodEndDate.toISOString()})`
+);
+
+return NextResponse.json({
+  success: true,
+  previousPlan: company.plan_tier,
+  newPlan,
+  effective: 'period_end',
+  periodEnd: currentPeriodEnd,
+});
+    } else {
+      // ── UPGRADE: apply immediately with proration ──
+      const updatedSubscription = await stripe.subscriptions.update(
+        company.stripe_subscription_id,
+        {
+          items: [{ id: currentItem.id, price: newPriceId }],
+          proration_behavior: 'always_invoice',
+        }
+      );
+
+      // Safe to update DB immediately — upgrade is live now
+     await sql`
+  UPDATE companies
+  SET plan_tier = ${newPlan},
+      pending_downgrade_at = NULL
+  WHERE id = ${companyId}
+`;
+
+      console.log(
+        `✅ Upgrade applied for company ${companyId}: ${company.plan_tier} → ${newPlan}`
+      );
+
+      return NextResponse.json({
+        success: true,
+        previousPlan: company.plan_tier,
+        newPlan,
+        effective: 'immediate',
+        subscriptionStatus: updatedSubscription.status,
+      });
+    }
   } catch (error: any) {
     console.error('Plan change error:', error);
     return NextResponse.json(

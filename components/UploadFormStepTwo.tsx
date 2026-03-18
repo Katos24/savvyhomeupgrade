@@ -146,9 +146,16 @@ export default function UploadFormStepTwo({
   const disabled = submitting || compressing;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-8 px-4"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl mb-8">
+    <div
+  className="fixed inset-0 z-50 px-4"
+  style={{
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch', // iOS momentum scroll
+  }}
+>
+  <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl mx-auto my-8">
 
         {/* Header */}
         <div className="rounded-t-2xl px-6 py-5 text-white"

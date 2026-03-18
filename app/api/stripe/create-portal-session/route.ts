@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Get company's Stripe customer ID
     const sql = neon(process.env.DATABASE_URL!);
     const companies = await sql`
-      SELECT stripe_customer_id FROM companies WHERE id = ${companyId}
+  SELECT stripe_customer_id, slug FROM companies WHERE id = ${companyId}
     `;
 
     if (!companies[0]?.stripe_customer_id) {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: companies[0].stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`,
+return_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companies[0].slug}/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });

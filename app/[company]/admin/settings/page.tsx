@@ -33,7 +33,8 @@ type CompanyDTO = {
   subscription_status: string | null;
   trial_ends_at: string | null;
   plan_tier: string;
-  form_field_config: any;
+    form_field_config: any;
+  pending_downgrade_at: string | null;
 };
 
 export default async function SettingsPage({
@@ -87,7 +88,8 @@ export default async function SettingsPage({
         subscription_status,
         trial_ends_at,
         plan_tier,
-        form_field_config
+        form_field_config,
+        pending_downgrade_at
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
@@ -126,8 +128,9 @@ export default async function SettingsPage({
       custom_questions: company.custom_questions,
       subscription_status: company.subscription_status,
       trial_ends_at: company.trial_ends_at,
-      plan_tier: company.plan_tier,
+       plan_tier: company.plan_tier,
       form_field_config: company.form_field_config,
+      pending_downgrade_at: company.pending_downgrade_at ?? null,
     };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;

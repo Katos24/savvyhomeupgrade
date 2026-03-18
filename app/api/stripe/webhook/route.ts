@@ -80,30 +80,39 @@ export async function POST(req: NextRequest) {
 
       // Check if plan changed by looking at the price ID
       const priceId = subscription.items?.data?.[0]?.price?.id;
-      let planTier: string | null = null;
-      if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
-      if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
+let planTier: string | null = null;
+if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
+if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
+
+// If a downgrade schedule is still active, don't update plan_tier yet —
+// wait for the schedule to fire naturally at period end.
+const hasActiveSchedule = !!(subscription as any).schedule;
+if (hasActiveSchedule && planTier === 'basic') {
+  console.log(`⏭️ Skipping plan_tier update — downgrade schedule pending for ${subscription.id}`);
+  planTier = null;
+}
 
       const result = planTier
-        ? await sql`
-            UPDATE companies 
-            SET 
-              stripe_subscription_id = ${subscription.id},
-              subscription_status = ${subscription.status},
-              plan_tier = ${planTier}
-            WHERE stripe_customer_id = ${subscription.customer as string}
-               OR stripe_subscription_id = ${subscription.id}
-            RETURNING id, subscription_status, plan_tier
-          `
-        : await sql`
-            UPDATE companies 
-            SET 
-              stripe_subscription_id = ${subscription.id},
-              subscription_status = ${subscription.status}
-            WHERE stripe_customer_id = ${subscription.customer as string}
-               OR stripe_subscription_id = ${subscription.id}
-            RETURNING id, subscription_status
-          `;
+  ? await sql`
+      UPDATE companies 
+      SET 
+        stripe_subscription_id = ${subscription.id},
+        subscription_status = ${subscription.status},
+        plan_tier = ${planTier},
+        pending_downgrade_at = NULL
+      WHERE stripe_customer_id = ${subscription.customer as string}
+         OR stripe_subscription_id = ${subscription.id}
+      RETURNING id, subscription_status, plan_tier
+    `
+  : await sql`
+      UPDATE companies 
+      SET 
+        stripe_subscription_id = ${subscription.id},
+        subscription_status = ${subscription.status}
+      WHERE stripe_customer_id = ${subscription.customer as string}
+         OR stripe_subscription_id = ${subscription.id}
+      RETURNING id, subscription_status
+    `;
 
       if (result.length === 0) {
         console.error('❌ No company found for customer:', subscription.customer, 'or subscription:', subscription.id);
@@ -218,8 +227,14 @@ export async function POST(req: NextRequest) {
     }
 
     default:
-      console.log(`Unhandled event type: ${event.type}`);
+  const evType = (event as any).type;
+  if (evType === 'customer.subscription.schedule.created') {
+    console.log('Subscription schedule created:', (event as any).data.object.id);
+  } else if (evType === 'customer.subscription.schedule.updated') {
+    console.log('Subscription schedule updated:', (event as any).data.object.id);
+  } else {
+    console.log(`Unhandled event type: ${evType}`);
   }
-
+  }
   return NextResponse.json({ received: true });
 }
