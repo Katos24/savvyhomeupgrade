@@ -72,6 +72,8 @@ function FormToBoardDemo() {
     { name: 'Lisa Morgan', status: 'In Progress',  sc: 'bg-purple-50 text-purple-700 border-purple-200', cat: 'Fencing',    quote: '$3,100'  },
   ];
 
+
+  
   return (
     <div className="relative">
       <style>{`
@@ -536,7 +538,7 @@ export default function Home() {
                 <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-2xl p-6 flex flex-col items-center gap-4 w-full max-w-[260px]">
                   <div className="w-full bg-slate-100 rounded-xl px-3 py-2 flex items-center gap-2">
                     <div className="flex gap-1">{['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-2 h-2 rounded-full" style={{ background: c }}/>)}</div>
-                    <div className="flex-1 bg-white rounded px-2 py-0.5 text-[9px] text-slate-400 font-mono text-center truncate">l2p.com/torres-roofing</div>
+                    <div className="flex-1 bg-white rounded px-2 py-0.5 text-[9px] text-slate-400 font-mono text-center truncate">lead2project.com/torres-roofing</div>
                   </div>
                   <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
                     <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
@@ -551,7 +553,7 @@ export default function Home() {
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-bold text-slate-900">Torres Roofing</p>
-                    <p className="text-[10px] text-blue-600 font-mono font-semibold">l2p.com/torres-roofing</p>
+                    <p className="text-[10px] text-blue-600 font-mono font-semibold">lead2project.com/torres-roofing</p>
                   </div>
                   <div className="w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl text-center">Request a Quote →</div>
                 </div>
