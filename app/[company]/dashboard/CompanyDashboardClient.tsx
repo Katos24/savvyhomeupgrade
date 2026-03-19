@@ -682,6 +682,30 @@ const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || f
           </div>
         </header>
 
+{/* Stats bar — desktop only */}
+        <div className="hidden md:grid grid-cols-4 gap-3 mb-6">
+          {(() => {
+            const totalRevenue = allLeads.filter(l => l.payment_status === 'paid').reduce((s, l) => s + parseFloat(l.quote_total || 0), 0);
+            const pendingRevenue = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid').reduce((s, l) => s + parseFloat(l.quote_total || 0), 0);
+            const activeJobs = allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length;
+            const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
+            return [
+              { label: 'Total Leads',       value: allLeads.length,    sub: 'all time',        color: 'text-white'       },
+              { label: 'Active Jobs',        value: activeJobs,         sub: 'in pipeline',     color: 'text-blue-400'    },
+              { label: 'Revenue Collected',  value: fmt(totalRevenue),  sub: 'paid',            color: 'text-emerald-400' },
+              { label: 'Pending',            value: fmt(pendingRevenue),sub: 'awaiting payment', color: 'text-amber-400'  },
+            ].map((s, i) => (
+              <div key={i} className="bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-4">
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{s.label}</p>
+                <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+                <p className="text-[10px] text-white/30 mt-0.5">{s.sub}</p>
+              </div>
+            ));
+          })()}
+        </div>
+
+      
+
         {/* Error state */}
         {loadError && (
           <div role="alert" className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-300 text-sm font-semibold flex items-center justify-between gap-3">
@@ -763,6 +787,25 @@ onClick={() => {
                 <List className="w-4 h-4" aria-hidden />
               </button>
             </div>
+          </div>
+
+        {/* Status pills — desktop only */}
+          <div className="hidden md:flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+            >
+              All ({allLeads.length})
+            </button>
+            {statusOptions.map(s => (statusCounts[s.value] || 0) > 0 && (
+              <button
+                key={s.value}
+                onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+              >
+                {s.label} ({statusCounts[s.value]})
+              </button>
+            ))}
           </div>
 
           {/* Quick filter row */}
