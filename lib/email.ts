@@ -147,7 +147,7 @@ export async function sendLeadConfirmationEmail({
         </head>
         <body>
           <div class="container">
-            <h1>Thanks for reaching out! 🎉</h1>
+            <h1>Thanks for reaching out!</h1>
             <p>Hi ${customerName},</p>
             <p>We received your request for <strong>${category}</strong> services.</p>
             <p>We'll review your request and get back to you within 24 hours.</p>
@@ -923,65 +923,53 @@ export async function sendSubscriptionCancelledEmail({
   companyEmail: string;
   companyName: string;
 }) {
-  try {
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 20px; }
-            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
-            .button { background-color: #3b82f6; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>😔 Your Subscription Has Been Cancelled</h1>
-            
-            <p>Hi ${companyName},</p>
-            
-            <p>We're sorry to see you go! Your Lead2Project subscription has been cancelled.</p>
-            
-            <p><strong>What happens now:</strong></p>
-            <ul style="color: #555; line-height: 28px;">
-              <li>Your access will continue until the end of your current billing period</li>
-              <li>You won't be charged again</li>
-              <li>Your data will be saved for 30 days in case you change your mind</li>
-            </ul>
-            
-            <p>Want to come back? You can reactivate your subscription anytime!</p>
-            
-            <center>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/subscribe" class="button">Reactivate Subscription</a>
-            </center>
-            
-            <p style="font-size: 14px; color: #666; margin-top: 32px;">
-              We'd love to know why you cancelled. Reply to this email and let us know how we can improve!
-            </p>
-            
-            <div class="footer">
-              Lead2Project<br>
-              We hope to see you again soon!
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+  const resubUrl = `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`;
 
+  try {
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: companyEmail,
-      subject: 'Your Lead2Project subscription has been cancelled',
-      html: emailHtml,
+      subject: `Your Lead2Project access has ended`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head><meta charset="utf-8"></head>
+          <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f9fc;margin:0;padding:0;">
+            <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+              <div style="background:linear-gradient(135deg,#dc2626,#991b1b);padding:28px 32px;">
+                <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">Your Access Has Ended</h1>
+                <p style="margin:8px 0 0 0;color:#fca5a5;font-size:14px;">${companyName}</p>
+              </div>
+              <div style="padding:32px;">
+                <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:20px;margin-bottom:24px;">
+                  <p style="margin:0;font-size:15px;color:#991b1b;font-weight:600;">
+                    Your Lead2Project subscription has fully ended. Your dashboard is now deactivated.
+                  </p>
+                </div>
+                <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:8px;">
+                  Your account data is still safe. If you reactivate, everything will be exactly as you left it.
+                </p>
+                <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:24px;">
+                  We'd love to have you back — and we'd love to know how we can do better. Reply to this email anytime.
+                </p>
+                <div style="text-align:center;">
+                  <a href="${resubUrl}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;">
+                    Reactivate Your Account →
+                  </a>
+                </div>
+                <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:24px;">
+                  Lead2Project · We hope to see you again soon
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
     });
 
-    console.log('✅ Cancellation email sent to:', companyEmail);
+    console.log('✅ Access ended email sent to:', companyEmail);
   } catch (error) {
-    console.error('❌ Failed to send cancellation email:', error);
+    console.error('❌ Failed to send access ended email:', error);
     throw error;
   }
 }
@@ -1487,15 +1475,22 @@ export async function sendCancellationScheduledEmail({
 }: {
   companyEmail: string;
   companyName: string;
-  accessUntil: string;
+  accessUntil: string;   // formatted date string e.g. "April 15, 2025"
   isTrialing: boolean;
 }) {
+  // Calculate days remaining from the formatted string isn't reliable,
+  // so also accept a raw date. We'll parse accessUntil for display.
   const resubUrl = `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`;
+
+  // Calculate days left
+  const accessDate = new Date(accessUntil);
+  const now = new Date();
+  const daysLeft = Math.max(0, Math.ceil((accessDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
   await resend.emails.send({
     from: 'Lead2Project <onboarding@resend.dev>',
     to: companyEmail,
-    subject: `Your Lead2Project subscription has been cancelled`,
+    subject: `You still have ${daysLeft} day${daysLeft !== 1 ? 's' : ''} of access — Lead2Project`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -1503,23 +1498,32 @@ export async function sendCancellationScheduledEmail({
         <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f9fc;margin:0;padding:0;">
           <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
             <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px 32px;">
-              <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">Subscription Cancelled</h1>
+              <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">Cancellation Confirmed</h1>
               <p style="margin:8px 0 0 0;color:#94a3b8;font-size:14px;">We're sorry to see you go, ${companyName}</p>
             </div>
             <div style="padding:32px;">
-              <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;margin-bottom:24px;">
-                <p style="margin:0 0 6px 0;font-size:13px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
-                  ${isTrialing ? 'Trial Access Until' : 'Full Access Until'}
+
+              <!-- Days remaining hero -->
+              <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:24px;margin-bottom:24px;text-align:center;">
+                <p style="margin:0 0 4px 0;font-size:13px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+                  You still have full access for
                 </p>
-                <p style="margin:0;font-size:24px;font-weight:800;color:#78350f;">${accessUntil}</p>
-                <p style="margin:8px 0 0 0;font-size:13px;color:#92400e;">
-                  You can continue using all features until this date. No further charges will occur.
+                <p style="margin:0;font-size:48px;font-weight:800;color:#78350f;line-height:1.1;">${daysLeft}</p>
+                <p style="margin:0;font-size:20px;font-weight:700;color:#92400e;">more day${daysLeft !== 1 ? 's' : ''}</p>
+                <p style="margin:12px 0 0 0;font-size:14px;color:#92400e;">
+                  ${isTrialing ? 'Trial access' : 'Full access'} until <strong>${accessUntil}</strong>
                 </p>
               </div>
-              <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:24px;">
-                After ${accessUntil}, your dashboard will be deactivated and you won't be able to receive new leads or access your data.
+
+              <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:16px;">
+                Your cancellation is confirmed. You won't be charged again, and you can keep using 
+                everything until <strong>${accessUntil}</strong>.
               </p>
-              <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Changed your mind? You can reactivate anytime before your access ends.</p>
+              <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:24px;">
+                After that, your dashboard will be deactivated. Changed your mind? 
+                Reactivate anytime before your access ends — no setup required.
+              </p>
+
               <div style="text-align:center;">
                 <a href="${resubUrl}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;">
                   Reactivate Subscription →

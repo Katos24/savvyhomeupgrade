@@ -24,7 +24,7 @@ export default function LeadConfirmation({
       <Head />
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Thanks for reaching out! 🎉</Heading>
+          <Heading style={h1}>Thanks for reaching out!</Heading>
           
           <Text style={text}>
             Hi {customerName},

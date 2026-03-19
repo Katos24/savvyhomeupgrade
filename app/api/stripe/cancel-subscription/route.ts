@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { neon } from '@neondatabase/serverless';
-import { sendCancellationScheduledEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -60,19 +59,6 @@ export async function POST(req: NextRequest) {
       WHERE id = ${companyId}
     `;
 
-    // Send cancellation confirmation email
-    if (company.email) {
-      try {
-        await sendCancellationScheduledEmail({
-          companyEmail: company.email,
-          companyName: company.name,
-          accessUntil: formattedDate,
-          isTrialing,
-        });
-      } catch (emailErr) {
-        console.error('Failed to send cancellation email:', emailErr);
-      }
-    }
 
     return NextResponse.json({
       success: true,

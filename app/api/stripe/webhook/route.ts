@@ -74,93 +74,118 @@ export async function POST(req: NextRequest) {
     }
 
     case 'customer.subscription.updated': {
-      const subscription = event.data.object;
+  const subscription = event.data.object as any;
 
-      console.log('Subscription updated:', subscription.id, '| Status:', subscription.status, '| Customer:', subscription.customer);
+  console.log('🔍 Subscription updated:', JSON.stringify({
+    id: subscription.id,
+    status: subscription.status,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    cancel_at: subscription.cancel_at,
+    previous_attributes: event.data.previous_attributes,
+  }, null, 2));
 
-      // Check if plan changed by looking at the price ID
-      const priceId = subscription.items?.data?.[0]?.price?.id;
-let planTier: string | null = null;
-if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
-if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
+  const priceId = subscription.items?.data?.[0]?.price?.id;
+  let planTier: string | null = null;
+  if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
 
-// If a downgrade schedule is still active, don't update plan_tier yet —
-// wait for the schedule to fire naturally at period end.
-const hasActiveSchedule = !!(subscription as any).schedule;
-if (hasActiveSchedule && planTier === 'basic') {
-  console.log(`⏭️ Skipping plan_tier update — downgrade schedule pending for ${subscription.id}`);
-  planTier = null;
-}
+  const hasActiveSchedule = !!subscription.schedule;
+  if (hasActiveSchedule && planTier === 'basic') {
+    console.log(`⏭️ Skipping plan_tier update — downgrade schedule pending for ${subscription.id}`);
+    planTier = null;
+  }
 
-      const result = planTier
-  ? await sql`
-      UPDATE companies 
-      SET 
+  const justScheduledCancel =
+    subscription.cancel_at != null &&
+    (event.data.previous_attributes as any)?.cancel_at === null;
+
+  const isCancelling = subscription.cancel_at_period_end === true || justScheduledCancel;
+
+  // Pre-compute to avoid ternary syntax errors inside Neon SQL template literals
+  const cancelAtPeriodEnd = subscription.cancel_at != null;
+  const cancelAt = subscription.cancel_at
+    ? new Date(subscription.cancel_at * 1000)
+    : null;
+
+  if (planTier) {
+    await sql`
+      UPDATE companies
+      SET
         stripe_subscription_id = ${subscription.id},
         subscription_status = ${subscription.status},
         plan_tier = ${planTier},
-        pending_downgrade_at = NULL
-      WHERE stripe_customer_id = ${subscription.customer as string}
+        pending_downgrade_at = NULL,
+        cancel_at_period_end = ${cancelAtPeriodEnd},
+        subscription_cancel_at = ${cancelAt}
+      WHERE stripe_customer_id = ${subscription.customer}
          OR stripe_subscription_id = ${subscription.id}
-      RETURNING id, subscription_status, plan_tier
-    `
-  : await sql`
-      UPDATE companies 
-      SET 
+    `;
+  } else {
+    await sql`
+      UPDATE companies
+      SET
         stripe_subscription_id = ${subscription.id},
-        subscription_status = ${subscription.status}
-      WHERE stripe_customer_id = ${subscription.customer as string}
+        subscription_status = ${subscription.status},
+        cancel_at_period_end = ${cancelAtPeriodEnd},
+        subscription_cancel_at = ${cancelAt}
+      WHERE stripe_customer_id = ${subscription.customer}
          OR stripe_subscription_id = ${subscription.id}
-      RETURNING id, subscription_status
     `;
-
-      if (result.length === 0) {
-        console.error('❌ No company found for customer:', subscription.customer, 'or subscription:', subscription.id);
-      } else {
-        console.log(`✅ Subscription updated for company ${result[0].id}: ${result[0].subscription_status}${planTier ? ` (plan: ${planTier})` : ''}`);
-      }
-
-      if (subscription.cancel_at_period_end === true) {
-  try {
-    const company = await sql`
-      SELECT name, email, subscription_status, trial_ends_at FROM companies 
-      WHERE stripe_customer_id = ${subscription.customer as string}
-    `;
-    if (company[0]) {
-      const isTrialing = company[0].subscription_status === 'trialing';
-      const sub = subscription as any;
-      let accessUntil: Date;
-      if (isTrialing && company[0].trial_ends_at) {
-        accessUntil = new Date(company[0].trial_ends_at);
-      } else if (sub.current_period_end) {
-        accessUntil = new Date(sub.current_period_end * 1000);
-      } else {
-        accessUntil = new Date();
-      }
-      const formattedDate = accessUntil.toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric',
-      });
-      await sql`
-        UPDATE companies SET
-          subscription_cancel_at = ${accessUntil},
-          cancel_at_period_end = true
-        WHERE stripe_customer_id = ${subscription.customer as string}
-      `;
-      await sendCancellationScheduledEmail({
-        companyEmail: company[0].email,
-        companyName: company[0].name,
-        accessUntil: formattedDate,
-        isTrialing,
-      });
-      console.log('✅ Cancellation scheduled email sent, access until:', formattedDate);
-    }
-  } catch (emailError) {
-    console.error('Failed to send cancellation scheduled email:', emailError);
   }
-}
 
-      break;
+  console.log(`✅ DB updated for company — cancel_at_period_end: ${cancelAtPeriodEnd}`);
+
+  if (isCancelling) {
+    try {
+      const company = await sql`
+        SELECT name, email, subscription_status, trial_ends_at
+        FROM companies
+        WHERE stripe_customer_id = ${subscription.customer}
+      `;
+
+      if (company[0]) {
+        const isTrialing = company[0].subscription_status === 'trialing';
+
+        let accessUntil: Date;
+        if (isTrialing && company[0].trial_ends_at) {
+          accessUntil = new Date(company[0].trial_ends_at);
+        } else if (subscription.cancel_at) {
+          accessUntil = new Date(subscription.cancel_at * 1000);
+        } else if (subscription.current_period_end) {
+          accessUntil = new Date(subscription.current_period_end * 1000);
+        } else {
+          accessUntil = new Date();
+        }
+
+        if (isTrialing) {
+          await sql`
+            UPDATE companies
+            SET subscription_cancel_at = ${accessUntil}
+            WHERE stripe_customer_id = ${subscription.customer}
+          `;
+        }
+
+        const formattedDate = accessUntil.toLocaleDateString('en-US', {
+          month: 'long', day: 'numeric', year: 'numeric',
+        });
+
+        await sendCancellationScheduledEmail({
+          companyEmail: company[0].email,
+          companyName: company[0].name,
+          accessUntil: formattedDate,
+          isTrialing,
+        });
+
+        console.log('✅ Cancellation scheduled email sent, access until:', formattedDate);
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send cancellation scheduled email:', emailError);
     }
+  }
+
+  break;
+}
+    
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
