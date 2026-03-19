@@ -534,140 +534,220 @@ export default function CategoriesTab({
           QUOTE / PRICING EDITOR MODAL
       ════════════════════════════════════════════ */}
       {quoteEditorCatValue !== null && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full max-w-2xl sm:rounded-[3rem] h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="bg-white w-full max-w-2xl sm:rounded-[2rem] h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
 
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Pricing Template</p>
-                <h3 className="text-lg font-black text-gray-900">{activeQuoteEditorCat?.label}</h3>
-                <p className="text-xs text-gray-400 mt-0.5">These line items will pre-fill when you create a quote for this category.</p>
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-0.5">Pricing Template</p>
+          <h3 className="text-lg font-black text-gray-900">{activeQuoteEditorCat?.label}</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {editingQuoteId && (
+            <button onClick={deleteQuoteTemplate} className="p-2 text-gray-300 hover:text-red-500 transition">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          <button onClick={() => setQuoteEditorCatValue(null)} className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5 space-y-3">
+
+        {/* ── COLUMN HEADERS — desktop only ── */}
+        <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 px-1">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Item</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">$ Price</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Qty</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">Total</span>
+          <span />
+        </div>
+
+        {/* ── EXISTING LINE ITEMS ── */}
+        {editingLineItems.length === 0 && (
+          <div className="py-8 text-center text-gray-300 text-sm font-bold">
+            No items yet. Add your first line item below.
+          </div>
+        )}
+
+        {editingLineItems.map(item => (
+          <div key={item.id}>
+            {/* Desktop row */}
+            <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center bg-gray-50 rounded-xl px-3 py-2 border border-transparent hover:border-emerald-100 transition">
+              <input
+                value={item.description}
+                onChange={e => updateLineItem(item.id, 'description', e.target.value)}
+                className="bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm w-full"
+                placeholder="Description"
+              />
+              <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                <input
+                  type="number"
+                  value={item.unitPrice}
+                  onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
+                  className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 ${noSpinners}`}
+                />
+              </div>
+              <input
+                type="number"
+                value={item.quantity}
+                onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
+                className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 ${noSpinners}`}
+              />
+              <span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount)}</span>
+              <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-500 transition flex justify-center">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mobile row */}
+            <div className="sm:hidden bg-gray-50 rounded-xl p-3 border border-transparent hover:border-emerald-100 transition space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <input
+                  value={item.description}
+                  onChange={e => updateLineItem(item.id, 'description', e.target.value)}
+                  className="flex-1 bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm"
+                  placeholder="Description"
+                />
+                <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-500 transition shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
               <div className="flex items-center gap-2">
-                {editingQuoteId && (
-                  <button onClick={deleteQuoteTemplate} className="p-2.5 text-gray-300 hover:text-red-500 transition">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-                <button onClick={() => setQuoteEditorCatValue(null)} className="p-3 bg-gray-100 rounded-2xl hover:bg-gray-200 transition">
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-
-              {/* Existing line items */}
-              <div className="space-y-2">
-                {editingLineItems.length === 0 && (
-                  <div className="py-6 text-center text-gray-300 text-sm font-bold">
-                    No items yet. Add your first line item below.
-                  </div>
-                )}
-                {editingLineItems.map(item => (
-                  <div key={item.id} className="bg-gray-50 rounded-2xl p-4 space-y-2 border border-transparent hover:border-emerald-100 transition">
-                    <input
-                      value={item.description}
-                      onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                      className="w-full bg-transparent border-none font-bold text-gray-900 focus:ring-0 text-sm p-0"
-                      placeholder="Item description"
-                    />
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">Price</label>
-                        <input
-                          type="number"
-                          value={item.unitPrice}
-                          onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                          className={`w-full bg-white border border-gray-200 rounded-xl text-right font-bold text-gray-900 p-2 text-sm ${noSpinners}`}
-                        />
-                      </div>
-                      <div className="w-16">
-                        <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">Qty</label>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                          className={`w-full bg-white border border-gray-200 rounded-xl text-center font-bold text-gray-900 p-2 text-sm ${noSpinners}`}
-                        />
-                      </div>
-                      <div className="text-right min-w-[72px]">
-                        <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">Total</label>
-                        <span className="font-black text-emerald-600 text-sm">{fmt(item.amount)}</span>
-                      </div>
-                      <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-500 transition mt-4">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add new line item */}
-              <div className={`rounded-[2rem] p-4 space-y-3 border-2 transition-all ${lineItemError ? 'bg-red-50 border-red-400' : 'bg-emerald-50/50 border-dashed border-emerald-100'}`}>
-                <input
-                  value={newLineItem.description}
-                  onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }}
-                  className="w-full bg-transparent border-none font-bold text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300"
-                  placeholder="Add line item, e.g. Labor – 2 hours..."
-                />
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">Price ($)</label>
-                    <input
-                      type="number"
-                      value={newLineItem.unitPrice}
-                      onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }}
-                      placeholder="0.00"
-                      className={`w-full bg-white border border-gray-200 rounded-xl text-right font-bold text-gray-900 p-2 text-sm ${noSpinners}`}
-                    />
-                  </div>
-                  <div className="w-16">
-                    <label className="text-[9px] font-black text-gray-400 uppercase block mb-1">Qty</label>
-                    <input
-                      type="number"
-                      value={newLineItem.quantity}
-                      onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })}
-                      className={`w-full bg-white border border-gray-200 rounded-xl text-center font-bold text-gray-900 p-2 text-sm ${noSpinners}`}
-                    />
-                  </div>
-                  <button onClick={addLineItem} className="bg-emerald-600 text-white p-3 rounded-2xl active:scale-90 transition mt-4 shadow-md">
-                    <Plus className="w-5 h-5" />
-                  </button>
+                <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
+                  <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                  <input
+                    type="number"
+                    value={item.unitPrice}
+                    onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
+                    className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 ${noSpinners}`}
+                    placeholder="0.00"
+                  />
                 </div>
-                {lineItemError && (
-                  <p className="text-xs font-black text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> {lineItemError}
-                  </p>
-                )}
-              </div>
-
-              {quoteError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-bold flex gap-2 items-center">
-                  <AlertCircle className="w-4 h-4 shrink-0" /> {quoteError}
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase">Qty</span>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
+                    className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 ${noSpinners}`}
+                  />
                 </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-5 border-t border-gray-100 bg-gray-50/50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Template Total</span>
-                <span className="text-2xl font-black text-emerald-600">{fmt(quoteEditorTotal)}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setQuoteEditorCatValue(null)} className="py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-500 text-sm">
-                  Cancel
-                </button>
-                <button onClick={saveQuoteTemplate} disabled={quoteSaving} className="py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-100 active:scale-95 transition disabled:opacity-50">
-                  {quoteSaving ? 'Saving...' : 'Save Pricing Template'}
-                </button>
+                <span className="font-black text-emerald-600 text-sm ml-auto">{fmt(item.amount)}</span>
               </div>
             </div>
           </div>
+        ))}
+
+        {/* ── ADD NEW LINE ITEM ── */}
+        <div className={`rounded-xl border-2 border-dashed transition-all ${lineItemError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50/50'}`}>
+          {/* Desktop add row */}
+          <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center px-3 py-2">
+            <input
+              value={newLineItem.description}
+              onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }}
+              onKeyDown={e => e.key === 'Enter' && addLineItem()}
+              className="bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300 w-full"
+              placeholder="Add item, e.g. Labor – 2 hrs..."
+            />
+            <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+              <input
+                type="number"
+                value={newLineItem.unitPrice}
+                onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }}
+                onKeyDown={e => e.key === 'Enter' && addLineItem()}
+                placeholder="0.00"
+                className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 ${noSpinners}`}
+              />
+            </div>
+            <input
+              type="number"
+              value={newLineItem.quantity}
+              onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })}
+              className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 ${noSpinners}`}
+            />
+            <span className="text-right font-black text-gray-300 text-sm">
+              {newLineItem.unitPrice && newLineItem.quantity
+                ? fmt(parseFloat(newLineItem.unitPrice) * parseFloat(newLineItem.quantity))
+                : '—'}
+            </span>
+            <button onClick={addLineItem} className="bg-emerald-600 text-white rounded-lg w-7 h-7 flex items-center justify-center active:scale-90 transition">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Mobile add row */}
+          <div className="sm:hidden p-3 space-y-2">
+            <input
+              value={newLineItem.description}
+              onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }}
+              className="w-full bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300"
+              placeholder="Add item, e.g. Labor – 2 hrs..."
+            />
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
+                <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                <input
+                  type="number"
+                  value={newLineItem.unitPrice}
+                  onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }}
+                  placeholder="0.00"
+                  className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 ${noSpinners}`}
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-400 font-bold uppercase">Qty</span>
+                <input
+                  type="number"
+                  value={newLineItem.quantity}
+                  onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })}
+                  className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 ${noSpinners}`}
+                />
+              </div>
+              <button onClick={addLineItem} className="bg-emerald-600 text-white rounded-lg w-9 h-9 flex items-center justify-center active:scale-90 transition shrink-0">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {lineItemError && (
+            <p className="px-3 pb-2 text-xs font-bold text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {lineItemError}
+            </p>
+          )}
         </div>
-      )}
+
+        {quoteError && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-bold flex gap-2 items-center">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {quoteError}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Template Total</span>
+          <span className="text-2xl font-black text-emerald-600">{fmt(quoteEditorTotal)}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => setQuoteEditorCatValue(null)} className="py-3.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-500 text-sm">
+            Cancel
+          </button>
+          <button onClick={saveQuoteTemplate} disabled={quoteSaving} className="py-3.5 bg-emerald-600 text-white rounded-xl font-black text-sm active:scale-95 transition disabled:opacity-50">
+            {quoteSaving ? 'Saving...' : 'Save Template'}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
 
 
       {/* ════════════════════════════════════════════
