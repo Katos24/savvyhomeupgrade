@@ -497,97 +497,183 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── DASHBOARD CAPABILITIES ── */}
+  {/* ── DASHBOARD CAPABILITIES ── */}
 <section id="capabilities" className="py-24 px-6 bg-slate-900">
   <div className="max-w-6xl mx-auto">
     <div className="text-center mb-20">
-      <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Inside the Dashboard</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Inside the Product</p>
       <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
         Everything happens here.
       </h2>
       <p className="text-slate-400 text-lg max-w-lg mx-auto">
-        After the lead lands, your whole workflow lives in one place — no switching between apps.
+        One place for every lead, quote, schedule, and payment. Nothing falls through.
       </p>
     </div>
 
-    {/* Row 1 — Overview */}
-    <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">Job Management</p>
-        <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
-          Every job, fully organized.
-        </h3>
-        <p className="text-slate-400 text-base leading-relaxed mb-8">
-          Each lead gets its own project file. Status, schedule, assignee, payment — all visible at a glance. Eight tabs cover everything from client info to photos to reminders.
-        </p>
-        <ul className="space-y-4">
-          {[
-            { label: 'Status tracking',      desc: 'New → Quoted → Scheduled → Paid — updated in one tap'     },
-{ label: 'Schedule + assignee',  desc: "Set the date, time, and who's showing up"                  },
-            { label: 'Payment at a glance',  desc: 'Unpaid, partial, or paid in full — always visible'         },
-            { label: '8 tabs per project',   desc: 'Overview, Quote, Schedule, Payment, Tasks, Media, Activity, Reminders' },
-          ].map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center mt-0.5 shrink-0">
-                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-              </div>
-              <div>
-                <p className="text-white font-bold text-sm">{item.label}</p>
-                <p className="text-slate-400 text-sm">{item.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="relative">
-        <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-2xl" />
-        <img
-          src="/images/modal-overview.png"
-          alt="Lead project overview — status, schedule, payment, client info"
-          className="relative w-full rounded-2xl shadow-2xl shadow-black/50 border border-white/10"
-        />
-      </div>
-    </div>
+    <div className="space-y-24">
 
-    {/* Row 2 — Quote + AI */}
-    <div className="grid md:grid-cols-2 gap-12 items-center">
-      <div className="relative order-2 md:order-1">
-        <div className="absolute -inset-4 bg-violet-600/10 rounded-3xl blur-2xl" />
-        <img
-          src="/images/modal-quote.png"
-          alt="AI-generated quote sheet with line items"
-          className="relative w-full rounded-2xl shadow-2xl shadow-black/50 border border-white/10"
-        />
+      {/* Row 1 — Dashboard */}
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="relative">
+          <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-2xl" />
+          <img
+            src="/images/dashboard-screenshot.png"
+            alt="Lead2Project dashboard"
+            className="relative w-full rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
+          />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">Lead Board</p>
+          <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+            Every job organized,<br/>nothing missed.
+          </h3>
+          <p className="text-slate-400 text-base leading-relaxed mb-8">
+            Every lead lands on your board the moment a customer submits. Stats, status filters, and lead cards — your whole pipeline visible at a glance.
+          </p>
+          <ul className="space-y-4">
+            {[
+              { label: 'Stats bar',           desc: 'Total leads, active jobs, revenue collected, pending payment' },
+              { label: 'Status filter pills', desc: 'One tap to see New, Quoted, Scheduled, or In Progress'        },
+              { label: 'Lead cards',          desc: 'Name, category, date, assignee, quote amount, payment status' },
+              { label: 'AI assistant',        desc: "Ask \"who hasn't paid?\" and get an instant answer"           },
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center mt-0.5 shrink-0">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{item.label}</p>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8">
+            <Link href="/demo" className="inline-flex items-center gap-2 bg-white text-slate-900 px-6 py-3.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition shadow-lg">
+              <Eye className="w-4 h-4" /> See it live
+            </Link>
+          </div>
+        </div>
       </div>
-      <div className="order-1 md:order-2">
-        <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">AI Quote Generator</p>
-        <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
-          Build quotes in seconds.<br/>AI does the heavy lifting.
-        </h3>
-        <p className="text-slate-400 text-base leading-relaxed mb-8">
-          Customer uploads a photo of the damage. AI reads it, generates line items with estimated pricing. You review, adjust, and send — all without leaving the job file.
-        </p>
-        <ul className="space-y-4">
-          {[
-            { label: 'AI reads customer photos',   desc: 'Detects damage, materials needed, and scope of work'        },
-            { label: 'Line items generated instantly', desc: 'Description, unit price, qty, and total — ready to edit' },
-            { label: 'Send with one click',        desc: 'Customer gets a branded email with Accept / Decline buttons' },
-            { label: 'Full sent history',          desc: 'Every quote email logged in your outbox with timestamps'     },
-          ].map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center mt-0.5 shrink-0">
-                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-              </div>
-              <div>
-                <p className="text-white font-bold text-sm">{item.label}</p>
-                <p className="text-slate-400 text-sm">{item.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
 
+      {/* Row 2 — Quote + AI */}
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="order-2 md:order-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">AI Quote Generator</p>
+          <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+            Build quotes in seconds.<br/>AI does the heavy lifting.
+          </h3>
+          <p className="text-slate-400 text-base leading-relaxed mb-8">
+            Customer uploads a photo of the damage. AI reads it, generates line items with estimated pricing. You review, adjust, and send — all without leaving the job file.
+          </p>
+          <ul className="space-y-4">
+            {[
+              { label: 'AI reads customer photos',       desc: 'Detects damage, materials needed, and scope of work'         },
+              { label: 'Line items generated instantly', desc: 'Description, unit price, qty, and total — ready to edit'     },
+              { label: 'Send with one click',            desc: 'Customer gets a branded email with Accept / Decline buttons'  },
+              { label: 'Full sent history',              desc: 'Every quote email logged in your outbox with timestamps'      },
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center mt-0.5 shrink-0">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{item.label}</p>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative order-1 md:order-2">
+          <div className="absolute -inset-4 bg-violet-600/10 rounded-3xl blur-2xl" />
+          <img
+            src="/images/modal-quote.png"
+            alt="AI-generated quote sheet"
+            className="relative w-full rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
+          />
+        </div>
+      </div>
+
+      {/* Row 3 — Settings + QR */}
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="relative">
+          <div className="absolute -inset-4 bg-emerald-600/10 rounded-3xl blur-2xl" />
+          <img
+            src="/images/settings-screenshot.png"
+            alt="Lead2Project settings — branding, QR code, booking form"
+            className="relative w-full rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
+          />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-4">Your Brand</p>
+          <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+            Your logo. Your colors.<br/>Your booking link.
+          </h3>
+          <p className="text-slate-400 text-base leading-relaxed mb-8">
+            Set up your company identity once — it flows through every customer email, your booking form, and your QR code. Looks like a real company, because it is.
+          </p>
+          <ul className="space-y-4">
+            {[
+              { label: 'Branded booking form',   desc: 'Your logo and colors on every customer touchpoint'            },
+              { label: 'QR code generator',      desc: 'Download a print-ready QR with your logo embedded inside'    },
+              { label: 'Custom form questions',  desc: 'Ask exactly what you need before the first call'              },
+              { label: 'Email templates',        desc: 'Personalize every quote, schedule, and payment reminder email'},
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center mt-0.5 shrink-0">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{item.label}</p>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Row 4 — QR Code */}
+      <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="order-2 md:order-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-4">QR Code</p>
+          <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+            Print it. Stick it.<br/>Get leads from anywhere.
+          </h3>
+          <p className="text-slate-400 text-base leading-relaxed mb-8">
+            Every account gets a custom QR code. Download it in seconds, stick it on your truck, yard sign, or business card — customers scan and submit a job request instantly.
+          </p>
+          <ul className="space-y-4">
+            {[
+              { label: 'Logo embedded inside',   desc: 'Your company logo sits in the center of the QR code'          },
+              { label: '3 style options',        desc: 'Standard, brand colors, or dark — matches your aesthetic'     },
+              { label: 'Export as PNG',          desc: 'Print-ready high resolution file, download in one click'      },
+              { label: 'Always up to date',      desc: 'Same QR forever — update your form without reprinting'        },
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center mt-0.5 shrink-0">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">{item.label}</p>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative order-1 md:order-2 flex justify-center">
+          <div className="absolute -inset-4 bg-amber-600/10 rounded-3xl blur-2xl" />
+          <img
+            src="/images/qr-screenshot.png"
+            alt="QR code generator with logo embedded"
+            className="relative w-2/3 rounded-2xl shadow-2xl shadow-black/60 border border-white/10"
+          />
+        </div>
+      </div>
+
+    </div>
   </div>
 </section>
 
