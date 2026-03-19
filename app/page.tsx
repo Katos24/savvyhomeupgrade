@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Zap, ArrowRight, Check, Star, Menu, X, Play,
-  MapPin, Calendar, Clock, HelpCircle, Image as ImageIcon,
+  MapPin, Calendar, Clock, HelpCircle, Eye, Image as ImageIcon,
   ChevronRight, User, Mail, Phone, Building, FileText,
   Send, CheckCircle, Bot, DollarSign, CalendarDays,
   BarChart2, Inbox, Users, Link2, QrCode,
@@ -402,35 +402,42 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-      <header className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"/>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600"/>
-          </span>
-          Built for Service Contractors
-        </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight mb-4">
-          Every job. Every customer.<br/>
-          <span className="text-blue-600">One place.</span>
-        </h1>
-        <p className="text-xl md:text-2xl text-slate-500 mb-3 max-w-xl mx-auto font-medium">
-          Year-end used to be chaos. Not anymore.
-        </p>
-        <p className="text-base text-slate-400 mb-10 max-w-lg mx-auto leading-relaxed">
-          Share one link. Customers submit their job details, photos, and videos. Everything lands on your board — organized, tracked, ready to close.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-          <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
-            Get Your Free Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition"/>
-          </Link>
-          <a href="#how-it-works" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition">
-            See How It Works
-          </a>
-        </div>
-      
-        <p className="mt-3 text-xs text-slate-400 uppercase tracking-widest font-medium">14-day free trial · Cancel anytime · 2 min setup</p>
-      </header>
+<header className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
+  <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
+    <span className="relative flex h-2 w-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
+    </span>
+    Built for Service Contractors
+  </div>
+  
+  <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight mb-4">
+    Every job. Every customer.<br />
+    <span className="text-blue-600">One place.</span>
+  </h1>
+  
+  <p className="text-xl md:text-2xl text-slate-500 mb-3 max-w-xl mx-auto font-medium">
+    Year-end used to be chaos. Not anymore.
+  </p>
+  
+  <p className="text-base text-slate-400 mb-10 max-w-lg mx-auto leading-relaxed">
+    Share one link. Customers submit their job details, photos, and videos. Everything lands on your board — organized, tracked, ready to close.
+  </p>
+
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+    <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
+      Get Your Free Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
+    </Link>
+    
+    <Link href="/demo" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
+      <Eye className="w-5 h-5" /> See Live Demo
+    </Link>
+  </div>
+
+  <p className="mt-3 text-xs text-slate-400 uppercase tracking-widest font-medium">
+    14-day free trial · Cancel anytime · 2 min setup
+  </p>
+</header>
 
       {/* HOW IT WORKS — LIVE DEMO */}
       <section id="how-it-works" className="py-24 px-6 bg-slate-50 border-t border-slate-100">
