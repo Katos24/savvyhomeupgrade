@@ -3,182 +3,207 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  Zap, ArrowRight, Check, Star, Menu, X, Play,
-  MapPin, Calendar, Clock, HelpCircle, Eye, Image as ImageIcon,
+  Zap, ArrowRight, Check, Menu, X, Eye,
+  MapPin, Calendar, HelpCircle, Image as ImageIcon,
   ChevronRight, User, Mail, Phone, Building, FileText,
-  Send, CheckCircle, Bot, DollarSign, CalendarDays,
-  BarChart2, Inbox, Users, Link2, QrCode,
+  CheckCircle, Bot, BarChart2, Link2, Camera,
+  Sparkles, Send, Loader2,
 } from 'lucide-react';
-import { Image } from 'lucide-react';
 
-// ─── ANIMATED FORM → BOARD DEMO (kept from original) ──────────────────────────
-function FormToBoardDemo() {
-  const [phase, setPhase] = useState<'filling' | 'flying' | 'board' | 'pause'>('filling');
+// ─── FORM FILLING DEMO ────────────────────────────────────────────────────────
+function FormFillingDemo() {
   const [fieldIndex, setFieldIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
-  const [displayedValues, setDisplayedValues] = useState<string[]>(['', '', '', '']);
-  const [newCardVisible, setNewCardVisible] = useState(false);
+  const [displayedValues, setDisplayedValues] = useState<string[]>(['', '', '', '', '']);
+  const [submitted, setSubmitted] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fields = [
-    { label: 'Full Name',  value: 'Mike Torres',                                 isSelect: false },
-    { label: 'Phone',      value: '(555) 482-1930',                              isSelect: false },
-    { label: 'Service',    value: 'Roofing Repair',                              isSelect: true  },
-    { label: 'Details',    value: 'Storm damage — shingles missing, south side.',isSelect: false },
+    { label: 'Full Name',       value: 'Mike Torres',                               isSelect: false },
+    { label: 'Phone',           value: '(555) 482-1930',                            isSelect: false },
+    { label: 'Service Type',    value: 'Fence Repair',                              isSelect: true  },
+    { label: 'Project Details', value: 'Post snapped at base, panel leaning badly.',isSelect: false },
+    { label: 'Service Address', value: '142 Oak St, Brooklyn',                      isSelect: false },
   ];
 
   useEffect(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (phase === 'filling') {
-      if (fieldIndex < fields.length) {
-        const f = fields[fieldIndex];
-        if (f.isSelect) {
-          timeoutRef.current = setTimeout(() => {
-            setDisplayedValues(prev => { const n = [...prev]; n[fieldIndex] = f.value; return n; });
-            timeoutRef.current = setTimeout(() => { setFieldIndex(i => i + 1); setCharIndex(0); }, 300);
-          }, 300);
-        } else if (charIndex < f.value.length) {
-          timeoutRef.current = setTimeout(() => {
-            setDisplayedValues(prev => { const n = [...prev]; n[fieldIndex] = f.value.slice(0, charIndex + 1); return n; });
-            setCharIndex(c => c + 1);
-          }, fieldIndex === 3 ? 22 : 38 + Math.random() * 14);
-        } else {
-          timeoutRef.current = setTimeout(() => { setFieldIndex(i => i + 1); setCharIndex(0); }, 220);
-        }
-      } else {
-        timeoutRef.current = setTimeout(() => setPhase('flying'), 500);
-      }
-    }
-    if (phase === 'flying') {
-      timeoutRef.current = setTimeout(() => { setPhase('board'); setTimeout(() => setNewCardVisible(true), 200); }, 800);
-    }
-    if (phase === 'board') {
-      timeoutRef.current = setTimeout(() => setPhase('pause'), 3500);
-    }
-    if (phase === 'pause') {
+    if (submitted) {
       timeoutRef.current = setTimeout(() => {
-        setPhase('filling'); setFieldIndex(0); setCharIndex(0);
-        setDisplayedValues(['', '', '', '']); setNewCardVisible(false);
-      }, 800);
+        setFieldIndex(0); setCharIndex(0);
+        setDisplayedValues(['', '', '', '', '']);
+        setSubmitted(false);
+      }, 2800);
+      return;
+    }
+    if (fieldIndex < fields.length) {
+      const f = fields[fieldIndex];
+      if (f.isSelect) {
+        timeoutRef.current = setTimeout(() => {
+          setDisplayedValues(prev => { const n = [...prev]; n[fieldIndex] = f.value; return n; });
+          timeoutRef.current = setTimeout(() => { setFieldIndex(i => i + 1); setCharIndex(0); }, 400);
+        }, 400);
+      } else if (charIndex < f.value.length) {
+        timeoutRef.current = setTimeout(() => {
+          setDisplayedValues(prev => { const n = [...prev]; n[fieldIndex] = f.value.slice(0, charIndex + 1); return n; });
+          setCharIndex(c => c + 1);
+        }, fieldIndex === 3 ? 20 : 42);
+      } else {
+        timeoutRef.current = setTimeout(() => { setFieldIndex(i => i + 1); setCharIndex(0); }, 320);
+      }
+    } else {
+      timeoutRef.current = setTimeout(() => setSubmitted(true), 500);
     }
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, fieldIndex, charIndex]);
+  }, [fieldIndex, charIndex, submitted]);
 
-  const isBoard = phase === 'board' || phase === 'pause';
-  const existingLeads = [
-    { name: 'Sarah Kim',   status: 'Quoted',       sc: 'bg-orange-50 text-orange-700 border-orange-200', cat: 'Renovation', quote: '$18,500' },
-    { name: 'James Park',  status: 'Scheduled',    sc: 'bg-green-50 text-green-700 border-green-200',    cat: 'HVAC',       quote: '$890'    },
-    { name: 'Lisa Morgan', status: 'In Progress',  sc: 'bg-purple-50 text-purple-700 border-purple-200', cat: 'Fencing',    quote: '$3,100'  },
-  ];
-
-
-  
   return (
-    <div className="relative">
-      <style>{`
-        @keyframes flyAcross { 0%{transform:translate(0,0) rotate(0deg);opacity:1} 50%{transform:translate(35vw,-30px) rotate(12deg);opacity:1} 100%{transform:translate(70vw,0) rotate(0deg);opacity:0} }
-        @keyframes cardDrop  { 0%{opacity:0;transform:translateY(-10px) scale(0.96)} 60%{transform:translateY(2px) scale(1.01)} 100%{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
-        .plane-anim { animation:flyAcross 0.8s cubic-bezier(.25,.46,.45,.94) forwards;position:absolute;top:36%;left:6%;z-index:20;pointer-events:none; }
-        .card-drop  { animation:cardDrop 0.35s ease forwards; }
-      `}</style>
-      <div className="flex justify-between mb-2 px-1">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400" style={{ opacity: isBoard ? 0 : 1, transition: 'opacity 0.3s' }}>● Customer sees this</span>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500" style={{ opacity: isBoard ? 1 : 0, transition: 'opacity 0.3s ease 0.4s' }}>● You see this — instantly</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3 relative overflow-hidden">
-        {phase === 'flying' && (
-          <div className="plane-anim">
-            <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
-              <path d="M4 20 L36 4 L28 20 L36 36 Z" fill="white" stroke="#2563eb" strokeWidth="1.5" strokeLinejoin="round"/>
-              <path d="M28 20 L4 20" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
+    <div className="w-full max-w-[210px] mx-auto">
+      <div className="bg-slate-950 rounded-[2rem] p-2 border-4 border-slate-700 shadow-2xl">
+        <div className="bg-slate-800 w-14 h-3 rounded-full mx-auto mb-2" />
+        <div className="bg-white rounded-[1.4rem] overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
+            <p className="text-[9px] font-black text-white/60 uppercase tracking-widest">L2P</p>
+            <p className="text-xs font-bold text-white">Request a Quote</p>
           </div>
-        )}
-        {/* FORM */}
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm" style={{ opacity: isBoard ? 0.15 : 1, transition: 'opacity 0.5s' }}>
-          <div className="bg-slate-50 border-b border-slate-200 px-3 py-2 flex items-center gap-1.5">
-            {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-2 h-2 rounded-full" style={{ background: c }}/>)}
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Get a Quote</span>
-          </div>
-          <div className="p-4 space-y-3">
-            {fields.map((f, i) => (
-              <div key={f.label}>
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{f.label}</div>
-                <div className={`border rounded-lg px-2.5 py-1.5 text-xs transition-colors ${fieldIndex === i && !isBoard ? 'border-blue-500 ring-1 ring-blue-200' : 'border-slate-200'} ${i === 3 ? 'min-h-[40px]' : ''}`}>
-                  <span className={displayedValues[i] ? 'text-slate-800' : 'text-slate-300'}>{displayedValues[i] || '—'}</span>
-                  {fieldIndex === i && !isBoard && phase === 'filling' && (
-                    <span className="inline-block w-[1px] h-3 bg-blue-500 ml-0.5 align-middle" style={{ animation: 'blink 1s step-end infinite' }}/>
-                  )}
-                </div>
+          {submitted ? (
+            <div className="p-5 flex flex-col items-center justify-center min-h-[260px] text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                <CheckCircle className="w-6 h-6 text-green-500" />
               </div>
-            ))}
-            <div className={`text-center py-2 rounded-xl text-xs font-bold transition-all ${fieldIndex >= fields.length && !isBoard ? 'bg-blue-600 text-white' : isBoard ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-              {phase === 'flying' ? <span className="flex items-center justify-center gap-1"><Send size={10}/> Sending…</span>
-               : isBoard ? <span className="flex items-center justify-center gap-1"><CheckCircle size={10}/> Submitted!</span>
-               : 'Submit Request'}
+              <p className="text-sm font-black text-slate-900 mb-1">Request Sent!</p>
+              <p className="text-[10px] text-slate-400 leading-relaxed">We'll be in touch within 24 hours.</p>
             </div>
-          </div>
-        </div>
-        {/* BOARD */}
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm" style={{ opacity: isBoard ? 1 : 0.1, transition: 'opacity 0.5s ease 0.3s' }}>
-          <div className="bg-slate-900 px-3 py-2 flex items-center gap-1.5">
-            {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-2 h-2 rounded-full" style={{ background: c }}/>)}
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Lead Board</span>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 ml-1" style={{ boxShadow:'0 0 5px rgba(74,222,128,0.7)' }}/>
-          </div>
-          <div className="p-2 space-y-1.5 bg-slate-50">
-            {newCardVisible && (
-              <div className="card-drop bg-white border-2 border-blue-500 rounded-xl overflow-hidden shadow-md">
-                <div className="h-1 bg-blue-500"/>
-                <div className="p-2.5">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded">NEW</span>
-                    <span className="text-[8px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded ml-auto">Roofing</span>
-                  </div>
-                  <div className="text-xs font-bold text-slate-900 mb-0.5">Mike Torres</div>
-                  <div className="text-[10px] text-slate-500 leading-snug">Storm damage — shingles missing</div>
-                  <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
-                    <span className="text-[9px] font-bold text-blue-600">Just now ✦</span>
-                    <span className="text-[9px] text-slate-400 ml-auto">(555) 482-1930</span>
+          ) : (
+            <div className="p-3 space-y-2">
+              {fields.map((f, i) => (
+                <div key={i} className={`transition-all duration-300 ${i > fieldIndex ? 'opacity-30' : 'opacity-100'}`}>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{f.label}</p>
+                  <div className={`h-7 border rounded-lg px-2 flex items-center text-[10px] transition-all ${
+                    fieldIndex === i ? 'border-blue-500 ring-1 ring-blue-100 bg-blue-50/30' :
+                    i < fieldIndex ? 'border-slate-200 bg-slate-50' : 'border-slate-100'
+                  }`}>
+                    <span className={i < fieldIndex ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+                      {displayedValues[i] || '—'}
+                    </span>
+                    {fieldIndex === i && !submitted && (
+                      <span className="w-0.5 h-3 bg-blue-500 ml-0.5 animate-pulse inline-block" />
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
-            {existingLeads.map((lead, i) => (
-              <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-                <div className="p-2.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${lead.sc}`}>{lead.status}</span>
-                    <span className="text-[8px] text-slate-400 ml-auto">{lead.cat}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">{lead.name}</span>
-                    <span className="text-xs font-bold text-green-600">{lead.quote}</span>
-                  </div>
+              ))}
+              <div className={`transition-all duration-300 ${fieldIndex < fields.length ? 'opacity-30' : 'opacity-100'}`}>
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Photos / Videos</p>
+                <div className="border border-dashed border-pink-200 bg-pink-50/50 rounded-lg p-2 flex items-center gap-2">
+                  <Camera size={10} className="text-pink-400 shrink-0" />
+                  <span className="text-[9px] text-pink-400">Tap to attach</span>
                 </div>
               </div>
-            ))}
-          </div>
+              <button className={`w-full py-1.5 rounded-xl text-[10px] font-bold transition-all ${
+                fieldIndex >= fields.length ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'
+              }`}>
+                Submit Request →
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
-        {[
-          { label: 'Customer fills form', active: phase === 'filling' },
-          { label: 'Submitting',          active: phase === 'flying'  },
-          { label: 'Live on your board',  active: isBoard             },
-        ].map((s, i) => (
-          <span key={i} className={`text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all ${s.active ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400 bg-white'}`}>
-            {s.label}
-          </span>
-        ))}
       </div>
     </div>
   );
 }
 
-// ─── INTERACTIVE FORM PREVIEW ──────────────────────────────────────────────────
+// ─── AI QUOTE MOCKUP ──────────────────────────────────────────────────────────
+function AIQuoteMockup() {
+  const [phase, setPhase] = useState<'photo' | 'analyzing' | 'result'>('photo');
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (phase === 'photo')     { timeoutRef.current = setTimeout(() => setPhase('analyzing'), 2200); }
+    if (phase === 'analyzing') { timeoutRef.current = setTimeout(() => setPhase('result'),    2800); }
+    if (phase === 'result')    { timeoutRef.current = setTimeout(() => setPhase('photo'),     4500); }
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [phase]);
+
+  const items = [
+    { desc: 'Remove & dispose damaged section', qty: 1, amount: 280 },
+    { desc: 'New cedar fence post — 4×4×8',    qty: 2, amount: 90  },
+    { desc: 'Fence panel replacement — 6ft',   qty: 1, amount: 180 },
+    { desc: 'Concrete footings',                qty: 2, amount: 70  },
+    { desc: 'Labor — installation',             qty: 3, amount: 285 },
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-violet-500" />
+          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">AI Quote Generator</span>
+        </div>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+          phase === 'analyzing' ? 'bg-amber-100 text-amber-700 animate-pulse' :
+          phase === 'result'    ? 'bg-emerald-100 text-emerald-700' :
+                                  'bg-slate-100 text-slate-500'
+        }`}>
+          {phase === 'photo' ? 'Ready' : phase === 'analyzing' ? 'Analyzing...' : 'Quote ready'}
+        </span>
+      </div>
+      <div className="relative">
+        <img
+          src="/images/fence-damage.png"
+          alt="Damaged fence"
+          className={`w-full h-40 object-cover transition-all duration-500 ${phase === 'analyzing' ? 'brightness-75' : ''}`}
+        />
+        {phase === 'analyzing' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+            <p className="text-white text-xs font-bold">Reading photo...</p>
+          </div>
+        )}
+        {phase === 'photo' && (
+          <div className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+            <Camera size={10} /> Customer uploaded
+          </div>
+        )}
+        {phase === 'result' && (
+          <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">✓ Analyzed</div>
+        )}
+      </div>
+      <div className={`transition-all duration-500 ${phase === 'result' ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="px-4 py-2 bg-violet-50 border-b border-violet-100">
+          <p className="text-[10px] font-black text-violet-700 flex items-center gap-1.5">
+            <Bot size={11} /> AI detected: post rot + panel damage
+          </p>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {items.map((item, i) => (
+            <div key={i} className="px-4 py-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200 flex-shrink-0 flex items-center justify-center">
+                  <Check size={8} className="text-emerald-600" strokeWidth={3} />
+                </div>
+                <span className="text-[11px] text-slate-700 truncate">{item.desc}</span>
+              </div>
+              <span className="text-[11px] font-black text-slate-900 shrink-0">${item.amount}</span>
+            </div>
+          ))}
+        </div>
+        <div className="px-4 py-3 bg-slate-900 flex items-center justify-between">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</span>
+          <span className="text-lg font-black text-white">$905</span>
+        </div>
+      </div>
+      {phase !== 'result' && (
+        <div className="h-32 flex items-center justify-center">
+          <p className="text-xs text-slate-300 font-medium">
+            {phase === 'photo' ? 'Waiting for AI analysis...' : 'Generating line items...'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── INTERACTIVE FORM PREVIEW ─────────────────────────────────────────────────
 function InteractiveFormPreview() {
   const [address, setAddress]   = useState(true);
   const [photos, setPhotos]     = useState(true);
@@ -191,7 +216,7 @@ function InteractiveFormPreview() {
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${on ? `border-${color}-200 bg-${color}-50/50` : 'border-slate-100 bg-white'}`}
     >
       <div className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${on ? `bg-${color}-500` : 'bg-slate-200'}`}>
-        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${on ? 'left-4' : 'left-0.5'}`}/>
+        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${on ? 'left-4' : 'left-0.5'}`} />
       </div>
       <div>
         <p className={`text-sm font-bold transition-colors ${on ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
@@ -205,22 +230,16 @@ function InteractiveFormPreview() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Custom Booking Form</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Your form. Your rules.
-          </h2>
-          <p className="text-slate-500 text-lg max-w-lg mx-auto">Toggle fields on and off — see exactly what your customers will see before you go live.</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">Your form. Your rules.</h2>
+          <p className="text-slate-500 text-lg max-w-lg mx-auto">Toggle fields on and off — see exactly what your customers will see.</p>
         </div>
-
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* LEFT: toggles */}
           <div className="space-y-3">
             <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Turn fields on or off</p>
-
-            <Toggle label="Custom Questions" desc="Ask anything — budget, gate code, pet at home" on={customQ} setOn={setCustomQ} color="indigo" />
-            <Toggle label="Service Address"  desc="Street address with autocomplete"              on={address}  setOn={setAddress}  color="blue"   />
-            <Toggle label="Photo & Video Upload" desc="Customers attach photos or short videos"   on={photos}   setOn={setPhotos}   color="pink"   />
-            <Toggle label="Preferred Date"   desc="Lets customers suggest timing"                 on={prefDate} setOn={setPrefDate} color="emerald"/>
-
+            <Toggle label="Custom Questions"     desc="Ask anything — budget, gate code, pet at home" on={customQ}  setOn={setCustomQ}  color="indigo" />
+            <Toggle label="Service Address"      desc="Street address with autocomplete"               on={address}  setOn={setAddress}  color="blue"   />
+            <Toggle label="Photo & Video Upload" desc="Customers attach photos or short videos"        on={photos}   setOn={setPhotos}   color="pink"   />
+            <Toggle label="Preferred Date"       desc="Lets customers suggest timing"                  on={prefDate} setOn={setPrefDate} color="emerald"/>
             <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <p className="text-xs font-bold text-slate-500 mb-2">Always collected — no toggle needed</p>
               <div className="flex flex-wrap gap-2">
@@ -230,49 +249,38 @@ function InteractiveFormPreview() {
               </div>
             </div>
           </div>
-
-          {/* RIGHT: phone mockup */}
           <div className="flex justify-center">
             <div className="bg-slate-900 rounded-[2.5rem] p-3 border-[6px] border-slate-800 shadow-2xl w-[280px]">
-              {/* notch */}
-              <div className="bg-slate-800 w-20 h-5 rounded-full mx-auto mb-2"/>
+              <div className="bg-slate-800 w-20 h-5 rounded-full mx-auto mb-2" />
               <div className="bg-white rounded-[1.5rem] overflow-hidden" style={{ maxHeight: '520px', overflowY: 'auto', scrollbarWidth: 'none' }}>
-                {/* form header */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white">
-                  <div className="w-8 h-1 bg-white/20 rounded-full mx-auto mb-3"/>
+                  <div className="w-8 h-1 bg-white/20 rounded-full mx-auto mb-3" />
                   <h3 className="text-sm font-bold">Request a Free Quote</h3>
                   <p className="text-white/60 text-[10px] mt-0.5">Fill out the form below</p>
                 </div>
                 <div className="p-4 space-y-3">
-                  {/* always-on fields */}
                   {[
-                    { label: 'Your Name',        placeholder: 'John Smith',           icon: <User size={10} className="text-blue-500"/> },
-                    { label: 'Email',            placeholder: 'john@example.com',     icon: <Mail size={10} className="text-blue-500"/> },
-                    { label: 'Phone',            placeholder: '(555) 123-4567',       icon: <Phone size={10} className="text-green-500"/> },
-                    { label: 'Service Type',     placeholder: 'Select...',            icon: <Building size={10} className="text-amber-500"/> },
-                    { label: 'Describe Project', placeholder: 'Tell us what you need',icon: <FileText size={10} className="text-purple-500"/> },
+                    { label: 'Your Name',        placeholder: 'John Smith',            icon: <User size={10} className="text-blue-500"/>      },
+                    { label: 'Email',            placeholder: 'john@example.com',      icon: <Mail size={10} className="text-blue-500"/>      },
+                    { label: 'Phone',            placeholder: '(555) 123-4567',        icon: <Phone size={10} className="text-green-500"/>    },
+                    { label: 'Service Type',     placeholder: 'Select...',             icon: <Building size={10} className="text-amber-500"/> },
+                    { label: 'Describe Project', placeholder: 'Tell us what you need', icon: <FileText size={10} className="text-purple-500"/>},
                   ].map(f => (
                     <div key={f.label}>
                       <div className="flex items-center gap-1 mb-1">{f.icon}<span className="text-[9px] font-bold text-slate-600">{f.label}</span></div>
                       <div className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-400">{f.placeholder}</div>
                     </div>
                   ))}
-
-                  {/* custom question — animated in/out */}
                   <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: customQ ? '80px' : '0px', opacity: customQ ? 1 : 0 }}>
                     <div className="flex items-center gap-1 mb-1"><HelpCircle size={10} className="text-indigo-500"/><span className="text-[9px] font-bold text-slate-600">Budget range?</span></div>
                     <div className="w-full bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5 text-[10px] text-indigo-400 flex justify-between items-center">
                       <span>Select...</span><ChevronRight size={8} className="rotate-90"/>
                     </div>
                   </div>
-
-                  {/* address — animated */}
                   <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: address ? '80px' : '0px', opacity: address ? 1 : 0 }}>
                     <div className="flex items-center gap-1 mb-1"><MapPin size={10} className="text-red-500"/><span className="text-[9px] font-bold text-slate-600">Service Address</span></div>
                     <div className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-400">Start typing your address...</div>
                   </div>
-
-                  {/* photo upload — animated */}
                   <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: photos ? '90px' : '0px', opacity: photos ? 1 : 0 }}>
                     <div className="flex items-center gap-1 mb-1"><ImageIcon size={10} className="text-pink-500"/><span className="text-[9px] font-bold text-slate-600">Photos / Videos</span></div>
                     <div className="border-2 border-dashed border-pink-200 bg-pink-50/50 rounded-lg p-3 text-center">
@@ -280,13 +288,10 @@ function InteractiveFormPreview() {
                       <p className="text-[9px] font-semibold text-pink-400">Tap to attach</p>
                     </div>
                   </div>
-
-                  {/* preferred date — animated */}
                   <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: prefDate ? '70px' : '0px', opacity: prefDate ? 1 : 0 }}>
                     <div className="flex items-center gap-1 mb-1"><Calendar size={10} className="text-emerald-500"/><span className="text-[9px] font-bold text-slate-600">Preferred Date</span></div>
                     <div className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-400">mm/dd/yyyy</div>
                   </div>
-
                   <button className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-[11px] font-bold mt-2">
                     Submit Request →
                   </button>
@@ -313,7 +318,7 @@ function PricingSection() {
     {
       name: 'Pro', monthly: 99, annual: 79,
       desc: 'Full job management + AI tools',
-      features: ['Everything in Basic','Convert leads → full projects','Quotes & payment tracking','Tasks, scheduling & crew assignment','Photos, videos & docs per project','AI Brief on every lead','AI Assistant — ask anything','Repeat customer detection'],
+      features: ['Everything in Basic','Convert leads → full projects','Quotes & payment tracking','Tasks, scheduling & crew assignment','Photos, videos & docs per project','AI Brief on every lead','AI quote generator from photos','AI Assistant — ask anything'],
       cta: 'Start Free Trial', highlight: true, href: '/signup?plan=pro',
     },
   ];
@@ -323,11 +328,11 @@ function PricingSection() {
         <div className="text-center mb-14">
           <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Pricing</p>
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">One job pays for the whole year.</h2>
-<p className="text-slate-500 text-lg mb-8">14-day free trial. Cancel anytime.</p>
+          <p className="text-slate-500 text-lg mb-8">14-day free trial. Cancel anytime.</p>
           <div className="inline-flex items-center gap-3 bg-slate-100 rounded-full px-4 py-2">
             <span className={`text-sm font-bold transition-colors ${!annual ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
             <button onClick={() => setAnnual(a => !a)} className="relative w-11 h-6 rounded-full transition-colors" style={{ background: annual ? '#2563eb' : '#cbd5e1' }}>
-              <div className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: annual ? 24 : 4 }}/>
+              <div className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: annual ? 24 : 4 }} />
             </button>
             <span className={`text-sm font-bold transition-colors ${annual ? 'text-slate-900' : 'text-slate-400'}`}>
               Annual <span className={`ml-2 text-[10px] font-black px-2 py-0.5 rounded-full transition-all ${annual ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-400'}`}>SAVE 20%</span>
@@ -361,13 +366,13 @@ function PricingSection() {
             );
           })}
         </div>
-        <p className="text-center text-xs text-slate-400 font-medium mt-6 uppercase tracking-widest">No credit card · Cancel anytime · 14-day free trial</p>
+        <p className="text-center text-xs text-slate-400 font-medium mt-6 uppercase tracking-widest">14-day free trial · Cancel anytime</p>
       </div>
     </section>
   );
 }
 
-// ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -379,12 +384,11 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <img src="/Lead2ProjectLogo.png" alt="Lead2Project" className="h-12 w-auto" />
-
           </Link>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#how-it-works" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">How it works</a>
-            <a href="#form-preview"  className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">Features</a>
-            <a href="#pricing"       className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">Pricing</a>
+            <a href="#the-flow"     className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">How it works</a>
+            <a href="#capabilities" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">Features</a>
+            <a href="#pricing"      className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">Pricing</a>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login"  className="hidden md:block text-sm font-bold text-slate-600 hover:text-slate-900 transition">Login</Link>
@@ -396,7 +400,7 @@ export default function Home() {
         </div>
         {mobileOpen && (
           <div className="md:hidden border-t border-slate-100 bg-white px-6 py-4 space-y-4">
-            {[['#how-it-works','How it works'],['#form-preview','Features'],['#pricing','Pricing'],['/login','Login']].map(([href,label]) => (
+            {[['#the-flow','How it works'],['#capabilities','Features'],['#pricing','Pricing'],['/login','Login']].map(([href,label]) => (
               <a key={href} href={href} onClick={() => setMobileOpen(false)} className="block text-base font-semibold text-slate-700">{label}</a>
             ))}
           </div>
@@ -404,194 +408,199 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-<header className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
-  <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
-    <span className="relative flex h-2 w-2">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
-    </span>
-    Built for Service Contractors
-  </div>
-  
-  <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight mb-4">
-    Every job. Every customer.<br />
-    <span className="text-blue-600">One place.</span>
-  </h1>
-  
-  <p className="text-xl md:text-2xl text-slate-500 mb-3 max-w-xl mx-auto font-medium">
-    Year-end used to be chaos. Not anymore.
-  </p>
-  
-  <p className="text-base text-slate-400 mb-10 max-w-lg mx-auto leading-relaxed">
-    Share one link. Customers submit their job details, photos, and videos. Everything lands on your board — organized, tracked, ready to close.
-  </p>
+      <header className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
+        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
+          </span>
+          Built for Service Contractors
+        </div>
+        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight mb-4">
+          Every job. Every customer.<br/>
+          <span className="text-blue-600">One place.</span>
+        </h1>
+        <p className="text-xl md:text-2xl text-slate-500 mb-3 max-w-xl mx-auto font-medium">
+          Year-end used to be chaos. Not anymore.
+        </p>
+        <p className="text-base text-slate-400 mb-10 max-w-lg mx-auto leading-relaxed">
+          Share one link. Customers submit their job details, photos, and videos. Everything lands on your board — organized, tracked, ready to close.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+          <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
+            Get Your Free Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition"/>
+          </Link>
+          <Link href="/demo" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
+            <Eye className="w-5 h-5" /> See Live Demo
+          </Link>
+        </div>
+        <p className="text-xs text-slate-400 uppercase tracking-widest font-medium">
+          14-day free trial · Cancel anytime · 2 min setup
+        </p>
+      </header>
 
-  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-    <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
-      Get Your Free Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
-    </Link>
-    
-    <Link href="/demo" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
-      <Eye className="w-5 h-5" /> See Live Demo
-    </Link>
-  </div>
-
-  <p className="mt-3 text-xs text-slate-400 uppercase tracking-widest font-medium">
-    14-day free trial · Cancel anytime · 2 min setup
-  </p>
-</header>
-
-      {/* HOW IT WORKS — LIVE DEMO */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">How It Works</p>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Customer submits.<br/><span className="text-blue-600">You see it instantly.</span>
+      {/* ── THE FLOW ── */}
+      <section id="the-flow" className="py-24 px-6 bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">The Flow</p>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+              From "can you help?" to <span className="text-blue-600">booked.</span>
             </h2>
-            <p className="text-slate-500 text-lg max-w-lg mx-auto leading-relaxed">
-              They fill out your form — name, job details, a photo or short video. It drops straight into your board.
-            </p>
           </div>
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl p-8">
-            <FormToBoardDemo/>
-          </div>
-        </div>
-      </section>
+          <div className="grid md:grid-cols-3 gap-8 items-start">
 
-      {/* 3 PILLARS */}
-      <section className="py-20 px-6 bg-white border-t border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Everything You Need</p>
-            <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Three things that change your business.</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Link2 size={24}/>,
-                color: 'blue',
-                title: 'Lead Capture',
-                desc: 'One link or QR code. Customers submit their job, photos, and a short video — straight to your board. Nothing falls through the cracks.',
-                points: ['Custom booking form','Photo & video uploads','Instant dashboard notification'],
-              },
-              {
-                icon: <BarChart2 size={24}/>,
-                color: 'indigo',
-                title: 'Project Organization',
-                desc: 'Every job tracked from first message to final payment. Quotes, schedules, tasks, and notes — all in one place per project.',
-                points: ['Leads → projects in one click','Quotes, payments & scheduling','AI brief on every job'],
-              },
-              {
-                icon: <Bot size={24}/>,
-                color: 'purple',
-                title: 'Your Brand',
-                desc: 'Custom colors, your logo, your questions. Every email and form looks like it came from a real company — because it did.',
-                points: ['Branded emails with your logo','Custom form questions','Your colors throughout'],
-              },
-            ].map((p, i) => (
-              <div key={i} className={`bg-slate-50 border border-slate-200 rounded-2xl p-8 hover:shadow-md hover:-translate-y-0.5 transition-all group`}>
-                <div className={`w-12 h-12 bg-${p.color}-50 rounded-xl flex items-center justify-center text-${p.color}-600 mb-5 group-hover:bg-${p.color}-600 group-hover:text-white transition-colors`}>
-                  {p.icon}
+            {/* Step 1 */}
+            <div className="flex flex-col">
+              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square">
+                <img src="/images/qr-scan.png" alt="Customer scanning QR code on contractor truck" className="w-full h-full object-cover"/>
+                <div className="absolute top-4 left-4 w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl">
+                  <span className="text-white font-black text-lg">1</span>
                 </div>
-                <h3 className="text-lg font-extrabold text-slate-900 mb-2 tracking-tight">{p.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed mb-4">{p.desc}</p>
-                <ul className="space-y-1.5">
-                  {p.points.map(pt => (
-                    <li key={pt} className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                      <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0"/>{pt}
-                    </li>
-                  ))}
-                </ul>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5">
+                  <p className="text-white font-bold text-sm">They scan or click</p>
+                  <p className="text-white/70 text-xs mt-0.5">QR on your truck, link in your bio — no app needed</p>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Step 2 — isolated form */}
+            <div className="flex flex-col">
+              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+                <div className="absolute top-4 left-4 w-10 h-10 bg-slate-700 border-2 border-white/20 rounded-2xl flex items-center justify-center shadow-xl z-10">
+                  <span className="text-white font-black text-lg">2</span>
+                </div>
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
+                <FormFillingDemo />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-5">
+                  <p className="text-white font-bold text-sm">They submit their job</p>
+                  <p className="text-white/70 text-xs mt-0.5">Details, photos, videos — straight to your board</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col">
+              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square">
+                <img src="/images/dashboard-jobsite.png" alt="Contractor viewing dashboard on job site" className="w-full h-full object-cover"/>
+                <div className="absolute top-4 left-4 w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center shadow-xl">
+                  <span className="text-white font-black text-lg">3</span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5">
+                  <p className="text-white font-bold text-sm">You quote and close</p>
+                  <p className="text-white/70 text-xs mt-0.5">Quote, schedule, collect payment — from your phone</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* INTERACTIVE FORM PREVIEW */}
+      {/* ── DASHBOARD CAPABILITIES ── */}
+<section id="capabilities" className="py-24 px-6 bg-slate-900">
+  <div className="max-w-6xl mx-auto">
+    <div className="text-center mb-20">
+      <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Inside the Dashboard</p>
+      <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
+        Everything happens here.
+      </h2>
+      <p className="text-slate-400 text-lg max-w-lg mx-auto">
+        After the lead lands, your whole workflow lives in one place — no switching between apps.
+      </p>
+    </div>
+
+    {/* Row 1 — Overview */}
+    <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">Job Management</p>
+        <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+          Every job, fully organized.
+        </h3>
+        <p className="text-slate-400 text-base leading-relaxed mb-8">
+          Each lead gets its own project file. Status, schedule, assignee, payment — all visible at a glance. Eight tabs cover everything from client info to photos to reminders.
+        </p>
+        <ul className="space-y-4">
+          {[
+            { label: 'Status tracking',      desc: 'New → Quoted → Scheduled → Paid — updated in one tap'     },
+{ label: 'Schedule + assignee',  desc: "Set the date, time, and who's showing up"                  },
+            { label: 'Payment at a glance',  desc: 'Unpaid, partial, or paid in full — always visible'         },
+            { label: '8 tabs per project',   desc: 'Overview, Quote, Schedule, Payment, Tasks, Media, Activity, Reminders' },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center mt-0.5 shrink-0">
+                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">{item.label}</p>
+                <p className="text-slate-400 text-sm">{item.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="relative">
+        <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-2xl" />
+        <img
+          src="/images/modal-overview.png"
+          alt="Lead project overview — status, schedule, payment, client info"
+          className="relative w-full rounded-2xl shadow-2xl shadow-black/50 border border-white/10"
+        />
+      </div>
+    </div>
+
+    {/* Row 2 — Quote + AI */}
+    <div className="grid md:grid-cols-2 gap-12 items-center">
+      <div className="relative order-2 md:order-1">
+        <div className="absolute -inset-4 bg-violet-600/10 rounded-3xl blur-2xl" />
+        <img
+          src="/images/modal-quote.png"
+          alt="AI-generated quote sheet with line items"
+          className="relative w-full rounded-2xl shadow-2xl shadow-black/50 border border-white/10"
+        />
+      </div>
+      <div className="order-1 md:order-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">AI Quote Generator</p>
+        <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
+          Build quotes in seconds.<br/>AI does the heavy lifting.
+        </h3>
+        <p className="text-slate-400 text-base leading-relaxed mb-8">
+          Customer uploads a photo of the damage. AI reads it, generates line items with estimated pricing. You review, adjust, and send — all without leaving the job file.
+        </p>
+        <ul className="space-y-4">
+          {[
+            { label: 'AI reads customer photos',   desc: 'Detects damage, materials needed, and scope of work'        },
+            { label: 'Line items generated instantly', desc: 'Description, unit price, qty, and total — ready to edit' },
+            { label: 'Send with one click',        desc: 'Customer gets a branded email with Accept / Decline buttons' },
+            { label: 'Full sent history',          desc: 'Every quote email logged in your outbox with timestamps'     },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center mt-0.5 shrink-0">
+                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">{item.label}</p>
+                <p className="text-slate-400 text-sm">{item.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+      {/* FORM CUSTOMIZER */}
       <div id="form-preview">
         <InteractiveFormPreview/>
       </div>
-
-      {/* QR CODE SECTION */}
-      <section className="py-20 px-6 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden">
-            <div className="grid md:grid-cols-2 gap-0">
-              <div className="p-10 md:p-14 flex flex-col justify-center">
-                <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Your Booking Link</p>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">One link.<br/>Share it anywhere.</h2>
-                <p className="text-slate-500 text-base leading-relaxed mb-8">
-                  Every contractor gets a custom link and QR code. Put it in your Instagram bio, text it to customers, print it on your truck, or add it to your business card.
-                </p>
-                <ul className="space-y-3">
-                  {['Instagram & Facebook bio','Email signature','Google Business profile','Business cards & truck wraps','SMS — just text it'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <Check className="w-4 h-4 text-green-500 flex-shrink-0"/>
-                      <span className="text-sm font-medium text-slate-600">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200 p-10 md:p-14 flex flex-col items-center justify-center gap-6">
-                <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-2xl p-6 flex flex-col items-center gap-4 w-full max-w-[260px]">
-                  <div className="w-full bg-slate-100 rounded-xl px-3 py-2 flex items-center gap-2">
-                    <div className="flex gap-1">{['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} className="w-2 h-2 rounded-full" style={{ background: c }}/>)}</div>
-                    <div className="flex-1 bg-white rounded px-2 py-0.5 text-[9px] text-slate-400 font-mono text-center truncate">lead2project.com/torres-roofing</div>
-                  </div>
-                  <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
-                      <rect x="8" y="8" width="36" height="36" rx="4" fill="#1e293b"/><rect x="14" y="14" width="24" height="24" rx="2" fill="white"/><rect x="20" y="20" width="12" height="12" rx="1" fill="#1e293b"/>
-                      <rect x="96" y="8" width="36" height="36" rx="4" fill="#1e293b"/><rect x="102" y="14" width="24" height="24" rx="2" fill="white"/><rect x="108" y="20" width="12" height="12" rx="1" fill="#1e293b"/>
-                      <rect x="8" y="96" width="36" height="36" rx="4" fill="#1e293b"/><rect x="14" y="102" width="24" height="24" rx="2" fill="white"/><rect x="20" y="108" width="12" height="12" rx="1" fill="#1e293b"/>
-                      {[52,58,64,70,76,82,88].map((x,i) => i%2===0 && <rect key={x} x={x} y="52" width="6" height="6" rx="1" fill="#1e293b"/>)}
-                      {[[52,60],[64,72],[76,60],[88,72],[52,78],[64,78],[76,90],[88,78],[58,96],[70,96],[82,108],[96,64],[108,70],[120,64],[132,70],[96,82],[108,76],[120,82]].map(([x,y],i) => <rect key={i} x={x} y={y} width="6" height="6" rx="1" fill="#1e293b"/>)}
-                      <rect x="62" y="62" width="16" height="16" rx="3" fill="#2563eb"/>
-                      <text x="70" y="74" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white">L2P</text>
-                    </svg>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs font-bold text-slate-900">Torres Roofing</p>
-                    <p className="text-[10px] text-blue-600 font-mono font-semibold">lead2project.com/torres-roofing</p>
-                  </div>
-                  <div className="w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl text-center">Request a Quote →</div>
-                </div>
-                <p className="text-xs text-slate-400 text-center font-medium max-w-[220px]">Your link is ready the moment you sign up.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3 STEPS */}
-      <section className="py-20 px-6 bg-white border-t border-slate-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Setup</p>
-            <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Up and running in 3 steps.</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { num:'01', title:'Share your link',  desc:'Put your booking link in your Instagram bio, email signature, or Google Business profile. Takes 60 seconds.' },
-              { num:'02', title:'Customers submit', desc:'They fill out your form with contact info, job details, photos or a short video — everything upfront, organized.' },
-              { num:'03', title:'Quote and close',  desc:'Lead lands on your board. Run an AI brief, send a quote, schedule the job, track payment — all in one place.' },
-            ].map((s, i) => (
-              <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl p-8">
-                <div className="text-5xl font-extrabold text-blue-100 mb-5 tracking-tight">{s.num}</div>
-                <h3 className="text-lg font-extrabold text-slate-900 mb-2 tracking-tight">{s.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* PRICING */}
       <PricingSection/>
 
       {/* FINAL CTA */}
-      <section className="py-24 px-6 bg-slate-900 text-center">
+      <section className="py-24 px-6 bg-slate-900 text-center border-t border-slate-800">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.05] mb-6">
             One job pays for<br/><span className="text-blue-400">the whole year.</span>
@@ -617,7 +626,7 @@ export default function Home() {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Product</p>
-              {[['Features','#form-preview'],['Pricing','/pricing'],['Sign Up','/signup'],['Login','/login']].map(([l,h]) => (
+              {[['Features','#capabilities'],['Pricing','/pricing'],['Sign Up','/signup'],['Login','/login']].map(([l,h]) => (
                 <div key={l} className="mb-2.5"><a href={h} className="text-sm text-slate-600 hover:text-blue-600 font-medium transition">{l}</a></div>
               ))}
             </div>
