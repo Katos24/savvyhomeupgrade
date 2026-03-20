@@ -428,7 +428,7 @@ export default function Home() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
-            Get Your Free Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition"/>
+            Get Your Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition"/>
           </Link>
           <Link href="/demo" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
             <Eye className="w-5 h-5" /> See Live Demo
@@ -691,7 +691,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.05] mb-6">
             One job pays for<br/><span className="text-blue-400">the whole year.</span>
           </h2>
-          <p className="text-slate-400 text-lg leading-relaxed mb-10">Stop losing leads to disorganization. Get your booking link in 2 minutes.</p>
+          <p className="text-slate-400 text-lg leading-relaxed mb-10">Stop losing leads to disorganization. Get your QR code in 2 minutes.</p>
           <Link href="/signup" className="inline-flex items-center gap-2 bg-blue-600 text-white px-10 py-5 rounded-2xl text-lg font-extrabold shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition active:scale-95">
             Start Free Trial <ArrowRight size={18}/>
           </Link>

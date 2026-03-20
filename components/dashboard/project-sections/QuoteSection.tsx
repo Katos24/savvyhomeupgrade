@@ -199,8 +199,7 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
               <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">✗ Declined</span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* AI button — violet so it's clearly distinct from save */}
+       <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAI((v) => !v)}
               className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition ${
@@ -222,22 +221,6 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
                 <X className="w-4 h-4" />
               </button>
             )}
-
-            <div className="relative">
-              <button onClick={() => setShowMoreActions(!showMoreActions)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
-                <MoreVertical className="w-4 h-4" />
-              </button>
-              {showMoreActions && (
-                <div className="absolute right-0 top-full mt-1 bg-white shadow-xl border border-gray-100 z-50 w-56 rounded-xl p-2 animate-in fade-in zoom-in-95">
-                  <SendCustomerEmailButtons
-                    leadId={lead.id} type="quote" currentUser={currentUser}
-                    onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
- hasQuote={quoteData.length > 0}
-                    quoteSentAt={outboxLog[0]?.created_at || null} disabled={!hasProject}
-                  />
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -255,17 +238,48 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
           </div>
         )}
 
-        {/* ── AI GENERATOR — clearly separated with its own bg ── */}
-        {showAI && (
-          <div className="p-4 bg-violet-50 border-b border-violet-100">
-            <AIQuoteGenerator
-              leadDescription={lead?.description || ''}
-              leadCategory={lead?.category || ''}
-              leadPhotos={leadPhotos}
-              onAddItems={handleAddItems}
-            />
+        {/* ── AI MODAL ── */}
+      {showAI && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowAI(false)}
+          />
+          <div className="relative bg-white w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-gray-900">Generate with AI</p>
+                  <p className="text-[10px] text-gray-400">
+                    {leadPhotos.length > 0
+                      ? `Using description + ${leadPhotos.length} photo${leadPhotos.length > 1 ? 's' : ''}`
+                      : 'Using job description'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAI(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            {/* Content */}
+            <div className="p-5">
+              <AIQuoteGenerator
+                leadDescription={lead?.description || ''}
+                leadCategory={lead?.category || ''}
+                leadPhotos={leadPhotos}
+                onAddItems={handleAddItems}
+              />
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* ── QUOTE TABLE ── */}
         <div className="overflow-x-auto">
@@ -377,17 +391,26 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
           </table>
         </div>
 
-        {/* ── FOOTER ACTIONS ── */}
-        <div className="p-3 border-t border-gray-100 space-y-2">
-          {/* Add line item — subtle, clearly secondary */}
-          <button
-            onClick={handleAddRow}
-            className="w-full h-10 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
-          >
-            <Plus className="w-4 h-4" /> Add Line Item
-          </button>
+       {/* ── ADD LINE ITEM ── */}
+        <div className="p-3 border-t border-gray-100">
+          {isEditing && (
+            <button
+              onClick={handleAddRow}
+              className="w-full h-10 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+            >
+              <Plus className="w-4 h-4" /> Add Line Item
+            </button>
+          )}
+        </div>
 
-          {/* Save — clearly primary, only shown when editing */}
+        {/* ── TOTAL BAR ── */}
+        <div className="px-4 py-2.5 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Quote Total</span>
+          <span className="text-base font-black text-slate-900">{fmt(total)}</span>
+        </div>
+
+        {/* ── SAVE + EMAIL ── */}
+        <div className="p-3 space-y-2">
           {isEditing && (
             <button
               onClick={handleSave}
@@ -398,12 +421,15 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
               Save Quote · {fmt(total)}
             </button>
           )}
-        </div>
-
-        {/* ── TOTAL BAR ── */}
-        <div className="px-4 py-4 bg-gray-900 text-white flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Quote Total</span>
-          <span className="text-xl font-black">{fmt(total)}</span>
+          <SendCustomerEmailButtons
+            leadId={lead.id}
+            type="quote"
+            currentUser={currentUser}
+            onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
+            hasQuote={quoteData.length > 0}
+            quoteSentAt={outboxLog[0]?.created_at || null}
+            disabled={!hasProject}
+          />
         </div>
 
         {/* ── EMAIL HISTORY ── */}
