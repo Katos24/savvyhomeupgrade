@@ -64,11 +64,7 @@ export default function QuoteSection({
 
 useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
 
-  const showTemplateBanner =
-    !templateBannerDismissed &&
-    quoteData.length === 0 &&
-    categoryTemplate &&
-    categoryTemplate.items.length > 0;
+
 
   const handleLoadTemplate = () => {
     const items = categoryTemplate.items.map((item: any, i: number) => ({ ...item, id: Date.now() + i }));
@@ -98,11 +94,33 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
     setIsEditing(true);
   };
 
-  const handleAddItems = (items: any[]) => {
-    setQuoteData((prev: any[]) => [...prev, ...items]);
+ const [pendingAiItems, setPendingAiItems] = useState<any[] | null>(null);
+
+const handleAddItems = (items: any[]) => {
+  if (quoteData.length > 0) {
+    setPendingAiItems(items);
+  } else {
+    setQuoteData(items);
     setIsEditing(true);
     setShowAI(false);
-  };
+  }
+};
+
+const handleAiReplace = () => {
+  if (!pendingAiItems) return;
+  setQuoteData(pendingAiItems);
+  setPendingAiItems(null);
+  setIsEditing(true);
+  setShowAI(false);
+};
+
+const handleAiAppend = () => {
+  if (!pendingAiItems) return;
+  setQuoteData((prev: any[]) => [...prev, ...pendingAiItems]);
+  setPendingAiItems(null);
+  setIsEditing(true);
+  setShowAI(false);
+};
 
   const handleUpdateCell = (id: number, field: string, value: any) => {
     setQuoteData(
@@ -199,44 +217,43 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
               <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 uppercase">✗ Declined</span>
             )}
           </div>
-       <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAI((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition ${
-                showAI ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'
-              }`}>
-              <Sparkles className="w-3.5 h-3.5" />
-              AI
-              {leadPhotos.length > 0 && !showAI && (
-                <span className="bg-violet-200 text-violet-700 px-1.5 rounded-full text-[9px]">{leadPhotos.length}📷</span>
-              )}
-            </button>
+    <div className="flex items-center gap-2">
+  <button
+    onClick={() => setShowAI((v) => !v)}
+    className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition ${
+      showAI ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+    }`}>
+    <Sparkles className="w-3.5 h-3.5" />
+    AI
+    {leadPhotos.length > 0 && !showAI && (
+      <span className="bg-violet-200 text-violet-700 px-1.5 rounded-full text-[9px]">{leadPhotos.length}📷</span>
+    )}
+  </button>
 
-            {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Edit quote">
-                <Edit2 className="w-4 h-4" />
-              </button>
-            ) : (
-              <button onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }} className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors" title="Discard changes">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+  {isEditing && (
+    <button
+      onClick={handleSave}
+      disabled={saving}
+      className="flex items-center gap-1.5 px-3 h-8 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black rounded-lg transition uppercase tracking-widest"
+    >
+      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+      Save
+    </button>
+  )}
+
+  {!isEditing ? (
+    <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors" title="Edit quote">
+      <Edit2 className="w-4 h-4" />
+    </button>
+  ) : (
+    <button onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }} className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors" title="Discard changes">
+      <X className="w-4 h-4" />
+    </button>
+  )}
+</div>
         </div>
 
-        {/* ── TEMPLATE BANNER ── */}
-        {showTemplateBanner && (
-          <div className="mx-4 mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <LayoutGrid className="w-4 h-4 text-indigo-500 shrink-0" />
-              <p className="text-sm font-bold text-indigo-900">There's a pricing template for this category — load it?</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={handleLoadTemplate} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition">Load Template</button>
-              <button onClick={() => setTemplateBannerDismissed(true)} className="p-1.5 text-indigo-300 hover:text-indigo-500 transition"><X className="w-4 h-4" /></button>
-            </div>
-          </div>
-        )}
+    
 
         {/* ── AI MODAL ── */}
       {showAI && (
@@ -472,6 +489,39 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
           input[type='number']::-webkit-inner-spin-button,
           input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         `}</style>
+        {pendingAiItems && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
+    <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl text-center animate-in zoom-in duration-200">
+      <div className="w-14 h-14 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <Sparkles className="w-7 h-7 text-violet-500" />
+      </div>
+      <h3 className="text-lg font-black text-gray-900 mb-2">Add AI items?</h3>
+      <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+        You already have <span className="font-bold text-gray-800">{quoteData.length} line item{quoteData.length > 1 ? 's' : ''}</span>. Replace them with the AI suggestion, or add to existing?
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={handleAiAppend}
+          className="py-3.5 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm"
+        >
+          Add to existing
+        </button>
+        <button
+          onClick={handleAiReplace}
+          className="py-3.5 bg-violet-600 text-white font-bold rounded-2xl shadow-lg shadow-violet-100 active:scale-95 transition text-sm"
+        >
+          Replace all
+        </button>
+      </div>
+      <button
+        onClick={() => setPendingAiItems(null)}
+        className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
       </div>
     </>
   );
