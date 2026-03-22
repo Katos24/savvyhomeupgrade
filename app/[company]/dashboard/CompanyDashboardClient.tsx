@@ -18,6 +18,8 @@ import TrialBanner from '@/components/TrialBanner';
 import { canUseAiChat, PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
+import { Sun, Moon } from 'lucide-react';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -133,6 +135,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+  if (typeof window === 'undefined') return true;
+  return localStorage.getItem('dashboard-theme') !== 'light';
+});
+
+useEffect(() => {
+  localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+}, [isDark]);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -769,26 +779,38 @@ onClick={() => {
             </button>
 
             {/* View toggle  hidden on mobile */}
-            <div className="hidden md:flex bg-white/5 border border-white/10 rounded-xl p-1" role="group" aria-label="View mode">
-              <button
-                onClick={() => setCurrentView('cards')}
-                aria-label="Cards view"
-                aria-pressed={currentView === 'cards'}
-                className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
-              >
-                <LayoutGrid className="w-4 h-4" aria-hidden />
-              </button>
-              <button
-                onClick={() => setCurrentView('table')}
-                aria-label="Table view"
-                aria-pressed={currentView === 'table'}
-                className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
-              >
-                <List className="w-4 h-4" aria-hidden />
-              </button>
-            </div>
-          </div>
 
+<div className="hidden md:flex items-center gap-2">
+  <button
+    onClick={() => setIsDark(v => !v)}
+    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-white/60 hover:text-white"
+  >
+    {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+  </button>
+  <div className="flex bg-white/5 border border-white/10 rounded-xl p-1" role="group" aria-label="View mode">
+    <button
+      onClick={() => setCurrentView('cards')}
+      aria-label="Cards view"
+      aria-pressed={currentView === 'cards'}
+      className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
+    >
+      <LayoutGrid className="w-4 h-4" aria-hidden />
+    </button>
+    <button
+      onClick={() => setCurrentView('table')}
+      aria-label="Table view"
+      aria-pressed={currentView === 'table'}
+      className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
+    >
+      <List className="w-4 h-4" aria-hidden />
+    </button>
+  </div>
+</div>     
+           
+
+</div>
+      
         {/* Status pills — all screen sizes */}
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             <button
@@ -922,6 +944,7 @@ onClick={() => {
                     leads={leads}
                     onSelectLead={setSelectedLead}
                     statusOptions={statusOptions}
+                    isDark={isDark}  
                   />
                 </section>
               ))}
@@ -950,6 +973,7 @@ onClick={() => {
                   teamMembers={teamMembers}
                   categories={company.form_categories || []}
                   customQuestions={company.custom_questions || []}
+                  isDark={isDark} 
                 />
               </div>
             </div>

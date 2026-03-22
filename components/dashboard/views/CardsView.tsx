@@ -6,15 +6,18 @@ import {
   DollarSign, Mail, Phone, ChevronRight, 
   Clock, Briefcase, Camera
 } from 'lucide-react';
+import { getTheme } from '@/lib/theme';
 
+// REPLACE WITH:
 interface CardsViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
   statusOptions: any[];
+  isDark?: boolean;
 }
 
-export default function CardsView({ leads, onSelectLead, statusOptions }: CardsViewProps) {
-  const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
+export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true }: CardsViewProps) {
+  const t = getTheme(isDark);  const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
 
   const getStatusConfig = (statusValue: string) =>
     statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0] || { label: 'New', color: 'blue' };
@@ -51,9 +54,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
           <div
             key={lead.id}
             onClick={() => onSelectLead(lead)}
-            className={`group relative flex bg-[#0A0C10] border border-[#1C2029] rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-[#3b82f6]/50 shadow-sm hover:shadow-xl ${
-              isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
-            }`}
+            // REPLACE WITH:
+className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl overflow-hidden transition-all active:scale-[0.98] ${t.cardBorderHover} shadow-sm hover:shadow-xl ${
+  isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
+}`}
           >
             {/* Left Status Accent */}
             <div 
@@ -81,7 +85,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
                   )}
                 </div>
 
-                <h3 className="text-white text-lg font-bold tracking-tight truncate group-hover:text-blue-400 transition-colors">
+<h3 className={`${t.textHeading} text-lg font-bold tracking-tight truncate group-hover:text-blue-400 transition-colors`}>
                   {lead.name}
                 </h3>
                 
@@ -104,7 +108,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
               </div>
 
               {/* Schedule Box: Clean Dashboard Style */}
-              <div className="grid grid-cols-2 gap-2 mb-5 bg-[#161B22]/50 p-3 rounded-xl border border-[#1C2029]">
+              <div className={`grid grid-cols-2 gap-2 mb-5 ${t.innerBg} p-3 rounded-xl border ${t.innerBorder}`}>
                 <div className="flex flex-col gap-1">
                   <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Date</span>
                   <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
@@ -124,7 +128,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
               </div>
 
               {/* Footer: Money & Navigation */}
-              <div className="flex items-center justify-between pt-3 border-t border-[#1C2029]">
+              <div className={`flex items-center justify-between pt-3 border-t ${t.cardBorder}`}>
                 <div className="flex flex-col">
                   <div className="text-white font-black text-base tracking-tight">
                     {lead.quote_total 
