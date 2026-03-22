@@ -31,6 +31,7 @@ interface ScheduleEmail {
 
 interface Project {
   id: number
+  lead_id: number
   customer_name: string
   customer_email: string
   quote_emails: QuoteEmail[]
@@ -58,8 +59,11 @@ interface FlatEmail {
   html_body?: string | null
   outbox_id?: number
   // payment reminder fields
-  amount_due?: number | null
+   amount_due?: number | null
   days_overdue?: number | null
+  due_date?: string | null
+  lead_id?: number | null
+
 }
 
 interface OutboxEmail {
@@ -84,7 +88,10 @@ interface Props {
   company: { id: number; name: string; slug: string; logo_url: string | null }
   projects: Project[]
   outboxEmails?: OutboxEmail[]
+  totalEmails?: number
 }
+
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtDate(d: string | null | undefined): string {
@@ -160,6 +167,7 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
       customer_name: e.to_name || '',
       customer_email: e.to_email,
       project_id: e.project_id || 0,
+      lead_id: e.lead_id || null,
       sent_by_email: e.sent_by_email,
       isDup: false,
       quote_data: metadata.quote_data || [],
@@ -168,7 +176,7 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
       scheduled_time: metadata.scheduled_time || null,
       assigned_to: metadata.assigned_to || null,
       amount_due: metadata.amount_due ? parseFloat(metadata.amount_due) : null,
-      days_overdue: metadata.days_overdue ? parseInt(metadata.days_overdue) : null,
+      due_date: metadata.due_date || null,
       source: 'outbox',
       status: e.status as 'sent' | 'failed',
       error_message: e.error_message,
@@ -198,12 +206,15 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 
     qEmails.forEach((q, i) => {
       if (isInOutbox(q.sent_at, p.id)) return
+     // FIND (in the qEmails.forEach block):
+      // REPLACE WITH:
       all.push({
         type: 'quote',
         sent_at: q.sent_at,
         customer_name: p.customer_name,
         customer_email: p.customer_email,
         project_id: p.id,
+        lead_id: p.lead_id || null,
         sent_by_email: q.sent_by_email,
         isDup: isDupInArray(qEmails, e => String(e.quote_total), i),
         quote_data: q.quote_data || [],
@@ -215,12 +226,14 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 
     sEmails.forEach((s, i) => {
       if (isInOutbox(s.sent_at, p.id)) return
+      // REPLACE WITH:
       all.push({
         type: 'schedule',
         sent_at: s.sent_at,
         customer_name: p.customer_name,
         customer_email: p.customer_email,
         project_id: p.id,
+        lead_id: p.lead_id || null,
         sent_by_email: s.sent_by_email,
         isDup: isDupInArray(sEmails, e => `${e.scheduled_date}|${e.scheduled_time}`, i),
         scheduled_date: s.scheduled_date,
@@ -236,8 +249,30 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function OutboxClient({ company, projects, outboxEmails = [] }: Props) {
+// REPLACE WITH:
+export default function OutboxClient({ company, projects, outboxEmails = [], totalEmails }: Props) {
   const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder'>('all')
+  const [outboxPage, setOutboxPage] = useState(1);
+  const [allOutboxEmails, setAllOutboxEmails] = useState<OutboxEmail[]>(outboxEmails);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const hasMore = totalEmails ? allOutboxEmails.length < totalEmails : false;
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = outboxPage + 1;
+      const res = await fetch(`/api/company/${company.slug}/outbox?page=${nextPage}`);
+      const data = await res.json();
+      if (data.success) {
+        setAllOutboxEmails(prev => [...prev, ...data.emails]);
+        setOutboxPage(nextPage);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   const [search, setSearch] = useState('')
   const [sentBy, setSentBy] = useState('')
   const [dateRange, setDateRange] = useState('')
@@ -246,7 +281,7 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
   const [showFilters, setShowFilters] = useState(false)
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
 
-  const allEmails = useMemo(() => buildEmailList(projects, outboxEmails), [projects, outboxEmails])
+const allEmails = useMemo(() => buildEmailList(projects, allOutboxEmails), [projects, allOutboxEmails])
 
   const senders = useMemo(() =>
     [...new Set(allEmails.map(e => e.sent_by_email))].sort(),
@@ -498,7 +533,6 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
                             <span>
                               Payment reminder
                               {email.amount_due && <span className="text-orange-400 font-semibold ml-1">{fmtMoney(email.amount_due)} due</span>}
-                              {email.days_overdue && <span className="text-red-400 ml-1">· {email.days_overdue}d overdue</span>}
                             </span>
                           )}
                           {!isQ && !isSched && !isReminder && <span className="text-gray-400">{email.customer_email}</span>}
@@ -589,20 +623,26 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
                               </div>
                             )}
 
-                            {isReminder && (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {[
-                                  { label: 'Amount Due',   value: email.amount_due ? fmtMoney(email.amount_due) : '—',              color: '#fb923c' },
-                                  { label: 'Days Overdue', value: email.days_overdue ? `${email.days_overdue} days` : '—',          color: '#f87171' },
-                                  { label: 'Customer',     value: email.customer_name,                                              color: '#e8eaf0' },
-                                ].map(f => (
-                                  <div key={f.label}>
-                                    <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">{f.label}</div>
-                                    <div className="text-sm font-semibold" style={{ color: f.color }}>{f.value}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+{isReminder && (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    {email.amount_due && (
+      <div>
+        <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">Amount Due</div>
+        <div className="text-sm font-semibold" style={{ color: '#fb923c' }}>{fmtMoney(email.amount_due)}</div>
+      </div>
+    )}
+    {email.due_date && (
+      <div>
+        <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">Due Date</div>
+        <div className="text-sm font-semibold" style={{ color: '#e8eaf0' }}>{fmtDate(email.due_date)}</div>
+      </div>
+    )}
+    <div>
+      <div className="text-xs text-gray-600 uppercase tracking-wider font-medium mb-1">Customer</div>
+      <div className="text-sm font-semibold" style={{ color: '#e8eaf0' }}>{email.customer_name}</div>
+    </div>
+  </div>
+)}
 
                             {!isQ && !isSched && !isReminder && (
                               <p className="text-sm text-gray-500">No additional details available.</p>
@@ -634,7 +674,8 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
                                 </>
                               )}
                             </div>
-                            <a href={`/${company.slug}/dashboard?project=${email.project_id}`}
+                            <a href={`/${company.slug}/dashboard?lead=${email.lead_id}`}
+
                               className="flex items-center justify-center gap-1.5 px-3 py-2 mt-4 rounded-lg text-xs text-gray-500 hover:text-white no-underline transition"
                               style={{ background: '#1c2029', border: '1px solid #2e3340' }}>
                               <ExternalLink className="w-3.5 h-3.5" /> Open Project #{email.project_id}
@@ -672,6 +713,18 @@ export default function OutboxClient({ company, projects, outboxEmails = [] }: P
             </div>
           ))
         )}
+      {hasMore && (
+        <div className="flex justify-center pt-6 pb-2">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition disabled:opacity-40"
+            style={{ background: '#111318', border: '1px solid #232731' }}
+          >
+            {loadingMore ? 'Loading...' : `Load More (${totalEmails! - allOutboxEmails.length} remaining)`}
+          </button>
+        </div>
+      )}
       </div>
 {/* Email Preview Modal */}
 {previewHtml && (

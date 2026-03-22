@@ -85,18 +85,25 @@ async function getCurrentUser(userId: number): Promise<CurrentUser | null> {
 async function getOutboxData(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
 
-  // Get new outbox table data
+  // First 25 outbox emails
   const outboxEmails = await sql`
     SELECT * FROM email_outbox
     WHERE company_id = ${companyId}
     ORDER BY created_at DESC
-    LIMIT 500
+    LIMIT 25
   `;
 
-  // Also get legacy data from projects (for emails sent before outbox table existed)
+  // Total outbox count
+  const outboxTotal = await sql`
+    SELECT COUNT(*) as total FROM email_outbox
+    WHERE company_id = ${companyId}
+  `;
+
+  // First 25 old projects with emails stored on the project row
   const projects = await sql`
     SELECT
       id,
+      lead_id,
       customer_name,
       customer_email,
       COALESCE(quote_emails, '[]'::jsonb) AS quote_emails,
@@ -108,9 +115,24 @@ async function getOutboxData(companyId: number) {
         OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
       )
     ORDER BY updated_at DESC
+    LIMIT 25
   `;
 
-  return { outboxEmails, projects };
+  // Total old project email count (count individual emails not rows)
+  const legacyTotal = await sql`
+    SELECT COUNT(*) as total FROM projects
+    WHERE company_id = ${companyId}
+      AND (
+        jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
+        OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
+      )
+  `;
+
+  return {
+    outboxEmails,
+    projects,
+    outboxTotal: parseInt(outboxTotal[0].total) + parseInt(legacyTotal[0].total),
+  };
 }
 
 export default async function OutboxPage({ params }: PageProps) {
@@ -131,6 +153,7 @@ export default async function OutboxPage({ params }: PageProps) {
       company={company}
       projects={outboxData.projects as any}
       outboxEmails={outboxData.outboxEmails as any}
+      totalEmails={outboxData.outboxTotal}
     />
   );
 }

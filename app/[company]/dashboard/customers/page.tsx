@@ -47,10 +47,10 @@ async function verifyAuth(companySlug: string) {
 // Simplified this function to just return the raw rows
 async function getRawProjects(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
-
   const rows = await sql`
     SELECT 
       id,
+      lead_id,
       customer_name,
       customer_email,
       customer_phone,
@@ -63,10 +63,8 @@ async function getRawProjects(companyId: number) {
     WHERE company_id = ${companyId}
     ORDER BY created_at DESC
   `;
-
   return rows;
 }
-
 export default async function CustomerListPage({
   params
 }: {

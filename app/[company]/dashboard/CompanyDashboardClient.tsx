@@ -233,6 +233,37 @@ const [isSearching, setIsSearching] = useState(false);
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [aiMessages, aiLoading]);
 
+  // ADD this useEffect after your existing useEffects:
+// REPLACE WITH:
+// REPLACE WITH:
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const leadId = params.get('lead');
+  if (!leadId) return;
+
+  // Try already-loaded leads first
+  const lead = allLeads.find(l => l.id === parseInt(leadId));
+  if (lead) {
+    setSelectedLead(lead);
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  // Only fetch if initial load is done and lead still not found
+  if (isInitialLoad) return;
+
+  // Fetch via the company leads endpoint (has full project join)
+  // REPLACE WITH:
+  fetch(`/api/leads/${leadId}`, { cache: 'no-store' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    })
+    .catch(() => {});
+}, [allLeads, isInitialLoad]);
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------

@@ -16,6 +16,7 @@ import {
 
 interface Project {
   id: number;
+  lead_id: number;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -218,7 +219,7 @@ export default function CustomerListClient({
                       
                      <a
   key={project.id}
-  href={`/${companySlug}/dashboard?project=${project.id}`}
+href={`/${companySlug}/dashboard?lead=${project.lead_id}`}
   className="group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/40 transition-all no-underline"
 >
                         <div className="flex-1 min-w-0">

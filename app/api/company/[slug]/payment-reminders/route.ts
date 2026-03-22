@@ -92,10 +92,10 @@ export async function POST(req: Request, { params }: Props) {
     const quoteTotal  = parseFloat(r.quote_total  || '0');
     const paid        = parseFloat(r.payment_amount || '0');
     const amountDue   = paid > 0 ? Math.max(quoteTotal - paid, 0) : quoteTotal;
-    const isOverdue   = new Date(r.payment_due_date) < new Date();
-    const daysOverdue = isOverdue
-      ? Math.floor((Date.now() - new Date(r.payment_due_date).getTime()) / 86400000)
-      : 0;
+const isOverdue   = r.payment_due_date ? new Date(r.payment_due_date) < new Date() : false;
+const daysOverdue = isOverdue && r.payment_due_date
+  ? Math.floor((Date.now() - new Date(r.payment_due_date).getTime()) / 86400000)
+  : 0;
 
     // ── Send the email ────────────────────────────────────────────────────────
     let emailResult: any = null;
