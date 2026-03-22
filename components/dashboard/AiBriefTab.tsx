@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { Sparkles, Image } from 'lucide-react';
 import { toast } from 'sonner';
 
+// REPLACE WITH:
 type AiBriefTabProps = {
-  lead: any;               // full lead object (ai_brief pre-joined from projects table)
+  lead: any;
   currentUser: any;
   company?: any;
   customerPhotos: string[];
   relatedLeads: any[];
   isProject: boolean;
+  onRefresh: () => Promise<void>;
 };
 
 /**
@@ -30,7 +32,7 @@ type AiBriefTabProps = {
  *     return res.json({ success: true });
  */
 export default function AiBriefTab({
-  lead, currentUser, company, customerPhotos, relatedLeads, isProject,
+  lead, currentUser, company, customerPhotos, relatedLeads, isProject, onRefresh,
 }: AiBriefTabProps) {
   const [brief, setBrief] = useState<any>(lead.ai_brief ?? null);
   const [loading, setLoading] = useState(false);
@@ -57,9 +59,10 @@ export default function AiBriefTab({
           user_email: currentUser?.email,
         }),
       });
+    // REPLACE WITH:
     } catch (e) {
       console.error('Failed to save AI brief:', e);
-    } finally {
+     } finally {
       setSaving(false);
     }
   };
@@ -96,10 +99,14 @@ export default function AiBriefTab({
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setBrief(data.brief);
-        await saveBrief(data.brief);
-      } else {
+      // REPLACE WITH:
+if (data.success) {
+  setBrief(data.brief);
+  if (isProject) {
+    await saveBrief(data.brief);
+    await onRefresh();
+  }
+} else {
         toast.error('Failed to generate brief');
       }
     } catch {

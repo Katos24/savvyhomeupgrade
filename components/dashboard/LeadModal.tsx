@@ -495,9 +495,9 @@ export default function LeadModal({
 
               {/* AI Brief shortcut */}
               <AiBriefButton
-                hasSavedBrief={!!lead.ai_brief}
-                onClick={() => setActiveTab('ai')}
-              />
+  hasSavedBrief={!!lead.ai_brief && isProject}
+  onClick={() => setActiveTab('ai')}
+/>
             </div>
 
             {/* Tab bar */}
@@ -845,14 +845,15 @@ export default function LeadModal({
 
            {/* ── AI BRIEF TAB ── */}
 {activeTab === 'ai' && (
-  <AiBriefTab
-    lead={lead}
-    currentUser={currentUser}
-    company={company}
-    customerPhotos={customerPhotos}
-    relatedLeads={relatedLeads}
-    isProject={isProject}
-  />
+ <AiBriefTab
+  lead={lead}
+  currentUser={currentUser}
+  company={company}
+  customerPhotos={customerPhotos}
+  relatedLeads={relatedLeads}
+  isProject={isProject}
+  onRefresh={onRefresh}
+/>
 )}
 
             {/* ── PROJECT TABS ── */}
