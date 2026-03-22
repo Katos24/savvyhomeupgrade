@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { 
-  Camera, Plus, Loader2, Maximize2, Trash2, 
-  Image as ImageIcon 
+import {
+  Camera, Plus, Loader2, Image as ImageIcon,
+  X, ChevronLeft, ChevronRight, Download,
 } from 'lucide-react';
 
 type Photo = string | { url: string; thumbnail: string };
@@ -16,21 +16,279 @@ type PhotoUploadProps = {
   beforePhotos?: Photo[];
   afterPhotos?: Photo[];
   hasProject: boolean;
+  customerPhotos?: string[];
 };
 
-export default function PhotoUpload({ 
-  leadId, 
-  currentUser, 
+function Lightbox({
+  photos,
+  startIndex,
+  onClose,
+  label,
+}: {
+  photos: string[];
+  startIndex: number;
+  onClose: () => void;
+  label?: string;
+}) {
+  const [current, setCurrent] = useState(startIndex);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setCurrent(c => (c + 1) % photos.length);
+      if (e.key === 'ArrowLeft') setCurrent(c => (c - 1 + photos.length) % photos.length);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [photos.length, onClose]);
+
+  // Touch swipe support
+  const touchStartX = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 50) {
+      if (delta < 0) setCurrent(c => (c + 1) % photos.length);
+      else setCurrent(c => (c - 1 + photos.length) % photos.length);
+    }
+    touchStartX.current = null;
+  };
+
+  const prev = () => setCurrent(c => (c - 1 + photos.length) % photos.length);
+  const next = () => setCurrent(c => (c + 1) % photos.length);
+
+  const handleDownload = async () => {
+    const url = photos[current];
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      const ext = url.split('.').pop()?.split('?')[0] || 'jpg';
+      a.download = `photo-${current + 1}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback: open in new tab so mobile users can long-press save
+      window.open(url, '_blank');
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        backgroundColor: 'rgba(0,0,0,0.92)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Top bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px',
+          zIndex: 10,
+          // Safe area for iPhone notch
+          paddingTop: 'max(16px, env(safe-area-inset-top))',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          {label} {photos.length > 1 && `· ${current + 1} / ${photos.length}`}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Download / Save button */}
+          <button
+            onClick={handleDownload}
+            title="Download photo"
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Download style={{ width: 18, height: 18, color: 'white' }} />
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <X style={{ width: 18, height: 18, color: 'white' }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Image area */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          width: '100%',
+          padding: '80px 8px 80px',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {photos.length > 1 && (
+          <button
+            onClick={prev}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              // Larger tap target on mobile
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <ChevronLeft style={{ width: 22, height: 22, color: 'white' }} />
+          </button>
+        )}
+
+        <img
+          src={photos[current]}
+          alt={`Photo ${current + 1}`}
+          style={{
+            maxHeight: '65vh',
+            maxWidth: photos.length > 1 ? 'calc(100vw - 120px)' : '92vw',
+            objectFit: 'contain',
+            borderRadius: 12,
+            // Prevent context menu / long-press saving is still allowed for mobile
+            WebkitUserSelect: 'none',
+            userSelect: 'none',
+          }}
+          draggable={false}
+        />
+
+        {photos.length > 1 && (
+          <button
+            onClick={next}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <ChevronRight style={{ width: 22, height: 22, color: 'white' }} />
+          </button>
+        )}
+      </div>
+
+      {/* Thumbnails — hidden on very small screens to save space */}
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 'max(16px, env(safe-area-inset-bottom))',
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '0 16px',
+            overflowX: 'auto',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          {photos.map((url, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              style={{
+                width: 44,
+                height: 44,
+                minWidth: 44,
+                borderRadius: 8,
+                overflow: 'hidden',
+                flexShrink: 0,
+                padding: 0,
+                cursor: 'pointer',
+                border: i === current ? '2px solid white' : '2px solid rgba(255,255,255,0.2)',
+                opacity: i === current ? 1 : 0.5,
+                transform: i === current ? 'scale(1.1)' : 'scale(1)',
+                transition: 'all 0.15s',
+              }}
+            >
+              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PhotoUpload({
+  leadId,
+  currentUser,
   onUploadComplete,
   beforePhotos = [],
-  hasProject
+  hasProject,
+  customerPhotos = [],
 }: PhotoUploadProps) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  
+  const [localPhotos, setLocalPhotos] = useState<Photo[]>(beforePhotos);
+  const [lightbox, setLightbox] = useState<{ photos: string[]; index: number; label?: string } | null>(null);
+
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+
+  useEffect(() => {
+    setLocalPhotos(beforePhotos);
+  }, [beforePhotos]);
+
+  const getUrl = (photo: Photo) => typeof photo === 'string' ? photo : photo.url;
+  const getThumb = (photo: Photo) => typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -43,16 +301,18 @@ export default function PhotoUpload({
       }
     }
 
+    const previewUrls = Array.from(files).map(f => URL.createObjectURL(f));
+    setLocalPhotos(prev => [...prev, ...previewUrls]);
+
     setUploadingPhotos(true);
     setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append('leadId', leadId.toString());
-      formData.append('photoType', 'before'); 
+      formData.append('photoType', 'before');
       formData.append('uploadType', 'photo');
       formData.append('userName', currentUser?.name || currentUser?.email || 'User');
-
       Array.from(files).forEach(file => formData.append('photos', file));
 
       const interval = setInterval(() => {
@@ -65,17 +325,18 @@ export default function PhotoUpload({
       });
 
       clearInterval(interval);
-      
       const result = await response.json();
 
       if (response.ok && result.success) {
         toast.success(`Uploaded ${files.length} photo${files.length > 1 ? 's' : ''}`);
         await onUploadComplete();
       } else {
+        setLocalPhotos(beforePhotos);
         toast.error(result.error || 'Failed to upload photos');
       }
     } catch (error) {
       console.error('Photo upload error:', error);
+      setLocalPhotos(beforePhotos);
       toast.error('Failed to upload photos');
     } finally {
       setUploadingPhotos(false);
@@ -84,154 +345,159 @@ export default function PhotoUpload({
     }
   };
 
-  const handleDelete = async (photoUrl: string, index: number) => {
-    if (!confirm("Remove this photo? This cannot be undone.")) return;
-    
-    setDeletingId(index);
-    try {
-      const res = await fetch(`/api/leads/${leadId}/delete-media`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ photoUrl }),
-});
-      
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        toast.success("Photo removed");
-        await onUploadComplete();
-      } else {
-        toast.error(data.error || "Failed to delete photo");
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-      toast.error("Network error. Failed to delete.");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   if (!hasProject) return null;
 
-  return (
-    <div className="space-y-6">
-      {/* Header with Counter */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-slate-100 rounded-lg text-slate-600">
-            <Camera className="w-4 h-4" />
-          </div>
-          <h3 className="text-sm font-black uppercase tracking-tight text-slate-900">Project Gallery</h3>
-          <span className="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full border border-indigo-100">
-            {beforePhotos.length}
-          </span>
-        </div>
-        
-        {beforePhotos.length > 0 && (
-          <label 
-            htmlFor={`photo-upload-${leadId}`} 
-            className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 cursor-pointer uppercase tracking-widest flex items-center gap-1"
-          >
-            <Plus className="w-3 h-3" /> Add More
-          </label>
-        )}
-      </div>
+  const projectPhotoUrls = localPhotos.map(getUrl);
 
-      {/* PHOTO GRID */}
-      {beforePhotos.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {beforePhotos.map((photo: Photo, index) => {
-            const photoUrl = typeof photo === 'string' ? photo : photo.url;
-            const thumbnailUrl = typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
-            
-            return (
-              <div key={index} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+  return (
+    <>
+      {lightbox && (
+        <Lightbox
+          photos={lightbox.photos}
+          startIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+          label={lightbox.label}
+        />
+      )}
+
+      <div className="space-y-6">
+
+        {/* Customer Photos */}
+        {customerPhotos.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Camera className="w-3.5 h-3.5 text-pink-400" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Submitted by Customer ({customerPhotos.length})
+              </p>
+            </div>
+            {/* 3 cols on mobile, 4 on larger screens */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+              {customerPhotos.map((url, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
+                  className="group relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-pink-300 hover:shadow-md transition-all"
+                >
+                  <img
+                    src={url}
+                    alt={`Customer photo ${i + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="bg-white/90 rounded-full p-1.5">
+                      <ImageIcon className="w-4 h-4 text-slate-700" />
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Project Gallery Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-slate-100 rounded-lg text-slate-600">
+              <Camera className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-tight text-slate-900">Project Gallery</h3>
+            <span className="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full border border-indigo-100">
+              {localPhotos.length}
+            </span>
+          </div>
+          {localPhotos.length > 0 && (
+            <label
+              htmlFor={`photo-upload-${leadId}`}
+              className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 cursor-pointer uppercase tracking-widest flex items-center gap-1 py-2 px-3 -mr-2 active:opacity-70"
+            >
+              <Plus className="w-3 h-3" /> Add More
+            </label>
+          )}
+        </div>
+
+        {/* Project Photo Grid */}
+        {localPhotos.length > 0 ? (
+          // 3 cols on mobile, 4 on larger screens
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4">
+            {localPhotos.map((photo, index) => (
+              <button
+                key={index}
+                onClick={() => setLightbox({ photos: projectPhotoUrls, index, label: 'Project Gallery' })}
+                className="group relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all"
+              >
                 <img
-                  src={thumbnailUrl}
+                  src={getThumb(photo)}
                   alt="Project site"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                
-                {/* Overlay Actions */}
-                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                  <a 
-                    href={photoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white text-slate-900 rounded-full hover:scale-110 transition-transform shadow-xl"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </a>
-                  <button 
-                    onClick={() => handleDelete(photoUrl, index)}
-                    disabled={deletingId !== null}
-                    className="p-2 bg-white text-rose-600 rounded-full hover:scale-110 transition-transform shadow-xl disabled:opacity-50"
-                  >
-                    {deletingId === index ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  </button>
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="bg-white/90 rounded-full p-1.5">
+                    <ImageIcon className="w-4 h-4 text-slate-700" />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="border-2 border-dashed border-slate-100 rounded-[2rem] p-12 text-center bg-slate-50/30">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-            <ImageIcon className="w-8 h-8 text-slate-200" />
-          </div>
-          <h4 className="text-sm font-bold text-slate-900">No project photos</h4>
-          <p className="text-xs text-slate-500 mt-1 max-w-[220px] mx-auto leading-relaxed">
-            Upload site photos to track progress and share with the customer.
-          </p>
-        </div>
-      )}
-
-      {/* UPLOAD TRIGGER AREA */}
-      <div className="relative">
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handlePhotoUpload}
-          disabled={uploadingPhotos}
-          className="hidden"
-          id={`photo-upload-${leadId}`}
-        />
-        
-        {uploadingPhotos ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-                <span className="text-sm font-bold text-slate-700">Uploading Assets...</span>
-              </div>
-              <span className="text-xs font-black text-slate-400">{uploadProgress}%</span>
-            </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-indigo-600 h-full transition-all duration-300 ease-out"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
+              </button>
+            ))}
           </div>
         ) : (
-          <label
-            htmlFor={`photo-upload-${leadId}`}
-            className="group flex flex-col items-center justify-center p-8 rounded-[2rem] border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer"
-          >
-            <div className="p-4 bg-white rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-              <Camera className="w-6 h-6 text-indigo-600" />
+          <div className="border-2 border-dashed border-slate-100 rounded-[2rem] p-10 sm:p-12 text-center bg-slate-50/30">
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+              <ImageIcon className="w-8 h-8 text-slate-200" />
             </div>
-            <span className="text-sm font-black text-indigo-900 uppercase tracking-widest">
-              Upload New Photos
-            </span>
-            <span className="text-[10px] text-indigo-400 mt-2 font-bold uppercase tracking-tight">
-              JPG, PNG • Max 10MB per file
-            </span>
-          </label>
+            <h4 className="text-sm font-bold text-slate-900">No project photos yet</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-[220px] mx-auto leading-relaxed">
+              Upload site photos to track progress and keep the job organized.
+            </p>
+          </div>
         )}
+
+        {/* Upload Area */}
+        <div className="relative">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePhotoUpload}
+            disabled={uploadingPhotos}
+            className="hidden"
+            id={`photo-upload-${leadId}`}
+          />
+
+          {uploadingPhotos ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+                  <span className="text-sm font-bold text-slate-700">Uploading...</span>
+                </div>
+                <span className="text-xs font-black text-slate-400">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-indigo-600 h-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <label
+              htmlFor={`photo-upload-${leadId}`}
+              className="group flex flex-col items-center justify-center p-8 rounded-[2rem] border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer active:bg-indigo-100"
+            >
+              <div className="p-4 bg-white rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                <Camera className="w-6 h-6 text-indigo-600" />
+              </div>
+              <span className="text-sm font-black text-indigo-900 uppercase tracking-widest">
+                Upload New Photos
+              </span>
+              <span className="text-[10px] text-indigo-400 mt-2 font-bold uppercase tracking-tight">
+                JPG, PNG • Max 10MB per file
+              </span>
+            </label>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

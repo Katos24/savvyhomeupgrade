@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Calendar, Bell, User, CheckCircle2, 
   DollarSign, Mail, Phone, ChevronRight, 
-  Clock, Briefcase 
+  Clock, Briefcase, Camera
 } from 'lucide-react';
 
 interface CardsViewProps {
@@ -85,7 +85,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
                   {lead.name}
                 </h3>
                 
-                <div className="flex items-center gap-3 mt-1 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
+             <div className="flex items-center gap-3 mt-1 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
                   <div className="flex items-center gap-1">
                     <Briefcase className="w-3 h-3 text-gray-600" />
                     <span className="truncate max-w-[80px]">{lead.category || 'General'}</span>
@@ -94,6 +94,12 @@ export default function CardsView({ leads, onSelectLead, statusOptions }: CardsV
                     <User className="w-3 h-3 text-gray-600" />
                     <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
                   </div>
+                  {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
+                    <div className="flex items-center gap-1 text-pink-500">
+                      <Camera className="w-3 h-3" />
+                      <span>{lead.file_urls.length}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

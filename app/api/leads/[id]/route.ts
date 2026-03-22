@@ -18,8 +18,16 @@ export async function GET(
     jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
 
     const leads = await sql`
-      SELECT * FROM leads WHERE id = ${parseInt(id)} AND deleted = false LIMIT 1
-    `;
+  SELECT 
+    l.*,
+    p.ai_brief,
+    p.internal_notes as project_internal_notes,
+    p.project_number
+  FROM leads l
+  LEFT JOIN projects p ON p.lead_id = l.id
+  WHERE l.id = ${parseInt(id)} AND l.deleted = false
+  LIMIT 1
+`;
 
     if (!leads.length) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 

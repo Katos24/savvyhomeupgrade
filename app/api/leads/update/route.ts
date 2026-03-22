@@ -880,6 +880,34 @@ else if (action === 'update_lead_step2') {
   return NextResponse.json({ success: true });
 }
 
+
+
+// ==================== SAVE AI BRIEF ====================
+else if (action === 'save_ai_brief') {
+  console.log('🤖 Saving AI brief');
+
+  const projects = await sql`
+    SELECT id FROM projects WHERE lead_id = ${id}
+  `;
+
+  if (projects.length === 0) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  const projectId = projects[0].id;
+
+  await sql`
+    UPDATE projects
+    SET
+      ai_brief = ${JSON.stringify(body.ai_brief)},
+      updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
+
+  console.log('✅ AI brief saved');
+  return NextResponse.json({ success: true });
+}
+
     // ==================== LEGACY ====================
     else {
       console.log('⚠️ Legacy update');
