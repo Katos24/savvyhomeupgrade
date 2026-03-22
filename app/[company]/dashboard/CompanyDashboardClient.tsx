@@ -789,8 +789,8 @@ onClick={() => {
             </div>
           </div>
 
-        {/* Status pills — desktop only */}
-          <div className="hidden md:flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        {/* Status pills — all screen sizes */}
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterStatus('all')}
               className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
@@ -825,20 +825,6 @@ onClick={() => {
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" aria-hidden />
             </div>
 
-            <div className="relative flex-[1.5]">
-              <select
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                aria-label="Filter by status"
-                className="w-full appearance-none pl-3 pr-8 py-3 bg-slate-800/60 border border-white/10 rounded-xl text-sm font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50 transition cursor-pointer"
-              >
-                <option value="all">All Statuses ({allLeads.length})</option>
-                {statusOptions.map(s => (
-                  <option key={s.value} value={s.value}>{s.label} ({statusCounts[s.value] || 0})</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" aria-hidden />
-            </div>
 
             {hasActiveFilters && (
               <button

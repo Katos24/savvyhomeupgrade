@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  Mail, 
-  MapPin, 
-  Briefcase, 
-  ArrowRight, 
-  User, 
+import {
+  ChevronDown,
+  ChevronRight,
+  Mail,
+  MapPin,
+  Briefcase,
+  ArrowRight,
+  User,
   Phone,
-  Search
+  Search,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface Project {
@@ -22,6 +23,8 @@ interface Project {
   status: string;
   category: string;
   updated_at: string;
+  quote_total?: number | null;
+  payment_status?: string | null;
 }
 
 interface CustomerGroup {
@@ -32,8 +35,8 @@ interface CustomerGroup {
 }
 
 export default function CustomerListClient({
-  projects = [], // Default to empty array to prevent 'undefined' errors
-  companySlug
+  projects = [],
+  companySlug,
 }: {
   projects?: Project[];
   companySlug: string;
@@ -41,152 +44,234 @@ export default function CustomerListClient({
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 1. Safe Grouping Logic
   const groupedCustomers = useMemo(() => {
     const groups: Record<string, CustomerGroup> = {};
-
-    // The safety check (projects || []) ensures forEach never runs on undefined
     (projects || []).forEach((p) => {
       const email = p.customer_email || 'no-email@provided.com';
       if (!groups[email]) {
         groups[email] = {
           name: p.customer_name || 'Unknown Customer',
-          email: email,
-          phone: p.customer_phone || 'No Phone',
-          projects: []
+          email,
+          phone: p.customer_phone || '',
+          projects: [],
         };
       }
       groups[email].projects.push(p);
     });
 
     const list = Object.values(groups).sort((a, b) => a.name.localeCompare(b.name));
-
     if (!searchTerm) return list;
-
-    return list.filter(c => 
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    return list.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.phone.includes(searchTerm)
     );
   }, [projects, searchTerm]);
 
-  // Early return if no data at all
   if (!projects || projects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-          <User className="w-8 h-8 text-gray-600" />
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-4">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+          <User className="w-8 h-8 text-slate-400" />
         </div>
-        <h2 className="text-xl font-bold text-white">No customers found</h2>
-        <p className="text-gray-500 max-w-xs mt-2">We couldn't find any customer records for this company.</p>
+        <h2 className="text-xl font-black text-slate-800">No customers yet</h2>
+        <p className="text-slate-500 max-w-xs mt-2 text-sm">
+          Customer profiles will appear here once leads are created.
+        </p>
+        
+          <a
+  href={`/${companySlug}/dashboard`}
+  className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700"
+>
+  <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+</a>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12" style={{ background: '#0a0c10', minHeight: '100vh', color: '#e8eaf0' }}>
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-white mb-2 uppercase">Customer Directory</h1>
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">
-            {groupedCustomers.length} Unique Client Profiles
-          </p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+          
+            <a
+  href={`/${companySlug}/dashboard`}
+  className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition shrink-0"
+  aria-label="Back to dashboard"
+>
+  <ArrowLeft className="w-5 h-5" />
+</a>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-black text-slate-900 tracking-tight">Customers</h1>
+            <p className="text-xs text-slate-400 font-medium">{groupedCustomers.length} profiles</p>
+          </div>
         </div>
+      </div>
 
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-          <input 
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
             type="text"
-            placeholder="Search directory..."
+            placeholder="Search by name, email or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#111318] border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-sm outline-none focus:border-orange-500/50 transition-all"
+            className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm"
           />
         </div>
-      </header>
 
-      <div className="space-y-3">
-        {groupedCustomers.map((customer) => {
-          const isExpanded = expandedEmail === customer.email;
-          const projectCount = customer.projects?.length || 0;
+        {/* Customer list */}
+        <div className="space-y-3">
+          {groupedCustomers.map((customer) => {
+            const isExpanded = expandedEmail === customer.email;
+            const jobCount = customer.projects.length;
+            const totalRevenue = customer.projects.reduce(
+              (sum, p) => sum + (parseFloat(String(p.quote_total || 0))),
+              0
+            );
+            const lastJob = customer.projects.reduce((latest, p) => {
+              const d = new Date(p.updated_at);
+              return d > latest ? d : latest;
+            }, new Date(0));
 
-          return (
-            <div 
-              key={customer.email} 
-              className={`rounded-[32px] border transition-all duration-500 ${
-                isExpanded ? 'bg-[#161921] border-orange-500/40 shadow-2xl' : 'bg-[#111318] border-white/5 hover:border-white/10'
-              }`}
-            >
-              {/* Customer Row */}
-              <div 
-                onClick={() => setExpandedEmail(isExpanded ? null : customer.email)}
-                className="p-5 sm:p-6 cursor-pointer flex items-center justify-between select-none"
+            return (
+              <div
+                key={customer.email}
+                className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-sm ${
+                  isExpanded ? 'border-indigo-200 shadow-md' : 'border-slate-100 hover:border-slate-200'
+                }`}
               >
-                <div className="flex items-center gap-4 sm:gap-6">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${isExpanded ? 'bg-orange-500/10 border-orange-500/20' : 'bg-white/5 border-white/10'}`}>
-                    <User className={`w-6 h-6 ${isExpanded ? 'text-orange-500' : 'text-gray-600'}`} />
+                {/* Customer row */}
+                <div
+                  onClick={() => setExpandedEmail(isExpanded ? null : customer.email)}
+                  className="p-4 sm:p-5 cursor-pointer flex items-center gap-4 select-none"
+                >
+                  {/* Avatar */}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-black text-base transition-colors ${
+                    isExpanded ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {customer.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-black text-white leading-none mb-2">{customer.name}</h2>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                      <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                        <Mail className="w-3 h-3" /> {customer.email}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[10px] font-black text-orange-500/80 uppercase tracking-widest">
-                        <Briefcase className="w-3 h-3" /> {projectCount} {projectCount === 1 ? 'Job' : 'Jobs'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                   {isExpanded ? <ChevronDown className="w-5 h-5 text-orange-500" /> : <ChevronRight className="w-5 h-5 text-gray-700" />}
-                </div>
-              </div>
 
-              {/* Bulked Projects Card Grid */}
-              {isExpanded && (
-                <div className="px-6 pb-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-5 border-t border-white/5">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-slate-900 text-sm leading-tight truncate">{customer.name}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                      {customer.phone && (
+                        <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                          <Phone className="w-3 h-3" /> {customer.phone}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                        <Briefcase className="w-3 h-3" /> {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
+                      </span>
+                      {totalRevenue > 0 && (
+                        <span className="text-[11px] font-black text-emerald-600">
+                          ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      Last job {lastJob.toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  {/* Chevron */}
+                  {isExpanded
+                    ? <ChevronDown className="w-4 h-4 text-indigo-500 shrink-0" />
+                    : <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                  }
+                </div>
+
+                {/* Expanded jobs */}
+                {isExpanded && (
+                  <div className="border-t border-slate-100 px-4 pb-4 pt-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {/* Contact row */}
+                    <div className="flex flex-wrap gap-3 mb-3">
+                      {customer.email !== 'no-email@provided.com' && (
+                        
+                         <a
+  href={`mailto:${customer.email}`}
+  className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition"
+  onClick={(e) => e.stopPropagation()}
+>
+                          <Mail className="w-3.5 h-3.5" /> {customer.email}
+                        </a>
+                      )}
+                      {customer.phone && customer.phone !== 'No Phone' && (
+                        
+                        <a
+  href={`tel:${customer.phone}`}
+  className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition"
+  onClick={(e) => e.stopPropagation()}
+>
+                          <Phone className="w-3.5 h-3.5" /> {customer.phone}
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Job cards */}
                     {customer.projects.map((project) => (
-                      <a
-                        key={project.id}
-                        href={`/${companySlug}/dashboard?project=${project.id}`}
-                        className="group flex flex-col p-5 bg-black/40 border border-white/5 rounded-[24px] hover:border-orange-500/50 transition-all no-underline"
-                      >
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Job ID</span>
-                            <span className="text-xs font-mono text-white">#{project.id}</span>
+                      
+                     <a
+  key={project.id}
+  href={`/${companySlug}/dashboard?project=${project.id}`}
+  className="group flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/40 transition-all no-underline"
+>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-black text-slate-800 capitalize">
+                              {project.category?.replace(/_/g, ' ') || 'Service Request'}
+                            </span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                              project.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                              project.status === 'cancelled' ? 'bg-red-100 text-red-600' :
+                              'bg-slate-200 text-slate-600'
+                            }`}>
+                              {project.status?.replace(/_/g, ' ') || 'active'}
+                            </span>
                           </div>
-                          <span className="text-[9px] font-black px-2 py-1 rounded-md bg-white/10 text-gray-300 uppercase tracking-widest border border-white/5">
-                            {project.status?.replace('_', ' ') || 'active'}
-                          </span>
+                          {project.service_address && (
+                            <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {project.service_address}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-slate-300 mt-0.5">
+                            {new Date(project.updated_at).toLocaleDateString()}
+                          </p>
                         </div>
-                        
-                        <p className="text-sm font-black text-white mb-1 uppercase tracking-tight">
-                          {project.category?.replace('_', ' ') || 'service request'}
-                        </p>
-                        
-                        <p className="text-[11px] font-bold text-gray-500 flex items-center gap-2 mt-1">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-700" />
-                          <span className="truncate">{project.service_address || 'Address Not Provided'}</span>
-                        </p>
-                        
-                        <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5">
-                          <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">
-                            Last Touch: {new Date(project.updated_at).toLocaleDateString()}
-                          </span>
-                          <div className="flex items-center gap-1 text-[10px] font-black text-white uppercase opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
-                            Open Project <ArrowRight className="w-3 h-3" />
-                          </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          {project.quote_total && (
+                            <span className="text-xs font-black text-slate-700">
+                              ${parseFloat(String(project.quote_total)).toLocaleString()}
+                            </span>
+                          )}
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition" />
                         </div>
                       </a>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {groupedCustomers.length === 0 && searchTerm && (
+          <div className="text-center py-16">
+            <p className="text-slate-400 font-medium text-sm">No results for "{searchTerm}"</p>
+            <button
+              onClick={() => setSearchTerm('')}
+              className="mt-2 text-xs text-indigo-500 font-bold hover:underline"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

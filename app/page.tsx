@@ -114,96 +114,7 @@ function FormFillingDemo() {
   );
 }
 
-// ─── AI QUOTE MOCKUP ──────────────────────────────────────────────────────────
-function AIQuoteMockup() {
-  const [phase, setPhase] = useState<'photo' | 'analyzing' | 'result'>('photo');
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (phase === 'photo')     { timeoutRef.current = setTimeout(() => setPhase('analyzing'), 2200); }
-    if (phase === 'analyzing') { timeoutRef.current = setTimeout(() => setPhase('result'),    2800); }
-    if (phase === 'result')    { timeoutRef.current = setTimeout(() => setPhase('photo'),     4500); }
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [phase]);
-
-  const items = [
-    { desc: 'Remove & dispose damaged section', qty: 1, amount: 280 },
-    { desc: 'New cedar fence post — 4×4×8',    qty: 2, amount: 90  },
-    { desc: 'Fence panel replacement — 6ft',   qty: 1, amount: 180 },
-    { desc: 'Concrete footings',                qty: 2, amount: 70  },
-    { desc: 'Labor — installation',             qty: 3, amount: 285 },
-  ];
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-violet-500" />
-          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">AI Quote Generator</span>
-        </div>
-        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
-          phase === 'analyzing' ? 'bg-amber-100 text-amber-700 animate-pulse' :
-          phase === 'result'    ? 'bg-emerald-100 text-emerald-700' :
-                                  'bg-slate-100 text-slate-500'
-        }`}>
-          {phase === 'photo' ? 'Ready' : phase === 'analyzing' ? 'Analyzing...' : 'Quote ready'}
-        </span>
-      </div>
-      <div className="relative">
-        <img
-          src="/images/fence-damage.png"
-          alt="Damaged fence"
-          className={`w-full h-40 object-cover transition-all duration-500 ${phase === 'analyzing' ? 'brightness-75' : ''}`}
-        />
-        {phase === 'analyzing' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <Loader2 className="w-8 h-8 text-white animate-spin" />
-            <p className="text-white text-xs font-bold">Reading photo...</p>
-          </div>
-        )}
-        {phase === 'photo' && (
-          <div className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-            <Camera size={10} /> Customer uploaded
-          </div>
-        )}
-        {phase === 'result' && (
-          <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">✓ Analyzed</div>
-        )}
-      </div>
-      <div className={`transition-all duration-500 ${phase === 'result' ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="px-4 py-2 bg-violet-50 border-b border-violet-100">
-          <p className="text-[10px] font-black text-violet-700 flex items-center gap-1.5">
-            <Bot size={11} /> AI detected: post rot + panel damage
-          </p>
-        </div>
-        <div className="divide-y divide-slate-50">
-          {items.map((item, i) => (
-            <div key={i} className="px-4 py-2 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200 flex-shrink-0 flex items-center justify-center">
-                  <Check size={8} className="text-emerald-600" strokeWidth={3} />
-                </div>
-                <span className="text-[11px] text-slate-700 truncate">{item.desc}</span>
-              </div>
-              <span className="text-[11px] font-black text-slate-900 shrink-0">${item.amount}</span>
-            </div>
-          ))}
-        </div>
-        <div className="px-4 py-3 bg-slate-900 flex items-center justify-between">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</span>
-          <span className="text-lg font-black text-white">$905</span>
-        </div>
-      </div>
-      {phase !== 'result' && (
-        <div className="h-32 flex items-center justify-center">
-          <p className="text-xs text-slate-300 font-medium">
-            {phase === 'photo' ? 'Waiting for AI analysis...' : 'Generating line items...'}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── INTERACTIVE FORM PREVIEW ─────────────────────────────────────────────────
 function InteractiveFormPreview() {
@@ -304,6 +215,89 @@ function InteractiveFormPreview() {
         </div>
       </div>
     </section>
+  );
+}
+
+function DailyDigestPreview() {
+  return (
+<div style={{ background: '#f1f5f9', padding: '14px 12px', borderRadius: '12px' }}>
+      <div style={{ background: '#ffffff', borderRadius: '12px', overflow: 'hidden', maxWidth: '540px', margin: '0 auto', border: '0.5px solid #e2e8f0' }}>
+
+        {/* Header */}
+<div style={{ background: '#0f172a', padding: '16px 20px' }}>
+          <p style={{ margin: '0 0 3px', color: '#94a3b8', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Monday, March 24</p>
+          <h2 style={{ margin: 0, color: '#ffffff', fontSize: '18px', fontWeight: 700 }}>Good morning — here's your day</h2>
+          <p style={{ margin: '5px 0 0', color: '#64748b', fontSize: '13px' }}>Torres Roofing &amp; Construction · 5 items need attention</p>
+        </div>
+
+<div style={{ padding: '16px 20px' }}>
+
+          {/* Today's Jobs */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '8px', borderBottom: '2px solid #22c55e40', marginBottom: '10px' }}>
+              <span style={{ fontSize: '15px' }}>📅</span>
+              <span style={{ color: '#16a34a', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.6px' }}>
+                Today's Jobs <span style={{ fontWeight: 400, color: '#94a3b8' }}>(2)</span>
+              </span>
+            </div>
+            {[
+              { name: 'Michael Johnson', meta: '· Roofing', right: '9:00 AM · Carlos T.' },
+              { name: 'Sarah Kim', meta: '· Renovation', right: '1:30 PM · Unassigned' },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderBottom: i === 0 ? '0.5px solid #f1f5f9' : 'none', background: '#f8fafc', fontSize: '13px' }}>
+                <div><span style={{ color: '#334155', fontWeight: 500 }}>{r.name}</span><span style={{ color: '#94a3b8', marginLeft: '4px' }}>{r.meta}</span></div>
+                <span style={{ color: '#64748b', whiteSpace: 'nowrap' as const }}>{r.right}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Overdue Payments */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '8px', borderBottom: '2px solid #ef444430', marginBottom: '10px' }}>
+              <span style={{ fontSize: '15px' }}>🔴</span>
+              <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.6px' }}>
+                Overdue Payments <span style={{ fontWeight: 400, color: '#94a3b8' }}>(2)</span>
+              </span>
+            </div>
+            {[
+              { name: 'Robert Torres', meta: '#21', amount: '$1,475', due: 'due Mar 18' },
+              { name: 'Lisa Morgan', meta: '#30', amount: '$3,100', due: 'due Mar 20' },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderBottom: i === 0 ? '0.5px solid #fee2e2' : 'none', background: '#fff5f5', fontSize: '13px' }}>
+                <div><span style={{ color: '#334155', fontWeight: 500 }}>{r.name}</span><span style={{ color: '#94a3b8', marginLeft: '4px' }}>{r.meta}</span></div>
+                <span style={{ whiteSpace: 'nowrap' as const, color: '#64748b' }}><span style={{ color: '#ef4444', fontWeight: 600 }}>{r.amount}</span> · {r.due}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Quote Follow-up */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '8px', borderBottom: '2px solid #eab30830', marginBottom: '10px' }}>
+              <span style={{ fontSize: '15px' }}>📬</span>
+              <span style={{ color: '#d97706', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.6px' }}>
+                Quote Follow-up <span style={{ fontWeight: 400, color: '#94a3b8' }}>(1)</span>
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', fontSize: '13px' }}>
+              <div><span style={{ color: '#334155', fontWeight: 500 }}>David Chen</span><span style={{ color: '#94a3b8', marginLeft: '4px' }}>#27 · Electrical</span></div>
+              <span style={{ color: '#64748b', whiteSpace: 'nowrap' as const }}>$2,450 · sent Mar 19</span>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center' as const, marginTop: '20px', paddingTop: '20px', borderTop: '0.5px solid #e2e8f0' }}>
+            <span style={{ display: 'inline-block', background: '#6366f1', color: '#ffffff', padding: '12px 28px', borderRadius: '8px', fontWeight: 600, fontSize: '14px' }}>
+              Open Dashboard →
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ background: '#f8fafc', padding: '14px 28px', borderTop: '0.5px solid #e2e8f0', textAlign: 'center' as const, fontSize: '12px', color: '#94a3b8' }}>
+          Torres Roofing &amp; Construction · Daily Digest
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -533,11 +527,11 @@ export default function Home() {
   <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full" />
   <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full" />
 
-  <div className="max-w-6xl mx-auto relative z-10">
+ <div className="max-w-6xl mx-auto relative z-10">
     <div className="grid lg:grid-cols-2 gap-16 items-center">
-      <div className="order-2 lg:order-1">
-        <AIQuoteMockup />
-      </div>
+      <div className="order-2 lg:order-1 relative">
+  <DailyDigestPreview />
+</div>
       <div className="order-1 lg:order-2">
         <span className="text-blue-400 font-black uppercase tracking-[0.25em] text-[10px] border border-blue-400/30 px-3 py-1 rounded-full bg-blue-400/5">The AI Edge</span>
         <h2 className="text-4xl md:text-5xl font-black text-white mt-6 mb-6 leading-tight">

@@ -7,7 +7,7 @@ import {
   Inbox, Send, Sparkles, LayoutGrid, List, ArrowRight,
   Check, MapPin, Phone, Mail, Calendar, Clock, FileText,
   DollarSign, Camera, Bot, AlertCircle, ChevronRight,
-  Zap, Eye, Lock,
+  Zap, Eye, Lock, User, ArrowLeft
 } from 'lucide-react';
 
 
@@ -122,158 +122,312 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── LEAD DETAIL MODAL ────────────────────────────────────────────────────────
 function LeadModal({ lead, onClose }: { lead: any; onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'ai'>('overview');
+const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'activity' | 'ai'>('overview');
+  const tabs = [
+    { id: 'overview', label: 'Overview', show: true },
+    { id: 'schedule', label: 'Schedule', show: true },
+    { id: 'quote', label: 'Quote', show: true },
+    { id: 'payment', label: 'Payment', show: true },
+    { id: 'tasks', label: 'Tasks', show: true },
+    { id: 'activity', label: 'Activity', show: true },
+      { id: 'ai', label: '✦ AI Brief', show: true },
+
+  ];
+
+  const fmt = (n: string | number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(Number(n));
+
+  const statusHex: Record<string, string> = {
+    new: '#3b82f6', contacted: '#eab308', quoted: '#a855f7',
+    scheduled: '#10b981', 'in-progress': '#f97316', completed: '#22c55e',
+    cancelled: '#ef4444',
+  };
+  const hex = statusHex[lead.status] || '#3b82f6';
+
+  const statusLabel: Record<string, string> = {
+    new: 'New', contacted: 'Contacted', quoted: 'Quoted',
+    scheduled: 'Scheduled', 'in-progress': 'In Progress',
+    completed: 'Completed', cancelled: 'Cancelled',
+  };
+
+  const LockedTab = () => (
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Lock className="w-7 h-7 text-indigo-400" />
+      </div>
+      <p className="font-black text-gray-800 text-lg mb-1">Unlock This Feature</p>
+      <p className="text-sm text-gray-400 mb-6 max-w-xs">
+        Sign up free to use scheduling, quotes, payments, tasks, and more — all in one place.
+      </p>
+      <Link
+        href="/signup"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
+      >
+        Start Free Trial <ArrowRight className="w-4 h-4" />
+      </Link>
+<p className="mt-3 text-xs text-gray-400">14-day free trial · Cancel anytime</p>    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-      <div className="bg-white w-full max-w-2xl sm:rounded-[2rem] h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full sm:max-w-4xl sm:rounded-2xl shadow-2xl flex flex-col"
+        style={{ maxHeight: '95vh', height: '95vh' }}
+        onClick={e => e.stopPropagation()}
+      >
 
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <StatusBadge status={lead.status} />
-              <span className="text-[10px] text-gray-400 font-medium">{lead.category}</span>
+        {/* ── HERO HEADER (matches real modal) ── */}
+        <div className="flex-shrink-0 relative overflow-hidden" style={{ background: '#312e81' }}>
+          <div className="relative z-10 p-4 sm:p-6 pb-0">
+
+            {/* Top row */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0 mr-4">
+                <div className="mb-2">
+                  <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Lead</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight truncate">
+                  {lead.name}
+                </h2>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Submitted {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center transition"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+              >
+                <X className="w-4 h-4 text-white/60" />
+              </button>
             </div>
-            <h2 className="text-xl font-black text-gray-900">{lead.name}</h2>
-            <p className="text-sm text-gray-400 mt-0.5">{timeAgo(lead.created_at)}</p>
+
+            {/* Status + chips */}
+            <div className="flex items-center gap-2 flex-wrap mb-4">
+              <span
+                className="appearance-none pl-3 pr-3 py-1.5 text-xs font-bold"
+                style={{ background: `${hex}25`, color: hex, border: `1px solid ${hex}40` }}
+              >
+                {statusLabel[lead.status] || 'New'}
+              </span>
+
+              {lead.scheduled_date ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold"
+                  style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc' }}>
+                  <Calendar className="w-3 h-3" />
+                  {new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {lead.scheduled_time && ` · ${lead.scheduled_time}`}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.35)' }}>
+                  <Calendar className="w-3 h-3" /> Not scheduled
+                </div>
+              )}
+
+              {lead.assigned_to && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)' }}>
+                  <User className="w-3 h-3" /> {lead.assigned_to}
+                </div>
+              )}
+
+              {lead.quote_total && (
+                <div className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold ${
+                  lead.payment_status === 'paid'
+                    ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
+                    : 'text-white/50'
+                }`}
+                  style={lead.payment_status !== 'paid' ? { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' } : {}}
+                >
+                  {lead.payment_status === 'paid'
+                    ? `✓ Paid — ${fmt(lead.quote_total)}`
+                    : `${fmt(lead.quote_total)} due`}
+                </div>
+              )}
+            </div>
+
+            {/* Tab bar */}
+            <div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
+                  style={{
+                    color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.4)',
+                    borderBottomColor: activeTab === tab.id ? '#a5b4fc' : 'transparent',
+                    background: 'transparent',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-100 px-6">
-          {[{ id: 'overview', label: 'Overview' }, { id: 'ai', label: '✦ AI Brief' }].map(t => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-4 text-sm font-bold border-b-2 transition -mb-px ${activeTab === t.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {/* ── BODY ── */}
+        <div className="flex-1 overflow-y-auto" style={{ background: '#f6f6fa' }}>
+          <div className="p-4 sm:p-6 space-y-4">
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {activeTab === 'overview' && (
-            <>
-              {/* Contact */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { icon: <Mail className="w-4 h-4 text-blue-500" />, label: 'Email', value: lead.email },
-                  { icon: <Phone className="w-4 h-4 text-green-500" />, label: 'Phone', value: lead.phone },
-                  { icon: <MapPin className="w-4 h-4 text-red-500" />, label: 'Address', value: lead.address_line_1 ? `${lead.address_line_1}, ${lead.city}` : 'Not provided' },
-                ].map(item => (
-                  <div key={item.label} className="bg-gray-50 rounded-xl p-3">
-                    <div className="flex items-center gap-1.5 mb-1">{item.icon}<span className="text-[10px] font-bold text-gray-400 uppercase">{item.label}</span></div>
-                    <p className="text-sm font-semibold text-gray-800 truncate">{item.value}</p>
+            {/* OVERVIEW TAB */}
+            {activeTab === 'overview' && (
+              <>
+                {/* Client card */}
+                <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-50">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Client Info</h3>
                   </div>
-                ))}
-              </div>
+                  <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Name</p><p className="text-sm font-semibold text-gray-900">{lead.name}</p></div>
+                    <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Email</p><p className="text-sm font-semibold text-indigo-600 truncate">{lead.email}</p></div>
+                    <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Phone</p><p className="text-sm font-semibold text-indigo-600">{lead.phone}</p></div>
+                    {lead.address_line_1 && (
+                      <div className="col-span-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Address</p>
+                        <p className="text-sm font-semibold text-gray-900">{lead.address_line_1}, {lead.city}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-600">
+                        {lead.category}
+                      </span>
+                    </div>
+                  </div>
 
-              {/* Description */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Project Description</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{lead.description}</p>
-              </div>
-
-              {/* Photos */}
-              {lead.file_urls?.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Attachments ({lead.file_urls.length})</p>
-                  <div className="flex gap-2">
-                    {lead.file_urls.map((f: string, i: number) => (
-                      <div key={i} className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center border border-indigo-200">
-                        {f.includes('video') ? <span className="text-lg">🎥</span> : <Camera className="w-5 h-5 text-indigo-400" />}
+                  {/* Action buttons */}
+                  <div className="flex gap-2 px-5 pb-4">
+                    {[
+                      { icon: <Mail className="w-4 h-4" />, label: 'Email', color: '#3b82f6' },
+                      { icon: <Phone className="w-4 h-4" />, label: 'Call', color: '#22c55e' },
+                      { icon: <MapPin className="w-4 h-4" />, label: 'Directions', color: '#ef4444' },
+                    ].map(btn => (
+                      <div key={btn.label}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-100 bg-gray-50 rounded-none"
+                      >
+                        <span style={{ color: btn.color }}>{btn.icon}</span>
+                        <span className="text-xs font-semibold text-gray-600">{btn.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-              )}
 
-              {/* Quote */}
-              {lead.quote_total && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Quote Sent</p>
-                    <p className="text-2xl font-black text-emerald-700">{fmt(lead.quote_total)}</p>
+                {/* Description */}
+                <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-50">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Customer's Message</h3>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-600 text-white' : lead.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-white text-gray-500 border border-gray-200'}`}>
-                    {lead.payment_status === 'paid' ? '✓ Paid' : lead.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                  </span>
-                </div>
-              )}
-
-              {/* Scheduled */}
-              {lead.scheduled_date && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-blue-500" />
-                  <div>
-                    <p className="text-[10px] font-bold text-blue-600 uppercase">Scheduled</p>
-                    <p className="text-sm font-bold text-blue-800">{new Date(lead.scheduled_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}{lead.scheduled_time && ` at ${lead.scheduled_time}`}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Demo actions banner */}
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3">
-                <Lock className="w-5 h-5 text-indigo-400 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-indigo-800">This is a live demo</p>
-                  <p className="text-xs text-indigo-600">Sign up to send quotes, schedule jobs, collect payment, and more.</p>
-                </div>
-                <Link href="/signup" className="shrink-0 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition">
-                  Try Free
-                </Link>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'ai' && (
-            <div>
-              {lead.ai_brief ? (
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl p-5 border border-indigo-700/40">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Bot className="w-4 h-4 text-indigo-300" />
-                      <span className="text-sm font-bold text-white">AI Summary</span>
-                      {lead.ai_brief.urgency === 'high' && (
-                        <span className="text-[9px] font-bold px-2 py-0.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-full uppercase ml-auto">High Priority</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-300 leading-relaxed">{lead.ai_brief.summary}</p>
-                  </div>
-                  {lead.ai_brief.next_steps && (
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Recommended Next Steps</p>
-                      <div className="space-y-2">
-                        {lead.ai_brief.next_steps.map((step: string, i: number) => (
-                          <div key={i} className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
-                            <span className="text-emerald-500 font-black text-sm">→</span>
-                            <span className="text-sm font-medium text-gray-800">{step}</span>
-                          </div>
-                        ))}
+                  <div className="p-5">
+                    <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
+                    {lead.file_urls?.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{lead.file_urls.length} Photos Submitted</p>
+                        <div className="flex gap-2">
+                          {lead.file_urls.slice(0, 4).map((_: any, i: number) => (
+                            <div key={i} className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-none border border-indigo-200 flex items-center justify-center">
+                              <Camera className="w-4 h-4 text-indigo-400" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="w-7 h-7 text-indigo-400" />
+                    )}
                   </div>
-                  <p className="font-bold text-gray-800 mb-1">AI Brief Available on Pro</p>
-                  <p className="text-sm text-gray-400 mb-4">Every lead gets an AI summary — scope, urgency, and next steps.</p>
-                  <Link href="/signup?plan=pro" className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition">
-                    Upgrade to Pro <ArrowRight className="w-4 h-4" />
+                </div>
+
+                {/* Demo CTA */}
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3">
+                  <Lock className="w-5 h-5 text-indigo-400 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-indigo-800">This is a live demo</p>
+                    <p className="text-xs text-indigo-600">Sign up to send quotes, schedule jobs, collect payment, and more.</p>
+                  </div>
+                  <Link href="/signup" className="shrink-0 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition">
+                    Try Free
                   </Link>
                 </div>
-              )}
-            </div>
+              </>
+            )}
+
+           {/* AI BRIEF — show real data if available, else locked */}
+{activeTab === 'ai' && (
+  lead.ai_brief ? (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl p-5 border border-indigo-700/40">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-indigo-300" />
+          <span className="text-sm font-bold text-white">AI Summary</span>
+          {lead.ai_brief.urgency === 'high' && (
+            <span className="text-[9px] font-bold px-2 py-0.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-full uppercase ml-auto">High Priority</span>
           )}
         </div>
+        <p className="text-sm text-slate-300 leading-relaxed">{lead.ai_brief.summary}</p>
+      </div>
+      {lead.ai_brief.next_steps && (
+        <div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Recommended Next Steps</p>
+          <div className="space-y-2">
+            {lead.ai_brief.next_steps.map((step: string, i: number) => (
+              <div key={i} className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                <span className="text-emerald-500 font-black text-sm">→</span>
+                <span className="text-sm font-medium text-gray-800">{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Upsell below the real data */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3">
+        <Sparkles className="w-5 h-5 text-indigo-400 shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-bold text-indigo-800">Every lead gets a brief like this</p>
+          <p className="text-xs text-indigo-600">Sign up to generate AI briefs with photo analysis, urgency scoring, and next steps.</p>
+        </div>
+        <Link href="/signup" className="shrink-0 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition">
+          Try Free
+        </Link>
+      </div>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Sparkles className="w-7 h-7 text-indigo-400" />
+      </div>
+      <p className="font-black text-gray-800 text-lg mb-1">AI Brief</p>
+      <p className="text-sm text-gray-400 mb-6 max-w-xs">
+        Every lead gets an AI summary — scope, urgency, and next steps. Sign up to unlock.
+      </p>
+      <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+        Start Free Trial <ArrowRight className="w-4 h-4" />
+      </Link>
+      <p className="mt-3 text-xs text-gray-400">14-day free trial · Cancel anytime</p>
+    </div>
+  )
+)}
+
+{/* ALL OTHER TABS — locked */}
+{activeTab !== 'overview' && activeTab !== 'ai' && <LockedTab />}
+
+          </div>
+        </div>
+
+        {/* ── FOOTER ── */}
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-t border-gray-100 flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 py-3 border-2 border-gray-100 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition">
+            Close
+          </button>
+          <Link href="/signup"
+            className="flex-[2] py-3 text-sm font-bold text-white text-center transition flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            Start Free Trial <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
       </div>
     </div>
   );
@@ -285,6 +439,7 @@ export default function DemoPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+    const [showAiNudge, setShowAiNudge] = useState(false); // ← add here
 
   const filtered = useMemo(() =>
     DEMO_LEADS.filter(l => {
@@ -310,13 +465,19 @@ export default function DemoPage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
 
       {/* Demo banner */}
-      <div className="bg-indigo-600 px-4 py-2.5 flex items-center justify-center gap-3">
-        <Eye className="w-4 h-4 text-indigo-200 shrink-0" />
-        <p className="text-sm font-bold text-white">You're viewing a live demo — data is read-only</p>
-        <Link href="/signup" className="ml-2 px-4 py-1.5 bg-white text-indigo-600 text-xs font-black rounded-full hover:bg-indigo-50 transition shrink-0">
-          Start Free Trial →
-        </Link>
-      </div>
+     <div className="bg-indigo-600 px-4 py-2.5 flex items-center justify-between gap-3">
+  <Link href="/" className="flex items-center gap-1.5 text-indigo-200 hover:text-white text-xs font-bold transition shrink-0">
+    <ArrowLeft className="w-3.5 h-3.5" /> Home
+  </Link>
+  <div className="flex items-center gap-2">
+    <Eye className="w-4 h-4 text-indigo-200 shrink-0" />
+    <p className="text-sm font-bold text-white hidden sm:block">You're viewing a live demo — data is read-only</p>
+    <p className="text-sm font-bold text-white sm:hidden">Live Demo</p>
+  </div>
+  <Link href="/signup" className="px-4 py-1.5 bg-white text-indigo-600 text-xs font-black rounded-full hover:bg-indigo-50 transition shrink-0">
+    Start Free Trial →
+  </Link>
+</div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
 
@@ -563,6 +724,38 @@ export default function DemoPage() {
 
       {/* Lead modal */}
       {selectedLead && <LeadModal lead={selectedLead} onClose={() => setSelectedLead(null)} />}
+        {/* AI Chat Button — locked */}
+<div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-3">
+  {showAiNudge && (
+    <div className="bg-white rounded-2xl shadow-2xl border border-indigo-100 p-4 w-64 animate-in slide-in-from-bottom-2 duration-200">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+          <Sparkles className="w-4 h-4 text-indigo-600" />
+        </div>
+        <div>
+          <p className="text-sm font-black text-gray-900 mb-0.5">AI Assistant</p>
+          <p className="text-xs text-gray-500 leading-relaxed">Ask anything about your leads, jobs, and revenue. Sign up to unlock.</p>
+        </div>
+      </div>
+      <Link
+        href="/signup"
+        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition"
+      >
+        Try Free <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
+  )}
+  <button
+    onClick={() => setShowAiNudge(v => !v)}
+    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+    style={{
+      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+      boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
+    }}
+  >
+    <Sparkles className="w-6 h-6 text-white" />
+  </button>
+</div>
     </div>
   );
 }
