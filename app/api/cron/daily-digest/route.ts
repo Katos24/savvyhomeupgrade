@@ -15,11 +15,14 @@ export async function GET(request: NextRequest) {
     console.log('📧 Starting daily digest...');
 
     const companies = await sql`
-      SELECT id, name, slug, email, reminder_settings, notification_preferences
-      FROM companies
-      WHERE daily_digest_enabled = true
-        AND subscription_status IN ('active', 'trialing')
-    `;
+  SELECT id, name, slug, email, reminder_settings, notification_preferences
+  FROM companies
+  WHERE (
+    daily_digest_enabled = true
+    OR (notification_preferences->'daily_digest'->>'enabled')::boolean = true
+  )
+  AND subscription_status IN ('active', 'trialing')
+`;
 
     console.log(`📊 ${companies.length} companies have daily digest enabled`);
 

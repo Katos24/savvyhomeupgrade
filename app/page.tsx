@@ -7,7 +7,9 @@ import {
   MapPin, Calendar, HelpCircle, Image as ImageIcon,
   ChevronRight, User, Mail, Phone, Building, FileText,
   CheckCircle, Bot, BarChart2, Link2, Camera,
-  Sparkles, Send, Loader2,
+  Sparkles, Send, Loader2, Clock9,
+  Settings2, XCircle, CheckCircle2,
+  QrCode
 } from 'lucide-react';
 
 // ─── FORM FILLING DEMO ────────────────────────────────────────────────────────
@@ -407,95 +409,167 @@ export default function Home() {
         )}
       </nav>
 
-      {/* HERO */}
-      <header className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 border border-blue-100">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
-          </span>
-          Built for Service Contractors
-        </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.08] tracking-tight mb-4">
-          Every job. Every customer.<br/>
-          <span className="text-blue-600">One place.</span>
-        </h1>
-        <p className="text-xl md:text-2xl text-slate-500 mb-3 max-w-xl mx-auto font-medium">
-          Year-end used to be chaos. Not anymore.
-        </p>
-        <p className="text-base text-slate-400 mb-10 max-w-lg mx-auto leading-relaxed">
-          Share one link. Customers submit their job details, photos, and videos. Everything lands on your board — organized, tracked, ready to close.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-          <Link href="/signup" className="w-full sm:w-auto bg-slate-900 text-white px-8 py-5 rounded-2xl text-lg font-bold shadow-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 group">
-            Get Your Link <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition"/>
-          </Link>
-          <Link href="/demo" className="w-full sm:w-auto bg-white border border-slate-200 text-slate-900 px-8 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
-            <Eye className="w-5 h-5" /> See Live Demo
-          </Link>
-        </div>
-        <p className="text-xs text-slate-400 uppercase tracking-widest font-medium">
-          14-day free trial · Cancel anytime · 2 min setup
-        </p>
-      </header>
+{/* HERO */}
+<header className="pt-24 pb-16 px-6 text-center max-w-6xl mx-auto">
+  <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 border border-slate-800 shadow-lg">
+    <Sparkles className="w-4 h-4 text-blue-400" />
+    <span>Your Office on Autopilot</span>
+  </div>
+  
+  <h1 className="text-6xl md:text-8xl font-extrabold text-slate-900 leading-[0.95] tracking-tighter mb-6 text-balance">
+    Everything In One Place.<br/>
+    <span className="text-blue-600 font-black text-shadow-sm">Finally.</span>
+  </h1>
+  
+  <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto font-medium leading-snug">
+    Get a professional dashboard and a custom QR code for your customers. Stop the phone tag—let clients submit requests directly into your 6AM daily briefing.
+  </p>
+  
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+    <Link href="/signup" className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl text-lg font-black shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+      Get My Free QR Code <ArrowRight size={20}/>
+    </Link>
+    <Link href="/demo" className="w-full sm:w-auto bg-white border-2 border-slate-200 text-slate-900 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition">
+      View The Dashboard
+    </Link>
+  </div>
 
-      {/* ── THE FLOW ── */}
-      <section id="the-flow" className="py-24 px-6 bg-white border-t border-slate-100">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">The Flow</p>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
-              From "can you help?" to <span className="text-blue-600">booked.</span>
-            </h2>
+  {/* THE HERO IMAGE / DASHBOARD PREVIEW */}
+  <div className="relative mt-12 mx-auto max-w-5xl group">
+    <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
+    <div className="relative bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden">
+      {/* PRO TIP: For this image, show your dashboard on the screen 
+        with a smartphone floating next to it showing the QR code 
+        on a truck magnet or a business card.
+      */}
+      <img 
+        src="/images/dashboard-screenshot.png" 
+        alt="Lead2Project One-Place Dashboard" 
+        className="w-full object-cover shadow-inner"
+      />
+    </div>
+  </div>
+
+  {/* THE "ALL IN ONE PLACE" STAT BAR */}
+  <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-slate-100 pt-12">
+    <div className="flex flex-col items-center md:items-start text-center md:text-left">
+      <div className="bg-blue-50 p-2 rounded-lg mb-4 text-blue-600 font-black uppercase text-[10px] tracking-widest border border-blue-100">
+        Customer Intake
+      </div>
+      <h4 className="text-slate-900 font-black text-xl">Custom QR Codes</h4>
+      <p className="text-slate-500 text-sm font-medium mt-2">Slap it on your truck or cards. Customers scan, fill the info, and it hits your dashboard instantly.</p>
+    </div>
+    
+    <div className="flex flex-col items-center md:items-start text-center md:text-left">
+       <div className="bg-blue-50 p-2 rounded-lg mb-4 text-blue-600 font-black uppercase text-[10px] tracking-widest border border-blue-100">
+        Daily Command
+      </div>
+      <h4 className="text-slate-900 font-black text-xl">Your Daily Digest</h4>
+      <p className="text-slate-500 text-sm font-medium mt-2">Every morning at 6AM, get one email with every new request, overdue payment, and today's schedule.</p>
+    </div>
+    
+    <div className="flex flex-col items-center md:items-start text-center md:text-left">
+       <div className="bg-blue-50 p-2 rounded-lg mb-4 text-blue-600 font-black uppercase text-[10px] tracking-widest border border-blue-100">
+        Full Tracking
+      </div>
+      <h4 className="text-slate-900 font-black text-xl">One Central Inbox</h4>
+      <p className="text-slate-500 text-sm font-medium mt-2">No more sticky notes or unread texts. Track every lead and every dollar in your personal command center.</p>
+    </div>
+  </div>
+</header>
+
+      {/* ── THE FLOW: THE MODERN FRONT DOOR ── */}
+<section id="the-flow" className="py-24 px-6 bg-white border-t border-slate-100">
+  <div className="max-w-6xl mx-auto text-center mb-16">
+    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600 mb-3">The Workflow</p>
+    <h2 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
+      Capture leads while <span className="text-blue-600 font-black">you sleep.</span>
+    </h2>
+  </div>
+  
+  <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 items-start">
+    {/* Step 1: QR & Branding */}
+    <div className="group">
+      <div className="relative rounded-[2.5rem] overflow-hidden mb-6 aspect-square shadow-lg group-hover:shadow-2xl transition-all">
+        <img src="/images/qr-scan.png" alt="QR" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
+        <div className="absolute top-6 left-6 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20">
+          <span className="text-white font-black text-xl">1</span>
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-2 text-center">Your Branded QR</h3>
+      <p className="text-slate-500 text-sm text-center font-medium px-4">Stick it on your truck or lawn signs. One scan opens your custom form—no app download required.</p>
+    </div>
+
+    {/* Step 2: Custom Data Capture */}
+    <div className="group">
+      <div className="relative rounded-[2.5rem] overflow-hidden mb-6 aspect-square bg-slate-900 flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all">
+        <div className="absolute top-6 left-6 w-12 h-12 bg-slate-700 rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/10 z-10">
+          <span className="text-white font-black text-xl">2</span>
+        </div>
+        <div className="scale-90"><FormFillingDemo /></div>
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-2 text-center">They Feed the AI</h3>
+      <p className="text-slate-500 text-sm text-center font-medium px-4">Customers choose their category, upload photos, and answer your specific custom questions instantly.</p>
+    </div>
+
+    {/* Step 3: AI Output */}
+    <div className="group">
+      <div className="relative rounded-[2.5rem] overflow-hidden mb-6 aspect-square shadow-lg group-hover:shadow-2xl transition-all">
+        <img src="/images/dashboard-jobsite.png" alt="Dashboard" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
+        <div className="absolute top-6 left-6 w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20">
+          <span className="text-white font-black text-xl">3</span>
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-2 text-center">You Quote & Close</h3>
+      <p className="text-slate-500 text-sm text-center font-medium px-4">AI generates the line items. You review the brief and send the quote with one tap. Job done.</p>
+    </div>
+  </div>
+</section>
+
+
+{/* ── THE ADVANTAGE: WHY WE BEAT THE LEGACY APPS ── */}
+<section className="py-24 px-6 bg-slate-950 relative overflow-hidden">
+  {/* Modern Glow Effect */}
+  <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full" />
+  <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full" />
+
+  <div className="max-w-6xl mx-auto relative z-10">
+    <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <div className="order-2 lg:order-1">
+        <AIQuoteMockup />
+      </div>
+      <div className="order-1 lg:order-2">
+        <span className="text-blue-400 font-black uppercase tracking-[0.25em] text-[10px] border border-blue-400/30 px-3 py-1 rounded-full bg-blue-400/5">The AI Edge</span>
+        <h2 className="text-4xl md:text-5xl font-black text-white mt-6 mb-6 leading-tight">
+          Your Office on <span className="text-blue-500">Autopilot.</span>
+        </h2>
+        <div className="space-y-8">
+          <div className="flex gap-4">
+             <div className="p-3 bg-white/5 rounded-2xl h-fit border border-white/10 text-blue-400"><Clock9 size={24}/></div>
+             <div>
+               <h4 className="text-white font-bold text-lg">Morning Daily Digest</h4>
+               <p className="text-slate-400 text-sm">Every morning at 6AM, get a summary of your leads, today's schedule, and payment status before you leave for the first job.</p>
+             </div>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 items-start">
-
-            {/* Step 1 */}
-            <div className="flex flex-col">
-              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square">
-                <img src="/images/qr-scan.png" alt="Customer scanning QR code on contractor truck" className="w-full h-full object-cover"/>
-                <div className="absolute top-4 left-4 w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl">
-                  <span className="text-white font-black text-lg">1</span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5">
-                  <p className="text-white font-bold text-sm">They scan or click</p>
-                  <p className="text-white/70 text-xs mt-0.5">QR on your truck, link in your bio — no app needed</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2 — isolated form */}
-            <div className="flex flex-col">
-              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-                <div className="absolute top-4 left-4 w-10 h-10 bg-slate-700 border-2 border-white/20 rounded-2xl flex items-center justify-center shadow-xl z-10">
-                  <span className="text-white font-black text-lg">2</span>
-                </div>
-                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
-                <FormFillingDemo />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-5">
-                  <p className="text-white font-bold text-sm">They submit their job</p>
-                  <p className="text-white/70 text-xs mt-0.5">Details, photos, videos — straight to your board</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col">
-              <div className="relative rounded-3xl overflow-hidden mb-5 aspect-square">
-                <img src="/images/dashboard-jobsite.png" alt="Contractor viewing dashboard on job site" className="w-full h-full object-cover"/>
-                <div className="absolute top-4 left-4 w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center shadow-xl">
-                  <span className="text-white font-black text-lg">3</span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5">
-                  <p className="text-white font-bold text-sm">You quote and close</p>
-                  <p className="text-white/70 text-xs mt-0.5">Quote, schedule, collect payment — from your phone</p>
-                </div>
-              </div>
-            </div>
-
+          <div className="flex gap-4">
+             <div className="p-3 bg-white/5 rounded-2xl h-fit border border-white/10 text-emerald-400"><Mail size={24}/></div>
+             <div>
+               <h4 className="text-white font-bold text-lg">Branded Email Automations</h4>
+               <p className="text-slate-400 text-sm">Professional templates for quotes and reminders. 1-click outbox lets you verify exactly what was sent and when.</p>
+             </div>
+          </div>
+          <div className="flex gap-4">
+             <div className="p-3 bg-white/5 rounded-2xl h-fit border border-white/10 text-indigo-400"><Settings2 size={24}/></div>
+             <div>
+               <h4 className="text-white font-bold text-lg">Custom Task Templates</h4>
+               <p className="text-slate-400 text-sm">Assign specific labor costs and materials to categories. AI uses <strong>your</strong> pricing to build quotes, not generic averages.</p>
+             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
 
   {/* ── DASHBOARD CAPABILITIES ── */}
 <section id="capabilities" className="py-24 px-6 bg-slate-900">
@@ -561,8 +635,11 @@ export default function Home() {
         <div className="order-2 md:order-1">
           <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-4">AI Quote Generator</p>
           <h3 className="text-3xl font-extrabold text-white mb-4 leading-tight">
-            Build quotes in seconds.<br/>AI does the heavy lifting.
-          </h3>
+  The End of Blank-Page<br/>Estimating.
+</h3>
+<p className="text-slate-400 text-base leading-relaxed mb-8">
+  Stop starting from scratch. AI analyzes customer photos to draft your job scope and line items. You keep the final say on every dollar.
+</p>
           <p className="text-slate-400 text-base leading-relaxed mb-8">
             Customer uploads a photo of the damage. AI reads it, generates line items with estimated pricing. You review, adjust, and send — all without leaving the job file.
           </p>
@@ -677,6 +754,58 @@ export default function Home() {
   </div>
 </section>
 
+
+{/* ── THE COMPARISON: WHY WE BEAT THE LEGACY APPS ── */}
+<section className="py-24 px-6 bg-white">
+  <div className="max-w-5xl mx-auto">
+    <div className="text-center mb-16">
+      <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+        Built for the <span className="text-blue-600">Truck</span>,<br/>Not the Office.
+      </h2>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-8">
+      {/* The "Other" Guys */}
+      <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 opacity-80">
+        <h4 className="text-xl font-bold text-slate-400 mb-6 flex items-center gap-2">
+          <XCircle className="w-5 h-5" /> Legacy CRMs (Jobber, etc.)
+        </h4>
+        <ul className="space-y-4">
+          {["Manual data entry for every lead", "Steep learning curve (days of training)", "Overwhelming features you never use", "High monthly cost + hidden fees"].map((item, i) => (
+            <li key={i} className="flex gap-3 text-slate-500 text-sm font-medium">
+              <span className="text-red-400">—</span> {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Lead2Project */}
+      <div className="p-8 rounded-[2rem] bg-blue-600 shadow-2xl shadow-blue-600/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Zap size={120} className="text-white" />
+        </div>
+        <h4 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 text-blue-200" /> Lead2Project
+        </h4>
+        <ul className="space-y-4 relative z-10">
+          {[
+            "Customers enter their own data via QR",
+            "AI-drafted quotes in 60 seconds",
+            "Zero training required. 2-min setup.",
+            "The 6AM Digest keeps you organized"
+          ].map((item, i) => (
+            <li key={i} className="flex gap-3 text-white text-sm font-bold">
+              <span className="text-blue-300">✓</span> {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
       {/* FORM CUSTOMIZER */}
       <div id="form-preview">
         <InteractiveFormPreview/>
@@ -698,6 +827,9 @@ export default function Home() {
           <p className="mt-5 text-xs text-slate-600 uppercase tracking-widest font-medium">14-day free trial · Cancel anytime · 2 min setup</p>
         </div>
       </section>
+
+
+      
 
       {/* FOOTER */}
       <footer className="bg-white border-t border-slate-200 py-16 px-6">

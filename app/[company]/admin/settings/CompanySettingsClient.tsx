@@ -9,6 +9,7 @@ import {
 import QRCodeLib from 'qrcode';
 
 
+
 // Sub-tab imports
 import FormTab from './tabs/FormTab';
 import PipelineTab from './tabs/PipelineTab';
@@ -35,6 +36,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
+
 
   // QR states
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -351,33 +354,69 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             )}
 
             {!isEditing && (
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <button
-                  onClick={() => setShowQrModal(true)}
-                  className="flex items-center gap-2.5 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
-                >
-                  {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
-                  <div className="text-left">
-                    <p className="text-xs font-black text-slate-700 leading-tight">QR Code</p>
-                    <p className="text-[10px] text-slate-400">Tap to download</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                  className="flex-1 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-white bg-indigo-600 px-5 py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? 'Copied!' : 'Copy Booking Link'}
-                </button>
-                <a
-                  href={publicLink}
-                  target="_blank"
-                  className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 px-4 py-3 rounded-xl hover:bg-slate-100 transition border border-slate-100"
-                >
-                  <ExternalLink className="w-4 h-4" /> View
-                </a>
-              </div>
-            )}
+  <div className="grid grid-cols-4 gap-2">
+    {/* QR Code */}
+    <button
+      onClick={() => setShowQrModal(true)}
+      className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
+    >
+      {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
+      <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">QR Code</span>
+    </button>
+
+    {/* Copy */}
+    <button
+      onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="flex flex-col items-center justify-center gap-1.5 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition"
+    >
+      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+      <span className="text-[10px] font-black uppercase tracking-wide">{copied ? 'Copied!' : 'Copy Link'}</span>
+    </button>
+
+    {/* View */}
+<a
+  href={publicLink}
+  target="_blank"
+  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
+>
+  <ExternalLink className="w-5 h-5 text-slate-500" />
+  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">View Form</span>
+</a>
+
+    {/* Daily Digest Toggle */}
+    <button
+      onClick={async () => {
+        const newVal = !digestEnabled;
+        setDigestEnabled(newVal);
+        await fetch(`/api/company/${company.slug}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update-notifications',
+            data: {
+              reminder_settings: company.reminder_settings,
+              notification_preferences: {
+                ...(company.notification_preferences || {}),
+                daily_digest: { enabled: newVal },
+                digest_recipient: 'company',
+              },
+            },
+          }),
+        });
+      }}
+      className={`flex flex-col items-center justify-center gap-1.5 p-3 border rounded-2xl transition-all ${
+        digestEnabled
+          ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+          : 'bg-slate-50 border-slate-100 text-slate-400'
+      }`}
+    >
+      <Mail className={`w-5 h-5 ${digestEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
+      <span className="text-[10px] font-black uppercase tracking-wide">
+        {digestEnabled ? 'Digest On' : 'Digest Off'}
+      </span>
+    </button>
+  </div>
+)}
           </div>
         </section>
 
@@ -392,6 +431,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} />
 <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
 <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
+  <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} />
+
           </div>
         </div>
 
