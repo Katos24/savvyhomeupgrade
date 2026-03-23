@@ -292,6 +292,7 @@ updated.amount = parseFloat(String(updated.quantity || 0)) * parseFloat(String(u
                 leadCategory={lead?.category || ''}
                 leadPhotos={leadPhotos}
                 onAddItems={handleAddItems}
+                companySlug={companySlug}
               />
             </div>
           </div>

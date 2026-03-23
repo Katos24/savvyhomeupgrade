@@ -17,6 +17,8 @@ type AIQuoteGeneratorProps = {
   leadDescription: string;
   leadCategory: string;
   leadPhotos?: string[];           // ← NEW: photo URLs from lead.file_urls
+    companySlug: string;
+
   onAddItems: (items: any[]) => void;
 };
 
@@ -24,6 +26,7 @@ export default function AIQuoteGenerator({
   leadDescription,
   leadCategory,
   leadPhotos = [],
+  companySlug,
   onAddItems,
 }: AIQuoteGeneratorProps) {
   const [generating, setGenerating] = useState(false);
@@ -48,6 +51,7 @@ export default function AIQuoteGenerator({
         body: JSON.stringify({
           description: leadDescription,
           category: leadCategory,
+          company_slug: companySlug,
           photos: validPhotos.slice(0, 6), // send up to 6 photos
         }),
       });

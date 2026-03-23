@@ -90,6 +90,8 @@ export default function AiBriefTab({
           payment_status: lead.payment_status || null,
           internal_notes: lead.project_internal_notes || null,
           company_name: company?.name || null,
+                    company_slug: company?.slug || null,
+
           repeat_customer: relatedLeads.length > 0,
           past_jobs: relatedLeads.map(r => ({
             category: r.category, status: r.status, quote_total: r.quote_total,

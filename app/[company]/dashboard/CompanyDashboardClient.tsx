@@ -433,7 +433,7 @@ useEffect(() => {
         body: JSON.stringify({
           lead_id: null, customer_name: null, description: message,
           category: null, status: null, project_id: null,
-          company_name: company.name, chat_mode: true,
+          company_name: company.name, company_slug: company.slug, chat_mode: true,
           chat_history: updated.slice(-6),
           all_leads_summary: {
             summary: {
