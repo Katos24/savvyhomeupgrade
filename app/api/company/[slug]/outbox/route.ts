@@ -2,6 +2,8 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { can, type PlanTier } from '@/lib/permissions';
+
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -20,13 +22,23 @@ export async function GET(req: Request, { params }: Props) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    const company = await sql`
-      SELECT c.id FROM companies c
-      JOIN users u ON u.company_id = c.id
-      WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
-      LIMIT 1
-    `;
-    if (!company.length) return NextResponse.json({ success: false }, { status: 403 });
+const company = await sql`
+  SELECT c.id, c.plan_tier FROM companies c
+  JOIN users u ON u.company_id = c.id
+  WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
+  LIMIT 1
+`;
+if (!company.length) return NextResponse.json({ success: false }, { status: 403 });
+
+// Server-side plan check
+const dbPlanTier = (company[0].plan_tier ?? 'basic') as PlanTier;
+if (!can(dbPlanTier, 'outbox')) {
+  return NextResponse.json({
+    success: false,
+    error: 'Outbox is available on the Pro plan',
+    upgrade_required: true,
+  }, { status: 403 });
+}
 
     const url = new URL(req.url);
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));

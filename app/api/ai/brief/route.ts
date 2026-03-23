@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { neon } from '@neondatabase/serverless';
+import { can } from '@/lib/permissions';
+import type { PlanTier } from '@/lib/permissions';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,39 +14,44 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     console.log('Generating AI Brief for lead:', body.lead_id);
+const {
+  customer_name,
+  description,
+  category,
+  status,
+  project_id,
+  scheduled_date,
+  scheduled_time,
+  assigned_to,
+  quote_total,
+  payment_amount,
+  payment_status,
+  tasks,
+  internal_notes,
+  company_name,
+  company_slug,
+  repeat_customer,
+  past_jobs,
+  chat_mode,
+  chat_history,
+  all_leads_summary,
+  photos,
+} = body;
 
-    const {
-      customer_name,
-      description,
-      category,
-      status,
-      project_id,
-      scheduled_date,
-      scheduled_time,
-      assigned_to,
-      quote_total,
-      payment_amount,
-      payment_status,
-      tasks,
-      internal_notes,
-      company_name,
-      company_slug, // ← Added for Team Context
-      repeat_customer,
-      past_jobs,
-      chat_mode,
-      chat_history,
-      all_leads_summary,
-      plan_tier,
-      photos,
-    } = body;
-
-    if (plan_tier === 'basic') {
-      return NextResponse.json({
-        success: false,
-        error: 'AI features are available on Pro and Business plans',
-        upgrade_required: true,
-      }, { status: 403 });
-    }
+// ── Server-side plan check — never trust client-sent plan_tier ──
+if (!company_slug) {
+  return NextResponse.json({ success: false, error: 'Missing company_slug' }, { status: 400 });
+}
+const sql = neon(process.env.DATABASE_URL!);
+const rows = await sql`SELECT plan_tier FROM companies WHERE slug = ${company_slug} LIMIT 1`;
+const dbPlanTier = (rows[0]?.plan_tier ?? 'basic') as PlanTier;
+if (!can(dbPlanTier, 'ai_brief')) {
+  return NextResponse.json({
+    success: false,
+    error: 'AI features are available on the Pro plan',
+    upgrade_required: true,
+  }, { status: 403 });
+}
 
     // ── NEW: FETCH TEAM FOR ACTIONABLE UPDATES ──
     let teamListString = "No team members found.";

@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { sendQuoteToCustomer, sendScheduleConfirmation } from '@/lib/email';
+import { can, type PlanTier } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
@@ -467,22 +468,33 @@ await sql`
       return NextResponse.json({ success: true });
     }
 // ==================== SEND QUOTE TO CUSTOMER 📧 ====================
-    else if (action === 'send_quote_to_customer') {
-      console.log('📧 Sending quote to customer via email');
-      
-      const leadCheck = await sql`
-        SELECT l.*, p.quote_data, p.quote_total, c.name as company_name, c.phone as company_phone, c.id as company_id
-        FROM leads l
-        LEFT JOIN projects p ON l.project_id = p.id
-        LEFT JOIN companies c ON l.company_id = c.id
-        WHERE l.id = ${id}
-      `;
+   else if (action === 'send_quote_to_customer') {
+  console.log('📧 Sending quote to customer via email');
+  
+  const leadCheck = await sql`
+    SELECT l.*, p.quote_data, p.quote_total, 
+           c.name as company_name, c.phone as company_phone, 
+           c.id as company_id, c.plan_tier
+    FROM leads l
+    LEFT JOIN projects p ON l.project_id = p.id
+    LEFT JOIN companies c ON l.company_id = c.id
+    WHERE l.id = ${id}
+  `;
 
-      if (!leadCheck[0]) {
-        return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
-      }
+  if (!leadCheck[0]) {
+    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+  }
 
-      const lead = leadCheck[0];
+  const lead = leadCheck[0];
+
+  // Server-side plan check
+  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_quote_email')) {
+    return NextResponse.json({
+      success: false,
+      error: 'One-click emails are available on the Pro plan',
+      upgrade_required: true,
+    }, { status: 403 });
+  }
 
       if (!lead.project_id || !lead.quote_data || !lead.quote_total) {
         return NextResponse.json({ success: false, error: 'No quote exists. Please create a quote first.' }, { status: 400 });
@@ -578,35 +590,45 @@ await sql`
 
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
-      console.log('📅 Sending schedule confirmation to customer');
-      
-      const result = await sql`
-        SELECT 
-          l.id,
-          l.name,
-          l.email,
-          l.address_line_1,
-          l.address_line_2,
-          l.city,
-          l.zip_code,
-          l.project_id,
-          p.scheduled_date::text as scheduled_date,
-          p.scheduled_time::text as scheduled_time,
-          p.assigned_to,
-          c.name as company_name,
-          c.phone as company_phone,
-          c.id as company_id
-        FROM leads l
-        JOIN projects p ON l.project_id = p.id
-        JOIN companies c ON l.company_id = c.id
-        WHERE l.id = ${id}
-      `;
+  console.log('📅 Sending schedule confirmation to customer');
+  
+  const result = await sql`
+    SELECT 
+      l.id,
+      l.name,
+      l.email,
+      l.address_line_1,
+      l.address_line_2,
+      l.city,
+      l.zip_code,
+      l.project_id,
+      p.scheduled_date::text as scheduled_date,
+      p.scheduled_time::text as scheduled_time,
+      p.assigned_to,
+      c.name as company_name,
+      c.phone as company_phone,
+      c.id as company_id,
+      c.plan_tier
+    FROM leads l
+    JOIN projects p ON l.project_id = p.id
+    JOIN companies c ON l.company_id = c.id
+    WHERE l.id = ${id}
+  `;
 
-      if (!result[0]) {
-        return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
-      }
+  if (!result[0]) {
+    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+  }
 
-      const lead = result[0];
+  const lead = result[0];
+
+  // Server-side plan check
+  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_schedule_email')) {
+    return NextResponse.json({
+      success: false,
+      error: 'One-click emails are available on the Pro plan',
+      upgrade_required: true,
+    }, { status: 403 });
+  }
 
       if (!lead.project_id || !lead.scheduled_date) {
         return NextResponse.json({ success: false, error: 'No schedule exists. Please set a schedule date first.' }, { status: 400 });

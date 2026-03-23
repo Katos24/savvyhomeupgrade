@@ -1,9 +1,28 @@
+// AFTER:
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { neon } from '@neondatabase/serverless';
+import { can, type PlanTier } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
-    const { description, category } = await request.json();
+    const { description, category, company_slug } = await request.json();
+    
+
+    // Server-side plan check — never trust client
+    if (!company_slug) {
+      return NextResponse.json({ success: false, error: 'Missing company_slug' }, { status: 400 });
+    }
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`SELECT plan_tier FROM companies WHERE slug = ${company_slug} LIMIT 1`;
+    const dbPlanTier = (rows[0]?.plan_tier ?? 'basic') as PlanTier;
+    if (!can(dbPlanTier, 'ai_quote')) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI quote generator is available on the Pro plan',
+        upgrade_required: true,
+      }, { status: 403 });
+    }
 
     if (!description || !description.trim()) {
       return NextResponse.json(

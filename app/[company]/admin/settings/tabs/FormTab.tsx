@@ -8,7 +8,8 @@ import {
   Clock, HelpCircle, Image as ImageIcon, Megaphone, Lock,
   ToggleLeft, ToggleRight, ExternalLink, Link2,
 } from 'lucide-react';
-import type { PlanTier } from '@/lib/permissions';
+import { can, type PlanTier } from '@/lib/permissions';
+import { InlineLockBanner } from '@/components/LockedTab';
 
 type CustomQuestion = {
   id: string;
@@ -40,42 +41,10 @@ const DEFAULT_FIELD_CONFIG: FieldConfig = {
   file_upload: { enabled: false }, // off by default — only on if plan allows
 };
 
-const PLAN_ORDER: PlanTier[] = ['basic', 'pro', 'business'];
-function planHasAccess(userPlan: PlanTier, required: PlanTier) {
-  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(required);
-}
-
-// ── Small inline locked feature banner ───────────────────────
-function LockedFeatureBanner({ label, description, companySlug, requiredPlan = 'Pro' }: {
-  label: string;
-  description: string;
-  companySlug: string;
-  requiredPlan?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50">
-      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-        <Lock className="w-4 h-4 text-blue-500" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-blue-900">{label}</p>
-        <p className="text-xs text-blue-600 mt-0.5">{description}</p>
-      </div>
-      <a
-        href={`/${companySlug}/admin/settings`}
-        onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
-        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition whitespace-nowrap"
-      >
-        Upgrade to {requiredPlan}
-      </a>
-    </div>
-  );
-}
-
 export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
-  const canUsePhotoUpload     = planHasAccess(planTier, 'pro');
-  const canUseCustomQuestions = planHasAccess(planTier, 'pro');
+  const canUsePhotoUpload     = can(planTier, 'customer_video_upload');
+  const canUseCustomQuestions = can(planTier, 'custom_form_questions');
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
@@ -351,9 +320,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                   onToggle={() => toggleField('file_upload')}
                 />
               ) : (
-                <LockedFeatureBanner
-                  label="Photo & Video Uploads"
+                <InlineLockBanner
+                  title="Photo & Video Uploads"
                   description="Let customers attach job site photos directly on the form — available on Pro."
+                  planLabel="Pro"
+                  priceLabel="$99.99/mo"
                   companySlug={company.slug}
                 />
               )}
@@ -378,9 +349,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             </div>
             <div className="p-5">
               {!canUseCustomQuestions ? (
-                <LockedFeatureBanner
-                  label="Custom Questions"
+                <InlineLockBanner
+                  title="Custom Questions"
                   description="Ask customers anything — budget range, gate codes, pet info. Available on Pro."
+                  planLabel="Pro"
+                  priceLabel="$99.99/mo"
                   companySlug={company.slug}
                 />
               ) : showAddQuestion ? (
@@ -551,8 +524,6 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
     </div>
   );
 }
-
-
 
 /* ---- Question Editor ---- */
 function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChange, onSave, onCancel }: {

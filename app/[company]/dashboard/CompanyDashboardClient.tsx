@@ -6,7 +6,7 @@ import {
 import {
   Search, X, Plus, Menu, Filter, ChevronDown, Download,
   Loader2, Inbox, Send, Sparkles, LayoutGrid, List, ArrowUp,
-  Check, ChevronRight,
+  Check, ChevronRight, Lock
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import CardsView from '@/components/dashboard/views/CardsView';
@@ -15,7 +15,7 @@ import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-import { canUseAiChat, PlanTier } from '@/lib/permissions';
+import { can, type PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
 import { Sun, Moon } from 'lucide-react';
@@ -986,13 +986,22 @@ onClick={() => {
                 <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">
                   Database View <span className="text-slate-500 ml-2">{filteredLeads.length} records</span>
                 </h2>
-                <a
-                  href={`/api/company/${company.slug}/export-csv?${new URLSearchParams({ status: filterStatus, time: timeFilter, category: filterCategory, search: searchQuery })}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg"
-                  aria-label="Export leads as CSV"
-                >
-                  <Download className="w-3.5 h-3.5" aria-hidden /> Export CSV
-                </a>
+{can((company.plan_tier || 'basic') as PlanTier, 'csv_export') ? (
+  <a
+href={`/api/company/${company.slug}/export-csv`}
+    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700"
+  >
+    Export CSV
+  </a>
+) : (
+  <button
+    onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
+    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl border border-slate-700"
+  >
+    <Lock className="w-3.5 h-3.5" />
+    Export CSV
+  </button>
+)}
               </div>
               <div className="bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-xl">
                 <TableView
@@ -1059,7 +1068,7 @@ onClick={() => {
       {/* AI Chat                                                              */}
       {/* ------------------------------------------------------------------ */}
       {!selectedLead && !isCreateModalOpen && (
-        canUseAiChat(company.plan_tier as any) ? (
+  can((company.plan_tier || 'basic') as PlanTier, 'ai_chat') ? (
           <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-3">
 
             {showAiChat && (

@@ -1,328 +1,107 @@
 // ============================================================
 // lib/permissions.ts
-// Single source of truth for role-based and plan-based access.
-// Update PLAN_CONFIG stripe price IDs when added in Stripe.
 // ============================================================
-
-export type UserRole = 'owner' | 'admin' | 'member';
-export type PlanTier = 'basic' | 'pro' | 'business';
-
-// ============================================================
-// ROLE PERMISSIONS
-// These check what a user can do based on their role,
-// regardless of what plan the company is on.
-// ============================================================
-
-// ── Leads ────────────────────────────────────────────────────
-export function canViewLeads(role: UserRole): boolean {
-  return true;
-}
-export function canAddNotes(role: UserRole): boolean {
-  return true;
-}
-export function canUpdateLeadStatus(role: UserRole): boolean {
-  return true;
-}
-export function canDeleteLead(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canConvertToProject(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canRestoreDeletedLead(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-
-// ── Team ─────────────────────────────────────────────────────
-export function canAccessTeamPage(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canInviteMembers(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canRemoveMembers(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canChangeRoles(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canRemoveOwner(_role: UserRole): boolean {
-  return false;
-}
-
-// ── Company & settings ───────────────────────────────────────
-export function canAccessCompanySettings(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function canDeleteCompany(role: UserRole): boolean {
-  return role === 'owner';
-}
-export function canAccessPersonalSettings(_role: UserRole): boolean {
-  return true;
-}
-export function canChangeOwnPassword(_role: UserRole): boolean {
-  return true;
-}
-export function canToggleOwnNotifications(_role: UserRole): boolean {
-  return true;
-}
-
-// ── Helpers ───────────────────────────────────────────────────
-export function isAdminOrOwner(role: UserRole): boolean {
-  return role === 'owner' || role === 'admin';
-}
-export function isOwner(role: UserRole): boolean {
-  return role === 'owner';
-}
-export function isMember(role: UserRole): boolean {
-  return role === 'member';
-}
-
-// ============================================================
-// PLAN PERMISSIONS
-// These check what features the company has access to based
-// on their subscription plan. Use these everywhere in UI
-// and API routes to gate features.
+// THE ONLY FILE YOU NEED TO EDIT for plan/feature changes.
 //
-// Basic    → lead capture, board, photos, payment tracking
-// Pro      → + pipeline, categories, scheduling, quotes,
-//              one-click emails, outbox, CSV export,
-//              customer video uploads, custom tasks & templates
-// Business → + all AI features, daily digest
+// To move a feature between plans:
+//   Change its entry in FEATURE_PLAN_MAP below. Done.
+//
+// To add a new feature:
+//   1. Add a key to FEATURE_PLAN_MAP
+//   2. Add upgrade copy to UPGRADE_PROMPTS
+//   Components call can('your_key') — no other changes needed.
+//
+// To change pricing:
+//   Update PLAN_CONFIG prices. Done.
 // ============================================================
 
-// ── Customer form ─────────────────────────────────────────────
-export function canCustomizeForm(plan: PlanTier): boolean {
-  // All plans can toggle fields and set branding
-  return true;
-}
-export function canEnableCustomerVideoUploads(plan: PlanTier): boolean {
-  // Customer can attach video on the intake form
-  return plan === 'pro' || plan === 'business';
-}
-export function canAddCustomFormQuestions(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
+// ── Plan types ────────────────────────────────────────────────
+export type PlanTier = 'basic' | 'pro';
+export type UserRole = 'owner' | 'admin' | 'member';
 
-// ── Lead board & pipeline ─────────────────────────────────────
-export function canViewLeadBoard(plan: PlanTier): boolean {
-  return true;
-}
-export function canCustomizePipeline(plan: PlanTier): boolean {
-  // Add / rename / reorder pipeline stages
-  return plan === 'pro' || plan === 'business';
-}
-export function canUseCategories(plan: PlanTier): boolean {
-  // Job categories with linked tasks & quote templates
-  return plan === 'pro' || plan === 'business';
-}
-export function canUseCustomTasks(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
+export const PLAN_ORDER: PlanTier[] = ['basic', 'pro'];
 
-// ── Media ─────────────────────────────────────────────────────
-export function canUploadPhotos(plan: PlanTier): boolean {
-  // All plans — core feature
-  return true;
-}
-export function canUploadDocs(plan: PlanTier): boolean {
-  return true;
-}
-
-// ── Scheduling, quotes & payments ────────────────────────────
-export function canUseScheduling(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-export function canUseQuotes(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-export function canUseCustomQuoteTemplates(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-export function canTrackPayments(plan: PlanTier): boolean {
-  // Basic gets payment status tracking, no quote builder
-  return true;
-}
-
-// ── One-click emails & outbox ─────────────────────────────────
-export function canSendOneClickEmails(plan: PlanTier): boolean {
-  // Quote, schedule, payment reminder one-click sends
-  return plan === 'pro' || plan === 'business';
-}
-export function canAccessOutbox(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-export function canUseCustomEmailTemplates(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-
-// ── Data export ───────────────────────────────────────────────
-export function canExportCsv(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-
-// ── AI features (Pro only) ────────────────────────────────────
-export function canUseAiBrief(plan: PlanTier): boolean {
-  return plan === 'business';
-}
-export function canUseAiQuoteGenerator(plan: PlanTier): boolean {
-  return plan === 'business';
-}
-export function canUseAiChat(plan: PlanTier): boolean {
-  return plan === 'business';
-}
-export function canUseAiPhotoAnalysis(plan: PlanTier): boolean {
-  return plan === 'business';
-}
-
-// ── Daily digest (Pro only) ───────────────────────────────────
-export function canUseDailyDigest(plan: PlanTier): boolean {
-  return plan === 'business';
-}
-
-// ── Team members ──────────────────────────────────────────────
-// No seat limits on any plan — upgrade path is features only
-export function canAddTeamMembers(_plan: PlanTier): boolean {
-  return true;
-}
-export function canManageRoles(plan: PlanTier): boolean {
-  return plan === 'pro' || plan === 'business';
-}
-
-// ============================================================
-// SETTINGS TAB PERMISSIONS
-// Controls which settings tabs are accessible vs locked.
-// Locked tabs are visible but show an upgrade overlay.
-// ============================================================
-export function canAccessSettingsTab(
-  tab: SettingsTab,
-  plan: PlanTier
+export function planMeetsRequirement(
+  userPlan: PlanTier,
+  requiredPlan: PlanTier
 ): boolean {
-  switch (tab) {
-    case 'company':
-    case 'customer-form':
-    case 'billing':
-      return true;
-    case 'pipeline':
-    case 'categories':
-    case 'email-templates':
-      return plan === 'pro' || plan === 'business';
-    case 'daily-digest':
-      return plan === 'business';
-    default:
-      return false;
-  }
+  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(requiredPlan);
 }
 
-export type SettingsTab =
-  | 'company'
-  | 'customer-form'
-  | 'pipeline'
-  | 'categories'
-  | 'email-templates'
-  | 'daily-digest'
-  | 'billing';
+// ── Feature → minimum plan map ────────────────────────────────
+// THIS is the single source of truth for what each plan gets.
+// Change a value here — it propagates everywhere automatically.
+export const FEATURE_PLAN_MAP = {
+  // ── Customer form ──────────────────────────────────────────
+  customize_form:           'basic',
+  customer_video_upload:    'pro',   // customer attaches photos/video on form
+  custom_form_questions:    'pro',   // add your own questions to form
 
-// ============================================================
-// UPGRADE PROMPTS
-// Used in lock overlays and API error responses.
-// ============================================================
-export const UPGRADE_PROMPTS: Record<string, { title: string; description: string; requiredPlan: PlanTier }> = {
-  pipeline: {
-    title: 'Customize your pipeline',
-    description: 'Add, rename, and reorder your board stages to match your exact workflow.',
-    requiredPlan: 'business',
-  },
-  categories: {
-    title: 'Job categories & templates',
-    description: 'Organize leads by job type and auto-load tasks and quote templates for each category.',
-    requiredPlan: 'business',
-  },
-  email_templates: {
-    title: 'Custom email templates',
-    description: 'Personalize your quote, schedule, and payment reminder emails with your own copy.',
-    requiredPlan: 'business',
-  },
-  one_click_emails: {
-    title: 'One-click emails',
-    description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',
-    requiredPlan: 'business',
-  },
-  csv_export: {
-    title: 'CSV export',
-    description: 'Download all your leads and job data for bookkeeping and reporting.',
-    requiredPlan: 'business',
-  },
-  customer_video: {
-    title: 'Customer video uploads',
-    description: 'Let customers attach photos and videos directly on your intake form.',
-    requiredPlan: 'business',
-  },
-  scheduling: {
-    title: 'Job scheduling',
-    description: 'Schedule jobs and send confirmation emails to customers in one click.',
-    requiredPlan: 'business',
-  },
-  quotes: {
-    title: 'Quotes & templates',
-    description: 'Build and send professional quotes with custom line item templates.',
-    requiredPlan: 'business',
-  },
-  ai_brief: {
-    title: 'AI brief',
-    description: 'Get an instant AI-generated summary of every lead — saved and ready on each card.',
-    requiredPlan: 'business',
-  },
-  ai_quote: {
-    title: 'AI quote generator',
-    description: 'Let AI draft a quote based on the job details and your templates.',
-    requiredPlan: 'business',
-  },
-  ai_chat: {
-    title: 'AI assistant',
-    description: 'Chat with AI about any lead — ask questions, get suggestions, draft messages.',
-    requiredPlan: 'business',
-  },
-  ai_photo: {
-    title: 'AI photo analysis',
-    description: 'AI reads job site photos and surfaces damage, scope, and material insights.',
-    requiredPlan: 'business',
-  },
-  daily_digest: {
-    title: 'Daily digest',
-    description: 'Get a morning email summary of all open leads, follow-ups, and scheduled jobs.',
-    requiredPlan: 'business',
-  },
-};
+  // ── Lead board ─────────────────────────────────────────────
+  lead_board:               'basic',
+  photos_on_card:           'basic',
+  docs_on_card:             'basic',
+  payment_tracking:         'basic',
+  custom_pipeline:          'pro',   // add/rename/reorder board stages
+  categories:               'pro',   // job categories with task templates
+  custom_tasks:             'pro',   // default task lists per category
+  csv_export:               'pro',   // download leads for bookkeeping
 
-// ============================================================
-// ROLE ERROR MESSAGES
-// ============================================================
-export const PERMISSION_ERRORS = {
-  NOT_AUTHORIZED: 'You are not authorized to perform this action',
-  ADMIN_ONLY: 'This action requires admin privileges',
-  OWNER_ONLY: 'This action can only be performed by the company owner',
-  CANNOT_DELETE_LEAD: 'Members cannot delete leads',
-  CANNOT_ACCESS_TEAM: 'Members cannot access team management',
-  CANNOT_INVITE: 'Members cannot invite team members',
-  CANNOT_REMOVE: 'Members cannot remove team members',
-  CANNOT_CHANGE_ROLES: 'Members cannot change user roles',
-  CANNOT_DELETE_COMPANY: 'Only the owner can delete the company',
-};
+  // ── Scheduling, quotes & payments ──────────────────────────
+  scheduling:               'pro',
+  quotes:                   'pro',
+  quote_templates:          'pro',
+  send_quote_email:         'pro',
+  send_schedule_email:      'pro',
+  send_payment_reminder:    'pro',
 
-// ============================================================
-// PLAN METADATA
-// Used on pricing page, upgrade prompts, and billing tab.
-// Add Stripe price IDs when created in Stripe dashboard.
-// ============================================================
+  // ── Outbox & email templates ───────────────────────────────
+  outbox:                   'pro',
+  email_templates:          'pro',
+
+  // ── AI features ────────────────────────────────────────────
+  ai_brief:                 'pro',
+  ai_quote:                 'pro',
+  ai_chat:                  'pro',
+  ai_photo_analysis:        'pro',
+
+  // ── Notifications ──────────────────────────────────────────
+  daily_digest:             'pro',
+
+  // ── Team & admin ───────────────────────────────────────────
+  team_members:             'basic',
+  role_permissions:         'pro',
+
+  // ── Settings tabs ──────────────────────────────────────────
+  settings_company:         'basic',
+  settings_form:            'basic',
+  settings_billing:         'basic',
+  settings_team:            'basic',
+  settings_pipeline:        'pro',
+  settings_categories:      'pro',
+  settings_email_templates: 'pro',
+  settings_notifications:   'pro',
+} as const;
+
+export type FeatureKey = keyof typeof FEATURE_PLAN_MAP;
+
+// ── Core permission check ─────────────────────────────────────
+// Use this everywhere. Never hardcode plan names in components.
+export function can(userPlan: PlanTier, feature: FeatureKey): boolean {
+  const required = FEATURE_PLAN_MAP[feature] as PlanTier;
+  return planMeetsRequirement(userPlan, required);
+}
+
+// ── Plan metadata ─────────────────────────────────────────────
 export const PLAN_CONFIG = {
   basic: {
-    label: 'Basic',
-    price: 49.99,
-    description: 'Lead capture and tracking for solo contractors',
-    stripePriceId: 'price_1T5WimDizdCQrdbAN3wR4PcF', // TODO: replace with live Stripe price ID
+    label:        'Basic',
+    price:        49.99,
+    priceLabel:   '$49.99/mo',
+    description:  'Lead capture and tracking for solo contractors',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID || 'price_XXXX_basic',
     features: [
-      'Custom QR code & intake form',
+      'Custom QR code & booking form',
       'Lead board (kanban view)',
       'Photo & doc uploads on cards',
       'Payment status tracking',
@@ -331,10 +110,11 @@ export const PLAN_CONFIG = {
     ],
   },
   pro: {
-    label: 'Pro',
-    price: 99.99,
-    description: 'Full workflow management for growing crews',
-    stripePriceId: 'price_1T5WijDizdCQrdbA7a1AFGFo', // TODO: replace with live Stripe price ID
+    label:        'Pro',
+    price:        99.99,
+    priceLabel:   '$99.99/mo',
+    description:  'Full workflow + AI for growing crews',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_XXXX_pro',
     features: [
       'Everything in Basic',
       'Custom pipeline stages',
@@ -344,17 +124,8 @@ export const PLAN_CONFIG = {
       'One-click emails (quote, schedule, reminder)',
       'Outbox — full sent email history',
       'Custom email templates',
-      'Customer photo & video uploads',
+      'Customer photo & video uploads on form',
       'CSV export for bookkeeping',
-    ],
-  },
-  business: {
-    label: 'Business',
-    price: 109,
-    description: 'AI-powered tools for closing more jobs',
-    stripePriceId: 'price_XXXX_business', // TODO: add in Stripe, then replace
-    features: [
-      'Everything in Pro',
       'AI brief on every lead',
       'AI quote generator',
       'AI assistant chat',
@@ -364,14 +135,117 @@ export const PLAN_CONFIG = {
   },
 } as const;
 
-// ============================================================
-// UTILITY — check if a plan meets a minimum requirement
-// Usage: planMeetsRequirement(company.plan, 'pro')
-// ============================================================
-export function planMeetsRequirement(
-  userPlan: PlanTier,
-  requiredPlan: PlanTier
-): boolean {
-  const order: PlanTier[] = ['basic', 'pro', 'business'];
-  return order.indexOf(userPlan) >= order.indexOf(requiredPlan);
-}
+// ── Upgrade prompt copy ───────────────────────────────────────
+export const UPGRADE_PROMPTS: Record<string, {
+  title: string;
+  description: string;
+}> = {
+  custom_pipeline: {
+    title: 'Customize your pipeline',
+    description: 'Add, rename, and reorder your board stages to match your exact workflow.',
+  },
+  categories: {
+    title: 'Job categories & templates',
+    description: 'Organize leads by job type and auto-load tasks and quote templates.',
+  },
+  custom_tasks: {
+    title: 'Custom task lists',
+    description: 'Build default task checklists for each job category.',
+  },
+  email_templates: {
+    title: 'Custom email templates',
+    description: 'Personalize your quote, schedule, and payment reminder emails.',
+  },
+  send_quote_email: {
+    title: 'One-click emails',
+    description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',
+  },
+  outbox: {
+    title: 'Email outbox',
+    description: 'Review every email sent to customers in one place.',
+  },
+  csv_export: {
+    title: 'CSV export',
+    description: 'Download all your leads and job data for bookkeeping and reporting.',
+  },
+  customer_video_upload: {
+    title: 'Customer photo & video uploads',
+    description: 'Let customers attach job site photos directly on your booking form.',
+  },
+  custom_form_questions: {
+    title: 'Custom form questions',
+    description: 'Ask customers anything — budget range, gate codes, pet info.',
+  },
+  scheduling: {
+    title: 'Job scheduling',
+    description: 'Schedule jobs and send confirmation emails in one click.',
+  },
+  quotes: {
+    title: 'Quote builder',
+    description: 'Build and send professional quotes with custom line item templates.',
+  },
+  ai_brief: {
+    title: 'AI brief',
+    description: 'Get an instant AI-generated summary of every lead — saved on each card.',
+  },
+  ai_quote: {
+    title: 'AI quote generator',
+    description: 'Let AI draft a quote based on job details and your templates.',
+  },
+  ai_chat: {
+    title: 'AI assistant',
+    description: 'Ask questions about your leads, get suggestions, draft follow-up messages.',
+  },
+  ai_photo_analysis: {
+    title: 'AI photo analysis',
+    description: 'AI reads job site photos and surfaces damage, scope, and material insights.',
+  },
+  daily_digest: {
+    title: 'Daily digest',
+    description: 'Get a morning email summary of open leads, follow-ups, and scheduled jobs.',
+  },
+  role_permissions: {
+    title: 'Role-based permissions',
+    description: 'Control what admins and members can see and do in your dashboard.',
+  },
+  settings_pipeline: {
+    title: 'Pipeline settings',
+    description: 'Customize your lead stages to match your workflow.',
+  },
+  settings_categories: {
+    title: 'Categories settings',
+    description: 'Set up job types with auto-loaded tasks and quote templates.',
+  },
+  settings_email_templates: {
+    title: 'Email template settings',
+    description: 'Personalize the emails your customers receive.',
+  },
+  settings_notifications: {
+    title: 'Notification settings',
+    description: 'Configure your daily digest and reminder preferences.',
+  },
+};
+
+// ── Role-based checks ─────────────────────────────────────────
+// Role = what a user can do within their company.
+// Plan = what features the company has access to.
+// These are intentionally separate concerns.
+export function canDeleteLead(role: UserRole):       boolean { return role === 'owner' || role === 'admin'; }
+export function canConvertToProject(role: UserRole): boolean { return role === 'owner' || role === 'admin'; }
+export function canRestoreLead(role: UserRole):      boolean { return role === 'owner' || role === 'admin'; }
+export function canInviteMembers(role: UserRole):    boolean { return role === 'owner' || role === 'admin'; }
+export function canRemoveMembers(role: UserRole):    boolean { return role === 'owner' || role === 'admin'; }
+export function canChangeRoles(role: UserRole):      boolean { return role === 'owner' || role === 'admin'; }
+export function canAccessSettings(role: UserRole):   boolean { return role === 'owner' || role === 'admin'; }
+export function canDeleteCompany(role: UserRole):    boolean { return role === 'owner'; }
+export function isAdminOrOwner(role: UserRole):      boolean { return role === 'owner' || role === 'admin'; }
+
+export const PERMISSION_ERRORS = {
+  NOT_AUTHORIZED:      'You are not authorized to perform this action',
+  ADMIN_ONLY:          'This action requires admin or owner privileges',
+  OWNER_ONLY:          'This action can only be performed by the company owner',
+  CANNOT_DELETE_LEAD:  'Members cannot delete leads',
+  CANNOT_INVITE:       'Members cannot invite team members',
+  CANNOT_REMOVE:       'Members cannot remove team members',
+  CANNOT_CHANGE_ROLES: 'Members cannot change user roles',
+};

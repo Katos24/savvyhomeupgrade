@@ -8,9 +8,7 @@ import {
   Lock,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
-import { PLAN_CONFIG, UPGRADE_PROMPTS } from '@/lib/permissions';
-import type { PlanTier } from '@/lib/permissions';
-import { usePlan } from '@/hooks/usePlan';
+import { can, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 
 // Sub-tab imports
 import FormTab from './tabs/FormTab';
@@ -33,33 +31,26 @@ const TAB_LABELS: Record<Tab, string> = {
   notifications: 'Notifications',
 };
 
-// Which plan is required for each tab
-const TAB_REQUIRED_PLAN: Partial<Record<Tab, PlanTier>> = {
-  pipeline:          'pro',
-  'email-templates': 'pro',
-  categories:        'pro',
-  notifications:     'business', // daily digest is business only
+// Tab → feature key mapping — reads from FEATURE_PLAN_MAP in permissions.ts
+const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
+  pipeline:          'settings_pipeline',
+  'email-templates': 'settings_email_templates',
+  categories:        'settings_categories',
+  notifications:     'settings_notifications',
 };
 
-const PLAN_ORDER: PlanTier[] = ['basic', 'pro', 'business'];
-
-function planHasAccess(userPlan: PlanTier, requiredPlan: PlanTier): boolean {
-  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(requiredPlan);
-}
-
 // ── Upgrade overlay shown inside a locked tab ─────────────────
-function UpgradeOverlay({ requiredPlan, feature, companySlug }: {
-  requiredPlan: PlanTier;
+function UpgradeOverlay({ feature, companySlug }: {
   feature: string;
   companySlug: string;
 }) {
   const prompt = UPGRADE_PROMPTS[feature];
-  const config = PLAN_CONFIG[requiredPlan];
+  // Always Pro for now — reads from PLAN_CONFIG automatically
+  const config = PLAN_CONFIG['pro'];
   const colors = {
-    pro:      { bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-900' },
-    business: { bg: 'from-purple-50 to-violet-50', border: 'border-purple-200', badge: 'bg-purple-600', text: 'text-purple-900' },
-    basic:    { bg: 'from-gray-50 to-gray-100', border: 'border-gray-200', badge: 'bg-gray-800', text: 'text-gray-900' },
-  }[requiredPlan];
+    bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200',
+    badge: 'bg-blue-600', text: 'text-blue-900',
+  };
 
   return (
     <div className={`rounded-2xl border ${colors.border} bg-gradient-to-br ${colors.bg} p-8 text-center`}>
@@ -88,7 +79,7 @@ function UpgradeOverlay({ requiredPlan, feature, companySlug }: {
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white ${colors.badge} hover:opacity-90 transition`}
       >
-        Upgrade to {requiredPlan === 'pro' ? 'Pro' : 'Business'}
+        Upgrade to Pro
         {config?.price && <span className="opacity-75 font-normal">— ${config.price}/mo</span>}
       </a>
       <p className="text-xs text-gray-400 mt-3">Cancel anytime. No contracts.</p>
@@ -235,14 +226,12 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
   // ── Tab content renderer with lock check ─────────────────────
   const renderTabContent = (tab: Tab) => {
-    const requiredPlan = TAB_REQUIRED_PLAN[tab];
+    const featureKey = TAB_FEATURE_MAP[tab];
 
     // Check if locked
-    if (requiredPlan && !planHasAccess(planTier, requiredPlan)) {
-      const featureKey = tab === 'email-templates' ? 'email_templates' : tab;
+    if (featureKey && !can(planTier, featureKey)) {
       return (
         <UpgradeOverlay
-          requiredPlan={requiredPlan}
           feature={featureKey}
           companySlug={company.slug}
         />
@@ -456,7 +445,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 </a>
 
                 {/* Daily Digest — Business only */}
-                {planHasAccess(planTier, 'business') ? (
+                {can(planTier, 'daily_digest') ? (
                   <button
                     onClick={async () => {
                       const newVal = !digestEnabled;
@@ -505,13 +494,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         <div>
           <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
-            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
+            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Pro" />
+            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} locked={!can(planTier, 'settings_categories')} requiredPlan="Pro" />
             <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} />
-            <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
+            <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
             <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
-            <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} locked={!planHasAccess(planTier, 'business')} requiredPlan="Business" />
+            <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} locked={!can(planTier, 'settings_notifications')} requiredPlan="Pro" />
           </div>
         </div>
 

@@ -1,10 +1,12 @@
+// AFTER:
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
+import { neon } from '@neondatabase/serverless';
+import { can, type PlanTier } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
-    // Check if API key exists
     if (!process.env.ANTHROPIC_API_KEY) {
       console.error('ANTHROPIC_API_KEY is not set');
       return NextResponse.json({ 
@@ -17,8 +19,22 @@ export async function POST(request: Request) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    const { imageUrls, category, description } = await request.json();
-    
+const { imageUrls, category, description, company_slug } = await request.json();
+
+    // Server-side plan check — never trust client
+    if (!company_slug) {
+      return NextResponse.json({ success: false, error: 'Missing company_slug' }, { status: 400 });
+    }
+    const sql = neon(process.env.DATABASE_URL!);
+    const rows = await sql`SELECT plan_tier FROM companies WHERE slug = ${company_slug} LIMIT 1`;
+    const dbPlanTier = (rows[0]?.plan_tier ?? 'basic') as PlanTier;
+    if (!can(dbPlanTier, 'ai_photo_analysis')) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI photo analysis is available on the Pro plan',
+        upgrade_required: true,
+      }, { status: 403 });
+    }    
     console.log('Analyzing images with Claude:', imageUrls);
     console.log('Category:', category);
     console.log('Description:', description);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { can, type PlanTier } from '@/lib/permissions';
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -25,8 +26,8 @@ export async function GET(
     console.log('✅ Token verified for user:', decoded.userId);
     
     // Get company
-    const companies = await sql`
-      SELECT id, quote_templates 
+   const companies = await sql`
+      SELECT id, quote_templates, plan_tier
       FROM companies 
       WHERE slug = ${resolvedParams.slug}
       LIMIT 1
@@ -39,6 +40,15 @@ export async function GET(
 
     const company = companies[0];
     console.log('✅ Company found:', company.id);
+
+    // Server-side plan check
+    if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Quote templates are available on the Pro plan',
+        upgrade_required: true,
+      }, { status: 403 });
+    }
     
     // Parse quote_templates if it's a string
     let templates = company.quote_templates || [];
@@ -100,8 +110,8 @@ export async function POST(
     }
 
     // Get company
-    const companies = await sql`
-      SELECT id, quote_templates 
+   const companies = await sql`
+      SELECT id, quote_templates, plan_tier
       FROM companies 
       WHERE slug = ${resolvedParams.slug}
       LIMIT 1
@@ -114,6 +124,15 @@ export async function POST(
 
     const company = companies[0];
     console.log('✅ Company found:', company.id);
+
+    // Server-side plan check
+    if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Quote templates are available on the Pro plan',
+        upgrade_required: true,
+      }, { status: 403 });
+    }
     
     // Verify user belongs to this company
     if (user.company_id !== company.id) {

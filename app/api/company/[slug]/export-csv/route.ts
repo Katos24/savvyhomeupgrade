@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { can, type PlanTier } from '@/lib/permissions';
 
 export async function GET(
   request: Request,
@@ -16,15 +17,26 @@ export async function GET(
     
     const sql = neon(process.env.DATABASE_URL!);
 
-    // Get company + custom_questions
+    // Get company + custom_questions + plan check
     const companies = await sql`
-      SELECT id, custom_questions 
+      SELECT id, custom_questions, plan_tier
       FROM companies 
       WHERE slug = ${slug}
     `;
     if (companies.length === 0) {
       return new NextResponse('Company not found', { status: 404 });
     }
+
+    // Server-side plan check
+    const dbPlanTier = (companies[0].plan_tier ?? 'basic') as PlanTier;
+    if (!can(dbPlanTier, 'csv_export')) {
+      return NextResponse.json({
+        success: false,
+        error: 'CSV export is available on the Pro plan',
+        upgrade_required: true,
+      }, { status: 403 });
+    }
+
     const companyId = companies[0].id;
     const customQuestions: any[] = companies[0].custom_questions || [];
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { sendDailyDigestEmail } from '@/lib/email';
+import { FEATURE_PLAN_MAP } from '@/lib/permissions';
 
 const sql = neon(process.env.DATABASE_URL!);
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -14,15 +15,19 @@ export async function GET(request: NextRequest) {
 
     console.log('📧 Starting daily digest...');
 
+   // daily_digest requires 'pro' plan — only process companies on that plan
+    const digestRequiredPlan = FEATURE_PLAN_MAP['daily_digest']; // 'pro'
+
     const companies = await sql`
-  SELECT id, name, slug, email, reminder_settings, notification_preferences
-  FROM companies
-  WHERE (
-    daily_digest_enabled = true
-    OR (notification_preferences->'daily_digest'->>'enabled')::boolean = true
-  )
-  AND subscription_status IN ('active', 'trialing')
-`;
+      SELECT id, name, slug, email, reminder_settings, notification_preferences
+      FROM companies
+      WHERE (
+        daily_digest_enabled = true
+        OR (notification_preferences->'daily_digest'->>'enabled')::boolean = true
+      )
+      AND subscription_status IN ('active', 'trialing')
+      AND plan_tier = ${digestRequiredPlan}
+    `;
 
     console.log(`📊 ${companies.length} companies have daily digest enabled`);
 

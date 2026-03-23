@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { sendPaymentReminderEmail } from '@/lib/email';
+import { can, type PlanTier } from '@/lib/permissions';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -9,10 +10,19 @@ export async function GET(_req: Request, { params }: Props) {
     const { slug } = await params;
     const sql = neon(process.env.DATABASE_URL!);
 
-    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
-    if (!companies[0]) return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
+    const companies = await sql`SELECT id, plan_tier FROM companies WHERE slug = ${slug}`;
+if (!companies[0]) return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
 
-    const companyId = companies[0].id;
+// Server-side plan check
+if (!can((companies[0].plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder')) {
+  return NextResponse.json({
+    success: false,
+    error: 'Payment reminders are available on the Pro plan',
+    upgrade_required: true,
+  }, { status: 403 });
+}
+
+const companyId = companies[0].id;
 
     const reminders = await sql`
       SELECT
@@ -64,29 +74,39 @@ export async function POST(req: Request, { params }: Props) {
     // ── Fetch project + company data ──────────────────────────────────────────
     // NOTE: added c.id as company_id so we can log to email_outbox
     const result = await sql`
-      SELECT
-        l.name as customer_name,
-        l.email as customer_email,
-        p.payment_due_date::text as payment_due_date,
-        p.payment_amount,
-        p.quote_total,
-        c.id as company_id,
-        c.name as company_name,
-        c.phone as company_phone
-      FROM projects p
-      JOIN leads l ON p.lead_id = l.id
-      JOIN companies c ON l.company_id = c.id
-      WHERE p.id = ${project_id}
-        AND l.id = ${lead_id}
-        AND c.slug = ${slug}
-      LIMIT 1
-    `;
+  SELECT
+    l.name as customer_name,
+    l.email as customer_email,
+    p.payment_due_date::text as payment_due_date,
+    p.payment_amount,
+    p.quote_total,
+    c.id as company_id,
+    c.name as company_name,
+    c.phone as company_phone,
+    c.plan_tier
+  FROM projects p
+  JOIN leads l ON p.lead_id = l.id
+  JOIN companies c ON l.company_id = c.id
+  WHERE p.id = ${project_id}
+    AND l.id = ${lead_id}
+    AND c.slug = ${slug}
+  LIMIT 1
+`;
 
-    if (!result[0]) {
-      return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
-    }
+if (!result[0]) {
+  return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
+}
 
-    const r = result[0];
+const r = result[0];
+
+// Server-side plan check
+if (!can((r.plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder')) {
+  return NextResponse.json({
+    success: false,
+    error: 'Payment reminders are available on the Pro plan',
+    upgrade_required: true,
+  }, { status: 403 });
+}
 
     // ── Calculate amount due ──────────────────────────────────────────────────
     const quoteTotal  = parseFloat(r.quote_total  || '0');

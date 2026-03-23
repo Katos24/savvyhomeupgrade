@@ -7,13 +7,12 @@ import {
   Trash2, ChevronDown, FileText, CheckSquare, Bell, CreditCard, Image,
   FileIcon, Clock, MapPin, User, Hash, ArrowLeft, History,
   UserCircle, MessageCircle, Lock, NotebookPen, Sparkles, Activity, AlertTriangle, LayoutGrid,
-  ChevronLeft, ChevronRight, Download,
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
 import PhotoGallery from '@/components/dashboard/PhotoGallery';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
 import { parseNotes } from '@/lib/utils';
-import { canDeleteLead } from '@/lib/permissions';
+import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import CompletionSummaryModal from './CompletionSummaryModal';
 import LeadLightbox from '@/components/dashboard/LeadLightbox';
 import AiBriefButton from '@/components/dashboard/AiBriefButton';
@@ -34,7 +33,7 @@ type LeadModalProps = {
 };
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
-
+type TabDef = { id: TopTab; label: string; icon: React.ElementType; show: boolean; locked?: boolean };
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function LeadModal({
@@ -338,7 +337,7 @@ export default function LeadModal({
   const currentStatusConfig = getStatusConfig(selectedStatus);
   const statusHex = getStatusColor(currentStatusConfig?.color);
 
-  const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean }[] = [
+const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean; locked?: boolean }[] = [
     { id: 'overview', label: 'Overview', icon: User, show: true },
     { id: 'schedule', label: 'Schedule', icon: Calendar, show: isProject },
     { id: 'quote', label: 'Quote', icon: FileText, show: isProject },
@@ -347,7 +346,7 @@ export default function LeadModal({
     { id: 'photos', label: 'Media', icon: Image, show: isProject },
     { id: 'activity', label: 'Activity', icon: MessageCircle, show: isProject },
     { id: 'reminders', label: 'Reminders', icon: Bell, show: isProject },
-    { id: 'ai', label: 'AI Brief', icon: Sparkles, show: true },
+  { id: 'ai', label: 'AI Brief', icon: Sparkles, show: true, locked: !can(company?.plan_tier as PlanTier ?? 'basic', 'ai_brief') },
   ];
 
   return (
@@ -508,21 +507,25 @@ export default function LeadModal({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
+onClick={() => {
+  if (tab.locked) return;
+  setActiveTab(tab.id);
+}}                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
                     style={{
-                      color: activeTab === tab.id
-                        ? (isAi ? '#c4b5fd' : 'white')
-                        : (isAi ? 'rgba(196,181,253,0.5)' : 'rgba(255,255,255,0.4)'),
-                      borderBottomColor: activeTab === tab.id
-                        ? (isAi ? '#c4b5fd' : '#a5b4fc')
-                        : 'transparent',
-                      background: 'transparent',
-                    }}
+  color: activeTab === tab.id
+    ? (isAi ? '#c4b5fd' : 'white')
+    : (isAi ? 'rgba(196,181,253,0.5)' : 'rgba(255,255,255,0.4)'),
+  borderBottomColor: activeTab === tab.id
+    ? (isAi ? '#c4b5fd' : '#a5b4fc')
+    : 'transparent',
+  opacity: tab.locked ? 0.5 : 1,
+}}
                   >
                     <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                  </button>
+<div className="flex items-center gap-1">
+  {tab.label}
+  {tab.locked && <Lock className="w-3 h-3 opacity-70" />}
+</div>                  </button>
                 );
               })}
               {!isProject && (
@@ -845,15 +848,36 @@ export default function LeadModal({
 
            {/* ── AI BRIEF TAB ── */}
 {activeTab === 'ai' && (
- <AiBriefTab
-  lead={lead}
-  currentUser={currentUser}
-  company={company}
-  customerPhotos={customerPhotos}
-  relatedLeads={relatedLeads}
-  isProject={isProject}
-  onRefresh={onRefresh}
-/>
+  can(company?.plan_tier as PlanTier, 'ai_brief') ? (
+    <AiBriefTab
+      lead={lead}
+      currentUser={currentUser}
+      company={company}
+      customerPhotos={customerPhotos}
+      relatedLeads={relatedLeads}
+      isProject={isProject}
+      onRefresh={onRefresh}
+    />
+  ) : (
+    <div className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center">
+      <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Sparkles className="w-6 h-6 text-indigo-500" />
+      </div>
+
+      <h3 className="text-base font-bold text-gray-900 mb-2">AI Brief</h3>
+
+      <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
+        Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
+      </p>
+
+      <a
+        href={`/${companySlug}/admin/settings`}
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition"
+      >
+        Upgrade to Pro — $99.99/mo
+      </a>
+    </div>
+  )
 )}
 
             {/* ── PROJECT TABS ── */}
