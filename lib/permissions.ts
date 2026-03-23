@@ -318,9 +318,9 @@ export const PERMISSION_ERRORS = {
 export const PLAN_CONFIG = {
   basic: {
     label: 'Basic',
-    price: 29,
+    price: 49.99,
     description: 'Lead capture and tracking for solo contractors',
-    stripePriceId: 'price_XXXX_basic', // TODO: replace with live Stripe price ID
+    stripePriceId: 'price_1T5WimDizdCQrdbAN3wR4PcF', // TODO: replace with live Stripe price ID
     features: [
       'Custom QR code & intake form',
       'Lead board (kanban view)',
@@ -332,9 +332,9 @@ export const PLAN_CONFIG = {
   },
   pro: {
     label: 'Pro',
-    price: 69,
+    price: 99.99,
     description: 'Full workflow management for growing crews',
-    stripePriceId: 'price_XXXX_pro', // TODO: replace with live Stripe price ID
+    stripePriceId: 'price_1T5WijDizdCQrdbA7a1AFGFo', // TODO: replace with live Stripe price ID
     features: [
       'Everything in Basic',
       'Custom pipeline stages',

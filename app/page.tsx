@@ -303,66 +303,116 @@ function DailyDigestPreview() {
 
 // ─── PRICING ──────────────────────────────────────────────────────────────────
 function PricingSection() {
-  const [annual, setAnnual] = useState(false);
   const plans = [
     {
-      name: 'Basic', monthly: 49, annual: 39,
+      name: 'Basic', 
+      price: 49,
       desc: 'Perfect for solo operators',
-      features: ['Custom booking link','Unlimited lead capture','Photo & video uploads','Lead board — cards + table view','Status tracking & notes','Branded confirmation emails','CSV export'],
-      cta: 'Start Free Trial', highlight: false, href: '/signup?plan=basic',
+      features: [
+        'Custom booking link',
+        'Unlimited lead capture',
+        'Photo & video uploads',
+        'Lead board — cards + table view',
+        'Status tracking & notes',
+        'Branded confirmation emails',
+        'CSV export'
+      ],
+      cta: 'Start Free Trial', 
+      highlight: false, 
+      href: '/signup?plan=basic',
     },
     {
-      name: 'Pro', monthly: 99, annual: 79,
+      name: 'Pro', 
+      price: 99,
       desc: 'Full job management + AI tools',
-      features: ['Everything in Basic','Convert leads → full projects','Quotes & payment tracking','Tasks, scheduling & crew assignment','Photos, videos & docs per project','AI Brief on every lead','AI quote generator from photos','AI Assistant — ask anything'],
-      cta: 'Start Free Trial', highlight: true, href: '/signup?plan=pro',
+      features: [
+        'Everything in Basic',
+        'Convert leads → full projects',
+        'Quotes & payment tracking',
+        'Tasks, scheduling & crew assignment',
+        'Photos, videos & docs per project',
+        'AI Brief on every lead',
+        'AI quote generator from photos',
+        'AI Assistant — ask anything'
+      ],
+      cta: 'Start Free Trial', 
+      highlight: true, 
+      href: '/signup?plan=pro',
     },
   ];
+
   return (
     <section id="pricing" className="bg-white py-24 px-6 border-t border-slate-100">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
+        <div className="text-center mb-16">
           <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-3">Pricing</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">One job pays for the whole year.</h2>
-          <p className="text-slate-500 text-lg mb-8">14-day free trial. Cancel anytime.</p>
-          <div className="inline-flex items-center gap-3 bg-slate-100 rounded-full px-4 py-2">
-            <span className={`text-sm font-bold transition-colors ${!annual ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
-            <button onClick={() => setAnnual(a => !a)} className="relative w-11 h-6 rounded-full transition-colors" style={{ background: annual ? '#2563eb' : '#cbd5e1' }}>
-              <div className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: annual ? 24 : 4 }} />
-            </button>
-            <span className={`text-sm font-bold transition-colors ${annual ? 'text-slate-900' : 'text-slate-400'}`}>
-              Annual <span className={`ml-2 text-[10px] font-black px-2 py-0.5 rounded-full transition-all ${annual ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-400'}`}>SAVE 20%</span>
-            </span>
-          </div>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+            One job pays for<br className="md:hidden" /> the whole year.
+          </h2>
+          <p className="text-slate-500 text-lg max-w-lg mx-auto">
+            Simple, transparent monthly pricing. No setup fees. 14-day free trial on all plans.
+          </p>
         </div>
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {plans.map(plan => {
-            const price = annual ? plan.annual : plan.monthly;
-            return (
-              <div key={plan.name} className={`rounded-[2rem] p-10 border-2 relative ${plan.highlight ? 'bg-slate-900 border-blue-600 shadow-2xl shadow-blue-500/20' : 'bg-white border-slate-200'}`}>
-                {plan.highlight && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full whitespace-nowrap">Most Popular</div>}
-                <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`}>{plan.name}</p>
-                <div className={`flex items-baseline gap-1 mb-2 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                  <span className="text-5xl font-extrabold tracking-tight">${price}</span>
-                  <span className="font-bold text-slate-400">/mo</span>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {plans.map((plan) => (
+            <div 
+              key={plan.name} 
+              className={`rounded-[2.5rem] p-10 border-2 relative transition-all duration-300 ${
+                plan.highlight 
+                  ? 'bg-slate-900 border-blue-600 shadow-2xl shadow-blue-500/20 scale-105 z-10' 
+                  : 'bg-white border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              {plan.highlight && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full whitespace-nowrap shadow-lg">
+                  Recommended for Growth
                 </div>
-                {annual && <p className="text-xs font-bold text-green-400 mb-1">billed annually</p>}
-                <p className={`text-sm mb-8 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>{plan.desc}</p>
-                <Link href={plan.href} className={`block text-center w-full py-4 rounded-2xl font-bold text-sm transition mb-8 ${plan.highlight ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30' : 'border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'}`}>
-                  {plan.cta}
-                </Link>
-                <ul className="space-y-3">
-                  {plan.features.map(f => (
-                    <li key={f} className={`flex items-start gap-3 text-sm font-medium ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
-                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.highlight ? 'text-blue-400' : 'text-green-500'}`}/>{f}
-                    </li>
-                  ))}
-                </ul>
+              )}
+              
+              <p className={`text-xs font-bold uppercase tracking-widest mb-4 ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+                {plan.name}
+              </p>
+              
+              <div className={`flex items-baseline gap-1 mb-2 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                <span className="text-6xl font-extrabold tracking-tighter">${plan.price}</span>
+                <span className="font-bold text-slate-400">/mo</span>
               </div>
-            );
-          })}
+              
+              <p className={`text-sm mb-8 font-medium ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                {plan.desc}
+              </p>
+              
+              <Link 
+                href={plan.href} 
+                className={`block text-center w-full py-4.5 rounded-2xl font-black text-sm transition-all active:scale-95 mb-10 ${
+                  plan.highlight 
+                    ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-600/30' 
+                    : 'bg-slate-900 text-white hover:bg-black'
+                }`}
+              >
+                {plan.cta}
+              </Link>
+              
+              <ul className="space-y-4">
+                {plan.features.map((f) => (
+                  <li key={f} className={`flex items-start gap-3 text-sm font-bold ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
+                    <div className={`mt-0.5 p-0.5 rounded-full ${plan.highlight ? 'bg-blue-500/20 text-blue-400' : 'bg-green-100 text-green-600'}`}>
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    </div>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        <p className="text-center text-xs text-slate-400 font-medium mt-6 uppercase tracking-widest">14-day free trial · Cancel anytime</p>
+        
+        <div className="mt-16 text-center">
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em]">
+            Secure checkout via Stripe · No credit card required to start
+          </p>
+        </div>
       </div>
     </section>
   );

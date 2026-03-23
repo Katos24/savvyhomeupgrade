@@ -36,8 +36,9 @@ const isPublicApiRoute =
 
   const isProtectedRoute =
     pathname.includes('/dashboard') ||
-    pathname.includes('/admin');
-    pathname.includes('/profile');
+    pathname.includes('/admin') ||
+    pathname.includes('/profile') ||
+    pathname.includes('/settings');
 
   if (isApiRoute) {
     if (isPublicApiRoute) {
