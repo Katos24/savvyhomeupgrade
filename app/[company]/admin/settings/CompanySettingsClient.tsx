@@ -10,6 +10,7 @@ import {
 import QRCodeLib from 'qrcode';
 import { PLAN_CONFIG, UPGRADE_PROMPTS } from '@/lib/permissions';
 import type { PlanTier } from '@/lib/permissions';
+import { usePlan } from '@/hooks/usePlan';
 
 // Sub-tab imports
 import FormTab from './tabs/FormTab';

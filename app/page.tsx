@@ -9,7 +9,7 @@ import {
   CheckCircle, Bot, BarChart2, Link2, Camera,
   Sparkles, Send, Loader2, Clock9,
   Settings2, XCircle, CheckCircle2,
-  QrCode
+  QrCode, Layout, Star
 } from 'lucide-react';
 
 // ─── FORM FILLING DEMO ────────────────────────────────────────────────────────
@@ -405,28 +405,42 @@ export default function Home() {
 
 {/* HERO */}
 <header className="pt-24 pb-16 px-6 text-center max-w-6xl mx-auto">
-  <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 border border-slate-800 shadow-lg">
-    <Sparkles className="w-4 h-4 text-blue-400" />
-    <span>Your Office on Autopilot</span>
+  <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 border border-blue-100 shadow-sm">
+    <Zap className="w-4 h-4 fill-current" />
+    <span>Built for the Trades</span>
   </div>
   
-  <h1 className="text-6xl md:text-8xl font-extrabold text-slate-900 leading-[0.95] tracking-tighter mb-6 text-balance">
-    Everything In One Place.<br/>
-    <span className="text-blue-600 font-black text-shadow-sm">Finally.</span>
+  <h1 className="text-6xl md:text-8xl font-extrabold text-slate-900 leading-[0.9] tracking-tighter mb-6 text-balance">
+    Stop Chasing Leads.<br/>
+    <span className="text-blue-600 font-black italic">Start Closing Jobs.</span>
   </h1>
   
-  <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto font-medium leading-snug">
-    Get a professional dashboard and a custom QR code for your customers. Stop the phone tag—let clients submit requests directly into your 6AM daily briefing.
+  <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-2xl mx-auto font-medium leading-tight">
+    Lead2Project is the "silent partner" for contractors. One QR code on your truck or lawn sign turns tire-kickers into <span className="text-slate-900 font-bold underline decoration-blue-500 italic">ready-to-work projects</span> while you’re busy on the tools.
   </p>
   
-  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-    <Link href="/signup" className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl text-lg font-black shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-      Get My Free QR Code <ArrowRight size={20}/>
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+    <Link href="/signup" className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl text-lg font-black shadow-[0_20px_50px_rgba(37,_99,_235,_0.3)] hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+      Claim My Free QR Code <ArrowRight size={20}/>
     </Link>
-    <Link href="/demo" className="w-full sm:w-auto bg-white border-2 border-slate-200 text-slate-900 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition">
-      View The Dashboard
+    <Link href="/demo" className="w-full sm:w-auto bg-white border-2 border-slate-200 text-slate-700 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition flex items-center justify-center gap-2">
+      <Layout className="w-5 h-5 text-slate-400" />
+      Try The Live Demo
     </Link>
   </div>
+
+  <div className="flex flex-col items-center gap-2 text-slate-500 text-sm font-medium">
+    <div className="flex gap-1 text-orange-400">
+      <Star size={16} fill="currentColor" />
+      <Star size={16} fill="currentColor" />
+      <Star size={16} fill="currentColor" />
+      <Star size={16} fill="currentColor" />
+      <Star size={16} fill="currentColor" />
+    </div>
+    <p>"Finally, a tool that actually understands a job site."</p>
+  </div>
+</header>
+{/* END HERO */}
 
   {/* THE HERO IMAGE / DASHBOARD PREVIEW */}
   <div className="relative mt-12 mx-auto max-w-5xl group">
@@ -470,7 +484,6 @@ export default function Home() {
       <p className="text-slate-500 text-sm font-medium mt-2">No more sticky notes or unread texts. Track every lead and every dollar in your personal command center.</p>
     </div>
   </div>
-</header>
 
       {/* ── THE FLOW: THE MODERN FRONT DOOR ── */}
 <section id="the-flow" className="py-24 px-6 bg-white border-t border-slate-100">
@@ -823,44 +836,106 @@ export default function Home() {
       </section>
 
 
-      
+ {/* FOOTER */}
+<footer className="bg-white border-t border-slate-200 py-16 px-6">
+  <div className="max-w-6xl mx-auto">
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-200 py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-blue-600 p-1.5 rounded-lg"><Zap className="text-white w-4 h-4" strokeWidth={2.5}/></div>
-                <span className="font-extrabold text-slate-900 tracking-tight">L2P</span>
-              </div>
-              <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">Job management built for service contractors. One link. Every lead.</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Product</p>
-              {[['Features','#capabilities'],['Pricing','/pricing'],['Sign Up','/signup'],['Login','/login']].map(([l,h]) => (
-                <div key={l} className="mb-2.5"><a href={h} className="text-sm text-slate-600 hover:text-blue-600 font-medium transition">{l}</a></div>
-              ))}
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Solutions</p>
-              {[['Roofing','/solutions/roofing'],['Dog Grooming','/solutions/dog-grooming'],['Cleaning','/solutions/cleaning']].map(([l,h]) => (
-                <div key={l} className="mb-2.5"><a href={h} className="text-sm text-slate-600 hover:text-blue-600 font-medium transition">{l}</a></div>
-              ))}
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Legal</p>
-              {[['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.com']].map(([l,h]) => (
-                <div key={l} className="mb-2.5"><a href={h} className="text-sm text-slate-600 hover:text-blue-600 font-medium transition">{l}</a></div>
-              ))}
-            </div>
+    {/* LINKS */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+
+      {/* BRAND */}
+      <div className="col-span-2 md:col-span-1">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="bg-blue-600 p-1.5 rounded-lg">
+            <Zap className="text-white w-4 h-4" strokeWidth={2.5} />
           </div>
-          <div className="border-t border-slate-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-sm text-slate-400 font-medium">© {new Date().getFullYear()} Lead2Project. All rights reserved.</p>
-            <p className="text-sm text-slate-400 font-medium">Built for Service Contractors.</p>
-          </div>
+          <span className="font-extrabold text-slate-900 tracking-tight">
+            L2P
+          </span>
         </div>
-      </footer>
+        <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">
+          Job management built for service contractors. One link. Every lead.
+        </p>
+      </div>
+
+      {/* PRODUCT */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
+          Product
+        </p>
+        {[
+          { label: 'Features', href: '#capabilities' },
+          { label: 'Pricing', href: '/pricing' },
+          { label: 'Sign Up', href: '/signup' },
+          { label: 'Login', href: '/login' },
+        ].map((item) => (
+          <div key={item.label} className="mb-2.5">
+            <a
+              href={item.href}
+              className="text-sm text-slate-600 hover:text-blue-600 font-medium transition"
+            >
+              {item.label}
+            </a>
+          </div>
+        ))}
+      </div>
+
+      {/* SOLUTIONS */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
+          Solutions
+        </p>
+        {[
+          { label: 'Roofing', href: '/solutions/roofing' },
+          { label: 'Dog Grooming', href: '/solutions/dog-grooming' },
+          { label: 'Cleaning', href: '/solutions/cleaning' },
+        ].map((item) => (
+          <div key={item.label} className="mb-2.5">
+            <a
+              href={item.href}
+              className="text-sm text-slate-600 hover:text-blue-600 font-medium transition"
+            >
+              {item.label}
+            </a>
+          </div>
+        ))}
+      </div>
+
+      {/* LEGAL */}
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
+          Legal
+        </p>
+        {[
+          { label: 'Privacy Policy', href: '/privacy' },
+          { label: 'Terms of Service', href: '/terms' },
+          { label: 'Contact', href: 'mailto:hello@lead2project.com' },
+        ].map((item) => (
+          <div key={item.label} className="mb-2.5">
+            <a
+              href={item.href}
+              className="text-sm text-slate-600 hover:text-blue-600 font-medium transition"
+            >
+              {item.label}
+            </a>
+          </div>
+        ))}
+      </div>
+
     </div>
-  );
+
+    {/* BOTTOM */}
+    <div className="border-t border-slate-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p className="text-sm text-slate-400 font-medium">
+        © {new Date().getFullYear()} Lead2Project. All rights reserved.
+      </p>
+      <p className="text-sm text-slate-400 font-medium">
+        Built for Service Contractors.
+      </p>
+    </div>
+
+  </div>
+</footer>
+</div>   // ✅ THIS IS THE MISSING ONE
+);
 }
