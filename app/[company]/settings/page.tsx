@@ -21,7 +21,6 @@ export default function SettingsPageRoute() {
 
     async function loadData() {
       try {
-        // Fetch current user
         const userRes = await fetch('/api/auth/me');
         const userData = await userRes.json();
 
@@ -29,10 +28,8 @@ export default function SettingsPageRoute() {
           window.location.href = `/login`;
           return;
         }
-
         setCurrentUser(userData.user);
 
-        // Fetch company info
         const companyRes = await fetch(`/api/company/${companySlug}/info`);
         const companyData = await companyRes.json();
 
@@ -81,6 +78,7 @@ export default function SettingsPageRoute() {
       companySlug={companySlug}
       companyName={company.name}
       companyLogoUrl={company.logo_url}
+      planTier={company.plan_tier ?? 'basic'} // 👈 new
       currentUser={currentUser}
     />
   );

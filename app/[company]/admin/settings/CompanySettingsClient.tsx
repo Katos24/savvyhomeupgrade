@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   Workflow, Mail, Grid, FileText, ArrowLeft, Bell, Users, 
   CreditCard, ChevronRight, Trash2, Camera, Copy, Check, 
-  Pencil, X, Save, Phone, ExternalLink, Palette, Globe, Download
+  Pencil, X, Save, Phone, ExternalLink, Palette, Globe, Download,
+  Lock,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
-
-
+import { PLAN_CONFIG, UPGRADE_PROMPTS } from '@/lib/permissions';
+import type { PlanTier } from '@/lib/permissions';
 
 // Sub-tab imports
 import FormTab from './tabs/FormTab';
@@ -31,13 +32,77 @@ const TAB_LABELS: Record<Tab, string> = {
   notifications: 'Notifications',
 };
 
+// Which plan is required for each tab
+const TAB_REQUIRED_PLAN: Partial<Record<Tab, PlanTier>> = {
+  pipeline:          'pro',
+  'email-templates': 'pro',
+  categories:        'pro',
+  notifications:     'business', // daily digest is business only
+};
+
+const PLAN_ORDER: PlanTier[] = ['basic', 'pro', 'business'];
+
+function planHasAccess(userPlan: PlanTier, requiredPlan: PlanTier): boolean {
+  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(requiredPlan);
+}
+
+// ── Upgrade overlay shown inside a locked tab ─────────────────
+function UpgradeOverlay({ requiredPlan, feature, companySlug }: {
+  requiredPlan: PlanTier;
+  feature: string;
+  companySlug: string;
+}) {
+  const prompt = UPGRADE_PROMPTS[feature];
+  const config = PLAN_CONFIG[requiredPlan];
+  const colors = {
+    pro:      { bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-900' },
+    business: { bg: 'from-purple-50 to-violet-50', border: 'border-purple-200', badge: 'bg-purple-600', text: 'text-purple-900' },
+    basic:    { bg: 'from-gray-50 to-gray-100', border: 'border-gray-200', badge: 'bg-gray-800', text: 'text-gray-900' },
+  }[requiredPlan];
+
+  return (
+    <div className={`rounded-2xl border ${colors.border} bg-gradient-to-br ${colors.bg} p-8 text-center`}>
+      <div className={`w-14 h-14 ${colors.badge} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+        <Lock className="w-7 h-7 text-white" />
+      </div>
+      <h3 className={`text-lg font-black ${colors.text} mb-2`}>
+        {prompt?.title ?? 'Upgrade to unlock'}
+      </h3>
+      {prompt?.description && (
+        <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto leading-relaxed">
+          {prompt.description}
+        </p>
+      )}
+      {config?.features && (
+        <ul className="text-left space-y-2 mb-6 max-w-xs mx-auto">
+          {config.features.slice(0, 4).map(f => (
+            <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="text-green-500 font-bold">✓</span> {f}
+            </li>
+          ))}
+        </ul>
+      )}
+      <a
+        href={`/${companySlug}/admin/settings`}
+        onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
+        className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white ${colors.badge} hover:opacity-90 transition`}
+      >
+        Upgrade to {requiredPlan === 'pro' ? 'Pro' : 'Business'}
+        {config?.price && <span className="opacity-75 font-normal">— ${config.price}/mo</span>}
+      </a>
+      <p className="text-xs text-gray-400 mt-3">Cancel anytime. No contracts.</p>
+    </div>
+  );
+}
+
 export default function CompanySettingsClient({ company, currentUser }: { company: any; currentUser: any }) {
+  const planTier = (company.plan_tier ?? 'basic') as PlanTier;
+
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
-
 
   // QR states
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -64,7 +129,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     }
   }, [company.slug]);
 
-  // QR generation
   useEffect(() => {
     if (!publicLink) return;
     const generateQR = async () => {
@@ -168,6 +232,34 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
   };
 
+  // ── Tab content renderer with lock check ─────────────────────
+  const renderTabContent = (tab: Tab) => {
+    const requiredPlan = TAB_REQUIRED_PLAN[tab];
+
+    // Check if locked
+    if (requiredPlan && !planHasAccess(planTier, requiredPlan)) {
+      const featureKey = tab === 'email-templates' ? 'email_templates' : tab;
+      return (
+        <UpgradeOverlay
+          requiredPlan={requiredPlan}
+          feature={featureKey}
+          companySlug={company.slug}
+        />
+      );
+    }
+
+    // Unlocked — render normally
+    switch (tab) {
+      case 'form':            return <FormTab company={company} currentUser={currentUser} />;
+      case 'pipeline':        return <PipelineTab company={company} currentUser={currentUser} />;
+      case 'email-templates': return <EmailTemplatesTab company={company} currentUser={currentUser} />;
+      case 'categories':      return <CategoriesTab company={company} currentUser={currentUser} />;
+      case 'team':            return <TeamTab company={company} currentUser={currentUser} />;
+      case 'billing':         return <BillingTab company={company} currentUser={currentUser} />;
+      case 'notifications':   return <NotificationsTab company={company} currentUser={currentUser} />;
+    }
+  };
+
   if (activeTab) {
     return (
       <div className="min-h-screen bg-slate-900">
@@ -188,13 +280,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
         <div className="max-w-4xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="bg-white rounded-[2rem] p-6 shadow-2xl">
-            {activeTab === 'form' && <FormTab company={company} currentUser={currentUser} />}
-            {activeTab === 'pipeline' && <PipelineTab company={company} currentUser={currentUser} />}
-            {activeTab === 'email-templates' && <EmailTemplatesTab company={company} currentUser={currentUser} />}
-            {activeTab === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
-            {activeTab === 'team' && <TeamTab company={company} currentUser={currentUser} />}
-            {activeTab === 'billing' && <BillingTab company={company} currentUser={currentUser} />}
-            {activeTab === 'notifications' && <NotificationsTab company={company} currentUser={currentUser} />}
+            {renderTabContent(activeTab)}
           </div>
         </div>
       </div>
@@ -203,7 +289,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
   return (
     <div className="min-h-screen bg-[#0F172A] pb-20 selection:bg-indigo-500/30">
-      {/* HEADER - Updated to dark translucent */}
       <header className="bg-slate-900/40 backdrop-blur-md border-b border-white/5 px-4 py-4 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <h1 className="text-xs sm:text-sm font-black text-white uppercase tracking-[0.15em] sm:tracking-[0.2em] italic underline decoration-indigo-500 decoration-2 underline-offset-4 truncate">
@@ -217,7 +302,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-12">
 
-        {/* IDENTITY HERO - Stays white */}
+        {/* IDENTITY HERO */}
         <section className="bg-white rounded-3xl sm:rounded-[3rem] shadow-2xl shadow-black/20 overflow-hidden">
           <div className="h-2 sm:h-3 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
 
@@ -337,137 +422,121 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
             {isEditing && (
               <div className="flex gap-3 pt-1">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center justify-center gap-1.5 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition"
-                >
+                <button onClick={() => setIsEditing(false)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition">
                   <X className="w-4 h-4" /> Cancel
                 </button>
-                <button
-                  onClick={handleSaveIdentity}
-                  disabled={loading}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]"
-                >
+                <button onClick={handleSaveIdentity} disabled={loading}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]">
                   <Save className="w-4 h-4" /> {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             )}
 
             {!isEditing && (
-  <div className="grid grid-cols-4 gap-2">
-    {/* QR Code */}
-    <button
-      onClick={() => setShowQrModal(true)}
-      className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
-    >
-      {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
-      <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">QR Code</span>
-    </button>
+              <div className="grid grid-cols-4 gap-2">
+                <button onClick={() => setShowQrModal(true)}
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all">
+                  {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
+                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">QR Code</span>
+                </button>
 
-    {/* Copy */}
-    <button
-      onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="flex flex-col items-center justify-center gap-1.5 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition"
-    >
-      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-      <span className="text-[10px] font-black uppercase tracking-wide">{copied ? 'Copied!' : 'Copy Link'}</span>
-    </button>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition">
+                  {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                  <span className="text-[10px] font-black uppercase tracking-wide">{copied ? 'Copied!' : 'Copy Link'}</span>
+                </button>
 
-    {/* View */}
-<a
-  href={publicLink}
-  target="_blank"
-  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all"
->
-  <ExternalLink className="w-5 h-5 text-slate-500" />
-  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">View Form</span>
-</a>
+                <a href={publicLink} target="_blank"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all">
+                  <ExternalLink className="w-5 h-5 text-slate-500" />
+                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">View Form</span>
+                </a>
 
-    {/* Daily Digest Toggle */}
-    <button
-      onClick={async () => {
-        const newVal = !digestEnabled;
-        setDigestEnabled(newVal);
-        await fetch(`/api/company/${company.slug}/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update-notifications',
-            data: {
-              reminder_settings: company.reminder_settings,
-              notification_preferences: {
-                ...(company.notification_preferences || {}),
-                daily_digest: { enabled: newVal },
-                digest_recipient: 'company',
-              },
-            },
-          }),
-        });
-      }}
-      className={`flex flex-col items-center justify-center gap-1.5 p-3 border rounded-2xl transition-all ${
-        digestEnabled
-          ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
-          : 'bg-slate-50 border-slate-100 text-slate-400'
-      }`}
-    >
-      <Mail className={`w-5 h-5 ${digestEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
-      <span className="text-[10px] font-black uppercase tracking-wide">
-        {digestEnabled ? 'Digest On' : 'Digest Off'}
-      </span>
-    </button>
-  </div>
-)}
+                {/* Daily Digest — Business only */}
+                {planHasAccess(planTier, 'business') ? (
+                  <button
+                    onClick={async () => {
+                      const newVal = !digestEnabled;
+                      setDigestEnabled(newVal);
+                      await fetch(`/api/company/${company.slug}/settings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          action: 'update-notifications',
+                          data: {
+                            reminder_settings: company.reminder_settings,
+                            notification_preferences: {
+                              ...(company.notification_preferences || {}),
+                              daily_digest: { enabled: newVal },
+                              digest_recipient: 'company',
+                            },
+                          },
+                        }),
+                      });
+                    }}
+                    className={`flex flex-col items-center justify-center gap-1.5 p-3 border rounded-2xl transition-all ${
+                      digestEnabled ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-100 text-slate-400'
+                    }`}
+                  >
+                    <Mail className={`w-5 h-5 ${digestEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <span className="text-[10px] font-black uppercase tracking-wide">
+                      {digestEnabled ? 'Digest On' : 'Digest Off'}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openTab('billing')}
+                    className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-200 border-dashed rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 group"
+                  >
+                    <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition" />
+                    <span className="text-[10px] font-black uppercase tracking-wide text-slate-300 group-hover:text-purple-400 transition">Digest</span>
+                    <span className="text-[8px] font-black uppercase tracking-wide text-purple-400">Business</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
-
-        {/* MODULE GRID - Updated Section Header */}
+        {/* MODULE GRID */}
         <div>
           <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} />
-<MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} />
-<MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} />
-<MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} />
-<MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
-<MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
-  <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} />
-
+            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
+            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
+            <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} />
+            <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!planHasAccess(planTier, 'pro')} requiredPlan="Pro" />
+            <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
+            <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
+            <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} locked={!planHasAccess(planTier, 'business')} requiredPlan="Business" />
           </div>
         </div>
 
-
-        {/* HOW IT WORKS - Stays white but darker border contrast */}
+        {/* HOW IT WORKS */}
         <section className="bg-white border border-white/10 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
             <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">How It Works</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-            <div className="p-5 flex items-start gap-4">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">1</div>
-              <div>
-                <p className="text-sm font-black text-slate-900 leading-tight">Set up your identity</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Your logo, colors, and contact info appear on every customer email and your booking form.</p>
+            {[
+              { n: 1, title: 'Set up your identity', body: 'Your logo, colors, and contact info appear on every customer email and your booking form.' },
+              { n: 2, title: 'Share your booking link', body: 'Send the link above or print the QR code. Customers tap it, fill out a quick form, and submit a project request.' },
+              { n: 3, title: 'Manage in your dashboard', body: 'Every submission lands as a lead. Quote it, schedule it, assign your team, and collect payment — all in one place.' },
+            ].map(({ n, title, body }) => (
+              <div key={n} className="p-5 flex items-start gap-4">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">{n}</div>
+                <div>
+                  <p className="text-sm font-black text-slate-900 leading-tight">{title}</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{body}</p>
+                </div>
               </div>
-            </div>
-            <div className="p-5 flex items-start gap-4">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">2</div>
-              <div>
-                <p className="text-sm font-black text-slate-900 leading-tight">Share your booking link</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Send the link above or print the QR code. Customers tap it, fill out a quick form, and submit a project request.</p>
-              </div>
-            </div>
-            <div className="p-5 flex items-start gap-4">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">3</div>
-              <div>
-                <p className="text-sm font-black text-slate-900 leading-tight">Manage in your dashboard</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Every submission lands as a lead. Quote it, schedule it, assign your team, and collect payment  all in one place.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* FOOTER - Adapted for Dark BG */}
+        {/* FOOTER */}
         <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 shadow-sm shrink-0">
@@ -486,13 +555,12 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </a>
         </div>
       </div>
-      
-      {/* QR MODAL stays the same visually as it is an overlay */}
+
+      {/* QR MODAL */}
       {showQrModal && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
           <div className="relative bg-white rounded-t-[2rem] sm:rounded-[3rem] p-6 sm:p-8 w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
-            {/* Modal Content... same as before */}
             <div className={`p-6 rounded-[2rem] mb-6 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
               <div className="relative">
                 <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
@@ -525,30 +593,39 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                   <Download className="w-4 h-4" /> Export PNG
                 </button>
               </div>
-              
             </div>
-            
           </div>
-          
         </div>
       )}
     </div>
   );
 }
 
-function MenuCard({ icon: Icon, label, desc, color, onClick }: any) {
+function MenuCard({ icon: Icon, label, desc, color, onClick, locked, requiredPlan }: {
+  icon: any; label: string; desc: string; color: string;
+  onClick: () => void; locked?: boolean; requiredPlan?: string;
+}) {
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 flex flex-col h-full active:scale-[0.98] border border-white/10"
+      className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 flex flex-col h-full active:scale-[0.98] border border-white/10 relative overflow-hidden"
     >
-      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] flex items-center justify-center mb-3 sm:mb-4 transition-all group-hover:scale-110 group-hover:-rotate-3" style={{ backgroundColor: `${color}15` }}>
-        <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color }} />
+      {locked && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full">
+          <Lock className="w-2.5 h-2.5 text-slate-400" />
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">{requiredPlan}</span>
+        </div>
+      )}
+      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1rem] flex items-center justify-center mb-3 sm:mb-4 transition-all group-hover:scale-110 group-hover:-rotate-3"
+        style={{ backgroundColor: locked ? '#f1f5f9' : `${color}15` }}>
+        <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: locked ? '#94a3b8' : color }} />
       </div>
-      <p className="text-xs sm:text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight mb-1.5">{label}</p>
+      <p className={`text-xs sm:text-sm font-black leading-tight mb-1.5 ${locked ? 'text-slate-400' : 'text-slate-900 group-hover:text-indigo-600'} transition-colors`}>
+        {label}
+      </p>
       <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-relaxed flex-1">{desc}</p>
-      <div className="mt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0">
-        Configure <ChevronRight className="w-3 h-3" />
+      <div className={`mt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0 ${locked ? 'text-purple-400' : 'text-indigo-500'}`}>
+        {locked ? `Upgrade to ${requiredPlan}` : 'Configure'} <ChevronRight className="w-3 h-3" />
       </div>
     </button>
   );

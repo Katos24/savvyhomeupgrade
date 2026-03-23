@@ -6,8 +6,9 @@ import {
   Settings2, Eye, Layout, Save, ChevronRight,
   User, Mail, Phone, Building, FileText, MapPin, Calendar,
   Clock, HelpCircle, Image as ImageIcon, Megaphone, Lock,
-  ToggleLeft, ToggleRight, ExternalLink, Link2, QrCode,
+  ToggleLeft, ToggleRight, ExternalLink, Link2,
 } from 'lucide-react';
+import type { PlanTier } from '@/lib/permissions';
 
 type CustomQuestion = {
   id: string;
@@ -36,10 +37,46 @@ const DEFAULT_FIELD_CONFIG: FieldConfig = {
   preferred_date: { enabled: true },
   preferred_time: { enabled: true },
   lead_source: { enabled: true },
-  file_upload: { enabled: true },
+  file_upload: { enabled: false }, // off by default — only on if plan allows
 };
 
-export default function FormTab({ company }: { company: any; currentUser: any }) {
+const PLAN_ORDER: PlanTier[] = ['basic', 'pro', 'business'];
+function planHasAccess(userPlan: PlanTier, required: PlanTier) {
+  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(required);
+}
+
+// ── Small inline locked feature banner ───────────────────────
+function LockedFeatureBanner({ label, description, companySlug, requiredPlan = 'Pro' }: {
+  label: string;
+  description: string;
+  companySlug: string;
+  requiredPlan?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50">
+      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+        <Lock className="w-4 h-4 text-blue-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-blue-900">{label}</p>
+        <p className="text-xs text-blue-600 mt-0.5">{description}</p>
+      </div>
+      <a
+        href={`/${companySlug}/admin/settings`}
+        onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
+        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition whitespace-nowrap"
+      >
+        Upgrade to {requiredPlan}
+      </a>
+    </div>
+  );
+}
+
+export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
+  const planTier = (company.plan_tier ?? 'basic') as PlanTier;
+  const canUsePhotoUpload     = planHasAccess(planTier, 'pro');
+  const canUseCustomQuestions = planHasAccess(planTier, 'pro');
+
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [ctaSuccessMessage, setCtaSuccessMessage] = useState(company.cta_success_message || '');
@@ -47,19 +84,16 @@ export default function FormTab({ company }: { company: any; currentUser: any })
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
-    if (existingConfig) {
-      return {
-        address: {
-          enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-          required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
-        },
-        preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-        preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-        lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
-        file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
-      };
-    }
-    return {
+    const base = existingConfig ? {
+      address: {
+        enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
+        required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
+      },
+      preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
+      preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
+      lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
+      file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
+    } : {
       address: {
         enabled: company.address_enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
         required: company.address_required ?? DEFAULT_FIELD_CONFIG.address.required,
@@ -69,9 +103,16 @@ export default function FormTab({ company }: { company: any; currentUser: any })
       lead_source: { enabled: DEFAULT_FIELD_CONFIG.lead_source.enabled },
       file_upload: { enabled: DEFAULT_FIELD_CONFIG.file_upload.enabled },
     };
+
+    // Always force file_upload off for Basic — they can't offer it
+    if (!canUsePhotoUpload) {
+      base.file_upload = { enabled: false };
+    }
+
+    return base;
   });
 
-const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
+  const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
@@ -108,8 +149,12 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
           action: 'update-form',
           data: {
             cta: { cta_success_message: ctaSuccessMessage },
-            questions: customQuestions,
-            field_config: fieldConfig,
+            questions: canUseCustomQuestions ? customQuestions : [],
+            field_config: {
+              ...fieldConfig,
+              // Always enforce file_upload off for Basic before saving
+              file_upload: { enabled: canUsePhotoUpload ? fieldConfig.file_upload.enabled : false },
+            },
           },
         }),
       });
@@ -140,10 +185,6 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
     setShowAddQuestion(false);
     setEditingQuestionId(null);
   };
-
-  const hasStep2Fields = fieldConfig.address.enabled || fieldConfig.preferred_date.enabled ||
-    fieldConfig.preferred_time.enabled || fieldConfig.lead_source.enabled ||
-    fieldConfig.file_upload.enabled || customQuestions.length > 0;
 
   return (
     <div className="max-w-7xl mx-auto space-y-5 pb-20">
@@ -180,10 +221,9 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
           <div className="flex-1 space-y-1">
             <p className="text-sm font-black text-indigo-900">This is the form your customers fill out</p>
             <p className="text-xs text-indigo-700 leading-relaxed">
-              When a customer taps your booking link or scans your QR code, they land on this form and submit a project request. It goes straight into your dashboard as a new lead. Configure what you want to collect below.
+              When a customer taps your booking link or scans your QR code, they land on this form and submit a project request. It goes straight into your dashboard as a new lead.
             </p>
           </div>
-          {/* Live booking URL */}
           <div className="flex flex-col gap-2 shrink-0">
             <div className="flex items-center gap-2 bg-white border border-indigo-200 rounded-xl px-3 py-2">
               <Link2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
@@ -214,15 +254,15 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
         {/* LEFT: Configuration */}
         <div className="lg:col-span-7 space-y-5">
 
-          {/* Step 1  Always-on fields */}
+          {/* Step 1 — Always-on fields */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-gray-400" />
-                <span className="font-bold text-sm text-gray-700">Step 1  Basic Info</span>
+                <span className="font-bold text-sm text-gray-700">Step 1 — Basic Info</span>
                 <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase tracking-wide ml-auto">Always collected</span>
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">These fields are always on the form. Every customer fills them out before moving to step 2.</p>
+              <p className="text-xs text-gray-400 mt-1.5">These fields are always on the form.</p>
             </div>
             <div className="p-4 space-y-1">
               {[
@@ -244,23 +284,23 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
             </div>
           </div>
 
-          {/* Step 2  Optional fields */}
+          {/* Step 2 — Optional fields */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-indigo-500" />
-                <span className="font-bold text-sm text-gray-700">Step 2  Extra Details</span>
+                <span className="font-bold text-sm text-gray-700">Step 2 — Extra Details</span>
                 <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wide ml-auto">You control these</span>
               </div>
               <p className="text-xs text-gray-400 mt-1.5">
-                After step 1 submits, customers see a second screen with these optional fields. Turn them on or off  they never block the customer from submitting.
+                After step 1, customers see these optional fields. Toggle on or off — they never block submission.
               </p>
             </div>
             <div className="p-4 space-y-1">
               <FieldToggle
                 icon={MapPin} iconColor="text-red-500"
                 label="Service Address"
-                description="Street address with autocomplete  useful for quotes"
+                description="Street address with autocomplete — useful for quotes"
                 enabled={fieldConfig.address.enabled}
                 onToggle={() => toggleField('address')}
               >
@@ -280,7 +320,7 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
               <FieldToggle
                 icon={Calendar} iconColor="text-emerald-500"
                 label="Preferred Date"
-                description="Lets customers suggest a date  you still confirm the real schedule"
+                description="Lets customers suggest a date — you still confirm the real schedule"
                 enabled={fieldConfig.preferred_date.enabled}
                 onToggle={() => toggleField('preferred_date')}
               />
@@ -288,7 +328,7 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
               <FieldToggle
                 icon={Clock} iconColor="text-blue-500"
                 label="Preferred Time"
-                description="Morning, afternoon, specific time  free text"
+                description="Morning, afternoon, specific time — free text"
                 enabled={fieldConfig.preferred_time.enabled}
                 onToggle={() => toggleField('preferred_time')}
               />
@@ -301,17 +341,26 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                 onToggle={() => toggleField('lead_source')}
               />
 
-              <FieldToggle
-                icon={ImageIcon} iconColor="text-pink-500"
-                label="Photo / Video Upload"
-                description="Customers can attach images of the job  great for quotes"
-                enabled={fieldConfig.file_upload.enabled}
-                onToggle={() => toggleField('file_upload')}
-              />
+              {/* Photo upload — locked for Basic */}
+              {canUsePhotoUpload ? (
+                <FieldToggle
+                  icon={ImageIcon} iconColor="text-pink-500"
+                  label="Photo / Video Upload"
+                  description="Customers can attach images of the job — great for quotes"
+                  enabled={fieldConfig.file_upload.enabled}
+                  onToggle={() => toggleField('file_upload')}
+                />
+              ) : (
+                <LockedFeatureBanner
+                  label="Photo & Video Uploads"
+                  description="Let customers attach job site photos directly on the form — available on Pro."
+                  companySlug={company.slug}
+                />
+              )}
             </div>
           </div>
 
-          {/* Custom Questions */}
+          {/* Custom Questions — locked for Basic */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
               <div>
@@ -319,16 +368,22 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                   <HelpCircle className="w-4 h-4 text-indigo-500" />
                   <span className="font-bold text-sm text-gray-700">Your Own Questions</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Add custom questions that appear on step 2  text, dropdown, or yes/no. Great for collecting info you always need upfront.</p>
+                <p className="text-xs text-gray-400 mt-1">Add custom questions that appear on step 2 — text, dropdown, or yes/no.</p>
               </div>
-              {!showAddQuestion && (
+              {canUseCustomQuestions && !showAddQuestion && (
                 <button onClick={() => setShowAddQuestion(true)} className="text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1 shrink-0">
                   <Plus className="w-4 h-4" /> Add
                 </button>
               )}
             </div>
             <div className="p-5">
-              {showAddQuestion ? (
+              {!canUseCustomQuestions ? (
+                <LockedFeatureBanner
+                  label="Custom Questions"
+                  description="Ask customers anything — budget range, gate codes, pet info. Available on Pro."
+                  companySlug={company.slug}
+                />
+              ) : showAddQuestion ? (
                 <QuestionEditor
                   question={newQuestion}
                   newOption={newOption}
@@ -348,7 +403,7 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                         </div>
                         <div>
                           <p className="text-sm font-bold text-gray-800">{q.label} {q.required && <span className="text-red-500">*</span>}</p>
-                          <p className="text-[11px] text-gray-400 uppercase font-medium">{q.type} field{q.type === 'select' && q.options?.length ? `  ${q.options.length} options` : ''}</p>
+                          <p className="text-[11px] text-gray-400 uppercase font-medium">{q.type} field{q.type === 'select' && q.options?.length ? ` — ${q.options.length} options` : ''}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -374,7 +429,7 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                 <Check className="w-4 h-4 text-emerald-500" />
                 <span className="font-bold text-sm text-gray-700">Confirmation Message</span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">What customers see after they hit submit  make it friendly and set expectations.</p>
+              <p className="text-xs text-gray-400 mt-1">What customers see after they hit submit.</p>
             </div>
             <div className="p-5">
               <textarea
@@ -384,21 +439,20 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm"
                 placeholder='e.g. "Thanks! We will review your request and reach out within 24 hours."'
               />
-<p className="text-[11px] text-gray-400 mt-2">Leave blank to use the default message.</p>
-<div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-2">
-  <Mail className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
-  <p className="text-xs text-indigo-700 leading-relaxed">
-    A confirmation email is automatically sent to the customer when they submit. This message appears on screen after submission.
-  </p>
-</div>            </div>
+              <p className="text-[11px] text-gray-400 mt-2">Leave blank to use the default message.</p>
+              <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-2">
+                <Mail className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-indigo-700 leading-relaxed">
+                  A confirmation email is automatically sent to the customer when they submit. This message appears on screen after submission.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* RIGHT: Live Preview */}
         <div className="lg:col-span-5">
           <div className="sticky top-6 space-y-3">
-
-            {/* Preview header */}
             <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-indigo-500" />
@@ -406,7 +460,7 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
                 <span className="text-[10px] font-bold text-gray-400 ml-auto">Updates as you edit</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">
-                This is exactly what your customers see when they open your booking link. The colors and logo come from your company identity settings.
+                This is exactly what your customers see when they open your booking link.
               </p>
               <a
                 href={publicUrl}
@@ -417,57 +471,53 @@ const [previewStep, setPreviewStep] = useState<1 | 2 | 3>(1);
               </a>
             </div>
 
-       {/* Step tabs */}
-<div className="flex gap-1.5">
-  {[
-    { step: 1, label: 'Step 1' },
-    { step: 2, label: 'Step 2' },
-    { step: 3, label: 'Confirmation' },
-  ].map(({ step, label }) => (
-    <button
-      key={step}
-      onClick={() => setPreviewStep(step as 1 | 2 | 3)}
-      className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-        previewStep === step ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
-      }`}
-    >
-      {label}
-    </button>
-  ))}
-</div>
+            {/* Step tabs */}
+            <div className="flex gap-1.5">
+              {([1, 2, 3] as const).map(step => (
+                <button
+                  key={step}
+                  onClick={() => setPreviewStep(step)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                    previewStep === step ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Confirmation'}
+                </button>
+              ))}
+            </div>
 
             {/* Phone frame */}
             <div className="bg-gray-900 rounded-[2.5rem] p-4 border-[8px] border-gray-800 shadow-2xl overflow-hidden aspect-[9/16] max-h-[680px] flex flex-col">
               <div className="bg-white rounded-[1.5rem] flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-        {previewStep === 1 && (
-  <PreviewStep1
-    heading={company.cta_heading || ''}
-    categories={categories}
-    brandColor1={brandColor1}
-    brandColor2={brandColor2}
-    logoUrl={company.logo_url}
-    companyName={company.name}
-  />
-)}
-{previewStep === 2 && (
-  <PreviewStep2
-    fieldConfig={fieldConfig}
-    customQuestions={customQuestions}
-    brandColor1={brandColor1}
-    brandColor2={brandColor2}
-    companyWebsite={company.website}
-    companyName={company.name}
-  />
-)}
-{previewStep === 3 && (
-  <PreviewStep3
-    message={ctaSuccessMessage}
-    brandColor1={brandColor1}
-    brandColor2={brandColor2}
-    companyName={company.name}
-    logoUrl={company.logo_url}
-  />
-)}
+                {previewStep === 1 && (
+                  <PreviewStep1
+                    heading={company.cta_heading || ''}
+                    categories={categories}
+                    brandColor1={brandColor1}
+                    brandColor2={brandColor2}
+                    logoUrl={company.logo_url}
+                    companyName={company.name}
+                  />
+                )}
+                {previewStep === 2 && (
+                  <PreviewStep2
+                    fieldConfig={fieldConfig}
+                    customQuestions={canUseCustomQuestions ? customQuestions : []}
+                    brandColor1={brandColor1}
+                    brandColor2={brandColor2}
+                    companyName={company.name}
+                    canUsePhotoUpload={canUsePhotoUpload}
+                  />
+                )}
+                {previewStep === 3 && (
+                  <PreviewStep3
+                    message={ctaSuccessMessage}
+                    brandColor1={brandColor1}
+                    brandColor2={brandColor2}
+                    companyName={company.name}
+                    logoUrl={company.logo_url}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -501,6 +551,8 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
     </div>
   );
 }
+
+
 
 /* ---- Question Editor ---- */
 function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChange, onSave, onCancel }: {
@@ -637,15 +689,15 @@ function PreviewStep1({ heading, categories, brandColor1, brandColor2, logoUrl, 
 }
 
 /* ---- Preview Step 2 ---- */
-function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, companyWebsite, companyName }: {
+function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, companyName, canUsePhotoUpload }: {
   fieldConfig: FieldConfig; customQuestions: CustomQuestion[];
   brandColor1: string; brandColor2: string;
-  companyWebsite?: string | null; companyName?: string;
+  companyName?: string; canUsePhotoUpload: boolean;
 }) {
   const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 text-gray-400 text-xs flex items-center";
   const hasAnything = fieldConfig.address.enabled || fieldConfig.preferred_date.enabled ||
     fieldConfig.preferred_time.enabled || fieldConfig.lead_source.enabled ||
-    fieldConfig.file_upload.enabled || customQuestions.length > 0;
+    (canUsePhotoUpload && fieldConfig.file_upload.enabled) || customQuestions.length > 0;
 
   return (
     <div>
@@ -656,7 +708,7 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
           <div className="w-5 h-5 rounded-full bg-white text-[10px] font-bold flex items-center justify-center" style={{ color: brandColor1 }}>2</div>
         </div>
         <h3 className="text-base font-bold">Request received!</h3>
-        <p className="text-white/70 text-[11px] mt-1">A few more details  all optional.</p>
+        <p className="text-white/70 text-[11px] mt-1">A few more details — all optional.</p>
       </div>
       <div className="px-5 pb-5 pt-4 space-y-3">
         {!hasAnything && (
@@ -719,7 +771,7 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
             </div>
           </PreviewField>
         )}
-        {fieldConfig.file_upload.enabled && (
+        {canUsePhotoUpload && fieldConfig.file_upload.enabled && (
           <div>
             <div className="flex items-center gap-1.5 mb-1.5">
               <ImageIcon className="w-3 h-3 text-pink-500" />
@@ -744,71 +796,29 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
   );
 }
 
-
-
-/* ---- Preview Step 3 / Confirmation ---- */
+/* ---- Preview Step 3 ---- */
 function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl }: {
   message: string; brandColor1: string; brandColor2: string; companyName?: string; logoUrl?: string | null;
 }) {
   const b1 = brandColor1 || '#2563eb';
   const b2 = brandColor2 || '#7c3aed';
-  const subtext = message || "We've got your request and will be in touch soon. Keep an eye on your inbox for a confirmation.";
+  const subtext = message || "We've got your request and will be in touch soon.";
 
   return (
     <div style={{ background: '#fafaf9', minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', borderRadius: '1.5rem' }}>
       <div style={{ width: '100%', background: '#fff', borderRadius: '20px', padding: '32px 20px 28px', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-
-        {/* Logo */}
         {logoUrl && (
           <div style={{ marginBottom: '20px' }}>
             <img src={logoUrl} alt={companyName} style={{ height: '36px', width: 'auto', objectFit: 'contain', maxWidth: '140px', margin: '0 auto' }} />
           </div>
         )}
-
-        {/* Check circle */}
         <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `linear-gradient(135deg, ${b1}, ${b2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 8px 20px ${b1}40` }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
-
-        {/* Headline */}
-        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111', marginBottom: '10px', fontFamily: 'Georgia, serif' }}>
-          Request Received!
-        </h1>
-
-        {/* Subtext */}
-        <p style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.6, marginBottom: '24px' }}>
-          {subtext}
-        </p>
-
-        {/* Steps */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px', textAlign: 'left' }}>
-          {[
-            { icon: '📬', title: 'Check your email', sub: 'Confirmation sent to your inbox' },
-            { icon: '⏳', title: "We'll reach out shortly", sub: 'Our team reviews every request' },
-          ].map((s) => (
-            <div key={s.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', background: `linear-gradient(135deg, ${b1}18, ${b2}18)` }}>
-                {s.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#111', marginBottom: '1px' }}>{s.title}</div>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{s.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA button */}
-        <div style={{ width: '100%', padding: '12px 20px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600, color: '#fff', background: `linear-gradient(135deg, ${b1}, ${b2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-          Visit Confirmation Email
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </div>
-
-        {/* Footer */}
+        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111', marginBottom: '10px' }}>Request Received!</h1>
+        <p style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.6, marginBottom: '24px' }}>{subtext}</p>
         <p style={{ marginTop: '18px', fontSize: '0.65rem', color: '#d1d5db', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           Powered by Lead2Project
         </p>
@@ -816,7 +826,6 @@ function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl 
     </div>
   );
 }
-
 
 /* ---- Preview Field Helper ---- */
 function PreviewField({ icon, label, required, children }: {
