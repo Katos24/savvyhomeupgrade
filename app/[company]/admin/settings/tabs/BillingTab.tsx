@@ -13,16 +13,17 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activePlan, setActivePlan] = useState<'starter' | 'basic' | 'pro'>(
-  (company.plan_tier || 'starter') as 'starter' | 'basic' | 'pro'
-);
+    (company.plan_tier || 'starter') as 'starter' | 'basic' | 'pro'
+  );
   const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
     company.pending_downgrade_at
       ? { periodEnd: Math.floor(new Date(company.pending_downgrade_at).getTime() / 1000) }
       : null
   );
 
-  const planConfig = PLAN_CONFIG[activePlan] || PLAN_CONFIG.basic;
+  const planConfig = PLAN_CONFIG[activePlan] || PLAN_CONFIG.starter;
   const isActive = ['active', 'trialing'].includes(company.subscription_status);
+  const isTrialing = company.subscription_status === 'trialing';
 
   async function handleManageSubscription() {
     setLoading(true);
@@ -47,15 +48,16 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     }
   }
 
-async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
+  async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
     if (changingPlan) return;
-    // Allow clicking Basic card to cancel a pending downgrade (upgrade back to pro)
     if (newPlan === activePlan && !pendingDowngrade) return;
 
-    const isUpgrade = newPlan === 'pro';
+    const ORDER = ['starter', 'basic', 'pro'] as const;
+    const isUpgrade = ORDER.indexOf(newPlan) > ORDER.indexOf(activePlan);
+
     const confirmed = window.confirm(
       isUpgrade
-        ? 'Upgrade to Pro ($99/mo)? The price difference will be prorated on your next invoice.'
+        ? `Upgrade to ${PLAN_CONFIG[newPlan].label} ($${PLAN_CONFIG[newPlan].price}/mo)? The price difference will be prorated on your next invoice.`
         : `Downgrade to ${PLAN_CONFIG[newPlan].label} ($${PLAN_CONFIG[newPlan].price}/mo)? You'll keep your current access until the end of your billing period.`
     );
 
@@ -73,18 +75,15 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to change plan');
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to change plan');
 
       if (isUpgrade) {
         setActivePlan(newPlan);
         setPendingDowngrade(null);
-        setSuccess('Upgraded to Pro! Your new features are available now.');
+        setSuccess(`Upgraded to ${PLAN_CONFIG[newPlan].label}! Your new features are available now.`);
       } else {
         setPendingDowngrade({ periodEnd: data.periodEnd });
-        setSuccess("Downgrade scheduled. You'll keep Pro access until the end of your current billing period.");
+        setSuccess("Downgrade scheduled. You'll keep your current access until the end of your billing period.");
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -154,13 +153,13 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
         <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
           <Clock className="w-5 h-5 flex-shrink-0 text-amber-600" />
           <span className="flex-1">
-            Your plan will switch to Basic on{' '}
+            Your plan will switch on{' '}
             <strong>
               {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', {
                 month: 'long', day: 'numeric', year: 'numeric'
               })}
             </strong>
-            . You have full Pro access until then.
+            . You have full access until then.
           </span>
         </div>
       )}
@@ -199,10 +198,10 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 {activePlan === 'pro'
-  ? <Sparkles className="w-5 h-5 text-indigo-600" />
-  : activePlan === 'basic'
-  ? <Zap className="w-5 h-5 text-blue-600" />
-  : <Zap className="w-5 h-5 text-slate-500" />}
+                  ? <Sparkles className="w-5 h-5 text-indigo-600" />
+                  : activePlan === 'basic'
+                  ? <Zap className="w-5 h-5 text-blue-600" />
+                  : <Zap className="w-5 h-5 text-slate-500" />}
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Current Plan</p>
               </div>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">{planConfig.label}</p>
@@ -212,7 +211,7 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
               {pendingDowngrade && (
                 <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  Switching to Basic on {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  Switching on {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
               )}
             </div>
@@ -228,7 +227,7 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
             </div>
 
             {/* Trial End Date */}
-            {company.trial_ends_at && company.subscription_status === 'trialing' && (
+            {company.trial_ends_at && isTrialing && (
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="w-5 h-5 text-green-600" />
@@ -244,22 +243,46 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
             )}
           </div>
 
-          {/* Plan Switcher */}
-          {isActive && (
+          {/* Trial Lock Message */}
+          {isTrialing && (
+            <div className="border-t border-slate-200 pt-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-start gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-blue-900 mb-1">You're on a free trial</p>
+                  <p className="text-sm text-blue-700">
+                    You have full access until your trial ends on{' '}
+                    <strong>
+                      {new Date(company.trial_ends_at).toLocaleDateString('en-US', {
+                        month: 'long', day: 'numeric', year: 'numeric'
+                      })}
+                    </strong>
+                    . You can change your plan after your trial converts to a paid subscription.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Plan Switcher — hidden during trial */}
+          {isActive && !isTrialing && (
             <div className="border-t border-slate-200 pt-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Change Plan</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               {(['starter', 'basic', 'pro'] as const).map((planKey) => {
-  const config = PLAN_CONFIG[planKey];
-  const ORDER = ['starter', 'basic', 'pro'] as const;
-  const isCurrent = planKey === activePlan && !pendingDowngrade;
-  const isPendingDowngradePlan = ORDER.indexOf(planKey) < ORDER.indexOf(activePlan) && !!pendingDowngrade;
-  const isUpgrade = ORDER.indexOf(planKey) > ORDER.indexOf(activePlan);
+              {/* 3 cols on all screen sizes, compact cards */}
+              <div className="grid grid-cols-3 gap-3">
+                {(['starter', 'basic', 'pro'] as const).map((planKey) => {
+                  const config = PLAN_CONFIG[planKey];
+                  const ORDER = ['starter', 'basic', 'pro'] as const;
+                  const isCurrent = planKey === activePlan && !pendingDowngrade;
+                  const isPendingDowngradePlan = ORDER.indexOf(planKey) < ORDER.indexOf(activePlan) && !!pendingDowngrade;
+                  const isUpgrade = ORDER.indexOf(planKey) > ORDER.indexOf(activePlan);
 
                   return (
                     <div
                       key={planKey}
-                      className={`relative rounded-xl border-2 p-5 transition ${
+                      className={`relative rounded-xl border-2 p-4 transition flex flex-col ${
                         isCurrent
                           ? 'border-blue-500 bg-blue-50/50'
                           : isPendingDowngradePlan
@@ -268,82 +291,80 @@ async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
                       }`}
                     >
                       {isCurrent && (
-                        <span className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
                           CURRENT
                         </span>
                       )}
                       {isPendingDowngradePlan && (
-                        <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
                           PENDING
                         </span>
                       )}
                       {planKey === 'pro' && !isCurrent && !pendingDowngrade && (
-                        <span className="absolute top-3 right-3 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
                           POPULAR
                         </span>
                       )}
 
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1">
                         {planKey === 'pro'
-                          ? <Sparkles className="w-5 h-5 text-indigo-600" />
-                          : <Zap className="w-5 h-5 text-blue-600" />}
-                        <h4 className="text-lg font-bold text-slate-900">{config.label}</h4>
-                      </div>
-                      <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-2xl font-extrabold text-slate-900">${config.price}</span>
-                        <span className="text-slate-500 text-sm">/month</span>
+                          ? <Sparkles className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                          : planKey === 'basic'
+                          ? <Zap className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                          : <Zap className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                        <h4 className="text-sm font-bold text-slate-900">{config.label}</h4>
                       </div>
 
-                      <ul className="space-y-1.5 mb-4">
-                        {config.features.slice(0, 5).map((f) => (
-                          <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            {f}
+                      <div className="flex items-baseline gap-0.5 mb-3">
+                        <span className="text-xl font-extrabold text-slate-900">${config.price}</span>
+                        <span className="text-slate-500 text-xs">/mo</span>
+                      </div>
+
+                      <ul className="space-y-1 mb-4 flex-1">
+                        {config.features.slice(0, 4).map((f) => (
+                          <li key={f} className="flex items-start gap-1.5 text-xs text-slate-600">
+                            <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="leading-tight">{f}</span>
                           </li>
                         ))}
-                        {config.features.length > 5 && (
-                          <li className="text-xs text-slate-400 pl-6">
-                            +{config.features.length - 5} more features
+                        {config.features.length > 4 && (
+                          <li className="text-xs text-slate-400 pl-4.5">
+                            +{config.features.length - 4} more
                           </li>
                         )}
                       </ul>
 
-         {/* Button area */}
-{isPendingDowngradePlan ? (
-  // Case 1: The Basic card when a downgrade is already scheduled
-  <div className="w-full py-2.5 px-4 rounded-lg text-sm bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center gap-2">
-    <Clock className="w-4 h-4 flex-shrink-0" />
-    Starts {new Date(pendingDowngrade!.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-  </div>
-) : planKey === 'pro' && pendingDowngrade ? (
-  // Case 2: The Pro card when a downgrade is scheduled (Show "Resume Pro" or "Cancel Downgrade")
-  <button
-    onClick={() => handleChangePlan('pro')}
-    disabled={changingPlan}
-    className="w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-50"
-  >
-  {changingPlan ? 'Processing...' : 'Keep Current Plan'}
-  </button>
-) : !isCurrent ? (
-  // Case 3: Standard Switch/Upgrade buttons
-  <button
-    onClick={() => handleChangePlan(planKey)}
-    disabled={changingPlan}
-    className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 ${
-      isUpgrade
-        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm'
-        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-    } disabled:opacity-50 disabled:cursor-not-allowed`}
-  >
-    {changingPlan ? (
-      'Processing...'
-    ) : isUpgrade ? (
-      <><TrendingUp className="w-4 h-4" /> Upgrade to Pro <ArrowRight className="w-4 h-4" /></>
-    ) : (
-      'Switch to Basic'
-    )}
-  </button>
-) : null}
+                      {/* Button area */}
+                      {isPendingDowngradePlan ? (
+                        <div className="w-full py-2 px-3 rounded-lg text-xs bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center gap-1">
+                          <Clock className="w-3 h-3 flex-shrink-0" />
+                          Starts {new Date(pendingDowngrade!.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                      ) : planKey !== 'starter' && planKey === activePlan.valueOf() && pendingDowngrade ? (
+                        <button
+                          onClick={() => handleChangePlan(planKey)}
+                          disabled={changingPlan}
+                          className="w-full py-2 px-3 rounded-lg font-semibold text-xs transition flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-50"
+                        >
+                          {changingPlan ? 'Processing...' : 'Keep Plan'}
+                        </button>
+                      ) : !isCurrent ? (
+                        <button
+                          onClick={() => handleChangePlan(planKey)}
+                          disabled={changingPlan}
+                          className={`w-full py-2 px-3 rounded-lg font-semibold text-xs transition flex items-center justify-center gap-1 ${
+                            isUpgrade
+                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {changingPlan ? 'Processing...' : isUpgrade ? (
+                            <><TrendingUp className="w-3 h-3" /> Upgrade</>
+                          ) : (
+                            'Switch'
+                          )}
+                        </button>
+                      ) : null}
                     </div>
                   );
                 })}
