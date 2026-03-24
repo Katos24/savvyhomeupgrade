@@ -5,17 +5,9 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token');
   const pathname = request.nextUrl.pathname;
 
-  const publicRoutes = [
-    '/login',
-    '/signup',
-    '/forgot-password',
-    '/reset-password',
-  ];
-
   const isApiRoute = pathname.startsWith('/api/');
 
-  // ✅ Stripe + public API bypass
-const isPublicApiRoute =
+  const isPublicApiRoute =
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/signup') ||
     pathname.startsWith('/api/stripe/webhook') ||
@@ -27,28 +19,38 @@ const isPublicApiRoute =
     pathname.startsWith('/api/upload') ||
     pathname.startsWith('/api/blob-upload') ||
     pathname.startsWith('/api/get-upload-url') ||
-    pathname.startsWith('/api/leads/update');
-  
+    pathname.startsWith('/api/onboarding') ||
+    pathname.startsWith('/api/db');
 
-  const isPublicRoute = publicRoutes.some(route =>
-    pathname.startsWith(route)
-  );
+  const isPublicPage =
+    pathname === '/' ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/accept-invite') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/subscribe') ||
+    pathname.startsWith('/success') ||
+    pathname.startsWith('/demo') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/terms') ||
+    pathname.startsWith('/contractor-software') ||
+    pathname.startsWith('/solutions') ||
+    pathname.startsWith('/onboarding');
 
   const isProtectedRoute =
     pathname.includes('/dashboard') ||
     pathname.includes('/admin') ||
     pathname.includes('/profile') ||
-    pathname.includes('/settings');
+    pathname.includes('/settings') ||
+    pathname.includes('/outbox');
 
   if (isApiRoute) {
-    if (isPublicApiRoute) {
-      return NextResponse.next();
-    }
-
+    if (isPublicApiRoute) return NextResponse.next();
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     return NextResponse.next();
   }
 

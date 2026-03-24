@@ -75,12 +75,6 @@ const plan = session.metadata?.plan || 'starter';
     case 'customer.subscription.updated': {
   const subscription = event.data.object as any;
 
-    id: subscription.id,
-    status: subscription.status,
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    cancel_at: subscription.cancel_at,
-    previous_attributes: event.data.previous_attributes,
-  }, null, 2));
 
   const priceId = subscription.items?.data?.[0]?.price?.id;
   let planTier: string | null = null;

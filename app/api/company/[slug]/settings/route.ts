@@ -108,18 +108,8 @@ export async function POST(
 
 
     switch (action) {
-      case 'update-general':
+     case 'update-general':
         try {
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            website: data.website,
-            business_type: data.business_type,
-            logo_url: data.logo_url,
-            email_brand_color_1: data.email_brand_color_1,
-            email_brand_color_2: data.email_brand_color_2
-          });
-          
           const result = await sql`
             UPDATE companies
             SET 
@@ -134,10 +124,8 @@ export async function POST(
             WHERE id = ${company.id}
             RETURNING *
           `;
-          
+          return NextResponse.json({ success: true, company: result[0] });
         } catch (updateError) {
-          console.error('❌ Update failed:', updateError);
-          throw updateError;
         }
         break;
 

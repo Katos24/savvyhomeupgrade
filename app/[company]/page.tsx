@@ -23,6 +23,7 @@ type Company = {
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
   form_field_config?: any;
+  plan_tier?: string | null;
 };
 
 async function getCompany(slug: string): Promise<Company | null> {
@@ -33,7 +34,7 @@ async function getCompany(slug: string): Promise<Company | null> {
       logo_url, form_categories, address_enabled, address_required,
       cta_heading, cta_button_text, cta_success_message,
       custom_questions, email_brand_color_1, email_brand_color_2,
-      form_field_config
+      form_field_config, plan_tier
     FROM companies 
     WHERE slug = ${slug}
   `;
