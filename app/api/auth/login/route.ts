@@ -71,7 +71,6 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     );
 
-    console.log('✅ Login successful:', normalizedEmail);
 
     const response = NextResponse.json({
       success: true,

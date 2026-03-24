@@ -47,7 +47,6 @@ export async function compressImage(file: File, maxSizeMB: number = 1): Promise<
               });
               const originalMB = (file.size / 1024 / 1024).toFixed(2);
               const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
-              console.log(`📦 Compressed ${file.name}: ${originalMB}MB → ${compressedMB}MB`);
               resolve(compressedFile);
             } else {
               resolve(file);

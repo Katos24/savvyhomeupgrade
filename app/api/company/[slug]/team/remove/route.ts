@@ -85,7 +85,6 @@ export async function POST(request: Request, { params }: Props) {
       WHERE id = ${userId}
     `;
 
-    console.log(`✅ Team member ${userId} removed by ${userRole}`);
 
     return NextResponse.json({
       success: true,

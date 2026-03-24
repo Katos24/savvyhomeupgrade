@@ -104,7 +104,6 @@ NOW() + INTERVAL '3 days',
         inviteLink,
         role,
       });
-      console.log('✅ Team invite sent to:', email);
     } catch (emailError) {
       console.error('❌ Failed to send invite email:', emailError);
       // Still return success since the invite was created in DB

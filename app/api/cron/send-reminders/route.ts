@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('🔔 Starting reminder check...');
 
     const companies = await sql`
       SELECT 
@@ -28,7 +27,6 @@ export async function GET(request: NextRequest) {
         AND (reminder_settings->>'follow_up_enabled')::boolean = true
     `;
 
-    console.log(`📊 Found ${companies.length} companies with reminders enabled`);
 
     let totalReminders = 0;
 
@@ -50,7 +48,6 @@ export async function GET(request: NextRequest) {
       `;
 
       if (users.length === 0) {
-        console.log(`⚠️ No admin found for company ${company.name}`);
         continue;
       }
 
@@ -207,7 +204,6 @@ export async function GET(request: NextRequest) {
 
       // Send email if there are leads needing follow-up
       if (leadsNeedingFollowUp.length > 0) {
-        console.log(`📧 Sending reminder email to ${adminUser.email} for ${leadsNeedingFollowUp.length} leads`);
         
         await sendFollowUpReminderEmail({
           recipientEmail: adminUser.email,
@@ -224,7 +220,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`✅ Sent ${totalReminders} reminder emails`);
 
     return NextResponse.json({
       success: true,

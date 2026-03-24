@@ -60,7 +60,6 @@ export async function POST(request: Request) {
       WHERE id = ${user.id}
     `;
 
-    console.log('✅ Account created for:', user.email);
 
     return NextResponse.json({
       success: true,

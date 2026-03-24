@@ -12,18 +12,15 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
-    console.log('📋 GET quote-templates for slug:', resolvedParams.slug);
     
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
     if (!token) {
-      console.log('❌ No auth token');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
-    console.log('✅ Token verified for user:', decoded.userId);
     
     // Get company
    const companies = await sql`
@@ -34,12 +31,10 @@ export async function GET(
     `;
 
     if (companies.length === 0) {
-      console.log('❌ Company not found');
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
     const company = companies[0];
-    console.log('✅ Company found:', company.id);
 
     // Server-side plan check
     if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
@@ -56,7 +51,6 @@ export async function GET(
       templates = JSON.parse(templates);
     }
     
-    console.log('✅ Returning templates:', templates.length);
 
     return NextResponse.json({ 
       success: true, 
@@ -79,33 +73,27 @@ export async function POST(
 ) {
   try {
     const resolvedParams = await params;
-    console.log('📋 POST quote-templates for slug:', resolvedParams.slug);
     
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
     if (!token) {
-      console.log('❌ No auth token');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
-    console.log('✅ Token verified for user:', decoded.userId);
     
     // Get user and verify permissions
     const users = await sql`SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1`;
     const user = users[0];
 
     if (!user) {
-      console.log('❌ User not found');
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
-    console.log('✅ User found:', user.email, 'role:', user.role);
 
     // Only owner, admin, and manager can manage templates
     if (!['owner', 'admin', 'manager'].includes(user.role)) {
-      console.log('❌ Insufficient permissions');
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -118,12 +106,10 @@ export async function POST(
     `;
 
     if (companies.length === 0) {
-      console.log('❌ Company not found');
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
     const company = companies[0];
-    console.log('✅ Company found:', company.id);
 
     // Server-side plan check
     if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
@@ -136,13 +122,11 @@ export async function POST(
     
     // Verify user belongs to this company
     if (user.company_id !== company.id) {
-      console.log('❌ User does not belong to company');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await request.json();
     const { action, template, templateId } = body;
-    console.log('📋 Action:', action);
 
     // Parse current templates
     let currentTemplates = company.quote_templates || [];
@@ -155,7 +139,6 @@ export async function POST(
     }
 
     if (action === 'create') {
-      console.log('➕ Creating template:', template.name);
       currentTemplates.push(template);
       
       await sql`
@@ -164,7 +147,6 @@ export async function POST(
         WHERE id = ${company.id}
       `;
 
-      console.log('✅ Template created');
       return NextResponse.json({ 
         success: true, 
         message: 'Template created',
@@ -173,11 +155,9 @@ export async function POST(
     }
 
     if (action === 'update') {
-      console.log('✏️ Updating template:', template.id);
       const index = currentTemplates.findIndex((t: any) => t.id === template.id);
       
       if (index === -1) {
-        console.log('❌ Template not found');
         return NextResponse.json({ success: false, error: 'Template not found' }, { status: 404 });
       }
 
@@ -189,7 +169,6 @@ export async function POST(
         WHERE id = ${company.id}
       `;
 
-      console.log('✅ Template updated');
       return NextResponse.json({ 
         success: true, 
         message: 'Template updated',
@@ -198,7 +177,6 @@ export async function POST(
     }
 
     if (action === 'delete') {
-      console.log('🗑️ Deleting template:', templateId);
       currentTemplates = currentTemplates.filter((t: any) => t.id !== templateId);
       
       await sql`
@@ -207,7 +185,6 @@ export async function POST(
         WHERE id = ${company.id}
       `;
 
-      console.log('✅ Template deleted');
       return NextResponse.json({ 
         success: true, 
         message: 'Template deleted',
@@ -215,7 +192,6 @@ export async function POST(
       });
     }
 
-    console.log('❌ Invalid action');
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
 
   } catch (error) {

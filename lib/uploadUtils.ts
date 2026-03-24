@@ -8,7 +8,6 @@ export async function uploadFilesToBlob(
 
   for (const file of files) {
     try {
-      console.log(`Uploading ${file.name} directly to blob...`);
       
       // Add timestamp to filename to make it unique
       const timestamp = Date.now();
@@ -27,7 +26,6 @@ export async function uploadFilesToBlob(
         size: file.size,
       });
 
-      console.log(`✅ Uploaded: ${blob.url}`);
     } catch (error) {
       console.error(`Failed to upload ${file.name}:`, error);
       throw error;

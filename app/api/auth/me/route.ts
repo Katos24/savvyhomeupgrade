@@ -8,7 +8,6 @@ export async function GET() {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token');
 
-    console.log('Auth check - token exists:', !!token); // DEBUG
 
     if (!token) {
       return NextResponse.json(
@@ -24,7 +23,6 @@ export async function GET() {
 if (!secret) throw new Error('JWT_SECRET is not set');
 decoded = jwt.verify(token.value, secret) as any;
 
-      console.log('Token decoded:', decoded); // DEBUG
     } catch (jwtError) {
       console.error('JWT verification failed:', jwtError); // DEBUG
       return NextResponse.json(
@@ -50,7 +48,6 @@ decoded = jwt.verify(token.value, secret) as any;
     `;
 
     if (users.length === 0) {
-      console.log('User not found in DB'); // DEBUG
       return NextResponse.json(
         { success: false, error: 'User not found' }, 
         { status: 401 }

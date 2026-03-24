@@ -24,7 +24,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob }) => {
-        console.log('✅ Blob uploaded:', blob.url);
       },
     });
 

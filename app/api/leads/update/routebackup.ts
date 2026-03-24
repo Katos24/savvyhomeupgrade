@@ -4,8 +4,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log('==========================================');
-    console.log('📥 REQUEST:', JSON.stringify(body, null, 2));
     
     const { 
       id, 
@@ -34,7 +32,6 @@ export async function POST(request: Request) {
 
     // ==================== UPDATE STATUS ====================
     if (action === 'update_status') {
-      console.log('🔄 ACTION: update_status');
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -66,13 +63,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Status updated to:', statusString);
       return NextResponse.json({ success: true });
     }
 
     // ==================== ADD NOTE ====================
     else if (action === 'add_note') {
-      console.log('📝 ACTION: add_note');
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -99,15 +94,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Note added');
       return NextResponse.json({ success: true });
     }
 
     // ==================== UPDATE PAYMENT ====================
     else if (action === 'update_payment') {
-      console.log('💳 ACTION: update_payment');
-      console.log('Payment status:', payment_status);
-      console.log('Payment amount:', payment_amount);
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -142,13 +133,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Payment updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {
-      console.log('📋 ACTION: update_project');
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -188,13 +177,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Project updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== SAVE QUOTE ====================
     else if (action === 'save_quote') {
-      console.log('💰 ACTION: save_quote');
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -224,13 +211,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Quote saved');
       return NextResponse.json({ success: true });
     }
 
     // ==================== SEND QUOTE ====================
     else if (action === 'send_quote') {
-      console.log('📤 ACTION: send_quote');
       
       const lead = await sql`SELECT notes FROM leads WHERE id = ${id}`;
       let existingNotes = [];
@@ -259,13 +244,11 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      console.log('✅ Quote sent');
       return NextResponse.json({ success: true });
     }
 
     // ==================== LEGACY (NO ACTION) ====================
     else {
-      console.log('⚠️ Legacy update (no action specified)');
       
       await sql`
         UPDATE leads 

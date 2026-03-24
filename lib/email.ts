@@ -113,7 +113,6 @@ export async function sendNewLeadAlertEmail({
       html: emailHtml,
     });
 
-    console.log('✅ New lead alert sent to contractor');
   } catch (error) {
     console.error('❌ Failed to send lead alert:', error);
   }
@@ -164,7 +163,6 @@ export async function sendLeadConfirmationEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Confirmation email sent to customer');
   } catch (error) {
     console.error('❌ Failed to send confirmation email:', error);
   }
@@ -232,7 +230,6 @@ export async function sendPasswordResetEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Password reset email sent to:', userEmail);
   } catch (error) {
     console.error('❌ Failed to send password reset email:', error);
     throw error;
@@ -313,7 +310,6 @@ export async function sendTeamInviteEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Team invite email sent to:', inviteeEmail);
   } catch (error) {
     console.error('❌ Failed to send team invite email:', error);
     throw error;
@@ -343,7 +339,6 @@ export async function sendQuoteToCustomer({
   quoteToken?: string;
 }){
   try {
-    console.log('🔥 sendQuoteToCustomer called');
 
     const company = await getCompanyDetails(companyId);
     const templates = await getCompanyEmailTemplates(companyId);
@@ -430,7 +425,6 @@ const lineItemsHtml = quoteItems.length > 0 ? `
       html: emailHtml,
     });
 
-    console.log('✅ Quote email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
 
   } catch (error) {
@@ -462,7 +456,6 @@ export async function sendScheduleConfirmation({
   assignedTo?: string;
 }) {
   try {
-    console.log('🔥 sendScheduleConfirmation called');
 
     // Get company details for logo
     const company = await getCompanyDetails(companyId);
@@ -520,7 +513,6 @@ export async function sendScheduleConfirmation({
       html: emailHtml,
     });
 
-    console.log('✅ Schedule confirmation email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
   } catch (error) {
     console.error('❌ Failed to send schedule confirmation:', error);
@@ -609,7 +601,6 @@ export async function sendTrialEndingReminderEmail({
       html: emailHtml,
     });
 
-    console.log(`✅ Trial reminder (${daysRemaining} days) sent to:`, companyEmail);
   } catch (error) {
     console.error('❌ Failed to send trial reminder:', error);
     throw error;
@@ -688,7 +679,6 @@ export async function sendPaymentFailedEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Payment failed email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send payment failed email:', error);
     throw error;
@@ -769,7 +759,6 @@ export async function sendSubscriptionActivatedEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Subscription activated email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send activation email:', error);
     throw error;
@@ -909,7 +898,6 @@ export async function sendWelcomeEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Welcome email sent to:', userEmail);
   } catch (error) {
     console.error('❌ Failed to send welcome email:', error);
     throw error;
@@ -967,7 +955,6 @@ export async function sendSubscriptionCancelledEmail({
       `,
     });
 
-    console.log('✅ Access ended email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send access ended email:', error);
     throw error;
@@ -1107,7 +1094,6 @@ export async function sendFollowUpReminderEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Follow-up reminder email sent to:', recipientEmail);
   } catch (error) {
     console.error('❌ Failed to send reminder email:', error);
     throw error;
@@ -1191,7 +1177,6 @@ const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US',
       html: emailHtml,
     });
 
-    console.log('✅ Payment reminder sent to:', customerEmail);
     return { subject, html: emailHtml, resendId: emailResult?.data?.id };
 
   } catch (error) {
@@ -1401,7 +1386,6 @@ export async function sendDailyDigestEmail({
       html: emailHtml,
     });
 
-    console.log('✅ Daily digest sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send daily digest:', error);
     throw error;

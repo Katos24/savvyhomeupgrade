@@ -35,9 +35,7 @@ const { imageUrls, category, description, company_slug } = await request.json();
         upgrade_required: true,
       }, { status: 403 });
     }    
-    console.log('Analyzing images with Claude:', imageUrls);
-    console.log('Category:', category);
-    console.log('Description:', description);
+   
     
     if (!imageUrls || imageUrls.length === 0) {
       return NextResponse.json({ 
@@ -55,7 +53,6 @@ const { imageUrls, category, description, company_slug } = await request.json();
           let buffer = Buffer.from(arrayBuffer);
           
           // Always compress/resize images to ensure they're under 5MB
-          console.log(`Processing image from: ${url} (${buffer.length} bytes)`);
           
           // Resize and compress to ensure < 5MB
           const compressedBuffer = await sharp(buffer)
@@ -69,7 +66,6 @@ const { imageUrls, category, description, company_slug } = await request.json();
             })
             .toBuffer();
           
-          console.log(`Compressed to: ${compressedBuffer.length} bytes`);
           
           const base64 = compressedBuffer.toString('base64');
           
@@ -97,7 +93,6 @@ const { imageUrls, category, description, company_slug } = await request.json();
       }, { status: 400 });
     }
 
-    console.log('Calling Claude API...');
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -226,7 +221,6 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
       ],
     });
 
-    console.log('Claude response received');
 
     const content = message.content[0];
     
@@ -260,7 +254,6 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
       };
     }
 
-    console.log('Analysis completed successfully');
 
     return NextResponse.json({ 
       success: true, 

@@ -53,7 +53,6 @@ const plan = session.metadata?.plan || 'starter';
         WHERE id = ${parseInt(companyId)}
       `;
 
-      console.log(`✅ Checkout completed for company ${companyId} on ${plan} plan`);
 
       try {
         const company = await sql`
@@ -76,7 +75,6 @@ const plan = session.metadata?.plan || 'starter';
     case 'customer.subscription.updated': {
   const subscription = event.data.object as any;
 
-  console.log('🔍 Subscription updated:', JSON.stringify({
     id: subscription.id,
     status: subscription.status,
     cancel_at_period_end: subscription.cancel_at_period_end,
@@ -93,7 +91,6 @@ if (priceId === process.env.STRIPE_PRO_PRICE_ID)     planTier = 'pro';
 
 const hasActiveSchedule = !!subscription.schedule;
 if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
-    console.log(`⏭️ Skipping plan_tier update — downgrade schedule pending for ${subscription.id}`);
     planTier = null;
   }
 
@@ -135,7 +132,6 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
     `;
   }
 
-  console.log(`✅ DB updated for company — cancel_at_period_end: ${cancelAtPeriodEnd}`);
 
   if (isCancelling) {
     try {
@@ -178,7 +174,6 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
           isTrialing,
         });
 
-        console.log('✅ Cancellation scheduled email sent, access until:', formattedDate);
       }
     } catch (emailError) {
       console.error('❌ Failed to send cancellation scheduled email:', emailError);
@@ -207,7 +202,6 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
       if (result.length === 0) {
         console.error('❌ No company found for deleted subscription:', subscription.id);
       } else {
-        console.log(`✅ Subscription canceled for company ${result[0].id}, reverted to basic`);
       }
 
       try {
@@ -220,7 +214,6 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
             companyEmail: company[0].email,
             companyName: company[0].name
           });
-          console.log('✅ Cancellation email sent (immediate cancel)');
         }
       } catch (emailError) {
         console.error('Failed to send cancellation email:', emailError);
@@ -242,7 +235,6 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
             companyName: company[0].name,
             updatePaymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
           });
-          console.log('✅ Payment failed email sent');
         } else {
           console.error('❌ No company found for failed payment, customer:', invoice.customer);
         }
@@ -256,11 +248,8 @@ if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
     default:
   const evType = (event as any).type;
   if (evType === 'customer.subscription.schedule.created') {
-    console.log('Subscription schedule created:', (event as any).data.object.id);
   } else if (evType === 'customer.subscription.schedule.updated') {
-    console.log('Subscription schedule updated:', (event as any).data.object.id);
   } else {
-    console.log(`Unhandled event type: ${evType}`);
   }
   }
   return NextResponse.json({ received: true });

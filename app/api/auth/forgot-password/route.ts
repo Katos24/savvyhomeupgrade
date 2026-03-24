@@ -46,7 +46,6 @@ export async function POST(request: Request) {
         userName: user.name || 'User',
         resetLink,
       });
-      console.log('✅ Password reset email sent to:', email);
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError);
       // Don't fail the request if email fails - token is still valid

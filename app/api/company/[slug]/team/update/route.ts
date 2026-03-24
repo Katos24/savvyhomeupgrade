@@ -93,7 +93,6 @@ export async function POST(request: Request, { params }: Props) {
       WHERE id = ${userId}
     `;
 
-    console.log(`✅ Role updated for user ${userId} to ${role} by ${userRole}`);
 
     return NextResponse.json({
       success: true,

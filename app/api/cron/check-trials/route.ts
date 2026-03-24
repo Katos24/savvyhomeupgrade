@@ -49,7 +49,6 @@ export async function GET(req: NextRequest) {
           });
           
           results.reminders_sent++;
-          console.log(`✅ Sent ${daysRemaining}-day reminder to ${company.email}`);
         }
       } catch (error) {
         console.error(`❌ Error sending reminder to ${company.email}:`, error);

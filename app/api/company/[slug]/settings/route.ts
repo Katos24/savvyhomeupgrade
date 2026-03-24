@@ -106,14 +106,10 @@ export async function POST(
     const body = await request.json();
     const { action, data } = body;
 
-    console.log('Settings update action:', action);
-    console.log('Settings update data:', data);
 
     switch (action) {
       case 'update-general':
         try {
-          console.log('Updating company ID:', company.id);
-          console.log('With data:', {
             name: data.name,
             email: data.email,
             phone: data.phone,
@@ -139,7 +135,6 @@ export async function POST(
             RETURNING *
           `;
           
-          console.log('✅ Update successful:', result[0]);
         } catch (updateError) {
           console.error('❌ Update failed:', updateError);
           throw updateError;
@@ -183,8 +178,6 @@ export async function POST(
         break;
 
       case 'update-custom-questions':
-        console.log('Updating custom questions for company:', company.id);
-        console.log('Custom questions:', data.custom_questions);
         
         await sql`
           UPDATE companies
@@ -192,12 +185,9 @@ export async function POST(
           WHERE id = ${company.id}
         `;
         
-        console.log('✅ Custom questions updated');
         break;
 
       case 'update-cta':
-        console.log('Updating CTA settings for company:', company.id);
-        console.log('CTA data:', data);
         
         await sql`
           UPDATE companies
@@ -208,11 +198,9 @@ export async function POST(
           WHERE id = ${company.id}
         `;
         
-        console.log('✅ CTA settings updated');
         break;
 
       case 'update-form': {
-        console.log('Updating form settings for company:', company.id);
 
         const ctaHeading = data.cta?.cta_heading ?? null;
         const ctaSuccessMessage = data.cta?.cta_success_message ?? null;
@@ -233,7 +221,6 @@ export async function POST(
           WHERE id = ${company.id}
         `;
 
-        console.log('✅ Form settings updated');
         break;
       }
 

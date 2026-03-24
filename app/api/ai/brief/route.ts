@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const body = await request.json();
 
-    console.log('Generating AI Brief for lead:', body.lead_id);
 const {
   customer_name,
   description,
@@ -71,23 +70,19 @@ if (!can(dbPlanTier, 'ai_brief')) {
 
     async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
       try {
-        console.log('Trying claude-sonnet-4-20250514...');
         return await anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' });
       } catch (err: any) {
         const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
         if (!isRetryable) throw err;
-        console.log(`Sonnet error (${err?.status}), falling back to Haiku...`);
       }
 
       for (let attempt = 0; attempt <= 1; attempt++) {
         try {
-          console.log(`Trying claude-haiku-4-5-20251001, attempt: ${attempt + 1}`);
           return await anthropic.messages.create({ ...params, model: 'claude-haiku-4-5-20251001' });
         } catch (err: any) {
           const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
           if (!isRetryable) throw err;
           if (attempt === 0) {
-            console.log(`Haiku error (${err?.status}), retrying in 2s...`);
             await new Promise(r => setTimeout(r, 2000));
           }
         }

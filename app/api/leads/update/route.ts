@@ -6,7 +6,6 @@ import { can, type PlanTier } from '@/lib/permissions';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log('📥 Incoming request:', { action: body.action, id: body.id });
     
     const { 
       id, 
@@ -35,11 +34,6 @@ export async function POST(request: Request) {
     const sql = neon(process.env.DATABASE_URL!);
 
     // 🔍 DEBUG: Log the extracted values immediately
-    console.log('🔍 EXTRACTED FROM BODY:');
-    console.log('   action:', action);
-    console.log('   scheduled_date:', scheduled_date);
-    console.log('   scheduled_time:', scheduled_time);
-    console.log('   scheduled_time type:', typeof scheduled_time);
 
     // 🔥 Helper function to add activity to projects.notes
     const addActivityToProject = async (leadId: number, activityEntry: any) => {
@@ -51,13 +45,10 @@ export async function POST(request: Request) {
       }
 
       const projectId = lead[0].project_id;
-      console.log('📌 Project ID:', projectId);
 
       // Get existing notes from projects table
       const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
       
-      console.log('📖 Raw notes from DB:', project[0]?.notes);
-      console.log('📖 Notes type:', typeof project[0]?.notes);
       
       let existingNotes = [];
       try {
@@ -78,12 +69,9 @@ export async function POST(request: Request) {
         existingNotes = [];
       }
 
-      console.log('📝 Existing notes count:', existingNotes.length);
-      console.log('➕ Adding new entry:', activityEntry.type);
       
       existingNotes.push(activityEntry);
       
-      console.log('📊 Total notes after push:', existingNotes.length);
 
       // Update projects.notes
       await sql`
@@ -93,12 +81,10 @@ export async function POST(request: Request) {
         WHERE id = ${projectId}
       `;
       
-      console.log('✅ Activity added to project notes');
     };
 
     // ==================== UPDATE STATUS ====================
     if (action === 'update_status') {
-      console.log('🔄 Updating status');
       
       await sql`
         UPDATE leads 
@@ -118,13 +104,11 @@ export async function POST(request: Request) {
 
       await addActivityToProject(id, statusChangeEntry);
 
-      console.log('✅ Status updated');
       return NextResponse.json({ success: true });
     } 
     
     // ==================== ADD NOTE ====================
     else if (action === 'add_note') {
-      console.log('📝 Adding note');
       
       const newNote = {
         type: 'note',
@@ -136,13 +120,11 @@ export async function POST(request: Request) {
 
       await addActivityToProject(id, newNote);
 
-      console.log('✅ Note added');
       return NextResponse.json({ success: true });
     }
 
     // ==================== CREATE PROJECT ====================
     else if (action === 'create_project') {
-      console.log('🎯 Creating project');
       
       // Get complete lead data
       const leadCheck = await sql`SELECT * FROM leads WHERE id = ${id}`;
@@ -152,7 +134,6 @@ export async function POST(request: Request) {
       }
 
       if (leadCheck[0].project_id) {
-        console.log('⚠️ Project already exists');
         return NextResponse.json({ 
           success: false, 
           error: 'Project already exists for this lead',
@@ -237,7 +218,6 @@ export async function POST(request: Request) {
       const leadCategory = formCategories.find((cat: any) => cat.value === leadData.category);
 
       if (leadCategory?.task_templates && leadCategory.task_templates.length > 0) {
-        console.log(`📋 Creating ${leadCategory.task_templates.length} tasks from template`);
         
         const sortedTasks = [...leadCategory.task_templates].sort((a: any, b: any) => a.order - b.order);
         
@@ -261,7 +241,6 @@ export async function POST(request: Request) {
           `;
         }
         
-        console.log(`✅ Created ${sortedTasks.length} tasks`);
       }
 
       // Update lead with project_id
@@ -289,7 +268,6 @@ export async function POST(request: Request) {
         WHERE id = ${projectId}
       `;
 
-      console.log(`✅ Created project ${projectId} (#${projectNumber}) for lead ${id}`);
       
       return NextResponse.json({ 
         success: true, 
@@ -336,7 +314,6 @@ export async function POST(request: Request) {
 
     // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {
-      console.log('📋 Updating project');
       
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
@@ -377,13 +354,11 @@ export async function POST(request: Request) {
 
       await addActivityToProject(id, projectUpdateEntry);
 
-      console.log('✅ Project updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== SAVE QUOTE ====================
     else if (action === 'save_quote') {
-      console.log('💰 Saving quote');
       
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
@@ -428,13 +403,11 @@ await sql`
 
       await addActivityToProject(id, quoteEntry);
 
-      console.log('✅ Quote saved');
       return NextResponse.json({ success: true });
     }
 
     // ==================== SEND QUOTE ====================
     else if (action === 'send_quote') {
-      console.log('📤 Sending quote');
       
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
@@ -464,12 +437,10 @@ await sql`
 
       await addActivityToProject(id, quoteSentEntry);
 
-      console.log('✅ Quote sent');
       return NextResponse.json({ success: true });
     }
 // ==================== SEND QUOTE TO CUSTOMER 📧 ====================
    else if (action === 'send_quote_to_customer') {
-  console.log('📧 Sending quote to customer via email');
   
   const leadCheck = await sql`
     SELECT l.*, p.quote_data, p.quote_total, 
@@ -567,7 +538,6 @@ await sql`
 
         await addActivityToProject(id, quoteSentEntry);
 
-        console.log('✅ Quote email sent to customer');
         return NextResponse.json({ success: true, message: 'Quote sent to customer!' });
       } catch (emailError: any) {
         // Log failed attempt to outbox
@@ -590,7 +560,6 @@ await sql`
 
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
-  console.log('📅 Sending schedule confirmation to customer');
   
   const result = await sql`
     SELECT 
@@ -692,7 +661,6 @@ await sql`
           WHERE id = ${lead.project_id}
         `;
 
-        console.log('✅ Schedule email sent to customer');
         return NextResponse.json({ success: true, message: 'Schedule confirmation sent!' });
       } catch (emailError: any) {
         // Log failed attempt to outbox
@@ -715,7 +683,6 @@ await sql`
     
     // ==================== UPDATE PAYMENT 💳 ====================
     else if (action === 'update_payment') {
-      console.log('💳 Updating payment');
       
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
@@ -754,13 +721,11 @@ await sql`
 
       await addActivityToProject(id, paymentEntry);
 
-      console.log('✅ Payment updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== UPDATE DETAILS 📝 ====================
     else if (action === 'update_details') {
-      console.log('📝 Updating lead/project details');
       
       const {
         name,
@@ -824,13 +789,11 @@ await sql`
         await addActivityToProject(id, detailsEntry);
       }
 
-      console.log('✅ Details updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== UPDATE TASKS ====================
     else if (action === 'update_tasks') {
-      console.log('✓ Updating tasks');
       
       const { tasks } = body;
       
@@ -851,13 +814,11 @@ await sql`
         WHERE id = ${projectId}
       `;
 
-      console.log('✅ Tasks updated');
       return NextResponse.json({ success: true });
     }
 
     // ==================== UPDATE LEAD STEP 2 (from public form) ====================
 else if (action === 'update_lead_step2') {
-  console.log('📋 Updating lead with step 2 details, lead ID:', id);
 
   const {
     address_line_1,
@@ -898,7 +859,6 @@ else if (action === 'update_lead_step2') {
     WHERE id = ${id}
   `;
 
-  console.log('✅ Lead step 2 updated');
   return NextResponse.json({ success: true });
 }
 
@@ -906,7 +866,6 @@ else if (action === 'update_lead_step2') {
 
 // ==================== SAVE AI BRIEF ====================
 else if (action === 'save_ai_brief') {
-  console.log('🤖 Saving AI brief');
 
   const projects = await sql`
     SELECT id FROM projects WHERE lead_id = ${id}
@@ -926,13 +885,11 @@ else if (action === 'save_ai_brief') {
     WHERE id = ${projectId}
   `;
 
-  console.log('✅ AI brief saved');
   return NextResponse.json({ success: true });
 }
 
     // ==================== LEGACY ====================
     else {
-      console.log('⚠️ Legacy update');
       await sql`
         UPDATE leads 
         SET status = ${status},

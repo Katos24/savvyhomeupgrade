@@ -133,7 +133,6 @@ await sql`
   WHERE id = ${companyId}
 `;
 
-console.log(
   `⏳ Downgrade scheduled for company ${companyId}: ${company.plan_tier} → ${newPlan} at period end (${periodEndDate.toISOString()})`
 );
 
@@ -162,7 +161,6 @@ return NextResponse.json({
   WHERE id = ${companyId}
 `;
 
-      console.log(
         `✅ Upgrade applied for company ${companyId}: ${company.plan_tier} → ${newPlan}`
       );
 

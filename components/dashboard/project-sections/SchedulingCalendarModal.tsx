@@ -45,9 +45,6 @@ export default function SchedulingCalendarModal({
   }, [isOpen, companySlug]);
 
   async function fetchScheduledJobs() {
-    console.log('🔍 SchedulingCalendarModal fetchScheduledJobs called');
-    console.log('🔍 companySlug value:', companySlug);
-    console.log('🔍 typeof companySlug:', typeof companySlug);
     
     try {
       const response = await fetch(`/api/company/${companySlug}/leads`);

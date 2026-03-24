@@ -83,7 +83,6 @@ export async function POST(request: Request) {
         RETURNING *
       `;
 
-      console.log('✅ Task created:', task.id);
       return NextResponse.json({ success: true, task });
     }
 
@@ -110,7 +109,6 @@ export async function POST(request: Request) {
         WHERE id = ${task_id}
       `;
 
-      console.log('✅ Task toggled:', task_id, completed);
       return NextResponse.json({ success: true });
     }
 
@@ -133,7 +131,6 @@ export async function POST(request: Request) {
         WHERE id = ${task_id}
       `;
 
-      console.log('✅ Task updated:', task_id);
       return NextResponse.json({ success: true });
     }
 
@@ -153,7 +150,6 @@ export async function POST(request: Request) {
         WHERE id = ${task_id}
       `;
 
-      console.log('✅ Task deleted:', task_id);
       return NextResponse.json({ success: true });
     }
 

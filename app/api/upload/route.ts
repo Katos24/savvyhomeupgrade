@@ -44,15 +44,11 @@ let created_by = 'customer';
 notify_owner = body.notify_owner ?? true;
 created_by = body.created_by || 'customer';
 
-      console.log('📥 JSON upload with', fileUrls.length, 'files');
       if (address_line_1) {
-        console.log('📍 Address:', address_line_1, address_line_2 ? `(${address_line_2})` : '', city ? `in ${city}` : '', zip_code ? `${zip_code}` : '');
       }
       if (lead_source) {
-        console.log('🎯 Lead source:', lead_source);
       }
       if (Object.keys(customAnswers).length > 0) {
-        console.log('📝 Custom answers:', customAnswers);
       }
     } else {
       const formData = await request.formData();
@@ -79,7 +75,6 @@ created_by = body.created_by || 'customer';
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    console.log(`🔄 Creating lead for ${name}...`);
 
     const [lead] = await sql`
       INSERT INTO leads (
@@ -93,7 +88,6 @@ created_by = body.created_by || 'customer';
     `;
 
     const leadId = lead.id;
-    console.log(`✅ Lead created with ID: ${leadId}`);
 
     // Send email notification to contractor
     if (companySlug) {
@@ -117,7 +111,6 @@ created_by = body.created_by || 'customer';
         }).catch(err => {
           console.error('Failed to send contractor email alert:', err);
         });
-        console.log(`📧 Contractor email alert queued for ${contractorEmail}`);
 
         if (notify_customer && email) sendLeadConfirmationEmail({
           customerEmail: email,
@@ -127,7 +120,6 @@ created_by = body.created_by || 'customer';
         }).catch(err => {
           console.error('Failed to send customer confirmation:', err);
         });
-        console.log(`📧 Customer confirmation queued for ${email}`);
       }
     }
 

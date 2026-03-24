@@ -31,7 +31,6 @@ export async function POST(request: Request) {
       WHERE id = ${userId}
     `;
 
-    console.log('✅ Profile updated for user:', userId);
 
     return NextResponse.json({
       success: true,

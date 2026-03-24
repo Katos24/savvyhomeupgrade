@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('📧 Starting daily digest...');
 
    // daily_digest requires 'pro' plan — only process companies on that plan
     const digestRequiredPlan = FEATURE_PLAN_MAP['daily_digest']; // 'pro'
@@ -29,7 +28,6 @@ export async function GET(request: NextRequest) {
       AND plan_tier = ${digestRequiredPlan}
     `;
 
-    console.log(`📊 ${companies.length} companies have daily digest enabled`);
 
     let sent = 0;
     let skipped = 0;
@@ -68,7 +66,6 @@ export async function GET(request: NextRequest) {
         }
 
         if (recipientEmails.length === 0) {
-          console.log(`⚠️ No recipient email for ${company.name}, skipping`);
           skipped++;
           continue;
         }
@@ -217,7 +214,6 @@ export async function GET(request: NextRequest) {
           followUpReminders.length;
 
         if (totalItems === 0) {
-          console.log(`⏭ Skipping ${company.name} — nothing to report`);
           skipped++;
           continue;
         }
@@ -236,7 +232,6 @@ export async function GET(request: NextRequest) {
             followUpReminders: followUpReminders as any[],
           } as any);
 
-          console.log(`✅ Digest sent → ${company.name} (${email}) | ${totalItems} items`);
           await delay(600);
         }
 

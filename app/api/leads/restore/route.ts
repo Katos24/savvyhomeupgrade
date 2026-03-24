@@ -28,7 +28,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Deleted lead not found' }, { status: 404 });
     }
     
-    console.log(`Lead ${id} (${result[0].name}) restored`);
     
     return NextResponse.json({ 
       success: true, 
