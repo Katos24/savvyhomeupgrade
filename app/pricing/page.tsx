@@ -68,7 +68,53 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="pb-24 px-4">
-        <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6">
+<div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+
+  {/* Starter */}
+<div
+  className="border border-slate-700 p-8 flex flex-col"
+  style={{ background: '#1e293b' }}
+>
+  <div className="flex items-center gap-2 mb-1">
+    <Zap className="w-4 h-4 text-slate-500" />
+    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+      Starter
+    </span>
+  </div>
+
+  <div className="flex items-baseline gap-2 mb-2">
+    <span className="text-5xl font-extrabold text-white">$29</span>
+    <span className="text-slate-400 text-sm">/month</span>
+  </div>
+
+  <p className="text-slate-400 text-sm mb-8">
+    Lead capture machine for solo contractors
+  </p>
+
+  <Link
+    href="/signup?plan=starter"
+    className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
+    style={{ background: '#475569' }}
+  >
+    Start Free Trial
+  </Link>
+
+  <div className="space-y-3 flex-1">
+    {[
+      'Custom QR code & booking form',
+      'Lead board (kanban view)',
+      'Photo & doc uploads on cards',
+      'Payment status tracking',
+      'Unlimited team members',
+      'Form branding (logo & colors)',
+    ].map(f => (
+      <div key={f} className="flex items-center gap-3">
+        <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
+        <span className="text-slate-300 text-sm">{f}</span>
+      </div>
+    ))}
+  </div>
+</div>
 
           {/* Basic */}
           <div
@@ -83,13 +129,13 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-5xl font-extrabold text-white">$49</span>
+<span className="text-5xl font-extrabold text-white">$49</span>
               <span className="text-slate-400 text-sm">/month</span>
             </div>
 
-            <p className="text-slate-400 text-sm mb-8">
-              Lead tracking for solo contractors
-            </p>
+           <p className="text-slate-400 text-sm mb-8">
+  Full job management for growing crews
+</p>
 
             <Link
               href="/signup?plan=basic"
@@ -103,15 +149,14 @@ export default function PricingPage() {
 
             <div className="space-y-3 flex-1">
               {[
-                'Unlimited leads',
-                'Cards + table view',
-                'Status management',
-                'Customer contact form',
-                'Email / call / text actions',
-                'Activity log & notes',
-                'CSV export',
-                'Mobile friendly',
-                'Email support',
+               'Everything in Starter',
+'Custom pipeline stages',
+'Job categories, tasks & quote templates',
+'Job scheduling',
+'Quote builder',
+'Customer photo & video uploads on form',
+'CSV export for bookkeeping',
+'Role-based permissions',
               ].map(f => (
                 <div key={f} className="flex items-center gap-3">
                   <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
@@ -230,7 +275,7 @@ export default function PricingPage() {
         </div>
 
         {/* Stats */}
-        <div className="max-w-3xl mx-auto mt-6 grid grid-cols-3 gap-4 text-center">
+<div className="max-w-5xl mx-auto mt-6 grid grid-cols-3 gap-4 text-center">
           {[
             { stat: '$60K', label: 'Lost yearly from missed leads' },
             { stat: '1 job', label: 'Pays for an entire year' },

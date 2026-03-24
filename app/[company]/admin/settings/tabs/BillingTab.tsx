@@ -12,9 +12,9 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
   const [changingPlan, setChangingPlan] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activePlan, setActivePlan] = useState<'basic' | 'pro'>(
-    (company.plan_tier || 'basic') as 'basic' | 'pro'
-  );
+  const [activePlan, setActivePlan] = useState<'starter' | 'basic' | 'pro'>(
+  (company.plan_tier || 'starter') as 'starter' | 'basic' | 'pro'
+);
   const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
     company.pending_downgrade_at
       ? { periodEnd: Math.floor(new Date(company.pending_downgrade_at).getTime() / 1000) }
@@ -47,7 +47,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     }
   }
 
-  async function handleChangePlan(newPlan: 'basic' | 'pro') {
+async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
     if (changingPlan) return;
     // Allow clicking Basic card to cancel a pending downgrade (upgrade back to pro)
     if (newPlan === activePlan && !pendingDowngrade) return;
@@ -56,7 +56,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     const confirmed = window.confirm(
       isUpgrade
         ? 'Upgrade to Pro ($99/mo)? The price difference will be prorated on your next invoice.'
-        : "Downgrade to Basic ($49/mo)? You'll keep Pro access until the end of your billing period, then switch to Basic."
+        : `Downgrade to ${PLAN_CONFIG[newPlan].label} ($${PLAN_CONFIG[newPlan].price}/mo)? You'll keep your current access until the end of your billing period.`
     );
 
     if (!confirmed) return;
@@ -199,8 +199,10 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 {activePlan === 'pro'
-                  ? <Sparkles className="w-5 h-5 text-indigo-600" />
-                  : <Zap className="w-5 h-5 text-blue-600" />}
+  ? <Sparkles className="w-5 h-5 text-indigo-600" />
+  : activePlan === 'basic'
+  ? <Zap className="w-5 h-5 text-blue-600" />
+  : <Zap className="w-5 h-5 text-slate-500" />}
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Current Plan</p>
               </div>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">{planConfig.label}</p>
@@ -247,11 +249,12 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
             <div className="border-t border-slate-200 pt-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Change Plan</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(['basic', 'pro'] as const).map((planKey) => {
-                  const config = PLAN_CONFIG[planKey];
-                  const isCurrent = planKey === activePlan && !pendingDowngrade;
-                  const isPendingDowngradePlan = planKey === 'basic' && !!pendingDowngrade;
-                  const isUpgrade = planKey === 'pro' && activePlan === 'basic';
+               {(['starter', 'basic', 'pro'] as const).map((planKey) => {
+  const config = PLAN_CONFIG[planKey];
+  const ORDER = ['starter', 'basic', 'pro'] as const;
+  const isCurrent = planKey === activePlan && !pendingDowngrade;
+  const isPendingDowngradePlan = ORDER.indexOf(planKey) < ORDER.indexOf(activePlan) && !!pendingDowngrade;
+  const isUpgrade = ORDER.indexOf(planKey) > ORDER.indexOf(activePlan);
 
                   return (
                     <div
@@ -319,7 +322,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     disabled={changingPlan}
     className="w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-50"
   >
-    {changingPlan ? 'Processing...' : 'Keep Pro Plan'}
+  {changingPlan ? 'Processing...' : 'Keep Current Plan'}
   </button>
 ) : !isCurrent ? (
   // Case 3: Standard Switch/Upgrade buttons

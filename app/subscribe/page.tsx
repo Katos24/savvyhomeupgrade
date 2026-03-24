@@ -16,6 +16,20 @@ import {
 } from 'lucide-react';
 
 const PLAN_CONFIG = {
+  starter: {
+    label: 'Starter',
+    price: '$29',
+    tagline: 'Lead capture machine for solo contractors.',
+    features: [
+      'Custom QR code & booking form',
+      'Lead board (kanban view)',
+      'Photo & doc uploads on cards',
+      'Payment status tracking',
+      'Unlimited team members',
+      'Form branding (logo & colors)',
+      'Cancel anytime',
+    ],
+  },
   basic: {
     label: 'Basic',
     price: '$49',
@@ -221,8 +235,8 @@ function SubscribePageContent() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-24">
-          {(['basic', 'pro'] as const).map((planKey) => {
+<div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto mb-24">
+{(['starter', 'basic', 'pro'] as const).map((planKey) => {
             const config = PLAN_CONFIG[planKey];
             const isPro = planKey === 'pro';
             

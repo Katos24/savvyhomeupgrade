@@ -3,6 +3,8 @@ import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
 import { CATEGORY_MAP, DEFAULT_STATUSES, ADDRESS_CONFIG } from '@/lib/formCategories';
 import { sendWelcomeEmail } from '@/lib/email';
+import { isReservedSlug } from '@/lib/reservedSlugs';
+
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -34,9 +36,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if slug already exists
-    const existingCompany = await sql`
-      SELECT id FROM companies WHERE slug = ${slug}
-    `;
+   if (isReservedSlug(slug)) {
+  return NextResponse.json(
+    { error: 'That URL is reserved. Please choose a different company name.' },
+    { status: 400 }
+  );
+}
+
+// Check if slug already exists
+const existingCompany = await sql`
+  SELECT id FROM companies WHERE slug = ${slug}
+`;
 
     if (existingCompany.length > 0) {
       return NextResponse.json(

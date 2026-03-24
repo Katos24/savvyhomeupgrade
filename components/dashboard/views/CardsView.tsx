@@ -89,15 +89,15 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                   {lead.name}
                 </h3>
                 
-             <div className="flex items-center gap-3 mt-1 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
-                  <div className="flex items-center gap-1">
-                    <Briefcase className="w-3 h-3 text-gray-600" />
-                    <span className="truncate max-w-[80px]">{lead.category || 'General'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <User className="w-3 h-3 text-gray-600" />
-                    <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
-                  </div>
+             <div className={`flex items-center gap-3 mt-1 text-[10px] font-bold uppercase tracking-wider ${t.textSecondary}`}>
+  <div className="flex items-center gap-1">
+    <Briefcase className={`w-3 h-3 ${t.textMuted}`} />
+    <span className="truncate max-w-[80px]">{lead.category || 'General'}</span>
+  </div>
+  <div className="flex items-center gap-1">
+    <User className={`w-3 h-3 ${t.textMuted}`} />
+    <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
+  </div>
                   {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
                     <div className="flex items-center gap-1 text-pink-500">
                       <Camera className="w-3 h-3" />
@@ -118,7 +118,7 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                       : 'Not Set'}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 border-l border-[#232830] pl-3">
+<div className={`flex flex-col gap-1 border-l ${t.innerBorder} pl-3`}>
                   <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Arrival</span>
                   <div className="flex items-center gap-1.5 text-gray-300 font-bold text-[11px]">
                     <Clock className="w-3.5 h-3.5 text-gray-500" />
@@ -130,11 +130,11 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
               {/* Footer: Money & Navigation */}
               <div className={`flex items-center justify-between pt-3 border-t ${t.cardBorder}`}>
                 <div className="flex flex-col">
-                  <div className="text-white font-black text-base tracking-tight">
-                    {lead.quote_total 
-                      ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
-                      : <span className="text-gray-700 text-xs uppercase tracking-widest">No Quote</span>}
-                  </div>
+                  <div className={`${t.textHeading} font-black text-base tracking-tight`}>
+  {lead.quote_total 
+    ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
+    : <span className={`${t.textEmpty} text-xs uppercase tracking-widest`}>No Quote</span>}
+</div>
                   <div className={`text-[9px] font-black uppercase tracking-tighter mt-0.5 ${
                     lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-gray-500'
                   }`}>
@@ -142,7 +142,7 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                   </div>
                 </div>
 
-                <div className="h-9 w-9 rounded-xl bg-[#161B22] border border-[#232830] flex items-center justify-center text-gray-500 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg">
+<div className={`h-9 w-9 rounded-xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg`}>
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>

@@ -124,8 +124,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   // Lead data
   const [allLeads, setAllLeads] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+const [serverStatusCounts, setServerStatusCounts] = useState<Record<string, number>>({});  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
 
@@ -178,14 +178,32 @@ const [isSearching, setIsSearching] = useState(false);
   // Data fetching
   // -------------------------------------------------------------------------
 
- const fetchLeads = useCallback(async (page = 1, silent = false, search = '') => {
+const fetchLeads = useCallback(async (page = 1, silent = false, overrides: Record<string, string> = {}) => {
   try {
     if (page === 1 && isInitialLoad) {
     } else if (!silent) {
       setIsRefreshing(true);
     }
     const params = new URLSearchParams({ page: String(page) });
-    if (search) params.set('search', search);
+    // Pass all active filters to the server
+    const search    = overrides.search    !== undefined ? overrides.search    : searchQuery;
+  const status    = overrides.status    !== undefined ? overrides.status    : filterStatus;
+  const category  = overrides.category  !== undefined ? overrides.category  : filterCategory;
+  const assignee  = overrides.assignee  !== undefined ? overrides.assignee  : filterAssignee;
+  const payment   = overrides.payment   !== undefined ? overrides.payment   : filterPayment;
+  const tFilter   = overrides.timeFilter!== undefined ? overrides.timeFilter: timeFilter;
+  const sDate     = overrides.startDate !== undefined ? overrides.startDate : startDate;
+  const eDate     = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
+
+    if (search)                   params.set('search',     search);
+    if (status    && status    !== 'all') params.set('status',     status);
+    if (category  && category  !== 'all') params.set('category',   category);
+    if (assignee  && assignee  !== 'all') params.set('assignee',   assignee);
+    if (payment   && payment   !== 'all') params.set('payment',    payment);
+    if (tFilter   && tFilter   !== 'all') params.set('timeFilter', tFilter);
+    if (sDate) params.set('startDate', sDate);
+    if (eDate) params.set('endDate',   eDate);
+
     const res = await fetch(`/api/company/${company.slug}/leads?${params}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
@@ -194,7 +212,8 @@ const [isSearching, setIsSearching] = useState(false);
       const data = await res.json();
       const fresh = (data.leads || []).filter((l: any) => !l.deleted);
       setAllLeads(prev => (page === 1 ? fresh : [...prev, ...fresh]));
-      setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
+setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
+if (data.statusCounts) setServerStatusCounts(data.statusCounts);
       setRefreshKey(k => k + 1);
       setLoadError('');
     } catch (e) {
@@ -204,7 +223,7 @@ const [isSearching, setIsSearching] = useState(false);
       setIsInitialLoad(false);
       setIsRefreshing(false);
     }
-  }, [company.slug, isInitialLoad]);
+}, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -227,6 +246,11 @@ const [isSearching, setIsSearching] = useState(false);
     fetchCurrentUser();
     fetchTeamMembers();
   }, []);
+
+  useEffect(() => {
+  if (isInitialLoad) return;
+  fetchLeads(1, true);
+}, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, fetchLeads]);
 
   // Scroll AI to bottom on new messages
   useEffect(() => {
@@ -372,15 +396,21 @@ useEffect(() => {
   }, [fetchLeads, selectedLead, company.slug]);
 
   const clearFilters = useCallback(() => {
-    setSearchQuery('');
-    setFilterCategory('all');
-    setFilterStatus('all');
-    setFilterAssignee('all');
-    setFilterPayment('all');
-    setTimeFilter('all');
-    setStartDate('');
-    setEndDate('');
-  }, []);
+  setSearchQuery('');
+  setFilterCategory('all');
+  setFilterStatus('all');
+  setFilterAssignee('all');
+  setFilterPayment('all');
+  setTimeFilter('all');
+  setStartDate('');
+  setEndDate('');
+  // Fetch with all filters cleared explicitly so the effect doesn't race
+  fetchLeads(1, true, {
+    search: '', status: 'all', category: 'all',
+    assignee: 'all', payment: 'all', timeFilter: 'all',
+    startDate: '', endDate: '',
+  });
+}, [fetchLeads]);
 
   // -------------------------------------------------------------------------
   // AI Chat
@@ -479,36 +509,8 @@ useEffect(() => {
 
   const { todayStart, yesterdayStart, weekStart, monthStart } = getDateBoundaries();
 
-  const filteredLeads = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return allLeads
-      .filter(lead => {
-        if (q && !lead.name?.toLowerCase().includes(q) && !lead.email?.toLowerCase().includes(q) && !lead.phone?.includes(q)) return false;
-        if (filterStatus !== 'all' && (lead.status || 'new') !== filterStatus) return false;
-        if (filterCategory !== 'all' && lead.category !== filterCategory) return false;
-        if (filterAssignee !== 'all') {
-          if (filterAssignee === 'unassigned' && lead.assigned_to) return false;
-          if (filterAssignee !== 'unassigned' && lead.assigned_to !== filterAssignee) return false;
-        }
-        if (filterPayment !== 'all') {
-          if (filterPayment === 'paid' && lead.payment_status !== 'paid') return false;
-          if (filterPayment === 'unpaid' && lead.payment_status === 'paid') return false;
-        }
-        const d = new Date(lead.created_at);
-        if (startDate && endDate) {
-          const end = new Date(endDate); end.setHours(23, 59, 59, 999);
-          if (d < new Date(startDate) || d > end) return false;
-        } else if (startDate && d < new Date(startDate)) return false;
-        else if (endDate) {
-          const end = new Date(endDate); end.setHours(23, 59, 59, 999);
-          if (d > end) return false;
-        } else if (timeFilter === 'today' && d < todayStart) return false;
-        else if (timeFilter === 'week' && d < weekStart) return false;
-        else if (timeFilter === 'month' && d < monthStart) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [allLeads, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, startDate, endDate, timeFilter]);
+  const filteredLeads = useMemo(() => allLeads, [allLeads]);
+
 
   const groups = useMemo(() => [
     { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
@@ -517,13 +519,8 @@ useEffect(() => {
     { title: 'Older', leads: filteredLeads.filter(l => new Date(l.created_at) < weekStart) },
   ], [filteredLeads]);
 
-  const statusCounts = useMemo(() =>
-    statusOptions.reduce((acc, s) => {
-      acc[s.value] = allLeads.filter(l => (l.status || statusOptions[0].value) === s.value).length;
-      return acc;
-    }, {} as Record<string, number>),
-    [allLeads, statusOptions]
-  );
+ const statusCounts = serverStatusCounts;
+
 
   const categories = useMemo(() => [...new Set(allLeads.map(l => l.category).filter(Boolean))], [allLeads]);
 
@@ -773,14 +770,14 @@ onChange={e => {
   setSearchQuery(val);
   if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   if (val.trim().length >= 2) {
-    setIsSearching(true);
-    searchTimeoutRef.current = setTimeout(async () => {
-      await fetchLeads(1, true, val.trim());
-      setIsSearching(false);
-    }, 400);
-  } else if (val.trim() === '') {
-    fetchLeads(1, true, '');
-  }
+  setIsSearching(true);
+  searchTimeoutRef.current = setTimeout(async () => {
+    await fetchLeads(1, true, { search: val.trim() });
+    setIsSearching(false);
+  }, 400);
+} else if (val.trim() === '') {
+  fetchLeads(1, true, { search: '' });
+}
 }}                aria-label="Search leads"
                 className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500 focus:outline-none text-white placeholder-white/30 text-sm font-medium transition-all"
               />
@@ -788,8 +785,9 @@ onChange={e => {
                 <button
 onClick={() => {
   setSearchQuery('');
-  fetchLeads(1, true, '');
-}}                  aria-label="Clear search"
+  fetchLeads(1, true, { search: '' });
+}}
+             aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40 transition"
                 >
                   <X className="w-3.5 h-3.5" aria-hidden />
@@ -811,7 +809,7 @@ onClick={() => {
 
             {/* View toggle  hidden on mobile */}
 
-<div className="hidden md:flex items-center gap-2">
+<div className="flex items-center gap-2">
   <button
     onClick={() => setIsDark(v => !v)}
     aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -848,7 +846,7 @@ onClick={() => {
               onClick={() => setFilterStatus('all')}
               className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
             >
-              All ({allLeads.length})
+All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
             </button>
             {statusOptions.map(s => (statusCounts[s.value] || 0) > 0 && (
               <button
@@ -1024,7 +1022,7 @@ href={`/api/company/${company.slug}/export-csv`}
         {pagination.page < pagination.pages && (
           <div className="flex justify-center pt-8">
             <button
-              onClick={() => fetchLeads(pagination.page + 1)}
+  onClick={() => fetchLeads(pagination.page + 1, false)}
               className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-2xl transition"
             >
               Load More ({pagination.total - allLeads.length} remaining)

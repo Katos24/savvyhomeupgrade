@@ -28,7 +28,7 @@ interface CustomInputProps {
 
 function SignupForm() {
   const searchParams = useSearchParams();
-  const plan = searchParams.get('plan') || 'basic';
+const plan = searchParams.get('plan') || 'starter';
   
   const router = useRouter();
   const [loading, setLoading] = useState(false);

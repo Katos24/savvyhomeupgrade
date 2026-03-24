@@ -9,10 +9,11 @@ type SubscribeButtonProps = {
   subscriptionStatus?: string;
   trialEndsAt?: string | null;
   variant?: 'primary' | 'banner' | 'cta';
-  plan?: 'basic' | 'pro';
+  plan?: 'starter' | 'basic' | 'pro';
 };
 
 const PLAN_PRICES: Record<string, string> = {
+  starter: '$29/month',
   basic: '$49/month',
   pro: '$99/month',
 };
@@ -24,7 +25,7 @@ export default function SubscribeButton({
   subscriptionStatus,
   trialEndsAt,
   variant = 'primary',
-  plan = 'basic',
+  plan = 'starter',
 }: SubscribeButtonProps) {
   const [loading, setLoading] = useState(false);
 
