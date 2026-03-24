@@ -14,9 +14,11 @@ interface CardsViewProps {
   onSelectLead: (lead: any) => void;
   statusOptions: any[];
   isDark?: boolean;
+  planTier?: string;
 }
 
-export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true }: CardsViewProps) {
+export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true, planTier = 'starter' }: CardsViewProps) {
+  const isStarter = planTier === 'starter';
   const t = getTheme(isDark);  const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
 
   const getStatusConfig = (statusValue: string) =>
@@ -107,40 +109,48 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                 </div>
               </div>
 
-              {/* Schedule Box: Clean Dashboard Style */}
-              <div className={`grid grid-cols-2 gap-2 mb-5 ${t.innerBg} p-3 rounded-xl border ${t.innerBorder}`}>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Date</span>
-                  <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {lead.scheduled_date 
-                      ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                      : 'Not Set'}
+                 {/* Schedule Box — Basic/Pro only */}
+              {!isStarter && (
+                <div className={`grid grid-cols-2 gap-2 mb-5 ${t.innerBg} p-3 rounded-xl border ${t.innerBorder}`}>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Date</span>
+                    <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {lead.scheduled_date 
+                        ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : 'Not Set'}
+                    </div>
+                  </div>
+                  <div className={`flex flex-col gap-1 border-l ${t.innerBorder} pl-3`}>
+                    <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Arrival</span>
+                    <div className="flex items-center gap-1.5 text-gray-300 font-bold text-[11px]">
+                      <Clock className="w-3.5 h-3.5 text-gray-500" />
+                      {formatScheduledTime(lead.scheduled_time)}
+                    </div>
                   </div>
                 </div>
-<div className={`flex flex-col gap-1 border-l ${t.innerBorder} pl-3`}>
-                  <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Arrival</span>
-                  <div className="flex items-center gap-1.5 text-gray-300 font-bold text-[11px]">
-                    <Clock className="w-3.5 h-3.5 text-gray-500" />
-                    {formatScheduledTime(lead.scheduled_time)}
-                  </div>
-                </div>
-              </div>
+              )}
 
-              {/* Footer: Money & Navigation */}
+               {/* Footer: Money & Navigation */}
               <div className={`flex items-center justify-between pt-3 border-t ${t.cardBorder}`}>
-                <div className="flex flex-col">
-                  <div className={`${t.textHeading} font-black text-base tracking-tight`}>
-  {lead.quote_total 
-    ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
-    : <span className={`${t.textEmpty} text-xs uppercase tracking-widest`}>No Quote</span>}
-</div>
-                  <div className={`text-[9px] font-black uppercase tracking-tighter mt-0.5 ${
-                    lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-gray-500'
-                  }`}>
-                    {lead.payment_status || 'Unpaid'}
+                {!isStarter ? (
+                  <div className="flex flex-col">
+                    <div className={`${t.textHeading} font-black text-base tracking-tight`}>
+                      {lead.quote_total 
+                        ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
+                        : <span className={`${t.textEmpty} text-xs uppercase tracking-widest`}>No Quote</span>}
+                    </div>
+                    <div className={`text-[9px] font-black uppercase tracking-tighter mt-0.5 ${
+                      lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-gray-500'
+                    }`}>
+                      {lead.payment_status || 'Unpaid'}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className={`text-[10px] font-bold uppercase tracking-widest ${t.textMuted}`}>
+                    {lead.category || 'General'}
+                  </div>
+                )}
 
 <div className={`h-9 w-9 rounded-xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg`}>
                   <ChevronRight className="w-5 h-5" />

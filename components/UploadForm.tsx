@@ -47,6 +47,7 @@ type Company = {
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
   form_field_config?: FieldConfig | null;
+  plan_tier?: string | null;
 };
 
 interface UploadFormProps {
@@ -100,7 +101,9 @@ export default function UploadForm({
   const finalCompanyId = company?.id || companyId;
   const customQuestions = company?.custom_questions || [];
 
-  const fieldConfig: FieldConfig = company?.form_field_config || {
+  const isStarterPlan = company?.plan_tier === 'starter';
+
+  const baseFieldConfig: FieldConfig = company?.form_field_config || {
     address: {
       enabled: company?.address_enabled ?? (ADDRESS_CONFIG[businessType]?.show ?? false),
       required: company?.address_required ?? false,
@@ -109,6 +112,14 @@ export default function UploadForm({
     preferred_time: { enabled: true },
     lead_source: { enabled: true },
     file_upload: { enabled: true },
+  };
+
+  // Starter plan cannot collect photos/videos on the customer form
+  const fieldConfig: FieldConfig = {
+    ...baseFieldConfig,
+    file_upload: {
+      enabled: isStarterPlan ? false : baseFieldConfig.file_upload.enabled,
+    },
   };
 
   const hasStep2Content =

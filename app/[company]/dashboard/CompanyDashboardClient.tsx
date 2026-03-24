@@ -970,11 +970,12 @@ All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
                     <span className="text-[10px] font-black bg-white/5 px-2 py-1 rounded-md text-slate-500">{leads.length}</span>
                   </div>
                   <CardsView
-                    leads={leads}
-                    onSelectLead={setSelectedLead}
-                    statusOptions={statusOptions}
-                    isDark={isDark}  
-                  />
+  leads={leads}
+  onSelectLead={setSelectedLead}
+  statusOptions={statusOptions}
+  isDark={isDark}
+  planTier={company.plan_tier || 'starter'}
+/>
                 </section>
               ))}
             </div>
