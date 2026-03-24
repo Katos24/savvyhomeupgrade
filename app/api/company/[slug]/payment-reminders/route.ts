@@ -108,6 +108,22 @@ if (!can((r.plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder')) {
   }, { status: 403 });
 }
 
+  // ── Dedup check — don't send if reminder sent in last 24 hours ────────────
+    const projectCheck = await sql`
+      SELECT reminder_sent_at FROM projects WHERE id = ${project_id}
+    `;
+    if (projectCheck[0]?.reminder_sent_at) {
+      const lastSent = new Date(projectCheck[0].reminder_sent_at);
+      const hoursSince = (Date.now() - lastSent.getTime()) / (1000 * 60 * 60);
+      if (hoursSince < 24) {
+        return NextResponse.json({
+          success: false,
+          error: `A reminder was already sent ${Math.floor(hoursSince)} hours ago. Please wait 24 hours before sending another.`,
+          too_soon: true,
+        }, { status: 429 });
+      }
+    }
+
     // ── Calculate amount due ──────────────────────────────────────────────────
     const quoteTotal  = parseFloat(r.quote_total  || '0');
     const paid        = parseFloat(r.payment_amount || '0');

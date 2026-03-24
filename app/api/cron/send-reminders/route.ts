@@ -75,6 +75,10 @@ export async function GET(request: NextRequest) {
           WHERE p.company_id = ${company.id}
             AND p.status NOT IN ('completed', 'cancelled', 'lost')
             AND p.updated_at < ${cutoffDate.toISOString()}
+            AND (
+              p.reminder_sent_at IS NULL
+              OR p.reminder_sent_at < NOW() - INTERVAL '24 hours'
+            )
           ORDER BY p.updated_at ASC
           LIMIT 50
         `;
@@ -189,6 +193,10 @@ export async function GET(request: NextRequest) {
           AND p.follow_up_date IS NOT NULL
           AND p.follow_up_date::date <= CURRENT_DATE
           AND p.status NOT IN ('completed', 'cancelled', 'lost')
+          AND (
+            p.reminder_sent_at IS NULL
+            OR p.reminder_sent_at < NOW() - INTERVAL '24 hours'
+          )
         LIMIT 50
       `;
 
@@ -213,9 +221,18 @@ export async function GET(request: NextRequest) {
           leads: leadsNeedingFollowUp,
         });
 
-        totalReminders++;
-        
-        // Wait 600ms between emails to respect rate limit (2 emails per second = 500ms minimum)
+         totalReminders++;
+
+        // Mark all reminded projects so we don't double-send
+        const remindedIds = leadsNeedingFollowUp.map((l: any) => l.id).filter(Boolean);
+        if (remindedIds.length > 0) {
+          await sql`
+            UPDATE projects
+            SET reminder_sent_at = NOW()
+            WHERE id = ANY(${remindedIds}::int[])
+          `;
+        }
+
         await delay(600);
       }
     }
