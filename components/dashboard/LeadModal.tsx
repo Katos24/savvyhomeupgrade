@@ -337,19 +337,66 @@ export default function LeadModal({
   const currentStatusConfig = getStatusConfig(selectedStatus);
   const statusHex = getStatusColor(currentStatusConfig?.color);
 
+const planTier = (company?.plan_tier || 'starter') as PlanTier;
+const isStarter = planTier === 'starter';
+
 const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean; locked?: boolean }[] = [
-    { id: 'overview', label: 'Overview', icon: User, show: true },
-    { id: 'schedule', label: 'Schedule', icon: Calendar, show: isProject },
-    { id: 'quote', label: 'Quote', icon: FileText, show: isProject },
-    { id: 'payment', label: 'Payment', icon: CreditCard, show: isProject },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare, show: isProject },
-    { id: 'photos', label: 'Media', icon: Image, show: isProject },
-    { id: 'activity', label: 'Activity', icon: MessageCircle, show: isProject },
-    { id: 'reminders', label: 'Reminders', icon: Bell, show: isProject },
-  { id: 'ai', label: 'AI Brief', icon: Sparkles, show: true, locked: !can(company?.plan_tier as PlanTier ?? 'basic', 'ai_brief') },
-  ];
+  { id: 'overview',  label: 'Overview',  icon: User,          show: true },
+  { id: 'schedule',  label: 'Schedule',  icon: Calendar,      show: isProject, locked: !can(planTier, 'scheduling') },
+  { id: 'quote',     label: 'Quote',     icon: FileText,      show: isProject, locked: !can(planTier, 'quotes') },
+  { id: 'payment',   label: 'Payment',   icon: CreditCard,    show: isProject, locked: !can(planTier, 'quotes') },
+  { id: 'tasks',     label: 'Tasks',     icon: CheckSquare,   show: isProject, locked: !can(planTier, 'custom_tasks') },
+  { id: 'photos',    label: 'Media',     icon: Image,         show: isProject, locked: !can(planTier, 'docs_on_card') },
+  { id: 'activity',  label: 'Activity',  icon: MessageCircle, show: isProject },
+  { id: 'reminders', label: 'Reminders', icon: Bell,          show: isProject, locked: !can(planTier, 'scheduling') },
+  { id: 'ai',        label: 'AI Brief',  icon: Sparkles,      show: true,      locked: !can(planTier, 'ai_brief') },
+];
+
+const renderProjectTab = () => {
+  if (activeTab === 'overview' || activeTab === 'activity' || activeTab === 'ai' || !isProject) return null;
+  const activeTabDef = tabs.find((t: TabDef) => t.id === activeTab);
+  if (activeTabDef?.locked) {
+    const upgradeMap: Record<string, { title: string; description: string; plan: string }> = {
+      schedule:  { title: 'Job Scheduling',      description: 'Schedule jobs, set arrival times, and manage your crew calendar.', plan: 'Basic' },
+      quote:     { title: 'Quote Builder',       description: 'Build professional quotes with line items and send them in one click.', plan: 'Basic' },
+      payment:   { title: 'Payment Tracking',    description: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Basic' },
+      tasks:     { title: 'Task Lists',          description: 'Build task checklists for each job and track completion.', plan: 'Basic' },
+      photos:    { title: 'Media & Documents',   description: 'Upload before/after photos and job documents.', plan: 'Basic' },
+      reminders: { title: 'Follow-up Reminders', description: 'Set follow-up dates and get reminded to check in on leads.', plan: 'Basic' },
+    };
+    const info = upgradeMap[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Basic' };
+    return (
+      <div className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center">
+        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-6 h-6 text-blue-500" />
+        </div>
+        <h3 className="text-base font-bold text-gray-900 mb-2">{info.title}</h3>
+        <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">{info.description}</p>
+        
+        <a
+      href={`/${companySlug}/admin/settings#billing`}
+      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition"
+    >
+      Upgrade to {info.plan} — $49.99/mo
+    </a>
+      </div>
+    );
+  }
+  return (
+    <ProjectSection
+      lead={lead}
+      currentUser={currentUser}
+      onRefresh={onRefresh}
+      statusOptions={statusOptions}
+      onUpdateStatus={onUpdateStatus}
+      companySlug={companySlug}
+      defaultTab={activeTab}
+    />
+  );
+};
 
   return (
+
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
@@ -455,7 +502,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
                 </div>
               </div>
 
-              {lead.scheduled_date ? (
+             {!isStarter && (lead.scheduled_date ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
                   style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc' }}>
                   <Calendar className="w-3 h-3" />
@@ -467,7 +514,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
                   <Calendar className="w-3 h-3" />
                   Not scheduled
                 </div>
-              )}
+              ))}
 
               {lead.assigned_to && (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
@@ -477,7 +524,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
                 </div>
               )}
 
-              {lead.quote_total && (
+               {!isStarter && lead.quote_total && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold ${
                   lead.payment_status === 'paid' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
                   : lead.payment_status === 'partial' ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
@@ -489,7 +536,6 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
                     ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.payment_amount || 0))} paid`
                     : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(lead.quote_total))} due`}
                 </div>
-             // REPLACE WITH:
               )}
 
               {/* AI Brief shortcut */}
@@ -508,9 +554,13 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
                   <button
                     key={tab.id}
 onClick={() => {
-  if (tab.locked) return;
+  if (tab.locked) {
+    window.location.href = `/${companySlug}/admin/settings#billing`;
+    return;
+  }
   setActiveTab(tab.id);
-}}                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
+}}              
+   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
                     style={{
   color: activeTab === tab.id
     ? (isAi ? '#c4b5fd' : 'white')
@@ -880,18 +930,8 @@ onClick={() => {
   )
 )}
 
-            {/* ── PROJECT TABS ── */}
-            {activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && isProject && (
-              <ProjectSection
-                lead={lead}
-                currentUser={currentUser}
-                onRefresh={onRefresh}
-                statusOptions={statusOptions}
-                onUpdateStatus={onUpdateStatus}
-                companySlug={companySlug}
-                defaultTab={activeTab}
-              />
-            )}
+       {/* ── PROJECT TABS ── */}
+            {renderProjectTab()}
 
             {/* ── ACTIVITY TAB ── */}
             {activeTab === 'activity' && (
@@ -1030,7 +1070,7 @@ onClick={() => {
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              <span className="font-bold text-gray-800">{pendingCategoryChange.newLabel}</span> has a pricing template. Replace your current quote items with it?
+              <span className="font-bold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
@@ -1038,7 +1078,7 @@ onClick={() => {
                 Keep Current
               </button>
               <button onClick={async () => {
-                const items = pendingCategoryChange.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
+                const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
                 setPendingCategoryChange(null);
                 await executeSaveDetails(items);
               }}
