@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const companyId = session.metadata?.companyId;
-      const plan = session.metadata?.plan || 'basic'; // ← grab plan from metadata
+const plan = session.metadata?.plan || 'starter';
 
       if (!companyId) {
         console.error('No companyId in session metadata');
@@ -86,11 +86,13 @@ export async function POST(req: NextRequest) {
 
   const priceId = subscription.items?.data?.[0]?.price?.id;
   let planTier: string | null = null;
-  if (priceId === process.env.STRIPE_BASIC_PRICE_ID) planTier = 'basic';
-  if (priceId === process.env.STRIPE_PRO_PRICE_ID) planTier = 'pro';
+  // AFTER:
+if (priceId === process.env.STRIPE_STARTER_PRICE_ID) planTier = 'starter';
+if (priceId === process.env.STRIPE_BASIC_PRICE_ID)   planTier = 'basic';
+if (priceId === process.env.STRIPE_PRO_PRICE_ID)     planTier = 'pro';
 
-  const hasActiveSchedule = !!subscription.schedule;
-  if (hasActiveSchedule && planTier === 'basic') {
+const hasActiveSchedule = !!subscription.schedule;
+if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
     console.log(`⏭️ Skipping plan_tier update — downgrade schedule pending for ${subscription.id}`);
     planTier = null;
   }
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest) {
   UPDATE companies 
   SET 
     subscription_status = 'canceled',
-    plan_tier = 'basic',
+    plan_tier = 'starter',
     cancel_at_period_end = false,
     subscription_cancel_at = NULL
   WHERE stripe_customer_id = ${subscription.customer as string}

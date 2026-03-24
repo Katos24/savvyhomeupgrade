@@ -13,13 +13,18 @@
 //
 // To change pricing:
 //   Update PLAN_CONFIG prices. Done.
+//
+// Plans:
+//   starter → $29.99 — lead capture only, no workflow tools
+//   basic   → $49.99 — full workflow, no emails, no AI
+//   pro     → $99.99 — everything + one-click emails + AI
 // ============================================================
 
 // ── Plan types ────────────────────────────────────────────────
-export type PlanTier = 'basic' | 'pro';
+export type PlanTier = 'starter' | 'basic' | 'pro';
 export type UserRole = 'owner' | 'admin' | 'member';
 
-export const PLAN_ORDER: PlanTier[] = ['basic', 'pro'];
+export const PLAN_ORDER: PlanTier[] = ['starter', 'basic', 'pro'];
 
 export function planMeetsRequirement(
   userPlan: PlanTier,
@@ -31,27 +36,31 @@ export function planMeetsRequirement(
 // ── Feature → minimum plan map ────────────────────────────────
 // THIS is the single source of truth for what each plan gets.
 // Change a value here — it propagates everywhere automatically.
+//
+// starter → lead capture machine only
+// basic   → full workflow, manual emails
+// pro     → automation + AI on top of basic
 export const FEATURE_PLAN_MAP = {
   // ── Customer form ──────────────────────────────────────────
-  customize_form:           'basic',
-  customer_video_upload:    'pro',   // customer attaches photos/video on form
-  custom_form_questions:    'pro',   // add your own questions to form
+  customize_form:           'starter', // branding, field toggles — all plans
+  customer_video_upload:    'basic',   // customer attaches photos/video on form
+  custom_form_questions:    'basic',   // add your own questions to form
 
   // ── Lead board ─────────────────────────────────────────────
-  lead_board:               'basic',
-  photos_on_card:           'basic',
-  docs_on_card:             'basic',
-  payment_tracking:         'basic',
-  custom_pipeline:          'pro',   // add/rename/reorder board stages
-  categories:               'pro',   // job categories with task templates
-  custom_tasks:             'pro',   // default task lists per category
-  csv_export:               'pro',   // download leads for bookkeeping
+  lead_board:               'starter',
+  photos_on_card:           'starter',
+  docs_on_card:             'starter',
+  payment_tracking:         'starter', // basic payment status on all plans
+  custom_pipeline:          'basic',   // add/rename/reorder board stages
+  categories:               'basic',   // job categories with task templates
+  custom_tasks:             'basic',   // default task lists per category
+  csv_export:               'basic',   // download leads for bookkeeping
 
   // ── Scheduling, quotes & payments ──────────────────────────
-  scheduling:               'pro',
-  quotes:                   'pro',
-  quote_templates:          'pro',
-  send_quote_email:         'pro',
+  scheduling:               'basic',   // basic can schedule, just can't email
+  quotes:                   'basic',   // basic can build quotes, just can't email
+  quote_templates:          'basic',   // custom line item templates
+  send_quote_email:         'pro',     // one-click send requires pro
   send_schedule_email:      'pro',
   send_payment_reminder:    'pro',
 
@@ -69,16 +78,16 @@ export const FEATURE_PLAN_MAP = {
   daily_digest:             'pro',
 
   // ── Team & admin ───────────────────────────────────────────
-  team_members:             'basic',
-  role_permissions:         'pro',
+  team_members:             'starter',
+  role_permissions:         'basic',
 
   // ── Settings tabs ──────────────────────────────────────────
-  settings_company:         'basic',
-  settings_form:            'basic',
-  settings_billing:         'basic',
-  settings_team:            'basic',
-  settings_pipeline:        'pro',
-  settings_categories:      'pro',
+  settings_company:         'starter',
+  settings_form:            'starter',
+  settings_billing:         'starter',
+  settings_team:            'starter',
+  settings_pipeline:        'basic',
+  settings_categories:      'basic',
   settings_email_templates: 'pro',
   settings_notifications:   'pro',
 } as const;
@@ -94,12 +103,12 @@ export function can(userPlan: PlanTier, feature: FeatureKey): boolean {
 
 // ── Plan metadata ─────────────────────────────────────────────
 export const PLAN_CONFIG = {
-  basic: {
-    label:        'Basic',
-    price:        49.99,
-    priceLabel:   '$49.99/mo',
-    description:  'Lead capture and tracking for solo contractors',
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID || 'price_XXXX_basic',
+  starter: {
+    label:        'Starter',
+    price:        29.99,
+    priceLabel:   '$29.99/mo',
+    description:  'Lead capture machine for solo contractors',
+stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || '',
     features: [
       'Custom QR code & booking form',
       'Lead board (kanban view)',
@@ -109,23 +118,34 @@ export const PLAN_CONFIG = {
       'Form branding (logo & colors)',
     ],
   },
-  pro: {
-    label:        'Pro',
-    price:        99.99,
-    priceLabel:   '$99.99/mo',
-    description:  'Full workflow + AI for growing crews',
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_XXXX_pro',
+  basic: {
+    label:        'Basic',
+    price:        49.99,
+    priceLabel:   '$49.99/mo',
+    description:  'Full job management for growing crews',
+stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
     features: [
-      'Everything in Basic',
+      'Everything in Starter',
       'Custom pipeline stages',
       'Job categories, tasks & quote templates',
       'Job scheduling',
       'Quote builder',
+      'Customer photo & video uploads on form',
+      'CSV export for bookkeeping',
+      'Role-based permissions',
+    ],
+  },
+  pro: {
+    label:        'Pro',
+    price:        99.99,
+    priceLabel:   '$99.99/mo',
+    description:  'Automation + AI for serious contractors',
+stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
+    features: [
+      'Everything in Basic',
       'One-click emails (quote, schedule, reminder)',
       'Outbox — full sent email history',
       'Custom email templates',
-      'Customer photo & video uploads on form',
-      'CSV export for bookkeeping',
       'AI brief on every lead',
       'AI quote generator',
       'AI assistant chat',
@@ -140,6 +160,7 @@ export const UPGRADE_PROMPTS: Record<string, {
   title: string;
   description: string;
 }> = {
+  // starter → basic
   custom_pipeline: {
     title: 'Customize your pipeline',
     description: 'Add, rename, and reorder your board stages to match your exact workflow.',
@@ -152,17 +173,17 @@ export const UPGRADE_PROMPTS: Record<string, {
     title: 'Custom task lists',
     description: 'Build default task checklists for each job category.',
   },
-  email_templates: {
-    title: 'Custom email templates',
-    description: 'Personalize your quote, schedule, and payment reminder emails.',
+  scheduling: {
+    title: 'Job scheduling',
+    description: 'Schedule jobs and manage your crew calendar.',
   },
-  send_quote_email: {
-    title: 'One-click emails',
-    description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',
+  quotes: {
+    title: 'Quote builder',
+    description: 'Build professional quotes with custom line item templates.',
   },
-  outbox: {
-    title: 'Email outbox',
-    description: 'Review every email sent to customers in one place.',
+  quote_templates: {
+    title: 'Quote templates',
+    description: 'Save your most-used quote line items as reusable templates.',
   },
   csv_export: {
     title: 'CSV export',
@@ -176,13 +197,47 @@ export const UPGRADE_PROMPTS: Record<string, {
     title: 'Custom form questions',
     description: 'Ask customers anything — budget range, gate codes, pet info.',
   },
-  scheduling: {
-    title: 'Job scheduling',
-    description: 'Schedule jobs and send confirmation emails in one click.',
+  role_permissions: {
+    title: 'Role-based permissions',
+    description: 'Control what admins and members can see and do in your dashboard.',
   },
-  quotes: {
-    title: 'Quote builder',
-    description: 'Build and send professional quotes with custom line item templates.',
+  settings_pipeline: {
+    title: 'Pipeline settings',
+    description: 'Customize your lead stages to match your workflow.',
+  },
+  settings_categories: {
+    title: 'Categories settings',
+    description: 'Set up job types with auto-loaded tasks and quote templates.',
+  },
+
+  // basic → pro
+  send_quote_email: {
+    title: 'One-click emails',
+    description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',
+  },
+  send_schedule_email: {
+    title: 'One-click schedule email',
+    description: 'Send schedule confirmations to customers in one click.',
+  },
+  send_payment_reminder: {
+    title: 'One-click payment reminder',
+    description: 'Send payment reminders to customers in one click.',
+  },
+  outbox: {
+    title: 'Email outbox',
+    description: 'Review every email sent to customers in one place.',
+  },
+  email_templates: {
+    title: 'Custom email templates',
+    description: 'Personalize your quote, schedule, and payment reminder emails.',
+  },
+  settings_email_templates: {
+    title: 'Email template settings',
+    description: 'Personalize the emails your customers receive.',
+  },
+  settings_notifications: {
+    title: 'Notification settings',
+    description: 'Configure your daily digest and reminder preferences.',
   },
   ai_brief: {
     title: 'AI brief',
@@ -203,26 +258,6 @@ export const UPGRADE_PROMPTS: Record<string, {
   daily_digest: {
     title: 'Daily digest',
     description: 'Get a morning email summary of open leads, follow-ups, and scheduled jobs.',
-  },
-  role_permissions: {
-    title: 'Role-based permissions',
-    description: 'Control what admins and members can see and do in your dashboard.',
-  },
-  settings_pipeline: {
-    title: 'Pipeline settings',
-    description: 'Customize your lead stages to match your workflow.',
-  },
-  settings_categories: {
-    title: 'Categories settings',
-    description: 'Set up job types with auto-loaded tasks and quote templates.',
-  },
-  settings_email_templates: {
-    title: 'Email template settings',
-    description: 'Personalize the emails your customers receive.',
-  },
-  settings_notifications: {
-    title: 'Notification settings',
-    description: 'Configure your daily digest and reminder preferences.',
   },
 };
 

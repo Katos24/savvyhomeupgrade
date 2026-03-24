@@ -6,8 +6,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const PLAN_PRICE_IDS: Record<string, string> = {
-  basic: process.env.STRIPE_BASIC_PRICE_ID || '',
-  pro:   process.env.STRIPE_PRO_PRICE_ID || '',
+  starter: process.env.STRIPE_STARTER_PRICE_ID || '',
+  basic:   process.env.STRIPE_BASIC_PRICE_ID || '',
+  pro:     process.env.STRIPE_PRO_PRICE_ID || '',
 };
 
 export async function POST(req: NextRequest) {

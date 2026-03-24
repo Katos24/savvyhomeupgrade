@@ -40,6 +40,7 @@ export type UsePlanReturn = {
   planConfig: typeof PLAN_CONFIG[PlanTier] | null;
 
   // Convenience
+  isStarter: boolean;
   isBasic: boolean;
   isPro: boolean;
 };
@@ -59,8 +60,9 @@ export function usePlan(): UsePlanReturn {
       .then(r => r.json())
       .then(data => {
         const tier = data.company?.plan_tier as PlanTier;
-        // Normalise — treat anything unrecognised as basic (fail safe)
-        setPlan(tier === 'pro' ? 'pro' : 'basic');
+        // Normalise — map to valid tier, default to starter (fail safe)
+        const validTiers: PlanTier[] = ['starter', 'basic', 'pro'];
+        setPlan(validTiers.includes(tier) ? tier : 'starter');
       })
       .catch(() => setPlan('basic')) // fail safe — never grant access on error
       .finally(() => setIsLoading(false));
@@ -88,7 +90,8 @@ export function usePlan(): UsePlanReturn {
     can,
     upgradePrompt,
     planConfig,
-    isBasic: plan === 'basic',
-    isPro:   plan === 'pro',
+    isStarter: plan === 'starter',
+    isBasic:   plan === 'basic',
+    isPro:     plan === 'pro',
   };
 }

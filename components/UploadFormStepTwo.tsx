@@ -237,41 +237,47 @@ export default function UploadFormStepTwo({
           )}
 
           {/* Preferred Date + Time */}
-          {(showDate || showTime) && (
-            <div className={`grid gap-4 ${showDate && showTime ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {showDate && (
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                    <Calendar className="w-4 h-4 text-emerald-500" />
-                    Preferred Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.preferred_date}
-                    onChange={e => onChange('preferred_date', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-                    disabled={disabled}
-                  />
-                </div>
-              )}
-              {showTime && (
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                    Preferred Time
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.preferred_time}
-                    onChange={e => onChange('preferred_time', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
-                    placeholder="Morning, 2PM..."
-                    disabled={disabled}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+{(showDate || showTime) && (
+  <div className={`grid gap-4 ${showDate && showTime ? 'grid-cols-2' : 'grid-cols-1'}`}>
+    {showDate && (
+      <div>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+          <Calendar className="w-4 h-4 text-emerald-500" />
+          Preferred Date
+        </label>
+        <input
+          // Logic to prevent pre-population on Desktop
+          type={formData.preferred_date ? "date" : "text"}
+          value={formData.preferred_date}
+          placeholder="Select a date"
+          onFocus={(e) => (e.target.type = "date")}
+          onBlur={(e) => {
+            if (!e.target.value) e.target.type = "text";
+          }}
+          onChange={e => onChange('preferred_date', e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+          disabled={disabled}
+        />
+      </div>
+    )}
+    {showTime && (
+      <div>
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+          <Clock className="w-4 h-4 text-blue-500" />
+          Preferred Time
+        </label>
+        <input
+          type="text"
+          value={formData.preferred_time}
+          onChange={e => onChange('preferred_time', e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+          placeholder="Morning, 2PM..."
+          disabled={disabled}
+        />
+      </div>
+    )}
+  </div>
+)}
 
           {/* Custom Questions */}
           {customQuestions.length > 0 && (

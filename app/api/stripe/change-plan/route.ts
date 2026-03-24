@@ -7,8 +7,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const PLAN_PRICE_IDS: Record<string, string> = {
-  basic: process.env.STRIPE_BASIC_PRICE_ID || '',
-  pro: process.env.STRIPE_PRO_PRICE_ID || '',
+  starter: process.env.STRIPE_STARTER_PRICE_ID || '',
+  basic:   process.env.STRIPE_BASIC_PRICE_ID || '',
+  pro:     process.env.STRIPE_PRO_PRICE_ID || '',
 };
 
 export async function POST(req: NextRequest) {
@@ -86,7 +87,9 @@ export async function POST(req: NextRequest) {
       (currentItem as any).current_period_end ??
       (subscription as any).current_period_end;
 
-    const isDowngrade = newPlan === 'basic';
+// Downgrade = moving to a lower tier in the plan order
+const PLAN_ORDER = ['starter', 'basic', 'pro'];
+const isDowngrade = PLAN_ORDER.indexOf(newPlan) < PLAN_ORDER.indexOf(company.plan_tier);
 
     if (isDowngrade) {
       // ── DOWNGRADE: schedule change for end of current billing period ──
