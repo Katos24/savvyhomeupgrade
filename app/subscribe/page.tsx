@@ -66,40 +66,113 @@ const PLAN_CONFIG = {
 // ─── Secure polling success screen ───────────────────────────────────────────
 function SuccessPolling() {
   const router = useRouter();
-  const [status, setStatus] = useState<'polling' | 'confirmed' | 'timeout'>('polling');
+  const [status, setStatus] = useState<'polling' | 'confirmed' | 'timeout' | 'error'>('polling');
   const [dots, setDots] = useState(0);
   const [slug, setSlug] = useState<string | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const attempts = useRef(0);
-  const MAX_ATTEMPTS = 20;
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const MAX_ATTEMPTS = 15;      // ~60 seconds total with backoff
+  const HARD_TIMEOUT_MS = 90000; // 90 second hard stop
 
+  // Animated dots
   useEffect(() => {
     const t = setInterval(() => setDots(d => (d + 1) % 4), 500);
     return () => clearInterval(t);
   }, []);
 
+  // Elapsed seconds counter for UX feedback
   useEffect(() => {
     if (status !== 'polling') return;
+    const t = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [status]);
+
+  // Hard timeout — 90s no matter what
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setStatus('timeout');
+    }, HARD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Polling with exponential backoff
+  useEffect(() => {
+    if (status !== 'polling') return;
+
+    const getDelay = (attempt: number) => {
+      // 2s, 2s, 3s, 4s, 5s, 6s, 7s... capped at 8s
+      return Math.min(2000 + Math.max(0, attempt - 2) * 1000, 8000);
+    };
+
     const poll = async () => {
       try {
         attempts.current += 1;
-        const res = await fetch('/api/subscription/status', { cache: 'no-store' });
-        if (!res.ok) return;
+
+        const controller = new AbortController();
+        const fetchTimeout = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch('/api/subscription/status', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        clearTimeout(fetchTimeout);
+
+        if (!res.ok) {
+          if (attempts.current >= MAX_ATTEMPTS) setStatus('timeout');
+          return;
+        }
+
         const data = await res.json();
+
         if (data.isActive) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
           setSlug(data.slug);
           setOnboardingCompleted(data.onboardingCompleted);
           setStatus('confirmed');
           return;
         }
-        if (attempts.current >= MAX_ATTEMPTS) setStatus('timeout');
-      } catch {}
+
+        if (attempts.current >= MAX_ATTEMPTS) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setStatus('timeout');
+          return;
+        }
+
+        // Schedule next poll with backoff
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setTimeout(poll, getDelay(attempts.current));
+
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          // fetch timed out — retry
+          if (attempts.current >= MAX_ATTEMPTS) {
+            setStatus('timeout');
+          } else {
+            intervalRef.current = setTimeout(poll, getDelay(attempts.current));
+          }
+        } else {
+          // Network error
+          if (attempts.current >= MAX_ATTEMPTS) {
+            setStatus('error');
+          } else {
+            intervalRef.current = setTimeout(poll, getDelay(attempts.current));
+          }
+        }
+      }
     };
+
+    // First poll immediately
     poll();
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [status]);
 
+  // Redirect after confirmed
   useEffect(() => {
     if (status !== 'confirmed' || !slug) return;
     const dest = onboardingCompleted ? `/${slug}/dashboard` : '/onboarding';
@@ -117,8 +190,48 @@ function SuccessPolling() {
               <Check className="w-10 h-10 text-white" strokeWidth={3} />
             </div>
           </div>
-          <h1 className="text-white text-3xl font-black mb-3 text-white">You're in! 🎉</h1>
-          <p className="text-slate-400 font-medium">Payment confirmed. Redirecting...</p>
+          <h1 className="text-white text-3xl font-black mb-3">You're in! 🎉</h1>
+          <p className="text-slate-400 font-medium">Payment confirmed. Redirecting you now...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'timeout' || status === 'error') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
+        <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-md">
+          <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <X className="w-8 h-8 text-amber-400" />
+          </div>
+          <h2 className="text-white text-2xl font-black mb-3">Taking longer than expected</h2>
+          <p className="text-slate-400 mb-2 font-medium">
+            Your payment was likely successful — Stripe can sometimes take a moment to confirm.
+          </p>
+          <p className="text-slate-500 text-sm mb-8">
+            Check your email for a confirmation, or try logging in to your dashboard.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition"
+            >
+              Go to Login
+            </button>
+            <button
+              onClick={() => {
+                attempts.current = 0;
+                setElapsedSeconds(0);
+                setStatus('polling');
+              }}
+              className="w-full py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition"
+            >
+              Try Again
+            </button>
+          </div>
+          <p className="text-slate-600 text-xs mt-6">
+            Need help? Email us at support@lead2project.com
+          </p>
         </div>
       </div>
     );
@@ -127,9 +240,26 @@ function SuccessPolling() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-6" />
-        <h2 className="text-white text-xl font-black mb-2">Activating your account{'.'.repeat(dots)}</h2>
-        <p className="text-slate-500 text-sm">Confirming payment with Stripe...</p>
+        <div className="relative inline-block mb-8">
+          <div className="w-20 h-20 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-indigo-500" />
+          </div>
+        </div>
+        <h2 className="text-white text-xl font-black mb-2">
+          Activating your account{'.'.repeat(dots)}
+        </h2>
+        <p className="text-slate-500 text-sm mb-4">Confirming payment with Stripe...</p>
+        {elapsedSeconds > 10 && (
+          <p className="text-slate-600 text-xs max-w-xs mx-auto">
+            This is taking a bit longer than usual. Please don't close this page.
+          </p>
+        )}
+        {elapsedSeconds > 30 && (
+          <p className="text-slate-600 text-xs max-w-xs mx-auto mt-2">
+            Almost there — Stripe webhooks occasionally have a short delay.
+          </p>
+        )}
       </div>
     </div>
   );
