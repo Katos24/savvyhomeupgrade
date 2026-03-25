@@ -273,17 +273,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 enabled={fieldConfig.address.enabled}
                 onToggle={() => toggleField('address')}
               >
-                {fieldConfig.address.enabled && (
-                  <label className="flex items-center gap-2 mt-2 ml-11 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={fieldConfig.address.required}
-                      onChange={() => toggleRequired('address')}
-                      className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-xs text-gray-500">Make this required before they can submit step 2</span>
-                  </label>
-                )}
+               
               </FieldToggle>
 
               <FieldToggle
