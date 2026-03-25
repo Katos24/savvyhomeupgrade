@@ -141,9 +141,9 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const addOrUpdateQuestion = () => {
     if (!newQuestion.label.trim()) return setStatus({ type: 'error', message: 'Label is required' });
     if (editingQuestionId) {
-      setCustomQuestions(customQuestions.map(q => q.id === editingQuestionId ? newQuestion : q));
+setCustomQuestions(customQuestions.map(q => q.id === editingQuestionId ? { ...newQuestion, required: false } : q));
     } else {
-      setCustomQuestions([...customQuestions, { ...newQuestion, id: `q_${Date.now()}` }]);
+setCustomQuestions([...customQuestions, { ...newQuestion, id: `q_${Date.now()}`, required: false }]);
     }
     resetForm();
   };
@@ -534,7 +534,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
       </div>
       <div>
         <label className="block text-[11px] font-bold text-indigo-600 uppercase mb-1.5">Input Type</label>
-        <div className="grid grid-cols-3 gap-2">
+<div className="grid grid-cols-3 gap-1.5">
           {[
             { val: 'text', desc: 'Open text' },
             { val: 'select', desc: 'Dropdown' },
@@ -564,29 +564,21 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             </div>
           ))}
           <div className="flex gap-2">
-            <input
-              type="text" value={newOption}
-              onChange={e => onOptionChange(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 outline-none"
-              placeholder="Add option..."
-              onKeyDown={e => { if (e.key === 'Enter' && newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
-            />
-            <button
-              onClick={() => { if (newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50"
-            >Add</button>
-          </div>
+          <input
+            type="text" value={newOption}
+            onChange={e => onOptionChange(e.target.value)}
+            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-gray-200 outline-none"
+            placeholder="Add option..."
+            onKeyDown={e => { if (e.key === 'Enter' && newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
+          />
+          <button
+            onClick={() => { if (newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
+            className="shrink-0 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50"
+          >Add</button>
+        </div>
         </div>
       )}
 
-      <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 cursor-pointer">
-        <input
-          type="checkbox" checked={question.required}
-          onChange={e => onChange({ ...question, required: e.target.checked })}
-          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
-        />
-        <span className="text-sm font-medium text-gray-700">Mark as required</span>
-      </label>
 
       <div className="flex gap-3">
         <button onClick={onSave} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition">
