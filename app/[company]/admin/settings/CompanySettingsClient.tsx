@@ -331,10 +331,26 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                       placeholder="Company Name"
                     />
                 }
-                <div className="mt-1.5 flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-full max-w-[260px]">
-                  <Globe className="w-3 h-3 text-indigo-500 shrink-0" />
-                  <span className="text-[10px] font-mono text-slate-500 truncate">{publicLink || 'Loading...'}</span>
-                </div>
+<div className="mt-2 w-full max-w-[360px]">
+  <div className="bg-gradient-to-r from-indigo-50 to-white border border-indigo-200 rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition">
+    
+    <div className="text-sm font-mono flex items-center flex-wrap">
+      <span className="text-[11px] font-mono text-slate-600 truncate">
+  <span>lead2project.com/</span>
+  <span className="text-indigo-600 font-semibold">
+    {publicLink?.split('/').pop() || 'your-company'}
+  </span>
+</span>
+      
+      
+    </div>
+
+  </div>
+
+  <p className="text-xs text-slate-500 mt-1 ml-1">
+    Your public booking link
+  </p>
+</div>
               </div>
 
               {!isEditing && (

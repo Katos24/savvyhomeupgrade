@@ -13,7 +13,8 @@ import {
   X,
   UserPlus,
   AlertCircle,
-  Link2
+  Link2,
+  EyeOff, Eye
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -297,22 +298,36 @@ const plan = searchParams.get('plan') || 'starter';
 }
 
 function CustomInput({ label, value, onChange, placeholder, type = "text", hint, important }: CustomInputProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+
   return (
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
         <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-400'}`}>
-            {label} {important && "— Check spelling"}
+          {label} {important && "— Check spelling"}
         </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}
       </div>
-      <input 
-        type={type}
-        required
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium text-base shadow-sm ${important ? 'border-indigo-200' : 'border-slate-200'}`}
-      />
+      <div className="relative">
+        <input
+          type={isPassword ? (showPassword ? 'text' : 'password') : type}
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium text-base shadow-sm ${isPassword ? 'pr-12' : ''} ${important ? 'border-indigo-200' : 'border-slate-200'}`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

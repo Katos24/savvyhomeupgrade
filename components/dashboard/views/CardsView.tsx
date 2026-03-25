@@ -19,7 +19,8 @@ interface CardsViewProps {
 
 export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true, planTier = 'starter' }: CardsViewProps) {
   const isStarter = planTier === 'starter';
-  const t = getTheme(isDark);  const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
+  const t = getTheme(isDark);  
+  const [hoveredReminder, setHoveredReminder] = useState<number | null>(null);
 
   const getStatusConfig = (statusValue: string) =>
     statusOptions.find((s: any) => s.value === statusValue) || statusOptions[0] || { label: 'New', color: 'blue' };
@@ -41,12 +42,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
   };
 
   return (
-    /* GRID SETTINGS: 
-       1 col on mobile
-       2 cols on tablet (md)
-       3 cols on large desktop (xl)
-    */
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+    /* Updated grid to match demo sizing */
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 px-1 sm:px-0">
       {leads.map((lead) => {
         const statusConfig = getStatusConfig(lead.status);
         const statusHex = getStatusColorHex(statusConfig.color);
@@ -56,10 +53,9 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
           <div
             key={lead.id}
             onClick={() => onSelectLead(lead)}
-            // REPLACE WITH:
-className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl overflow-hidden transition-all active:scale-[0.98] ${t.cardBorderHover} shadow-sm hover:shadow-xl ${
-  isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
-}`}
+            className={`w-full group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl overflow-hidden transition-all active:scale-[0.98] ${t.cardBorderHover} shadow-sm hover:shadow-xl ${
+              isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
+            }`}
           >
             {/* Left Status Accent */}
             <div 
@@ -69,8 +65,8 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
 
             <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
               
-              {/* Header: Status & Follow-up */}
-              <div className="mb-4">
+              {/* Header */}
+              <div className="mb-5">
                 <div className="flex items-center justify-between mb-2">
                   <span 
                     className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border"
@@ -87,19 +83,19 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                   )}
                 </div>
 
-<h3 className={`${t.textHeading} text-lg font-bold tracking-tight truncate group-hover:text-blue-400 transition-colors`}>
+                <h3 className={`${t.textHeading} text-lg font-bold tracking-tight truncate group-hover:text-blue-400 transition-colors`}>
                   {lead.name}
                 </h3>
                 
-             <div className={`flex items-center gap-3 mt-1 text-[10px] font-bold uppercase tracking-wider ${t.textSecondary}`}>
-  <div className="flex items-center gap-1">
-    <Briefcase className={`w-3 h-3 ${t.textMuted}`} />
-    <span className="truncate max-w-[80px]">{lead.category || 'General'}</span>
-  </div>
-  <div className="flex items-center gap-1">
-    <User className={`w-3 h-3 ${t.textMuted}`} />
-    <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
-  </div>
+                <div className={`flex items-center gap-3 mt-1 text-[10px] font-bold uppercase tracking-wider ${t.textSecondary}`}>
+                  <div className="flex items-center gap-1">
+                    <Briefcase className={`w-3 h-3 ${t.textMuted}`} />
+                    <span className="truncate max-w-[80px]">{lead.category || 'General'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <User className={`w-3 h-3 ${t.textMuted}`} />
+                    <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
+                  </div>
                   {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
                     <div className="flex items-center gap-1 text-pink-500">
                       <Camera className="w-3 h-3" />
@@ -109,7 +105,7 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                 </div>
               </div>
 
-                 {/* Schedule Box — Basic/Pro only */}
+              {/* Schedule Box */}
               {!isStarter && (
                 <div className={`grid grid-cols-2 gap-2 mb-5 ${t.innerBg} p-3 rounded-xl border ${t.innerBorder}`}>
                   <div className="flex flex-col gap-1">
@@ -131,7 +127,7 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                 </div>
               )}
 
-               {/* Footer: Money & Navigation */}
+              {/* Footer */}
               <div className={`flex items-center justify-between pt-3 border-t ${t.cardBorder}`}>
                 {!isStarter ? (
                   <div className="flex flex-col">
@@ -152,7 +148,7 @@ className={`group relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl o
                   </div>
                 )}
 
-<div className={`h-9 w-9 rounded-xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg`}>
+                <div className={`h-9 w-9 rounded-xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg`}>
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
