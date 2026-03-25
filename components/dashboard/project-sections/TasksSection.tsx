@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Plus, Loader2, CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import { 
+  Plus, 
+  Loader2, 
+  CheckCircle2, 
+  Circle, 
+  Trash2, 
+  ListTodo, 
+  CheckSquare, 
+  Square,
+  ClipboardCheck
+} from 'lucide-react';
 
 type Task = {
   id: number;
@@ -56,15 +66,15 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   }, [lead.project_id, hasProject]);
 
   useEffect(() => {
-  if (!templatesLoaded || !hasProject || !lead.project_id) return;
-  if (tasks.length > 0 || !lead?.category) return;
-  if (templateCreatedRef.current) return;
-  const match = companyCategories.find(c => c.value === lead?.category);
-  if (match?.task_templates?.length > 0) {
-    templateCreatedRef.current = true;
-    createTasksFromTemplate(match.task_templates);
-  }
-}, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
+    if (!templatesLoaded || !hasProject || !lead.project_id) return;
+    if (tasks.length > 0 || !lead?.category) return;
+    if (templateCreatedRef.current) return;
+    const match = companyCategories.find(c => c.value === lead?.category);
+    if (match?.task_templates?.length > 0) {
+      templateCreatedRef.current = true;
+      createTasksFromTemplate(match.task_templates);
+    }
+  }, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
 
   const fetchTasks = async () => {
     try {
@@ -187,110 +197,138 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="overflow-hidden">
-
-      {/* Section header */}
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <span className="w-5 h-5 bg-violet-50 flex items-center justify-center text-xs">✅</span>
-          Tasks
-          {totalCount > 0 && (
-            <span className="px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold">
-              {completedCount}/{totalCount}
-            </span>
-          )}
-        </h3>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      
+      {/* Header Section */}
+      <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <ClipboardCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Tasks</h3>
+            {totalCount > 0 && (
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                {completedCount} of {totalCount} completed
+              </p>
+            )}
+          </div>
+        </div>
+        
         {totalCount > 0 && (
-          <div className="flex items-center gap-2">
-            <div className="w-24 h-1.5 bg-gray-100 overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div
-                className="h-full transition-all duration-500"
+                className="h-full transition-all duration-700 ease-out"
                 style={{
                   width: `${percentage}%`,
-                  background: percentage === 100 ? '#22c55e' : '#6366f1',
+                  background: percentage === 100 ? '#10b981' : '#6366f1',
                 }}
               />
             </div>
-            <span className={`text-xs font-bold ${percentage === 100 ? 'text-emerald-600' : 'text-indigo-600'}`}>
+            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${percentage === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
               {percentage}%
             </span>
           </div>
         )}
       </div>
 
-      {/* Loading */}
-      {loading ? (
-        <div className="py-10 flex justify-center">
-          <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-        </div>
-      ) : !hasProject ? (
-        <div className="py-10 text-center">
-          <p className="text-sm text-gray-400">Convert to project to manage tasks</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-50">
-
-          {/* Task list */}
-          {sortedTasks.map((task) => (
-            <div
-              key={task.id}
-              className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50 group transition ${task.completed ? 'opacity-50' : ''}`}
-            >
-              <button
-                onClick={() => handleToggleComplete(task.id, task.completed)}
-                disabled={saving}
-                className="flex-shrink-0"
-              >
-                {task.completed
-                  ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  : <Circle className="w-5 h-5 text-gray-300 hover:text-indigo-400 transition" />}
-              </button>
-              <span className={`flex-1 text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-                {task.label}
-              </span>
-              <button
-                onClick={() => handleDeleteTask(task.id)}
-                className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 transition"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              </button>
-            </div>
-          ))}
-
-          {/* Empty state */}
-          {tasks.length === 0 && (
-            <div className="py-10 flex flex-col items-center gap-2 text-center">
-              <span className="text-3xl">📋</span>
-              <p className="text-sm font-semibold text-gray-400">No tasks yet</p>
-              <p className="text-xs text-gray-300">Add a task below</p>
-            </div>
-          )}
-
-          {/* Add task input */}
-          <div className="flex items-center gap-3 px-5 py-3">
-            <Plus className="w-4 h-4 text-gray-300 flex-shrink-0" />
-            <input
-              type="text"
-              value={newTaskLabel}
-              onChange={(e) => setNewTaskLabel(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !saving && handleAddTask()}
-              placeholder="Add a task..."
-              disabled={saving}
-              className="flex-1 text-sm py-1 border-b border-transparent hover:border-gray-200 focus:border-indigo-400 focus:outline-none transition bg-transparent text-gray-700 placeholder-gray-300"
-            />
-            {newTaskLabel.trim() && (
-              <button
-                onClick={handleAddTask}
-                disabled={saving}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 flex-shrink-0"
-              >
-                {saving ? '...' : 'Add'}
-              </button>
-            )}
+      {/* Content Area */}
+      <div className="min-h-[100px]">
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Checklist...</p>
           </div>
+        ) : !hasProject ? (
+          <div className="py-12 flex flex-col items-center justify-center px-6 text-center">
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+              <ListTodo className="w-6 h-6 text-slate-300" />
+            </div>
+            <p className="text-sm font-bold text-slate-800">Checklist Locked</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-[200px]">Convert this lead to a project to start managing tasks.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            
+            {/* Task List */}
+            {sortedTasks.map((task) => (
+              <div
+                key={task.id}
+                className={`flex items-center gap-4 px-5 py-4 group hover:bg-slate-50/50 transition-all ${task.completed ? 'opacity-60' : ''}`}
+              >
+                <button
+                  onClick={() => handleToggleComplete(task.id, task.completed)}
+                  disabled={saving}
+                  className="flex-shrink-0 transition-transform active:scale-90"
+                >
+                  {task.completed ? (
+                    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white border-2 border-emerald-500">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full border-2 border-slate-200 bg-white group-hover:border-indigo-400 flex items-center justify-center transition-colors" />
+                  )}
+                </button>
+                
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-bold truncate transition-all ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                    {task.label}
+                  </p>
+                  {task.completed && task.completed_by && (
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mt-0.5">
+                      By {task.completed_by}
+                    </p>
+                  )}
+                </div>
 
-        </div>
-      )}
+                <button
+                  onClick={() => handleDeleteTask(task.id)}
+                  className="p-2 opacity-0 group-hover:opacity-100 hover:bg-rose-50 text-rose-400 rounded-lg transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+
+            {/* Empty State */}
+            {tasks.length === 0 && (
+              <div className="py-12 flex flex-col items-center justify-center text-center px-6">
+                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mb-3">
+                  <Plus className="w-5 h-5 text-indigo-400" />
+                </div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No tasks yet</p>
+              </div>
+            )}
+
+            {/* Input Row */}
+            <div className="p-4 bg-slate-50/30">
+              <div className="relative flex items-center gap-3 px-3 py-1 bg-white border border-slate-200 rounded-xl focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all">
+                <Plus className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={newTaskLabel}
+                  onChange={(e) => setNewTaskLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !saving && handleAddTask()}
+                  placeholder="New task..."
+                  disabled={saving}
+                  className="flex-1 text-sm font-bold py-2.5 bg-transparent text-slate-700 placeholder-slate-300 outline-none"
+                />
+                {newTaskLabel.trim() && (
+                  <button
+                    onClick={handleAddTask}
+                    disabled={saving}
+                    className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-700 transition-all active:scale-95 shadow-md shadow-indigo-100"
+                  >
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Add'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
     </div>
   );
 }
