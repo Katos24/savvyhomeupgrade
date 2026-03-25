@@ -486,16 +486,17 @@ await sql`
         await sql`UPDATE projects SET quote_token = ${quoteToken} WHERE id = ${lead.project_id}`;
 
         const emailResult = await sendQuoteToCustomer({
-          customerEmail: lead.email,
-          customerName: lead.name,
-          companyName: lead.company_name || 'Your Service Provider',
-          companyPhone: lead.company_phone,
-          companyId: lead.company_id,
-          quoteTotal: parseFloat(lead.quote_total),
-          quoteItems: quoteItems,
-          projectDescription: lead.category || 'Your project',
-          quoteToken: quoteToken,
-        });
+  customerEmail: lead.email,
+  customerName: lead.name,
+  companyName: lead.company_name || 'Your Service Provider',
+  companyPhone: lead.company_phone,
+  companyId: lead.company_id,
+  quoteTotal: parseFloat(lead.quote_total),
+  quoteItems: quoteItems,
+  projectDescription: lead.category || 'Your project',
+  quoteToken: quoteToken,
+  contractorEmail: user_email,
+});
 
         // Log to outbox
         try {
@@ -609,17 +610,19 @@ await sql`
       if (lead.zip_code) serviceAddress += ` ${lead.zip_code}`;
 
       try {
-        const emailResult = await sendScheduleConfirmation({
-          customerEmail: lead.email,
-          customerName: lead.name,
-          companyName: lead.company_name || 'Your Service Provider',
-          companyPhone: lead.company_phone,
-          companyId: lead.company_id,
-          scheduledDate: lead.scheduled_date,
-          scheduledTime: lead.scheduled_time || undefined,
-          serviceAddress: serviceAddress || undefined,
-          assignedTo: lead.assigned_to || undefined,
-        });
+        // AFTER
+const emailResult = await sendScheduleConfirmation({
+  customerEmail: lead.email,
+  customerName: lead.name,
+  companyName: lead.company_name || 'Your Service Provider',
+  companyPhone: lead.company_phone,
+  companyId: lead.company_id,
+  scheduledDate: lead.scheduled_date,
+  scheduledTime: lead.scheduled_time || undefined,
+  serviceAddress: serviceAddress || undefined,
+  assignedTo: lead.assigned_to || undefined,
+  contractorEmail: user_email,
+});
 
         // Log to outbox
         try {

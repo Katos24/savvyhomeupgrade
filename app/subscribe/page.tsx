@@ -431,6 +431,10 @@ function SubscribePageContent() {
                 ) : (
                   <div className="h-14 bg-slate-100 animate-pulse rounded-2xl" />
                 )}
+
+                <p className="text-xs text-center text-slate-400 mt-3">
+  All sales are final. No refunds. Cancel anytime to stop future charges.
+</p>
                 
                 <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-6 opacity-50">
                   Secure Billing via Stripe

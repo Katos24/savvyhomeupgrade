@@ -90,7 +90,7 @@ const plan = searchParams.get('plan') || 'starter';
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, phone: phoneDigits }),
+body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
       });
 
       const data = await response.json();

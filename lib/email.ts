@@ -8,7 +8,7 @@ const sql = neon(process.env.DATABASE_URL!);
 // Helper function to get company details
 async function getCompanyDetails(companyId: number) {
   const companies = await sql`
-    SELECT name, logo_url, phone, email_brand_color_1, email_brand_color_2 
+    SELECT name, logo_url, phone, email, email_brand_color_1, email_brand_color_2 
     FROM companies WHERE id = ${companyId} LIMIT 1
   `;
   return companies[0];
@@ -73,12 +73,12 @@ ${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="te
               
               ${address ? `
                 <div class="label">Service Address:</div>
-                <div class="value">📍 ${address}${city ? `, ${city}` : ''}</div>
+                <div class="value">${address}${city ? `, ${city}` : ''}</div>
               ` : ''}
               
               ${photosCount && photosCount > 0 ? `
                 <div class="label">Photos Uploaded:</div>
-                <div class="value">📸 ${photosCount} photo${photosCount > 1 ? 's' : ''} attached</div>
+                <div class="value">${photosCount} photo${photosCount > 1 ? 's' : ''} attached</div>
               ` : ''}
               
               ${description ? `
@@ -89,7 +89,7 @@ ${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="te
             
             ${address ? `
               <div class="highlight">
-                <strong>📍 Quick Actions:</strong><br>
+                <strong>Quick Actions:</strong><br>
                 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + (city ? ', ' + city : ''))}" style="color: #3b82f6; text-decoration: none;">
                   View on Google Maps →
                 </a>
@@ -213,7 +213,7 @@ export async function sendPasswordResetEmail({
             <p style="word-break: break-all; color: #5469d4;">${resetLink}</p>
             
             <div class="warning">
-              <strong>⚠️ Security Notice:</strong><br>
+              <strong>Security Notice:</strong><br>
               This link will expire in 1 hour. If you didn't request this reset, you can safely ignore this email.
             </div>
             
@@ -279,7 +279,7 @@ export async function sendTeamInviteEmail({
             <p><strong>${inviterName}</strong> has invited you to join their team at <strong>${companyName}</strong>.</p>
             
             <div class="info-box">
-              <strong>Your Role:</strong> ${role === 'admin' ? '⚙️ Admin' : '👤 Member'}<br>
+              <strong>Your Role:</strong> ${role === 'admin' ? 'Admin' : 'Member'}<br>
               ${role === 'admin' 
                 ? 'You\'ll be able to manage leads, team members, and settings.' 
                 : 'You\'ll be able to view and manage leads.'}
@@ -295,7 +295,7 @@ export async function sendTeamInviteEmail({
             <p style="word-break: break-all; color: #3b82f6; font-size: 14px;">${inviteLink}</p>
             
             <p style="font-size: 14px; color: #999; margin-top: 32px;">
-              ⚠️ This invitation will expire in 24 hours.
+              This invitation will expire in 24 hours.
             </p>
             
             <div class="footer">
@@ -332,6 +332,7 @@ export async function sendQuoteToCustomer({
   quoteItems,
   projectDescription,
   quoteToken,
+  contractorEmail, 
 }: {
   customerEmail: string;
   customerName: string;
@@ -342,6 +343,7 @@ export async function sendQuoteToCustomer({
   quoteItems: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
   projectDescription?: string;
   quoteToken?: string;
+  contractorEmail?: string;
 }){
   try {
     console.log('🔥 sendQuoteToCustomer called');
@@ -425,11 +427,12 @@ const lineItemsHtml = quoteItems.length > 0 ? `
 );
 
     const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <onboarding@resend.dev>`,
-      to: customerEmail,
-      subject: rendered.subject,
-      html: emailHtml,
-    });
+  from: `${company.name || companyName} <onboarding@resend.dev>`,
+  to: customerEmail,
+  replyTo: company.email || undefined,  // ← ADD THIS
+  subject: rendered.subject,
+  html: emailHtml,
+});
 
     console.log('✅ Quote email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
@@ -451,6 +454,7 @@ export async function sendScheduleConfirmation({
   scheduledTime,
   serviceAddress,
   assignedTo,
+  contractorEmail, 
 }: {
   customerEmail: string;
   customerName: string;
@@ -461,6 +465,7 @@ export async function sendScheduleConfirmation({
   scheduledTime?: string;
   serviceAddress?: string;
   assignedTo?: string;
+  contractorEmail?: string;
 }) {
   try {
     console.log('🔥 sendScheduleConfirmation called');
@@ -515,11 +520,12 @@ export async function sendScheduleConfirmation({
 );
 
     const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <onboarding@resend.dev>`,
-      to: customerEmail,
-      subject: rendered.subject,
-      html: emailHtml,
-    });
+  from: `${company.name || companyName} <onboarding@resend.dev>`,
+  to: customerEmail,
+  replyTo: company.email || undefined,  // ← ADD THIS
+  subject: rendered.subject,
+  html: emailHtml,
+});
 
     console.log('✅ Schedule confirmation email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
@@ -567,15 +573,14 @@ export async function sendTrialEndingReminderEmail({
             <p>Hi ${companyName},</p>
             
             <div class="warning-box">
-              <div style="font-size: 64px; margin-bottom: 12px;">⏰</div>
               <div class="days">${daysRemaining} Days Left</div>
               <p style="margin: 8px 0; color: #92400e; font-weight: 600;">Your free trial ends in ${daysRemaining} days</p>
             </div>
             
-            <p>We hope you've been enjoying Lead2Project! Your trial is ending soon, but don't worry - you can continue using all features for just <strong>$49.99/month</strong>.</p>
+            <p>We hope you've been enjoying Lead2Project! Your trial is ending soon, but don't worry - you can continue using all features on your current plan.</p>
             
             <div class="features">
-              <h3 style="margin-top: 0; color: #333;">✅ What You Keep:</h3>
+              <h3 style="margin-top: 0; color: #333;">What You Keep:</h3>
               <div class="feature">✓ Unlimited lead tracking</div>
               <div class="feature">✓ Professional quote builder</div>
               <div class="feature">✓ Photo uploads from customers</div>
@@ -584,7 +589,7 @@ export async function sendTrialEndingReminderEmail({
               <div class="feature">✓ Email notifications</div>
             </div>
             
-            <p><strong>Your card will be automatically charged $39.99 on your trial end date.</strong> No action needed!</p>
+            <p><strong>Your card will be automatically charged on your trial end date.</strong> No action needed!</p>
             
             <center>
               <a href="${subscribeUrl}" class="button">View Billing Details →</a>
@@ -649,13 +654,12 @@ export async function sendPaymentFailedEmail({
             <p>Hi ${companyName},</p>
             
             <div class="alert-box">
-              <div style="font-size: 48px; text-align: center; margin-bottom: 12px;">💳</div>
               <p style="margin: 0; font-weight: 600; color: #991b1b; text-align: center;">
                 We couldn't process your payment
               </p>
             </div>
             
-            <p>Your recent payment of $39.99 failed to process. This could be due to:</p>
+            <p>Your recent subscription payment failed to process. This could be due to:</p>
             
             <ul style="color: #555; line-height: 28px;">
               <li>Insufficient funds</li>
@@ -728,13 +732,12 @@ export async function sendSubscriptionActivatedEmail({
             <p>Hi ${companyName},</p>
             
             <div class="success-box">
-              <div style="font-size: 64px; margin-bottom: 12px;">✅</div>
               <p style="margin: 0; font-weight: 600; color: #065f46; font-size: 18px;">
                 Your subscription is now active!
               </p>
             </div>
             
-            <p>Thank you for subscribing! Your payment of <strong>$39.99</strong> has been processed successfully.</p>
+            <p>Thank you for subscribing! Your payment has been processed successfully.</p>
             
             <p>You now have full access to all Lead2Project features:</p>
             
@@ -751,7 +754,7 @@ export async function sendSubscriptionActivatedEmail({
             </center>
             
             <p style="font-size: 14px; color: #666; margin-top: 24px;">
-              You'll be billed $39.99 monthly. Manage your subscription anytime from your billing settings.
+              You'll be billed monthly. Manage your subscription anytime from your billing settings.
             </p>
             
             <div class="footer">
@@ -1178,6 +1181,7 @@ export async function sendPaymentReminderEmail({
   amountDue: number;
   dueDate: string;
   isOverdue: boolean;
+  contractorEmail?: string;
 }) {
   try {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -1230,11 +1234,12 @@ const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US',
     }
 
     const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <onboarding@resend.dev>`,
-      to: customerEmail,
-      subject,
-      html: emailHtml,
-    });
+  from: `${company.name || companyName} <onboarding@resend.dev>`,
+  to: customerEmail,
+ replyTo: company.email || undefined,
+   subject,
+  html: emailHtml,
+});
 
     console.log('✅ Payment reminder sent to:', customerEmail);
     return { subject, html: emailHtml, resendId: emailResult?.data?.id };
@@ -1487,7 +1492,7 @@ export async function sendQuoteAcceptedNotification({
         <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f6f9fc;margin:0;padding:0;">
           <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
             <div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px 32px;">
-              <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">✅ Quote Accepted!</h1>
+              <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">Quote Accepted!</h1>
               <p style="margin:8px 0 0 0;color:#d1fae5;font-size:14px;">${customerName} just accepted your quote</p>
             </div>
             <div style="padding:32px;">
