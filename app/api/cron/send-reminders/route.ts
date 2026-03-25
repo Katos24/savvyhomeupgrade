@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { sendFollowUpReminderEmail } from '@/lib/email';
 
-const sql = neon(process.env.DATABASE_URL!);
-
-// Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function GET(request: NextRequest) {
@@ -13,7 +10,6 @@ export async function GET(request: NextRequest) {
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
 
     const companies = await sql`
       SELECT 
@@ -26,7 +22,6 @@ export async function GET(request: NextRequest) {
         reminder_settings IS NOT NULL
         AND (reminder_settings->>'follow_up_enabled')::boolean = true
     `;
-
 
     let totalReminders = 0;
 
@@ -47,18 +42,16 @@ export async function GET(request: NextRequest) {
         LIMIT 1
       `;
 
-      if (users.length === 0) {
-        continue;
-      }
+      if (users.length === 0) continue;
 
       const adminUser = users[0];
       const leadsNeedingFollowUp: any[] = [];
 
-      // 1. General follow-ups (no activity in X days)
+      // 1. General follow-ups
       if (settings.follow_up_days) {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - settings.follow_up_days);
-        
+
         const generalFollowUps = await sql`
           SELECT 
             p.id,
@@ -92,11 +85,11 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // 2. Quote follow-ups (quote sent X days ago)
+      // 2. Quote follow-ups
       if (settings.quote_follow_up_days && settings.quote_follow_up_days > 0) {
         const quoteCutoffDate = new Date();
         quoteCutoffDate.setDate(quoteCutoffDate.getDate() - settings.quote_follow_up_days);
-        
+
         const quoteFollowUps = await sql`
           SELECT DISTINCT ON (p.id)
             p.id,
@@ -143,7 +136,7 @@ export async function GET(request: NextRequest) {
       if (settings.schedule_follow_up_days && settings.schedule_follow_up_days > 0) {
         const scheduleCutoffDate = new Date();
         scheduleCutoffDate.setDate(scheduleCutoffDate.getDate() - settings.schedule_follow_up_days);
-        
+
         const scheduleFollowUps = await sql`
           SELECT 
             p.id,
@@ -175,7 +168,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // 4. Custom reminders (manually set follow-up dates)
+      // 4. Custom reminders
       const customReminders = await sql`
         SELECT 
           p.id,
@@ -210,9 +203,7 @@ export async function GET(request: NextRequest) {
         }
       });
 
-      // Send email if there are leads needing follow-up
       if (leadsNeedingFollowUp.length > 0) {
-        
         await sendFollowUpReminderEmail({
           recipientEmail: adminUser.email,
           recipientName: adminUser.name || 'Team',
@@ -221,9 +212,8 @@ export async function GET(request: NextRequest) {
           leads: leadsNeedingFollowUp,
         });
 
-         totalReminders++;
+        totalReminders++;
 
-        // Mark all reminded projects so we don't double-send
         const remindedIds = leadsNeedingFollowUp.map((l: any) => l.id).filter(Boolean);
         if (remindedIds.length > 0) {
           await sql`
@@ -237,7 +227,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-
     return NextResponse.json({
       success: true,
       companiesChecked: companies.length,
@@ -246,9 +235,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in send-reminders cron:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: String(error) 
-    }, { status: 500 });
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }

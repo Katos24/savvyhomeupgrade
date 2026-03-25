@@ -1,13 +1,11 @@
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuoteAcceptedNotification } from '@/lib/email';
-
-const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  const action = searchParams.get('action'); // 'accept' or 'decline'
+  const action = searchParams.get('action');
 
   if (!token || !action || !['accept', 'decline'].includes(action)) {
     return new NextResponse(renderPage('Invalid Link', 'This link is invalid or missing required information.', false), {
@@ -16,9 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Look up project by token
     const projects = await sql`
-      SELECT 
+      SELECT
         p.id,
         p.quote_token,
         p.quote_total,
@@ -46,7 +43,6 @@ export async function GET(request: NextRequest) {
 
     const project = projects[0];
 
-    // Already responded
     if (project.quote_accepted_at) {
       return new NextResponse(renderPage('Already Accepted', `You already accepted this quote on ${new Date(project.quote_accepted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${project.company_name} will be in touch to schedule your appointment.`, true), {
         headers: { 'Content-Type': 'text/html' },
@@ -62,14 +58,13 @@ export async function GET(request: NextRequest) {
     if (action === 'accept') {
       await sql`
         UPDATE projects
-        SET 
+        SET
           quote_accepted_at = NOW(),
           quote_token = NULL,
           updated_at = NOW()
         WHERE id = ${project.id}
       `;
 
-      // Notify contractor
       try {
         await sendQuoteAcceptedNotification({
           companyEmail: project.company_email,
@@ -96,12 +91,12 @@ export async function GET(request: NextRequest) {
 
     if (action === 'decline') {
       await sql`
-  UPDATE projects
-  SET 
-    quote_declined_at = NOW(),
-    updated_at = NOW()
-  WHERE id = ${project.id}
-`;
+        UPDATE projects
+        SET
+          quote_declined_at = NOW(),
+          updated_at = NOW()
+        WHERE id = ${project.id}
+      `;
 
       return new NextResponse(
         renderPage(

@@ -1,7 +1,4 @@
-// File 1: app/api/auth/validate-invite/route.ts
-// This validates the invite token and returns invite info
-
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -15,9 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // Find user with valid invite token
     const users = await sql`
       SELECT u.id, u.email, u.role, u.company_id, c.name as company_name, c.slug as company_slug
       FROM users u
@@ -43,7 +37,7 @@ export async function POST(request: Request) {
         role: user.role,
         companyName: user.company_name,
         companySlug: user.company_slug,
-      }
+      },
     });
   } catch (error) {
     console.error('Validate invite error:', error);

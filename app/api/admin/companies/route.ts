@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { adminDb as sql } from '@/lib/db';
 
 async function verifyAdmin(): Promise<boolean> {
   try {
@@ -24,8 +25,6 @@ export async function GET() {
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL!);
-
     const companies = await sql`
       SELECT * FROM companies 
       ORDER BY created_at DESC
@@ -62,7 +61,6 @@ export async function POST(request: Request) {
 
   try {
     const { name, slug, email, phone, password, business_type, logo_url, status_options, form_categories } = await request.json();
-    const sql = neon(process.env.DATABASE_URL!);
 
     const existing = await sql`SELECT id FROM companies WHERE slug = ${slug}`;
     if (existing.length > 0) {
@@ -112,8 +110,6 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: 'Company ID required' }, { status: 400 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
     const company = await sql`
       UPDATE companies 
       SET 
@@ -159,8 +155,6 @@ export async function DELETE(request: Request) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'Company ID required' }, { status: 400 });
     }
-
-    const sql = neon(process.env.DATABASE_URL!);
 
     await sql`DELETE FROM leads WHERE company_id = ${id}`;
     await sql`DELETE FROM users WHERE company_id = ${id}`;

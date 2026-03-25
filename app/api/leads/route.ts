@@ -1,22 +1,19 @@
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { 
-      id, 
-      status, 
-      notes, 
+    const {
+      id,
+      status,
+      notes,
       action,
       user_name,
       user_email,
-      old_status 
+      old_status
     } = await request.json();
 
-    const sql = neon(process.env.DATABASE_URL!);
-
     if (action === 'update_status') {
-      // Update status AND add status change to notes
       const lead = await sql`
         SELECT notes FROM leads WHERE id = ${id}
       `;
@@ -28,20 +25,19 @@ export async function POST(request: Request) {
         existingNotes = [];
       }
 
-      // Add status change entry
       const statusChangeEntry = {
         type: 'status_change',
         old_status: old_status,
         new_status: status,
         user_name: user_name,
         user_email: user_email,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       existingNotes.push(statusChangeEntry);
 
       await sql`
-        UPDATE leads 
+        UPDATE leads
         SET status = ${status},
             notes = ${JSON.stringify(existingNotes)},
             updated_at = NOW()
@@ -51,7 +47,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
 
     } else if (action === 'add_note') {
-      // Add note with user info
       const lead = await sql`
         SELECT notes FROM leads WHERE id = ${id}
       `;
@@ -68,13 +63,13 @@ export async function POST(request: Request) {
         text: notes,
         user_name: user_name,
         user_email: user_email,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       existingNotes.push(newNote);
 
       await sql`
-        UPDATE leads 
+        UPDATE leads
         SET notes = ${JSON.stringify(existingNotes)},
             updated_at = NOW()
         WHERE id = ${id}
@@ -83,9 +78,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
 
     } else {
-      // Legacy: just update status without tracking
       await sql`
-        UPDATE leads 
+        UPDATE leads
         SET status = ${status},
             updated_at = NOW()
         WHERE id = ${id}

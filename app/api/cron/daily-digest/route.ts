@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { sendDailyDigestEmail } from '@/lib/email';
 import { FEATURE_PLAN_MAP } from '@/lib/permissions';
 
-const sql = neon(process.env.DATABASE_URL!);
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function GET(request: NextRequest) {
@@ -13,9 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-
-   // daily_digest requires 'pro' plan — only process companies on that plan
-    const digestRequiredPlan = FEATURE_PLAN_MAP['daily_digest']; // 'pro'
+    const digestRequiredPlan = FEATURE_PLAN_MAP['daily_digest'];
 
     const companies = await sql`
       SELECT id, name, slug, email, reminder_settings, notification_preferences
@@ -27,7 +24,6 @@ export async function GET(request: NextRequest) {
       AND subscription_status IN ('active', 'trialing')
       AND plan_tier = ${digestRequiredPlan}
     `;
-
 
     let sent = 0;
     let skipped = 0;
@@ -43,7 +39,7 @@ export async function GET(request: NextRequest) {
 
         const todayStr = new Date().toISOString().split('T')[0];
 
-        // ── Determine recipients ──────────────────────────────────────────────
+        // Determine recipients
         const digestRecipient = prefs.digest_recipient || 'company';
         const recipientEmails: string[] = [];
 
@@ -70,7 +66,7 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // ── TODAY'S JOBS ──────────────────────────────────────────────────────
+        // Today's jobs
         const todayJobs = await sql`
           SELECT
             l.name  AS customer_name,
@@ -87,7 +83,7 @@ export async function GET(request: NextRequest) {
           ORDER BY p.scheduled_time ASC NULLS LAST
         `;
 
-        // ── STALE LEADS ───────────────────────────────────────────────────────
+        // Stale leads
         const staleCutoff = new Date();
         staleCutoff.setDate(staleCutoff.getDate() - followUpDays);
 
@@ -103,7 +99,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── QUOTES SENT, NO RESPONSE ──────────────────────────────────────────
+        // Quotes sent, no response
         const quoteCutoff = new Date();
         quoteCutoff.setDate(quoteCutoff.getDate() - quoteFollowDays);
 
@@ -125,7 +121,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── JOB DONE, NO PAYMENT ──────────────────────────────────────────────
+        // Job done, no payment
         const schedCutoff = new Date();
         schedCutoff.setDate(schedCutoff.getDate() - schedFollowDays);
 
@@ -147,7 +143,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── OVERDUE PAYMENTS ──────────────────────────────────────────────────
+        // Overdue payments
         const overduePayments = await sql`
           SELECT
             l.name AS customer_name,
@@ -165,7 +161,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── DUE THIS WEEK ─────────────────────────────────────────────────────
+        // Due this week
         const weekFromNowStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           .toISOString().split('T')[0];
 
@@ -187,7 +183,7 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // ── FOLLOW-UP REMINDERS ───────────────────────────────────────────────
+        // Follow-up reminders
         const followUpReminders = await sql`
           SELECT
             p.id,

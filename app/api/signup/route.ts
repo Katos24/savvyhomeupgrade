@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { CATEGORY_MAP, DEFAULT_STATUSES, ADDRESS_CONFIG } from '@/lib/formCategories';
 import { sendWelcomeEmail } from '@/lib/email';
 import { isReservedSlug } from '@/lib/reservedSlugs';
-
-
-const sql = neon(process.env.DATABASE_URL!);
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +17,6 @@ export async function POST(req: NextRequest) {
       ownerName 
     } = await req.json();
 
-    // Validation
     if (!companyName || !slug || !email || !password || !ownerName) {
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -35,18 +31,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if slug already exists
-   if (isReservedSlug(slug)) {
-  return NextResponse.json(
-    { error: 'That URL is reserved. Please choose a different company name.' },
-    { status: 400 }
-  );
-}
+    if (isReservedSlug(slug)) {
+      return NextResponse.json(
+        { error: 'That URL is reserved. Please choose a different company name.' },
+        { status: 400 }
+      );
+    }
 
-// Check if slug already exists
-const existingCompany = await sql`
-  SELECT id FROM companies WHERE slug = ${slug}
-`;
+    const existingCompany = await sql`
+      SELECT id FROM companies WHERE slug = ${slug}
+    `;
 
     if (existingCompany.length > 0) {
       return NextResponse.json(
@@ -55,7 +49,6 @@ const existingCompany = await sql`
       );
     }
 
-    // Check if email already exists in users table
     const existingUser = await sql`
       SELECT id FROM users WHERE email = ${email}
     `;
@@ -67,16 +60,10 @@ const existingCompany = await sql`
       );
     }
 
-    // Hash password for user
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Get default categories for business type
     const defaultCategories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
-
-    // Get address config for business type
     const addressConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
 
-    // Create company - NO TRIAL YET
     const [newCompany] = await sql`
       INSERT INTO companies (
         name,
@@ -106,7 +93,6 @@ const existingCompany = await sql`
       RETURNING id, slug
     `;
 
-    // Create owner user
     const [newUser] = await sql`
       INSERT INTO users (
         name,
@@ -124,23 +110,19 @@ const existingCompany = await sql`
       RETURNING id
     `;
 
-// After creating user, BEFORE creating JWT token
-try {
-  await sendWelcomeEmail({
-    userEmail: email,
-    userName: ownerName,
-    companyName: companyName,
-    companySlug: slug,
-    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard`,
-    formUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
-  });
-} catch (emailError) {
-  console.error('Failed to send welcome email:', emailError);
-}
-  // Don't block signup if email fails
+    try {
+      await sendWelcomeEmail({
+        userEmail: email,
+        userName: ownerName,
+        companyName: companyName,
+        companySlug: slug,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard`,
+        formUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
+      });
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+    }
 
-
-    // Create JWT token
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       {
@@ -157,15 +139,14 @@ try {
     const response = NextResponse.json({
       success: true,
       companySlug: newCompany.slug,
-      message: 'Account created! Complete your subscription.'
+      message: 'Account created! Complete your subscription.',
     });
 
-    // Set auth cookie
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;

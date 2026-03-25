@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const sql = neon(process.env.DATABASE_URL!);
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,14 +24,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 400 });
     }
 
-    // Cancel at period end — they keep access until then
     const canceled = await stripe.subscriptions.update(
       company.stripe_subscription_id,
       { cancel_at_period_end: true }
     ) as any;
 
-    // Determine access end date
-    // If in trial, use trial_ends_at. If paid, use current_period_end.
     const isTrialing = company.subscription_status === 'trialing';
     let periodEnd: Date;
 
@@ -42,15 +37,13 @@ export async function POST(req: NextRequest) {
     } else if (canceled.current_period_end) {
       periodEnd = new Date(canceled.current_period_end * 1000);
     } else {
-      periodEnd = new Date(); // fallback
+      periodEnd = new Date();
     }
 
     const formattedDate = periodEnd.toLocaleDateString('en-US', {
       month: 'long', day: 'numeric', year: 'numeric',
     });
 
-    // Update DB — keep status as-is (trialing/active) so they retain access
-    // Set cancel_at so we know when to deactivate
     await sql`
       UPDATE companies
       SET
@@ -58,7 +51,6 @@ export async function POST(req: NextRequest) {
         cancel_at_period_end = true
       WHERE id = ${companyId}
     `;
-
 
     return NextResponse.json({
       success: true,

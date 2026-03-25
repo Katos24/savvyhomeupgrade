@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 type Props = {
@@ -8,16 +8,15 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
-    const sql = neon(process.env.DATABASE_URL!);
 
     const companies = await sql`
-     SELECT 
-  id, name, slug, email, phone, website, business_type, logo_url,
-  status_options, created_at,
-  subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id,
-  plan_tier
-FROM companies
-WHERE slug = ${slug}
+      SELECT
+        id, name, slug, email, phone, website, business_type, logo_url,
+        status_options, created_at,
+        subscription_status, trial_ends_at, stripe_customer_id, stripe_subscription_id,
+        plan_tier
+      FROM companies
+      WHERE slug = ${slug}
     `;
 
     if (companies.length === 0) {
@@ -46,8 +45,8 @@ WHERE slug = ${slug}
         trial_ends_at: company.trial_ends_at,
         stripe_customer_id: company.stripe_customer_id,
         stripe_subscription_id: company.stripe_subscription_id,
-        plan_tier: company.plan_tier,  // 👈 'basic' | 'pro'
-      }
+        plan_tier: company.plan_tier,
+      },
     });
   } catch (error) {
     console.error('Error fetching company info:', error);

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { 
   sendTrialEndingReminderEmail,
-  sendSubscriptionActivatedEmail 
 } from '@/lib/email';
 
 export const runtime = 'nodejs';
@@ -10,15 +9,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron secret to prevent unauthorized access
     const authHeader = req.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-    
-    // Get all companies with active trials
     const trialingCompanies = await sql`
       SELECT id, name, slug, email, trial_ends_at, subscription_status
       FROM companies
@@ -39,7 +34,6 @@ export async function GET(req: NextRequest) {
       const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       try {
-        // Send reminder at 7 days, 3 days, and 1 day before trial ends
         if (daysRemaining === 7 || daysRemaining === 3 || daysRemaining === 1) {
           await sendTrialEndingReminderEmail({
             companyEmail: company.email,
@@ -47,7 +41,7 @@ export async function GET(req: NextRequest) {
             daysRemaining,
             subscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
           });
-          
+
           results.reminders_sent++;
         }
       } catch (error) {
