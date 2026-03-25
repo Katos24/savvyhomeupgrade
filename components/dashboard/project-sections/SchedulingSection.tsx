@@ -21,7 +21,6 @@ type SchedulingSectionProps = {
 export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug }: SchedulingSectionProps) {
   const [saving, setSaving] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [previewEmail, setPreviewEmail] = useState<any>(null);
   const [showHours, setShowHours] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
 
@@ -68,25 +67,22 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     fetchTeam();
   }, []);
 
-  // Fetch outbox log entries for this lead (schedule type)  includes status + html_body
   const fetchOutbox = async () => {
-  if (!lead?.id) return;
-  try {
-    const res = await fetch(
-      `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=schedule`
-    );
-    const data = await res.json();
-    if (data.entries) {
-      setOutboxLog(data.entries);
-      const latest = data.entries.find((e: any) => e.html_body);
-      if (latest) setLastHtmlBody(latest.html_body);
-    } else if (data.html_body) {
-      setLastHtmlBody(data.html_body);
-    }
-  } catch {}
-};
+    if (!lead?.id) return;
+    try {
+      const res = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=schedule`);
+      const data = await res.json();
+      if (data.entries) {
+        setOutboxLog(data.entries);
+        const latest = data.entries.find((e: any) => e.html_body);
+        if (latest) setLastHtmlBody(latest.html_body);
+      } else if (data.html_body) {
+        setLastHtmlBody(data.html_body);
+      }
+    } catch {}
+  };
 
-useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
+  useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
 
   useEffect(() => {
     setScheduledDate(lead?.scheduled_date ? lead.scheduled_date.split('T')[0].split(' ')[0] : '');
@@ -135,7 +131,6 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
       });
       if (res.ok) {
         toast.success('Schedule updated');
-        // Update local state immediately so the select shows the new value
         if (finalAssignee) setAssignedTo(finalAssignee);
         setShowCustomAssignee(false);
         setCustomAssignee('');
@@ -154,7 +149,7 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
 
   return (
     <>
-      {/* EMAIL CONTENT PREVIEW */}
+      {/* EMAIL CONTENT PREVIEW MODAL */}
       {previewHtml && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
@@ -174,154 +169,101 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
                 <X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
-             <iframe
-  title="Email Preview"
-  srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
-  className="w-full border-0 rounded-xl bg-white"
-  style={{ height: '100%', width: '100%', display: 'block' }}
-  sandbox="allow-same-origin"
-/>
+            <div className="flex-1 overflow-hidden p-3">
+              <iframe
+                title="Email Preview"
+                srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
+                className="w-full border-0 rounded-xl bg-white"
+                style={{ height: '100%', width: '100%', display: 'block' }}
+                sandbox="allow-same-origin"
+              />
             </div>
           </div>
         </div>
       )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
         {/* Header */}
-        <div className="px-4 sm:px-6 py-4 sm:py-5 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
               <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Schedule</h3>
+              <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Schedule</h3>
               {lastEmailSentAt && (
-                <p className="text-[10px] font-bold text-emerald-600 mt-0.5">
-                  Confirmed {new Date(lastEmailSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                <p className="text-[9px] font-bold text-emerald-600">
+                  Confirmed {new Date(lastEmailSentAt).toLocaleDateString()}
                 </p>
               )}
             </div>
           </div>
           <button
             onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition hover:border-indigo-300"
           >
             <Calendar className="w-3.5 h-3.5" /> Calendar
           </button>
         </div>
 
-        {/* Form  3 clear primary fields */}
-        <div className="p-4 sm:p-6 space-y-4">
-
-          {/* Assigned To */}
+        <div className="p-5 space-y-5">
+          {/* Assigned To - Clean Select */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-              Assigned To
-            </label>
+            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Assigned To</label>
             {!showCustomAssignee ? (
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 <select
                   value={assignedTo}
-                  onChange={(e) => {
-                    if (e.target.value === '__custom__') {
-                      setShowCustomAssignee(true);
-                    } else {
-                      setAssignedTo(e.target.value);
-                    }
-                  }}
-                  className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer"
+                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
+                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none appearance-none"
                 >
                   <option value="">Choose team member...</option>
                   {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                  {/* Show current value if it's a custom name not in the team list */}
-                  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
-                    <option value={assignedTo}>{assignedTo}</option>
-                  )}
+                  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && <option value={assignedTo}>{assignedTo}</option>}
                   <option value="__custom__">+ Add Custom Name</option>
                 </select>
-                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none rotate-90" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             ) : (
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Enter name..."
+                  placeholder="Name..."
                   value={customAssignee}
                   onChange={(e) => setCustomAssignee(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustomName()}
-                  autoFocus
-                  className="flex-1 px-4 py-3 bg-slate-50 border border-indigo-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                  className="flex-1 px-4 py-3 bg-slate-50 border border-indigo-200 rounded-xl text-sm font-bold text-slate-900 outline-none"
                 />
-                <button
-                  onClick={handleAddCustomName}
-                  disabled={saving}
-                  className="px-4 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black transition hover:bg-indigo-700"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
-                </button>
-                <button
-                  onClick={() => setShowCustomAssignee(false)}
-                  className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-slate-200 transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <button onClick={handleAddCustomName} className="px-4 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Add</button>
+                <button onClick={() => setShowCustomAssignee(false)} className="p-3 bg-slate-100 text-slate-400 rounded-xl"><X className="w-4 h-4" /></button>
               </div>
             )}
           </div>
 
-          {/* Date + Time side by side on desktop, stacked on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Date */}
+          {/* Date & Time Grid */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                Date of Service
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Service Date</label>
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-900 outline-none"
+              />
             </div>
 
-            {/* Time */}
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                Start Time
-              </label>
-              <div className="flex items-center h-[46px] px-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:bg-white focus-within:border-indigo-500 transition-all gap-1">
-                <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  value={timeHour}
-                  onChange={(e) => setTimeHour(e.target.value)}
-                  className="bg-transparent text-sm font-bold outline-none flex-1 cursor-pointer"
-                >
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Start Time</label>
+              <div className="flex items-center px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl gap-1">
+                <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-sm font-bold outline-none flex-1">
                   <option value="">HH</option>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                    <option key={h} value={h}>{h}</option>
-                  ))}
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
                 <span className="text-slate-300 font-black">:</span>
-                <select
-                  value={timeMinute}
-                  onChange={(e) => setTimeMinute(e.target.value)}
-                  className="bg-transparent text-sm font-bold outline-none flex-1 cursor-pointer"
-                >
+                <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-sm font-bold outline-none flex-1">
                   <option value="">MM</option>
                   {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
-                <div className="w-px h-5 bg-slate-200 mx-1" />
-                <select
-                  value={timeAmPm}
-                  onChange={(e) => setTimeAmPm(e.target.value)}
-                  className="bg-transparent text-xs font-black text-indigo-600 outline-none cursor-pointer"
-                >
+                <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-transparent text-[10px] font-black text-indigo-600 outline-none">
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
                 </select>
@@ -329,125 +271,59 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
             </div>
           </div>
 
-          {/* Save */}
-          <button
-            onClick={() => handleSave()}
-            disabled={saving}
-            className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-[0.98]"
-          >
-            {saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4 animate-spin" /> Saving...
-              </span>
-            ) : 'Save Schedule'}
-          </button>
-
-          {/* Send Schedule  opens shared SendEmailModal */}
-          <button
-            onClick={() => setShowEmailModal(true)}
-            disabled={!hasProject || !scheduledDate || saving}
-            className="w-full border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50 text-slate-600 hover:text-indigo-600 font-black py-4 rounded-xl text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            Send Schedule to Customer
-            {lastEmailSentAt && (
-              <span className="text-[10px] font-bold text-slate-400 normal-case tracking-normal ml-1">
-                (last: {new Date(lastEmailSentAt).toLocaleDateString()})
-              </span>
-            )}
-          </button>
-
-          {/* Hours  collapsed toggle below buttons, same as notes */}
-          <div className="pt-1 border-t border-slate-100">
+          {/* Buttons */}
+          <div className="space-y-3">
             <button
-              onClick={() => setShowHours(v => !v)}
-              className="flex items-center gap-2 text-xs font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors pt-3"
+              onClick={() => handleSave()}
+              disabled={saving}
+              className="w-full py-4 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition active:scale-95"
             >
-              <Hash className="w-3.5 h-3.5" />
-              {showHours ? 'Hide Hours' : 'Job Hours'}
-              {showHours ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {saving ? 'Saving...' : 'Save Schedule'}
+            </button>
+            <button
+              onClick={() => setShowEmailModal(true)}
+              disabled={!hasProject || !scheduledDate || saving}
+              className="w-full py-4 border-2 border-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
+            >
+              <Send className="w-3.5 h-3.5" /> Send to Customer
+            </button>
+          </div>
+
+          {/* Hours Section Restoration */}
+          <div className="pt-2 border-t border-slate-100">
+            <button onClick={() => setShowHours(v => !v)} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <Hash className="w-3 h-3" /> {showHours ? 'Hide' : 'Job'} Hours {showHours ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
             {showHours && (
-              <div className="mt-3 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="mt-3 grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                    Est. Hours
-                  </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={estimatedHours}
-                      onChange={(e) => setEstimatedHours(e.target.value)}
-                      placeholder="0.0"
-                      className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Est.</label>
+                  <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                    Actual Hours
-                  </label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={actualHours}
-                      onChange={(e) => setActualHours(e.target.value)}
-                      placeholder="0.0"
-                      className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Actual</label>
+                  <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none" />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Email history  from outbox, shows status + preview */}
+          {/* Sent History Full Logic Restoration */}
           {outboxLog.length > 0 && (
-            <div className="pt-0 border-t border-slate-100">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-3 mb-2 flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5" /> Sent History
-              </p>
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Mail className="w-3 h-3" /> Sent History</p>
               <div className="space-y-2">
                 {outboxLog.map((entry: any, i: number) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3"
-                  >
-                    <div className="flex flex-col gap-0.5 min-w-0">
+                  <div key={i} className="flex flex-col p-3 bg-slate-50 border border-slate-100 rounded-xl gap-1">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          entry.status === 'failed'
-                            ? 'bg-red-100 text-red-600'
-                            : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          {entry.status === 'failed' ? 'Failed' : 'Sent'}
-                        </span>
-                        <span className="text-xs font-black text-slate-700">
-                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>{entry.status}</span>
+                        <span className="text-[10px] font-black text-slate-700">{new Date(entry.created_at).toLocaleDateString()}</span>
                       </div>
-                      {entry.sent_by_email && (
-                        <span className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</span>
-                      )}
-                      {entry.status === 'failed' && entry.error_message && (
-                        <span className="text-[10px] text-red-500 font-bold truncate">{entry.error_message}</span>
-                      )}
+                      {entry.html_body && <button onClick={() => setPreviewHtml(entry.html_body)} className="text-[9px] font-black text-indigo-600 uppercase">Preview</button>}
                     </div>
-                    {entry.html_body && (
-                      <button
-                        onClick={() => setPreviewHtml(entry.html_body)}
-                        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition"
-                      >
-                        <Eye className="w-3 h-3" /> Preview
-                      </button>
-                    )}
+                    {entry.sent_by_email && <span className="text-[9px] text-slate-400 truncate">{entry.sent_by_email}</span>}
+                    {entry.status === 'failed' && entry.error_message && <span className="text-[9px] text-red-500 font-bold">{entry.error_message}</span>}
                   </div>
                 ))}
               </div>
@@ -474,16 +350,12 @@ useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
         open={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
-
         type="schedule"
         leadId={lead.id}
         currentUser={currentUser}
         customerName={lead.name}
         customerEmail={lead.email}
-        contextLine={scheduledDate
-          ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-          : null
-        }
+        contextLine={scheduledDate ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null}
         lastSentAt={lastEmailSentAt}
         lastHtmlBody={lastHtmlBody}
       />
