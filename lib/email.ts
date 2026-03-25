@@ -58,7 +58,7 @@ export async function sendNewLeadAlertEmail({
         </head>
         <body>
           <div class="container">
-            <h1>🎯 New Lead Received!</h1>
+            <h1>New Lead Received!</h1>
             <p>You have a new lead from <strong>${customerName}</strong></p>
             
             <div class="info-box">
@@ -69,7 +69,7 @@ export async function sendNewLeadAlertEmail({
               <div class="value"><a href="mailto:${customerEmail}">${customerEmail}</a></div>
               
               <div class="label">Phone:</div>
-              <div class="value"><a href="tel:${customerPhone}">${customerPhone}</a></div>
+${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="tel:${customerPhone}">${customerPhone}</a></div>` : ''}
               
               ${address ? `
                 <div class="label">Service Address:</div>
@@ -109,10 +109,11 @@ export async function sendNewLeadAlertEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: contractorEmail,
-      subject: `🎯 New Lead: ${customerName} - ${category}`,
+      subject: `New Lead: ${customerName} — ${category}`,
       html: emailHtml,
     });
 
+    console.log('✅ New lead alert sent to contractor');
   } catch (error) {
     console.error('❌ Failed to send lead alert:', error);
   }
@@ -151,6 +152,7 @@ export async function sendLeadConfirmationEmail({
             <p>We received your request for <strong>${category}</strong> services.</p>
             <p>We'll review your request and get back to you within 24 hours.</p>
             <div class="footer">${companyName}</div>
+            
           </div>
         </body>
       </html>
@@ -163,6 +165,7 @@ export async function sendLeadConfirmationEmail({
       html: emailHtml,
     });
 
+    console.log('✅ Confirmation email sent to customer');
   } catch (error) {
     console.error('❌ Failed to send confirmation email:', error);
   }
@@ -196,7 +199,7 @@ export async function sendPasswordResetEmail({
         </head>
         <body>
           <div class="container">
-            <h1>🔒 Reset Your Password</h1>
+            <h1>Reset your password — Lead2Project</h1>
             
             <p>Hi ${userName},</p>
             
@@ -226,10 +229,11 @@ export async function sendPasswordResetEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: userEmail,
-      subject: '🔒 Reset Your Password',
+      subject: 'Reset Your Password',
       html: emailHtml,
     });
 
+    console.log('✅ Password reset email sent to:', userEmail);
   } catch (error) {
     console.error('❌ Failed to send password reset email:', error);
     throw error;
@@ -268,7 +272,7 @@ export async function sendTeamInviteEmail({
         </head>
         <body>
           <div class="container">
-            <h1>👥 You've Been Invited!</h1>
+            <h1>You've Been Invited!</h1>
             
             <p>Hi there!</p>
             
@@ -310,6 +314,7 @@ export async function sendTeamInviteEmail({
       html: emailHtml,
     });
 
+    console.log('✅ Team invite email sent to:', inviteeEmail);
   } catch (error) {
     console.error('❌ Failed to send team invite email:', error);
     throw error;
@@ -339,6 +344,7 @@ export async function sendQuoteToCustomer({
   quoteToken?: string;
 }){
   try {
+    console.log('🔥 sendQuoteToCustomer called');
 
     const company = await getCompanyDetails(companyId);
     const templates = await getCompanyEmailTemplates(companyId);
@@ -425,6 +431,7 @@ const lineItemsHtml = quoteItems.length > 0 ? `
       html: emailHtml,
     });
 
+    console.log('✅ Quote email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
 
   } catch (error) {
@@ -456,6 +463,7 @@ export async function sendScheduleConfirmation({
   assignedTo?: string;
 }) {
   try {
+    console.log('🔥 sendScheduleConfirmation called');
 
     // Get company details for logo
     const company = await getCompanyDetails(companyId);
@@ -513,6 +521,7 @@ export async function sendScheduleConfirmation({
       html: emailHtml,
     });
 
+    console.log('✅ Schedule confirmation email sent to customer:', customerEmail);
     return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
   } catch (error) {
     console.error('❌ Failed to send schedule confirmation:', error);
@@ -553,7 +562,7 @@ export async function sendTrialEndingReminderEmail({
         </head>
         <body>
           <div class="container">
-            <h1>⏰ Your Free Trial is Ending Soon</h1>
+            <h1>Your Free Trial is Ending Soon</h1>
             
             <p>Hi ${companyName},</p>
             
@@ -563,7 +572,7 @@ export async function sendTrialEndingReminderEmail({
               <p style="margin: 8px 0; color: #92400e; font-weight: 600;">Your free trial ends in ${daysRemaining} days</p>
             </div>
             
-            <p>We hope you've been enjoying Lead2Project! Your trial is ending soon, but don't worry - you can continue using all features for just <strong>$39.99/month</strong>.</p>
+            <p>We hope you've been enjoying Lead2Project! Your trial is ending soon, but don't worry - you can continue using all features for just <strong>$49.99/month</strong>.</p>
             
             <div class="features">
               <h3 style="margin-top: 0; color: #333;">✅ What You Keep:</h3>
@@ -597,10 +606,11 @@ export async function sendTrialEndingReminderEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: companyEmail,
-      subject: `⏰ ${daysRemaining} days left in your free trial`,
+      subject: `Your free trial ends in ${daysRemaining} days`,
       html: emailHtml,
     });
 
+    console.log(`✅ Trial reminder (${daysRemaining} days) sent to:`, companyEmail);
   } catch (error) {
     console.error('❌ Failed to send trial reminder:', error);
     throw error;
@@ -634,7 +644,7 @@ export async function sendPaymentFailedEmail({
         </head>
         <body>
           <div class="container">
-            <h1>⚠️ Payment Failed</h1>
+            <h1>Payment Failed</h1>
             
             <p>Hi ${companyName},</p>
             
@@ -675,10 +685,11 @@ export async function sendPaymentFailedEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: companyEmail,
-      subject: '⚠️ Payment Failed - Update Your Card',
+      subject: 'Action required: payment failed — Lead2Project',
       html: emailHtml,
     });
 
+    console.log('✅ Payment failed email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send payment failed email:', error);
     throw error;
@@ -712,7 +723,7 @@ export async function sendSubscriptionActivatedEmail({
         </head>
         <body>
           <div class="container">
-            <h1>🎉 Welcome to Lead2Project!</h1>
+            <h1>Welcome to Lead2Project!</h1>
             
             <p>Hi ${companyName},</p>
             
@@ -755,10 +766,11 @@ export async function sendSubscriptionActivatedEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: companyEmail,
-      subject: '🎉 Welcome to Lead2Project - Subscription Active!',
+      subject: 'Your subscription is active — Lead2Project',
       html: emailHtml,
     });
 
+    console.log('✅ Subscription activated email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send activation email:', error);
     throw error;
@@ -772,6 +784,7 @@ export async function sendWelcomeEmail({
   companySlug,
   dashboardUrl,
   formUrl,
+  plan = 'starter',
 }: {
   userEmail: string;
   userName: string;
@@ -779,7 +792,29 @@ export async function sendWelcomeEmail({
   companySlug: string;
   dashboardUrl: string;
   formUrl: string;
+  plan?: 'starter' | 'basic' | 'pro';
 }) {
+  const planDetails = {
+    starter: {
+      label: 'Starter',
+      price: '$29.99/mo',
+      features: ['Custom booking form', 'Lead board', 'Payment tracking', 'Unlimited team members'],
+      color: '#6366f1',
+    },
+    basic: {
+      label: 'Basic',
+      price: '$49.99/mo',
+      features: ['Everything in Starter', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
+      color: '#3b82f6',
+    },
+    pro: {
+      label: 'Pro',
+      price: '$99.99/mo',
+      features: ['Everything in Basic', 'One-click emails', 'AI quote generator', 'Daily digest', 'Email outbox'],
+      color: '#8b5cf6',
+    },
+  }[plan];
+
   try {
     const settingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/admin/settings`;
 
@@ -804,9 +839,35 @@ export async function sendWelcomeEmail({
                   </td>
                 </tr>
 
+                <!-- Plan Badge -->
+                <tr>
+                  <td style="padding:28px 40px 0;">
+                    <div style="background:${planDetails.color}12;border:1px solid ${planDetails.color}30;border-radius:12px;padding:20px;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="vertical-align:middle;">
+                            <p style="margin:0 0 2px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:${planDetails.color};">Your Plan</p>
+                            <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;">${planDetails.label} <span style="font-size:14px;font-weight:500;color:#64748b;">${planDetails.price}</span></p>
+                          </td>
+                          <td style="text-align:right;vertical-align:middle;">
+                            <span style="display:inline-block;background:${planDetails.color};color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">14-day trial</span>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="border-top:1px solid ${planDetails.color}25;margin-top:14px;padding-top:14px;">
+                        ${planDetails.features.map(f =>
+                          `<div style="padding:3px 0;font-size:13px;color:#475569;">
+                            <span style="color:${planDetails.color};font-weight:700;">&#10003;</span>&nbsp;&nbsp;${f}
+                          </div>`
+                        ).join('')}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
                 <!-- Your two URLs -->
                 <tr>
-                  <td style="padding:32px 40px 0;">
+                  <td style="padding:28px 40px 0;">
                     <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Your two most important links</h2>
 
                     <!-- Customer Form URL -->
@@ -834,24 +895,20 @@ export async function sendWelcomeEmail({
                   <td style="padding:28px 40px 0;">
                     <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Set up your account in 5 minutes</h2>
                     <table width="100%" cellpadding="0" cellspacing="0">
-
                       ${[
-                        { emoji: '📂', title: 'Add service categories', desc: 'Create categories like Roofing, Plumbing, or HVAC — each can have its own task checklist and pricing template that auto-load when you create a project.' },
-                        { emoji: '💰', title: 'Set up pricing templates', desc: 'Pre-fill quote line items per category. When a new job comes in, your quote is already half-built.' },
-                        { emoji: '✅', title: 'Build task checklists', desc: 'Add steps your team should complete for each job type. They auto-load when you convert a lead to a project.' },
-                        { emoji: '🎨', title: 'Add your logo and brand colors', desc: 'Your logo and colors appear on every customer email — quotes, schedules, and payment reminders all look like they came from you.' },
-                        { emoji: '📋', title: 'Customize your booking form', desc: 'Turn on address collection, photo uploads, preferred date — whatever makes sense for your business.' },
-                        { emoji: '📧', title: 'Update your email templates', desc: 'Personalize the messages your customers receive when you send a quote, confirm a schedule, or request payment.' },
+                        { title: 'Add service categories', desc: 'Create categories like Roofing, Plumbing, or HVAC — each can have its own task checklist and pricing template that auto-load when you create a project.' },
+                        { title: 'Set up pricing templates', desc: 'Pre-fill quote line items per category. When a new job comes in, your quote is already half-built.' },
+                        { title: 'Build task checklists', desc: 'Add steps your team should complete for each job type. They auto-load when you convert a lead to a project.' },
+                        { title: 'Add your logo and brand colors', desc: 'Your logo and colors appear on every customer email — quotes, schedules, and payment reminders all look like they came from you.' },
+                        { title: 'Customize your booking form', desc: 'Turn on address collection, photo uploads, preferred date — whatever makes sense for your business.' },
+                        { title: 'Update your email templates', desc: 'Personalize the messages your customers receive when you send a quote, confirm a schedule, or request payment.' },
                       ].map(item => `
                         <tr>
-                          <td style="padding:0 0 16px 0;">
+                          <td style="padding:0 0 12px 0;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;overflow:hidden;">
                               <tr>
-                                <td style="padding:16px;width:44px;vertical-align:top;">
-                                  <span style="font-size:22px;">${item.emoji}</span>
-                                </td>
-                                <td style="padding:16px 16px 16px 0;vertical-align:top;">
-                                  <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e293b;">${item.title}</p>
+                                <td style="padding:14px 16px;vertical-align:top;">
+                                  <p style="margin:0 0 3px 0;font-size:14px;font-weight:700;color:#1e293b;">${item.title}</p>
                                   <p style="margin:0;font-size:13px;color:#64748b;line-height:1.5;">${item.desc}</p>
                                 </td>
                               </tr>
@@ -859,7 +916,6 @@ export async function sendWelcomeEmail({
                           </td>
                         </tr>
                       `).join('')}
-
                     </table>
                   </td>
                 </tr>
@@ -898,6 +954,7 @@ export async function sendWelcomeEmail({
       html: emailHtml,
     });
 
+    console.log('✅ Welcome email sent to:', userEmail);
   } catch (error) {
     console.error('❌ Failed to send welcome email:', error);
     throw error;
@@ -955,6 +1012,7 @@ export async function sendSubscriptionCancelledEmail({
       `,
     });
 
+    console.log('✅ Access ended email sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send access ended email:', error);
     throw error;
@@ -1039,7 +1097,7 @@ export async function sendFollowUpReminderEmail({
         </head>
         <body>
           <div class="container">
-            <h1>🔔 Follow-up Reminders</h1>
+            <h1>Follow-up Reminders</h1>
             <p style="color: #64748b; font-size: 16px; margin-bottom: 24px;">
               Good morning ${recipientName}! You have leads waiting for follow-up.
             </p>
@@ -1090,10 +1148,11 @@ export async function sendFollowUpReminderEmail({
     await resend.emails.send({
       from: 'Lead2Project Reminders <onboarding@resend.dev>',
       to: recipientEmail,
-      subject: `🔔 ${leads.length} Lead${leads.length > 1 ? 's' : ''} Need Follow-up - ${companyName}`,
+      subject: `${leads.length} Lead${leads.length > 1 ? 's' : ''} Need Follow-up - ${companyName}`,
       html: emailHtml,
     });
 
+    console.log('✅ Follow-up reminder email sent to:', recipientEmail);
   } catch (error) {
     console.error('❌ Failed to send reminder email:', error);
     throw error;
@@ -1177,6 +1236,7 @@ const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US',
       html: emailHtml,
     });
 
+    console.log('✅ Payment reminder sent to:', customerEmail);
     return { subject, html: emailHtml, resendId: emailResult?.data?.id };
 
   } catch (error) {
@@ -1382,10 +1442,11 @@ export async function sendDailyDigestEmail({
     await resend.emails.send({
       from: 'Lead2Project <onboarding@resend.dev>',
       to: companyEmail,
-      subject: `📋 ${today} — ${totalItems} item${totalItems !== 1 ? 's' : ''} need attention · ${companyName}`,
+      subject: `${today} — ${totalItems} item${totalItems !== 1 ? 's' : ''} need attention · ${companyName}`,
       html: emailHtml,
     });
 
+    console.log('✅ Daily digest sent to:', companyEmail);
   } catch (error) {
     console.error('❌ Failed to send daily digest:', error);
     throw error;
@@ -1418,7 +1479,7 @@ export async function sendQuoteAcceptedNotification({
   await resend.emails.send({
     from: 'Lead2Project <onboarding@resend.dev>',
     to: companyEmail,
-    subject: `✅ ${customerName} accepted your quote — ${fmt(quoteTotal)}`,
+    subject: `${customerName} accepted your quote — ${fmt(quoteTotal)}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -1518,5 +1579,88 @@ export async function sendCancellationScheduledEmail({
         </body>
       </html>
     `,
+  });
+}
+
+
+
+
+export async function sendPlanChangedEmail({
+  companyEmail,
+  companyName,
+  previousPlan,
+  newPlan,
+  effective,
+  periodEnd,
+  dashboardUrl,
+}: {
+  companyEmail: string;
+  companyName:  string;
+  previousPlan: string;
+  newPlan:      string;
+  effective:    'immediate' | 'period_end';
+  periodEnd?:   string;
+  dashboardUrl: string;
+}) {
+  const PLAN_ORDER = ['starter', 'basic', 'pro'];
+  const isUpgrade = PLAN_ORDER.indexOf(newPlan) > PLAN_ORDER.indexOf(previousPlan);
+  const planLabel = (p: string) =>
+    ({ starter: 'Starter', basic: 'Basic', pro: 'Pro' }[p] || p);
+
+  const subject = isUpgrade
+    ? `Plan upgraded to ${planLabel(newPlan)} — Lead2Project`
+    : `Downgrade to ${planLabel(newPlan)} scheduled — Lead2Project`;
+
+  const bodyText = isUpgrade
+    ? `Your plan has been upgraded from <strong>${planLabel(previousPlan)}</strong> to <strong>${planLabel(newPlan)}</strong>. Your new features are available right now.`
+    : `Your plan will change from <strong>${planLabel(previousPlan)}</strong> to <strong>${planLabel(newPlan)}</strong> on <strong>${periodEnd}</strong>. You keep full ${planLabel(previousPlan)} access until then.`;
+
+  const featuresByPlan: Record<string, string[]> = {
+    starter: ['Custom booking form', 'Lead board', 'Payment tracking', 'Unlimited team members'],
+    basic:   ['Everything in Starter', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
+    pro:     ['Everything in Basic', 'One-click emails (quote, schedule, reminder)', 'AI quote generator and brief', 'Daily digest email', 'Email outbox'],
+  };
+
+  await resend.emails.send({
+    from: 'Lead2Project <onboarding@resend.dev>',
+    to:   companyEmail,
+    subject,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+    <div style="background:${isUpgrade ? '#10b981' : '#475569'};padding:28px 32px;">
+      <p style="margin:0 0 4px 0;color:rgba(255,255,255,0.7);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Lead2Project</p>
+      <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">${isUpgrade ? 'Plan Upgraded' : 'Plan Change Scheduled'}</h1>
+      <p style="margin:6px 0 0 0;color:rgba(255,255,255,0.75);font-size:14px;">${companyName}</p>
+    </div>
+    <div style="padding:32px;">
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px 0;">${bodyText}</p>
+
+      <div style="background:#f8fafc;border-radius:8px;padding:20px;margin-bottom:24px;">
+        <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#94a3b8;">${planLabel(newPlan)} plan includes</p>
+        ${(featuresByPlan[newPlan] || []).map(f =>
+          `<div style="padding:4px 0;font-size:14px;color:#374151;">&#10003;&nbsp;&nbsp;${f}</div>`
+        ).join('')}
+      </div>
+
+      ${!isUpgrade && periodEnd ? `
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">
+          <strong>Access until ${periodEnd}.</strong> After that, features not included in ${planLabel(newPlan)} will be disabled. You can upgrade again anytime.
+        </p>
+      </div>` : ''}
+
+      <div style="text-align:center;">
+        <a href="${dashboardUrl}" style="display:inline-block;background:#1e293b;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:14px;">Go to Dashboard</a>
+      </div>
+    </div>
+    <div style="background:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;">
+      <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;">Lead2Project — questions? Reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>`,
   });
 }

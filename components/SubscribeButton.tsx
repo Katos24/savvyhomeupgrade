@@ -67,8 +67,8 @@ export default function SubscribeButton({
     const daysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     return (
       <div className={`${badgeBase} bg-indigo-50 text-indigo-700 border-indigo-100`}>
-        <span className="text-base">🎉</span> {daysLeft} Days Left in Trial
-      </div>
+<div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+{daysLeft} Days Left in Trial      </div>
     );
   }
 
@@ -76,8 +76,8 @@ export default function SubscribeButton({
     return (
       <div className="flex flex-col gap-3">
         <div className={`${badgeBase} bg-rose-50 text-rose-700 border-rose-100`}>
-          ⚠️ Payment Failed
-        </div>
+<div className="w-2 h-2 rounded-full bg-rose-500" />
+Payment Failed        </div>
         <button 
           onClick={handleSubscribe} 
           disabled={loading}

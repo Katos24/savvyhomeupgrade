@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
       phone, 
       password, 
       businessType,
-      ownerName 
+      ownerName,
+      plan = 'starter',
     } = await req.json();
 
     if (!companyName || !slug || !email || !password || !ownerName) {
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
         subscription_status,
         email_notifications_enabled,
         address_enabled,
-        address_required
+        address_required,
+        plan_tier
       ) VALUES (
         ${companyName},
         ${slug},
@@ -88,7 +90,8 @@ export async function POST(req: NextRequest) {
         'inactive',
         true,
         ${addressConfig.show},
-        ${addressConfig.required}
+        ${addressConfig.required},
+        ${plan}
       )
       RETURNING id, slug
     `;
@@ -118,6 +121,7 @@ export async function POST(req: NextRequest) {
         companySlug: slug,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard`,
         formUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
+        plan,
       });
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);

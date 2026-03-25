@@ -3,10 +3,10 @@ import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { headers } from 'next/headers';
 import {
-  sendSubscriptionActivatedEmail,
   sendSubscriptionCancelledEmail,
   sendPaymentFailedEmail,
   sendCancellationScheduledEmail,
+  sendPlanChangedEmail,
 } from '@/lib/email';
 
 export const runtime = 'nodejs';
@@ -56,21 +56,6 @@ export async function POST(req: NextRequest) {
         WHERE id = ${parseInt(companyId)}
       `;
 
-      try {
-        const company = await sql`
-          SELECT name, email, slug FROM companies WHERE id = ${parseInt(companyId)}
-        `;
-        if (company[0]) {
-          await sendSubscriptionActivatedEmail({
-            companyEmail: company[0].email,
-            companyName: company[0].name,
-            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
-          });
-        }
-      } catch (emailError) {
-        console.error('Failed to send activation email:', emailError);
-      }
-
       break;
     }
 
@@ -84,6 +69,8 @@ export async function POST(req: NextRequest) {
       if (priceId === process.env.STRIPE_BASIC_PRICE_ID)   planTier = 'basic';
       if (priceId === process.env.STRIPE_PRO_PRICE_ID)     planTier = 'pro';
 
+      // If a downgrade schedule is still pending, don't apply the new plan yet —
+      // the schedule will fire at period end and trigger another updated event
       const hasActiveSchedule = !!subscription.schedule;
       if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
         planTier = null;
@@ -100,6 +87,7 @@ export async function POST(req: NextRequest) {
         ? new Date(subscription.cancel_at * 1000)
         : null;
 
+      // ── 1. DB write first ──
       if (planTier) {
         await sql`
           UPDATE companies
@@ -126,6 +114,44 @@ export async function POST(req: NextRequest) {
         `;
       }
 
+      // ── 2. Plan change email after DB is updated ──
+      // Only fires when the price actually changed (e.g. scheduled downgrade executed,
+      // or an upgrade was applied). Skipped for status-only updates.
+      if (planTier) {
+        try {
+          const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
+          const PLAN_ORDER = ['starter', 'basic', 'pro'];
+          const previousPlan =
+            previousPriceId === process.env.STRIPE_STARTER_PRICE_ID ? 'starter' :
+            previousPriceId === process.env.STRIPE_BASIC_PRICE_ID   ? 'basic'   :
+            previousPriceId === process.env.STRIPE_PRO_PRICE_ID     ? 'pro'     : null;
+
+          const isActualPlanChange = previousPlan && previousPlan !== planTier;
+
+          if (isActualPlanChange) {
+            const company = await sql`
+              SELECT name, email, slug FROM companies
+              WHERE stripe_customer_id = ${subscription.customer}
+                 OR stripe_subscription_id = ${subscription.id}
+              LIMIT 1
+            `;
+            if (company[0]) {
+              await sendPlanChangedEmail({
+                companyEmail: company[0].email,
+                companyName:  company[0].name,
+                previousPlan,
+                newPlan:      planTier,
+                effective:    'immediate',
+                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Failed to send plan change email:', e);
+        }
+      }
+
+      // ── 3. Cancellation scheduled email ──
       if (isCancelling) {
         try {
           const company = await sql`
@@ -162,13 +188,13 @@ export async function POST(req: NextRequest) {
 
             await sendCancellationScheduledEmail({
               companyEmail: company[0].email,
-              companyName: company[0].name,
-              accessUntil: formattedDate,
+              companyName:  company[0].name,
+              accessUntil:  formattedDate,
               isTrialing,
             });
           }
         } catch (emailError) {
-          console.error('❌ Failed to send cancellation scheduled email:', emailError);
+          console.error('Failed to send cancellation scheduled email:', emailError);
         }
       }
 
@@ -191,7 +217,7 @@ export async function POST(req: NextRequest) {
       `;
 
       if (result.length === 0) {
-        console.error('❌ No company found for deleted subscription:', subscription.id);
+        console.error('No company found for deleted subscription:', subscription.id);
       }
 
       try {
@@ -202,7 +228,7 @@ export async function POST(req: NextRequest) {
         if (company[0]) {
           await sendSubscriptionCancelledEmail({
             companyEmail: company[0].email,
-            companyName: company[0].name,
+            companyName:  company[0].name,
           });
         }
       } catch (emailError) {
@@ -217,16 +243,17 @@ export async function POST(req: NextRequest) {
 
       try {
         const company = await sql`
-          SELECT name, email FROM companies WHERE stripe_customer_id = ${invoice.customer as string}
+          SELECT name, email FROM companies
+          WHERE stripe_customer_id = ${invoice.customer as string}
         `;
         if (company[0]) {
           await sendPaymentFailedEmail({
             companyEmail: company[0].email,
-            companyName: company[0].name,
+            companyName:  company[0].name,
             updatePaymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`,
           });
         } else {
-          console.error('❌ No company found for failed payment, customer:', invoice.customer);
+          console.error('No company found for failed payment, customer:', invoice.customer);
         }
       } catch (emailError) {
         console.error('Failed to send payment failed email:', emailError);
@@ -236,6 +263,15 @@ export async function POST(req: NextRequest) {
     }
 
     default:
+      const evType = (event as any).type;
+      if (
+        evType === 'subscription_schedule.created' ||
+        evType === 'subscription_schedule.updated'
+      ) {
+        console.log(`Subscription schedule event: ${evType}`);
+      } else {
+        console.log(`Unhandled event type: ${evType}`);
+      }
       break;
   }
 

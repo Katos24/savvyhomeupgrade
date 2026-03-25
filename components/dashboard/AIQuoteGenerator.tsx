@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Sparkles, Loader2, Plus, X, Image } from 'lucide-react';
+import { Sparkles, Loader2, Plus, X, Image, Info, CheckCircle2 } from 'lucide-react';
 
 type AIQuoteItem = {
   id: number;
@@ -15,15 +15,16 @@ type AIQuoteItem = {
 
 type AIQuoteGeneratorProps = {
   leadDescription: string;
+  leadInternalNotes: string; // ← NEW: Fallback for AI analysis
   leadCategory: string;
-  leadPhotos?: string[];           // ← NEW: photo URLs from lead.file_urls
-    companySlug: string;
-
+  leadPhotos?: string[];
+  companySlug: string;
   onAddItems: (items: any[]) => void;
 };
 
 export default function AIQuoteGenerator({
   leadDescription,
+  leadInternalNotes,
   leadCategory,
   leadPhotos = [],
   companySlug,
@@ -33,13 +34,16 @@ export default function AIQuoteGenerator({
   const [suggestedItems, setSuggestedItems] = useState<AIQuoteItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Logic FIX: Use internal notes if public description is missing
+  const effectiveDescription = leadDescription?.trim() || leadInternalNotes?.trim() || '';
+
   const validPhotos = leadPhotos.filter(
     (url) => typeof url === 'string' && url.startsWith('http')
   );
 
   const handleGenerateQuote = async () => {
-    if (!leadDescription?.trim()) {
-      toast.error('No description to analyze');
+    if (!effectiveDescription) {
+      toast.error('Add a description or internal notes first');
       return;
     }
 
@@ -49,10 +53,10 @@ export default function AIQuoteGenerator({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          description: leadDescription,
+          description: effectiveDescription,
           category: leadCategory,
           company_slug: companySlug,
-          photos: validPhotos.slice(0, 6), // send up to 6 photos
+          photos: validPhotos.slice(0, 6),
         }),
       });
 
@@ -70,7 +74,6 @@ export default function AIQuoteGenerator({
 
       setSuggestedItems(items);
       setShowSuggestions(true);
-      toast.success('Quote generated!');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate quote');
     } finally {
@@ -84,50 +87,40 @@ export default function AIQuoteGenerator({
     );
   };
 
-  const handleAddSelected = () => {
-    const selectedItems = suggestedItems.filter((item) => item.selected);
-    if (selectedItems.length === 0) { toast.error('Select at least one item'); return; }
-
-    onAddItems(
-      selectedItems.map((item) => ({
-        id: item.id,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-      }))
-    );
-    toast.success(`${selectedItems.length} item(s) added to quote`);
-    setShowSuggestions(false);
-    setSuggestedItems([]);
-  };
-
   const totalSelected = suggestedItems
     .filter((item) => item.selected)
     .reduce((sum, item) => sum + item.amount, 0);
 
   return (
-    <div className="space-y-3">
-      {/* ── Generate button ── */}
+    <div className="space-y-4">
+      {/* ── EMPTY STATE / PROMPT ── */}
+      {!showSuggestions && !generating && !effectiveDescription && (
+        <div className="p-6 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
+          <Info className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Missing Context</p>
+          <p className="text-xs text-slate-500 mt-1">Add a job description or internal notes to enable AI quoting.</p>
+        </div>
+      )}
+
+      {/* ── GENERATE BUTTON ── */}
       {!showSuggestions && (
         <button
           onClick={handleGenerateQuote}
-          disabled={generating || !leadDescription?.trim()}
-          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 text-white font-black text-xs uppercase tracking-widest py-3.5 px-4 rounded-2xl transition shadow-lg shadow-violet-100"
+          disabled={generating || !effectiveDescription}
+          className="group relative w-full overflow-hidden inline-flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-100 text-white disabled:text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] py-5 px-4 rounded-[1.5rem] transition-all active:scale-[0.98]"
         >
           {generating ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {validPhotos.length > 0 ? 'Analyzing photos & description...' : 'Generating quote...'}
+              <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+              <span>Analyzing Details...</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
-              Generate with AI
+              <Sparkles className="w-4 h-4 text-indigo-400 group-hover:rotate-12 transition-transform" />
+              <span>Generate Smart Quote</span>
               {validPhotos.length > 0 && (
-                <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
-                  <Image className="w-3 h-3" />
-                  {validPhotos.length} photo{validPhotos.length > 1 ? 's' : ''}
+                <span className="bg-white/10 px-2 py-0.5 rounded-full text-[9px] lowercase tracking-normal">
+                  + {validPhotos.length} photos
                 </span>
               )}
             </>
@@ -135,80 +128,67 @@ export default function AIQuoteGenerator({
         </button>
       )}
 
-      {/* ── AI Suggestions panel ── */}
+      {/* ── MESH UI SUGGESTIONS ── */}
       {showSuggestions && (
-        <div className="bg-gradient-to-br from-violet-50 to-indigo-50 border-2 border-violet-200 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-black text-gray-900 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-violet-600" />
-              AI Suggested Quote
-              {validPhotos.length > 0 && (
-                <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded-full flex items-center gap-1">
-                  <Image className="w-3 h-3" /> photo-informed
-                </span>
-              )}
-            </h4>
-            <button
-              onClick={() => setShowSuggestions(false)}
-              className="p-1.5 hover:bg-violet-100 rounded-xl transition"
-            >
-              <X className="w-4 h-4 text-gray-500" />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <div>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">AI Drafted Items</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-tight">Tap to toggle selection</p>
+            </div>
+            <button onClick={() => setShowSuggestions(false)} className="text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-widest">
+              Clear
             </button>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-6">
             {suggestedItems.map((item) => (
               <div
                 key={item.id}
                 onClick={() => toggleItem(item.id)}
-                className={`p-3 rounded-xl border-2 transition cursor-pointer ${
+                className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${
                   item.selected
-                    ? 'bg-white border-violet-300 shadow-sm'
-                    : 'bg-gray-50 border-gray-200 opacity-50'
+                    ? 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-slate-50/50 border-transparent opacity-40 grayscale'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={item.selected}
-                    onChange={() => toggleItem(item.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-1 w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
-                  />
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900">{item.description}</p>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                      <span>Qty: {item.quantity}</span>
-                      <span>×</span>
-                      <span>${item.unitPrice.toFixed(2)}</span>
+                    <p className="text-sm font-bold text-slate-900 leading-tight mb-1">{item.description}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {item.quantity} x ${item.unitPrice.toLocaleString()}
+                      </span>
                     </div>
                   </div>
-                  <p className="text-sm font-black text-violet-600 shrink-0">
-                    ${item.amount.toFixed(2)}
-                  </p>
+                  
+                  <div className="text-right">
+                    <p className={`text-sm font-black transition-colors ${item.selected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                      ${item.amount.toLocaleString()}
+                    </p>
+                    {item.selected && <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto mt-1" />}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Total row */}
-          <div className="flex items-center justify-between py-3 border-t-2 border-violet-200 mb-3">
-            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Selected Total</span>
-            <span className="text-lg font-black text-violet-600">${totalSelected.toFixed(2)}</span>
+          {/* TOTAL & ACTION - Mosh Style */}
+          <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl shadow-indigo-100">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Selected Total</span>
+              <span className="text-xl font-black">${totalSelected.toLocaleString()}</span>
+            </div>
+            
+            <button
+              onClick={() => onAddItems(suggestedItems.filter(i => i.selected))}
+              disabled={suggestedItems.filter((i) => i.selected).length === 0}
+              className="w-full py-4 bg-indigo-500 hover:bg-indigo-400 disabled:bg-slate-700 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Items to Quote
+            </button>
           </div>
-
-          <button
-            onClick={handleAddSelected}
-            disabled={suggestedItems.filter((i) => i.selected).length === 0}
-            className="w-full inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl transition"
-          >
-            <Plus className="w-4 h-4" />
-            Add {suggestedItems.filter((i) => i.selected).length} Item(s) to Quote
-          </button>
-
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            You can edit prices and add more items after adding these
-          </p>
         </div>
       )}
     </div>
