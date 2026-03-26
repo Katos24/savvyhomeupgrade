@@ -45,8 +45,8 @@ export default function AiBriefTab({
 
   // ── Save to projects table ──────────────────────────────────────────────────
   const saveBrief = async (data: any) => {
-    if (!isProject) return; // only projects have a row in the projects table
-    setSaving(true);
+  if (!lead.project_id) return; // use project_id instead — more reliable
+  setSaving(true);
     try {
       await fetch('/api/leads/update', {
         method: 'POST',
@@ -104,7 +104,7 @@ export default function AiBriefTab({
       // REPLACE WITH:
 if (data.success) {
   setBrief(data.brief);
-  if (isProject) {
+  if (lead.project_id) {
     await saveBrief(data.brief);
     await onRefresh();
   }
@@ -142,7 +142,7 @@ if (data.success) {
           )}
 
           {/* Saved indicator — only shown for projects */}
-          {brief && isProject && (
+{brief && lead.project_id && (
             <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-none">
               {saving ? '↻ saving…' : '✓ saved'}
             </span>

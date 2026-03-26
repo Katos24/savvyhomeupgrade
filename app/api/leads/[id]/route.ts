@@ -52,6 +52,7 @@ export async function GET(
         p.documents,
         p.completed_at as job_completed_at,
         p.notes as project_notes,
+        p.internal_notes,
         p.tasks as project_tasks,
         p.follow_up_date,
         p.internal_notes as project_internal_notes,

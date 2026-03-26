@@ -159,7 +159,7 @@ export async function sendLeadConfirmationEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+from: `${companyName} <onboarding@resend.dev>`,
       to: customerEmail,
       subject: `Thanks for reaching out to ${companyName}!`,
       html: emailHtml,
@@ -176,10 +176,12 @@ export async function sendPasswordResetEmail({
   userEmail,
   userName,
   resetLink,
+  companyName,
 }: {
   userEmail: string;
   userName: string;
   resetLink: string;
+  companyName: string;
 }) {
   try {
     const emailHtml = `
@@ -227,7 +229,7 @@ export async function sendPasswordResetEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: `${companyName} <onboarding@resend.dev>`,
       to: userEmail,
       subject: 'Reset Your Password',
       html: emailHtml,

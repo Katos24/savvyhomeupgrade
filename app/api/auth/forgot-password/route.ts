@@ -37,6 +37,8 @@ export async function POST(request: Request) {
         userEmail: email,
         userName: user.name || 'User',
         resetLink,
+          companyName: user.company_name,
+
       });
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError);

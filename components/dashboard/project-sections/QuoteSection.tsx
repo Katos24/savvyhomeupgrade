@@ -542,7 +542,7 @@ export default function QuoteSection({
               <AIQuoteGenerator
                 leadDescription={lead?.description || ''}
                 leadCategory={lead?.category || ''}
-                leadInternalNotes={lead?.internal_notes || lead?.project?.internal_notes || ''}
+leadInternalNotes={lead?.project_internal_notes || ''}
                 leadPhotos={leadPhotos}
                 onAddItems={handleAddItems}
                 companySlug={companySlug}

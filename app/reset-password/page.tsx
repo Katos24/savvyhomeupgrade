@@ -13,6 +13,7 @@ function ResetPasswordForm() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false); // ✅ added
 
   useEffect(() => {
     if (!token) {
@@ -49,8 +50,11 @@ function ResetPasswordForm() {
       const data = await response.json();
 
       if (data.success) {
-        alert('✅ Password reset successful!');
-        router.push('/login');
+        setSuccess(true); // ✅ trigger success UI
+
+        setTimeout(() => {
+          router.push('/login');
+        }, 1500);
       } else {
         setError(data.error || 'Failed to reset password');
       }
@@ -60,6 +64,20 @@ function ResetPasswordForm() {
       setLoading(false);
     }
   };
+
+  // ✅ Success UI (replaces form)
+  if (success) {
+    return (
+      <div className="card text-center py-10">
+        <div className="text-green-600 text-5xl mb-4">✅</div>
+        <h2 className="text-2xl font-semibold mb-2">Password Reset Successful</h2>
+        <p className="text-gray-600 mb-4">
+          You can now log in with your new password.
+        </p>
+        <p className="text-sm text-gray-400">Redirecting to login...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-6">

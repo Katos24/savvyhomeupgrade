@@ -6,7 +6,7 @@ import { can, type PlanTier } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
-    const { description, category, company_slug } = await request.json();
+const { description, category, company_slug, internal_notes } = await request.json();
     
 
     // Server-side plan check — never trust client
@@ -24,12 +24,17 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    if (!description || !description.trim()) {
-      return NextResponse.json(
-        { error: 'Description is required' },
-        { status: 400 }
-      );
-    }
+   const effectiveDescription = description?.trim() || internal_notes?.trim();
+if (!effectiveDescription) {
+  return NextResponse.json(
+    { 
+      success: false,
+      error: 'Please add a project description or internal notes before generating a quote.',
+      needs_description: true,
+    },
+    { status: 400 }
+  );
+}
 
     if (!process.env.ANTHROPIC_API_KEY) {
       console.error('ANTHROPIC_API_KEY is not set');
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
     const prompt = `You are a professional contractor estimating a job quote.
 
 Customer Category: ${category || 'General'}
-Customer Description: "${description}"
+Customer Description: "${effectiveDescription}"
 
 Generate a detailed quote with line items. Be realistic with pricing for a typical contractor in the US (New York area).
 

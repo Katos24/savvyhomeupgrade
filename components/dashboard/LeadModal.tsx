@@ -540,8 +540,11 @@ const renderProjectTab = () => {
 
               {/* AI Brief shortcut */}
               <AiBriefButton
-  hasSavedBrief={!!lead.ai_brief && isProject}
-  onClick={() => setActiveTab('ai')}
+hasSavedBrief={!!(lead.ai_brief && (
+  typeof lead.ai_brief === 'string' 
+    ? lead.ai_brief !== '{}' && lead.ai_brief !== '' 
+    : Object.keys(lead.ai_brief).length > 0
+))}  onClick={() => setActiveTab('ai')}
 />
             </div>
 
