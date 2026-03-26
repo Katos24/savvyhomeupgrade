@@ -341,16 +341,17 @@ export default function CreateLeadModal({
                     {(showDate || showTime) && (
                       <div className="grid grid-cols-2 gap-3">
                         {showDate && (
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preferred Date</label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                              <input type="date" value={formData.preferred_date}
-                                onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
-                                className={`${inputClass} pl-10 text-sm`} />
-                            </div>
-                          </div>
-                        )}
+  <div className="space-y-2 min-w-0 overflow-hidden">
+    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preferred Date</label>
+    <input
+      type="date"
+      value={formData.preferred_date}
+      onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+      style={{ colorScheme: 'dark' }}
+      className={`${inputClass} text-sm w-full`}
+    />
+  </div>
+)}
                         {showTime && (
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preferred Time</label>
