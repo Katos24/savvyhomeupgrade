@@ -20,8 +20,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/blob-upload') ||
     pathname.startsWith('/api/get-upload-url') ||
     pathname.startsWith('/api/onboarding') ||
-    pathname.startsWith('/api/onboarding');
-    
+    pathname.startsWith('/api/leads/update'); // Fixed semicolon and added logic correctly
+
   const isPublicPage =
     pathname === '/' ||
     pathname.startsWith('/login') ||
