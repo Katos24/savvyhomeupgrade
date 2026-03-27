@@ -9,7 +9,7 @@ import {
   User, Phone, FileText, ChevronRight, CheckCircle,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
   Calendar, Clock, SlidersHorizontal, Filter,
-  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff
+  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, FileX
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -468,23 +468,68 @@ function Hero() {
   );
 }
 // ─────────────────────────────────────────────────────────────────────────────
-// TRUST BAR — LIGHT EDITION
+// TRUST BAR — THE "SYSTEM IMPACT" EDITION
 // ─────────────────────────────────────────────────────────────────────────────
 function TrustBar() {
   const { ref, visible } = useFadeIn();
+
+  const stats = [
+    { 
+      value: '10+ Hours', 
+      label: 'Admin saved weekly', 
+      sub: 'Per contractor',
+      icon: <Clock className="w-4 h-4 text-blue-600" />
+    },
+    { 
+      value: '60 Seconds', 
+      label: 'To draft a quote', 
+      sub: 'AI-powered speed',
+      icon: <Zap className="w-4 h-4 text-amber-500" />
+    },
+    { 
+      value: 'Zero', 
+      label: 'Forgotten leads', 
+      sub: 'Automated follow-ups',
+      icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+    },
+    { 
+      value: '100%', 
+      label: 'Data Ownership', 
+      sub: 'Easy CSV exports',
+      icon: <Database className="w-4 h-4 text-indigo-600" />
+    },
+  ];
+
   return (
-    <div ref={ref} className="bg-white border-y border-slate-200 py-12 px-6">
-      <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-8 transition-all duration-700"
-        style={{ opacity: visible?1:0, transform: visible?'none':'translateY(16px)' }}>
-        {[
-          { value: '12,000+', label: 'Leads captured' },
-          { value: 'AI', label: 'Drafted quotes' },
-          { value: '14 Days', label: 'Free trial' },
-          { value: 'Instant', label: 'QR setup' },
-        ].map((s,i) => (
-          <div key={i} className="flex-1 min-w-[140px] text-center md:text-left">
-            <p className="text-4xl font-[1000] text-slate-900 tracking-tighter leading-none">{s.value}</p>
-            <p className="text-[12px] text-slate-500 font-black uppercase tracking-widest mt-2">{s.label}</p>
+    <div className="bg-white border-y border-slate-100 py-16 px-6 relative overflow-hidden">
+      {/* Subtle background wash */}
+      <div className="absolute inset-0 bg-slate-50/30 pointer-events-none" />
+
+      <div 
+        ref={ref} 
+        className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-12 relative z-10"
+        style={{ 
+          opacity: visible ? 1 : 0, 
+          transform: visible ? 'none' : 'translateY(20px)',
+          transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+        }}
+      >
+        {stats.map((s, i) => (
+          <div key={i} className="group flex flex-col items-center lg:items-start text-center lg:text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                {s.icon}
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{s.label}</p>
+            </div>
+            
+            <p className="text-4xl md:text-5xl font-[1000] text-slate-900 tracking-tighter leading-none mb-2">
+              {s.value}
+            </p>
+            
+            <p className="text-[12px] text-slate-500 font-bold italic opacity-70 group-hover:opacity-100 transition-opacity">
+              {s.sub}
+            </p>
           </div>
         ))}
       </div>
@@ -492,7 +537,121 @@ function TrustBar() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 2 — THE "SPREADSHEET VS. COMMAND CENTER" COMPARISON
+// ─────────────────────────────────────────────────────────────────────────────
+function ComparisonSection() {
+  const { ref, visible } = useFadeIn();
 
+  return (
+    <section className="py-32 px-6 bg-white overflow-hidden border-b border-slate-100">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Header: The Direct Call-out */}
+        <div className="mb-20 text-center max-w-3xl mx-auto">
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-red-500 mb-4 animate-pulse">The Choice is yours</p>
+          <h2 className="text-4xl md:text-6xl font-[1000] text-slate-900 tracking-tighter leading-none mb-6">
+            Software for the field, <br/>
+            <span className="text-slate-400 italic">not the office.</span>
+          </h2>
+          <p className="text-lg text-slate-500 font-medium leading-relaxed">
+            Every minute you spend wrestling with a spreadsheet is a minute you aren't closing a job. 
+            Stop the manual entry and start the automation.
+          </p>
+        </div>
+
+        <div ref={ref} className="grid md:grid-cols-2 gap-8 items-stretch transition-all duration-1000"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(32px)' }}>
+          
+          {/* THE "OLD" WAY — CHAOS */}
+          <div className="relative group bg-slate-50 border border-slate-200 rounded-[3rem] p-10 overflow-hidden">
+             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                <FileX size={80} className="text-slate-900 rotate-12" />
+             </div>
+             
+             <span className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">
+                The Spreadsheet Struggle
+             </span>
+
+             <div className="space-y-6">
+                <div className="opacity-50 blur-[1px] group-hover:blur-0 transition-all duration-500">
+                   <div className="h-4 w-full bg-slate-200 rounded-full mb-3" />
+                   <div className="h-4 w-3/4 bg-slate-200 rounded-full mb-3" />
+                   <div className="h-4 w-5/6 bg-slate-200 rounded-full" />
+                </div>
+                
+                <ul className="space-y-4 relative z-10">
+                   {[
+                     'Manual data entry for every lead',
+                     'Lost phone numbers & gate codes',
+                     'Quotes buried in your sent folder',
+                     'Zero automated follow-ups',
+                     'No visibility into your pipeline'
+                   ].map((text, i) => (
+                     <li key={i} className="flex items-center gap-3 text-slate-500 font-bold text-sm">
+                        <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                           <X size={12} className="text-red-500" strokeWidth={3} />
+                        </div>
+                        {text}
+                     </li>
+                   ))}
+                </ul>
+             </div>
+             <p className="mt-10 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center border-t border-slate-200 pt-6">
+                "Where did I save that address?"
+             </p>
+          </div>
+
+          {/* THE "NEW" WAY — LEAD2PROJECT */}
+          <div className="relative group bg-slate-900 rounded-[3rem] p-10 overflow-hidden shadow-2xl shadow-blue-500/20">
+             {/* Glow Effect */}
+             <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full" />
+             
+             <div className="absolute top-0 right-0 p-6 opacity-20">
+                <Sparkles size={80} className="text-blue-400 -rotate-12" />
+             </div>
+
+             <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/30 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-blue-400 mb-8">
+                The Command Center
+             </span>
+
+             <ul className="space-y-4 relative z-10">
+                {[
+                  'QR-powered instant intake',
+                  'AI-drafted line item quotes',
+                  'One-click outbox for everything',
+                  'Automated payment reminders',
+                  '6:00 AM daily morning brief'
+                ].map((text, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white font-bold text-[15px]">
+                     <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/40">
+                        <Check size={14} className="text-white" strokeWidth={4} />
+                     </div>
+                     {text}
+                  </li>
+                ))}
+             </ul>
+
+             {/* The Interactive Visual */}
+             <div className="mt-10 bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group-hover:border-blue-500/50 transition-colors">
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                      <Zap size={20} fill="white" />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">New Job Status</p>
+                      <p className="text-xs font-black text-white">Ready for Scheduling</p>
+                   </div>
+                </div>
+                <ArrowRight className="text-white/30 group-hover:translate-x-1 group-hover:text-white transition-all" size={20} />
+             </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
@@ -1952,9 +2111,11 @@ export default function Home() {
 
       {/* 1. HERO — dark, headline + visual */}
       <Hero />
-
       {/* 2. TRUST BAR — stats strip */}
       <TrustBar />
+
+            <ComparisonSection />
+
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
       <HowItWorks />
