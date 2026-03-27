@@ -1131,7 +1131,7 @@ function AiSection() {
               {[
                 { t: 'Instant Line Items', d: 'AI identifies materials and labor from lead photos.' },
                 { t: 'Project Summaries', d: 'Automatically boils down job notes for your crew.' },
-                { t: 'Smart Outbox', d: 'Drafts follow-up emails based on lead urgency.' }
+                { t: 'One Click Emails', d: 'Send professional emails with a single click.' }
               ].map((item, idx) => (
                 <div key={idx} className="group flex gap-5 p-6 rounded-[2rem] hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all border border-transparent hover:border-slate-200">
                   <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
