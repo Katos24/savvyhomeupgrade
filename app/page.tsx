@@ -9,7 +9,7 @@ import {
   User, Phone, FileText, ChevronRight, CheckCircle,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
   Calendar, Clock, SlidersHorizontal, Filter,
-  MapPin, HomeIcon, Image as ImageIcon, Upload
+  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -130,7 +130,7 @@ function HeroMockup() {
               {[
                 { label: 'TOTAL LEADS',      value: '20',     vc: '#fff' },
                 { label: 'ACTIVE JOBS',       value: '20',     vc: '#60a5fa' },
-                { label: 'REVENUE COLLECTED', value: '$0',     vc: '#34d399' },
+                { label: 'REVENUE COLLECTED', value: '$51,200',     vc: '#34d399' },
                 { label: 'PENDING',           value: '$13,900',vc: '#fbbf24' },
               ].map(s => (
                 <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 7px' }}>
@@ -178,81 +178,60 @@ function HeroMockup() {
               <span style={{ fontSize: 7, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Today</span>
               <span style={{ fontSize: 6, fontWeight: 700, color: '#6b7280', background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: 99 }}>2</span>
             </div>
+{/* Lead cards — 3 cols, accurate status colors */}
+            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, flex: 1 }}>
 
-            {/* Lead cards */}
-            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flex: 1 }}>
+              {[
+                { name: 'John Simpson',  status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Unassigned', date: 'Mar 31', time: '8:15 AM',  amount: '$74',     amountColor: '#fff',     amountLabel: 'Unpaid'  },
+                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex Katos', date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
+                { name: 'Maria Reyes',   status: 'Contacted',   statusBg: 'rgba(99,102,241,0.15)',  statusColor: '#818cf8', borderColor: '#6366f1', cardBg: '#09090f', cat: 'Gutters',  assign: 'Tony',       date: 'Apr 2',  time: '10:00 AM', amount: '$1,200', amountColor: '#fff',     amountLabel: 'Unpaid'  },
+                { name: 'Tony Marino',   status: 'In Progress', statusBg: 'rgba(245,158,11,0.15)',  statusColor: '#fbbf24', borderColor: '#f59e0b', cardBg: '#0f0d07', cat: 'Siding',   assign: 'Mike',       date: 'Apr 5',  time: '9:00 AM',  amount: '$6,400', amountColor: '#fbbf24', amountLabel: 'Partial' },
+                { name: 'Carl Bennett',  status: 'Quoted',      statusBg: 'rgba(139,92,246,0.15)',  statusColor: '#a78bfa', borderColor: '#8b5cf6', cardBg: '#0a0810', cat: 'Windows',  assign: 'Unassigned', date: 'Apr 10', time: '1:00 PM',  amount: '$2,800', amountColor: '#fff',     amountLabel: 'Unpaid'  },
+                { name: 'Diana Cole',    status: 'Completed',   statusBg: 'rgba(107,114,128,0.15)', statusColor: '#9ca3af', borderColor: '#6b7280', cardBg: '#090909', cat: 'Plumbing', assign: 'Tony',       date: 'Mar 27', time: '—',        amount: '$4,200', amountColor: '#34d399', amountLabel: 'Paid'    },
+              ].map((lead, i) => (
+                <div key={i} style={{ background: lead.cardBg, border: '1px solid rgba(255,255,255,0.05)', borderLeft: `2.5px solid ${lead.borderColor}`, borderRadius: 9, padding: '6px 7px', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-              {/* John Simpson — green */}
-              <div style={{ background: '#080f08', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid #10b981', borderRadius: 10, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'inline-flex', background: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: 6, fontWeight: 900, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', alignSelf: 'flex-start' }}>New</div>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1 }}>John Simpson</div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Roofing</span>
-                  <span style={{ fontSize: 6, color: '#374151' }}>·</span>
-                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Unassigned</span>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '5px 6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                  <div>
-                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Calendar size={7} color="#60a5fa" />
-                      <span style={{ fontSize: 7, color: '#60a5fa', fontWeight: 700 }}>Mar 31</span>
-                    </div>
+                  <div style={{ display: 'inline-flex', background: lead.statusBg, color: lead.statusColor, fontSize: 5, fontWeight: 900, padding: '1.5px 5px', borderRadius: 4, textTransform: 'uppercase', alignSelf: 'flex-start', letterSpacing: '0.04em' }}>
+                    {lead.status}
                   </div>
-                  <div>
-                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Arrival</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Clock size={7} color="#6b7280" />
-                      <span style={{ fontSize: 7, color: '#9ca3af', fontWeight: 700 }}>8:15 AM</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#fff' }}>$74</div>
-                    <div style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Unpaid</div>
-                  </div>
-                  <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ChevronRight size={9} color="#6b7280" />
-                  </div>
-                </div>
-              </div>
 
-              {/* Jack Thomas — blue */}
-              <div style={{ background: '#08080f', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid #3b82f6', borderRadius: 10, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'inline-flex', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', fontSize: 6, fontWeight: 900, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', alignSelf: 'flex-start' }}>New</div>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1 }}>Jack Thomas</div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Roofing</span>
-                  <span style={{ fontSize: 6, color: '#374151' }}>·</span>
-                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Alex Katos</span>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '5px 6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                  <div>
-                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Calendar size={7} color="#60a5fa" />
-                      <span style={{ fontSize: 7, color: '#60a5fa', fontWeight: 700 }}>Apr 8</span>
+                  <div style={{ fontSize: 9, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{lead.name}</div>
+
+                  <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                    <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>{lead.cat}</span>
+                    <span style={{ fontSize: 5.5, color: '#374151' }}>·</span>
+                    <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 38 }}>{lead.assign}</span>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '4px 5px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                    <div>
+                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Date</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Calendar size={6} color="#60a5fa" />
+                        <span style={{ fontSize: 6, color: '#60a5fa', fontWeight: 700 }}>{lead.date}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Arrival</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Clock size={6} color="#6b7280" />
+                        <span style={{ fontSize: 6, color: '#9ca3af', fontWeight: 700 }}>{lead.time}</span>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Arrival</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Clock size={7} color="#6b7280" />
-                      <span style={{ fontSize: 7, color: '#9ca3af', fontWeight: 700 }}>8:30 AM</span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                    <div>
+                      <div style={{ fontSize: 9, fontWeight: 900, color: lead.amountColor }}>{lead.amount}</div>
+                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>{lead.amountLabel}</div>
+                    </div>
+                    <div style={{ width: 14, height: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ChevronRight size={7} color="#6b7280" />
                     </div>
                   </div>
+
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#fbbf24' }}>$3,550</div>
-                    <div style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Partial</div>
-                  </div>
-                  <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ChevronRight size={9} color="#6b7280" />
-                  </div>
-                </div>
-              </div>
+              ))}
 
             </div>
           </div>
@@ -263,87 +242,99 @@ function HeroMockup() {
         <div style={{ background: '#111520', height: 5, borderRadius: '0 0 8px 8px', border: '1px solid rgba(255,255,255,0.04)', borderTop: 'none' }} />
       </div>
 
-      {/* ── PHONE — small, bottom-right, just the form, no chrome ── */}
+     {/* ── PHONE — short, clean, bottom-right ── */}
       <div style={{
         position: 'absolute',
-        bottom: -16,
-        right: -10,
+        bottom: -12,
+        right: -8,
         zIndex: 30,
-        width: 130,
+        width: 148,
         background: '#f9f9fb',
-        borderRadius: 16,
-        border: '4px solid #1a1a1f',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.7)',
+        borderRadius: 20,
+        border: '5px solid #16181f',
+        boxShadow: '0 24px 56px rgba(0,0,0,0.75)',
         overflow: 'hidden',
       }}>
 
-        {/* Tiny header strip */}
-        <div style={{ background: '#e8e8f0', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-          <div style={{ width: 14, height: 14, background: '#fff', borderRadius: 4, border: '1px solid rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 4.5, fontWeight: 900, color: '#374151' }}>RL</span>
+        {/* App header */}
+        <div style={{ background: '#e8e8f0', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+          <div style={{ width: 16, height: 16, background: '#fff', borderRadius: 5, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 5, fontWeight: 900, color: '#374151' }}>RL</span>
           </div>
-          <span style={{ fontSize: 7, fontWeight: 700, color: '#111827' }}>Ridge Line Roofing</span>
+          <span style={{ fontSize: 8, fontWeight: 700, color: '#111827' }}>Ridge Line Roofing</span>
         </div>
 
-        {/* Step bar */}
-        <div style={{ background: '#fff', padding: '5px 8px 4px', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 7, fontWeight: 900, color: '#fff' }}>1</span>
+        {/* Step indicator */}
+        <div style={{ background: '#fff', padding: '6px 10px 5px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid #f1f1f1' }}>
+          <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 7.5, fontWeight: 900, color: '#fff' }}>1</span>
           </div>
-          <span style={{ fontSize: 5.5, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your Info</span>
+          <span style={{ fontSize: 6, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Info</span>
           <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 7, fontWeight: 700, color: '#9ca3af' }}>2</span>
+          <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 7.5, fontWeight: 700, color: '#9ca3af' }}>2</span>
           </div>
-          <span style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Details</span>
+          <span style={{ fontSize: 6, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Details</span>
         </div>
 
-        {/* Form fields */}
-        <div style={{ background: '#fff', padding: '3px 7px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Fields */}
+        <div style={{ background: '#fff', padding: '6px 10px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
 
-          {[
-            { label: 'Full Name', val: 'John Simpson',    icon: <User size={6} color="#9ca3af" /> },
-            { label: 'Email',     val: 'johns@gmail.com', icon: <Mail size={6} color="#9ca3af" /> },
-            { label: 'Phone',     val: '(555) 704-5325',  icon: <Phone size={6} color="#9ca3af" /> },
-          ].map(f => (
-            <div key={f.label}>
-              <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{f.label}</div>
-              <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                {f.icon}
-                <span style={{ fontSize: 7, color: '#111827', fontWeight: 500 }}>{f.val}</span>
-              </div>
-            </div>
-          ))}
-
-          {/* Service */}
+          {/* Full Name */}
           <div>
-            <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Service Needed</div>
-            <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <QrCode size={6} color="#9ca3af" />
-                <span style={{ fontSize: 7, color: '#111827', fontWeight: 600 }}>Roofing</span>
+            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Full Name</p>
+            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <User size={7} color="#9ca3af" />
+              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>John Simpson</span>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div>
+            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Email</p>
+            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Mail size={7} color="#9ca3af" />
+              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>johns@gmail.com</span>
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Phone</p>
+            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Phone size={7} color="#9ca3af" />
+              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>(555) 704-5325</span>
+            </div>
+          </div>
+
+          {/* Service Needed */}
+          <div>
+            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Service Needed</p>
+            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <QrCode size={7} color="#9ca3af" />
+                <span style={{ fontSize: 8, color: '#111827', fontWeight: 600 }}>Roofing</span>
               </div>
               <ChevronDown size={7} color="#9ca3af" />
             </div>
           </div>
 
-          {/* Project notes */}
+          {/* About Your Project — single clean line, no textarea weirdness */}
           <div>
-            <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>About Your Project</div>
-            <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', minHeight: 22 }}>
-              <span style={{ fontSize: 6.5, color: '#6b7280', fontStyle: 'italic', lineHeight: 1.3 }}>"Seeing a leak in my bedroom ceiling..."</span>
+            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>About Your Project</p>
+            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px' }}>
+              <p style={{ fontSize: 7.5, color: '#6b7280', fontStyle: 'italic', margin: 0, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>"Seeing a leak in my bedroom ceiling..."</p>
             </div>
           </div>
 
           {/* Continue button */}
-          <div style={{ background: 'linear-gradient(135deg, #4f46e5, #2563eb)', borderRadius: 8, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginTop: 2 }}>
-            <span style={{ fontSize: 8, fontWeight: 900, color: '#fff' }}>Continue</span>
-            <ChevronRight size={8} color="#fff" />
+          <div style={{ background: 'linear-gradient(135deg, #4f46e5, #2563eb)', borderRadius: 9, padding: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 1 }}>
+            <span style={{ fontSize: 9, fontWeight: 900, color: '#fff' }}>Continue</span>
+            <ChevronRight size={9} color="#fff" />
           </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: 5.5, color: '#9ca3af' }}>lead2project.com — Private</span>
-          </div>
+          {/* Footer */}
+          <p style={{ textAlign: 'center', fontSize: 6, color: '#9ca3af', margin: 0 }}>lead2project.com — Private</p>
 
         </div>
       </div>
@@ -352,88 +343,110 @@ function HeroMockup() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HERO
+/// ─────────────────────────────────────────────────────────────────────────────
+// UPDATED HERO — LIGHT MODE & HIGH CONVERSION
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setMounted(true), 60); return () => clearTimeout(t); }, []);
+  useEffect(() => { 
+    const t = setTimeout(() => setMounted(true), 60); 
+    return () => clearTimeout(t); 
+  }, []);
 
   return (
-    <section className="relative min-h-screen bg-[#080C14] flex flex-col overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-blue-600/[0.12] blur-[140px] rounded-full" />
-        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#080C14] to-transparent" />
-      </div>
+    <section className="relative min-h-screen bg-slate-50 flex flex-col overflow-hidden">
+      {/* Subtle Grid Pattern for Texture */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3 Opercent3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} 
+      />
+      
+      {/* Soft radial glow to keep it premium */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-radial from-blue-100/40 to-transparent pointer-events-none" />
 
       <Nav />
 
       <div className="relative z-10 flex-1 flex items-center">
-        <div className="max-w-6xl mx-auto px-6 w-full pt-28 pb-20">
+        <div className="max-w-7xl mx-auto px-6 w-full pt-32 pb-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
             {/* LEFT copy */}
-            <div className="space-y-8">
+            <div className="space-y-10">
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(12px)', transition:'all 0.6s ease' }}>
-                <span className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em]">
-                  <Zap className="w-3 h-3 fill-current" /> Built for the Trades
+                <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-600/20 text-blue-700 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
+                  <Sparkles className="w-3.5 h-3.5 fill-current" /> Replace Your Website
                 </span>
               </div>
 
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.08s' }}>
-                <h1 className="text-[56px] md:text-[72px] font-black text-white leading-[0.9] tracking-[-0.03em]">
-                  From QR Scan<br/>
-                  to Closed Job.<br/>
-                  <em className="text-blue-500 not-italic">One flow.</em>
+                <h1 className="text-[64px] md:text-[84px] font-[1000] text-slate-900 leading-[0.85] tracking-[-0.05em]">
+                  Your Link.<br/>
+                  Your Jobs.<br/>
+                  <span className="text-blue-600">Zero Effort.</span>
                 </h1>
               </div>
 
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.16s' }}>
-                <p className="text-[17px] text-slate-400 leading-relaxed max-w-[440px] font-medium">
-                  Your booking link works everywhere. No website? You don't need one —
-                  just a link that turns every customer touchpoint into a job request.
+                <p className="text-[20px] text-slate-600 leading-snug max-w-[480px] font-medium">
+                  Don't waste $3,000 on a website. One link turns your Instagram, Facebook, and Truck Wraps into a 24/7 sales machine.
                 </p>
-                <div className="mt-6 flex flex-wrap gap-2">
+                
+                {/* The "Where it works" Pills */}
+                <div className="mt-8 flex flex-wrap gap-2">
                   {[
-                    { icon: <Truck className="w-3.5 h-3.5" />,     label: 'Truck wrap' },
-                    { icon: <Instagram className="w-3.5 h-3.5" />, label: 'Instagram bio' },
-                    { icon: <Facebook className="w-3.5 h-3.5" />,  label: 'Facebook page' },
-                    { icon: <AtSign className="w-3.5 h-3.5" />,    label: 'Email signature' },
-                    { icon: <Globe className="w-3.5 h-3.5" />,     label: 'No site needed' },
+                    { icon: <Truck size={14} />,     label: 'Truck Wrap' },
+                    { icon: <Instagram size={14} />, label: 'Social Bio' },
+                    { icon: <AtSign size={14} />,    label: 'Email Sig' },
+                    { icon: <CheckCircle size={14} />, label: 'No Website Needed' },
                   ].map(({ icon, label }) => (
-                    <div key={label} className="inline-flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] text-slate-400 px-3 py-1.5 rounded-lg text-[12px] font-semibold">
-                      {icon} {label}
+                    <div key={label} className="inline-flex items-center gap-2 bg-white border border-slate-200 shadow-sm text-slate-700 px-3.5 py-2 rounded-xl text-[13px] font-bold">
+                      <span className="text-blue-500">{icon}</span> {label}
                     </div>
                   ))}
                 </div>
               </div>
 
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.24s' }}>
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/signup"
-                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl text-[15px] font-black shadow-[0_0_50px_rgba(37,99,235,0.35)] hover:-translate-y-0.5 transition-all active:scale-95">
-                    Start Free Trial <ArrowRight size={17}/>
+                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl text-[16px] font-black shadow-xl shadow-blue-600/30 transition-all active:scale-95">
+                    Claim Your Link <ArrowRight size={18} strokeWidth={3}/>
                   </Link>
                   <Link href="/demo"
-                    className="inline-flex items-center justify-center gap-2 bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-2xl text-[15px] font-bold transition-all backdrop-blur-sm">
-                    <Layout className="w-4 h-4 text-slate-400" /> Try Live Demo
+                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-900 px-10 py-5 rounded-2xl text-[16px] font-black transition-all">
+                    See It In Action
                   </Link>
                 </div>
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="flex gap-0.5 text-amber-400">
-                    {[...Array(5)].map((_,i) => <Star key={i} size={13} fill="currentColor"/>)}
+                
+                <div className="mt-8 flex items-center gap-4 border-t border-slate-200 pt-8">
+                  <div className="flex -space-x-2">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-50 bg-slate-200 overflow-hidden shadow-sm">
+                        <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="user" />
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[13px] text-slate-500 font-medium">"Finally a tool that gets how a job site works."</p>
+                  <div>
+                    <div className="flex gap-0.5 text-amber-500 mb-0.5">
+                      {[...Array(5)].map((_,i) => <Star key={i} size={14} fill="currentColor"/>)}
+                    </div>
+                    <p className="text-[13px] text-slate-500 font-bold">"Took 2 minutes to set up. Closed a job 20 mins later."</p>
+                  </div>
                 </div>
-                <p className="mt-2 text-[11px] text-slate-600 font-bold tracking-[0.18em] uppercase">
-                  14-day free trial · No credit card · 2 min setup
-                </p>
               </div>
             </div>
 
-            {/* RIGHT — mockup, extra bottom padding for phone overhang */}
-            <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(24px) scale(0.97)', transition:'all 0.9s ease 0.2s', position: 'relative', paddingBottom: 24 }}>
-              <HeroMockup />
+            {/* RIGHT — The Mockup in Light Mode */}
+            <div style={{ 
+              opacity: mounted?1:0, 
+              transform: mounted?'none':'translateY(24px) scale(0.97)', 
+              transition:'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s', 
+              position: 'relative'
+            }}>
+               <div className="relative group">
+                  {/* Outer shadow/glow for the mockup */}
+                  <div className="absolute -inset-4 bg-blue-600/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <HeroMockup />
+               </div>
             </div>
 
           </div>
@@ -444,41 +457,29 @@ function Hero() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TRUST BAR
+// TRUST BAR — LIGHT EDITION
 // ─────────────────────────────────────────────────────────────────────────────
 function TrustBar() {
   const { ref, visible } = useFadeIn();
   return (
-    <div ref={ref} className="bg-[#080C14] border-y border-white/[0.06] py-10 px-6">
-      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-700"
+    <div ref={ref} className="bg-white border-y border-slate-200 py-12 px-6">
+      <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-8 transition-all duration-700"
         style={{ opacity: visible?1:0, transform: visible?'none':'translateY(16px)' }}>
         {[
           { value: '12,000+', label: 'Leads captured' },
-          { value: '< 60 sec', label: 'Avg. quote time' },
-          { value: '14 days', label: 'Free trial' },
-          { value: '2 min', label: 'Setup time' },
+          { value: 'AI', label: 'Drafted quotes' },
+          { value: '14 Days', label: 'Free trial' },
+          { value: 'Instant', label: 'QR setup' },
         ].map((s,i) => (
-          <div key={i} className="text-center">
-            <p className="text-3xl font-black text-white tracking-tight">{s.value}</p>
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">{s.label}</p>
+          <div key={i} className="flex-1 min-w-[140px] text-center md:text-left">
+            <p className="text-4xl font-[1000] text-slate-900 tracking-tighter leading-none">{s.value}</p>
+            <p className="text-[12px] text-slate-500 font-black uppercase tracking-widest mt-2">{s.label}</p>
           </div>
         ))}
       </div>
     </div>
   );
 }
-// ADD these to your existing lucide-react import line (merge with what you have):
-// MapPin, Home, Calendar, Clock, ImageIcon (imported as "Image as ImageIcon"), Upload
-//
-// Full import line should include at minimum:
-// import {
-//   ArrowRight, Zap, Check, Menu, X, Star, Layout,
-//   QrCode, Bot, Mail, BarChart2, ChevronDown,
-//   Truck, Instagram, Facebook, AtSign, Globe,
-//   User, Phone, FileText, ChevronRight, CheckCircle,
-//   Search, LayoutGrid, List, Plus, AlignLeft,
-//   Calendar, Clock, MapPin, Home, Image as ImageIcon, Upload
-// } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
@@ -730,32 +731,72 @@ function FastDemoForm() {
   );
 }
 // ─────────────────────────────────────────────────────────────────────────────
-// HOW IT WORKS
+// HOW IT WORKS — DARK MODE EDITION
 // ─────────────────────────────────────────────────────────────────────────────
 function HowItWorks() {
   const { ref, visible } = useFadeIn();
+  
   const steps = [
-    { number: '01', color: 'blue',    title: 'Scan the QR',          desc: 'Your branded QR lives on your truck, yard sign, or business card. One scan opens your custom form — no app download required.',                                                                  image: '/images/qr-scan-2.png',          visual: null },
-    { number: '02', color: 'indigo',  title: 'Customer fills it out', desc: 'They enter their info, describe the job, and pick a service. You get everything you need — name, phone, and project details — before the first call.',                                             image: null,                             visual: 'demo-form' },
-    { number: '03', color: 'emerald', title: 'You quote and close',   desc: 'The lead lands on your dashboard instantly. AI drafts the quote. Review, click once, and it is in their inbox.',                                                                                    image: '/images/dashboard-screenshot.png', visual: null },
+    { 
+      number: '01', 
+      color: 'blue', 
+      title: 'Customer scans QR', 
+      desc: 'Your branded QR lives on your truck, yard sign, or business card. One scan opens your custom form — no app download required.', 
+      image: '/images/qr-scan-2.png', 
+      visual: null 
+    },
+    { 
+      number: '02', 
+      color: 'indigo', 
+      title: 'Fills out form', 
+      desc: 'They enter their info, describe the job, and pick a service. You get everything you need — name, phone, and project details — before the first call.', 
+      image: null, 
+      visual: 'demo-form' 
+    },
+    { 
+      number: '03', 
+      color: 'emerald', 
+      title: 'It lands on your dashboard', 
+      desc: 'The lead lands on your dashboard instantly. AI drafts the quote. Review, click once, and it’s in their inbox.', 
+      image: '/images/dashboard-jobsite.png', 
+      visual: null 
+    },
   ];
-  const colorMap: Record<string,string> = { blue: 'bg-blue-50 border-blue-100 text-blue-600', indigo: 'bg-indigo-50 border-indigo-100 text-indigo-600', emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600' };
-  const glowMap:  Record<string,string> = { blue: 'bg-blue-300', indigo: 'bg-indigo-300', emerald: 'bg-emerald-300' };
+
+  // Dark mode color mappings
+  const colorMap: Record<string, string> = { 
+    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400', 
+    indigo: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400', 
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+  };
+  
+  const glowMap: Record<string, string> = { 
+    blue: 'bg-blue-600', 
+    indigo: 'bg-indigo-600', 
+    emerald: 'bg-emerald-600' 
+  };
 
   return (
-    <section id="how-it-works" className="py-32 px-6 bg-white overflow-hidden">
+    <section id="how-it-works" className="py-32 px-6 bg-[#080C14] overflow-hidden border-t border-white/[0.05]">
       <div className="max-w-6xl mx-auto">
-        <div ref={ref} className="text-center mb-24 transition-all duration-1000"
-          style={{ opacity: visible?1:0, transform: visible?'none':'translateY(30px)' }}>
-          <p className="text-[12px] font-black uppercase tracking-[0.3em] text-blue-600 mb-5">The Workflow</p>
-          <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]">
+        <div ref={ref} className="text-center mb-32 transition-all duration-1000"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(30px)' }}>
+          <p className="text-[12px] font-black uppercase tracking-[0.3em] text-blue-500 mb-5">The Workflow</p>
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">
             Three steps.<br/>
-            <span className="text-slate-300 font-medium italic">That's all it takes.</span>
+            <span className="text-slate-600 font-medium italic">That’s all it takes.</span>
           </h2>
         </div>
-        <div className="space-y-28">
+        
+        <div className="space-y-40">
           {steps.map((step, i) => (
-            <StepRow key={i} step={step} isEven={i%2===1} colorClass={colorMap[step.color]} glowClass={glowMap[step.color]} />
+            <StepRow 
+              key={i} 
+              step={step} 
+              isEven={i % 2 === 1} 
+              colorClass={colorMap[step.color]} 
+              glowClass={glowMap[step.color]} 
+            />
           ))}
         </div>
       </div>
@@ -765,39 +806,55 @@ function HowItWorks() {
 
 function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: boolean; colorClass: string; glowClass: string }) {
   const { ref, visible } = useFadeIn();
+  
   return (
     <div ref={ref}
-      className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${isEven ? 'md:grid-flow-dense' : ''}`}
-      style={{ opacity: visible?1:0, transform: visible?'none':'translateY(32px)' }}>
+      className={`grid md:grid-cols-2 gap-16 lg:gap-24 items-center transition-all duration-1000 ${isEven ? 'md:grid-flow-dense' : ''}`}
+      style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(40px)' }}>
+      
       <div className={isEven ? 'md:col-start-2' : ''}>
-        <div className={`inline-flex items-center px-4 py-2 rounded-2xl border text-[11px] font-black uppercase tracking-widest mb-8 ${colorClass}`}>
+        <div className={`inline-flex items-center px-5 py-2 rounded-2xl border text-[12px] font-black uppercase tracking-[0.2em] mb-8 ${colorClass}`}>
           Step {step.number}
         </div>
-        <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">{step.title}</h3>
-        <p className="text-xl text-slate-500 leading-relaxed font-medium max-w-md">{step.desc}</p>
+        <h3 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-8 leading-none">
+          {step.title}
+        </h3>
+        <p className="text-xl text-slate-400 leading-relaxed font-medium max-w-md">
+          {step.desc}
+        </p>
       </div>
+
       <div className={`${isEven ? 'md:col-start-1 md:row-start-1' : ''} relative`}>
-        <div className={`absolute -inset-6 rounded-[40px] opacity-15 blur-3xl ${glowClass}`} />
+        {/* Neon Back-glow */}
+        <div className={`absolute -inset-10 rounded-full opacity-10 blur-[100px] ${glowClass} animate-pulse`} />
+        
         {step.visual === 'demo-form' ? (
-          <FastDemoForm />
+          <div className="relative transform hover:scale-[1.02] transition-transform duration-500">
+             <FastDemoForm />
+          </div>
         ) : step.image ? (
-          <div className="relative bg-white rounded-[28px] p-2 shadow-[0_0_40px_-8px_rgba(0,0,0,0.10)] border border-slate-100 overflow-hidden">
-            <img src={step.image} alt={step.title} className="w-full h-auto rounded-[20px] object-cover aspect-[4/3]" />
+          <div className="relative bg-[#111827] rounded-[32px] p-3 shadow-2xl border border-white/[0.08] overflow-hidden group">
+            <img 
+              src={step.image} 
+              alt={step.title} 
+              className="w-full h-auto rounded-[24px] object-cover aspect-[4/3] opacity-80 group-hover:opacity-100 transition-opacity duration-700" 
+            />
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
           </div>
         ) : (
-          <div className="relative bg-white rounded-[28px] p-2 shadow-[0_0_40px_-8px_rgba(0,0,0,0.10)] border border-slate-100">
-            <div className="bg-slate-50 rounded-[20px] aspect-[4/3] flex items-center justify-center">
-              <p className="text-slate-300 font-bold uppercase tracking-tighter text-sm italic">Image Pending</p>
+          <div className="relative bg-[#111827] rounded-[32px] p-3 shadow-2xl border border-white/[0.08]">
+            <div className="bg-[#080C14] rounded-[24px] aspect-[4/3] flex flex-col items-center justify-center border border-dashed border-white/10">
+              <Sparkles className="text-white/10 mb-4" size={40} />
+              <p className="text-white/20 font-black uppercase tracking-widest text-[10px]">Visual Experience Loading</p>
             </div>
           </div>
         )}
       </div>
     </div>
   );
-}
-/// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 4 — FEATURES BENTO GRID
-// Status: Fully Coded with Micro-UIs. No external images required.
+}// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 4 — FEATURES BENTO GRID (Light BG + Dark Cards + Original QR)
 // ─────────────────────────────────────────────────────────────────────────────
 function Features() {
   const { ref, visible } = useFadeIn();
@@ -811,14 +868,52 @@ function Features() {
       desc: 'Stick it on your truck or yard signs. One scan opens your custom form. No app download, no friction. Customers do the data entry — you just receive the job.',
       accent: 'blue',
       visual: (
-        <div className="absolute right-[-20px] bottom-[-20px] w-48 h-48 bg-white rounded-3xl rotate-12 shadow-2xl p-3 hidden lg:block group-hover:rotate-[8deg] group-hover:-translate-y-4 transition-all duration-500">
-          <div className="w-full h-full border-4 border-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2">
-            <QrCode className="w-20 h-20 text-slate-900" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Scan to Book</span>
+        <div className="absolute right-[-20px] bottom-[-20px] w-56 bg-white rounded-[28px] p-4 shadow-2xl hidden lg:block rotate-6 group-hover:rotate-3 group-hover:-translate-y-2 transition-all duration-500 border border-slate-100">
+          {/* QR panel - YOUR ORIGINAL QR CODE */}
+          <div className="bg-[#0d1117] rounded-2xl p-3 mb-3">
+            <svg viewBox="0 0 200 200" className="w-full" xmlns="http://www.w3.org/2000/svg">
+              <rect width="200" height="200" fill="#0d1117"/>
+              <rect x="10" y="10" width="50" height="50" rx="6" fill="#fff"/><rect x="17" y="17" width="36" height="36" rx="3" fill="#0d1117"/><rect x="23" y="23" width="24" height="24" rx="2" fill="#fff"/>
+              <rect x="140" y="10" width="50" height="50" rx="6" fill="#fff"/><rect x="147" y="17" width="36" height="36" rx="3" fill="#0d1117"/><rect x="153" y="23" width="24" height="24" rx="2" fill="#fff"/>
+              <rect x="10" y="140" width="50" height="50" rx="6" fill="#fff"/><rect x="17" y="147" width="36" height="36" rx="3" fill="#0d1117"/><rect x="23" y="153" width="24" height="24" rx="2" fill="#fff"/>
+              <g fill="#fff">
+                <rect x="72" y="10" width="7" height="7" rx="1"/><rect x="82" y="10" width="7" height="7" rx="1"/><rect x="99" y="10" width="7" height="7" rx="1"/><rect x="109" y="10" width="7" height="7" rx="1"/><rect x="126" y="10" width="7" height="7" rx="1"/>
+                <rect x="72" y="20" width="7" height="7" rx="1"/><rect x="92" y="20" width="7" height="7" rx="1"/><rect x="116" y="20" width="7" height="7" rx="1"/><rect x="126" y="20" width="7" height="7" rx="1"/>
+                <rect x="82" y="30" width="7" height="7" rx="1"/><rect x="99" y="30" width="7" height="7" rx="1"/><rect x="109" y="30" width="7" height="7" rx="1"/>
+                <rect x="72" y="40" width="7" height="7" rx="1"/><rect x="92" y="40" width="7" height="7" rx="1"/><rect x="99" y="40" width="7" height="7" rx="1"/><rect x="119" y="40" width="7" height="7" rx="1"/>
+                <rect x="72" y="50" width="7" height="7" rx="1"/><rect x="82" y="50" width="7" height="7" rx="1"/><rect x="109" y="50" width="7" height="7" rx="1"/><rect x="126" y="50" width="7" height="7" rx="1"/>
+                <rect x="10" y="65" width="7" height="7" rx="1"/><rect x="24" y="65" width="7" height="7" rx="1"/><rect x="38" y="65" width="7" height="7" rx="1"/><rect x="52" y="65" width="7" height="7" rx="1"/><rect x="150" y="65" width="7" height="7" rx="1"/><rect x="164" y="65" width="7" height="7" rx="1"/><rect x="178" y="65" width="7" height="7" rx="1"/>
+                <rect x="10" y="75" width="7" height="7" rx="1"/><rect x="30" y="75" width="7" height="7" rx="1"/><rect x="50" y="75" width="7" height="7" rx="1"/><rect x="72" y="75" width="7" height="7" rx="1"/><rect x="89" y="75" width="7" height="7" rx="1"/><rect x="150" y="75" width="7" height="7" rx="1"/><rect x="170" y="75" width="7" height="7" rx="1"/>
+                <rect x="20" y="85" width="7" height="7" rx="1"/><rect x="40" y="85" width="7" height="7" rx="1"/><rect x="72" y="85" width="7" height="7" rx="1"/><rect x="160" y="85" width="7" height="7" rx="1"/><rect x="178" y="85" width="7" height="7" rx="1"/>
+                <rect x="10" y="95" width="7" height="7" rx="1"/><rect x="30" y="95" width="7" height="7" rx="1"/><rect x="50" y="95" width="7" height="7" rx="1"/><rect x="150" y="95" width="7" height="7" rx="1"/><rect x="168" y="95" width="7" height="7" rx="1"/>
+                <rect x="20" y="105" width="7" height="7" rx="1"/><rect x="44" y="105" width="7" height="7" rx="1"/><rect x="72" y="105" width="7" height="7" rx="1"/><rect x="155" y="105" width="7" height="7" rx="1"/><rect x="178" y="105" width="7" height="7" rx="1"/>
+                <rect x="72" y="140" width="7" height="7" rx="1"/><rect x="89" y="140" width="7" height="7" rx="1"/><rect x="106" y="140" width="7" height="7" rx="1"/><rect x="150" y="140" width="7" height="7" rx="1"/><rect x="168" y="140" width="7" height="7" rx="1"/><rect x="183" y="140" width="7" height="7" rx="1"/>
+                <rect x="72" y="150" width="7" height="7" rx="1"/><rect x="99" y="150" width="7" height="7" rx="1"/><rect x="116" y="150" width="7" height="7" rx="1"/><rect x="155" y="150" width="7" height="7" rx="1"/><rect x="178" y="150" width="7" height="7" rx="1"/>
+                <rect x="82" y="160" width="7" height="7" rx="1"/><rect x="106" y="160" width="7" height="7" rx="1"/><rect x="123" y="160" width="7" height="7" rx="1"/><rect x="150" y="160" width="7" height="7" rx="1"/><rect x="165" y="160" width="7" height="7" rx="1"/><rect x="183" y="160" width="7" height="7" rx="1"/>
+                <rect x="72" y="170" width="7" height="7" rx="1"/><rect x="89" y="170" width="7" height="7" rx="1"/><rect x="113" y="170" width="7" height="7" rx="1"/><rect x="155" y="170" width="7" height="7" rx="1"/><rect x="175" y="170" width="7" height="7" rx="1"/>
+                <rect x="82" y="180" width="7" height="7" rx="1"/><rect x="99" y="180" width="7" height="7" rx="1"/><rect x="123" y="180" width="7" height="7" rx="1"/><rect x="150" y="180" width="7" height="7" rx="1"/><rect x="165" y="180" width="7" height="7" rx="1"/><rect x="183" y="180" width="7" height="7" rx="1"/>
+              </g>
+              <circle cx="100" cy="100" r="22" fill="#fff"/>
+              <polygon points="100,85 90,104 110,104" fill="#c0392b"/>
+              <polygon points="93,90 84,106 102,106" fill="#e74c3c" opacity="0.8"/>
+              <polygon points="107,90 98,106 116,106" fill="#c0392b" opacity="0.7"/>
+              <text x="100" y="114" textAnchor="middle" fontSize="5" fontWeight="700" fill="#1a1a2e" fontFamily="system-ui">RIDGE LINE</text>
+              <text x="100" y="120" textAnchor="middle" fontSize="4" fill="#6b7280" fontFamily="system-ui">ROOFING</text>
+            </svg>
+          </div>
+          {/* Controls */}
+          <div className="grid grid-cols-3 gap-1 mb-2">
+            {['Standard','Brand','Dark'].map((t,i) => (
+              <div key={t} className={`text-center py-1.5 rounded-lg text-[8px] font-black border ${i===2?'border-indigo-500 text-indigo-600 bg-indigo-50':'border-slate-200 text-slate-400'}`}>{t.toUpperCase()}</div>
+            ))}
+          </div>
+          <div className="bg-[#0d1117] rounded-xl py-2 flex items-center justify-center">
+            <span className="text-[8px] font-black text-white uppercase tracking-wider">Export PNG</span>
           </div>
         </div>
       )
     },
+    // ... all other tiles stay exactly as you had them
     {
       size: 'col-span-1',
       icon: <Bot className="w-6 h-6 text-violet-400" />,
@@ -850,14 +945,13 @@ function Features() {
     },
     {
       size: 'col-span-2',
-      icon: <Layout className="w-6 h-6 text-slate-300" />,
+      icon: <Layout className="w-6 h-6 text-slate-400" />,
       badge: 'Lead Board',
       title: 'Every job. One place.',
       desc: 'Your whole pipeline visible at a glance. Status filters, AI assistance, and real-time stats — nothing falls through the cracks.',
       accent: 'slate',
       visual: (
         <div className="absolute right-6 top-6 bottom-6 w-1/2 hidden lg:flex flex-col gap-3 pl-12 pointer-events-none">
-          {/* Mock Lead Card 1 */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 transform translate-x-4 group-hover:translate-x-0 transition-transform duration-700">
             <div className="flex justify-between mb-2">
                <div className="w-12 h-1.5 bg-blue-500/40 rounded-full" />
@@ -865,7 +959,6 @@ function Features() {
             </div>
             <div className="w-20 h-2 bg-white/20 rounded-full" />
           </div>
-          {/* Mock Lead Card 2 */}
           <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-3 shadow-xl transform translate-x-8 group-hover:translate-x-2 transition-transform duration-700 delay-75">
             <div className="flex justify-between mb-2">
                <div className="w-12 h-1.5 bg-blue-400 rounded-full" />
@@ -887,7 +980,7 @@ function Features() {
   };
 
   return (
-    <section id="features" className="py-28 px-6 bg-[#080C14]">
+    <section id="features" className="py-28 px-6 bg-slate-50 border-t border-slate-200">
       <style jsx global>{`
         @keyframes scan {
           0% { left: -100%; }
@@ -896,29 +989,28 @@ function Features() {
       `}</style>
       
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Header - Light mode background, dark text */}
         <div ref={ref} className="mb-16 max-w-2xl"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4">Inside the product</p>
-          <h2 className="text-5xl font-black text-white tracking-tight leading-[0.92]">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Inside the product</p>
+          <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-[0.92]">
             Everything happens here.
           </h2>
-          <p className="text-slate-400 text-lg mt-4 font-medium leading-relaxed">
+          <p className="text-slate-600 text-lg mt-4 font-medium leading-relaxed">
             One place for every lead, quote, schedule, and payment. Built for the speed of the job site.
           </p>
         </div>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Bento grid - Cards remain DARK (#0d1117) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {tiles.map((tile, i) => {
             const { ref: tRef, visible: tVis } = useFadeIn();
             return (
               <div
                 key={i} ref={tRef}
-                className={`md:${tile.size} relative overflow-hidden bg-white/[0.03] border border-white/[0.07] rounded-[2.5rem] p-10 hover:bg-white/[0.05] hover:border-white/[0.12] transition-all duration-500 group`}
+                className={`md:${tile.size} relative overflow-hidden bg-[#0d1117] border border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2.5rem] p-10 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 group`}
                 style={{ opacity: tVis ? 1 : 0, transform: tVis ? 'none' : 'translateY(20px)', transition: `all 0.6s ease ${i * 0.08}s` }}
               >
-                {/* Visual Background Elements */}
                 {tile.visual}
 
                 <div className="relative z-10">
@@ -926,8 +1018,8 @@ function Features() {
                     {tile.icon}
                     {tile.badge}
                   </div>
-                  <h3 className="text-2xl font-black text-white mb-4 group-hover:text-blue-200 transition-colors tracking-tight">{tile.title}</h3>
-                  <p className="text-slate-500 text-base leading-relaxed font-medium max-w-[280px]">{tile.desc}</p>
+                  <h3 className="text-2xl font-black text-white mb-4 group-hover:text-blue-400 transition-colors tracking-tight">{tile.title}</h3>
+                  <p className="text-slate-400 text-base leading-relaxed font-medium max-w-[280px]">{tile.desc}</p>
                 </div>
               </div>
             );
@@ -937,101 +1029,117 @@ function Features() {
     </section>
   );
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 5 — AI CO-PILOT (Light, Glassmorphism Feel)
+// SECTION 5 — AI CO-PILOT (Position: Above Workflow Bento)
 // ─────────────────────────────────────────────────────────────────────────────
 function AiSection() {
   const { ref, visible } = useFadeIn();
 
   return (
-    <section id="ai" className="py-32 px-6 bg-[#FAFAFB] relative overflow-hidden border-t border-slate-100">
-      {/* Soft Blue/Violet Ambient Glow */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/5 blur-[100px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-400/5 blur-[100px] rounded-full pointer-events-none" />
+    <section id="ai" className="py-32 px-6 bg-slate-50 relative overflow-hidden border-t border-slate-200">
+      {/* Soft Ambient Glows - Subtle for Light Mode */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-400/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative z-10">
         <div
           ref={ref}
-          className="grid lg:grid-cols-2 gap-20 items-center"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center"
+          style={{ 
+            opacity: visible ? 1 : 0, 
+            transform: visible ? 'none' : 'translateY(32px)', 
+            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+          }}
         >
-          {/* LEFT — THE AI INTERFACE (Visual Proof) */}
+          {/* LEFT — THE AI INTERFACE */}
           <div className="relative group order-2 lg:order-1">
-            {/* The "Quote Drafting" Card - High Contrast Light Mode */}
-            <div className="relative bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-200">
-                    <Sparkles className="w-5 h-5 text-white" />
+            {/* The Main AI Card */}
+            <div className="relative bg-white border border-slate-200 rounded-[3rem] p-10 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-200">
+                    <Sparkles className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 text-left">AI Engine</p>
-                    <p className="text-slate-900 font-black text-sm">Drafting Quote #2044</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">Lead2Project AI</p>
+                    <p className="text-slate-900 font-black text-base">Drafting Quote #2044</p>
                   </div>
                 </div>
-                <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] text-slate-500 font-black border border-slate-200 uppercase tracking-tighter">
-                  Generating...
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 rounded-full text-[10px] text-indigo-600 font-black border border-indigo-100 uppercase tracking-widest animate-pulse">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                  Analyzing
                 </div>
               </div>
 
-              {/* AI Typing Simulation with Progress Bar */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl animate-pulse">
-                  <span className="text-slate-700 text-sm font-bold">Roof Shingle Replacement</span>
-                  <span className="text-violet-600 font-black text-sm">$2,400.00</span>
+              {/* AI Typing Simulation */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <span className="text-slate-800 text-[15px] font-bold">Roof Shingle Replacement</span>
+                  <span className="text-indigo-600 font-black text-[15px]">$2,400.00</span>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-60">
-                  <span className="text-slate-700 text-sm font-bold">Flashing & Sealant</span>
-                  <span className="text-violet-600 font-black text-sm">$450.00</span>
+                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl opacity-60">
+                  <span className="text-slate-800 text-[15px] font-bold">Flashing & Sealant</span>
+                  <span className="text-indigo-600 font-black text-[15px]">$450.00</span>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-30">
-                  <span className="text-slate-700 text-sm font-bold">Debris Removal</span>
-                  <span className="text-violet-600 font-black text-sm">$300.00</span>
+                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl opacity-30">
+                  <span className="text-slate-800 text-[15px] font-bold">Debris Removal</span>
+                  <span className="text-indigo-600 font-black text-[15px]">$300.00</span>
                 </div>
               </div>
 
-              {/* Action Button Area */}
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Estimated</p>
-                 <p className="text-3xl font-black text-slate-900 tracking-tighter">$3,150.00</p>
+              {/* Total Calculation */}
+              <div className="mt-10 pt-8 border-t border-slate-100 flex items-end justify-between">
+                 <div>
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Estimated</p>
+                    <p className="text-4xl font-black text-slate-900 tracking-tighter">$3,150.00</p>
+                 </div>
+                 <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors">
+                    Review & Send
+                 </button>
               </div>
             </div>
 
-            {/* Floating Annotation (Yellow Note Style) */}
-            <div className="absolute -top-4 -right-4 bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-xl -rotate-2 hidden md:block">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <p className="text-amber-900 font-black text-[11px] uppercase tracking-tighter">Analyzing Photos...</p>
+            {/* Floating Photo Annotation */}
+            <div className="absolute -top-6 -right-6 bg-amber-50 border border-amber-200 px-5 py-4 rounded-[2rem] shadow-2xl -rotate-3 hidden md:block">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center border border-amber-200">
+                    <Camera size={18} className="text-amber-700" />
+                </div>
+                <div>
+                   <p className="text-amber-900 font-black text-[11px] uppercase tracking-tighter">Photo Scan</p>
+                   <p className="text-amber-700/70 text-[10px] font-bold leading-none">3 Images Found</p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* RIGHT — COPY */}
           <div className="order-1 lg:order-2 space-y-8">
-            <span className="inline-flex items-center gap-2 bg-violet-100 border border-violet-200 text-violet-600 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
-              <Bot className="w-3.5 h-3.5" /> Intelligence
+            <span className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
+              <Bot className="w-4 h-4" /> AI Intelligence
             </span>
             <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]">
               Quotes that <br/>
-              <span className="text-slate-300">write themselves.</span>
+              <span className="text-slate-400 font-medium italic">write themselves.</span>
             </h2>
-            <p className="text-xl text-slate-500 leading-relaxed font-medium">
-              Lead2Project understands your jobs. Our AI reads customer photos and job descriptions to draft professional, line-item quotes in seconds.
+            <p className="text-xl text-slate-600 leading-relaxed font-medium">
+              Lead2Project doesn't just manage leads—it understands them. Our AI reads customer photos and job descriptions to draft professional, line-item quotes before you even pick up the phone.
             </p>
             
-            <div className="grid gap-3">
+            <div className="space-y-4 pt-4">
               {[
                 { t: 'Instant Line Items', d: 'AI identifies materials and labor from lead photos.' },
-                { t: 'Project Briefs', d: 'Automatically summarizes leads for your crew.' },
-                { t: 'Smart Outbox', d: 'AI drafts the perfect follow-up email for every client.' }
+                { t: 'Project Summaries', d: 'Automatically boils down job notes for your crew.' },
+                { t: 'Smart Outbox', d: 'Drafts follow-up emails based on lead urgency.' }
               ].map((item, idx) => (
-                <div key={idx} className="group flex gap-4 p-5 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all border border-transparent hover:border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-1">
-                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                <div key={idx} className="group flex gap-5 p-6 rounded-[2rem] hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all border border-transparent hover:border-slate-200">
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-4 h-4 text-white" strokeWidth={4} />
                   </div>
                   <div>
-                    <p className="text-slate-900 font-black text-lg leading-none mb-1.5">{item.t}</p>
-                    <p className="text-slate-500 text-sm font-medium">{item.d}</p>
+                    <p className="text-slate-900 font-black text-lg leading-tight mb-1">{item.t}</p>
+                    <p className="text-slate-500 text-sm font-medium leading-snug">{item.d}</p>
                   </div>
                 </div>
               ))}
@@ -1044,7 +1152,216 @@ function AiSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 6 — DAILY DIGEST + OUTBOX (Dark Mode Visual)
+// SECTION 4B — WORKFLOW BENTO (Light BG + Dark Cards)
+// ─────────────────────────────────────────────────────────────────────────────
+function WorkflowFeatures() {
+  const { ref, visible } = useFadeIn();
+
+  return (
+    <section className="pb-32 px-6 bg-slate-50 overflow-hidden border-b border-slate-200">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Section label — Updated for Light Mode */}
+        <div ref={ref} className="mb-12 transition-all duration-700"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 mb-3">Your workflow, your rules</p>
+          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
+            Built to fit how<br/>
+            <span className="text-slate-400 font-medium italic">you already work.</span>
+          </h2>
+        </div>
+
+        {/* Bento grid — Cards stay Dark (#0d1117) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+          {/* Tile 1 — Pipeline Stages */}
+          <BentoTile
+            badge="Pipeline"
+            accent="blue"
+            title="Your stages. Your flow."
+            desc="Move leads through custom stages that match how you actually close jobs."
+            delay={0}
+          >
+            <div className="mt-8 space-y-3">
+              {[
+                { label: 'New',       w: '100%', color: '#3b82f6' },
+                { label: 'Quoted',    w: '65%',  color: '#f59e0b' },
+                { label: 'Scheduled', w: '40%',  color: '#10b981' },
+                { label: 'Closed',    w: '20%',  color: '#6b7280' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-slate-500 w-14 shrink-0 uppercase tracking-tighter">{s.label}</span>
+                  <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000"
+                      style={{ width: s.w, background: s.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </BentoTile>
+
+          {/* Tile 2 — Custom Categories */}
+          <BentoTile
+            badge="Categories"
+            accent="violet"
+            title="Tag every lead."
+            desc="Roofing, HVAC, Plumbing—tag every lead to filter and quote without digging."
+            delay={0.1}
+          >
+            <div className="mt-8 flex flex-wrap gap-2">
+              {[
+                { label: 'Roofing',    color: '#3b82f6' },
+                { label: 'Gutters',    color: '#8b5cf6' },
+                { label: 'Siding',     color: '#10b981' },
+                { label: 'Repair',     color: '#f59e0b' },
+                { label: '+ Add New',  color: '#374151', dashed: true },
+              ].map((c, i) => (
+                <div key={i} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold ${
+                  c.dashed
+                    ? 'border border-dashed border-white/20 text-slate-500'
+                    : 'bg-white/[0.06] border border-white/[0.08] text-slate-300'
+                }`}>
+                  {!c.dashed && <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />}
+                  {c.label}
+                </div>
+              ))}
+            </div>
+          </BentoTile>
+
+          {/* Tile 3 — Custom Form Questions */}
+          <BentoTile
+            badge="Custom Form"
+            accent="amber"
+            title="Ask exactly what you need."
+            desc="Add questions for budget, gate codes, or pets before the first call."
+            delay={0.2}
+          >
+            <div className="mt-8 space-y-2">
+              {[
+                { q: 'Budget range?',        type: 'Select' },
+                { q: 'Pet on property?',     type: 'Yes/No' },
+                { q: 'Gate access?',         type: 'Text'   },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-3">
+                  <span className="text-[11px] font-medium text-slate-300 truncate">{item.q}</span>
+                  <span className="text-[8px] font-black text-slate-600 bg-white/[0.05] px-2 py-0.5 rounded-lg uppercase tracking-widest">{item.type}</span>
+                </div>
+              ))}
+            </div>
+          </BentoTile>
+
+          {/* Tile 4 — Quotes (col-span-2) */}
+          <BentoTile
+            badge="Quotes"
+            accent="emerald"
+            title="Line-item quotes. Sent in seconds."
+            desc="AI drafts line items from photos and notes. Review, adjust, and send—all without leaving the dashboard."
+            delay={0.3}
+            wide
+          >
+            <div className="mt-8 bg-white/[0.04] border border-white/[0.07] rounded-2xl overflow-hidden shadow-2xl">
+              <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
+                <div>
+                  <p className="text-[12px] font-black text-white">Quote #2044 — Marcus Rivera</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Roofing · AI Drafted</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <Check size={14} className="text-emerald-400" />
+                </div>
+              </div>
+              <div className="divide-y divide-white/[0.04]">
+                {[
+                  { item: 'Shingle Replacement', price: '$2,400' },
+                  { item: 'Flashing & Sealant',  price: '$450'  },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-3">
+                    <span className="text-[13px] text-slate-400 font-medium">{row.item}</span>
+                    <span className="text-[13px] font-black text-white">{row.price}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-4 bg-emerald-500/5 border-t border-white/[0.06] flex items-center justify-between">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Total</span>
+                <span className="text-[18px] font-black text-emerald-400 tracking-tighter">$2,850.00</span>
+              </div>
+            </div>
+          </BentoTile>
+
+          {/* Tile 5 — Tasks */}
+          <BentoTile
+            badge="Tasks"
+            accent="slate"
+            title="Nothing falls through."
+            desc="Attach tasks to any lead. Follow ups, permits, or material orders."
+            delay={0.4}
+          >
+            <div className="mt-8 space-y-3">
+              {[
+                { label: 'Call to confirm', done: true  },
+                { label: 'Send estimate',   done: true  },
+                { label: 'Pull city permit', done: false },
+              ].map((task, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 ${
+                    task.done ? 'bg-blue-600 border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]' : 'border-white/20 bg-transparent'
+                  }`}>
+                    {task.done && <Check size={10} className="text-white" strokeWidth={4} />}
+                  </div>
+                  <span className={`text-[12px] font-bold tracking-tight ${
+                    task.done ? 'text-slate-600' : 'text-slate-300'
+                  }`}>{task.label}</span>
+                </div>
+              ))}
+            </div>
+          </BentoTile>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Shared tile wrapper ──────────────────────────────────────────────────────
+function BentoTile({
+  badge, accent, title, desc, delay, wide, children,
+}: {
+  badge: string; accent: string; title: string; desc: string;
+  delay: number; wide?: boolean; children?: React.ReactNode;
+}) {
+  const { ref, visible } = useFadeIn();
+
+  const accentMap: Record<string, string> = {
+    blue:    'bg-blue-500/10 border-blue-500/20 text-blue-400',
+    violet:  'bg-violet-500/10 border-violet-500/20 text-violet-400',
+    amber:   'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    slate:   'bg-white/5 border-white/10 text-slate-400',
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={`${wide ? 'md:col-span-2' : 'col-span-1'} relative bg-[#0d1117] border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] p-9 hover:border-blue-500/30 transition-all duration-500 group overflow-hidden`}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(24px)',
+        transition: `all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s`,
+      }}
+    >
+      <div className={`inline-flex items-center px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest mb-6 ${accentMap[accent]}`}>
+        {badge}
+      </div>
+      <h3 className="text-2xl font-black text-white tracking-tight mb-3 group-hover:text-blue-400 transition-colors">
+        {title}
+      </h3>
+      <p className="text-slate-500 text-[15px] leading-relaxed font-medium max-w-[280px]">{desc}</p>
+      {children}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 6 — DAILY DIGEST (rebuilt to match real digest content)
 // ─────────────────────────────────────────────────────────────────────────────
 function DigestSection() {
   const { ref, visible } = useFadeIn();
@@ -1067,14 +1384,15 @@ function DigestSection() {
               <span className="text-slate-500">before it starts.</span>
             </h2>
             <p className="text-xl text-slate-400 leading-relaxed font-medium">
-              Every morning at 6:00 AM — get your new leads, overdue payments, and today's schedule in one email. No login required.
+              Every morning at 6:00 AM — your jobs, overdue payments, stale leads, and follow-up reminders in one email. No login required.
             </p>
-            
+
             <div className="grid gap-4">
               {[
-                { t: 'Morning Digest', d: 'Your entire business health delivered at 6AM every day.' },
-                { t: 'Outbox Paper Trail', d: 'Every quote and reminder logged. No "I never got that" excuses.' },
-                { t: 'One-Click Sending', d: 'Send professional updates without leaving the lead board.' }
+                { t: "Today's Schedule",    d: 'Every job on your plate today — customer, time, and category.' },
+                { t: 'Overdue Payments',    d: 'Who owes you money. How much. How overdue. No surprises.' },
+                { t: 'Stale Leads',         d: 'Leads that went quiet — flagged before they go cold for good.' },
+                { t: 'Quote Follow-Ups',    d: 'Quotes sent but not accepted. Time to nudge.' },
               ].map((item, idx) => (
                 <div key={idx} className="flex gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
                   <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
@@ -1089,60 +1407,133 @@ function DigestSection() {
             </div>
           </div>
 
-          {/* RIGHT — THE VISUAL (Smartphone + Email Preview) */}
+          {/* RIGHT — EMAIL MOCKUP */}
           <div className="relative group">
-            {/* Ambient Amber Glow */}
-            <div className="absolute inset-0 bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute inset-0 bg-amber-500/8 blur-[120px] rounded-full pointer-events-none" />
 
-            {/* Smartphone Lock Screen */}
-            <div className="relative mx-auto w-[280px] h-[580px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden z-20 transform -rotate-3 group-hover:rotate-0 transition-transform duration-700">
-               {/* Lock Screen Header */}
-               <div className="pt-12 px-6 text-center">
-                  <p className="text-white/60 text-xs font-bold">Friday, March 27</p>
-                  <h3 className="text-6xl font-black text-white tracking-tighter mt-2">6:00</h3>
-               </div>
+            {/* Email card — looks like a real rendered email */}
+            <div className="relative z-10 bg-white rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.5)] max-w-sm mx-auto group-hover:-translate-y-1 transition-transform duration-700">
 
-               {/* Notifications */}
-               <div className="mt-12 px-4 space-y-3">
-                  <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-lg animate-bounce-slow">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px] text-white font-black">L</div>
-                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Lead2Project</p>
+              {/* Email client chrome */}
+              <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/60" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/60" />
+                </div>
+                <div className="flex-1 bg-white rounded-md px-3 py-1 text-[9px] text-slate-400 font-mono ml-2">
+                  From: digest@lead2project.com
+                </div>
+              </div>
+
+              {/* Email header */}
+              <div className="bg-[#0d1117] px-6 py-5">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+                      <span className="text-[8px] font-black text-white">L</span>
                     </div>
-                    <p className="text-white font-bold text-sm leading-tight">Your Daily Digest is ready</p>
-                    <p className="text-white/60 text-xs mt-1">3 new leads, 2 overdue payments...</p>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Lead2Project</span>
                   </div>
-               </div>
+                  <span className="text-[9px] text-slate-600">6:00 AM · Fri Mar 28</span>
+                </div>
+                <p className="text-white font-black text-sm mt-3">Ridge Line Roofing — Morning Briefing</p>
+                <p className="text-slate-500 text-[10px] mt-0.5">Here's everything you need to start the day.</p>
+              </div>
+
+              {/* Pending revenue banner */}
+              <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Pending Revenue</p>
+                  <p className="text-2xl font-black text-amber-500 tracking-tight mt-0.5">$37,194</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">New Leads</p>
+                  <p className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">+3</p>
+                </div>
+              </div>
+
+              {/* Today's jobs */}
+              <div className="px-6 pt-4 pb-2">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Today's Schedule</p>
+                <div className="space-y-2">
+                  {[
+                    { name: 'Marcus Rivera',  time: '8:15 AM',  cat: 'Roofing',  dot: '#10b981' },
+                    { name: 'Diane Holloway', time: '11:30 AM', cat: 'Plumbing', dot: '#3b82f6' },
+                  ].map((job, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: job.dot }} />
+                        <span className="text-[11px] font-bold text-slate-800">{job.name}</span>
+                        <span className="text-[9px] text-slate-400 font-medium">{job.cat}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-500">{job.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Overdue payments */}
+              <div className="px-6 pt-3 pb-2">
+                <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3">Overdue Payments</p>
+                <div className="space-y-2">
+                  {[
+                    { name: 'Jack Thomas',  amount: '$3,550', days: '5 days overdue' },
+                    { name: 'Tony Marino',  amount: '$1,200', days: '12 days overdue' },
+                  ].map((p, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-800">{p.name}</span>
+                        <span className="text-[9px] text-red-400 font-bold ml-2">{p.days}</span>
+                      </div>
+                      <span className="text-[11px] font-black text-red-500">{p.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stale leads */}
+              <div className="px-6 pt-3 pb-4">
+                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-3">Needs Follow-Up</p>
+                <div className="space-y-2">
+                  {[
+                    { name: 'Sarah Mitchell', days: '4 days ago', cat: 'Roofing' },
+                    { name: 'Carl Bennett',   days: '6 days ago', cat: 'Gutters' },
+                  ].map((l, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
+                      <span className="text-[11px] font-bold text-slate-800">{l.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-slate-400">{l.cat}</span>
+                        <span className="text-[9px] font-bold text-amber-500">{l.days}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="px-6 pb-5">
+                <div className="w-full bg-[#0d1117] rounded-xl py-3 flex items-center justify-center gap-2">
+                  <span className="text-[11px] font-black text-white uppercase tracking-widest">Open Dashboard</span>
+                  <ChevronRight size={12} className="text-slate-500" />
+                </div>
+                <p className="text-center text-[9px] text-slate-400 mt-3">
+                  lead2project.com · Unsubscribe
+                </p>
+              </div>
             </div>
 
-            {/* Email Preview Card (Floating behind phone) */}
-            <div className="absolute top-20 -right-10 lg:-right-20 w-[380px] bg-[#161B26] border border-white/10 rounded-3xl shadow-2xl p-8 z-10 transform rotate-6 group-hover:rotate-3 transition-transform duration-700">
-               <div className="flex items-center gap-3 mb-8">
-                  <Mail className="w-5 h-5 text-amber-400" />
-                  <p className="text-white font-black text-sm tracking-tight">Today's Briefing</p>
-               </div>
-               
-               <div className="space-y-6">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Pending Revenue</p>
-                    <p className="text-4xl font-black text-amber-400 tracking-tighter">$37,194.00</p>
-                  </div>
-
-                  <div className="space-y-2 pt-4 border-t border-white/5">
-                    <div className="flex justify-between items-center text-sm">
-                       <span className="text-slate-400">New Leads</span>
-                       <span className="text-white font-bold">+3</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                       <span className="text-slate-400">Scheduled Today</span>
-                       <span className="text-white font-bold">5</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                     <div className="w-full h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xs uppercase tracking-widest">Open Dashboard</div>
-                  </div>
-               </div>
+            {/* Floating phone notification */}
+            <div className="absolute -top-4 -right-4 md:-right-8 z-20 bg-[#1C1C1E] border border-white/10 rounded-2xl px-4 py-3 shadow-2xl w-[200px] group-hover:-translate-y-1 group-hover:rotate-1 transition-all duration-700">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center shrink-0">
+                  <span className="text-[7px] font-black text-white">L</span>
+                </div>
+                <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Lead2Project</span>
+                <span className="text-[9px] text-slate-600 ml-auto">now</span>
+              </div>
+              <p className="text-white text-[11px] font-bold leading-snug">Your 6AM digest is ready</p>
+              <p className="text-slate-500 text-[10px] mt-0.5">3 new leads · $3,550 overdue</p>
             </div>
           </div>
         </div>
@@ -1558,11 +1949,18 @@ export default function Home() {
       {/* 4. FEATURES BENTO — dark section, grid of capabilities */}
       <Features />
 
+
+
       {/* 5. AI CO-PILOT — light section, screenshot + bullet points */}
       <AiSection />
 
+
+
       {/* 6. DAILY DIGEST + OUTBOX — dark section, email preview + copy */}
       <DigestSection />
+
+                  <WorkflowFeatures />
+
 
       {/* 7. VS JOBBER — light section, two-column comparison */}
       <Comparison />
