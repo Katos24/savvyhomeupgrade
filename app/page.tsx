@@ -3,15 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  ArrowRight, Zap, Check, Menu, X, Star,
-  Layout, QrCode, Bot, Mail, BarChart2,
-  ChevronDown, CheckCircle2, XCircle,
+  ArrowRight, Zap, Check, Menu, X, Star, Layout,
+  QrCode, Bot, Mail, BarChart2, ChevronDown, XCircle,
   Truck, Instagram, Facebook, AtSign, Globe,
+  User, Phone, FileText, ChevronRight, CheckCircle,
+  Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
+  Calendar, Clock, SlidersHorizontal, Filter
 } from 'lucide-react';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCROLL FADE HOOK — reusable for every section
-// ─────────────────────────────────────────────────────────────────────────────
 function useFadeIn(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -28,9 +27,6 @@ function useFadeIn(threshold = 0.12) {
   return { ref, visible };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NAV
-// ─────────────────────────────────────────────────────────────────────────────
 function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -39,27 +35,19 @@ function Nav() {
     window.addEventListener('scroll', fn);
     return () => window.removeEventListener('scroll', fn);
   }, []);
-
   return (
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-      scrolled
-        ? 'bg-[#080C14]/90 backdrop-blur-2xl border-b border-white/[0.06] shadow-2xl shadow-black/40'
-        : 'bg-transparent'
+      scrolled ? 'bg-[#080C14]/90 backdrop-blur-2xl border-b border-white/[0.06] shadow-2xl shadow-black/40' : 'bg-transparent'
     }`}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <img src="/Lead2ProjectLogo.png" alt="L2P" className="h-10 w-auto" />
         </Link>
-
-        {/* Desktop links */}
         <div className="hidden md:flex items-center gap-8">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing']].map(([href,label]) => (
             <a key={href} href={href} className="text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">{label}</a>
           ))}
         </div>
-
-        {/* Actions */}
         <div className="flex items-center gap-3">
           <Link href="/login" className="hidden md:block text-[13px] font-bold text-slate-400 hover:text-white transition-colors">Login</Link>
           <Link href="/signup" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/25 transition-all active:scale-95">
@@ -70,8 +58,6 @@ function Nav() {
           </button>
         </div>
       </div>
-
-      {/* Mobile drawer */}
       {open && (
         <div className="md:hidden bg-[#080C14]/95 backdrop-blur-xl border-t border-white/[0.06] px-6 py-5 space-y-4">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing'],['/login','Login']].map(([href,label]) => (
@@ -84,9 +70,289 @@ function Nav() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 1 — HERO
-// Status: Foundation built. Replace placeholder image with real dashboard screenshot.
-// TODO: swap /images/placeholder-dashboard.png with actual screenshot
+// HERO MOCKUP
+// Laptop: full width, dominant. Phone: small 120px, bottom-right, just the form.
+// ─────────────────────────────────────────────────────────────────────────────
+function HeroMockup() {
+  const D = { fontSize: 'inherit', lineHeight: 'inherit' }; // reset helper
+
+  return (
+    <div style={{ position: 'relative', width: '100%', userSelect: 'none' }}>
+
+      {/* ── LAPTOP — full width, the hero ── */}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+
+        {/* Screen */}
+        <div style={{
+          background: '#0d1117',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '10px 10px 0 0',
+          overflow: 'hidden',
+          aspectRatio: '16/10',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+        }}>
+
+          {/* Browser chrome */}
+          <div style={{ background: '#161b25', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(239,68,68,0.6)' }} />
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(245,158,11,0.6)' }} />
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(52,211,153,0.6)' }} />
+            <div style={{ flex: 1, margin: '0 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 4, height: 14, display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+              <span style={{ fontSize: 6, color: '#4b5563', fontFamily: 'monospace' }}>app.lead2project.com/dashboard</span>
+            </div>
+          </div>
+
+          {/* Dashboard — full width, no sidebar */}
+          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 27px)', overflow: 'hidden' }}>
+
+            {/* Header pill */}
+            <div style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '4px 8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ width: 10, height: 1.5, background: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />)}
+                </div>
+                <div style={{ width: 18, height: 18, background: '#1e2a3a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 5, fontWeight: 900, color: 'rgba(255,255,255,0.7)' }}>RL</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, fontWeight: 900, color: '#fff', lineHeight: 1 }}>Ridge Line Roofing</div>
+                  <div style={{ fontSize: 5.5, fontWeight: 700, color: '#6366f1', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1 }}>Dashboard</div>
+                </div>
+              </div>
+              <div style={{ width: 22, height: 22, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)' }}>
+                <Plus size={11} color="rgba(255,255,255,0.7)" />
+              </div>
+            </div>
+
+            {/* 4 stat cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, padding: '0 10px 6px' }}>
+              {[
+                { label: 'TOTAL LEADS',      value: '20',     vc: '#fff' },
+                { label: 'ACTIVE JOBS',       value: '20',     vc: '#60a5fa' },
+                { label: 'REVENUE COLLECTED', value: '$0',     vc: '#34d399' },
+                { label: 'PENDING',           value: '$13,900',vc: '#fbbf24' },
+              ].map(s => (
+                <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 7px' }}>
+                  <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{s.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: s.vc, lineHeight: 1 }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Search + controls */}
+            <div style={{ padding: '0 10px 5px', display: 'flex', gap: 4, alignItems: 'center' }}>
+              <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, height: 18, display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 6 }}>
+                <Search size={8} color="#4b5563" />
+                <span style={{ fontSize: 6, color: '#4b5563' }}>Search by name, email or phone...</span>
+              </div>
+              <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Filter size={8} color="#6b7280" />
+              </div>
+              <div style={{ width: 18, height: 18, background: '#4f46e5', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LayoutGrid size={9} color="#fff" />
+              </div>
+              <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <List size={8} color="#6b7280" />
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ padding: '0 10px 5px', display: 'flex', gap: 4 }}>
+              <div style={{ background: '#4f46e5', color: '#fff', fontSize: 6, fontWeight: 900, padding: '2px 7px', borderRadius: 99 }}>All (150)</div>
+              {['New (23)','Contacted (11)','In Progress (20)','Completed (12)'].map(t => (
+                <div key={t} style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#6b7280', fontSize: 6, fontWeight: 700, padding: '2px 6px', borderRadius: 99 }}>{t}</div>
+              ))}
+            </div>
+
+            {/* All Time */}
+            <div style={{ padding: '0 10px 5px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
+                <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)' }}>All Time</span>
+                <ChevronDown size={8} color="#4b5563" />
+              </div>
+            </div>
+
+            {/* TODAY */}
+            <div style={{ padding: '0 10px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 7, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Today</span>
+              <span style={{ fontSize: 6, fontWeight: 700, color: '#6b7280', background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: 99 }}>2</span>
+            </div>
+
+            {/* Lead cards */}
+            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flex: 1 }}>
+
+              {/* John Simpson — green */}
+              <div style={{ background: '#080f08', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid #10b981', borderRadius: 10, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'inline-flex', background: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: 6, fontWeight: 900, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', alignSelf: 'flex-start' }}>New</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1 }}>John Simpson</div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Roofing</span>
+                  <span style={{ fontSize: 6, color: '#374151' }}>·</span>
+                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Unassigned</span>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '5px 6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                  <div>
+                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Calendar size={7} color="#60a5fa" />
+                      <span style={{ fontSize: 7, color: '#60a5fa', fontWeight: 700 }}>Mar 31</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Arrival</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Clock size={7} color="#6b7280" />
+                      <span style={{ fontSize: 7, color: '#9ca3af', fontWeight: 700 }}>8:15 AM</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#fff' }}>$74</div>
+                    <div style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Unpaid</div>
+                  </div>
+                  <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ChevronRight size={9} color="#6b7280" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Jack Thomas — blue */}
+              <div style={{ background: '#08080f', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid #3b82f6', borderRadius: 10, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'inline-flex', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', fontSize: 6, fontWeight: 900, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', alignSelf: 'flex-start' }}>New</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', lineHeight: 1 }}>Jack Thomas</div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Roofing</span>
+                  <span style={{ fontSize: 6, color: '#374151' }}>·</span>
+                  <span style={{ fontSize: 6, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Alex Katos</span>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, padding: '5px 6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                  <div>
+                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Date</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Calendar size={7} color="#60a5fa" />
+                      <span style={{ fontSize: 7, color: '#60a5fa', fontWeight: 700 }}>Apr 8</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Arrival</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Clock size={7} color="#6b7280" />
+                      <span style={{ fontSize: 7, color: '#9ca3af', fontWeight: 700 }}>8:30 AM</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#fbbf24' }}>$3,550</div>
+                    <div style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Partial</div>
+                  </div>
+                  <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ChevronRight size={9} color="#6b7280" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Laptop chin */}
+        <div style={{ background: '#1a1f2b', height: 10, borderRadius: '0 0 2px 2px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }} />
+        <div style={{ background: '#111520', height: 5, borderRadius: '0 0 8px 8px', border: '1px solid rgba(255,255,255,0.04)', borderTop: 'none' }} />
+      </div>
+
+      {/* ── PHONE — small, bottom-right, just the form, no chrome ── */}
+      <div style={{
+        position: 'absolute',
+        bottom: -16,
+        right: -10,
+        zIndex: 30,
+        width: 130,
+        background: '#f9f9fb',
+        borderRadius: 16,
+        border: '4px solid #1a1a1f',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.7)',
+        overflow: 'hidden',
+      }}>
+
+        {/* Tiny header strip */}
+        <div style={{ background: '#e8e8f0', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+          <div style={{ width: 14, height: 14, background: '#fff', borderRadius: 4, border: '1px solid rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 4.5, fontWeight: 900, color: '#374151' }}>RL</span>
+          </div>
+          <span style={{ fontSize: 7, fontWeight: 700, color: '#111827' }}>Ridge Line Roofing</span>
+        </div>
+
+        {/* Step bar */}
+        <div style={{ background: '#fff', padding: '5px 8px 4px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 7, fontWeight: 900, color: '#fff' }}>1</span>
+          </div>
+          <span style={{ fontSize: 5.5, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your Info</span>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 7, fontWeight: 700, color: '#9ca3af' }}>2</span>
+          </div>
+          <span style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Details</span>
+        </div>
+
+        {/* Form fields */}
+        <div style={{ background: '#fff', padding: '3px 7px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+          {[
+            { label: 'Full Name', val: 'John Simpson',    icon: <User size={6} color="#9ca3af" /> },
+            { label: 'Email',     val: 'johns@gmail.com', icon: <Mail size={6} color="#9ca3af" /> },
+            { label: 'Phone',     val: '(555) 704-5325',  icon: <Phone size={6} color="#9ca3af" /> },
+          ].map(f => (
+            <div key={f.label}>
+              <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{f.label}</div>
+              <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {f.icon}
+                <span style={{ fontSize: 7, color: '#111827', fontWeight: 500 }}>{f.val}</span>
+              </div>
+            </div>
+          ))}
+
+          {/* Service */}
+          <div>
+            <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Service Needed</div>
+            <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <QrCode size={6} color="#9ca3af" />
+                <span style={{ fontSize: 7, color: '#111827', fontWeight: 600 }}>Roofing</span>
+              </div>
+              <ChevronDown size={7} color="#9ca3af" />
+            </div>
+          </div>
+
+          {/* Project notes */}
+          <div>
+            <div style={{ fontSize: 5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>About Your Project</div>
+            <div style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 6px', minHeight: 22 }}>
+              <span style={{ fontSize: 6.5, color: '#6b7280', fontStyle: 'italic', lineHeight: 1.3 }}>"Seeing a leak in my bedroom ceiling..."</span>
+            </div>
+          </div>
+
+          {/* Continue button */}
+          <div style={{ background: 'linear-gradient(135deg, #4f46e5, #2563eb)', borderRadius: 8, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginTop: 2 }}>
+            <span style={{ fontSize: 8, fontWeight: 900, color: '#fff' }}>Continue</span>
+            <ChevronRight size={8} color="#fff" />
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: 5.5, color: '#9ca3af' }}>lead2project.com — Private</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -94,36 +360,26 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen bg-[#080C14] flex flex-col overflow-hidden">
-
-      {/* Background atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Subtle dot grid */}
-        <div className="absolute inset-0 opacity-[0.035]"
-          style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        {/* Blue glow */}
         <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-blue-600/[0.12] blur-[140px] rounded-full" />
-        {/* Bottom fade */}
         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#080C14] to-transparent" />
       </div>
 
       <Nav />
 
-      {/* Content */}
       <div className="relative z-10 flex-1 flex items-center">
         <div className="max-w-6xl mx-auto px-6 w-full pt-28 pb-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-            {/* LEFT — copy */}
+            {/* LEFT copy */}
             <div className="space-y-8">
-              {/* Badge */}
-              <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(12px)', transition: 'all 0.6s ease' }}>
+              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(12px)', transition:'all 0.6s ease' }}>
                 <span className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em]">
                   <Zap className="w-3 h-3 fill-current" /> Built for the Trades
                 </span>
               </div>
 
-              {/* Headline */}
-              <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)', transition: 'all 0.7s ease 0.08s' }}>
+              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.08s' }}>
                 <h1 className="text-[56px] md:text-[72px] font-black text-white leading-[0.9] tracking-[-0.03em]">
                   From QR Scan<br/>
                   to Closed Job.<br/>
@@ -131,21 +387,18 @@ function Hero() {
                 </h1>
               </div>
 
-              {/* Sub */}
-              <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)', transition: 'all 0.7s ease 0.16s' }}>
+              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.16s' }}>
                 <p className="text-[17px] text-slate-400 leading-relaxed max-w-[440px] font-medium">
                   Your booking link works everywhere. No website? You don't need one —
                   just a link that turns every customer touchpoint into a job request.
                 </p>
-
-                {/* Link everywhere strip */}
                 <div className="mt-6 flex flex-wrap gap-2">
                   {[
-                    { icon: <Truck className="w-3.5 h-3.5" />,      label: 'Truck wrap'      },
-                    { icon: <Instagram className="w-3.5 h-3.5" />,  label: 'Instagram bio'   },
-                    { icon: <Facebook className="w-3.5 h-3.5" />,   label: 'Facebook page'   },
-                    { icon: <AtSign className="w-3.5 h-3.5" />,     label: 'Email signature' },
-                    { icon: <Globe className="w-3.5 h-3.5" />,      label: 'No site needed'  },
+                    { icon: <Truck className="w-3.5 h-3.5" />,     label: 'Truck wrap' },
+                    { icon: <Instagram className="w-3.5 h-3.5" />, label: 'Instagram bio' },
+                    { icon: <Facebook className="w-3.5 h-3.5" />,  label: 'Facebook page' },
+                    { icon: <AtSign className="w-3.5 h-3.5" />,    label: 'Email signature' },
+                    { icon: <Globe className="w-3.5 h-3.5" />,     label: 'No site needed' },
                   ].map(({ icon, label }) => (
                     <div key={label} className="inline-flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] text-slate-400 px-3 py-1.5 rounded-lg text-[12px] font-semibold">
                       {icon} {label}
@@ -154,8 +407,7 @@ function Hero() {
                 </div>
               </div>
 
-              {/* CTAs */}
-              <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)', transition: 'all 0.7s ease 0.24s' }}>
+              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.24s' }}>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Link href="/signup"
                     className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl text-[15px] font-black shadow-[0_0_50px_rgba(37,99,235,0.35)] hover:-translate-y-0.5 transition-all active:scale-95">
@@ -166,8 +418,6 @@ function Hero() {
                     <Layout className="w-4 h-4 text-slate-400" /> Try Live Demo
                   </Link>
                 </div>
-
-                {/* Social proof */}
                 <div className="mt-6 flex items-center gap-3">
                   <div className="flex gap-0.5 text-amber-400">
                     {[...Array(5)].map((_,i) => <Star key={i} size={13} fill="currentColor"/>)}
@@ -180,29 +430,9 @@ function Hero() {
               </div>
             </div>
 
-            {/* RIGHT — placeholder for hero visual */}
-            {/* ─────────────────────────────────────────────────────────────
-                TODO: Replace this placeholder with a real image.
-                Best option: screenshot of dashboard with a phone mockup
-                floating beside it showing the customer form.
-                Size: ~600×460px, transparent or dark bg preferred.
-            ───────────────────────────────────────────────────────────── */}
-            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(24px) scale(0.97)', transition: 'all 0.9s ease 0.2s' }}>
-              <div className="relative">
-                <div className="absolute -inset-4 bg-blue-600/10 blur-[60px] rounded-3xl" />
-                <div className="relative bg-white/[0.04] border border-white/10 rounded-3xl overflow-hidden aspect-[4/3] flex items-center justify-center">
-                  {/* PLACEHOLDER — swap with: <img src="/images/hero-visual.png" ... /> */}
-                  <div className="text-center space-y-3 p-8">
-                    <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/30">
-                      <Layout className="w-8 h-8 text-blue-400" />
-                    </div>
-                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">Hero Visual</p>
-                    <p className="text-slate-600 text-xs max-w-[200px] mx-auto leading-relaxed">
-                      Replace with dashboard screenshot + phone mockup showing customer form
-                    </p>
-                  </div>
-                </div>
-              </div>
+            {/* RIGHT — mockup, extra bottom padding for phone overhang */}
+            <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(24px) scale(0.97)', transition:'all 0.9s ease 0.2s', position: 'relative', paddingBottom: 24 }}>
+              <HeroMockup />
             </div>
 
           </div>
@@ -213,24 +443,20 @@ function Hero() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 2 — TRUST BAR
-// Status: Ready. Update numbers when you have real data.
+// TRUST BAR
 // ─────────────────────────────────────────────────────────────────────────────
 function TrustBar() {
   const { ref, visible } = useFadeIn();
-  const stats = [
-    { value: '12,000+', label: 'Leads captured' },
-    { value: '< 60 sec', label: 'Avg. quote time' },
-    { value: '14 days',  label: 'Free trial'     },
-    { value: '2 min',    label: 'Setup time'     },
-  ];
   return (
     <div ref={ref} className="bg-[#080C14] border-y border-white/[0.06] py-10 px-6">
-      <div
-        className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-700"
-        style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)' }}
-      >
-        {stats.map((s,i) => (
+      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-700"
+        style={{ opacity: visible?1:0, transform: visible?'none':'translateY(16px)' }}>
+        {[
+          { value: '12,000+', label: 'Leads captured' },
+          { value: '< 60 sec', label: 'Avg. quote time' },
+          { value: '14 days', label: 'Free trial' },
+          { value: '2 min', label: 'Setup time' },
+        ].map((s,i) => (
           <div key={i} className="text-center">
             <p className="text-3xl font-black text-white tracking-tight">{s.value}</p>
             <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">{s.label}</p>
@@ -240,110 +466,212 @@ function TrustBar() {
     </div>
   );
 }
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 2 — FAST AUTO-ANIMATING FORM
+// ─────────────────────────────────────────────────────────────────────────────
+function FastDemoForm() {
+  const FIELDS = [
+    { key: 'name',    label: 'Full Name',    value: 'Sarah Mitchell',  icon: <User size={14} className="text-slate-400 shrink-0" /> },
+    { key: 'email',   label: 'Email',        value: 'sarah.m@gmail.com', icon: <Mail size={14} className="text-slate-400 shrink-0" /> },
+    { key: 'phone',   label: 'Phone',        value: '(718) 552-8844',  icon: <Phone size={14} className="text-slate-400 shrink-0" /> },
+    { key: 'service', label: 'Service',      value: 'Roofing',         icon: <QrCode size={14} className="text-slate-400 shrink-0" />, isSelect: true },
+    { key: 'desc',    label: 'Project Notes',value: "My flat roof is pooling water after every rain. There's visible cracking along the edge near the chimney.", icon: <FileText size={14} className="text-slate-400 shrink-0" />, isTextarea: true },
+  ];
+
+  const [vals, setVals] = useState<Record<string,string>>({ name:'', email:'', phone:'', service:'', desc:'' });
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [done, setDone] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    let fieldIdx = 0;
+    let charIdx = 0;
+    let running = true;
+
+    function reset() {
+      setVals({ name:'', email:'', phone:'', service:'', desc:'' });
+      setActiveIdx(-1);
+      setDone(false);
+      fieldIdx = 0; charIdx = 0;
+      timerRef.current = setTimeout(tick, 900);
+    }
+
+    function tick() {
+      if (!running) return;
+      const field = FIELDS[fieldIdx];
+      if (!field) {
+        setActiveIdx(-1);
+        setDone(true);
+        timerRef.current = setTimeout(reset, 2800);
+        return;
+      }
+      setActiveIdx(fieldIdx);
+      if (field.isSelect) {
+        setVals(v => ({ ...v, [field.key]: field.value }));
+        timerRef.current = setTimeout(() => { fieldIdx++; charIdx = 0; tick(); }, 420);
+        return;
+      }
+      charIdx++;
+      setVals(v => ({ ...v, [field.key]: field.value.slice(0, charIdx) }));
+      if (charIdx < field.value.length) {
+        timerRef.current = setTimeout(tick, field.isTextarea ? 18 : 38);
+      } else {
+        timerRef.current = setTimeout(() => { fieldIdx++; charIdx = 0; tick(); }, 340);
+      }
+    }
+
+    timerRef.current = setTimeout(tick, 500);
+    return () => { running = false; if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  const progress = done ? 100 : activeIdx < 0 ? 0 : Math.round((activeIdx / FIELDS.length) * 100);
+
+  return (
+    <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden max-w-sm mx-auto">
+      <div className="bg-[#f4f5f9] px-5 py-3.5 border-b border-slate-200/70 flex items-center gap-3">
+        <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center">
+          <span className="text-[9px] font-black text-slate-700">RL</span>
+        </div>
+        <p className="text-[12px] font-bold text-slate-800">Ridge Line Roofing</p>
+      </div>
+
+      <div className="px-5 pt-4 pb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-black text-white">1</span>
+          </div>
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Your Info</span>
+          <div className="flex-1 h-px bg-slate-200" />
+          <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-bold text-slate-400">2</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Details</span>
+        </div>
+        <div className="h-0.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      <div className="px-5 pb-5 pt-1 space-y-2.5">
+        {FIELDS.map((f, i) => {
+          const isActive = activeIdx === i;
+          const hasVal = vals[f.key].length > 0;
+          const box = `border rounded-xl transition-all duration-150 bg-slate-50 ${
+            isActive ? 'border-blue-400 ring-2 ring-blue-50' : hasVal ? 'border-slate-200' : 'border-slate-100'
+          }`;
+          return (
+            <div key={f.key}>
+              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{f.label}</label>
+              {f.isTextarea ? (
+                <div className={`${box} px-3 py-2 min-h-[56px]`}>
+                  <div className="flex gap-2">
+                    <div className="mt-0.5 shrink-0">{f.icon}</div>
+                    <p className="text-[12px] text-slate-700 leading-snug">
+                      {vals[f.key] || <span className="text-slate-300">Describe what you need done...</span>}
+                      {isActive && <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" />}
+                    </p>
+                  </div>
+                </div>
+              ) : f.isSelect ? (
+                <div className={`${box} px-3 py-2.5 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2">
+                    {f.icon}
+                    <span className={`text-[12px] font-medium ${hasVal ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {vals[f.key] || 'Select a service...'}
+                    </span>
+                  </div>
+                  <ChevronDown size={13} className={hasVal ? 'text-blue-400' : 'text-slate-300'} />
+                </div>
+              ) : (
+                <div className={`${box} px-3 py-2.5 flex items-center gap-2`}>
+                  {f.icon}
+                  <span className="text-[12px] font-medium text-slate-800 min-h-[16px]">
+                    {vals[f.key] || <span className="text-slate-300">{f.value}</span>}
+                    {isActive && <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" />}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <button className={`w-full py-3 rounded-xl text-[13px] font-black flex items-center justify-center gap-2 transition-all duration-500 ${done ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'}`}>
+          {done ? <><Check size={15} /> Submitted</> : <>Continue <ChevronRight size={15} /></>}
+        </button>
+        <p className="text-center text-[9px] text-slate-400">lead2project.com — Private</p>
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 3 — HOW IT WORKS (3 steps)
-// Status: Copy + structure ready. Replace step images with real screenshots.
-// TODO: swap placeholder divs with actual step screenshots or short screen recordings
+// HOW IT WORKS
 // ─────────────────────────────────────────────────────────────────────────────
 function HowItWorks() {
   const { ref, visible } = useFadeIn();
-
   const steps = [
-    {
-      number: '01',
-      color: 'blue',
-      title: 'Scan the QR',
-      desc: 'Your branded QR lives on your truck, yard sign, or business card. One scan opens your custom form — no app download.',
-      // TODO: Replace placeholder with screenshot of QR code on a truck or business card
-      image: null,
-    },
-    {
-      number: '02',
-      color: 'indigo',
-      title: 'Customer fills it out',
-      desc: 'They enter their info, describe the job, pick a service type, and upload photos. You get everything you need before the first call.',
-      // TODO: Replace placeholder with phone screenshot of the customer form
-      image: null,
-    },
-    {
-      number: '03',
-      color: 'emerald',
-      title: 'You quote & close',
-      desc: 'The lead lands on your dashboard instantly. AI drafts the quote. You review and send with one click.',
-      // TODO: Replace placeholder with screenshot of the lead card + quote modal
-      image: null,
-    },
+    { number: '01', color: 'blue',    title: 'Scan the QR',          desc: 'Your branded QR lives on your truck, yard sign, or business card. One scan opens your custom form — no app download required.',                                                                  image: '/images/qr-scan-2.png',          visual: null },
+    { number: '02', color: 'indigo',  title: 'Customer fills it out', desc: 'They enter their info, describe the job, and pick a service. You get everything you need — name, phone, and project details — before the first call.',                                             image: null,                             visual: 'demo-form' },
+    { number: '03', color: 'emerald', title: 'You quote and close',   desc: 'The lead lands on your dashboard instantly. AI drafts the quote. Review, click once, and it is in their inbox.',                                                                                    image: '/images/dashboard-screenshot.png', visual: null },
   ];
+  const colorMap: Record<string,string> = { blue: 'bg-blue-50 border-blue-100 text-blue-600', indigo: 'bg-indigo-50 border-indigo-100 text-indigo-600', emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600' };
+  const glowMap:  Record<string,string> = { blue: 'bg-blue-300', indigo: 'bg-indigo-300', emerald: 'bg-emerald-300' };
 
   return (
-    <section id="how-it-works" className="py-28 px-6 bg-white">
+    <section id="how-it-works" className="py-32 px-6 bg-white overflow-hidden">
       <div className="max-w-6xl mx-auto">
-
-        {/* Header */}
-        <div ref={ref} className="text-center mb-20"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 mb-4">The Workflow</p>
-          <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[0.92]">
+        <div ref={ref} className="text-center mb-24 transition-all duration-1000"
+          style={{ opacity: visible?1:0, transform: visible?'none':'translateY(30px)' }}>
+          <p className="text-[12px] font-black uppercase tracking-[0.3em] text-blue-600 mb-5">The Workflow</p>
+          <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]">
             Three steps.<br/>
-            <span className="text-slate-400 font-medium">That's all it takes.</span>
+            <span className="text-slate-300 font-medium italic">That's all it takes.</span>
           </h2>
         </div>
-
-        {/* Steps */}
-        <div className="space-y-24">
-          {steps.map((step, i) => {
-            const { ref: sRef, visible: sVis } = useFadeIn();
-            const isEven = i % 2 === 1;
-            const colors: Record<string, string> = {
-              blue: 'bg-blue-50 border-blue-100 text-blue-600',
-              indigo: 'bg-indigo-50 border-indigo-100 text-indigo-600',
-              emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600',
-            };
-
-            return (
-              <div
-                key={i} ref={sRef}
-                className={`grid md:grid-cols-2 gap-12 items-center transition-all duration-700 ${isEven ? 'md:grid-flow-dense' : ''}`}
-                style={{ opacity: sVis ? 1 : 0, transform: sVis ? 'none' : 'translateY(28px)' }}
-              >
-                {/* Text */}
-                <div className={isEven ? 'md:col-start-2' : ''}>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-black uppercase tracking-widest mb-6 ${colors[step.color]}`}>
-                    Step {step.number}
-                  </div>
-                  <h3 className="text-4xl font-black text-slate-900 tracking-tight mb-4">{step.title}</h3>
-                  <p className="text-lg text-slate-500 leading-relaxed font-medium max-w-md">{step.desc}</p>
-                </div>
-
-                {/* Image */}
-                {/* ─────────────────────────────────────────────────────
-                    TODO: Replace this block with:
-                    <img src="/images/step-{i+1}.png" alt="..." className="w-full rounded-3xl shadow-2xl border border-slate-100" />
-                ───────────────────────────────────────────────────── */}
-                <div className={isEven ? 'md:col-start-1 md:row-start-1' : ''}>
-                  <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl aspect-[4/3] flex items-center justify-center">
-                    <div className="text-center space-y-2 p-8">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto border ${colors[step.color]}`}>
-                        <span className="font-black text-lg">{step.number}</span>
-                      </div>
-                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Screenshot placeholder</p>
-                      <p className="text-slate-300 text-xs max-w-[160px] mx-auto">{step.title}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="space-y-28">
+          {steps.map((step, i) => (
+            <StepRow key={i} step={step} isEven={i%2===1} colorClass={colorMap[step.color]} glowClass={glowMap[step.color]} />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: boolean; colorClass: string; glowClass: string }) {
+  const { ref, visible } = useFadeIn();
+  return (
+    <div ref={ref}
+      className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${isEven ? 'md:grid-flow-dense' : ''}`}
+      style={{ opacity: visible?1:0, transform: visible?'none':'translateY(32px)' }}>
+      <div className={isEven ? 'md:col-start-2' : ''}>
+        <div className={`inline-flex items-center px-4 py-2 rounded-2xl border text-[11px] font-black uppercase tracking-widest mb-8 ${colorClass}`}>
+          Step {step.number}
+        </div>
+        <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">{step.title}</h3>
+        <p className="text-xl text-slate-500 leading-relaxed font-medium max-w-md">{step.desc}</p>
+      </div>
+      <div className={`${isEven ? 'md:col-start-1 md:row-start-1' : ''} relative`}>
+        <div className={`absolute -inset-6 rounded-[40px] opacity-15 blur-3xl ${glowClass}`} />
+        {step.visual === 'demo-form' ? (
+          <FastDemoForm />
+        ) : step.image ? (
+          <div className="relative bg-white rounded-[28px] p-2 shadow-[0_0_40px_-8px_rgba(0,0,0,0.10)] border border-slate-100 overflow-hidden">
+            <img src={step.image} alt={step.title} className="w-full h-auto rounded-[20px] object-cover aspect-[4/3]" />
+          </div>
+        ) : (
+          <div className="relative bg-white rounded-[28px] p-2 shadow-[0_0_40px_-8px_rgba(0,0,0,0.10)] border border-slate-100">
+            <div className="bg-slate-50 rounded-[20px] aspect-[4/3] flex items-center justify-center">
+              <p className="text-slate-300 font-bold uppercase tracking-tighter text-sm italic">Image Pending</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+/// ─────────────────────────────────────────────────────────────────────────────
 // SECTION 4 — FEATURES BENTO GRID
-// Status: Structure + copy ready. Icons in place. No images needed here.
+// Status: Fully Coded with Micro-UIs. No external images required.
 // ─────────────────────────────────────────────────────────────────────────────
 function Features() {
   const { ref, visible } = useFadeIn();
@@ -356,6 +684,14 @@ function Features() {
       title: 'Your branded QR code',
       desc: 'Stick it on your truck or yard signs. One scan opens your custom form. No app download, no friction. Customers do the data entry — you just receive the job.',
       accent: 'blue',
+      visual: (
+        <div className="absolute right-[-20px] bottom-[-20px] w-48 h-48 bg-white rounded-3xl rotate-12 shadow-2xl p-3 hidden lg:block group-hover:rotate-[8deg] group-hover:-translate-y-4 transition-all duration-500">
+          <div className="w-full h-full border-4 border-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2">
+            <QrCode className="w-20 h-20 text-slate-900" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Scan to Book</span>
+          </div>
+        </div>
+      )
     },
     {
       size: 'col-span-1',
@@ -364,6 +700,11 @@ function Features() {
       title: 'Quotes in 60 seconds',
       desc: 'AI reads customer photos and drafts line items. You review and send.',
       accent: 'violet',
+      visual: (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+          <div className="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-violet-500/10 to-transparent skew-x-12 group-hover:animate-[scan_2s_ease-in-out_infinite]" />
+        </div>
+      )
     },
     {
       size: 'col-span-1',
@@ -386,8 +727,28 @@ function Features() {
       icon: <Layout className="w-6 h-6 text-slate-300" />,
       badge: 'Lead Board',
       title: 'Every job. One place.',
-      desc: 'Cards or table view. Status filters. AI assistant. Stats bar. Your whole pipeline visible at a glance — nothing falls through.',
+      desc: 'Your whole pipeline visible at a glance. Status filters, AI assistance, and real-time stats — nothing falls through the cracks.',
       accent: 'slate',
+      visual: (
+        <div className="absolute right-6 top-6 bottom-6 w-1/2 hidden lg:flex flex-col gap-3 pl-12 pointer-events-none">
+          {/* Mock Lead Card 1 */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-3 transform translate-x-4 group-hover:translate-x-0 transition-transform duration-700">
+            <div className="flex justify-between mb-2">
+               <div className="w-12 h-1.5 bg-blue-500/40 rounded-full" />
+               <div className="w-4 h-1.5 bg-white/10 rounded-full" />
+            </div>
+            <div className="w-20 h-2 bg-white/20 rounded-full" />
+          </div>
+          {/* Mock Lead Card 2 */}
+          <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-3 shadow-xl transform translate-x-8 group-hover:translate-x-2 transition-transform duration-700 delay-75">
+            <div className="flex justify-between mb-2">
+               <div className="w-12 h-1.5 bg-blue-400 rounded-full" />
+               <div className="w-4 h-1.5 bg-blue-400/30 rounded-full" />
+            </div>
+            <div className="w-24 h-2 bg-white/80 rounded-full" />
+          </div>
+        </div>
+      )
     },
   ];
 
@@ -401,8 +762,14 @@ function Features() {
 
   return (
     <section id="features" className="py-28 px-6 bg-[#080C14]">
+      <style jsx global>{`
+        @keyframes scan {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+      `}</style>
+      
       <div className="max-w-6xl mx-auto">
-
         {/* Header */}
         <div ref={ref} className="mb-16 max-w-2xl"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
@@ -411,7 +778,7 @@ function Features() {
             Everything happens here.
           </h2>
           <p className="text-slate-400 text-lg mt-4 font-medium leading-relaxed">
-            One place for every lead, quote, schedule, and payment. Nothing falls through.
+            One place for every lead, quote, schedule, and payment. Built for the speed of the job site.
           </p>
         </div>
 
@@ -422,15 +789,20 @@ function Features() {
             return (
               <div
                 key={i} ref={tRef}
-                className={`md:${tile.size} bg-white/[0.03] border border-white/[0.07] rounded-3xl p-8 hover:bg-white/[0.05] hover:border-white/[0.12] transition-all duration-500 group`}
+                className={`md:${tile.size} relative overflow-hidden bg-white/[0.03] border border-white/[0.07] rounded-[2.5rem] p-10 hover:bg-white/[0.05] hover:border-white/[0.12] transition-all duration-500 group`}
                 style={{ opacity: tVis ? 1 : 0, transform: tVis ? 'none' : 'translateY(20px)', transition: `all 0.6s ease ${i * 0.08}s` }}
               >
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest mb-6 ${accentMap[tile.accent]}`}>
-                  {tile.icon}
-                  {tile.badge}
+                {/* Visual Background Elements */}
+                {tile.visual}
+
+                <div className="relative z-10">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest mb-8 ${accentMap[tile.accent]}`}>
+                    {tile.icon}
+                    {tile.badge}
+                  </div>
+                  <h3 className="text-2xl font-black text-white mb-4 group-hover:text-blue-200 transition-colors tracking-tight">{tile.title}</h3>
+                  <p className="text-slate-500 text-base leading-relaxed font-medium max-w-[280px]">{tile.desc}</p>
                 </div>
-                <h3 className="text-xl font-black text-white mb-3 group-hover:text-blue-100 transition-colors">{tile.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed font-medium">{tile.desc}</p>
               </div>
             );
           })}
@@ -439,64 +811,101 @@ function Features() {
     </section>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 5 — AI CO-PILOT (dark, premium feel)
-// Status: Copy ready. Replace placeholder with AI brief / quote screenshot.
-// TODO: swap placeholder with screenshot of AI quote generator or AI brief panel
+// SECTION 5 — AI CO-PILOT (Light, Glassmorphism Feel)
 // ─────────────────────────────────────────────────────────────────────────────
 function AiSection() {
   const { ref, visible } = useFadeIn();
 
-  const capabilities = [
-    { title: 'AI Quote Generator',  desc: 'Customer uploads a photo. AI reads the damage, drafts line items with pricing. You review and send.' },
-    { title: 'AI Project Brief',    desc: 'Every lead automatically summarized into a clear execution plan for you and your crew.' },
-    { title: 'AI Assistant',        desc: 'Ask anything — "who hasn\'t paid?", "what\'s scheduled Tuesday?" — get instant answers.' },
-  ];
-
   return (
-    <section className="py-28 px-6 bg-white border-t border-slate-100">
+    <section id="ai" className="py-32 px-6 bg-[#FAFAFB] relative overflow-hidden border-t border-slate-100">
+      {/* Soft Blue/Violet Ambient Glow */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/5 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-400/5 blur-[100px] rounded-full pointer-events-none" />
+
       <div className="max-w-6xl mx-auto">
         <div
           ref={ref}
-          className="grid lg:grid-cols-2 gap-16 items-center"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.7s ease' }}
+          className="grid lg:grid-cols-2 gap-20 items-center"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
-          {/* Left — image placeholder */}
-          {/* ─────────────────────────────────────────────────────────────
-              TODO: Replace with screenshot of AI quote modal or AI brief panel.
-              Ideal: show the AI generating line items from a photo.
-          ───────────────────────────────────────────────────────────── */}
-          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl aspect-[4/3] flex items-center justify-center order-2 lg:order-1">
-            <div className="text-center space-y-2 p-8">
-              <div className="w-12 h-12 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center mx-auto">
-                <Bot className="w-6 h-6 text-violet-500" />
+          {/* LEFT — THE AI INTERFACE (Visual Proof) */}
+          <div className="relative group order-2 lg:order-1">
+            {/* The "Quote Drafting" Card - High Contrast Light Mode */}
+            <div className="relative bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 text-left">AI Engine</p>
+                    <p className="text-slate-900 font-black text-sm">Drafting Quote #2044</p>
+                  </div>
+                </div>
+                <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] text-slate-500 font-black border border-slate-200 uppercase tracking-tighter">
+                  Generating...
+                </div>
               </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Screenshot placeholder</p>
-              <p className="text-slate-300 text-xs max-w-[160px] mx-auto">AI quote generator or AI brief panel</p>
+
+              {/* AI Typing Simulation with Progress Bar */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl animate-pulse">
+                  <span className="text-slate-700 text-sm font-bold">Roof Shingle Replacement</span>
+                  <span className="text-violet-600 font-black text-sm">$2,400.00</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-60">
+                  <span className="text-slate-700 text-sm font-bold">Flashing & Sealant</span>
+                  <span className="text-violet-600 font-black text-sm">$450.00</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-30">
+                  <span className="text-slate-700 text-sm font-bold">Debris Removal</span>
+                  <span className="text-violet-600 font-black text-sm">$300.00</span>
+                </div>
+              </div>
+
+              {/* Action Button Area */}
+              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Estimated</p>
+                 <p className="text-3xl font-black text-slate-900 tracking-tighter">$3,150.00</p>
+              </div>
+            </div>
+
+            {/* Floating Annotation (Yellow Note Style) */}
+            <div className="absolute -top-4 -right-4 bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-xl -rotate-2 hidden md:block">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <p className="text-amber-900 font-black text-[11px] uppercase tracking-tighter">Analyzing Photos...</p>
+              </div>
             </div>
           </div>
 
-          {/* Right — copy */}
-          <div className="order-1 lg:order-2">
-            <span className="inline-flex items-center gap-2 bg-violet-50 border border-violet-100 text-violet-600 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em] mb-6">
-              <Bot className="w-3.5 h-3.5" /> AI Co-pilot
+          {/* RIGHT — COPY */}
+          <div className="order-1 lg:order-2 space-y-8">
+            <span className="inline-flex items-center gap-2 bg-violet-100 border border-violet-200 text-violet-600 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
+              <Bot className="w-3.5 h-3.5" /> Intelligence
             </span>
-            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-[0.92] mb-6">
-              Your office<br/>on autopilot.
+            <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]">
+              Quotes that <br/>
+              <span className="text-slate-300">write themselves.</span>
             </h2>
-            <p className="text-lg text-slate-500 leading-relaxed mb-10 font-medium">
-              Not a chatbot. A co-pilot that reads your jobs, drafts your quotes, and keeps your crew informed — automatically.
+            <p className="text-xl text-slate-500 leading-relaxed font-medium">
+              Lead2Project understands your jobs. Our AI reads customer photos and job descriptions to draft professional, line-item quotes in seconds.
             </p>
-            <div className="space-y-6">
-              {capabilities.map((c, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center mt-0.5 shrink-0">
-                    <Check className="w-3 h-3 text-white" strokeWidth={3}/>
+            
+            <div className="grid gap-3">
+              {[
+                { t: 'Instant Line Items', d: 'AI identifies materials and labor from lead photos.' },
+                { t: 'Project Briefs', d: 'Automatically summarizes leads for your crew.' },
+                { t: 'Smart Outbox', d: 'AI drafts the perfect follow-up email for every client.' }
+              ].map((item, idx) => (
+                <div key={idx} className="group flex gap-4 p-5 rounded-3xl hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all border border-transparent hover:border-slate-100">
+                  <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-1">
+                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
                   </div>
                   <div>
-                    <p className="text-slate-900 font-bold text-[15px]">{c.title}</p>
-                    <p className="text-slate-500 text-sm mt-0.5 leading-relaxed">{c.desc}</p>
+                    <p className="text-slate-900 font-black text-lg leading-none mb-1.5">{item.t}</p>
+                    <p className="text-slate-500 text-sm font-medium">{item.d}</p>
                   </div>
                 </div>
               ))}
@@ -509,64 +918,105 @@ function AiSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 6 — DAILY DIGEST + OUTBOX
-// Status: Copy ready. DailyDigestPreview component goes here.
-// TODO: drop in <DailyDigestPreview /> from your existing code on the left side
+// SECTION 6 — DAILY DIGEST + OUTBOX (Dark Mode Visual)
 // ─────────────────────────────────────────────────────────────────────────────
 function DigestSection() {
   const { ref, visible } = useFadeIn();
 
   return (
-    <section className="py-28 px-6 bg-[#080C14]">
+    <section id="digest" className="py-32 px-6 bg-[#080C14] border-t border-white/5 overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <div
           ref={ref}
-          className="grid lg:grid-cols-2 gap-16 items-center"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.7s ease' }}
+          className="grid lg:grid-cols-2 gap-20 items-center"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
-          {/* Left — copy */}
-          <div>
-            <span className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em] mb-6">
-              Daily Command
+          {/* LEFT — COPY */}
+          <div className="space-y-8">
+            <span className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
+              <Mail className="w-3.5 h-3.5" /> Daily Command
             </span>
-            <h2 className="text-5xl font-black text-white tracking-tight leading-[0.92] mb-6">
-              Know your day<br/>before it starts.
+            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">
+              Know your day<br/>
+              <span className="text-slate-500">before it starts.</span>
             </h2>
-            <p className="text-lg text-slate-400 leading-relaxed mb-10 font-medium">
-              Every morning at 6AM — new leads, overdue payments, today's schedule. One email. No login required.
+            <p className="text-xl text-slate-400 leading-relaxed font-medium">
+              Every morning at 6:00 AM — get your new leads, overdue payments, and today's schedule in one email. No login required.
             </p>
-            <div className="space-y-6">
+            
+            <div className="grid gap-4">
               {[
-                { title: 'Morning Digest',    desc: 'New leads, overdue payments, and today\'s jobs — delivered at 6AM every day.' },
-                { title: 'Outbox Paper Trail',desc: 'Every quote, reminder, and schedule email logged. Searchable confirmation hub — no "I never got that" excuses.' },
-                { title: 'One-Click Sending', desc: 'Send quotes and reminders without leaving the lead. Full sent history always visible.' },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center mt-0.5 shrink-0">
-                    <Check className="w-3 h-3 text-white" strokeWidth={3}/>
+                { t: 'Morning Digest', d: 'Your entire business health delivered at 6AM every day.' },
+                { t: 'Outbox Paper Trail', d: 'Every quote and reminder logged. No "I never got that" excuses.' },
+                { t: 'One-Click Sending', d: 'Send professional updates without leaving the lead board.' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                  <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                    <Check className="w-3.5 h-3.5 text-amber-500" strokeWidth={4} />
                   </div>
                   <div>
-                    <p className="text-white font-bold text-[15px]">{item.title}</p>
-                    <p className="text-slate-400 text-sm mt-0.5 leading-relaxed">{item.desc}</p>
+                    <p className="text-white font-black text-lg leading-none mb-2">{item.t}</p>
+                    <p className="text-slate-500 text-sm font-medium">{item.d}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right — Daily Digest visual */}
-          {/* ─────────────────────────────────────────────────────────────
-              TODO: Replace this placeholder with <DailyDigestPreview />
-              which already exists in your current page.tsx.
-              Just import and drop it in here.
-          ───────────────────────────────────────────────────────────── */}
-          <div className="bg-white/[0.03] border-2 border-dashed border-white/10 rounded-3xl aspect-[4/3] flex items-center justify-center">
-            <div className="text-center space-y-2 p-8">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto">
-                <Mail className="w-6 h-6 text-amber-400" />
-              </div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Drop in DailyDigestPreview</p>
-              <p className="text-slate-600 text-xs max-w-[160px] mx-auto">Component already exists in your codebase</p>
+          {/* RIGHT — THE VISUAL (Smartphone + Email Preview) */}
+          <div className="relative group">
+            {/* Ambient Amber Glow */}
+            <div className="absolute inset-0 bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+            {/* Smartphone Lock Screen */}
+            <div className="relative mx-auto w-[280px] h-[580px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden z-20 transform -rotate-3 group-hover:rotate-0 transition-transform duration-700">
+               {/* Lock Screen Header */}
+               <div className="pt-12 px-6 text-center">
+                  <p className="text-white/60 text-xs font-bold">Friday, March 27</p>
+                  <h3 className="text-6xl font-black text-white tracking-tighter mt-2">6:00</h3>
+               </div>
+
+               {/* Notifications */}
+               <div className="mt-12 px-4 space-y-3">
+                  <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-lg animate-bounce-slow">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px] text-white font-black">L</div>
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Lead2Project</p>
+                    </div>
+                    <p className="text-white font-bold text-sm leading-tight">Your Daily Digest is ready</p>
+                    <p className="text-white/60 text-xs mt-1">3 new leads, 2 overdue payments...</p>
+                  </div>
+               </div>
+            </div>
+
+            {/* Email Preview Card (Floating behind phone) */}
+            <div className="absolute top-20 -right-10 lg:-right-20 w-[380px] bg-[#161B26] border border-white/10 rounded-3xl shadow-2xl p-8 z-10 transform rotate-6 group-hover:rotate-3 transition-transform duration-700">
+               <div className="flex items-center gap-3 mb-8">
+                  <Mail className="w-5 h-5 text-amber-400" />
+                  <p className="text-white font-black text-sm tracking-tight">Today's Briefing</p>
+               </div>
+               
+               <div className="space-y-6">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Pending Revenue</p>
+                    <p className="text-4xl font-black text-amber-400 tracking-tighter">$37,194.00</p>
+                  </div>
+
+                  <div className="space-y-2 pt-4 border-t border-white/5">
+                    <div className="flex justify-between items-center text-sm">
+                       <span className="text-slate-400">New Leads</span>
+                       <span className="text-white font-bold">+3</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                       <span className="text-slate-400">Scheduled Today</span>
+                       <span className="text-white font-bold">5</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                     <div className="w-full h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xs uppercase tracking-widest">Open Dashboard</div>
+                  </div>
+               </div>
             </div>
           </div>
         </div>
@@ -574,75 +1024,101 @@ function DigestSection() {
     </section>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 7 — VS JOBBER COMPARISON
-// Status: Ready. No images needed.
+// SECTION 7 — THE "ALL-IN-ONE" UPGRADE
 // ─────────────────────────────────────────────────────────────────────────────
 function Comparison() {
   const { ref, visible } = useFadeIn();
 
-  const them = [
-    'Manual data entry for every lead',
-    'Days of onboarding and training',
-    'Overwhelming features you never use',
-    'High monthly cost + hidden fees',
-    'Built for office managers, not tradespeople',
-  ];
-  const us = [
-    'Customers enter their own data via QR',
-    'Set up in 2 minutes, live the same day',
-    'Focused tools that match how you work',
-    'Simple flat pricing, no surprises',
-    'Built specifically for service contractors',
+  const comparisons = [
+    { 
+      label: 'Digital Presence', 
+      them: 'Expensive Website + Hosting', 
+      us: 'One Link. Socials, QR, or Bio.' 
+    },
+    { 
+      label: 'Lead Capture', 
+      them: 'Contact forms that email you', 
+      us: 'Smart Link that builds the job' 
+    },
+    { 
+      label: 'Quoting', 
+      them: 'Manual PDF creation', 
+      us: 'AI-Drafted line items' 
+    },
+    { 
+      label: 'Visibility', 
+      them: 'Check 5 different apps', 
+      us: 'Track everything in one board' 
+    },
+    { 
+      label: 'Setup', 
+      them: 'Weeks of web design', 
+      us: 'Live in 2 minutes' 
+    },
   ];
 
   return (
-    <section className="py-28 px-6 bg-white border-t border-slate-100">
-      <div className="max-w-5xl mx-auto">
+    <section id="compare" className="py-32 px-6 bg-white border-t border-slate-100 overflow-hidden">
+      <div className="max-w-4xl mx-auto">
         <div
           ref={ref}
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
+          className="text-center mb-20"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s ease' }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-[0.92]">
-              Built for the truck,<br/>
-              <span className="text-blue-600">not the office.</span>
-            </h2>
-          </div>
+          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 mb-4 block underline underline-offset-4">The New Standard</span>
+          <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none">
+            No Website? <br/>
+            <span className="text-slate-400 font-medium">No Problem.</span>
+          </h2>
+          <p className="mt-8 text-slate-500 font-medium text-lg max-w-2xl mx-auto">
+            You don't need a $3,000 website. You need a **booking link** that works in your Instagram bio, Facebook page, and email signature. 
+            One link to capture, quote, and track every single dollar.
+          </p>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Them */}
-            <div className="rounded-3xl p-8 bg-slate-50 border border-slate-100">
-              <div className="flex items-center gap-2 mb-6">
-                <XCircle className="w-5 h-5 text-slate-400" />
-                <h4 className="text-lg font-bold text-slate-400">Legacy CRMs (Jobber, etc.)</h4>
+        {/* Comparison Table */}
+        <div className="relative z-10 space-y-3">
+          {comparisons.map((item, i) => (
+            <div 
+              key={i} 
+              className="group grid grid-cols-1 md:grid-cols-3 items-center p-6 md:p-10 rounded-[2.5rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500"
+              style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: `all 0.6s ease ${i * 0.1}s` }}
+            >
+              {/* Category Label */}
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 md:mb-0">
+                {item.label}
               </div>
-              <ul className="space-y-4">
-                {them.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-500 text-sm font-medium">
-                    <span className="text-red-400 mt-0.5 font-bold shrink-0">—</span> {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
 
-            {/* Us */}
-            <div className="rounded-3xl p-8 bg-slate-900 border border-slate-800 relative overflow-hidden">
-              <div className="absolute top-0 right-0 opacity-[0.06]"><Zap size={160} className="text-blue-400" /></div>
-              <div className="flex items-center gap-2 mb-6 relative z-10">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" />
-                <h4 className="text-lg font-black text-white">Lead2Project</h4>
+              {/* The "Them" side */}
+              <div className="flex items-center gap-3 text-slate-400 font-medium mb-4 md:mb-0 grayscale opacity-60">
+                <XCircle size={18} className="text-slate-300 shrink-0" />
+                <span className="text-sm line-through decoration-slate-300 underline-offset-2">{item.them}</span>
               </div>
-              <ul className="space-y-4 relative z-10">
-                {us.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-300 text-sm font-bold">
-                    <span className="text-blue-400 mt-0.5 shrink-0">✓</span> {item}
-                  </li>
-                ))}
-              </ul>
+
+              {/* The "Us" side */}
+              <div className="flex items-center gap-4 bg-blue-50 md:bg-transparent p-5 md:p-0 rounded-2xl md:rounded-none border border-blue-100 md:border-none shadow-sm md:shadow-none">
+                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-200">
+                  <Zap size={14} className="text-white fill-current" />
+                </div>
+                <span className="text-slate-900 font-black text-lg md:text-2xl tracking-tighter leading-none">
+                  {item.us}
+                </span>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
+
+        {/* Action Callout */}
+        <div className="mt-16 bg-slate-900 rounded-[3rem] p-8 md:p-12 text-center relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-8 opacity-10">
+             <Globe size={120} className="text-white" />
+           </div>
+           <h3 className="text-white text-2xl font-black mb-4 relative z-10">Ready to own your digital storefront?</h3>
+           <p className="text-slate-400 font-medium mb-8 relative z-10">Set up your link in under 2 minutes and start tracking jobs today.</p>
+           <Link href="/signup" className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-blue-500 transition-all active:scale-95 relative z-10">
+              Claim Your Link <ArrowRight size={18} />
+           </Link>
         </div>
       </div>
     </section>
@@ -650,90 +1126,162 @@ function Comparison() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECTION 8 — PRICING
-// Status: Ready. Update plan features / prices as needed.
+// SECTION 8 — PRICING (Basic & Pro Focus)
 // ─────────────────────────────────────────────────────────────────────────────
 function Pricing() {
   const { ref, visible } = useFadeIn();
 
   const plans = [
     {
-      name: 'Starter',
-      price: 29,
-      desc: 'Perfect for solo operators just getting organized.',
+      name: 'Basic',
+      price: 49,
+      desc: 'Your entire digital storefront and job tracking in one link.',
       highlight: false,
-      href: '/signup?plan=starter',
-      features: ['Custom booking link & QR code', 'Unlimited lead capture', 'Photo & video uploads', 'Lead board — cards + table view', 'Status tracking & notes', 'Branded confirmation emails', 'CSV export'],
+      cta: 'Start 14-Day Free Trial',
+      href: '/signup?plan=basic',
+      features: [
+        'Custom Booking Link (No Website Needed)',
+        'Branded QR Code for Trucks & Signs',
+        'Unlimited Lead Capture & Photo Uploads',
+        'Visual Lead Board (Kanban & Table)',
+        'Job Scheduling & Quote Builder',
+        'Custom Pipeline Stages & Task Lists',
+        'CSV Export for Bookkeeping',
+        'Unlimited Team Members'
+      ],
     },
     {
       name: 'Pro',
-      price: 79,
-      desc: 'Full job management + AI tools.',
+      price: 99,
+      desc: 'The complete AI-powered office for contractors who want to scale.',
       highlight: true,
+      cta: 'Go Pro — 14 Days Free',
       href: '/signup?plan=pro',
-      features: ['Everything in Starter', 'Convert leads → full projects', 'Quotes & payment tracking', 'Tasks, scheduling & crew assignment', 'AI Brief on every lead ✦ PRO', 'AI quote generator from photos ✦ PRO', 'AI Assistant — ask anything ✦ PRO', 'Daily Digest email ✦ PRO'],
+      features: [
+        'Everything in Basic',
+        'AI Quote Generator from Photos ✦',
+        'AI Project Briefs for Crews ✦',
+        '6AM Daily Digest Email Briefing ✦',
+        'One-Click Email Sending (Quotes/Reminders)',
+        'Full Email Outbox & Sent History',
+        'Custom Email Templates & Branding',
+        'AI Assistant — Ask Anything ✦'
+      ],
     },
   ];
 
   return (
-    <section id="pricing" className="py-28 px-6 bg-[#080C14] border-t border-white/[0.06]">
-      <div className="max-w-5xl mx-auto">
+    <section id="pricing" className="py-32 px-6 bg-[#080C14] border-t border-white/[0.06] overflow-hidden">
+      <div className="max-w-6xl mx-auto relative">
+        {/* Decorative Glow */}
+        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-violet-600/5 blur-[100px] rounded-full pointer-events-none" />
+
         <div
           ref={ref}
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
+          style={{ 
+            opacity: visible ? 1 : 0, 
+            transform: visible ? 'none' : 'translateY(24px)', 
+            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+          }}
         >
-          <div className="text-center mb-16">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4">Pricing</p>
-            <h2 className="text-5xl font-black text-white tracking-tight leading-[0.92] mb-4">
-              One job pays for<br/>the whole year.
+          <div className="text-center mb-20">
+            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-4 block">Simple Monthly Billing</span>
+            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-6">
+              One job pays for<br/>
+              <span className="text-slate-500">the whole year.</span>
             </h2>
-            <p className="text-slate-400 text-lg font-medium">Simple pricing. No setup fees. 14-day free trial.</p>
+            <p className="text-slate-400 text-lg font-medium max-w-xl mx-auto">
+              Choose the plan that fits your stage. No setup fees, no contracts, cancel anytime.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {plans.map(plan => (
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-start">
+            {plans.map((plan) => (
               <div key={plan.name}
-                className={`rounded-3xl p-10 border relative transition-all ${
+                className={`group rounded-[3rem] p-10 border transition-all duration-500 relative ${
                   plan.highlight
-                    ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-600/20'
-                    : 'bg-white/[0.03] border-white/[0.08] hover:border-white/[0.14]'
+                    ? 'bg-[#0F172A] border-blue-500 shadow-2xl shadow-blue-900/20 md:scale-105 z-10'
+                    : 'bg-white/[0.02] border-white/[0.08] hover:border-white/20'
                 }`}>
+                
                 {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-white text-blue-600 text-[10px] font-black uppercase tracking-[0.18em] px-5 py-1.5 rounded-full whitespace-nowrap">
-                    Most Popular
+                  <div className="absolute -top-4 left-10 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-full shadow-xl">
+                    Recommended for Growth
                   </div>
                 )}
-                <p className={`text-[11px] font-black uppercase tracking-widest mb-4 ${plan.highlight ? 'text-blue-100' : 'text-slate-400'}`}>{plan.name}</p>
-                <div className={`flex items-baseline gap-1 mb-2 ${plan.highlight ? 'text-white' : 'text-white'}`}>
-                  <span className="text-6xl font-black tracking-tight">${plan.price}</span>
-                  <span className={`font-bold ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>/mo</span>
+
+                <div className="mb-8">
+                  <h3 className={`text-xl font-black uppercase tracking-widest ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-7xl font-black text-white tracking-tighter">${plan.price}</span>
+                    <span className="text-slate-500 font-bold text-lg">/mo</span>
+                  </div>
                 </div>
-                <p className={`text-sm mb-8 font-medium ${plan.highlight ? 'text-blue-100' : 'text-slate-500'}`}>{plan.desc}</p>
+
+                <p className="text-slate-400 font-medium mb-10 text-lg leading-relaxed min-h-[60px]">
+                  {plan.desc}
+                </p>
+
                 <Link href={plan.href}
-                  className={`block text-center w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-95 mb-10 ${
+                  className={`block text-center w-full py-5 rounded-2xl font-black text-sm tracking-widest uppercase transition-all active:scale-95 mb-10 ${
                     plan.highlight
-                      ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-xl'
-                      : 'bg-white/[0.08] text-white hover:bg-white/[0.14] border border-white/10'
+                      ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-600/30'
+                      : 'bg-white text-slate-900 hover:bg-slate-100'
                   }`}>
-                  Start Free Trial
+                  {plan.cta}
                 </Link>
-                <ul className="space-y-3.5">
-                  {plan.features.map(f => (
-                    <li key={f} className={`flex items-start gap-3 text-sm font-medium ${plan.highlight ? 'text-blue-100' : 'text-slate-400'}`}>
-                      <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.highlight ? 'bg-white/20' : 'bg-white/10'}`}>
-                        <Check className="w-2.5 h-2.5" strokeWidth={3}/>
-                      </div>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-6 border-b border-white/5 pb-2">What's included:</p>
+                  <ul className="grid gap-4">
+                    {plan.features.map(f => (
+                      <li key={f} className="flex items-start gap-3">
+                        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                          f.includes('✦') ? 'bg-violet-500/20' : plan.highlight ? 'bg-blue-500/20' : 'bg-white/10'
+                        }`}>
+                          <Check className={`w-3 h-3 ${
+                            f.includes('✦') ? 'text-violet-400' : plan.highlight ? 'text-blue-400' : 'text-slate-400'
+                          }`} strokeWidth={4}/>
+                        </div>
+                        <span className={`text-sm font-semibold tracking-tight ${
+                          f.includes('✦') ? 'text-violet-200' : 'text-slate-300'
+                        }`}>
+                          {f.replace(' ✦', '')}
+                          {f.includes('✦') && (
+                            <span className="ml-2 text-[8px] bg-violet-500/20 text-violet-400 px-1.5 py-0.5 rounded-md font-black border border-violet-500/30 uppercase tracking-tighter">
+                              AI
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             ))}
           </div>
 
-          <p className="text-center mt-10 text-[11px] text-slate-600 font-bold uppercase tracking-[0.18em]">
-            Secure checkout via Stripe · Cancel anytime
-          </p>
+          {/* Trust Badges */}
+          <div className="mt-20 flex flex-col items-center justify-center gap-8">
+            <div className="flex -space-x-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="w-12 h-12 rounded-full border-4 border-[#080C14] bg-slate-800 overflow-hidden shadow-xl">
+                  <img src={`https://i.pravatar.cc/100?img=${i+15}`} alt="contractor" />
+                </div>
+              ))}
+              <div className="w-12 h-12 rounded-full border-4 border-[#080C14] bg-blue-600 flex items-center justify-center text-xs font-black text-white shadow-xl">+120</div>
+            </div>
+            <p className="text-slate-500 font-bold tracking-tight text-center">
+              Join <span className="text-white">120+ contractors</span> switching to Lead2Project this month.
+            </p>
+            <div className="flex items-center gap-10 opacity-30 grayscale pointer-events-none">
+               <span className="text-white font-black tracking-tighter text-xl uppercase">Stripe Secure</span>
+               <span className="text-white font-black tracking-tighter text-xl uppercase">256-Bit SSL</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
