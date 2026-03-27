@@ -262,7 +262,7 @@ Rules:
 - The headline should capture the core situation.
 - SUGGESTED UPDATES: Based on the request, suggest a schedule (YYYY-MM-DD), a quote total, and an assignee ID from the list above.
 
-Respond ONLY with this JSON (all fields required):
+CRITICAL: Respond with ONLY the raw JSON object below. No markdown. No code fences. No explanation before or after. Start your response with { and end with }. Nothing else:
 {
   "headline": "punchy status sentence",
   "summary": "2-3 sentence context paragraph",
@@ -314,8 +314,14 @@ Respond ONLY with this JSON (all fields required):
     if (content.type !== 'text') throw new Error('Unexpected response type');
 
     let brief;
-    try {
-      const clean = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+   try {
+  // Extract only the JSON object — ignore any markdown or prose before/after
+  const raw = content.text;
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON object found in response');
+  const clean = raw.slice(start, end + 1);
+  brief = JSON.parse(clean);
       brief = JSON.parse(clean);
       brief.customer_name = customer_name;
       brief.is_project = !!project_id;

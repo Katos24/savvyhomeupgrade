@@ -29,7 +29,9 @@ export default function ConvertToProjectButton({
 
   const handleConvert = async () => {
     setIsConverting(true);
+
     try {
+      // ── Step 1: Create the project ─────────────────────────────────────────
       const response = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,51 +46,69 @@ export default function ConvertToProjectButton({
 
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        toast.success(`Project #${result.project_number} created!`);
-        setShowConfirm(false);
+      if (!response.ok || !result.success) {
+        toast.error(result.error || 'Failed to create project');
+        return;
+      }
 
-        // Auto-load matching quote template if category has one
+      // ── Step 2: Close modal + show toast immediately ───────────────────────
+      // Do this BEFORE refresh so the toast isn't killed by unmount
+      setShowConfirm(false);
+      toast.success(`Project #${result.project_number} created!`);
+
+      // ── Step 3: Auto-load quote template (optional, non-blocking) ──────────
+      // Pull slug from lead object first, fall back to URL parsing
+      const companySlug =
+        lead.company_slug ||
+        lead.slug ||
+        window.location.pathname.split('/').find((s: string) =>
+          s.length > 0 && s !== 'dashboard' && s !== 'leads' && s !== 'settings'
+        ) ||
+        '';
+
+      if (companySlug && category) {
         try {
-          const companySlug = window.location.pathname.split('/')[1];
           const tmplRes = await fetch(`/api/company/${companySlug}/quote-templates`);
-          const tmplData = await tmplRes.json();
+          if (tmplRes.ok) {
+            const tmplData = await tmplRes.json();
+            if (tmplData.success) {
+              const match = (tmplData.templates || []).find(
+                (t: any) => t.category === category
+              );
+              if (match?.items?.length > 0) {
+                const items = match.items.map((item: any, i: number) => ({
+                  id: Date.now() + i,
+                  description: item.description,
+                  quantity: item.quantity || 1,
+                  unitPrice: item.unitPrice || item.amount / (item.quantity || 1),
+                  amount: item.amount,
+                }));
+                const total = items.reduce((s: number, i: any) => s + i.amount, 0);
 
-          if (tmplData.success) {
-            const match = (tmplData.templates || []).find(
-              (t: any) => t.category === category
-            );
-            if (match) {
-              const items = match.items.map((item: any, i: number) => ({
-                id: Date.now() + i,
-                description: item.description,
-                quantity: item.quantity || 1,
-                unitPrice: item.unitPrice || item.amount / (item.quantity || 1),
-                amount: item.amount,
-              }));
-              const total = items.reduce((s: number, i: any) => s + i.amount, 0);
-              await fetch('/api/leads/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  id: lead.id,
-                  action: 'save_quote',
-                  quote_data: items,
-                  quote_total: total,
-                  user_name: currentUser?.name || 'Unknown',
-                  user_email: currentUser?.email || '',
-                }),
-              });
+                await fetch('/api/leads/update', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id: lead.id,
+                    action: 'save_quote',
+                    quote_data: items,
+                    quote_total: total,
+                    user_name: currentUser?.name || 'Unknown',
+                    user_email: currentUser?.email || '',
+                  }),
+                });
+              }
             }
           }
         } catch (e) {
-          console.error('Auto-save quote failed:', e);
+          // Non-critical — project was still created successfully
+          console.error('Auto-load quote template failed (non-critical):', e);
         }
-
-        await onRefresh();
-      } else {
-        toast.error(result.error || 'Failed to create project');
       }
+
+      // ── Step 4: Refresh the lead board ────────────────────────────────────
+      await onRefresh();
+
     } catch (error) {
       console.error('Conversion error:', error);
       toast.error('Failed to create project');
@@ -102,14 +122,18 @@ export default function ConvertToProjectButton({
       {/* ── Trigger button ── */}
       <button
         onClick={() => setShowConfirm(true)}
-className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black rounded-lg transition active:scale-95 shadow-lg shadow-emerald-500/30"      >
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black rounded-lg transition active:scale-95 shadow-lg shadow-emerald-500/30"
+      >
         <Rocket className="w-3.5 h-3.5" />
         Convert to Project
       </button>
 
       {/* ── Confirm modal ── */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+          onClick={() => !isConverting && setShowConfirm(false)}
+        >
           <div
             className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
