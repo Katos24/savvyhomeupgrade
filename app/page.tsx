@@ -8,7 +8,8 @@ import {
   Truck, Instagram, Facebook, AtSign, Globe,
   User, Phone, FileText, ChevronRight, CheckCircle,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
-  Calendar, Clock, SlidersHorizontal, Filter
+  Calendar, Clock, SlidersHorizontal, Filter,
+  MapPin, HomeIcon, Image as ImageIcon, Upload
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -466,68 +467,113 @@ function TrustBar() {
     </div>
   );
 }
+// ADD these to your existing lucide-react import line (merge with what you have):
+// MapPin, Home, Calendar, Clock, ImageIcon (imported as "Image as ImageIcon"), Upload
+//
+// Full import line should include at minimum:
+// import {
+//   ArrowRight, Zap, Check, Menu, X, Star, Layout,
+//   QrCode, Bot, Mail, BarChart2, ChevronDown,
+//   Truck, Instagram, Facebook, AtSign, Globe,
+//   User, Phone, FileText, ChevronRight, CheckCircle,
+//   Search, LayoutGrid, List, Plus, AlignLeft,
+//   Calendar, Clock, MapPin, Home, Image as ImageIcon, Upload
+// } from 'lucide-react';
+
 // ─────────────────────────────────────────────────────────────────────────────
-// STEP 2 — FAST AUTO-ANIMATING FORM
+// STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
+// Replace the existing FastDemoForm function with this entire block
 // ─────────────────────────────────────────────────────────────────────────────
 function FastDemoForm() {
-  const FIELDS = [
-    { key: 'name',    label: 'Full Name',    value: 'Sarah Mitchell',  icon: <User size={14} className="text-slate-400 shrink-0" /> },
-    { key: 'email',   label: 'Email',        value: 'sarah.m@gmail.com', icon: <Mail size={14} className="text-slate-400 shrink-0" /> },
-    { key: 'phone',   label: 'Phone',        value: '(718) 552-8844',  icon: <Phone size={14} className="text-slate-400 shrink-0" /> },
-    { key: 'service', label: 'Service',      value: 'Roofing',         icon: <QrCode size={14} className="text-slate-400 shrink-0" />, isSelect: true },
-    { key: 'desc',    label: 'Project Notes',value: "My flat roof is pooling water after every rain. There's visible cracking along the edge near the chimney.", icon: <FileText size={14} className="text-slate-400 shrink-0" />, isTextarea: true },
-  ];
-
-  const [vals, setVals] = useState<Record<string,string>>({ name:'', email:'', phone:'', service:'', desc:'' });
-  const [activeIdx, setActiveIdx] = useState(-1);
-  const [done, setDone] = useState(false);
+  type Phase = 'idle'|'typing-address'|'typing-zip'|'pick-date'|'pick-time'|'dropping-photo'|'done'|'reset';
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [address, setAddress] = useState('');
+  const [zip, setZip] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [photoVisible, setPhotoVisible] = useState(false);
+  const [photoDrop, setPhotoDrop] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const ADDRESS = '42 Maple Ave, Brooklyn NY';
+  const ZIP = '11201';
+
   useEffect(() => {
-    let fieldIdx = 0;
-    let charIdx = 0;
     let running = true;
 
-    function reset() {
-      setVals({ name:'', email:'', phone:'', service:'', desc:'' });
-      setActiveIdx(-1);
-      setDone(false);
-      fieldIdx = 0; charIdx = 0;
-      timerRef.current = setTimeout(tick, 900);
-    }
-
-    function tick() {
+    function go(fn: () => void, ms: number) {
       if (!running) return;
-      const field = FIELDS[fieldIdx];
-      if (!field) {
-        setActiveIdx(-1);
-        setDone(true);
-        timerRef.current = setTimeout(reset, 2800);
-        return;
-      }
-      setActiveIdx(fieldIdx);
-      if (field.isSelect) {
-        setVals(v => ({ ...v, [field.key]: field.value }));
-        timerRef.current = setTimeout(() => { fieldIdx++; charIdx = 0; tick(); }, 420);
-        return;
-      }
-      charIdx++;
-      setVals(v => ({ ...v, [field.key]: field.value.slice(0, charIdx) }));
-      if (charIdx < field.value.length) {
-        timerRef.current = setTimeout(tick, field.isTextarea ? 18 : 38);
-      } else {
-        timerRef.current = setTimeout(() => { fieldIdx++; charIdx = 0; tick(); }, 340);
-      }
+      timerRef.current = setTimeout(fn, ms);
     }
 
-    timerRef.current = setTimeout(tick, 500);
+    function typeStr(target: string, setter: (v: string) => void, speed: number, onDone: () => void) {
+      let i = 0;
+      function step() {
+        if (!running) return;
+        i++;
+        setter(target.slice(0, i));
+        if (i < target.length) timerRef.current = setTimeout(step, speed + Math.random() * 12);
+        else go(onDone, 350);
+      }
+      go(step, 280);
+    }
+
+    function run() {
+      setPhase('idle');
+      setAddress(''); setZip(''); setDate(''); setTime('');
+      setPhotoVisible(false); setPhotoDrop(false);
+
+      go(() => {
+        setPhase('typing-address');
+        typeStr(ADDRESS, setAddress, 32, () => {
+          setPhase('typing-zip');
+          typeStr(ZIP, setZip, 50, () => {
+            setPhase('pick-date');
+            go(() => {
+              setDate('Apr 12');
+              setPhase('pick-time');
+              go(() => {
+                setTime('Morning');
+                setPhase('dropping-photo');
+                go(() => {
+                  setPhotoVisible(true);
+                  go(() => {
+                    setPhotoDrop(true);
+                    setPhase('done');
+                    go(run, 3000);
+                  }, 550);
+                }, 480);
+              }, 480);
+            }, 480);
+          });
+        });
+      }, 600);
+    }
+
+    run();
     return () => { running = false; if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
-  const progress = done ? 100 : activeIdx < 0 ? 0 : Math.round((activeIdx / FIELDS.length) * 100);
+  const cursor = (active: boolean) =>
+    active ? <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" /> : null;
+
+  const box = (active: boolean, filled: boolean) =>
+    `w-full border rounded-xl px-3 py-2.5 flex items-center gap-2 transition-all duration-150 bg-slate-50 ${
+      active ? 'border-blue-400 ring-2 ring-blue-50' : filled ? 'border-slate-200' : 'border-slate-100'
+    }`;
+
+  const progress =
+    phase === 'done' ? 100 :
+    phase === 'dropping-photo' ? 78 :
+    phase === 'pick-time' ? 62 :
+    phase === 'pick-date' ? 46 :
+    phase === 'typing-zip' ? 30 :
+    phase === 'typing-address' ? 12 : 0;
 
   return (
     <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden max-w-sm mx-auto">
+
+      {/* App header */}
       <div className="bg-[#f4f5f9] px-5 py-3.5 border-b border-slate-200/70 flex items-center gap-3">
         <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center">
           <span className="text-[9px] font-black text-slate-700">RL</span>
@@ -535,74 +581,154 @@ function FastDemoForm() {
         <p className="text-[12px] font-bold text-slate-800">Ridge Line Roofing</p>
       </div>
 
+      {/* Step indicator — step 1 done, step 2 active */}
       <div className="px-5 pt-4 pb-2">
         <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+            <Check size={11} className="text-white" strokeWidth={3} />
+          </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-through decoration-slate-300">Your Info</span>
+          <ChevronRight size={10} className="text-slate-300 shrink-0" />
           <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-black text-white">1</span>
+            <span className="text-[10px] font-black text-white">2</span>
           </div>
-          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Your Info</span>
-          <div className="flex-1 h-px bg-slate-200" />
-          <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-bold text-slate-400">2</span>
-          </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Details</span>
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Details</span>
         </div>
         <div className="h-0.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+          <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      <div className="px-5 pb-5 pt-1 space-y-2.5">
-        {FIELDS.map((f, i) => {
-          const isActive = activeIdx === i;
-          const hasVal = vals[f.key].length > 0;
-          const box = `border rounded-xl transition-all duration-150 bg-slate-50 ${
-            isActive ? 'border-blue-400 ring-2 ring-blue-50' : hasVal ? 'border-slate-200' : 'border-slate-100'
-          }`;
-          return (
-            <div key={f.key}>
-              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{f.label}</label>
-              {f.isTextarea ? (
-                <div className={`${box} px-3 py-2 min-h-[56px]`}>
-                  <div className="flex gap-2">
-                    <div className="mt-0.5 shrink-0">{f.icon}</div>
-                    <p className="text-[12px] text-slate-700 leading-snug">
-                      {vals[f.key] || <span className="text-slate-300">Describe what you need done...</span>}
-                      {isActive && <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" />}
-                    </p>
-                  </div>
-                </div>
-              ) : f.isSelect ? (
-                <div className={`${box} px-3 py-2.5 flex items-center justify-between`}>
-                  <div className="flex items-center gap-2">
-                    {f.icon}
-                    <span className={`text-[12px] font-medium ${hasVal ? 'text-slate-800' : 'text-slate-400'}`}>
-                      {vals[f.key] || 'Select a service...'}
-                    </span>
-                  </div>
-                  <ChevronDown size={13} className={hasVal ? 'text-blue-400' : 'text-slate-300'} />
-                </div>
-              ) : (
-                <div className={`${box} px-3 py-2.5 flex items-center gap-2`}>
-                  {f.icon}
-                  <span className="text-[12px] font-medium text-slate-800 min-h-[16px]">
-                    {vals[f.key] || <span className="text-slate-300">{f.value}</span>}
-                    {isActive && <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" />}
-                  </span>
-                </div>
-              )}
+      {/* Saved confirmation banner */}
+      <div className="mx-5 mb-3 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center gap-2">
+        <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+          <Check size={9} className="text-white" strokeWidth={3} />
+        </div>
+        <p className="text-[10px] font-bold text-emerald-700 leading-tight">Your request is saved! Add details for a faster quote.</p>
+      </div>
+
+      <div className="px-5 pb-5 space-y-2.5">
+
+        {/* Address field */}
+        <div>
+          <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
+            Address <span className="text-red-400">*</span>
+          </label>
+          <div className={box(phase === 'typing-address', address.length > 0)}>
+            <MapPin size={13} className="text-red-400 shrink-0" />
+            <span className="text-[12px] font-medium text-slate-800 min-h-[16px] flex-1 truncate">
+              {address || <span className="text-slate-300">Start typing your address...</span>}
+              {cursor(phase === 'typing-address')}
+            </span>
+          </div>
+        </div>
+
+        {/* Zip + Apt row */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Zip Code</label>
+            <div className={box(phase === 'typing-zip', zip.length > 0)}>
+              <MapPin size={13} className="text-emerald-400 shrink-0" />
+              <span className="text-[12px] font-medium text-slate-800 min-h-[16px]">
+                {zip || <span className="text-slate-300">12345</span>}
+                {cursor(phase === 'typing-zip')}
+              </span>
             </div>
-          );
-        })}
-        <button className={`w-full py-3 rounded-xl text-[13px] font-black flex items-center justify-center gap-2 transition-all duration-500 ${done ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'}`}>
-          {done ? <><Check size={15} /> Submitted</> : <>Continue <ChevronRight size={15} /></>}
+          </div>
+          <div>
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Unit / Apt</label>
+            <div className={box(false, false)}>
+              <HomeIcon size={13} className="text-slate-300 shrink-0" />
+              <span className="text-[12px] text-slate-300">Apt 4B</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Date + Time row */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Preferred Date</label>
+            <div className={box(phase === 'pick-date', date.length > 0)}>
+              <Calendar size={13} className="text-emerald-500 shrink-0" />
+              <span className={`text-[12px] font-medium min-h-[16px] transition-all ${date ? 'text-slate-800' : 'text-slate-300'}`}>
+                {date || 'Pick date'}
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Preferred Time</label>
+            <div className={box(phase === 'pick-time', time.length > 0)}>
+              <Clock size={13} className="text-blue-400 shrink-0" />
+              <span className={`text-[12px] font-medium min-h-[16px] transition-all ${time ? 'text-slate-800' : 'text-slate-300'}`}>
+                {time || 'Morning...'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Photo upload zone */}
+        <div>
+          <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
+            Photos <span className="font-normal text-slate-400 normal-case">— helps us quote faster</span>
+          </label>
+          <div className={`border-2 border-dashed rounded-xl transition-all duration-400 ${
+            photoDrop
+              ? 'border-blue-400 bg-blue-50'
+              : photoVisible
+              ? 'border-blue-300 bg-blue-50/40'
+              : 'border-slate-200 bg-slate-50'
+          }`}>
+            {photoDrop ? (
+              // Photo landed
+              <div className="p-2">
+                <div className="relative w-full h-[72px] rounded-lg overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-b from-sky-300 via-slate-400 to-slate-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-slate-700" style={{ clipPath: 'polygon(0 100%, 50% 20%, 100% 100%)' }} />
+                  <div className="absolute bottom-0 inset-x-0 bg-black/50 px-2 py-1">
+                    <p className="text-white text-[8px] font-medium">roof-photo.jpg</p>
+                  </div>
+                </div>
+              </div>
+            ) : photoVisible ? (
+              // Dragging in — bouncing icon
+              <div className="py-4 text-center">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1.5 animate-bounce">
+                  <ImageIcon size={14} className="text-blue-500" />
+                </div>
+                <p className="text-[10px] font-bold text-blue-500">Drop photo here...</p>
+              </div>
+            ) : (
+              // Idle
+              <div className="py-4 text-center">
+                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1.5">
+                  <ImageIcon size={14} className="text-slate-400" />
+                </div>
+                <p className="text-[10px] font-semibold text-slate-500">Click or drag photos here</p>
+                <p className="text-[8px] text-slate-400 mt-0.5">Max 50MB per file</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button className={`w-full py-3 rounded-xl text-[13px] font-black flex items-center justify-center gap-2 transition-all duration-500 shadow-sm ${
+          phase === 'done' ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'
+        }`}>
+          {phase === 'done'
+            ? <><Check size={14} strokeWidth={3} /> Details Submitted!</>
+            : <><Upload size={14} /> Submit Details</>
+          }
         </button>
+
+        <div className="text-center">
+          <button className="text-[10px] text-slate-400 underline underline-offset-2">Skip for now</button>
+        </div>
+
         <p className="text-center text-[9px] text-slate-400">lead2project.com — Private</p>
       </div>
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW IT WORKS
 // ─────────────────────────────────────────────────────────────────────────────
