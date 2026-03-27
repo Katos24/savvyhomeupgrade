@@ -9,7 +9,7 @@ import {
   User, Phone, FileText, ChevronRight, CheckCircle,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
   Calendar, Clock, SlidersHorizontal, Filter,
-  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera
+  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -183,7 +183,7 @@ function HeroMockup() {
 
               {[
                 { name: 'John Simpson',  status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Unassigned', date: 'Mar 31', time: '8:15 AM',  amount: '$74',     amountColor: '#fff',     amountLabel: 'Unpaid'  },
-                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex Katos', date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
+                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex K', date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
                 { name: 'Maria Reyes',   status: 'Contacted',   statusBg: 'rgba(99,102,241,0.15)',  statusColor: '#818cf8', borderColor: '#6366f1', cardBg: '#09090f', cat: 'Gutters',  assign: 'Tony',       date: 'Apr 2',  time: '10:00 AM', amount: '$1,200', amountColor: '#fff',     amountLabel: 'Unpaid'  },
                 { name: 'Tony Marino',   status: 'In Progress', statusBg: 'rgba(245,158,11,0.15)',  statusColor: '#fbbf24', borderColor: '#f59e0b', cardBg: '#0f0d07', cat: 'Siding',   assign: 'Mike',       date: 'Apr 5',  time: '9:00 AM',  amount: '$6,400', amountColor: '#fbbf24', amountLabel: 'Partial' },
                 { name: 'Carl Bennett',  status: 'Quoted',      statusBg: 'rgba(139,92,246,0.15)',  statusColor: '#a78bfa', borderColor: '#8b5cf6', cardBg: '#0a0810', cat: 'Windows',  assign: 'Unassigned', date: 'Apr 10', time: '1:00 PM',  amount: '$2,800', amountColor: '#fff',     amountLabel: 'Unpaid'  },
@@ -343,110 +343,122 @@ function HeroMockup() {
   );
 }
 
-/// ─────────────────────────────────────────────────────────────────────────────
-// UPDATED HERO — LIGHT MODE & HIGH CONVERSION
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO — light bg, emotional urgency, sell against spreadsheets
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { 
-    const t = setTimeout(() => setMounted(true), 60); 
-    return () => clearTimeout(t); 
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 60);
+    return () => clearTimeout(t);
   }, []);
 
   return (
     <section className="relative min-h-screen bg-slate-50 flex flex-col overflow-hidden">
-      {/* Subtle Grid Pattern for Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3 Opercent3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} 
-      />
-      
-      {/* Soft radial glow to keep it premium */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-radial from-blue-100/40 to-transparent pointer-events-none" />
+
+      {/* Subtle texture */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.018]"
+        style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+
+      {/* Blue ambient top */}
+      <div className="absolute top-0 right-0 w-[600px] h-[500px] bg-blue-100/60 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-indigo-100/40 blur-[100px] rounded-full pointer-events-none" />
 
       <Nav />
 
       <div className="relative z-10 flex-1 flex items-center">
-        <div className="max-w-7xl mx-auto px-6 w-full pt-32 pb-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-6xl mx-auto px-6 w-full pt-28 pb-16">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
 
-            {/* LEFT copy */}
-            <div className="space-y-10">
+            {/* LEFT — copy */}
+            <div className="space-y-8">
+
+              {/* Badge */}
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(12px)', transition:'all 0.6s ease' }}>
-                <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-600/20 text-blue-700 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
-                  <Sparkles className="w-3.5 h-3.5 fill-current" /> Replace Your Website
+                <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-600/20 text-blue-700 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.18em]">
+                  <Zap className="w-3 h-3 fill-current" /> Built for contractors
                 </span>
               </div>
 
-              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.08s' }}>
-                <h1 className="text-[64px] md:text-[84px] font-[1000] text-slate-900 leading-[0.85] tracking-[-0.05em]">
-                  Your Link.<br/>
-                  Your Jobs.<br/>
-                  <span className="text-blue-600">Zero Effort.</span>
-                </h1>
-              </div>
+              {/* Headline — High impact, sharp focus */}
+<div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.08s' }}>
+  <h1 className="text-[52px] md:text-[72px] font-[1000] text-slate-900 leading-[0.85] tracking-[-0.05em]">
+    Stop running your<br/>
+    business out of<br/>
+    <span className="text-blue-600">a spreadsheet.</span>
+  </h1>
+</div>
 
-              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.16s' }}>
-                <p className="text-[20px] text-slate-600 leading-snug max-w-[480px] font-medium">
-                  Don't waste $3,000 on a website. One link turns your Instagram, Facebook, and Truck Wraps into a 24/7 sales machine.
-                </p>
-                
-                {/* The "Where it works" Pills */}
-                <div className="mt-8 flex flex-wrap gap-2">
-                  {[
-                    { icon: <Truck size={14} />,     label: 'Truck Wrap' },
-                    { icon: <Instagram size={14} />, label: 'Social Bio' },
-                    { icon: <AtSign size={14} />,    label: 'Email Sig' },
-                    { icon: <CheckCircle size={14} />, label: 'No Website Needed' },
-                  ].map(({ icon, label }) => (
-                    <div key={label} className="inline-flex items-center gap-2 bg-white border border-slate-200 shadow-sm text-slate-700 px-3.5 py-2 rounded-xl text-[13px] font-bold">
-                      <span className="text-blue-500">{icon}</span> {label}
-                    </div>
-                  ))}
-                </div>
-              </div>
+{/* Sub — The "Transformation" Copy */}
+<div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.16s' }}>
+  <p className="text-[19px] text-slate-600 leading-relaxed max-w-[480px] font-medium">
+    Spreadsheets don't send reminders or draft quotes. 
+    Lead2Project automates your office work so you can focus on the job site. 
+    <span className="text-slate-900 font-bold italic"> One link, one dashboard, done.</span>
+  </p>
 
+  {/* Refined Outcome Pills — More "Result" focused */}
+  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[500px]">
+    {[
+      { stat: 'No More', thing: 'leads lost to missed calls', icon: <PhoneOff className="w-3 h-3"/> },
+      { stat: '60 Sec',  thing: 'AI quotes from job photos', icon: <Sparkles className="w-3 h-3"/> },
+      { stat: '1 Click', thing: 'to send & track follow-ups', icon: <Zap className="w-3 h-3"/> },
+      { stat: 'Daily',   thing: '6AM briefing on your day', icon: <Calendar className="w-3 h-3"/> },
+    ].map(({ stat, thing, icon }) => (
+      <div key={thing} className="group flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm hover:border-blue-400 hover:shadow-md transition-all duration-300">
+        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+          {icon}
+        </div>
+        <div>
+          <p className="text-[13px] font-black text-slate-900 leading-none mb-1">{stat}</p>
+          <p className="text-[11px] text-slate-500 font-bold leading-none">{thing}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+              {/* CTAs */}
               <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.24s' }}>
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Link href="/signup"
-                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl text-[16px] font-black shadow-xl shadow-blue-600/30 transition-all active:scale-95">
-                    Claim Your Link <ArrowRight size={18} strokeWidth={3}/>
+                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl text-[15px] font-black shadow-xl shadow-blue-600/25 hover:-translate-y-0.5 transition-all active:scale-95">
+                    Get Started Free <ArrowRight size={17}/>
                   </Link>
                   <Link href="/demo"
-                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-900 px-10 py-5 rounded-2xl text-[16px] font-black transition-all">
-                    See It In Action
+                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 px-8 py-4 rounded-2xl text-[15px] font-bold transition-all shadow-sm">
+                    <Layout className="w-4 h-4 text-slate-400" /> See Live Demo
                   </Link>
                 </div>
-                
-                <div className="mt-8 flex items-center gap-4 border-t border-slate-200 pt-8">
+
+                {/* Social proof */}
+                <div className="mt-6 flex items-center gap-4 pt-6 border-t border-slate-200">
                   <div className="flex -space-x-2">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-50 bg-slate-200 overflow-hidden shadow-sm">
-                        <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="user" />
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="w-9 h-9 rounded-full border-2 border-slate-50 bg-slate-200 overflow-hidden shadow-sm">
+                        <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="" />
                       </div>
                     ))}
                   </div>
                   <div>
-                    <div className="flex gap-0.5 text-amber-500 mb-0.5">
-                      {[...Array(5)].map((_,i) => <Star key={i} size={14} fill="currentColor"/>)}
+                    <div className="flex gap-0.5 text-amber-400 mb-1">
+                      {[...Array(5)].map((_,i) => <Star key={i} size={12} fill="currentColor"/>)}
                     </div>
-                    <p className="text-[13px] text-slate-500 font-bold">"Took 2 minutes to set up. Closed a job 20 mins later."</p>
+                    <p className="text-[12px] text-slate-500 font-bold">"Set up in 2 minutes. Closed a job the same afternoon."</p>
+                  </div>
+                  <div className="ml-auto hidden sm:block">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">14-day free trial</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No credit card</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT — The Mockup in Light Mode */}
-            <div style={{ 
-              opacity: mounted?1:0, 
-              transform: mounted?'none':'translateY(24px) scale(0.97)', 
-              transition:'all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s', 
-              position: 'relative'
-            }}>
-               <div className="relative group">
-                  {/* Outer shadow/glow for the mockup */}
-                  <div className="absolute -inset-4 bg-blue-600/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <HeroMockup />
-               </div>
+            {/* RIGHT — mockup with mobile scale */}
+            <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(24px) scale(0.97)', transition:'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s', position: 'relative' }}
+              className="pb-10">
+              <div className="scale-[0.52] origin-top-left sm:scale-[0.72] md:scale-[0.88] lg:scale-100 -mb-72 sm:-mb-44 md:-mb-20 lg:mb-0">
+                <HeroMockup />
+              </div>
             </div>
 
           </div>
@@ -455,7 +467,6 @@ function Hero() {
     </section>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // TRUST BAR — LIGHT EDITION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -480,6 +491,8 @@ function TrustBar() {
     </div>
   );
 }
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
@@ -740,8 +753,8 @@ function HowItWorks() {
     { 
       number: '01', 
       color: 'blue', 
-      title: 'Customer scans QR', 
-      desc: 'Your branded QR lives on your truck, yard sign, or business card. One scan opens your custom form — no app download required.', 
+      title: 'Customer scans QR or clicks link', 
+  desc: 'Print it on your truck, stick it on a yard sign, or drop link in your Instagram bio. One scan opens your booking form directly in their browser — no app, no login, no friction. You get the lead whether you answered the phone or not.',
       image: '/images/qr-scan-2.png', 
       visual: null 
     },
@@ -749,7 +762,7 @@ function HowItWorks() {
       number: '02', 
       color: 'indigo', 
       title: 'Fills out form', 
-      desc: 'They enter their info, describe the job, and pick a service. You get everything you need — name, phone, and project details — before the first call.', 
+      desc: 'They enter their info, describe the job, and pick a service. You get everything you need — name, phone, photos, and project details — before the first call.', 
       image: null, 
       visual: 'demo-form' 
     },
