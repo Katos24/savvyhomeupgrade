@@ -130,12 +130,13 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
         }),
       });
       if (res.ok) {
-        toast.success('Schedule updated');
-        if (finalAssignee) setAssignedTo(finalAssignee);
-        setShowCustomAssignee(false);
-        setCustomAssignee('');
-        await onRefresh();
-      } else {
+  toast.success('Schedule updated');
+  if (finalAssignee) setAssignedTo(finalAssignee);
+  setShowCustomAssignee(false);
+  setCustomAssignee('');
+  await onRefresh();
+  if (finalAssignee) setAssignedTo(finalAssignee);
+} else {
         toast.error('Failed to save');
       }
     } catch { toast.error('Failed to save'); }

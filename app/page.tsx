@@ -6,10 +6,10 @@ import {
   ArrowRight, Zap, Check, Menu, X, Star, Layout,
   QrCode, Bot, Mail, BarChart2, ChevronDown, XCircle,
   Truck, Instagram, Facebook, AtSign, Globe,
-  User, Phone, FileText, ChevronRight, CheckCircle,
+  User, Phone, FileText, ChevronRight, MailCheck,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
-  Calendar, Clock, SlidersHorizontal, Filter,
-  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, FileX
+  Calendar, Clock, SlidersHorizontal, Filter, CreditCard, MessageCircle,
+  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, Bell, CheckSquare
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -537,121 +537,6 @@ function TrustBar() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 2 — THE "SPREADSHEET VS. COMMAND CENTER" COMPARISON
-// ─────────────────────────────────────────────────────────────────────────────
-function ComparisonSection() {
-  const { ref, visible } = useFadeIn();
-
-  return (
-    <section className="py-32 px-6 bg-white overflow-hidden border-b border-slate-100">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Header: The Direct Call-out */}
-        <div className="mb-20 text-center max-w-3xl mx-auto">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-red-500 mb-4 animate-pulse">The Choice is yours</p>
-          <h2 className="text-4xl md:text-6xl font-[1000] text-slate-900 tracking-tighter leading-none mb-6">
-            Software for the field, <br/>
-            <span className="text-slate-400 italic">not the office.</span>
-          </h2>
-          <p className="text-lg text-slate-500 font-medium leading-relaxed">
-            Every minute you spend wrestling with a spreadsheet is a minute you aren't closing a job. 
-            Stop the manual entry and start the automation.
-          </p>
-        </div>
-
-        <div ref={ref} className="grid md:grid-cols-2 gap-8 items-stretch transition-all duration-1000"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(32px)' }}>
-          
-          {/* THE "OLD" WAY — CHAOS */}
-          <div className="relative group bg-slate-50 border border-slate-200 rounded-[3rem] p-10 overflow-hidden">
-             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                <FileX size={80} className="text-slate-900 rotate-12" />
-             </div>
-             
-             <span className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">
-                The Spreadsheet Struggle
-             </span>
-
-             <div className="space-y-6">
-                <div className="opacity-50 blur-[1px] group-hover:blur-0 transition-all duration-500">
-                   <div className="h-4 w-full bg-slate-200 rounded-full mb-3" />
-                   <div className="h-4 w-3/4 bg-slate-200 rounded-full mb-3" />
-                   <div className="h-4 w-5/6 bg-slate-200 rounded-full" />
-                </div>
-                
-                <ul className="space-y-4 relative z-10">
-                   {[
-                     'Manual data entry for every lead',
-                     'Lost phone numbers & gate codes',
-                     'Quotes buried in your sent folder',
-                     'Zero automated follow-ups',
-                     'No visibility into your pipeline'
-                   ].map((text, i) => (
-                     <li key={i} className="flex items-center gap-3 text-slate-500 font-bold text-sm">
-                        <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                           <X size={12} className="text-red-500" strokeWidth={3} />
-                        </div>
-                        {text}
-                     </li>
-                   ))}
-                </ul>
-             </div>
-             <p className="mt-10 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center border-t border-slate-200 pt-6">
-                "Where did I save that address?"
-             </p>
-          </div>
-
-          {/* THE "NEW" WAY — LEAD2PROJECT */}
-          <div className="relative group bg-slate-900 rounded-[3rem] p-10 overflow-hidden shadow-2xl shadow-blue-500/20">
-             {/* Glow Effect */}
-             <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full" />
-             
-             <div className="absolute top-0 right-0 p-6 opacity-20">
-                <Sparkles size={80} className="text-blue-400 -rotate-12" />
-             </div>
-
-             <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/30 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-blue-400 mb-8">
-                The Command Center
-             </span>
-
-             <ul className="space-y-4 relative z-10">
-                {[
-                  'QR-powered instant intake',
-                  'AI-drafted line item quotes',
-                  'One-click outbox for everything',
-                  'Automated payment reminders',
-                  '6:00 AM daily morning brief'
-                ].map((text, i) => (
-                  <li key={i} className="flex items-center gap-3 text-white font-bold text-[15px]">
-                     <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/40">
-                        <Check size={14} className="text-white" strokeWidth={4} />
-                     </div>
-                     {text}
-                  </li>
-                ))}
-             </ul>
-
-             {/* The Interactive Visual */}
-             <div className="mt-10 bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group-hover:border-blue-500/50 transition-colors">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-                      <Zap size={20} fill="white" />
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">New Job Status</p>
-                      <p className="text-xs font-black text-white">Ready for Scheduling</p>
-                   </div>
-                </div>
-                <ArrowRight className="text-white/30 group-hover:translate-x-1 group-hover:text-white transition-all" size={20} />
-             </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
@@ -902,6 +787,8 @@ function FastDemoForm() {
     </div>
   );
 }
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW IT WORKS — DARK MODE EDITION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1025,7 +912,134 @@ function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: b
       </div>
     </div>
   );
-}// ─────────────────────────────────────────────────────────────────────────────
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 3 — THE PROJECT HUB (Clean Light Mode)
+// ─────────────────────────────────────────────────────────────────────────────
+function ProjectHub() {
+  const { ref, visible } = useFadeIn();
+
+  return (
+    <section className="py-24 px-6 bg-white border-b border-slate-100 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
+          
+          {/* LEFT: THE VALUE PROMISE */}
+          <div className="max-w-xl">
+            <span className="text-[10px] font-[1000] uppercase tracking-[0.25em] text-blue-600 mb-6 block">
+              The Digital Job Folder
+            </span>
+            <h2 className="text-5xl md:text-6xl font-[1000] text-slate-900 leading-[0.9] tracking-tighter mb-8">
+              Every job detail.<br/>
+              <span className="text-slate-400">Zero search time.</span>
+            </h2>
+            
+            <p className="text-lg text-slate-600 font-medium leading-relaxed mb-10">
+              Stop digging through text threads and paper stacks. Lead2Project organizes every lead into a "Smart Card" that tracks the job from the first QR scan to the final payment.
+            </p>
+
+            <div className="space-y-4">
+              {[
+                { t: 'One-Click Outbox', d: 'Send quotes & schedules instantly. We track when they open them.' },
+                { t: 'Media & Activity', d: 'Upload site photos and track every internal update in real-time.' },
+                { t: 'AI Job Briefing', d: 'Your messy notes turned into clear crew instructions automatically.' }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 hover:bg-slate-50/50 transition-all group">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check size={12} className="text-white" strokeWidth={4} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.t}</p>
+                    <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT: THE TABBED CARD UI (Reflecting your code) */}
+          <div ref={ref} className="relative pt-12"
+            style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.8s ease' }}>
+            
+            {/* Background Decorative Element */}
+            <div className="absolute top-0 right-0 w-full h-full bg-slate-100 rounded-[3rem] -rotate-2 scale-105" />
+
+            {/* The Main Card */}
+            <div className="relative z-10 bg-white border-2 border-slate-200 rounded-[2.5rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
+              
+              {/* Header (Light Mode) */}
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Project #1024 • Roofing</p>
+                  <h3 className="text-3xl font-[1000] text-slate-900 tracking-tight">Marcus Rivera</h3>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                  <User size={20} />
+                </div>
+              </div>
+
+              {/* TABS (Directly reflecting your UI logic) */}
+              <div className="flex bg-slate-50/80 px-4 border-b border-slate-100 overflow-x-auto no-scrollbar">
+                {[
+                  { id: 'overview', label: 'Overview', icon: <Layout size={14} />, active: true },
+                  { id: 'schedule', label: 'Schedule', icon: <Calendar size={14} /> },
+                  { id: 'quote',    label: 'Quote',    icon: <CreditCard size={14} /> },
+                  { id: 'media',    label: 'Media',    icon: <ImageIcon size={14} /> },
+                  { id: 'ai',       label: 'AI Brief', icon: <Sparkles size={14} /> },
+                ].map((tab) => (
+                  <div key={tab.id} className={`
+                    flex items-center gap-2 px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all
+                    ${tab.active ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:text-slate-600'}
+                  `}>
+                    {tab.icon} {tab.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Content Area */}
+              <div className="p-8 space-y-6 min-h-[300px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mobile Phone</p>
+                    <p className="text-xs font-black text-slate-900">(555) 123-4567</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Job Category</p>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase border border-blue-100">Shingle Roof</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <MessageCircle size={12} className="text-emerald-500" /> Customer Message
+                  </p>
+                  <p className="text-sm font-bold text-slate-700 leading-relaxed italic">
+                    "I have a leak in the back porch area. Seems to be getting worse after every rain. Need a quote ASAP."
+                  </p>
+                </div>
+
+                <div className="pt-4 flex items-center justify-between border-t border-slate-50">
+                  <div className="flex -space-x-2">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="w-8 h-8 rounded-lg bg-slate-200 border-2 border-white overflow-hidden shadow-sm" />
+                    ))}
+                  </div>
+                  <button className="h-10 px-6 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-600 transition-all">
+                    One-Click Quote
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION 4 — FEATURES BENTO GRID (Light BG + Dark Cards + Original QR)
 // ─────────────────────────────────────────────────────────────────────────────
 function Features() {
@@ -2114,11 +2128,12 @@ export default function Home() {
       {/* 2. TRUST BAR — stats strip */}
       <TrustBar />
 
-            <ComparisonSection />
 
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
       <HowItWorks />
+
+      <ProjectHub />
 
       {/* 4. FEATURES BENTO — dark section, grid of capabilities */}
       <Features />
