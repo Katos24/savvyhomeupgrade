@@ -6,8 +6,8 @@ import {
   ArrowRight, Zap, Check, Menu, X, Star, Layout,
   QrCode, Bot, Mail, BarChart2, ChevronDown, XCircle,
   Truck, Instagram, Facebook, AtSign, Globe,
-  User, Phone, FileText, ChevronRight, MailCheck,
-  Search, LayoutGrid, List, Plus, AlignLeft, Sparkles,
+  User, Phone, FileText, ChevronRight, MailCheck, Send, DollarSign,
+  Search, LayoutGrid, List, Plus, AlignLeft, Sparkles, Target,
   Calendar, Clock, SlidersHorizontal, Filter, CreditCard, MessageCircle,
   MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, Bell, CheckSquare
 } from 'lucide-react';
@@ -38,7 +38,7 @@ function Nav() {
   }, []);
   return (
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-      scrolled ? 'bg-[#080C14]/90 backdrop-blur-2xl border-b border-white/[0.06] shadow-2xl shadow-black/40' : 'bg-transparent'
+scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm' : 'bg-[#F2EDE4]/80 backdrop-blur-sm'
     }`}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
@@ -46,11 +46,11 @@ function Nav() {
         </Link>
         <div className="hidden md:flex items-center gap-8">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing']].map(([href,label]) => (
-            <a key={href} href={href} className="text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">{label}</a>
+            <a key={href} href={href} className="hidden md:block text-[13px] font-bold text-slate-600 hover:text-slate-900 transition-colors">{label}</a>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden md:block text-[13px] font-bold text-slate-400 hover:text-white transition-colors">Login</Link>
+          <Link href="/login" className="hidden md:block text-[13px] font-bold text-slate-600 hover:text-slate-900 transition-colors">Login</Link>
           <Link href="/signup" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/25 transition-all active:scale-95">
             Start Free Trial
           </Link>
@@ -60,9 +60,9 @@ function Nav() {
         </div>
       </div>
       {open && (
-        <div className="md:hidden bg-[#080C14]/95 backdrop-blur-xl border-t border-white/[0.06] px-6 py-5 space-y-4">
+<div className="md:hidden bg-[#F2EDE4] border-t border-[#D9D2C8] px-6 py-5 space-y-4">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing'],['/login','Login']].map(([href,label]) => (
-            <a key={href} href={href} onClick={() => setOpen(false)} className="block text-base font-semibold text-slate-300">{label}</a>
+            <a key={href} href={href} onClick={() => setOpen(false)} className="block text-base font-semibold text-slate-700">{label}</a>
           ))}
         </div>
       )}
@@ -70,20 +70,10 @@ function Nav() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HERO MOCKUP
-// Laptop: full width, dominant. Phone: small 120px, bottom-right, just the form.
-// ─────────────────────────────────────────────────────────────────────────────
 function HeroMockup() {
-  const D = { fontSize: 'inherit', lineHeight: 'inherit' }; // reset helper
-
   return (
     <div style={{ position: 'relative', width: '100%', userSelect: 'none' }}>
-
-      {/* ── LAPTOP — full width, the hero ── */}
       <div style={{ position: 'relative', zIndex: 10 }}>
-
-        {/* Screen */}
         <div style={{
           background: '#0d1117',
           border: '1px solid rgba(255,255,255,0.08)',
@@ -92,7 +82,6 @@ function HeroMockup() {
           aspectRatio: '16/10',
           boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
         }}>
-
           {/* Browser chrome */}
           <div style={{ background: '#161b25', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(239,68,68,0.6)' }} />
@@ -103,7 +92,7 @@ function HeroMockup() {
             </div>
           </div>
 
-          {/* Dashboard — full width, no sidebar */}
+          {/* Dashboard */}
           <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 27px)', overflow: 'hidden' }}>
 
             {/* Header pill */}
@@ -128,10 +117,10 @@ function HeroMockup() {
             {/* 4 stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, padding: '0 10px 6px' }}>
               {[
-                { label: 'TOTAL LEADS',      value: '20',     vc: '#fff' },
-                { label: 'ACTIVE JOBS',       value: '20',     vc: '#60a5fa' },
-                { label: 'REVENUE COLLECTED', value: '$51,200',     vc: '#34d399' },
-                { label: 'PENDING',           value: '$13,900',vc: '#fbbf24' },
+                { label: 'TOTAL LEADS',      value: '20',      vc: '#fff' },
+                { label: 'ACTIVE JOBS',      value: '20',      vc: '#60a5fa' },
+                { label: 'REVENUE COLLECTED',value: '$51,200', vc: '#34d399' },
+                { label: 'PENDING',          value: '$13,900', vc: '#fbbf24' },
               ].map(s => (
                 <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 7px' }}>
                   <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{s.label}</div>
@@ -178,31 +167,27 @@ function HeroMockup() {
               <span style={{ fontSize: 7, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Today</span>
               <span style={{ fontSize: 6, fontWeight: 700, color: '#6b7280', background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: 99 }}>2</span>
             </div>
-{/* Lead cards — 3 cols, accurate status colors */}
-            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, flex: 1 }}>
 
+            {/* Lead cards */}
+            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, flex: 1 }}>
               {[
-                { name: 'John Simpson',  status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Unassigned', date: 'Mar 31', time: '8:15 AM',  amount: '$74',     amountColor: '#fff',     amountLabel: 'Unpaid'  },
-                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex K', date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
+                { name: 'John Simpson',  status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Unassigned', date: 'Mar 31', time: '8:15 AM',  amount: '$74',    amountColor: '#fff',     amountLabel: 'Unpaid'  },
+                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex K',     date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
                 { name: 'Maria Reyes',   status: 'Contacted',   statusBg: 'rgba(99,102,241,0.15)',  statusColor: '#818cf8', borderColor: '#6366f1', cardBg: '#09090f', cat: 'Gutters',  assign: 'Tony',       date: 'Apr 2',  time: '10:00 AM', amount: '$1,200', amountColor: '#fff',     amountLabel: 'Unpaid'  },
                 { name: 'Tony Marino',   status: 'In Progress', statusBg: 'rgba(245,158,11,0.15)',  statusColor: '#fbbf24', borderColor: '#f59e0b', cardBg: '#0f0d07', cat: 'Siding',   assign: 'Mike',       date: 'Apr 5',  time: '9:00 AM',  amount: '$6,400', amountColor: '#fbbf24', amountLabel: 'Partial' },
                 { name: 'Carl Bennett',  status: 'Quoted',      statusBg: 'rgba(139,92,246,0.15)',  statusColor: '#a78bfa', borderColor: '#8b5cf6', cardBg: '#0a0810', cat: 'Windows',  assign: 'Unassigned', date: 'Apr 10', time: '1:00 PM',  amount: '$2,800', amountColor: '#fff',     amountLabel: 'Unpaid'  },
                 { name: 'Diana Cole',    status: 'Completed',   statusBg: 'rgba(107,114,128,0.15)', statusColor: '#9ca3af', borderColor: '#6b7280', cardBg: '#090909', cat: 'Plumbing', assign: 'Tony',       date: 'Mar 27', time: '—',        amount: '$4,200', amountColor: '#34d399', amountLabel: 'Paid'    },
               ].map((lead, i) => (
                 <div key={i} style={{ background: lead.cardBg, border: '1px solid rgba(255,255,255,0.05)', borderLeft: `2.5px solid ${lead.borderColor}`, borderRadius: 9, padding: '6px 7px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-
                   <div style={{ display: 'inline-flex', background: lead.statusBg, color: lead.statusColor, fontSize: 5, fontWeight: 900, padding: '1.5px 5px', borderRadius: 4, textTransform: 'uppercase', alignSelf: 'flex-start', letterSpacing: '0.04em' }}>
                     {lead.status}
                   </div>
-
                   <div style={{ fontSize: 9, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{lead.name}</div>
-
                   <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
                     <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>{lead.cat}</span>
                     <span style={{ fontSize: 5.5, color: '#374151' }}>·</span>
                     <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 38 }}>{lead.assign}</span>
                   </div>
-
                   <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '4px 5px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
                     <div>
                       <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Date</div>
@@ -219,7 +204,6 @@ function HeroMockup() {
                       </div>
                     </div>
                   </div>
-
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
                     <div>
                       <div style={{ fontSize: 9, fontWeight: 900, color: lead.amountColor }}>{lead.amount}</div>
@@ -229,122 +213,22 @@ function HeroMockup() {
                       <ChevronRight size={7} color="#6b7280" />
                     </div>
                   </div>
-
                 </div>
               ))}
-
             </div>
+
           </div>
         </div>
-
         {/* Laptop chin */}
         <div style={{ background: '#1a1f2b', height: 10, borderRadius: '0 0 2px 2px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }} />
         <div style={{ background: '#111520', height: 5, borderRadius: '0 0 8px 8px', border: '1px solid rgba(255,255,255,0.04)', borderTop: 'none' }} />
       </div>
-
-     {/* ── PHONE — short, clean, bottom-right ── */}
-      <div style={{
-        position: 'absolute',
-        bottom: -12,
-        right: -8,
-        zIndex: 30,
-        width: 148,
-        background: '#f9f9fb',
-        borderRadius: 20,
-        border: '5px solid #16181f',
-        boxShadow: '0 24px 56px rgba(0,0,0,0.75)',
-        overflow: 'hidden',
-      }}>
-
-        {/* App header */}
-        <div style={{ background: '#e8e8f0', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-          <div style={{ width: 16, height: 16, background: '#fff', borderRadius: 5, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 5, fontWeight: 900, color: '#374151' }}>RL</span>
-          </div>
-          <span style={{ fontSize: 8, fontWeight: 700, color: '#111827' }}>Ridge Line Roofing</span>
-        </div>
-
-        {/* Step indicator */}
-        <div style={{ background: '#fff', padding: '6px 10px 5px', display: 'flex', alignItems: 'center', gap: 5, borderBottom: '1px solid #f1f1f1' }}>
-          <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 7.5, fontWeight: 900, color: '#fff' }}>1</span>
-          </div>
-          <span style={{ fontSize: 6, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Info</span>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-          <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 7.5, fontWeight: 700, color: '#9ca3af' }}>2</span>
-          </div>
-          <span style={{ fontSize: 6, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Details</span>
-        </div>
-
-        {/* Fields */}
-        <div style={{ background: '#fff', padding: '6px 10px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-
-          {/* Full Name */}
-          <div>
-            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Full Name</p>
-            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <User size={7} color="#9ca3af" />
-              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>John Simpson</span>
-            </div>
-          </div>
-
-          {/* Email */}
-          <div>
-            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Email</p>
-            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Mail size={7} color="#9ca3af" />
-              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>johns@gmail.com</span>
-            </div>
-          </div>
-
-          {/* Phone */}
-          <div>
-            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Phone</p>
-            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Phone size={7} color="#9ca3af" />
-              <span style={{ fontSize: 8, color: '#111827', fontWeight: 500 }}>(555) 704-5325</span>
-            </div>
-          </div>
-
-          {/* Service Needed */}
-          <div>
-            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Service Needed</p>
-            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <QrCode size={7} color="#9ca3af" />
-                <span style={{ fontSize: 8, color: '#111827', fontWeight: 600 }}>Roofing</span>
-              </div>
-              <ChevronDown size={7} color="#9ca3af" />
-            </div>
-          </div>
-
-          {/* About Your Project — single clean line, no textarea weirdness */}
-          <div>
-            <p style={{ fontSize: 5.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>About Your Project</p>
-            <div style={{ background: '#f3f4f6', borderRadius: 7, padding: '4px 7px' }}>
-              <p style={{ fontSize: 7.5, color: '#6b7280', fontStyle: 'italic', margin: 0, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>"Seeing a leak in my bedroom ceiling..."</p>
-            </div>
-          </div>
-
-          {/* Continue button */}
-          <div style={{ background: 'linear-gradient(135deg, #4f46e5, #2563eb)', borderRadius: 9, padding: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 1 }}>
-            <span style={{ fontSize: 9, fontWeight: 900, color: '#fff' }}>Continue</span>
-            <ChevronRight size={9} color="#fff" />
-          </div>
-
-          {/* Footer */}
-          <p style={{ textAlign: 'center', fontSize: 6, color: '#9ca3af', margin: 0 }}>lead2project.com — Private</p>
-
-        </div>
-      </div>
-
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO — light bg, emotional urgency, sell against spreadsheets
+// HERO
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -354,190 +238,419 @@ function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen bg-slate-50 flex flex-col overflow-hidden">
-
-      {/* Subtle texture */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.018]"
-        style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-
-      {/* Blue ambient top */}
-      <div className="absolute top-0 right-0 w-[600px] h-[500px] bg-blue-100/60 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-indigo-100/40 blur-[100px] rounded-full pointer-events-none" />
-
+    <section className="relative min-h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#F2EDE4' }}>
       <Nav />
 
       <div className="relative z-10 flex-1 flex items-center">
-        <div className="max-w-6xl mx-auto px-6 w-full pt-28 pb-16">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-16">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* LEFT — copy */}
-            <div className="space-y-8">
-
-              {/* Badge */}
-              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(12px)', transition:'all 0.6s ease' }}>
-                <span className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-600/20 text-blue-700 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.18em]">
-                  <Zap className="w-3 h-3 fill-current" /> Built for contractors
-                </span>
+            <div
+              className="space-y-5 text-center lg:text-left"
+              style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
+            >
+              <div className="flex justify-center lg:justify-start">
+                
               </div>
 
-              {/* Headline — High impact, sharp focus */}
-<div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.08s' }}>
-  <h1 className="text-[52px] md:text-[72px] font-[1000] text-slate-900 leading-[0.85] tracking-[-0.05em]">
-    Stop running your<br/>
-    business out of<br/>
-    <span className="text-blue-600">a spreadsheet.</span>
-  </h1>
-</div>
+              <h1 className="font-black tracking-tight"
+                style={{ fontSize: 'clamp(38px, 6vw, 64px)', color: '#0F1F3D', lineHeight: 1.0 }}>
+                Everything to run<br />
+                and grow your<br />
+                <span style={{ color: '#1a6645' }}>home service business.</span>
+              </h1>
 
-{/* Sub — The "Transformation" Copy */}
-<div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.16s' }}>
-  <p className="text-[19px] text-slate-600 leading-relaxed max-w-[480px] font-medium">
-    Spreadsheets don't send reminders or draft quotes. 
-    Lead2Project automates your office work so you can focus on the job site. 
-    <span className="text-slate-900 font-bold italic"> One link, one dashboard, done.</span>
-  </p>
+              <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[440px]"
+                style={{ fontSize: 'clamp(15px, 2vw, 18px)', color: '#4A5568' }}>
+                Win more jobs, get paid faster, and look more professional — all from one dashboard.
+              </p>
 
-  {/* Refined Outcome Pills — More "Result" focused */}
-  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[500px]">
-    {[
-      { stat: 'No More', thing: 'leads lost to missed calls', icon: <PhoneOff className="w-3 h-3"/> },
-      { stat: '60 Sec',  thing: 'AI quotes from job photos', icon: <Sparkles className="w-3 h-3"/> },
-      { stat: '1 Click', thing: 'to send & track follow-ups', icon: <Zap className="w-3 h-3"/> },
-      { stat: 'Daily',   thing: '6AM briefing on your day', icon: <Calendar className="w-3 h-3"/> },
-    ].map(({ stat, thing, icon }) => (
-      <div key={thing} className="group flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm hover:border-blue-400 hover:shadow-md transition-all duration-300">
-        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-          {icon}
-        </div>
-        <div>
-          <p className="text-[13px] font-black text-slate-900 leading-none mb-1">{stat}</p>
-          <p className="text-[11px] text-slate-500 font-bold leading-none">{thing}</p>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
-              {/* CTAs */}
-              <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(16px)', transition:'all 0.7s ease 0.24s' }}>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/signup"
-                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl text-[15px] font-black shadow-xl shadow-blue-600/25 hover:-translate-y-0.5 transition-all active:scale-95">
-                    Get Started Free <ArrowRight size={17}/>
-                  </Link>
-                  <Link href="/demo"
-                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 px-8 py-4 rounded-2xl text-[15px] font-bold transition-all shadow-sm">
-                    <Layout className="w-4 h-4 text-slate-400" /> See Live Demo
-                  </Link>
+              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                {['QR lead capture', 'One-click quotes', 'Payment tracking', 'AI job briefs'].map(label => (
+                  <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold border"
+                    style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
+                    <Check size={11} strokeWidth={3} style={{ color: '#1a6645' }} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <Link href="/signup"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-black text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  style={{ backgroundColor: '#1a6645', boxShadow: '0 8px 24px rgba(26,102,69,0.25)' }}>
+                  Start Free Trial <ArrowRight size={16} />
+                </Link>
+                <Link href="/demo"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-bold border transition-all"
+                  style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
+                  <Layout className="w-4 h-4" style={{ color: '#6B7280' }} /> See Live Demo
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-3 justify-center lg:justify-start">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#F59E0B" stroke="none" />)}
                 </div>
-
-                {/* Social proof */}
-                <div className="mt-6 flex items-center gap-4 pt-6 border-t border-slate-200">
-                  <div className="flex -space-x-2">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="w-9 h-9 rounded-full border-2 border-slate-50 bg-slate-200 overflow-hidden shadow-sm">
-                        <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="" />
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex gap-0.5 text-amber-400 mb-1">
-                      {[...Array(5)].map((_,i) => <Star key={i} size={12} fill="currentColor"/>)}
-                    </div>
-                    <p className="text-[12px] text-slate-500 font-bold">"Set up in 2 minutes. Closed a job the same afternoon."</p>
-                  </div>
-                  <div className="ml-auto hidden sm:block">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">14-day free trial</p>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No credit card</p>
-                  </div>
-                </div>
+                <p className="text-[13px] font-medium" style={{ color: '#6B7280' }}>
+                  14-day free trial · Cancel anytime · 2 min setup
+                </p>
               </div>
             </div>
 
-            {/* RIGHT — mockup with mobile scale */}
-            <div style={{ opacity: mounted?1:0, transform: mounted?'none':'translateY(24px) scale(0.97)', transition:'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s', position: 'relative' }}
-              className="pb-10">
-              <div className="scale-[0.52] origin-top-left sm:scale-[0.72] md:scale-[0.88] lg:scale-100 -mb-72 sm:-mb-44 md:-mb-20 lg:mb-0">
-                <HeroMockup />
-              </div>
+            {/* RIGHT — mockup */}
+            <div
+              className="hidden lg:flex items-center justify-center"
+              style={{
+                opacity: mounted ? 1 : 0,
+                transform: mounted ? 'none' : 'translateY(24px) scale(0.97)',
+                transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
+              }}
+            >
+              <HeroMockup />
             </div>
 
           </div>
         </div>
       </div>
+
+      <div style={{ height: 2, background: 'linear-gradient(to right, transparent, #D9D2C8, transparent)' }} />
     </section>
   );
 }
+
+
 // ─────────────────────────────────────────────────────────────────────────────
-// TRUST BAR — THE "SYSTEM IMPACT" EDITION
+// FEATURE TABS — Value focused, light gray bg (#F7F5F0)
+// 5 tabs: Get Leads · Schedule · Quote & Win · Get Paid · Stay Sharp
+// Replace the existing LeadCapture function with this entire block
 // ─────────────────────────────────────────────────────────────────────────────
-function TrustBar() {
+function LeadCapture() {
+  const [active, setActive] = useState(0);
   const { ref, visible } = useFadeIn();
 
-  const stats = [
-    { 
-      value: '10+ Hours', 
-      label: 'Admin saved weekly', 
-      sub: 'Per contractor',
-      icon: <Clock className="w-4 h-4 text-blue-600" />
+  const tabs = [
+    {
+      label: 'Get Leads',
+      icon: <QrCode size={15} />,
+      eyebrow: 'Never miss a lead',
+      headline: 'Your truck is now\na lead machine.',
+      desc: 'Print your branded QR code on your truck, yard signs, or drop the link in your Instagram bio. Customers fill out your custom form — name, job type, photos, budget, preferred date — and it lands on your dashboard instantly. You get the lead whether you answered the phone or not.',
+      callout: 'Stop losing jobs to missed calls',
+      points: [
+        'Branded QR code — works on trucks, signs, social & business cards',
+        'Fully customizable form — your colors, your questions, your order',
+        'Collect address, preferred date & time, photos, budget range',
+        'Lead hits your board the second they submit — no manual entry',
+      ],
+      quote: '"A neighbor scanned my yard sign while I was on the roof. Job was booked before I came down."',
+      author: 'Mike T., Ridge Line Roofing',
+      visual: (
+        <div className="relative w-full h-full overflow-hidden" style={{ backgroundColor: '#1a2235' }}>
+          <img
+            src="/images/qrbranded.png"
+            alt="QR on truck and yard sign"
+            className="w-full h-full object-cover"
+            style={{ opacity: 0.55 }}
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0f1623 30%, transparent 100%)' }} />
+          <div className="absolute bottom-6 left-6 right-6 rounded-2xl p-5 border"
+            style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #34d399' }} />
+              <span className="text-[10px] font-black text-white uppercase tracking-widest">New lead — just now</span>
+            </div>
+            <p className="text-sm font-bold text-slate-300">"John S. — Roof repair, 226 Springmeadow Dr · $5K–$10K budget"</p>
+          </div>
+        </div>
+      ),
     },
-    { 
-      value: '60 Seconds', 
-      label: 'To draft a quote', 
-      sub: 'AI-powered speed',
-      icon: <Zap className="w-4 h-4 text-amber-500" />
+    {
+      label: 'Schedule',
+      icon: <Calendar size={15} />,
+      eyebrow: 'Stop double-booking and no-shows',
+      headline: 'Set the date.\nSend the confirmation.\nDone.',
+      desc: 'Pick the job date, assign your crew, and send a professional confirmation email — all from the job card. No switching to a calendar app. No texting back and forth. One click and the customer knows exactly when you\'re coming.',
+      callout: 'Customers who get confirmations cancel less',
+      points: [
+        'Set estimate date and job start date per card',
+        'Assign jobs to any team member by name',
+        'One-click confirmation email sent instantly',
+        'Every email logged in the outbox — always reviewable',
+      ],
+      quote: '"I used to lose jobs because nobody confirmed the date. Now it\'s automatic."',
+      author: 'Tony M., Shoreline Gutters',
+visual: (
+  <img
+    src="/images/schedule-tab.png"
+    alt="Schedule section"
+    className="w-full h-full object-contain object-top"
+    style={{ background: '#f8f9fb' }}
+  />
+),
     },
-    { 
-      value: 'Zero', 
-      label: 'Forgotten leads', 
-      sub: 'Automated follow-ups',
-      icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+    {
+      label: 'Quote & Win',
+      icon: <FileText size={15} />,
+      eyebrow: 'Stop losing bids to slow quotes',
+      headline: 'Quote it fast.\nThey accept in one tap.',
+      desc: 'Build a line-item quote right on the job card. Let AI draft it from the job description. Send it to the customer in one click — they get an email with an Accept or Decline button. Their answer updates your dashboard automatically. No chasing, no guessing.',
+      callout: 'The faster you quote, the more jobs you win',
+      points: [
+        'Line-item quotes with auto totals',
+        'AI quote generator — drafts from job description in seconds',
+        'Customer gets Accept / Decline buttons in the email',
+        'Custom quote templates per job category',
+        'Quote status tracked — pending, accepted, declined',
+      ],
+      quote: '"I send quotes before I even leave the driveway. Customers love the speed."',
+      author: 'Dave R., All-Pro Siding',
+      visual: (
+        <div className="w-full h-full flex flex-col p-6 justify-center" style={{ background: '#111827' }}>
+          <p style={{ fontSize: 9, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Quote #1024 — Marcus Rivera · AI Drafted</p>
+          <div className="space-y-2 mb-4">
+            {[
+              { item: 'Full Shingle Replacement', price: '$6,200' },
+              { item: 'Flashing & Sealant', price: '$850' },
+              { item: 'Debris Removal', price: '$400' },
+            ].map((row, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{row.item}</span>
+                <span style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>{row.price}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-4 py-4 rounded-xl" style={{ background: '#2563eb' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</span>
+              <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>$7,450.00</span>
+            </div>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p style={{ fontSize: 9, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Customer receives</p>
+            <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 10 }}>"Your quote for $7,450 is ready for review."</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <div style={{ padding: '8px', background: '#10b981', borderRadius: 10, textAlign: 'center', fontSize: 10, fontWeight: 900, color: '#fff' }}>✓ Accept</div>
+              <div style={{ padding: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, textAlign: 'center', fontSize: 10, fontWeight: 900, color: '#6b7280' }}>Decline</div>
+            </div>
+          </div>
+        </div>
+      ),
     },
-    { 
-      value: '100%', 
-      label: 'Data Ownership', 
-      sub: 'Easy CSV exports',
-      icon: <Database className="w-4 h-4 text-indigo-600" />
+    {
+      label: 'Get Paid',
+      icon: <DollarSign size={15} />,
+      eyebrow: 'Stop leaving money on the table',
+      headline: 'Know who owes you.\nGet paid without the awkward text.',
+      desc: 'Log deposits and final payments on every job. Send a payment request email in one click. See every job\'s payment status at a glance. Export everything to CSV for your bookkeeper — your data, always yours.',
+      callout: 'Most contractors are owed $10K+ they haven\'t collected',
+      points: [
+        'Log deposit and final payment per job card',
+        'One-click payment request email — professional, not awkward',
+        'See outstanding balance across all jobs instantly',
+        'Export all job and payment data to CSV anytime',
+        'Custom payment reminder email templates',
+      ],
+      quote: '"I realized I had $14,000 sitting uncollected. The dashboard showed me in 10 seconds."',
+      author: 'Carl B., ProClean Services',
+      visual: (
+        <div className="w-full h-full flex flex-col p-6 justify-center gap-3" style={{ background: '#111827' }}>
+          {[
+            { name: 'Marcus Rivera',  job: 'Roofing',  amount: '$8,400', status: 'Paid',    color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)' },
+            { name: 'Jack Thomas',   job: 'Siding',   amount: '$3,550', status: 'Deposit',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
+            { name: 'Maria Reyes',   job: 'Gutters',  amount: '$1,200', status: 'Unpaid',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)'  },
+            { name: 'Tony Marino',   job: 'Windows',  amount: '$6,400', status: 'Deposit',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
+          ].map((row, i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full" style={{ background: row.color }} />
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{row.name}</p>
+                  <p style={{ fontSize: 10, color: '#6b7280', fontWeight: 600 }}>{row.job} · {row.amount}</p>
+                </div>
+              </div>
+              <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 10px', borderRadius: 20, background: row.bg, border: `1px solid ${row.border}`, color: row.color }}>{row.status}</span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between px-4 py-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <span style={{ fontSize: 10, fontWeight: 900, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Outstanding</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: '#ef4444' }}>$11,150</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Database size={12} color="#6b7280" />
+            <span style={{ fontSize: 10, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Export all data as CSV</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: 'Stay Sharp',
+      icon: <Bell size={15} />,
+      eyebrow: 'Your 6AM morning briefing',
+      headline: 'Know your day\nbefore it starts.',
+      desc: 'Every morning at 6AM, Lead2Project sends you a digest of everything that needs attention — today\'s jobs, overdue payments, stale leads, unaccepted quotes, and reminders you set. No login required. Your whole business in one email.',
+      callout: 'Stop starting your day reactive — start it informed',
+      points: [
+        "Today's scheduled jobs — who, where, what time",
+        'New leads since yesterday',
+        'Overdue payments — name, amount, days overdue',
+        'Quotes sent but not yet accepted',
+        'Reminders you set on any job card',
+        'Stale leads that have gone quiet',
+      ],
+      quote: '"I check the digest before I get out of bed. I know my whole day before I touch my coffee."',
+      author: 'James P., Peak Roofing Co.',
+      visual: (
+        <div className="w-full h-full flex flex-col p-5 justify-center" style={{ background: '#111827' }}>
+          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+            <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center">
+                <span style={{ fontSize: 7, fontWeight: 900, color: '#fff' }}>L</span>
+              </div>
+              <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 700 }}>digest@lead2project.com</span>
+              <span style={{ fontSize: 9, color: '#6b7280', marginLeft: 'auto' }}>6:00 AM</span>
+            </div>
+            <div className="px-4 py-3" style={{ background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 2 }}>Ridge Line Roofing — Morning Briefing</p>
+              <p style={{ fontSize: 10, color: '#6b7280' }}>Friday, March 28 · Here's what needs your attention.</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="px-4 py-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+                <p style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pending Revenue</p>
+                <p style={{ fontSize: 20, fontWeight: 900, color: '#f59e0b' }}>$37,194</p>
+              </div>
+              <div className="px-4 py-3">
+                <p style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>New Leads</p>
+                <p style={{ fontSize: 20, fontWeight: 900, color: '#60a5fa' }}>+3</p>
+              </div>
+            </div>
+            {[
+              { label: "Today's jobs",        value: '2 scheduled',      color: '#10b981' },
+              { label: 'Overdue payments',     value: '2 · $4,750',       color: '#ef4444' },
+              { label: 'Quotes not accepted',  value: '3 pending',        color: '#f59e0b' },
+              { label: 'Stale leads',          value: '2 need follow-up', color: '#a78bfa' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{item.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 900, color: item.color }}>{item.value}</span>
+              </div>
+            ))}
+            <div className="px-4 py-3 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+              <span style={{ fontSize: 10, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Open Dashboard →</span>
+            </div>
+          </div>
+        </div>
+      ),
     },
   ];
 
   return (
-    <div className="bg-white border-y border-slate-100 py-16 px-6 relative overflow-hidden">
-      {/* Subtle background wash */}
-      <div className="absolute inset-0 bg-slate-50/30 pointer-events-none" />
+    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
+      <div className="max-w-7xl mx-auto">
 
-      <div 
-        ref={ref} 
-        className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-12 relative z-10"
-        style={{ 
-          opacity: visible ? 1 : 0, 
-          transform: visible ? 'none' : 'translateY(20px)',
-          transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
-        }}
-      >
-        {stats.map((s, i) => (
-          <div key={i} className="group flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                {s.icon}
+        {/* Header */}
+        <div ref={ref} className="text-center mb-12"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
+            Built to save time & close more jobs
+          </p>
+          <h2 className="font-black leading-tight tracking-tight mb-4"
+            style={{ fontSize: 'clamp(32px, 5vw, 60px)', color: '#0F1F3D' }}>
+            The all-in-one solution<br />
+            <span style={{ color: '#1a6645' }}>for home service pros.</span>
+          </h2>
+          <p className="text-lg font-medium max-w-2xl mx-auto" style={{ color: '#4A5568' }}>
+            Stop running your business out of texts and a spreadsheet. Everything you need — leads, scheduling, quotes, payments, and your morning briefing — in one place.
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex justify-center gap-2 flex-wrap mb-12">
+          {tabs.map((tab, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[12px] font-black border transition-all duration-300"
+              style={active === i ? {
+                background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D',
+              } : {
+                background: 'white', color: '#4A5568', borderColor: '#D1C9BD',
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="relative" style={{ minHeight: 480 }}>
+          {tabs.map((tab, i) => (
+            <div
+              key={i}
+              className="grid lg:grid-cols-2 gap-12 items-center transition-all duration-500"
+              style={{
+                opacity: active === i ? 1 : 0,
+                transform: active === i ? 'translateY(0)' : 'translateY(16px)',
+                position: active === i ? 'relative' : 'absolute',
+                inset: active === i ? 'auto' : 0,
+                pointerEvents: active === i ? 'auto' : 'none',
+                zIndex: active === i ? 10 : 0,
+              }}
+            >
+              {/* LEFT — Visual */}
+              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl">
+                {tab.visual}
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{s.label}</p>
+
+              {/* RIGHT — Copy */}
+              <div className="space-y-5">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: '#1a6645' }}>
+                  {tab.eyebrow}
+                </p>
+                <h3 className="font-black leading-tight tracking-tight whitespace-pre-line"
+                  style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', color: '#0F1F3D' }}>
+                  {tab.headline}
+                </h3>
+                <p className="text-base font-medium leading-relaxed" style={{ color: '#4A5568' }}>
+                  {tab.desc}
+                </p>
+                <div className="px-4 py-3 rounded-xl border-l-4 font-bold text-sm"
+                  style={{ background: '#FFF8E1', borderLeftColor: '#F59E0B', color: '#92400E' }}>
+                  ⚠ {tab.callout}
+                </div>
+                <div className="space-y-2.5">
+                  {tab.points.map((pt, j) => (
+                    <div key={j} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: '#E8F4EF' }}>
+                        <Check size={11} strokeWidth={4} style={{ color: '#1a6645' }} />
+                      </div>
+                      <span className="text-sm font-bold" style={{ color: '#374151' }}>{pt}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-5 border-t space-y-2" style={{ borderColor: '#E5E0D8' }}>
+                  <p className="text-sm font-medium italic leading-relaxed" style={{ color: '#6B7280' }}>
+                    "{tab.quote}"
+                  </p>
+                  <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#1a6645' }}>
+                    — {tab.author}
+                  </p>
+                </div>
+                <Link href="/signup"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  style={{ backgroundColor: '#1a6645', boxShadow: '0 6px 20px rgba(26,102,69,0.2)' }}>
+                  Start Free Trial <ArrowRight size={15} />
+                </Link>
+              </div>
             </div>
-            
-            <p className="text-4xl md:text-5xl font-[1000] text-slate-900 tracking-tighter leading-none mb-2">
-              {s.value}
-            </p>
-            
-            <p className="text-[12px] text-slate-500 font-bold italic opacity-70 group-hover:opacity-100 transition-opacity">
-              {s.sub}
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
+
       </div>
-    </div>
+    </section>
   );
 }
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 ANIMATED DEMO — address + date/time + photo drop, loops cleanly
 // Replace the existing FastDemoForm function with this entire block
@@ -914,9 +1027,9 @@ function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: b
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 3 — THE PROJECT HUB (Clean Light Mode)
-// ─────────────────────────────────────────────────────────────────────────────
+ /* ─────────────────────────────────────────────────────────────────────────────
+   SECTION: THE SMART JOB FOLDER (One-Click & Track)
+   ───────────────────────────────────────────────────────────────────────────── */
 function ProjectHub() {
   const { ref, visible } = useFadeIn();
 
@@ -924,113 +1037,163 @@ function ProjectHub() {
     <section className="py-24 px-6 bg-white border-b border-slate-100 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-20 items-center">
-          
+
           {/* LEFT: THE VALUE PROMISE */}
           <div className="max-w-xl">
-            <span className="text-[10px] font-[1000] uppercase tracking-[0.25em] text-blue-600 mb-6 block">
-              The Digital Job Folder
-            </span>
-            <h2 className="text-5xl md:text-6xl font-[1000] text-slate-900 leading-[0.9] tracking-tighter mb-8">
-              Every job detail.<br/>
-              <span className="text-slate-400">Zero search time.</span>
-            </h2>
+            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+              <span className="text-[10px] font-[1000] uppercase tracking-[0.2em] text-blue-700">Live Project Intelligence</span>
+            </div>
             
-            <p className="text-lg text-slate-600 font-medium leading-relaxed mb-10">
-              Stop digging through text threads and paper stacks. Lead2Project organizes every lead into a "Smart Card" that tracks the job from the first QR scan to the final payment.
+            <h2 className="text-5xl md:text-7xl font-[1000] text-slate-900 leading-[0.85] tracking-tighter mb-8">
+              One-click send.<br />
+              <span className="text-blue-600 italic">Auto-tracked.</span>
+            </h2>
+
+            <p className="text-xl text-slate-500 font-medium leading-relaxed mb-10">
+              Stop guessing if they saw your email. Every job card acts as a command center—send quotes, schedule updates, and payment links in a single tap, then watch the status update in real-time.
             </p>
 
-            <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               {[
-                { t: 'One-Click Outbox', d: 'Send quotes & schedules instantly. We track when they open them.' },
-                { t: 'Media & Activity', d: 'Upload site photos and track every internal update in real-time.' },
-                { t: 'AI Job Briefing', d: 'Your messy notes turned into clear crew instructions automatically.' }
+                {
+                  t: 'No More Gmail Tab-Hopping',
+                  d: 'Send quotes & time estimates directly from the card. No copy-pasting required.',
+                },
+                {
+                  t: 'Smart Decision Links',
+                  d: 'Emails include Accept/Decline buttons that update your dashboard instantly.',
+                },
+                {
+                  t: 'The Audit Trail',
+                  d: 'A permanent, timestamped log of every communication. Never lose an email again.',
+                },
+                {
+                  t: 'Instant Crew Briefs',
+                  d: 'AI boils down lead notes into a 10-second instruction for your field guys.',
+                },
               ].map((item, i) => (
-                <div key={i} className="flex gap-4 p-4 rounded-2xl border border-slate-50 hover:border-slate-100 hover:bg-slate-50/50 transition-all group">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check size={12} className="text-white" strokeWidth={4} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.t}</p>
-                    <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.d}</p>
-                  </div>
+                <div
+                  key={i}
+                  className="p-5 rounded-3xl border border-slate-100 bg-slate-50/30 hover:bg-white hover:shadow-xl hover:shadow-blue-50 transition-all group"
+                >
+                  <p className="text-sm font-[1000] text-slate-900 uppercase tracking-tight mb-2 flex items-center gap-2">
+                    <Check size={14} className="text-blue-600" strokeWidth={4} /> {item.t}
+                  </p>
+                  <p className="text-xs text-slate-500 font-bold leading-snug">{item.d}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* RIGHT: THE TABBED CARD UI (Reflecting your code) */}
-          <div ref={ref} className="relative pt-12"
-            style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.8s ease' }}>
+          {/* RIGHT: THE INTERACTIVE CARD MOCKUP */}
+          <div
+            ref={ref}
+            className="relative pt-12"
+            style={{ 
+              opacity: visible ? 1 : 0, 
+              transform: visible ? 'none' : 'translateY(32px)', 
+              transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
+            }}
+          >
+            {/* Soft Shadow Glow behind card */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-100/40 blur-[120px] rounded-full" />
             
-            {/* Background Decorative Element */}
-            <div className="absolute top-0 right-0 w-full h-full bg-slate-100 rounded-[3rem] -rotate-2 scale-105" />
+            <div className="relative z-10 bg-white border border-slate-200 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden">
 
-            {/* The Main Card */}
-            <div className="relative z-10 bg-white border-2 border-slate-200 rounded-[2.5rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
-              
-              {/* Header (Light Mode) */}
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              {/* Card Header: High Contrast */}
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Project #1024 • Roofing</p>
-                  <h3 className="text-3xl font-[1000] text-slate-900 tracking-tight">Marcus Rivera</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Project • #1024</p>
+                  </div>
+                  <h3 className="text-3xl font-[1000] text-slate-900 tracking-tighter">Marcus Rivera</h3>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                  <User size={20} />
+                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
+                  <User size={24} />
                 </div>
               </div>
 
-              {/* TABS (Directly reflecting your UI logic) */}
-              <div className="flex bg-slate-50/80 px-4 border-b border-slate-100 overflow-x-auto no-scrollbar">
+              {/* Tabs: The Navigation Hub */}
+              <div className="flex bg-white px-4 border-b border-slate-100 overflow-x-auto no-scrollbar">
                 {[
-                  { id: 'overview', label: 'Overview', icon: <Layout size={14} />, active: true },
-                  { id: 'schedule', label: 'Schedule', icon: <Calendar size={14} /> },
-                  { id: 'quote',    label: 'Quote',    icon: <CreditCard size={14} /> },
-                  { id: 'media',    label: 'Media',    icon: <ImageIcon size={14} /> },
-                  { id: 'ai',       label: 'AI Brief', icon: <Sparkles size={14} /> },
+                  { id: 'overview',  label: 'Overview',  icon: <Layout size={14} />,     active: true },
+                  { id: 'schedule',  label: 'Schedule',  icon: <Calendar size={14} /> },
+                  { id: 'quote',     label: 'Quote',     icon: <CreditCard size={14} /> },
+                  { id: 'media',     label: 'Media',     icon: <ImageIcon size={14} /> },
+                  { id: 'ai',        label: 'AI Brief',  icon: <Sparkles size={14} /> },
                 ].map((tab) => (
-                  <div key={tab.id} className={`
-                    flex items-center gap-2 px-6 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all
-                    ${tab.active ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:text-slate-600'}
-                  `}>
+                  <div
+                    key={tab.id}
+                    className={`
+                      flex items-center gap-2 px-6 py-5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all
+                      ${tab.active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}
+                    `}
+                  >
                     {tab.icon} {tab.label}
                   </div>
                 ))}
               </div>
 
-              {/* Content Area */}
-              <div className="p-8 space-y-6 min-h-[300px]">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mobile Phone</p>
-                    <p className="text-xs font-black text-slate-900">(555) 123-4567</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Job Category</p>
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase border border-blue-100">Shingle Roof</span>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <MessageCircle size={12} className="text-emerald-500" /> Customer Message
-                  </p>
-                  <p className="text-sm font-bold text-slate-700 leading-relaxed italic">
-                    "I have a leak in the back porch area. Seems to be getting worse after every rain. Need a quote ASAP."
-                  </p>
-                </div>
-
-                <div className="pt-4 flex items-center justify-between border-t border-slate-50">
-                  <div className="flex -space-x-2">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="w-8 h-8 rounded-lg bg-slate-200 border-2 border-white overflow-hidden shadow-sm" />
+              {/* Content Body */}
+              <div className="p-8 space-y-8">
+                
+                {/* Send Actions: The "One-Click" buttons */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Instant Outbox</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { label: 'Time Estimate', color: 'text-amber-600', bg: 'bg-amber-50', icon: <Clock size={12} /> },
+                      { label: 'Send Quote',   color: 'text-blue-600',  bg: 'bg-blue-50',  icon: <FileText size={12} /> },
+                      { label: 'Get Paid',      color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <DollarSign size={12} /> },
+                    ].map((btn, i) => (
+                      <button key={i} className={`flex items-center justify-between px-4 py-3 rounded-xl border border-transparent font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-md transition-all ${btn.bg} ${btn.color}`}>
+                        <span className="flex items-center gap-2">{btn.icon} {btn.label}</span>
+                        <Send size={10} className="opacity-40" />
+                      </button>
                     ))}
                   </div>
-                  <button className="h-10 px-6 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-600 transition-all">
-                    One-Click Quote
-                  </button>
                 </div>
-              </div>
 
+                {/* Customer View Mockup */}
+                <div className="bg-slate-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-10 text-white"><Mail size={40} /></div>
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-4">Customer Experience</p>
+                  <p className="text-sm text-white/90 font-bold mb-6 leading-relaxed">
+                    "Hi Marcus, your roofing quote for <span className="text-blue-400">$8,450</span> is ready for review."
+                  </p>
+                  <div className="flex gap-3">
+                    <div className="flex-1 py-3 px-4 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl text-center shadow-lg shadow-emerald-500/20">
+                      ✓ Accept Quote
+                    </div>
+                    <div className="flex-1 py-3 px-4 bg-white/10 border border-white/20 text-white/60 text-[10px] font-black uppercase tracking-widest rounded-xl text-center hover:bg-white/20 transition-colors">
+                      Decline
+                    </div>
+                  </div>
+                </div>
+
+                {/* Audit Trail / History Log */}
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Activity Trail</p>
+                  <div className="space-y-4">
+                    {[
+                      { dot: 'bg-blue-400',    text: 'Quote #1024 delivered',         time: '10:41 AM' },
+                      { dot: 'bg-emerald-500', text: 'Quote accepted by Marcus',      time: '2:21 PM', bold: true, pulse: true },
+                      { dot: 'bg-slate-300',   text: 'Project converted from Lead',   time: 'Yesterday' },
+                    ].map((row, i) => (
+                      <div key={i} className="flex items-center gap-4 group/row">
+                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${row.dot} ${row.pulse ? 'animate-pulse ring-4 ring-emerald-500/20' : ''}`} />
+                        <span className={`text-sm flex-1 ${row.bold ? 'font-[1000] text-slate-900' : 'font-bold text-slate-500 opacity-70'}`}>
+                          {row.text}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter shrink-0">{row.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
 
@@ -1039,6 +1202,7 @@ function ProjectHub() {
     </section>
   );
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 4 — FEATURES BENTO GRID (Light BG + Dark Cards + Original QR)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2126,9 +2290,8 @@ export default function Home() {
       {/* 1. HERO — dark, headline + visual */}
       <Hero />
       {/* 2. TRUST BAR — stats strip */}
-      <TrustBar />
 
-
+<LeadCapture />
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
       <HowItWorks />
