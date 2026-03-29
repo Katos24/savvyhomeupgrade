@@ -72,7 +72,7 @@ scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm
 
 function HeroMockup() {
   return (
-    <div style={{ position: 'relative', width: '100%', userSelect: 'none' }}>
+<div style={{ position: 'relative', width: '100%', maxWidth: 680, margin: '0 auto', userSelect: 'none' }}>
       <div style={{ position: 'relative', zIndex: 10 }}>
         <div style={{
           background: '#0d1117',
@@ -242,8 +242,8 @@ function Hero() {
       <Nav />
 
       <div className="relative z-10 flex-1 flex items-center">
-        <div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-16">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+<div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-8 lg:pb-16">
+<div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-10 lg:gap-16 items-center">
 
             {/* LEFT — copy */}
             <div
@@ -300,7 +300,7 @@ function Hero() {
 
             {/* RIGHT — mockup */}
             <div
-              className="hidden lg:flex items-center justify-center"
+  className="w-full lg:flex items-center justify-center mt-8 lg:mt-0"
               style={{
                 opacity: mounted ? 1 : 0,
                 transform: mounted ? 'none' : 'translateY(24px) scale(0.97)',
@@ -995,171 +995,6 @@ function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: b
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 4 — FEATURES BENTO GRID (Light BG + Dark Cards + Original QR)
-// ─────────────────────────────────────────────────────────────────────────────
-function Features() {
-  const { ref, visible } = useFadeIn();
-
-  const tiles = [
-    {
-      size: 'col-span-2',
-      icon: <QrCode className="w-6 h-6 text-blue-400" />,
-      badge: 'Customer Intake',
-      title: 'Your branded QR code',
-      desc: 'Stick it on your truck or yard signs. One scan opens your custom form. No app download, no friction. Customers do the data entry — you just receive the job.',
-      accent: 'blue',
-      visual: (
-        <div className="absolute right-[-20px] bottom-[-20px] w-56 bg-white rounded-[28px] p-4 shadow-2xl hidden lg:block rotate-6 group-hover:rotate-3 group-hover:-translate-y-2 transition-all duration-500 border border-slate-100">
-          {/* QR panel - YOUR ORIGINAL QR CODE */}
-          <div className="bg-[#0d1117] rounded-2xl p-3 mb-3">
-            <svg viewBox="0 0 200 200" className="w-full" xmlns="http://www.w3.org/2000/svg">
-              <rect width="200" height="200" fill="#0d1117"/>
-              <rect x="10" y="10" width="50" height="50" rx="6" fill="#fff"/><rect x="17" y="17" width="36" height="36" rx="3" fill="#0d1117"/><rect x="23" y="23" width="24" height="24" rx="2" fill="#fff"/>
-              <rect x="140" y="10" width="50" height="50" rx="6" fill="#fff"/><rect x="147" y="17" width="36" height="36" rx="3" fill="#0d1117"/><rect x="153" y="23" width="24" height="24" rx="2" fill="#fff"/>
-              <rect x="10" y="140" width="50" height="50" rx="6" fill="#fff"/><rect x="17" y="147" width="36" height="36" rx="3" fill="#0d1117"/><rect x="23" y="153" width="24" height="24" rx="2" fill="#fff"/>
-              <g fill="#fff">
-                <rect x="72" y="10" width="7" height="7" rx="1"/><rect x="82" y="10" width="7" height="7" rx="1"/><rect x="99" y="10" width="7" height="7" rx="1"/><rect x="109" y="10" width="7" height="7" rx="1"/><rect x="126" y="10" width="7" height="7" rx="1"/>
-                <rect x="72" y="20" width="7" height="7" rx="1"/><rect x="92" y="20" width="7" height="7" rx="1"/><rect x="116" y="20" width="7" height="7" rx="1"/><rect x="126" y="20" width="7" height="7" rx="1"/>
-                <rect x="82" y="30" width="7" height="7" rx="1"/><rect x="99" y="30" width="7" height="7" rx="1"/><rect x="109" y="30" width="7" height="7" rx="1"/>
-                <rect x="72" y="40" width="7" height="7" rx="1"/><rect x="92" y="40" width="7" height="7" rx="1"/><rect x="99" y="40" width="7" height="7" rx="1"/><rect x="119" y="40" width="7" height="7" rx="1"/>
-                <rect x="72" y="50" width="7" height="7" rx="1"/><rect x="82" y="50" width="7" height="7" rx="1"/><rect x="109" y="50" width="7" height="7" rx="1"/><rect x="126" y="50" width="7" height="7" rx="1"/>
-                <rect x="10" y="65" width="7" height="7" rx="1"/><rect x="24" y="65" width="7" height="7" rx="1"/><rect x="38" y="65" width="7" height="7" rx="1"/><rect x="52" y="65" width="7" height="7" rx="1"/><rect x="150" y="65" width="7" height="7" rx="1"/><rect x="164" y="65" width="7" height="7" rx="1"/><rect x="178" y="65" width="7" height="7" rx="1"/>
-                <rect x="10" y="75" width="7" height="7" rx="1"/><rect x="30" y="75" width="7" height="7" rx="1"/><rect x="50" y="75" width="7" height="7" rx="1"/><rect x="72" y="75" width="7" height="7" rx="1"/><rect x="89" y="75" width="7" height="7" rx="1"/><rect x="150" y="75" width="7" height="7" rx="1"/><rect x="170" y="75" width="7" height="7" rx="1"/>
-                <rect x="20" y="85" width="7" height="7" rx="1"/><rect x="40" y="85" width="7" height="7" rx="1"/><rect x="72" y="85" width="7" height="7" rx="1"/><rect x="160" y="85" width="7" height="7" rx="1"/><rect x="178" y="85" width="7" height="7" rx="1"/>
-                <rect x="10" y="95" width="7" height="7" rx="1"/><rect x="30" y="95" width="7" height="7" rx="1"/><rect x="50" y="95" width="7" height="7" rx="1"/><rect x="150" y="95" width="7" height="7" rx="1"/><rect x="168" y="95" width="7" height="7" rx="1"/>
-                <rect x="20" y="105" width="7" height="7" rx="1"/><rect x="44" y="105" width="7" height="7" rx="1"/><rect x="72" y="105" width="7" height="7" rx="1"/><rect x="155" y="105" width="7" height="7" rx="1"/><rect x="178" y="105" width="7" height="7" rx="1"/>
-                <rect x="72" y="140" width="7" height="7" rx="1"/><rect x="89" y="140" width="7" height="7" rx="1"/><rect x="106" y="140" width="7" height="7" rx="1"/><rect x="150" y="140" width="7" height="7" rx="1"/><rect x="168" y="140" width="7" height="7" rx="1"/><rect x="183" y="140" width="7" height="7" rx="1"/>
-                <rect x="72" y="150" width="7" height="7" rx="1"/><rect x="99" y="150" width="7" height="7" rx="1"/><rect x="116" y="150" width="7" height="7" rx="1"/><rect x="155" y="150" width="7" height="7" rx="1"/><rect x="178" y="150" width="7" height="7" rx="1"/>
-                <rect x="82" y="160" width="7" height="7" rx="1"/><rect x="106" y="160" width="7" height="7" rx="1"/><rect x="123" y="160" width="7" height="7" rx="1"/><rect x="150" y="160" width="7" height="7" rx="1"/><rect x="165" y="160" width="7" height="7" rx="1"/><rect x="183" y="160" width="7" height="7" rx="1"/>
-                <rect x="72" y="170" width="7" height="7" rx="1"/><rect x="89" y="170" width="7" height="7" rx="1"/><rect x="113" y="170" width="7" height="7" rx="1"/><rect x="155" y="170" width="7" height="7" rx="1"/><rect x="175" y="170" width="7" height="7" rx="1"/>
-                <rect x="82" y="180" width="7" height="7" rx="1"/><rect x="99" y="180" width="7" height="7" rx="1"/><rect x="123" y="180" width="7" height="7" rx="1"/><rect x="150" y="180" width="7" height="7" rx="1"/><rect x="165" y="180" width="7" height="7" rx="1"/><rect x="183" y="180" width="7" height="7" rx="1"/>
-              </g>
-              <circle cx="100" cy="100" r="22" fill="#fff"/>
-              <polygon points="100,85 90,104 110,104" fill="#c0392b"/>
-              <polygon points="93,90 84,106 102,106" fill="#e74c3c" opacity="0.8"/>
-              <polygon points="107,90 98,106 116,106" fill="#c0392b" opacity="0.7"/>
-              <text x="100" y="114" textAnchor="middle" fontSize="5" fontWeight="700" fill="#1a1a2e" fontFamily="system-ui">RIDGE LINE</text>
-              <text x="100" y="120" textAnchor="middle" fontSize="4" fill="#6b7280" fontFamily="system-ui">ROOFING</text>
-            </svg>
-          </div>
-          {/* Controls */}
-          <div className="grid grid-cols-3 gap-1 mb-2">
-            {['Standard','Brand','Dark'].map((t,i) => (
-              <div key={t} className={`text-center py-1.5 rounded-lg text-[8px] font-black border ${i===2?'border-indigo-500 text-indigo-600 bg-indigo-50':'border-slate-200 text-slate-400'}`}>{t.toUpperCase()}</div>
-            ))}
-          </div>
-          <div className="bg-[#0d1117] rounded-xl py-2 flex items-center justify-center">
-            <span className="text-[8px] font-black text-white uppercase tracking-wider">Export PNG</span>
-          </div>
-        </div>
-      )
-    },
-
-    {
-      size: 'col-span-1',
-      icon: <Mail className="w-6 h-6 text-emerald-400" />,
-      badge: 'One-Click Outbox',
-      title: 'Every email logged',
-      desc: 'Send quotes, reminders, and schedules with one click. Full sent history so nothing slips.',
-      accent: 'emerald',
-    },
-    {
-      size: 'col-span-1',
-      icon: <BarChart2 className="w-6 h-6 text-amber-400" />,
-      badge: 'Daily Digest',
-      title: '6AM morning briefing',
-      desc: 'New leads, overdue payments, today\'s schedule — in one email before you leave for the job.',
-      accent: 'amber',
-    },
-    {
-      size: 'col-span-2',
-      icon: <Layout className="w-6 h-6 text-slate-400" />,
-      badge: 'Lead Board',
-      title: 'Every job. One place.',
-      desc: 'Your whole pipeline visible at a glance. Status filters, AI assistance, and real-time stats — nothing falls through the cracks.',
-      accent: 'slate',
-      visual: (
-        <div className="absolute right-6 top-6 bottom-6 w-1/2 hidden lg:flex flex-col gap-3 pl-12 pointer-events-none">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-3 transform translate-x-4 group-hover:translate-x-0 transition-transform duration-700">
-            <div className="flex justify-between mb-2">
-               <div className="w-12 h-1.5 bg-blue-500/40 rounded-full" />
-               <div className="w-4 h-1.5 bg-white/10 rounded-full" />
-            </div>
-            <div className="w-20 h-2 bg-white/20 rounded-full" />
-          </div>
-          <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-3 shadow-xl transform translate-x-8 group-hover:translate-x-2 transition-transform duration-700 delay-75">
-            <div className="flex justify-between mb-2">
-               <div className="w-12 h-1.5 bg-blue-400 rounded-full" />
-               <div className="w-4 h-1.5 bg-blue-400/30 rounded-full" />
-            </div>
-            <div className="w-24 h-2 bg-white/80 rounded-full" />
-          </div>
-        </div>
-      )
-    },
-  ];
-
-  const accentMap: Record<string, string> = {
-    blue:   'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    violet: 'bg-violet-500/10 border-violet-500/20 text-violet-400',
-    emerald:'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    amber:  'bg-amber-500/10 border-amber-500/20 text-amber-400',
-    slate:  'bg-white/5 border-white/10 text-slate-400',
-  };
-
-  return (
-    <section id="features" className="py-28 px-6 bg-slate-50 border-t border-slate-200">
-      <style jsx global>{`
-        @keyframes scan {
-          0% { left: -100%; }
-          100% { left: 100%; }
-        }
-      `}</style>
-      
-      <div className="max-w-6xl mx-auto">
-        {/* Header - Light mode background, dark text */}
-        <div ref={ref} className="mb-16 max-w-2xl"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Inside the product</p>
-          <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-[0.92]">
-            Everything happens here.
-          </h2>
-          <p className="text-slate-600 text-lg mt-4 font-medium leading-relaxed">
-            One place for every lead, quote, schedule, and payment. Built for the speed of the job site.
-          </p>
-        </div>
-
-        {/* Bento grid - Cards remain DARK (#0d1117) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tiles.map((tile, i) => {
-            const { ref: tRef, visible: tVis } = useFadeIn();
-            return (
-              <div
-                key={i} ref={tRef}
-                className={`md:${tile.size} relative overflow-hidden bg-[#0d1117] border border-slate-200 shadow-xl shadow-slate-200/50 rounded-[2.5rem] p-10 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 group`}
-                style={{ opacity: tVis ? 1 : 0, transform: tVis ? 'none' : 'translateY(20px)', transition: `all 0.6s ease ${i * 0.08}s` }}
-              >
-                {tile.visual}
-
-                <div className="relative z-10">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest mb-8 ${accentMap[tile.accent]}`}>
-                    {tile.icon}
-                    {tile.badge}
-                  </div>
-                  <h3 className="text-2xl font-black text-white mb-4 group-hover:text-blue-400 transition-colors tracking-tight">{tile.title}</h3>
-                  <p className="text-slate-400 text-base leading-relaxed font-medium max-w-[280px]">{tile.desc}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 6 — DAILY DIGEST (rebuilt to match real digest content)
@@ -1728,10 +1563,6 @@ export default function Home() {
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
       <HowItWorks />
-
-
-      {/* 4. FEATURES BENTO — dark section, grid of capabilities */}
-      <Features />
 
 
 
