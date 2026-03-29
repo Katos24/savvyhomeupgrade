@@ -291,7 +291,6 @@ function Hero() {
 
               <div className="flex items-center gap-3 justify-center lg:justify-start">
                 <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#F59E0B" stroke="none" />)}
                 </div>
                 <p className="text-[13px] font-medium" style={{ color: '#6B7280' }}>
                   14-day free trial · Cancel anytime · 2 min setup
@@ -342,7 +341,7 @@ function LeadCapture() {
         'Branded QR code — works on trucks, signs, social & business cards',
         'Fully customizable form — your colors, your questions, your order',
         'Collect address, preferred date & time, photos, budget range',
-        'Lead hits your board the second they submit — no manual entry',
+        'Lead hits your board the second they submit',
       ],
       quote: '"A neighbor scanned my yard sign while I was on the roof. Job was booked before I came down."',
       author: 'Mike T., Ridge Line Roofing',
@@ -351,18 +350,9 @@ function LeadCapture() {
           <img
             src="/images/qrbranded.png"
             alt="QR on truck and yard sign"
-            className="w-full h-full object-cover"
-            style={{ opacity: 0.55 }}
+            className="w-full h-full object-contain object-top"
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0f1623 30%, transparent 100%)' }} />
-          <div className="absolute bottom-6 left-6 right-6 rounded-2xl p-5 border"
-            style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #34d399' }} />
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">New lead — just now</span>
-            </div>
-            <p className="text-sm font-bold text-slate-300">"John S. — Roof repair, 226 Springmeadow Dr · $5K–$10K budget"</p>
-          </div>
+         
         </div>
       ),
     },
@@ -407,34 +397,13 @@ visual: (
       quote: '"I send quotes before I even leave the driveway. Customers love the speed."',
       author: 'Dave R., All-Pro Siding',
       visual: (
-        <div className="w-full h-full flex flex-col p-6 justify-center" style={{ background: '#111827' }}>
-          <p style={{ fontSize: 9, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Quote #1024 — Marcus Rivera · AI Drafted</p>
-          <div className="space-y-2 mb-4">
-            {[
-              { item: 'Full Shingle Replacement', price: '$6,200' },
-              { item: 'Flashing & Sealant', price: '$850' },
-              { item: 'Debris Removal', price: '$400' },
-            ].map((row, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{row.item}</span>
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>{row.price}</span>
-              </div>
-            ))}
-            <div className="flex items-center justify-between px-4 py-4 rounded-xl" style={{ background: '#2563eb' }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</span>
-              <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>$7,450.00</span>
-            </div>
-          </div>
-          <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <p style={{ fontSize: 9, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Customer receives</p>
-            <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 10 }}>"Your quote for $7,450 is ready for review."</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <div style={{ padding: '8px', background: '#10b981', borderRadius: 10, textAlign: 'center', fontSize: 10, fontWeight: 900, color: '#fff' }}>✓ Accept</div>
-              <div style={{ padding: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, textAlign: 'center', fontSize: 10, fontWeight: 900, color: '#6b7280' }}>Decline</div>
-            </div>
-          </div>
-        </div>
-      ),
+  <img
+    src="/images/quotenew.png"
+    alt="Quote section"
+    className="w-full h-full object-cover"
+    style={{ background: '#f8f9fb' }}
+  />
+),
     },
     {
       label: 'Get Paid',
@@ -892,10 +861,8 @@ function FastDemoForm() {
         </button>
 
         <div className="text-center">
-          <button className="text-[10px] text-slate-400 underline underline-offset-2">Skip for now</button>
         </div>
 
-        <p className="text-center text-[9px] text-slate-400">lead2project.com — Private</p>
       </div>
     </div>
   );
@@ -1027,181 +994,6 @@ function StepRow({ step, isEven, colorClass, glowClass }: { step: any; isEven: b
   );
 }
 
- /* ─────────────────────────────────────────────────────────────────────────────
-   SECTION: THE SMART JOB FOLDER (One-Click & Track)
-   ───────────────────────────────────────────────────────────────────────────── */
-function ProjectHub() {
-  const { ref, visible } = useFadeIn();
-
-  return (
-    <section className="py-24 px-6 bg-white border-b border-slate-100 overflow-hidden">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-
-          {/* LEFT: THE VALUE PROMISE */}
-          <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-              <span className="text-[10px] font-[1000] uppercase tracking-[0.2em] text-blue-700">Live Project Intelligence</span>
-            </div>
-            
-            <h2 className="text-5xl md:text-7xl font-[1000] text-slate-900 leading-[0.85] tracking-tighter mb-8">
-              One-click send.<br />
-              <span className="text-blue-600 italic">Auto-tracked.</span>
-            </h2>
-
-            <p className="text-xl text-slate-500 font-medium leading-relaxed mb-10">
-              Stop guessing if they saw your email. Every job card acts as a command center—send quotes, schedule updates, and payment links in a single tap, then watch the status update in real-time.
-            </p>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              {[
-                {
-                  t: 'No More Gmail Tab-Hopping',
-                  d: 'Send quotes & time estimates directly from the card. No copy-pasting required.',
-                },
-                {
-                  t: 'Smart Decision Links',
-                  d: 'Emails include Accept/Decline buttons that update your dashboard instantly.',
-                },
-                {
-                  t: 'The Audit Trail',
-                  d: 'A permanent, timestamped log of every communication. Never lose an email again.',
-                },
-                {
-                  t: 'Instant Crew Briefs',
-                  d: 'AI boils down lead notes into a 10-second instruction for your field guys.',
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="p-5 rounded-3xl border border-slate-100 bg-slate-50/30 hover:bg-white hover:shadow-xl hover:shadow-blue-50 transition-all group"
-                >
-                  <p className="text-sm font-[1000] text-slate-900 uppercase tracking-tight mb-2 flex items-center gap-2">
-                    <Check size={14} className="text-blue-600" strokeWidth={4} /> {item.t}
-                  </p>
-                  <p className="text-xs text-slate-500 font-bold leading-snug">{item.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT: THE INTERACTIVE CARD MOCKUP */}
-          <div
-            ref={ref}
-            className="relative pt-12"
-            style={{ 
-              opacity: visible ? 1 : 0, 
-              transform: visible ? 'none' : 'translateY(32px)', 
-              transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
-            }}
-          >
-            {/* Soft Shadow Glow behind card */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-100/40 blur-[120px] rounded-full" />
-            
-            <div className="relative z-10 bg-white border border-slate-200 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden">
-
-              {/* Card Header: High Contrast */}
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Project • #1024</p>
-                  </div>
-                  <h3 className="text-3xl font-[1000] text-slate-900 tracking-tighter">Marcus Rivera</h3>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
-                  <User size={24} />
-                </div>
-              </div>
-
-              {/* Tabs: The Navigation Hub */}
-              <div className="flex bg-white px-4 border-b border-slate-100 overflow-x-auto no-scrollbar">
-                {[
-                  { id: 'overview',  label: 'Overview',  icon: <Layout size={14} />,     active: true },
-                  { id: 'schedule',  label: 'Schedule',  icon: <Calendar size={14} /> },
-                  { id: 'quote',     label: 'Quote',     icon: <CreditCard size={14} /> },
-                  { id: 'media',     label: 'Media',     icon: <ImageIcon size={14} /> },
-                  { id: 'ai',        label: 'AI Brief',  icon: <Sparkles size={14} /> },
-                ].map((tab) => (
-                  <div
-                    key={tab.id}
-                    className={`
-                      flex items-center gap-2 px-6 py-5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all
-                      ${tab.active ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}
-                    `}
-                  >
-                    {tab.icon} {tab.label}
-                  </div>
-                ))}
-              </div>
-
-              {/* Content Body */}
-              <div className="p-8 space-y-8">
-                
-                {/* Send Actions: The "One-Click" buttons */}
-                <div className="space-y-3">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Instant Outbox</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { label: 'Time Estimate', color: 'text-amber-600', bg: 'bg-amber-50', icon: <Clock size={12} /> },
-                      { label: 'Send Quote',   color: 'text-blue-600',  bg: 'bg-blue-50',  icon: <FileText size={12} /> },
-                      { label: 'Get Paid',      color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <DollarSign size={12} /> },
-                    ].map((btn, i) => (
-                      <button key={i} className={`flex items-center justify-between px-4 py-3 rounded-xl border border-transparent font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-md transition-all ${btn.bg} ${btn.color}`}>
-                        <span className="flex items-center gap-2">{btn.icon} {btn.label}</span>
-                        <Send size={10} className="opacity-40" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Customer View Mockup */}
-                <div className="bg-slate-900 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 p-4 opacity-10 text-white"><Mail size={40} /></div>
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-4">Customer Experience</p>
-                  <p className="text-sm text-white/90 font-bold mb-6 leading-relaxed">
-                    "Hi Marcus, your roofing quote for <span className="text-blue-400">$8,450</span> is ready for review."
-                  </p>
-                  <div className="flex gap-3">
-                    <div className="flex-1 py-3 px-4 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl text-center shadow-lg shadow-emerald-500/20">
-                      ✓ Accept Quote
-                    </div>
-                    <div className="flex-1 py-3 px-4 bg-white/10 border border-white/20 text-white/60 text-[10px] font-black uppercase tracking-widest rounded-xl text-center hover:bg-white/20 transition-colors">
-                      Decline
-                    </div>
-                  </div>
-                </div>
-
-                {/* Audit Trail / History Log */}
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Activity Trail</p>
-                  <div className="space-y-4">
-                    {[
-                      { dot: 'bg-blue-400',    text: 'Quote #1024 delivered',         time: '10:41 AM' },
-                      { dot: 'bg-emerald-500', text: 'Quote accepted by Marcus',      time: '2:21 PM', bold: true, pulse: true },
-                      { dot: 'bg-slate-300',   text: 'Project converted from Lead',   time: 'Yesterday' },
-                    ].map((row, i) => (
-                      <div key={i} className="flex items-center gap-4 group/row">
-                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${row.dot} ${row.pulse ? 'animate-pulse ring-4 ring-emerald-500/20' : ''}`} />
-                        <span className={`text-sm flex-1 ${row.bold ? 'font-[1000] text-slate-900' : 'font-bold text-slate-500 opacity-70'}`}>
-                          {row.text}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter shrink-0">{row.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 4 — FEATURES BENTO GRID (Light BG + Dark Cards + Original QR)
@@ -1263,20 +1055,7 @@ function Features() {
         </div>
       )
     },
-    // ... all other tiles stay exactly as you had them
-    {
-      size: 'col-span-1',
-      icon: <Bot className="w-6 h-6 text-violet-400" />,
-      badge: 'AI Co-pilot',
-      title: 'Quotes in 60 seconds',
-      desc: 'AI reads customer photos and drafts line items. You review and send.',
-      accent: 'violet',
-      visual: (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
-          <div className="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-violet-500/10 to-transparent skew-x-12 group-hover:animate-[scan_2s_ease-in-out_infinite]" />
-        </div>
-      )
-    },
+
     {
       size: 'col-span-1',
       icon: <Mail className="w-6 h-6 text-emerald-400" />,
@@ -1380,335 +1159,7 @@ function Features() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 5 — AI CO-PILOT (Position: Above Workflow Bento)
-// ─────────────────────────────────────────────────────────────────────────────
-function AiSection() {
-  const { ref, visible } = useFadeIn();
 
-  return (
-    <section id="ai" className="py-32 px-6 bg-slate-50 relative overflow-hidden border-t border-slate-200">
-      {/* Soft Ambient Glows - Subtle for Light Mode */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-400/10 blur-[120px] rounded-full pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto relative z-10">
-        <div
-          ref={ref}
-          className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center"
-          style={{ 
-            opacity: visible ? 1 : 0, 
-            transform: visible ? 'none' : 'translateY(32px)', 
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
-          }}
-        >
-          {/* LEFT — THE AI INTERFACE */}
-          <div className="relative group order-2 lg:order-1">
-            {/* The Main AI Card */}
-            <div className="relative bg-white border border-slate-200 rounded-[3rem] p-10 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] overflow-hidden">
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-200">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">Lead2Project AI</p>
-                    <p className="text-slate-900 font-black text-base">Drafting Quote #2044</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 rounded-full text-[10px] text-indigo-600 font-black border border-indigo-100 uppercase tracking-widest animate-pulse">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                  Analyzing
-                </div>
-              </div>
-
-              {/* AI Typing Simulation */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <span className="text-slate-800 text-[15px] font-bold">Roof Shingle Replacement</span>
-                  <span className="text-indigo-600 font-black text-[15px]">$2,400.00</span>
-                </div>
-                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl opacity-60">
-                  <span className="text-slate-800 text-[15px] font-bold">Flashing & Sealant</span>
-                  <span className="text-indigo-600 font-black text-[15px]">$450.00</span>
-                </div>
-                <div className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl opacity-30">
-                  <span className="text-slate-800 text-[15px] font-bold">Debris Removal</span>
-                  <span className="text-indigo-600 font-black text-[15px]">$300.00</span>
-                </div>
-              </div>
-
-              {/* Total Calculation */}
-              <div className="mt-10 pt-8 border-t border-slate-100 flex items-end justify-between">
-                 <div>
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Estimated</p>
-                    <p className="text-4xl font-black text-slate-900 tracking-tighter">$3,150.00</p>
-                 </div>
-                 <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors">
-                    Review & Send
-                 </button>
-              </div>
-            </div>
-
-            {/* Floating Photo Annotation */}
-            <div className="absolute -top-6 -right-6 bg-amber-50 border border-amber-200 px-5 py-4 rounded-[2rem] shadow-2xl -rotate-3 hidden md:block">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center border border-amber-200">
-                    <Camera size={18} className="text-amber-700" />
-                </div>
-                <div>
-                   <p className="text-amber-900 font-black text-[11px] uppercase tracking-tighter">Photo Scan</p>
-                   <p className="text-amber-700/70 text-[10px] font-bold leading-none">3 Images Found</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT — COPY */}
-          <div className="order-1 lg:order-2 space-y-8">
-            <span className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em]">
-              <Bot className="w-4 h-4" /> AI Intelligence
-            </span>
-            <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]">
-              Quotes that <br/>
-              <span className="text-slate-400 font-medium italic">write themselves.</span>
-            </h2>
-            <p className="text-xl text-slate-600 leading-relaxed font-medium">
-              Lead2Project doesn't just manage leads—it understands them. Our AI reads customer photos and job descriptions to draft professional, line-item quotes before you even pick up the phone.
-            </p>
-            
-            <div className="space-y-4 pt-4">
-              {[
-                { t: 'Instant Line Items', d: 'AI identifies materials and labor from lead photos.' },
-                { t: 'Project Summaries', d: 'Automatically boils down job notes for your crew.' },
-                { t: 'One Click Emails', d: 'Send professional emails with a single click.' }
-              ].map((item, idx) => (
-                <div key={idx} className="group flex gap-5 p-6 rounded-[2rem] hover:bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all border border-transparent hover:border-slate-200">
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-4 h-4 text-white" strokeWidth={4} />
-                  </div>
-                  <div>
-                    <p className="text-slate-900 font-black text-lg leading-tight mb-1">{item.t}</p>
-                    <p className="text-slate-500 text-sm font-medium leading-snug">{item.d}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 4B — WORKFLOW BENTO (Light BG + Dark Cards)
-// ─────────────────────────────────────────────────────────────────────────────
-function WorkflowFeatures() {
-  const { ref, visible } = useFadeIn();
-
-  return (
-    <section className="pb-32 px-6 bg-slate-50 overflow-hidden border-b border-slate-200">
-      <div className="max-w-6xl mx-auto">
-
-        {/* Section label — Updated for Light Mode */}
-        <div ref={ref} className="mb-12 transition-all duration-700"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 mb-3">Your workflow, your rules</p>
-          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
-            Built to fit how<br/>
-            <span className="text-slate-400 font-medium italic">you already work.</span>
-          </h2>
-        </div>
-
-        {/* Bento grid — Cards stay Dark (#0d1117) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-          {/* Tile 1 — Pipeline Stages */}
-          <BentoTile
-            badge="Pipeline"
-            accent="blue"
-            title="Your stages. Your flow."
-            desc="Move leads through custom stages that match how you actually close jobs."
-            delay={0}
-          >
-            <div className="mt-8 space-y-3">
-              {[
-                { label: 'New',       w: '100%', color: '#3b82f6' },
-                { label: 'Quoted',    w: '65%',  color: '#f59e0b' },
-                { label: 'Scheduled', w: '40%',  color: '#10b981' },
-                { label: 'Closed',    w: '20%',  color: '#6b7280' },
-              ].map((s, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold text-slate-500 w-14 shrink-0 uppercase tracking-tighter">{s.label}</span>
-                  <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-1000"
-                      style={{ width: s.w, background: s.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </BentoTile>
-
-          {/* Tile 2 — Custom Categories */}
-          <BentoTile
-            badge="Categories"
-            accent="violet"
-            title="Tag every lead."
-            desc="Roofing, HVAC, Plumbing—tag every lead to filter and quote without digging."
-            delay={0.1}
-          >
-            <div className="mt-8 flex flex-wrap gap-2">
-              {[
-                { label: 'Roofing',    color: '#3b82f6' },
-                { label: 'Gutters',    color: '#8b5cf6' },
-                { label: 'Siding',     color: '#10b981' },
-                { label: 'Repair',     color: '#f59e0b' },
-                { label: '+ Add New',  color: '#374151', dashed: true },
-              ].map((c, i) => (
-                <div key={i} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold ${
-                  c.dashed
-                    ? 'border border-dashed border-white/20 text-slate-500'
-                    : 'bg-white/[0.06] border border-white/[0.08] text-slate-300'
-                }`}>
-                  {!c.dashed && <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />}
-                  {c.label}
-                </div>
-              ))}
-            </div>
-          </BentoTile>
-
-          {/* Tile 3 — Custom Form Questions */}
-          <BentoTile
-            badge="Custom Form"
-            accent="amber"
-            title="Ask exactly what you need."
-            desc="Add questions for budget, gate codes, or pets before the first call."
-            delay={0.2}
-          >
-            <div className="mt-8 space-y-2">
-              {[
-                { q: 'Budget range?',        type: 'Select' },
-                { q: 'Pet on property?',     type: 'Yes/No' },
-                { q: 'Gate access?',         type: 'Text'   },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-3">
-                  <span className="text-[11px] font-medium text-slate-300 truncate">{item.q}</span>
-                  <span className="text-[8px] font-black text-slate-600 bg-white/[0.05] px-2 py-0.5 rounded-lg uppercase tracking-widest">{item.type}</span>
-                </div>
-              ))}
-            </div>
-          </BentoTile>
-
-          {/* Tile 4 — Quotes (col-span-2) */}
-          <BentoTile
-            badge="Quotes"
-            accent="emerald"
-            title="Line-item quotes. Sent in seconds."
-            desc="AI drafts line items from photos and notes. Review, adjust, and send—all without leaving the dashboard."
-            delay={0.3}
-            wide
-          >
-            <div className="mt-8 bg-white/[0.04] border border-white/[0.07] rounded-2xl overflow-hidden shadow-2xl">
-              <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
-                <div>
-                  <p className="text-[12px] font-black text-white">Quote #2044 — Marcus Rivera</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Roofing · AI Drafted</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                    <Check size={14} className="text-emerald-400" />
-                </div>
-              </div>
-              <div className="divide-y divide-white/[0.04]">
-                {[
-                  { item: 'Shingle Replacement', price: '$2,400' },
-                  { item: 'Flashing & Sealant',  price: '$450'  },
-                ].map((row, i) => (
-                  <div key={i} className="flex items-center justify-between px-5 py-3">
-                    <span className="text-[13px] text-slate-400 font-medium">{row.item}</span>
-                    <span className="text-[13px] font-black text-white">{row.price}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="px-5 py-4 bg-emerald-500/5 border-t border-white/[0.06] flex items-center justify-between">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Total</span>
-                <span className="text-[18px] font-black text-emerald-400 tracking-tighter">$2,850.00</span>
-              </div>
-            </div>
-          </BentoTile>
-
-          {/* Tile 5 — Tasks */}
-          <BentoTile
-            badge="Tasks"
-            accent="slate"
-            title="Nothing falls through."
-            desc="Attach tasks to any lead. Follow ups, permits, or material orders."
-            delay={0.4}
-          >
-            <div className="mt-8 space-y-3">
-              {[
-                { label: 'Call to confirm', done: true  },
-                { label: 'Send estimate',   done: true  },
-                { label: 'Pull city permit', done: false },
-              ].map((task, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 ${
-                    task.done ? 'bg-blue-600 border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]' : 'border-white/20 bg-transparent'
-                  }`}>
-                    {task.done && <Check size={10} className="text-white" strokeWidth={4} />}
-                  </div>
-                  <span className={`text-[12px] font-bold tracking-tight ${
-                    task.done ? 'text-slate-600' : 'text-slate-300'
-                  }`}>{task.label}</span>
-                </div>
-              ))}
-            </div>
-          </BentoTile>
-
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Shared tile wrapper ──────────────────────────────────────────────────────
-function BentoTile({
-  badge, accent, title, desc, delay, wide, children,
-}: {
-  badge: string; accent: string; title: string; desc: string;
-  delay: number; wide?: boolean; children?: React.ReactNode;
-}) {
-  const { ref, visible } = useFadeIn();
-
-  const accentMap: Record<string, string> = {
-    blue:    'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    violet:  'bg-violet-500/10 border-violet-500/20 text-violet-400',
-    amber:   'bg-amber-500/10 border-amber-500/20 text-amber-400',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    slate:   'bg-white/5 border-white/10 text-slate-400',
-  };
-
-  return (
-    <div
-      ref={ref}
-      className={`${wide ? 'md:col-span-2' : 'col-span-1'} relative bg-[#0d1117] border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] p-9 hover:border-blue-500/30 transition-all duration-500 group overflow-hidden`}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'none' : 'translateY(24px)',
-        transition: `all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}s`,
-      }}
-    >
-      <div className={`inline-flex items-center px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest mb-6 ${accentMap[accent]}`}>
-        {badge}
-      </div>
-      <h3 className="text-2xl font-black text-white tracking-tight mb-3 group-hover:text-blue-400 transition-colors">
-        {title}
-      </h3>
-      <p className="text-slate-500 text-[15px] leading-relaxed font-medium max-w-[280px]">{desc}</p>
-      {children}
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 6 — DAILY DIGEST (rebuilt to match real digest content)
@@ -1766,14 +1217,7 @@ function DigestSection() {
 
               {/* Email client chrome */}
               <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/60" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/60" />
-                </div>
-                <div className="flex-1 bg-white rounded-md px-3 py-1 text-[9px] text-slate-400 font-mono ml-2">
-                  From: digest@lead2project.com
-                </div>
+             
               </div>
 
               {/* Email header */}
@@ -1873,18 +1317,7 @@ function DigestSection() {
               </div>
             </div>
 
-            {/* Floating phone notification */}
-            <div className="absolute -top-4 -right-4 md:-right-8 z-20 bg-[#1C1C1E] border border-white/10 rounded-2xl px-4 py-3 shadow-2xl w-[200px] group-hover:-translate-y-1 group-hover:rotate-1 transition-all duration-700">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center shrink-0">
-                  <span className="text-[7px] font-black text-white">L</span>
-                </div>
-                <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Lead2Project</span>
-                <span className="text-[9px] text-slate-600 ml-auto">now</span>
-              </div>
-              <p className="text-white text-[11px] font-bold leading-snug">Your 6AM digest is ready</p>
-              <p className="text-slate-500 text-[10px] mt-0.5">3 new leads · $3,550 overdue</p>
-            </div>
+           
           </div>
         </div>
       </div>
@@ -2296,22 +1729,18 @@ export default function Home() {
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
       <HowItWorks />
 
-      <ProjectHub />
 
       {/* 4. FEATURES BENTO — dark section, grid of capabilities */}
       <Features />
 
 
 
-      {/* 5. AI CO-PILOT — light section, screenshot + bullet points */}
-      <AiSection />
 
 
 
       {/* 6. DAILY DIGEST + OUTBOX — dark section, email preview + copy */}
       <DigestSection />
 
-                  <WorkflowFeatures />
 
 
       {/* 7. VS JOBBER — light section, two-column comparison */}
