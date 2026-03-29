@@ -8,7 +8,7 @@ import {
   Truck, Instagram, Facebook, AtSign, Globe,
   User, Phone, FileText, ChevronRight, MailCheck, Send, DollarSign,
   Search, LayoutGrid, List, Plus, AlignLeft, Sparkles, Target,
-  Calendar, Clock, SlidersHorizontal, Filter, CreditCard, MessageCircle,
+  Calendar, Clock, SlidersHorizontal, Filter, CreditCard, MessageCircle, Download,
   MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, Bell, CheckSquare
 } from 'lucide-react';
 
@@ -69,166 +69,8 @@ scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm
     </nav>
   );
 }
-
-function HeroMockup() {
-  return (
-<div style={{ position: 'relative', width: '100%', maxWidth: 680, margin: '0 auto', userSelect: 'none' }}>
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        <div style={{
-          background: '#0d1117',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '10px 10px 0 0',
-          overflow: 'hidden',
-          aspectRatio: '16/10',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
-        }}>
-          {/* Browser chrome */}
-          <div style={{ background: '#161b25', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(239,68,68,0.6)' }} />
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(245,158,11,0.6)' }} />
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(52,211,153,0.6)' }} />
-            <div style={{ flex: 1, margin: '0 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 4, height: 14, display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
-              <span style={{ fontSize: 6, color: '#4b5563', fontFamily: 'monospace' }}>app.lead2project.com/dashboard</span>
-            </div>
-          </div>
-
-          {/* Dashboard */}
-          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 27px)', overflow: 'hidden' }}>
-
-            {/* Header pill */}
-            <div style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '4px 8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {[0,1,2].map(i => <div key={i} style={{ width: 10, height: 1.5, background: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />)}
-                </div>
-                <div style={{ width: 18, height: 18, background: '#1e2a3a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 5, fontWeight: 900, color: 'rgba(255,255,255,0.7)' }}>RL</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: 8, fontWeight: 900, color: '#fff', lineHeight: 1 }}>Ridge Line Roofing</div>
-                  <div style={{ fontSize: 5.5, fontWeight: 700, color: '#6366f1', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1 }}>Dashboard</div>
-                </div>
-              </div>
-              <div style={{ width: 22, height: 22, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)' }}>
-                <Plus size={11} color="rgba(255,255,255,0.7)" />
-              </div>
-            </div>
-
-            {/* 4 stat cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, padding: '0 10px 6px' }}>
-              {[
-                { label: 'TOTAL LEADS',      value: '20',      vc: '#fff' },
-                { label: 'ACTIVE JOBS',      value: '20',      vc: '#60a5fa' },
-                { label: 'REVENUE COLLECTED',value: '$51,200', vc: '#34d399' },
-                { label: 'PENDING',          value: '$13,900', vc: '#fbbf24' },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 7px' }}>
-                  <div style={{ fontSize: 5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{s.label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 900, color: s.vc, lineHeight: 1 }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Search + controls */}
-            <div style={{ padding: '0 10px 5px', display: 'flex', gap: 4, alignItems: 'center' }}>
-              <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, height: 18, display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 6 }}>
-                <Search size={8} color="#4b5563" />
-                <span style={{ fontSize: 6, color: '#4b5563' }}>Search by name, email or phone...</span>
-              </div>
-              <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Filter size={8} color="#6b7280" />
-              </div>
-              <div style={{ width: 18, height: 18, background: '#4f46e5', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <LayoutGrid size={9} color="#fff" />
-              </div>
-              <div style={{ width: 18, height: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <List size={8} color="#6b7280" />
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div style={{ padding: '0 10px 5px', display: 'flex', gap: 4 }}>
-              <div style={{ background: '#4f46e5', color: '#fff', fontSize: 6, fontWeight: 900, padding: '2px 7px', borderRadius: 99 }}>All (150)</div>
-              {['New (23)','Contacted (11)','In Progress (20)','Completed (12)'].map(t => (
-                <div key={t} style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#6b7280', fontSize: 6, fontWeight: 700, padding: '2px 6px', borderRadius: 99 }}>{t}</div>
-              ))}
-            </div>
-
-            {/* All Time */}
-            <div style={{ padding: '0 10px 5px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
-                <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)' }}>All Time</span>
-                <ChevronDown size={8} color="#4b5563" />
-              </div>
-            </div>
-
-            {/* TODAY */}
-            <div style={{ padding: '0 10px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 7, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Today</span>
-              <span style={{ fontSize: 6, fontWeight: 700, color: '#6b7280', background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: 99 }}>2</span>
-            </div>
-
-            {/* Lead cards */}
-            <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, flex: 1 }}>
-              {[
-                { name: 'John Simpson',  status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Unassigned', date: 'Mar 31', time: '8:15 AM',  amount: '$74',    amountColor: '#fff',     amountLabel: 'Unpaid'  },
-                { name: 'Jack Thomas',   status: 'New',         statusBg: 'rgba(16,185,129,0.15)',  statusColor: '#34d399', borderColor: '#10b981', cardBg: '#080f08', cat: 'Roofing',  assign: 'Alex K',     date: 'Apr 8',  time: '8:30 AM',  amount: '$3,550', amountColor: '#fbbf24', amountLabel: 'Partial' },
-                { name: 'Maria Reyes',   status: 'Contacted',   statusBg: 'rgba(99,102,241,0.15)',  statusColor: '#818cf8', borderColor: '#6366f1', cardBg: '#09090f', cat: 'Gutters',  assign: 'Tony',       date: 'Apr 2',  time: '10:00 AM', amount: '$1,200', amountColor: '#fff',     amountLabel: 'Unpaid'  },
-                { name: 'Tony Marino',   status: 'In Progress', statusBg: 'rgba(245,158,11,0.15)',  statusColor: '#fbbf24', borderColor: '#f59e0b', cardBg: '#0f0d07', cat: 'Siding',   assign: 'Mike',       date: 'Apr 5',  time: '9:00 AM',  amount: '$6,400', amountColor: '#fbbf24', amountLabel: 'Partial' },
-                { name: 'Carl Bennett',  status: 'Quoted',      statusBg: 'rgba(139,92,246,0.15)',  statusColor: '#a78bfa', borderColor: '#8b5cf6', cardBg: '#0a0810', cat: 'Windows',  assign: 'Unassigned', date: 'Apr 10', time: '1:00 PM',  amount: '$2,800', amountColor: '#fff',     amountLabel: 'Unpaid'  },
-                { name: 'Diana Cole',    status: 'Completed',   statusBg: 'rgba(107,114,128,0.15)', statusColor: '#9ca3af', borderColor: '#6b7280', cardBg: '#090909', cat: 'Plumbing', assign: 'Tony',       date: 'Mar 27', time: '—',        amount: '$4,200', amountColor: '#34d399', amountLabel: 'Paid'    },
-              ].map((lead, i) => (
-                <div key={i} style={{ background: lead.cardBg, border: '1px solid rgba(255,255,255,0.05)', borderLeft: `2.5px solid ${lead.borderColor}`, borderRadius: 9, padding: '6px 7px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ display: 'inline-flex', background: lead.statusBg, color: lead.statusColor, fontSize: 5, fontWeight: 900, padding: '1.5px 5px', borderRadius: 4, textTransform: 'uppercase', alignSelf: 'flex-start', letterSpacing: '0.04em' }}>
-                    {lead.status}
-                  </div>
-                  <div style={{ fontSize: 9, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{lead.name}</div>
-                  <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                    <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>{lead.cat}</span>
-                    <span style={{ fontSize: 5.5, color: '#374151' }}>·</span>
-                    <span style={{ fontSize: 5.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 38 }}>{lead.assign}</span>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 5, padding: '4px 5px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                    <div>
-                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Date</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Calendar size={6} color="#60a5fa" />
-                        <span style={{ fontSize: 6, color: '#60a5fa', fontWeight: 700 }}>{lead.date}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Arrival</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Clock size={6} color="#6b7280" />
-                        <span style={{ fontSize: 6, color: '#9ca3af', fontWeight: 700 }}>{lead.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 900, color: lead.amountColor }}>{lead.amount}</div>
-                      <div style={{ fontSize: 4.5, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>{lead.amountLabel}</div>
-                    </div>
-                    <div style={{ width: 14, height: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <ChevronRight size={7} color="#6b7280" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </div>
-        {/* Laptop chin */}
-        <div style={{ background: '#1a1f2b', height: 10, borderRadius: '0 0 2px 2px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }} />
-        <div style={{ background: '#111520', height: 5, borderRadius: '0 0 8px 8px', border: '1px solid rgba(255,255,255,0.04)', borderTop: 'none' }} />
-      </div>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO
+// HERO — Remote estimation angle, Option A
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -242,33 +84,45 @@ function Hero() {
       <Nav />
 
       <div className="relative z-10 flex-1 flex items-center">
-<div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-8 lg:pb-16">
-<div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-10 lg:gap-16 items-center">
+        <div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-8 lg:pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-16 items-center">
 
             {/* LEFT — copy */}
             <div
-              className="space-y-5 text-center lg:text-left"
+              className="space-y-6 text-center lg:text-left"
               style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
             >
+              {/* Eyebrow */}
               <div className="flex justify-center lg:justify-start">
-                
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold border"
+                  style={{ background: '#E8F4EF', borderColor: '#A8D5C2', color: '#1a6645' }}>
+                  <Zap className="w-3 h-3" style={{ fill: '#1a6645' }} />
+                  Built for home service pros
+                </span>
               </div>
 
+              {/* Headline */}
               <h1 className="font-black tracking-tight"
-                style={{ fontSize: 'clamp(38px, 6vw, 64px)', color: '#0F1F3D', lineHeight: 1.0 }}>
-                Everything to run<br />
-                and grow your<br />
-                <span style={{ color: '#1a6645' }}>home service business.</span>
+                style={{ fontSize: 'clamp(40px, 6vw, 68px)', color: '#0F1F3D', lineHeight: 1.0 }}>
+                Quote jobs without<br />
+                <span style={{ color: '#1a6645' }}>leaving your desk.</span>
               </h1>
 
-              <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[440px]"
-                style={{ fontSize: 'clamp(15px, 2vw, 18px)', color: '#4A5568' }}>
-                Win more jobs, get paid faster, and look more professional — all from one dashboard.
+              {/* Sub */}
+              <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[460px]"
+                style={{ fontSize: 'clamp(16px, 2vw, 19px)', color: '#4A5568' }}>
+                Customers scan your QR code, upload photos of the damage, and describe the job — before you ever pick up the phone. You get everything you need to send an accurate quote in minutes.
               </p>
 
+              {/* Pills */}
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {['QR lead capture', 'One-click quotes', 'Payment tracking', 'AI job briefs'].map(label => (
-                  <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold border"
+                {[
+                  'Photo & video uploads',
+                  'Instant lead capture',
+                  'One-click quotes',
+                  'Full job tracking',
+                ].map(label => (
+                  <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border shadow-sm"
                     style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
                     <Check size={11} strokeWidth={3} style={{ color: '#1a6645' }} />
                     {label}
@@ -276,38 +130,71 @@ function Hero() {
                 ))}
               </div>
 
+              {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Link href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-black text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                  style={{ backgroundColor: '#1a6645', boxShadow: '0 8px 24px rgba(26,102,69,0.25)' }}>
-                  Start Free Trial <ArrowRight size={16} />
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-black text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-lg"
+                  style={{ backgroundColor: '#1a6645', boxShadow: '0 8px 24px rgba(26,102,69,0.2)' }}>
+                  Start Free Trial <ArrowRight size={18} />
                 </Link>
                 <Link href="/demo"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-bold border transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold border transition-all"
                   style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
-                  <Layout className="w-4 h-4" style={{ color: '#6B7280' }} /> See Live Demo
+                  See Live Demo
                 </Link>
               </div>
 
-              <div className="flex items-center gap-3 justify-center lg:justify-start">
-                <div className="flex gap-0.5">
+              {/* Trust strip */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border"
+                  style={{ borderColor: '#D1C9BD' }}>
+                  <Download size={13} style={{ color: '#1a6645' }} />
+                  <span className="text-[12px] font-bold" style={{ color: '#0F1F3D' }}>Full CSV export</span>
                 </div>
-                <p className="text-[13px] font-medium" style={{ color: '#6B7280' }}>
-                  14-day free trial · Cancel anytime · 2 min setup
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border"
+                  style={{ borderColor: '#D1C9BD' }}>
+                  <Mail size={13} style={{ color: '#1a6645' }} />
+                  <span className="text-[12px] font-bold" style={{ color: '#0F1F3D' }}>Daily email digest</span>
+                </div>
+                <p className="text-[12px] font-medium hidden xl:block" style={{ color: '#9CA3AF' }}>
+                  14-day trial · Cancel anytime
                 </p>
               </div>
             </div>
 
-            {/* RIGHT — mockup */}
+            {/* RIGHT — hero image */}
             <div
-  className="w-full lg:flex items-center justify-center mt-8 lg:mt-0"
+              className="relative w-full lg:flex items-center justify-center mt-8 lg:mt-0"
               style={{
                 opacity: mounted ? 1 : 0,
                 transform: mounted ? 'none' : 'translateY(24px) scale(0.97)',
                 transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
               }}
             >
-              <HeroMockup />
+              {/* Floating badge — top left */}
+              <div className="absolute top-8 -left-4 z-20 bg-white p-3 rounded-2xl shadow-xl border border-slate-100 hidden md:flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: '#E8F4EF' }}>
+                  <Camera size={16} style={{ color: '#1a6645' }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>New lead received</p>
+                  <p className="text-[13px] font-black" style={{ color: '#0F1F3D' }}>3 photos attached</p>
+                </div>
+              </div>
+
+              <img
+                src="/images/heroimagefull.png"
+                alt="Customer submitting job photos — leads landing on your dashboard"
+                className="w-full h-auto"
+                style={{ borderRadius: 24, filter: 'drop-shadow(0 32px 80px rgba(0,0,0,0.18))' }}
+              />
+
+              {/* Floating badge — bottom right */}
+              <div className="absolute -bottom-3 right-6 bg-[#0F1F3D] text-white px-4 py-2.5 rounded-xl text-[12px] font-bold shadow-2xl flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                Quote sent in 4 minutes
+              </div>
             </div>
 
           </div>
@@ -321,192 +208,243 @@ function Hero() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FEATURE TABS — Value focused, light gray bg (#F7F5F0)
-// 5 tabs: Get Leads · Schedule · Quote & Win · Get Paid · Stay Sharp
-// Replace the existing LeadCapture function with this entire block
+// SECTION 2 — PRODUCT UI SHOWCASE
+// Focus: The "Job Card" as the single source of truth
+// ─────────────────────────────────────────────────────────────────────────────
+function ProductShowcase() {
+  const { ref, visible } = useFadeIn();
+
+  return (
+    <section className="border-y" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
+      <div
+        ref={ref}
+        className="max-w-6xl mx-auto px-5 py-24 text-center"
+        style={{ 
+          opacity: visible ? 1 : 0, 
+          transform: visible ? 'none' : 'translateY(20px)', 
+          transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+        }}
+      >
+        <div className="max-w-3xl mx-auto mb-16">
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4"
+            style={{ color: '#1a6645' }}>
+            The Command Center
+          </p>
+          <h2 className="font-black tracking-tight mb-6"
+            style={{ fontSize: 'clamp(32px, 5vw, 54px)', color: '#0F1F3D', lineHeight: 1.1 }}>
+            One card. <span style={{ color: '#1a6645' }}>Zero friction.</span>
+          </h2>
+          <p className="text-lg font-medium text-slate-600 leading-relaxed">
+            Every photo, email, and payment lives inside a single, unified job card. 
+            Update status, schedule crews, and send digital quotes without ever leaving the page.
+          </p>
+        </div>
+
+        {/* The Image Container with "Framer" styling */}
+        <div className="relative group">
+          {/* Subtle glow behind the image */}
+          <div className="absolute inset-0 bg-[#1a6645]/5 blur-[100px] rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000" />
+          
+          <img
+            src="/images/product-ui2.png" // This is your 'replicate-prediction' image
+            alt="Lead2Project job card with scheduling, quotes and payments"
+            className="relative z-10 w-full h-auto shadow-2xl transition-all duration-700"
+            style={{ 
+              borderRadius: 24, 
+              border: '1px solid rgba(15,31,61,0.08)',
+              boxShadow: '0 40px 100px -20px rgba(15,31,61,0.2)' 
+            }}
+          />
+
+          {/* Floating Feature Tags for "Aesthetic" context */}
+          
+          <div className="hidden lg:block absolute bottom-20 -right-8 z-20 bg-[#1a6645] px-4 py-2 rounded-xl shadow-lg text-white animate-float-delayed">
+             <span className="text-[12px] font-black tracking-wide">Email Confirmation Sent</span>
+          </div>
+        </div>
+
+        {/* Quick Benefits Grid below the image */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 max-w-4xl mx-auto">
+          {[
+            { label: 'Status Tracking', desc: 'New to Paid' },
+            { label: 'One-Click Email', desc: 'No more typing' },
+            { label: 'Mobile Sync', desc: 'Office to Field' },
+            { label: 'Team Assign', desc: 'Who is where' },
+          ].map((item, i) => (
+            <div key={i} className="text-center">
+              <p className="text-[14px] font-black text-[#0F1F3D] mb-1">{item.label}</p>
+              <p className="text-[12px] font-bold text-[#1a6645] uppercase tracking-wider">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURE TABS — Operational Focus (#F7F5F0 bg)
 // ─────────────────────────────────────────────────────────────────────────────
 function LeadCapture() {
   const [active, setActive] = useState(0);
-  const { ref, visible } = useFadeIn();
+  // Ensure useFadeIn or similar intersection observer hook is defined in your file
+  const { ref, visible } = useFadeIn(); 
 
   const tabs = [
     {
-      label: 'Get Leads',
+      label: 'Unified Intake',
       icon: <QrCode size={15} />,
-      eyebrow: 'Never miss a lead',
-      headline: 'Your truck is now\na lead machine.',
-      desc: 'Print your branded QR code on your truck, yard signs, or drop the link in your Instagram bio. Customers fill out your custom form — name, job type, photos, budget, preferred date — and it lands on your dashboard instantly. You get the lead whether you answered the phone or not.',
-      callout: 'Stop losing jobs to missed calls',
+      eyebrow: 'Stop scribbling on scrap paper',
+      headline: 'One form for customers.\nOne form for you.',
+      desc: 'Whether a customer scans a QR on your truck or you are doing a site-walk, use your branded form to capture everything. Collect high-res photos, short videos, and specific job details that land instantly on your dashboard.',
+      callout: 'Consistency is how you scale',
       points: [
-        'Branded QR code — works on trucks, signs, social & business cards',
-        'Fully customizable form — your colors, your questions, your order',
-        'Collect address, preferred date & time, photos, budget range',
-        'Lead hits your board the second they submit',
+        'Branded QR codes for trucks, yard signs, and social bio',
+        'Contractor-mode for rapid site-walk data entry',
+        'Accepts photos, short videos, and PDF documents',
+        'Customizable questions: Address, budget, & preferred dates',
       ],
-      quote: '"A neighbor scanned my yard sign while I was on the roof. Job was booked before I came down."',
+      quote: "I use the form myself during every estimate. It ensures I never forget to take a specific photo or ask about the budget.",
       author: 'Mike T., Ridge Line Roofing',
-      visual: (
-        <div className="relative w-full h-full overflow-hidden" style={{ backgroundColor: '#1a2235' }}>
-          <img
-            src="/images/qrbranded.png"
-            alt="QR on truck and yard sign"
-            className="w-full h-full object-contain object-top"
-          />
-         
-        </div>
-      ),
+     visual: (
+  <div className="relative w-full h-full">
+    <img 
+      src="/images/qrfeature.png" 
+      alt="Mobile Intake" 
+      className="w-full h-full object-cover object-top" 
+    />
+    {/* Optional: Add a subtle inner shadow to make it look embedded */}
+    <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.1)] pointer-events-none" />
+  </div>
+),
     },
     {
       label: 'Schedule',
       icon: <Calendar size={15} />,
-      eyebrow: 'Stop double-booking and no-shows',
-      headline: 'Set the date.\nSend the confirmation.\nDone.',
-      desc: 'Pick the job date, assign your crew, and send a professional confirmation email — all from the job card. No switching to a calendar app. No texting back and forth. One click and the customer knows exactly when you\'re coming.',
-      callout: 'Customers who get confirmations cancel less',
+      eyebrow: 'Eliminate the "When are you coming?" texts',
+      headline: 'Schedule in a click.\nNotify automatically.',
+      desc: 'Move leads from "New" to "Scheduled" instantly. Assign team members and send a professional confirmation email with one tap. No more manual texting or calendar juggling.',
+      callout: 'Automatic confirmations reduce no-shows by 40%',
       points: [
-        'Set estimate date and job start date per card',
-        'Assign jobs to any team member by name',
-        'One-click confirmation email sent instantly',
-        'Every email logged in the outbox — always reviewable',
+        'One-click scheduling directly from the job card',
+        'Automated branded confirmation emails',
+        'Assign jobs to specific crew members or subs',
+        'Every confirmation tracked in your Global Outbox',
       ],
-      quote: '"I used to lose jobs because nobody confirmed the date. Now it\'s automatic."',
+      quote: "The one-click confirmation saves me 30 minutes of texting every single evening.",
       author: 'Tony M., Shoreline Gutters',
-visual: (
-  <img
-    src="/images/schedule-tab.png"
-    alt="Schedule section"
-    className="w-full h-full object-contain object-top"
-    style={{ background: '#f8f9fb' }}
-  />
-),
+      visual: (
+        <div className="w-full h-full bg-slate-100 p-6 flex flex-col justify-center">
+             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <p className="text-[10px] font-bold text-blue-600 mb-1">UPCOMING JOB</p>
+                <p className="font-black text-slate-800">John Simpson - Roof Repair</p>
+                <p className="text-xs text-slate-500 mb-4">Monday, Oct 12 @ 8:00 AM</p>
+                <div className="py-2 px-3 bg-green-50 text-green-700 text-[10px] font-bold rounded flex items-center gap-2">
+                   <Check size={12}/> Confirmation Email Sent
+                </div>
+             </div>
+        </div>
+      ),
     },
     {
       label: 'Quote & Win',
       icon: <FileText size={15} />,
-      eyebrow: 'Stop losing bids to slow quotes',
-      headline: 'Quote it fast.\nThey accept in one tap.',
-      desc: 'Build a line-item quote right on the job card. Let AI draft it from the job description. Send it to the customer in one click — they get an email with an Accept or Decline button. Their answer updates your dashboard automatically. No chasing, no guessing.',
-      callout: 'The faster you quote, the more jobs you win',
+      eyebrow: 'Stop losing bids to slow responses',
+      headline: 'Professional quotes.\nSent from the driveway.',
+      desc: 'Use custom templates to build quotes in seconds. Leverage the AI Project Brief to summarize customer videos and notes into a clean bid. Send it instantly—clients accept with one tap from their phone.',
+      callout: 'Speed is the #1 reason customers choose a contractor',
       points: [
-        'Line-item quotes with auto totals',
-        'AI quote generator — drafts from job description in seconds',
-        'Customer gets Accept / Decline buttons in the email',
-        'Custom quote templates per job category',
-        'Quote status tracked — pending, accepted, declined',
+        'Custom quote templates based on your job categories',
+        'AI-generated project briefs from intake media',
+        'One-tap "Accept/Decline" buttons for customers',
+        'Real-time status tracking: Pending, Accepted, or Declined',
       ],
-      quote: '"I send quotes before I even leave the driveway. Customers love the speed."',
+      quote: "I send the quote before I even start my truck to leave the site. My closing rate has doubled.",
       author: 'Dave R., All-Pro Siding',
-      visual: (
-  <img
-    src="/images/quotenew.png"
-    alt="Quote section"
-    className="w-full h-full object-cover"
-    style={{ background: '#f8f9fb' }}
-  />
+    visual: (
+  <div className="relative w-full h-full bg-white">
+    <img 
+      src="/images/quotefeature.png" 
+      alt="Professional Quote Interface" 
+      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
+    />
+    {/* Subtle gradient overlay to make the transition to the UI feel smoother */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+  </div>
 ),
     },
     {
       label: 'Get Paid',
       icon: <DollarSign size={15} />,
       eyebrow: 'Stop leaving money on the table',
-      headline: 'Know who owes you.\nGet paid without the awkward text.',
-      desc: 'Log deposits and final payments on every job. Send a payment request email in one click. See every job\'s payment status at a glance. Export everything to CSV for your bookkeeper — your data, always yours.',
-      callout: 'Most contractors are owed $10K+ they haven\'t collected',
+      headline: 'Track every dollar.\nExport every record.',
+      desc: 'Log deposits and final payments directly on the job card. See exactly who owes you money at a glance. When it’s tax time, export your entire history to CSV in one click. Your data is always yours.',
+      callout: 'Your data is portable. One-click CSV exports anytime.',
       points: [
-        'Log deposit and final payment per job card',
-        'One-click payment request email — professional, not awkward',
-        'See outstanding balance across all jobs instantly',
-        'Export all job and payment data to CSV anytime',
-        'Custom payment reminder email templates',
+        'Centralized dashboard for all unpaid balances',
+        'Professional payment reminder emails in one click',
+        'Full history of deposits and final payments per job',
+        'One-click CSV export for bookkeeping and taxes',
       ],
-      quote: '"I realized I had $14,000 sitting uncollected. The dashboard showed me in 10 seconds."',
+      quote: "Seeing my outstanding balance in red made me realize I had $11k just sitting out there. I collected it all in two days.",
       author: 'Carl B., ProClean Services',
       visual: (
-        <div className="w-full h-full flex flex-col p-6 justify-center gap-3" style={{ background: '#111827' }}>
+        <div className="w-full h-full bg-[#111827] flex flex-col p-6 justify-center gap-3">
           {[
-            { name: 'Marcus Rivera',  job: 'Roofing',  amount: '$8,400', status: 'Paid',    color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)' },
-            { name: 'Jack Thomas',   job: 'Siding',   amount: '$3,550', status: 'Deposit',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
-            { name: 'Maria Reyes',   job: 'Gutters',  amount: '$1,200', status: 'Unpaid',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)'  },
-            { name: 'Tony Marino',   job: 'Windows',  amount: '$6,400', status: 'Deposit',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' },
+            { name: 'Marcus Rivera', amount: '$8,400', status: 'Paid', color: '#10b981' },
+            { name: 'Maria Reyes', amount: '$1,200', status: 'Unpaid', color: '#ef4444' },
           ].map((row, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full" style={{ background: row.color }} />
-                <div>
-                  <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{row.name}</p>
-                  <p style={{ fontSize: 10, color: '#6b7280', fontWeight: 600 }}>{row.job} · {row.amount}</p>
-                </div>
+                <span className="text-xs font-bold text-white">{row.name}</span>
               </div>
-              <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 10px', borderRadius: 20, background: row.bg, border: `1px solid ${row.border}`, color: row.color }}>{row.status}</span>
+              <span className="text-xs font-black text-white">{row.amount}</span>
             </div>
           ))}
-          <div className="flex items-center justify-between px-4 py-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-            <span style={{ fontSize: 10, fontWeight: 900, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Outstanding</span>
-            <span style={{ fontSize: 18, fontWeight: 900, color: '#ef4444' }}>$11,150</span>
+          <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Outstanding</p>
+            <p className="text-2xl font-black text-red-500">$11,150</p>
           </div>
-          <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <Database size={12} color="#6b7280" />
-            <span style={{ fontSize: 10, fontWeight: 900, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Export all data as CSV</span>
-          </div>
+          <button className="mt-2 py-2 flex items-center justify-center gap-2 text-[10px] font-black text-slate-400 uppercase border border-white/10 rounded-lg">
+             <Download size={12} /> Download CSV
+          </button>
         </div>
       ),
     },
     {
       label: 'Stay Sharp',
       icon: <Bell size={15} />,
-      eyebrow: 'Your 6AM morning briefing',
-      headline: 'Know your day\nbefore it starts.',
-      desc: 'Every morning at 6AM, Lead2Project sends you a digest of everything that needs attention — today\'s jobs, overdue payments, stale leads, unaccepted quotes, and reminders you set. No login required. Your whole business in one email.',
-      callout: 'Stop starting your day reactive — start it informed',
+      eyebrow: 'Total transparency',
+      headline: 'The Global Outbox &\nDaily Digest.',
+      desc: "Never wonder if a client got your email. Every quote, confirmation, and reminder is logged in your Global Outbox. Plus, get a 6AM briefing every morning with today's schedule and overdue tasks.",
+      callout: 'Know your business status without opening the app',
       points: [
-        "Today's scheduled jobs — who, where, what time",
-        'New leads since yesterday',
-        'Overdue payments — name, amount, days overdue',
-        'Quotes sent but not yet accepted',
-        'Reminders you set on any job card',
-        'Stale leads that have gone quiet',
+        'Global Outbox: Proof of every communication sent',
+        '6AM Daily Digest: Your schedule & leads via email',
+        'Follow-up reminders on stale leads',
+        'Custom task templates for different job categories',
       ],
-      quote: '"I check the digest before I get out of bed. I know my whole day before I touch my coffee."',
+      quote: "The Outbox is a lifesaver. When a client says 'I never got the quote,' I can see exactly when it was sent.",
       author: 'James P., Peak Roofing Co.',
       visual: (
-        <div className="w-full h-full flex flex-col p-5 justify-center" style={{ background: '#111827' }}>
-          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-            <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center">
-                <span style={{ fontSize: 7, fontWeight: 900, color: '#fff' }}>L</span>
+        <div className="w-full h-full bg-slate-900 flex items-center justify-center p-6">
+           <div className="w-full bg-slate-800 rounded-xl overflow-hidden shadow-2xl border border-white/10">
+              <div className="p-3 bg-slate-700/50 border-b border-white/5 text-[10px] font-bold text-slate-400">GLOBAL OUTBOX</div>
+              <div className="p-4 space-y-3">
+                 <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-white">Quote Sent: Anthony Vino</span>
+                    <span className="text-slate-500">2m ago</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-white">Confirmation: J. Simpson</span>
+                    <span className="text-slate-500">1h ago</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-white text-green-400 underline">Daily Digest Delivered</span>
+                    <span className="text-slate-500">6:00 AM</span>
+                 </div>
               </div>
-              <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 700 }}>digest@lead2project.com</span>
-              <span style={{ fontSize: 9, color: '#6b7280', marginLeft: 'auto' }}>6:00 AM</span>
-            </div>
-            <div className="px-4 py-3" style={{ background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 2 }}>Ridge Line Roofing — Morning Briefing</p>
-              <p style={{ fontSize: 10, color: '#6b7280' }}>Friday, March 28 · Here's what needs your attention.</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="px-4 py-3" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pending Revenue</p>
-                <p style={{ fontSize: 20, fontWeight: 900, color: '#f59e0b' }}>$37,194</p>
-              </div>
-              <div className="px-4 py-3">
-                <p style={{ fontSize: 9, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>New Leads</p>
-                <p style={{ fontSize: 20, fontWeight: 900, color: '#60a5fa' }}>+3</p>
-              </div>
-            </div>
-            {[
-              { label: "Today's jobs",        value: '2 scheduled',      color: '#10b981' },
-              { label: 'Overdue payments',     value: '2 · $4,750',       color: '#ef4444' },
-              { label: 'Quotes not accepted',  value: '3 pending',        color: '#f59e0b' },
-              { label: 'Stale leads',          value: '2 need follow-up', color: '#a78bfa' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{item.label}</span>
-                <span style={{ fontSize: 11, fontWeight: 900, color: item.color }}>{item.value}</span>
-              </div>
-            ))}
-            <div className="px-4 py-3 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <span style={{ fontSize: 10, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Open Dashboard →</span>
-            </div>
-          </div>
+           </div>
         </div>
       ),
     },
@@ -520,15 +458,15 @@ visual: (
         <div ref={ref} className="text-center mb-12"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
           <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
-            Built to save time & close more jobs
+            Built for the field, managed from the desk
           </p>
           <h2 className="font-black leading-tight tracking-tight mb-4"
             style={{ fontSize: 'clamp(32px, 5vw, 60px)', color: '#0F1F3D' }}>
-            The all-in-one solution<br />
-            <span style={{ color: '#1a6645' }}>for home service pros.</span>
+            Everything to run your<br />
+            <span style={{ color: '#1a6645' }}>business, in one place.</span>
           </h2>
           <p className="text-lg font-medium max-w-2xl mx-auto" style={{ color: '#4A5568' }}>
-            Stop running your business out of texts and a spreadsheet. Everything you need — leads, scheduling, quotes, payments, and your morning briefing — in one place.
+            No more lost sticky notes or scrolling through endless text threads. From unified intake to your morning briefing, Lead2Project keeps you organized.
           </p>
         </div>
 
@@ -567,7 +505,7 @@ visual: (
               }}
             >
               {/* LEFT — Visual */}
-              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl">
+              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl border border-white">
                 {tab.visual}
               </div>
 
@@ -584,8 +522,8 @@ visual: (
                   {tab.desc}
                 </p>
                 <div className="px-4 py-3 rounded-xl border-l-4 font-bold text-sm"
-                  style={{ background: '#FFF8E1', borderLeftColor: '#F59E0B', color: '#92400E' }}>
-                  ⚠ {tab.callout}
+                  style={{ background: '#E8F4EF', borderLeftColor: '#1a6645', color: '#1a6645' }}>
+                  💡 {tab.callout}
                 </div>
                 <div className="space-y-2.5">
                   {tab.points.map((pt, j) => (
@@ -606,11 +544,6 @@ visual: (
                     — {tab.author}
                   </p>
                 </div>
-                <Link href="/signup"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                  style={{ backgroundColor: '#1a6645', boxShadow: '0 6px 20px rgba(26,102,69,0.2)' }}>
-                  Start Free Trial <ArrowRight size={15} />
-                </Link>
               </div>
             </div>
           ))}
@@ -1558,6 +1491,9 @@ export default function Home() {
       {/* 1. HERO — dark, headline + visual */}
       <Hero />
       {/* 2. TRUST BAR — stats strip */}
+
+<ProductShowcase />
+
 
 <LeadCapture />
 
