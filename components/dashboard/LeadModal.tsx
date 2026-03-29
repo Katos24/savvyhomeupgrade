@@ -17,6 +17,8 @@ import CompletionSummaryModal from './CompletionSummaryModal';
 import LeadLightbox from '@/components/dashboard/LeadLightbox';
 import AiBriefButton from '@/components/dashboard/AiBriefButton';
 import AiBriefTab from '@/components/dashboard/AiBriefTab';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 type LeadModalProps = {
   lead: any;
@@ -395,23 +397,26 @@ const renderProjectTab = () => {
   );
 };
 
-  return (
-
-    <div
+return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
     >
-      {/* Lightbox — rendered outside modal so z-index is always on top */}
       {lightbox && (
-  <LeadLightbox
-    photos={lightbox.photos}
-    startIndex={lightbox.index}
-    onClose={() => setLightbox(null)}
-    label={lightbox.label}
-  />
-)}
+        <LeadLightbox
+          photos={lightbox.photos}
+          startIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+          label={lightbox.label}
+        />
+      )}
 
-      <div
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="bg-white w-full sm:max-w-4xl sm:rounded-2xl shadow-2xl flex flex-col"
         style={{ maxHeight: '95vh', height: '95vh' }}
         onClick={e => e.stopPropagation()}
@@ -422,7 +427,11 @@ const renderProjectTab = () => {
           <div className="relative z-10 p-4 sm:p-6 pb-0">
             {/* Top row */}
             <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0 mr-4">
+              <motion.div
+                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="flex-1 min-w-0 mr-4"
+              >
                 {isProject ? (
                   <div className="mb-2">
                     <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>#{lead.project_number}</span>
@@ -436,52 +445,69 @@ const renderProjectTab = () => {
                 <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   Submitted {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
-              </div>
+              </motion.div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canDelete && (
                   <div className="relative">
-                    <button onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => setShowMoreMenu(!showMoreMenu)}
                       className="w-9 h-9 rounded-none flex items-center justify-center transition"
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                    >
                       <MoreVertical className="w-4 h-4 text-white/60" />
-                    </button>
-                    {showMoreMenu && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-                        <div className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden">
-                          {!showDeleteConfirm ? (
-                            <button onClick={() => setShowDeleteConfirm(true)}
-                              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition">
-                              <Trash2 className="w-4 h-4" /> Delete Lead
-                            </button>
-                          ) : (
-                            <div className="p-3">
-                              <p className="text-xs font-bold text-gray-700 mb-2">Confirm delete?</p>
-                              <button onClick={handleDelete} disabled={saving}
-                                className="w-full bg-red-600 text-white text-xs font-bold py-2 rounded-none mb-1.5 disabled:opacity-50">
-                                {saving ? 'Deleting...' : 'Yes, Delete'}
+                    </motion.button>
+                    <AnimatePresence>
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                            className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+                          >
+                            {!showDeleteConfirm ? (
+                              <button onClick={() => setShowDeleteConfirm(true)}
+                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition">
+                                <Trash2 className="w-4 h-4" /> Delete Lead
                               </button>
-                              <button onClick={() => { setShowDeleteConfirm(false); setShowMoreMenu(false); }}
-                                className="w-full bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-none">
-                                Cancel
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
+                            ) : (
+                              <div className="p-3">
+                                <p className="text-xs font-bold text-gray-700 mb-2">Confirm delete?</p>
+                                <button onClick={handleDelete} disabled={saving}
+                                  className="w-full bg-red-600 text-white text-xs font-bold py-2 rounded-none mb-1.5 disabled:opacity-50">
+                                  {saving ? 'Deleting...' : 'Yes, Delete'}
+                                </button>
+                                <button onClick={() => { setShowDeleteConfirm(false); setShowMoreMenu(false); }}
+                                  className="w-full bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-none">
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
-                <button onClick={onClose}
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={onClose}
                   className="w-9 h-9 rounded-none flex items-center justify-center transition"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
                   <X className="w-4 h-4 text-white/60" />
-                </button>
+                </motion.button>
               </div>
             </div>
 
             {/* Status + meta chips */}
-            <div className="flex items-center gap-2 flex-wrap mb-4">
+            <motion.div
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="flex items-center gap-2 flex-wrap mb-4"
+            >
               <div className="relative flex items-center gap-2">
                 <div className="relative">
                   <select
@@ -502,7 +528,7 @@ const renderProjectTab = () => {
                 </div>
               </div>
 
-             {!isStarter && (lead.scheduled_date ? (
+              {!isStarter && (lead.scheduled_date ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
                   style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc' }}>
                   <Calendar className="w-3 h-3" />
@@ -524,7 +550,7 @@ const renderProjectTab = () => {
                 </div>
               )}
 
-               {!isStarter && lead.quote_total && (
+              {!isStarter && lead.quote_total && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold ${
                   lead.payment_status === 'paid' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
                   : lead.payment_status === 'partial' ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
@@ -538,15 +564,14 @@ const renderProjectTab = () => {
                 </div>
               )}
 
-              {/* AI Brief shortcut */}
               <AiBriefButton
-hasSavedBrief={!!(lead.ai_brief && (
-  typeof lead.ai_brief === 'string' 
-    ? lead.ai_brief !== '{}' && lead.ai_brief !== '' 
-    : Object.keys(lead.ai_brief).length > 0
-))}  onClick={() => setActiveTab('ai')}
-/>
-            </div>
+                hasSavedBrief={!!(lead.ai_brief && (
+                  typeof lead.ai_brief === 'string'
+                    ? lead.ai_brief !== '{}' && lead.ai_brief !== ''
+                    : Object.keys(lead.ai_brief).length > 0
+                ))} onClick={() => setActiveTab('ai')}
+              />
+            </motion.div>
 
             {/* Tab bar */}
             <div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
@@ -556,29 +581,30 @@ hasSavedBrief={!!(lead.ai_brief && (
                 return (
                   <button
                     key={tab.id}
-onClick={() => {
-  if (tab.locked) {
-    window.location.href = `/${companySlug}/admin/settings#billing`;
-    return;
-  }
-  setActiveTab(tab.id);
-}}              
-   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
+                    onClick={() => {
+                      if (tab.locked) {
+                        window.location.href = `/${companySlug}/admin/settings#billing`;
+                        return;
+                      }
+                      setActiveTab(tab.id);
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
                     style={{
-  color: activeTab === tab.id
-    ? (isAi ? '#c4b5fd' : 'white')
-    : (isAi ? 'rgba(196,181,253,0.5)' : 'rgba(255,255,255,0.4)'),
-  borderBottomColor: activeTab === tab.id
-    ? (isAi ? '#c4b5fd' : '#a5b4fc')
-    : 'transparent',
-  opacity: tab.locked ? 0.5 : 1,
-}}
+                      color: activeTab === tab.id
+                        ? (isAi ? '#c4b5fd' : 'white')
+                        : (isAi ? 'rgba(196,181,253,0.5)' : 'rgba(255,255,255,0.4)'),
+                      borderBottomColor: activeTab === tab.id
+                        ? (isAi ? '#c4b5fd' : '#a5b4fc')
+                        : 'transparent',
+                      opacity: tab.locked ? 0.5 : 1,
+                    }}
                   >
                     <Icon className="w-3.5 h-3.5" />
-<div className="flex items-center gap-1">
-  {tab.label}
-  {tab.locked && <Lock className="w-3 h-3 opacity-70" />}
-</div>                  </button>
+                    <div className="flex items-center gap-1">
+                      {tab.label}
+                      {tab.locked && <Lock className="w-3 h-3 opacity-70" />}
+                    </div>
+                  </button>
                 );
               })}
               {!isProject && (
@@ -592,516 +618,625 @@ onClick={() => {
 
         {/* ── BODY ── */}
         <div className="flex-1 overflow-y-auto" style={{ background: '#f6f6fa' }}>
-          <div className="p-4 sm:p-6 space-y-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="p-4 sm:p-6 space-y-4"
+            >
 
-            {/* ── OVERVIEW TAB ── */}
-            {activeTab === 'overview' && (
-              <>
-                {/* Client Card */}
-                <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-indigo-400" /></span>
-                      Client Info
-                      {relatedLeads.length > 0 && (
-                        <button
-                          onClick={() => setShowHistoryDrawer(true)}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-bold transition hover:opacity-80"
-                          style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#f59e0b' }}
+              {/* ── OVERVIEW TAB ── */}
+              {activeTab === 'overview' && (
+                <>
+                  {/* Client Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-indigo-400" /></span>
+                        Client Info
+                        {relatedLeads.length > 0 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowHistoryDrawer(true)}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-bold transition hover:opacity-80"
+                            style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#f59e0b' }}
+                          >
+                            <History className="w-3 h-3" />
+                            {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
+                          </motion.button>
+                        )}
+                      </h3>
+                      <div className="relative">
+                        <button onClick={() => setShowClientActions(!showClientActions)}
+                          className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-none transition">
+                          Actions ▾
+                        </button>
+                        <AnimatePresence>
+                          {showClientActions && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setShowClientActions(false)} />
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+                              >
+                                <button onClick={() => { window.location.href = `mailto:${lead.email}`; setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
+                                  <Mail className="w-4 h-4 text-blue-500" /> Email
+                                </button>
+                                <button onClick={() => { window.location.href = `tel:${lead.phone}`; setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 transition">
+                                  <Phone className="w-4 h-4 text-green-500" /> Call
+                                </button>
+                                <button onClick={() => { window.location.href = `sms:${lead.phone}?body=${encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`)}`; setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 transition">
+                                  <MessageSquare className="w-4 h-4 text-purple-500" /> Text
+                                </button>
+                                {fullAddress && (
+                                  <button onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'); setShowClientActions(false); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition">
+                                    <Navigation className="w-4 h-4 text-red-500" /> Directions
+                                  </button>
+                                )}
+                                <div className="border-t border-gray-100 my-1" />
+                                <button onClick={() => { setIsEditingDetails(true); setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                  <Edit2 className="w-4 h-4 text-gray-400" /> Edit Details
+                                </button>
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {isEditingDetails ? (
+                        <motion.div
+                          key="editing"
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          className="p-5 space-y-3"
                         >
-                          <History className="w-3 h-3" />
-                          {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
-                        </button>
-                      )}
-                    </h3>
-                    <div className="relative">
-                      <button onClick={() => setShowClientActions(!showClientActions)}
-                        className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-none transition">
-                        Actions ▾
-                      </button>
-                      {showClientActions && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setShowClientActions(false)} />
-                          <div className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden">
-                            <button onClick={() => { window.location.href = `mailto:${lead.email}`; setShowClientActions(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
-                              <Mail className="w-4 h-4 text-blue-500" /> Email
-                            </button>
-                            <button onClick={() => { window.location.href = `tel:${lead.phone}`; setShowClientActions(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 transition">
-                              <Phone className="w-4 h-4 text-green-500" /> Call
-                            </button>
-                            <button onClick={() => { window.location.href = `sms:${lead.phone}?body=${encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`)}`; setShowClientActions(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 transition">
-                              <MessageSquare className="w-4 h-4 text-purple-500" /> Text
-                            </button>
-                            {fullAddress && (
-                              <button onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'); setShowClientActions(false); }}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition">
-                                <Navigation className="w-4 h-4 text-red-500" /> Directions
-                              </button>
-                            )}
-                            <div className="border-t border-gray-100 my-1" />
-                            <button onClick={() => { setIsEditingDetails(true); setShowClientActions(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                              <Edit2 className="w-4 h-4 text-gray-400" /> Edit Details
-                            </button>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
+                              <input type="text" value={editedDetails.name}
+                                onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
+                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
+                              <input type="tel" value={editedDetails.phone}
+                                onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
+                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" maxLength={14} />
+                            </div>
                           </div>
-                        </>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
+                            <input type="email" value={editedDetails.email}
+                              onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
+                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
+                            <input type="text" value={editedDetails.address_line_1} placeholder="123 Main St"
+                              onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
+                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
+                              <input type="text" value={editedDetails.address_line_2}
+                                onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
+                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
+                              <input type="text" value={editedDetails.city}
+                                onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
+                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
+                            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
+                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400">
+                              {categories.map((cat: any) => (
+                                <option key={cat.value} value={cat.value}>{cat.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
+                              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-none transition text-sm">
+                              {saving ? 'Saving...' : 'Save Changes'}
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
+                              setEditedDetails({ name: lead.name || '', email: lead.email || '', phone: lead.phone || '', address_line_1: lead.address_line_1 || '', address_line_2: lead.address_line_2 || '', city: lead.city || '' });
+                              setSelectedCategory(lead.category || '');
+                              setIsEditingDetails(false);
+                            }}
+                              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-none transition text-sm">
+                              Cancel
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div key="viewing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <InfoField label="Name" value={lead.name} />
+                            <InfoField label="Email" value={lead.email} isLink />
+                            <InfoField label="Phone" value={formatPhoneNumber(lead.phone)} isLink />
+                            {lead.address_line_1 && (
+                              <div className="col-span-2">
+                                <InfoField label="Address" value={fullAddress || ''} />
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
+                              {lead.category ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-none text-xs font-bold text-indigo-600">
+                                  {formatCategory(lead.category)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs italic">None</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 px-5 pb-4">
+                            {[
+                              { icon: <Mail className="w-4 h-4" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: '#3b82f6' },
+                              { icon: <Phone className="w-4 h-4" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: '#22c55e' },
+                              { icon: <MessageSquare className="w-4 h-4" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: '#a855f7' },
+                              ...(fullAddress ? [{ icon: <Navigation className="w-4 h-4" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: '#ef4444' }] : []),
+                            ].map((btn, i) => (
+                              <motion.button
+                                key={btn.label}
+                                whileTap={{ scale: 0.95 }}
+                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                onClick={btn.action}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-none border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 transition group"
+                              >
+                                <span style={{ color: btn.color }}>{btn.icon}</span>
+                                <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600">{btn.label}</span>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
                       )}
-                    </div>
-                  </div>
+                    </AnimatePresence>
+                  </motion.div>
 
-                  {isEditingDetails ? (
-                    <div className="p-5 space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
-                          <input type="text" value={editedDetails.name}
-                            onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
-                          <input type="tel" value={editedDetails.phone}
-                            onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
-                            className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" maxLength={14} />
-                        </div>
+                  {/* Two-col: Message + Notes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+                    >
+                      <div className="px-5 py-4 border-b border-gray-50">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
+                          Customer's Message
+                        </h3>
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
-                        <input type="email" value={editedDetails.email}
-                          onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
-                          className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
-                        <input type="text" value={editedDetails.address_line_1} placeholder="123 Main St"
-                          onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
-                          className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
-                          <input type="text" value={editedDetails.address_line_2}
-                            onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
-                          <input type="text" value={editedDetails.city}
-                            onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
-                        <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-                          className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400">
-                          {categories.map((cat: any) => (
-                            <option key={cat.value} value={cat.value}>{cat.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button onClick={handleSaveDetails} disabled={saving}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-none transition text-sm">
-                          {saving ? 'Saving...' : 'Save Changes'}
-                        </button>
-                        <button onClick={() => {
-                          setEditedDetails({ name: lead.name || '', email: lead.email || '', phone: lead.phone || '', address_line_1: lead.address_line_1 || '', address_line_2: lead.address_line_2 || '', city: lead.city || '' });
-                          setSelectedCategory(lead.category || '');
-                          setIsEditingDetails(false);
-                        }}
-                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-none transition text-sm">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <InfoField label="Name" value={lead.name} />
-                        <InfoField label="Email" value={lead.email} isLink />
-                        <InfoField label="Phone" value={formatPhoneNumber(lead.phone)} isLink />
-                        {lead.address_line_1 && (
-                          <div className="col-span-2">
-                            <InfoField label="Address" value={fullAddress || ''} />
+                      <div className="p-5">
+                        {lead.description
+                          ? <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
+                          : <p className="text-sm text-gray-400 italic">No message provided</p>
+                        }
+
+                        {(lead.preferred_date || lead.preferred_time) && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+                            {lead.preferred_date && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                <span className="font-semibold text-gray-400 uppercase tracking-wide mr-1">Preferred:</span>
+                                {(() => {
+                                  const d = new Date(lead.preferred_date);
+                                  return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                                })()}
+                              </div>
+                            )}
+                            {lead.preferred_time && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                                {lead.preferred_time}
+                              </div>
+                            )}
                           </div>
                         )}
-                        <div>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
-                          {lead.category ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-none text-xs font-bold text-indigo-600">
-                              {formatCategory(lead.category)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs italic">None</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 px-5 pb-4">
-                        {[
-                          { icon: <Mail className="w-4 h-4" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: '#3b82f6' },
-                          { icon: <Phone className="w-4 h-4" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: '#22c55e' },
-                          { icon: <MessageSquare className="w-4 h-4" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: '#a855f7' },
-                          ...(fullAddress ? [{ icon: <Navigation className="w-4 h-4" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: '#ef4444' }] : []),
-                        ].map(btn => (
-                          <button key={btn.label} onClick={btn.action}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-none border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 transition group">
-                            <span style={{ color: btn.color }}>{btn.icon}</span>
-                            <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600">{btn.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
 
-                {/* Two-col: Message + Notes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Customer Message */}
-                  <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-50">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
-                        Customer's Message
-                      </h3>
-                    </div>
-                    <div className="p-5">
-                      {lead.description
-                        ? <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
-                        : <p className="text-sm text-gray-400 italic">No message provided</p>
-                      }
-
-                      {(lead.preferred_date || lead.preferred_time) && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
-                          {lead.preferred_date && (
-                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                              <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                              <span className="font-semibold text-gray-400 uppercase tracking-wide mr-1">Preferred:</span>
-                              {(() => {
-                                const d = new Date(lead.preferred_date);
-                                return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                              })()}
+                        {customerPhotos.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Image className="w-3.5 h-3.5 text-indigo-400" />
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
+                              </span>
                             </div>
-                          )}
-                          {lead.preferred_time && (
-                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                              <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                              {lead.preferred_time}
+                            <div className="flex flex-wrap gap-1.5">
+                              {customerPhotos.slice(0, 6).map((url: string, i: number) => (
+                                <motion.button
+                                  key={i}
+                                  whileTap={{ scale: 0.95 }}
+                                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: i * 0.04 }}
+                                  onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
+                                  className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-indigo-400 transition group flex-shrink-0"
+                                >
+                                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition" />
+                                </motion.button>
+                              ))}
+                              {customerPhotos.length > 6 && (
+                                <motion.button
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setLightbox({ photos: customerPhotos, index: 6, label: 'Customer Photos' })}
+                                  className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 hover:bg-indigo-50 hover:border-indigo-300 flex items-center justify-center flex-shrink-0 transition"
+                                >
+                                  <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
+                                </motion.button>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Customer photo thumbnails — tap opens Lightbox */}
-                      {customerPhotos.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Image className="w-3.5 h-3.5 text-indigo-400" />
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                              {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
-                            </span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {customerPhotos.slice(0, 6).map((url: string, i: number) => (
-                              <button
-                                key={i}
-                                onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
-                                className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-indigo-400 transition group flex-shrink-0"
-                              >
-                                <img
-                                  src={url}
-                                  alt={`Photo ${i + 1}`}
-                                  className="w-full h-full object-cover group-hover:opacity-80 transition"
-                                />
-                              </button>
-                            ))}
-                            {customerPhotos.length > 6 && (
-                              <button
-                                onClick={() => setLightbox({ photos: customerPhotos, index: 6, label: 'Customer Photos' })}
-                                className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 hover:bg-indigo-50 hover:border-indigo-300 flex items-center justify-center flex-shrink-0 transition"
-                              >
-                                <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                        )}
 
-                      {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
-                            className="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                            {showCustomQuestions ? '▼' : '▶'} Additional ({Object.keys(lead.custom_answers).length})
-                          </button>
-                          {showCustomQuestions && (
-                            <div className="mt-3 space-y-2">
-                              {Object.entries(lead.custom_answers).map(([qId, answer]: [string, any]) => {
-                                const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
-                                return (
-                                  <div key={qId} className="text-sm">
-                                    <div className="text-xs text-gray-400 mb-0.5">{qDef?.label || qId}</div>
-                                    <div className="text-gray-800 font-medium">
-                                      {typeof answer === 'boolean' ? (answer ? 'Yes' : 'No') : answer || <span className="text-gray-400 italic">No answer</span>}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Internal Notes */}
-                  <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-50">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
-                        Internal Notes
-                      </h3>
-                    </div>
-                    <div className="p-5">
-                      {isEditingNotes ? (
-                        <div className="space-y-2">
-                          <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
-                            rows={5} placeholder="Notes visible only to your team..."
-                            className="w-full px-3 py-2.5 border-2 border-indigo-200 rounded-none text-sm resize-none focus:outline-none focus:border-indigo-400" />
-                          <div className="flex gap-2">
-                            <button onClick={handleSaveInternalNotes} disabled={saving}
-                              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2 rounded-none text-xs transition">
-                              {saving ? 'Saving...' : 'Save'}
+                        {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
+                              className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                              {showCustomQuestions ? '▼' : '▶'} Additional ({Object.keys(lead.custom_answers).length})
                             </button>
-                            <button onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
-                              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-none text-xs transition">
-                              Cancel
-                            </button>
+                            <AnimatePresence>
+                              {showCustomQuestions && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden mt-3 space-y-2"
+                                >
+                                  {Object.entries(lead.custom_answers).map(([qId, answer]: [string, any]) => {
+                                    const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
+                                    return (
+                                      <div key={qId} className="text-sm">
+                                        <div className="text-xs text-gray-400 mb-0.5">{qDef?.label || qId}</div>
+                                        <div className="text-gray-800 font-medium">
+                                          {typeof answer === 'boolean' ? (answer ? 'Yes' : 'No') : answer || <span className="text-gray-400 italic">No answer</span>}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                        </div>
-                      ) : lead.project_internal_notes ? (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-3">{lead.project_internal_notes}</p>
-                          <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Edit Notes</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setIsEditingNotes(true)}
-                          className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-indigo-300 hover:bg-indigo-50/30 transition flex flex-col items-center gap-2">
-                          <NotebookPen className="w-6 h-6 text-gray-300" />
-                          <span className="text-xs font-semibold text-gray-400 hover:text-indigo-500">Add internal notes</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+                        )}
+                      </div>
+                    </motion.div>
 
-           {/* ── AI BRIEF TAB ── */}
-{activeTab === 'ai' && (
-  can(company?.plan_tier as PlanTier, 'ai_brief') ? (
-    <AiBriefTab
-      lead={lead}
-      currentUser={currentUser}
-      company={company}
-      customerPhotos={customerPhotos}
-      relatedLeads={relatedLeads}
-      isProject={isProject}
-      onRefresh={onRefresh}
-    />
-  ) : (
-    <div className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center">
-      <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-        <Sparkles className="w-6 h-6 text-indigo-500" />
-      </div>
-
-      <h3 className="text-base font-bold text-gray-900 mb-2">AI Brief</h3>
-
-      <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
-        Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
-      </p>
-
-      <a
-        href={`/${companySlug}/admin/settings`}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition"
-      >
-        Upgrade to Pro — $99.99/mo
-      </a>
-    </div>
-  )
-)}
-
-       {/* ── PROJECT TABS ── */}
-            {renderProjectTab()}
-
-            {/* ── ACTIVITY TAB ── */}
-            {activeTab === 'activity' && (
-              <div className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-50">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>
-                    Activity Log
-                    {notesArray.length > 0 && (
-                      <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-none">{notesArray.length}</span>
-                    )}
-                  </h3>
-                </div>
-                <div className="p-5 space-y-4">
-                  <div>
-                    <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
-                      placeholder="Add a note..." rows={3}
-                      className="w-full px-4 py-3 text-sm rounded-none border-2 border-gray-100 focus:border-indigo-300 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
-                    <button onClick={handleAddNote} disabled={saving || !newNote.trim()}
-                      className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-3 text-sm rounded-none transition">
-                      {saving ? 'Adding...' : 'Add Note'}
-                    </button>
-                  </div>
-                  {notesArray.length > 0 && (
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {[...notesArray].reverse().map((note: any, idx: number) => {
-                        const isOld = typeof note === 'string';
-                        const text = isOld ? note : note.text;
-                        const user = isOld ? 'Unknown' : (note.user_name || 'System');
-                        const ts = isOld ? lead.created_at : note.timestamp;
-                        return (
-                          <div key={idx} className="flex gap-3 p-3 bg-gray-50 rounded-none">
-                            <div className="w-7 h-7 rounded-none bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 flex-shrink-0">
-                              {user.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-xs font-bold text-gray-800">{user}</span>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                </span>
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+                    >
+                      <div className="px-5 py-4 border-b border-gray-50">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
+                          Internal Notes
+                        </h3>
+                      </div>
+                      <div className="p-5">
+                        <AnimatePresence mode="wait">
+                          {isEditingNotes ? (
+                            <motion.div key="editing-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                              <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
+                                rows={5} placeholder="Notes visible only to your team..."
+                                className="w-full px-3 py-2.5 border-2 border-indigo-200 rounded-none text-sm resize-none focus:outline-none focus:border-indigo-400" />
+                              <div className="flex gap-2">
+                                <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveInternalNotes} disabled={saving}
+                                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2 rounded-none text-xs transition">
+                                  {saving ? 'Saving...' : 'Save'}
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
+                                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-none text-xs transition">
+                                  Cancel
+                                </motion.button>
                               </div>
-                              <p className="text-sm text-gray-600">{text}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            </motion.div>
+                          ) : lead.project_internal_notes ? (
+                            <motion.div key="has-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                              <p className="text-sm text-gray-600 mb-3">{lead.project_internal_notes}</p>
+                              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Edit Notes</button>
+                            </motion.div>
+                          ) : (
+                            <motion.button
+                              key="empty-notes"
+                              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setIsEditingNotes(true)}
+                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-indigo-300 hover:bg-indigo-50/30 transition flex flex-col items-center gap-2"
+                            >
+                              <NotebookPen className="w-6 h-6 text-gray-300" />
+                              <span className="text-xs font-semibold text-gray-400 hover:text-indigo-500">Add internal notes</span>
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  </div>
+                </>
+              )}
+
+              {/* ── AI BRIEF TAB ── */}
+              {activeTab === 'ai' && (
+                can(company?.plan_tier as PlanTier, 'ai_brief') ? (
+                  <AiBriefTab
+                    lead={lead}
+                    currentUser={currentUser}
+                    company={company}
+                    customerPhotos={customerPhotos}
+                    relatedLeads={relatedLeads}
+                    isProject={isProject}
+                    onRefresh={onRefresh}
+                  />
+                ) : (
+                 <motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center"
+>
+  <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <Sparkles className="w-6 h-6 text-indigo-500" />
+  </div>
+
+  <h3 className="text-base font-bold text-gray-900 mb-2">AI Brief</h3>
+
+  <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
+    Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
+  </p>
+
+  <a
+    href={`/${companySlug}/admin/settings`}
+    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition"
+  >
+    Upgrade to Pro — $99.99/mo
+  </a>
+</motion.div>
+                )
+              )}
+
+              {/* ── PROJECT TABS ── */}
+              {renderProjectTab()}
+
+              {/* ── ACTIVITY TAB ── */}
+              {activeTab === 'activity' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+                >
+                  <div className="px-5 py-4 border-b border-gray-50">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>
+                      Activity Log
+                      {notesArray.length > 0 && (
+                        <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-none">{notesArray.length}</span>
+                      )}
+                    </h3>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div>
+                      <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
+                        placeholder="Add a note..." rows={3}
+                        className="w-full px-4 py-3 text-sm rounded-none border-2 border-gray-100 focus:border-indigo-300 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleAddNote} disabled={saving || !newNote.trim()}
+                        className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-3 text-sm rounded-none transition"
+                      >
+                        {saving ? 'Adding...' : 'Add Note'}
+                      </motion.button>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+                    {notesArray.length > 0 && (
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        <AnimatePresence>
+                          {[...notesArray].reverse().map((note: any, idx: number) => {
+                            const isOld = typeof note === 'string';
+                            const text = isOld ? note : note.text;
+                            const user = isOld ? 'Unknown' : (note.user_name || 'System');
+                            const ts = isOld ? lead.created_at : note.timestamp;
+                            return (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.04 }}
+                                className="flex gap-3 p-3 bg-gray-50 rounded-none"
+                              >
+                                <div className="w-7 h-7 rounded-none bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 flex-shrink-0">
+                                  {user.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className="text-xs font-bold text-gray-800">{user}</span>
+                                    <span className="text-xs text-gray-400">
+                                      {new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600">{text}</p>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* ── FOOTER ── */}
         <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-t border-gray-100 flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 py-3 rounded-none border-2 border-gray-100 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={onClose}
+            className="flex-1 py-3 rounded-none border-2 border-gray-100 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition"
+          >
             Close
-          </button>
-          {newNote.trim() && activeTab === 'activity' && (
-            <button onClick={async () => {
-              setSaving(true);
-              const ok = await onAddNote(lead.id, newNote);
-              setSaving(false);
-              if (ok) { setNewNote(''); toast.success('Note saved!'); await onRefresh(); onClose(); }
-            }} disabled={saving}
-              className="flex-2 flex-[2] py-3 rounded-none text-sm font-bold text-white transition"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-              {saving ? 'Saving...' : 'Save Note'}
-            </button>
-          )}
+          </motion.button>
+          <AnimatePresence>
+            {newNote.trim() && activeTab === 'activity' && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9, width: 0 }}
+                animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                exit={{ opacity: 0, scale: 0.9, width: 0 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={async () => {
+                  setSaving(true);
+                  const ok = await onAddNote(lead.id, newNote);
+                  setSaving(false);
+                  if (ok) { setNewNote(''); toast.success('Note saved!'); await onRefresh(); onClose(); }
+                }}
+                disabled={saving}
+                className="flex-[2] py-3 rounded-none text-sm font-bold text-white transition overflow-hidden whitespace-nowrap px-4"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+              >
+                {saving ? 'Saving...' : 'Save Note'}
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── REPEAT CUSTOMER HISTORY DRAWER ── */}
-      {showHistoryDrawer && (
-        <div className="fixed inset-0 z-[60] flex">
-          <div className="flex-1" onClick={() => setShowHistoryDrawer(false)} />
-          <div className="w-full sm:w-96 bg-white shadow-2xl flex flex-col h-full border-l border-gray-200">
-            <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#312e81' }}>
-              <button onClick={() => setShowHistoryDrawer(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-none"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                <X className="w-4 h-4 text-white/70" />
-              </button>
-              <div>
-                <p className="text-xs font-semibold text-white/50">Repeat Customer</p>
-                <p className="text-sm font-bold text-white">{lead.name}</p>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
-                {relatedLeads.length} Previous Job{relatedLeads.length > 1 ? 's' : ''}
-              </p>
-              {relatedLeads.map((rl: any) => (
-                <div key={rl.id} className="bg-white border border-gray-200 rounded-none p-4 space-y-2 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{rl.category || 'No category'}</p>
-                      <p className="text-xs text-gray-400">{new Date(rl.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                    </div>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-none ${
-                      rl.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
-                      : rl.status === 'cancelled' ? 'bg-red-100 text-red-600'
-                      : 'bg-blue-100 text-blue-700'
-                    }`}>{rl.status}</span>
-                  </div>
-                  {rl.description && <p className="text-xs text-gray-500 leading-relaxed">{rl.description}</p>}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    {rl.quote_total && <span className="font-semibold text-gray-700">${parseFloat(rl.quote_total).toLocaleString()}</span>}
-                    {rl.payment_status === 'paid' && <span className="text-emerald-600 font-semibold">Paid</span>}
-                    {rl.scheduled_date && <span>{new Date(rl.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                    <span />
-                    {rl.project_id
-                      ? <span className="text-xs text-gray-400">Project #{rl.project_number || rl.project_id}</span>
-                      : <span className="text-xs text-gray-400 italic">No project</span>
-                    }
-                  </div>
+      <AnimatePresence>
+        {showHistoryDrawer && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex"
+          >
+            <motion.div className="flex-1" onClick={() => setShowHistoryDrawer(false)} />
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="w-full sm:w-96 bg-white shadow-2xl flex flex-col h-full border-l border-gray-200"
+            >
+              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#312e81' }}>
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => setShowHistoryDrawer(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-none"
+                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+                >
+                  <X className="w-4 h-4 text-white/70" />
+                </motion.button>
+                <div>
+                  <p className="text-xs font-semibold text-white/50">Repeat Customer</p>
+                  <p className="text-sm font-bold text-white">{lead.name}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  {relatedLeads.length} Previous Job{relatedLeads.length > 1 ? 's' : ''}
+                </p>
+                {relatedLeads.map((rl: any, i: number) => (
+                  <motion.div
+                    key={rl.id}
+                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06 }}
+                    className="bg-white border border-gray-200 rounded-none p-4 space-y-2 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{rl.category || 'No category'}</p>
+                        <p className="text-xs text-gray-400">{new Date(rl.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-none ${
+                        rl.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
+                        : rl.status === 'cancelled' ? 'bg-red-100 text-red-600'
+                        : 'bg-blue-100 text-blue-700'
+                      }`}>{rl.status}</span>
+                    </div>
+                    {rl.description && <p className="text-xs text-gray-500 leading-relaxed">{rl.description}</p>}
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      {rl.quote_total && <span className="font-semibold text-gray-700">${parseFloat(rl.quote_total).toLocaleString()}</span>}
+                      {rl.payment_status === 'paid' && <span className="text-emerald-600 font-semibold">Paid</span>}
+                      {rl.scheduled_date && <span>{new Date(rl.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-50">
+                      <span />
+                      {rl.project_id
+                        ? <span className="text-xs text-gray-400">Project #{rl.project_number || rl.project_id}</span>
+                        : <span className="text-xs text-gray-400 italic">No project</span>
+                      }
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── CATEGORY CHANGE MODAL ── */}
-      {pendingCategoryChange && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
-              <LayoutGrid className="w-8 h-8 text-indigo-500" />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              <span className="font-bold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
-                className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm">
-                Keep Current
-              </button>
-              <button onClick={async () => {
-                const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
-                setPendingCategoryChange(null);
-                await executeSaveDetails(items);
-              }}
-                className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition text-sm">
-                Use Template
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {pendingCategoryChange && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
+                <LayoutGrid className="w-8 h-8 text-indigo-500" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                <span className="font-bold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button whileTap={{ scale: 0.97 }}
+                  onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
+                  className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm">
+                  Keep Current
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.97 }}
+                  onClick={async () => {
+                    const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
+                    setPendingCategoryChange(null);
+                    await executeSaveDetails(items);
+                  }}
+                  className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition text-sm">
+                  Use Template
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── COMPLETION SUMMARY MODAL ── */}
-      {showCompletionSummary && (
-        <CompletionSummaryModal
-          lead={lead}
-          onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(selectedStatus); }}
-          onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
-        />
-      )}
-    </div>
+      <AnimatePresence>
+        {showCompletionSummary && (
+          <CompletionSummaryModal
+            lead={lead}
+            onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(selectedStatus); }}
+            onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
