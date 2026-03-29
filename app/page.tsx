@@ -246,7 +246,7 @@ function ProductShowcase() {
           <div className="absolute inset-0 bg-[#1a6645]/5 blur-[100px] rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000" />
           
           <img
-            src="/images/product-ui2.png" // This is your 'replicate-prediction' image
+            src="/images/product-ui.png" // This is your 'replicate-prediction' image
             alt="Lead2Project job card with scheduling, quotes and payments"
             className="relative z-10 w-full h-auto shadow-2xl transition-all duration-700"
             style={{ 
@@ -333,17 +333,16 @@ function LeadCapture() {
       quote: "The one-click confirmation saves me 30 minutes of texting every single evening.",
       author: 'Tony M., Shoreline Gutters',
       visual: (
-        <div className="w-full h-full bg-slate-100 p-6 flex flex-col justify-center">
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <p className="text-[10px] font-bold text-blue-600 mb-1">UPCOMING JOB</p>
-                <p className="font-black text-slate-800">John Simpson - Roof Repair</p>
-                <p className="text-xs text-slate-500 mb-4">Monday, Oct 12 @ 8:00 AM</p>
-                <div className="py-2 px-3 bg-green-50 text-green-700 text-[10px] font-bold rounded flex items-center gap-2">
-                   <Check size={12}/> Confirmation Email Sent
-                </div>
-             </div>
-        </div>
-      ),
+  <div className="relative w-full h-full bg-[#f8f9fb]">
+    <img 
+      src="/images/schedulefeature.png" // The 4K upscale of your schedule board
+      alt="Interactive Scheduling Dashboard" 
+      className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105" 
+    />
+    {/* Subtle inner shadow and gradient for a "recessed" look */}
+    <div className="absolute inset-0 shadow-[inset_0_2px_12px_rgba(0,0,0,0.03)] pointer-events-none" />
+  </div>
+),
     },
     {
       label: 'Quote & Win',
