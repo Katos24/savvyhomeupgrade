@@ -25,6 +25,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showHours, setShowHours] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showHistory, setShowHistory] = useState<boolean>(false);
 
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -154,7 +155,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
   return (
     <>
-      {/* EMAIL PREVIEW MODAL — framer animated */}
+      {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
           <motion.div
@@ -164,22 +165,22 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl border border-white/20"
+              className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-white/20"
               style={{ height: '85vh' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-xl text-blue-600"><Eye size={16} /></div>
-                  <p className="text-sm font-black text-[#0F1F3D] uppercase tracking-widest">Email Preview</p>
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600"><Eye size={14} /></div>
+                  <p className="text-xs font-black text-[#0F1F3D] uppercase tracking-widest">Email Preview</p>
                 </div>
-                <button onClick={() => setPreviewHtml(null)} className="p-2 hover:bg-slate-200 rounded-full transition"><X size={20} /></button>
+                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition"><X size={18} /></button>
               </div>
-              <div className="flex-1 p-4">
+              <div className="flex-1 p-3">
                 <iframe
                   title="Email Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
-                  className="w-full h-full rounded-2xl border border-slate-100"
+                  className="w-full h-full rounded-xl border border-slate-100"
                   sandbox="allow-same-origin"
                 />
               </div>
@@ -188,20 +189,20 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
         )}
       </AnimatePresence>
 
-      <div className="bg-white rounded-[2.5rem] border border-[#D1C9BD]/50 shadow-xl overflow-hidden transition-all hover:shadow-2xl">
+      <div className="bg-white rounded-2xl border border-[#D1C9BD]/50 shadow-lg overflow-hidden">
 
-        {/* HEADER */}
-        <div className="px-8 py-6 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#0F1F3D] flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
-              <Sparkles size={20} className="text-blue-400" />
+        {/* HEADER — compact single row */}
+        <div className="px-4 py-3 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#0F1F3D] flex items-center justify-center text-white shadow-md">
+              <Sparkles size={14} className="text-blue-400" />
             </div>
             <div>
-              <h3 className="text-xs font-black text-[#0F1F3D] uppercase tracking-[0.2em]">Schedule</h3>
+              <h3 className="text-[10px] font-black text-[#0F1F3D] uppercase tracking-[0.2em]">Schedule</h3>
               {lastEmailSentAt && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <CheckCircle2 size={12} className="text-emerald-500" />
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 size={10} className="text-emerald-500" />
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tight">
                     Confirmed {new Date(lastEmailSentAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -210,35 +211,34 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           </div>
           <button
             onClick={() => setShowCalendarModal(true)}
-            className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-[#D1C9BD] text-[#0F1F3D] rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#0F1F3D] hover:text-white shadow-sm"
+            className="group flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#D1C9BD] text-[#0F1F3D] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:bg-[#0F1F3D] hover:text-white shadow-sm"
           >
-            <Calendar size={14} className="group-hover:scale-110 transition-transform" /> Calendar
+            <Calendar size={12} className="group-hover:scale-110 transition-transform" /> Calendar
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="p-4 space-y-3">
 
           {/* ASSIGNED TO */}
-          <div className="relative group">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
-              <User size={12} className="text-blue-500" /> Assigned To
+          <div>
+            <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">
+              <User size={10} className="text-blue-500" /> Assigned To
             </label>
             {!showCustomAssignee ? (
               <div className="relative">
                 <select
                   value={assignedTo}
                   onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
-className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer"
+                  className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer"
                 >
                   <option value="">Choose team member...</option>
                   {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                  {/* Show current assignee if not in team list */}
                   {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
                     <option value={assignedTo}>{assignedTo}</option>
                   )}
                   <option value="__custom__">+ Add Custom Name</option>
                 </select>
-                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex gap-2">
@@ -247,45 +247,39 @@ className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl
                   value={customAssignee}
                   onChange={(e) => setCustomAssignee(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCustomName()}
-                  className="flex-1 px-6 py-4 bg-white border-2 border-blue-500 rounded-[1.5rem] text-sm font-black text-[#0F1F3D] outline-none shadow-lg shadow-blue-500/10"
+                  className="flex-1 px-4 py-2.5 bg-white border-2 border-blue-500 rounded-xl text-sm font-black text-[#0F1F3D] outline-none"
                 />
-                <button
-                  onClick={handleAddCustomName}
-                  className="px-6 bg-[#0F1F3D] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
-                  Add
-                </button>
-                <button
-                  onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }}
-                  className="p-4 bg-slate-100 text-slate-400 rounded-[1.5rem] hover:bg-red-50 hover:text-red-500 transition-colors">
-                  <X size={18} />
+                <button onClick={handleAddCustomName} className="px-4 bg-[#0F1F3D] text-white rounded-xl text-[10px] font-black uppercase tracking-wide">Add</button>
+                <button onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }} className="p-2.5 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors">
+                  <X size={16} />
                 </button>
               </motion.div>
             )}
           </div>
 
-          {/* DATE & TIME */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Date</label>
-              <input
-                type="date" value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black text-[#0F1F3D] outline-none transition-all focus:border-blue-500 focus:bg-white"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
-              <div className="flex items-center px-4 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] gap-2 transition-all focus-within:border-blue-500 focus-within:bg-white">
-                <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-sm font-black outline-none flex-1 cursor-pointer">
+          {/* DATE & TIME — single row */}
+          <div className="grid grid-cols-2 gap-2">
+           <div className="min-w-0">
+  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Date</label>
+  <input
+    type="date" value={scheduledDate}
+    onChange={(e) => setScheduledDate(e.target.value)}
+    className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none focus:border-blue-500 focus:bg-white transition-all"
+  />
+</div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Time</label>
+              <div className="flex items-center px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-1 focus-within:border-blue-500 focus-within:bg-white transition-all">
+                <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer min-w-0">
                   <option value="">HH</option>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
-                <span className="text-slate-300 font-black">:</span>
-                <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-sm font-black outline-none flex-1 cursor-pointer">
+                <span className="text-slate-300 font-black text-xs">:</span>
+                <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer min-w-0">
                   <option value="">MM</option>
                   {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
-                <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-3 py-1 rounded-xl text-[10px] font-black text-blue-600 outline-none shadow-sm">
+                <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg text-[9px] font-black text-blue-600 outline-none">
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
                 </select>
@@ -293,36 +287,36 @@ className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="grid grid-cols-1 gap-4 pt-2">
+          {/* ACTION BUTTONS — side by side */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => handleSave()}
               disabled={saving}
-              className="w-full py-5 bg-[#0F1F3D] text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[1.5rem] shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-all hover:bg-[#1a6645] hover:shadow-[#1a6645]/20 disabled:opacity-50"
+              className="py-3 bg-[#0F1F3D] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-[#1a6645] disabled:opacity-50"
             >
-              {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles size={16} className="text-blue-400" />}
-              {saving ? 'Saving...' : 'Save Schedule'}
+              {saving ? <Loader2 className="animate-spin w-3.5 h-3.5" /> : <Sparkles size={13} className="text-blue-400" />}
+              {saving ? 'Saving…' : 'Save'}
             </motion.button>
 
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowEmailModal(true)}
               disabled={!hasProject || !scheduledDate || saving}
-              className="w-full py-5 bg-white border-2 border-slate-100 text-[#0F1F3D] text-[11px] font-black uppercase tracking-[0.3em] rounded-[1.5rem] flex items-center justify-center gap-3 transition-all hover:border-blue-500 hover:text-blue-600 disabled:opacity-30 shadow-sm"
+              className="py-3 bg-white border-2 border-slate-100 text-[#0F1F3D] text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all hover:border-blue-500 hover:text-blue-600 disabled:opacity-30 shadow-sm"
             >
-              <Send size={16} /> Send to Customer
+              <Send size={13} /> Send
             </motion.button>
           </div>
 
-          {/* JOB HOURS */}
-          <div className="pt-6 border-t border-slate-100">
-            <button onClick={() => setShowHours(v => !v)} className="flex items-center justify-between w-full group">
-              <span className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                <Hash size={12} className="text-blue-400" /> Job Hours
+          {/* JOB HOURS — collapsible */}
+          <div className="pt-2 border-t border-slate-100">
+            <button onClick={() => setShowHours(v => !v)} className="flex items-center justify-between w-full py-1">
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <Hash size={10} className="text-blue-400" /> Job Hours
               </span>
-              <div className="p-1 rounded-lg bg-slate-50 text-slate-400 group-hover:text-blue-500 transition-colors">
-                {showHours ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              <div className="text-slate-400">
+                {showHours ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
               </div>
             </button>
             <AnimatePresence>
@@ -331,14 +325,14 @@ className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-5 grid grid-cols-2 gap-4 pb-2">
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estimated</label>
-                      <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-[#0F1F3D] outline-none" />
+                  <div className="mt-2 grid grid-cols-2 gap-2 pb-1">
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1 block">Estimated</label>
+                      <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Actual</label>
-                      <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-[#0F1F3D] outline-none" />
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1 block">Actual</label>
+                      <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none" />
                     </div>
                   </div>
                 </motion.div>
@@ -346,45 +340,53 @@ className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl
             </AnimatePresence>
           </div>
 
-          {/* SENT HISTORY — full log restored */}
+          {/* SENT HISTORY — collapsible */}
           {outboxLog.length > 0 && (
-            <div className="pt-6 border-t border-slate-100">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                <History size={12} className="text-blue-400" /> Sent History
-              </p>
-              <div className="space-y-3">
-                {outboxLog.map((entry: any, i: number) => (
+            <div className="pt-2 border-t border-slate-100">
+              <button onClick={() => setShowHistory(v => !v)} className="flex items-center justify-between w-full py-1">
+                <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <History size={10} className="text-blue-400" /> Sent History ({outboxLog.length})
+                </span>
+                {showHistory ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+              </button>
+              <AnimatePresence>
+                {showHistory && (
                   <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                    className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group"
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`w-2 h-2 rounded-full ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
-                            {entry.status}
-                          </span>
-                          <p className="text-[10px] font-black text-[#0F1F3D]">{new Date(entry.created_at).toLocaleDateString()}</p>
+                    <div className="mt-2 space-y-2">
+                      {outboxLog.map((entry: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                                  {entry.status}
+                                </span>
+                                <p className="text-[9px] font-black text-[#0F1F3D]">{new Date(entry.created_at).toLocaleDateString()}</p>
+                              </div>
+                              {entry.sent_by_email && <p className="text-[9px] text-slate-400 truncate">{entry.sent_by_email}</p>}
+                              {entry.status === 'failed' && entry.error_message && (
+                                <p className="text-[9px] text-red-500 font-bold">{entry.error_message}</p>
+                              )}
+                            </div>
+                          </div>
+                          {entry.html_body && (
+                            <button
+                              onClick={() => setPreviewHtml(entry.html_body)}
+                              className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-[8px] font-black text-blue-600 uppercase hover:border-blue-400 transition-colors opacity-0 group-hover:opacity-100 shadow-sm shrink-0 ml-2"
+                            >
+                              <Eye size={10} /> Preview
+                            </button>
+                          )}
                         </div>
-                        {entry.sent_by_email && <p className="text-[9px] text-slate-400 truncate mt-0.5">{entry.sent_by_email}</p>}
-                        {entry.status === 'failed' && entry.error_message && (
-                          <p className="text-[9px] text-red-500 font-bold mt-0.5">{entry.error_message}</p>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                    {entry.html_body && (
-                      <button
-                        onClick={() => setPreviewHtml(entry.html_body)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[9px] font-black text-blue-600 uppercase hover:border-blue-400 transition-colors opacity-0 group-hover:opacity-100 shadow-sm"
-                      >
-                        Preview
-                      </button>
-                    )}
                   </motion.div>
-                ))}
-              </div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
