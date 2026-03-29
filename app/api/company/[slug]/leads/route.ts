@@ -82,6 +82,20 @@ export async function GET(request: Request, { params }: Props) {
     const fromISO = timeFrom ? timeFrom.toISOString() : '2000-01-01T00:00:00.000Z';
     const toISO   = timeTo   ? timeTo.toISOString()   : '2099-12-31T23:59:59.999Z';
 
+// ── Global stats — always all time, no filters ────────────
+const statsResult = await sql`
+  SELECT
+    COUNT(*) as total_leads,
+    COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
+    COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status = 'paid'), 0) as revenue,
+    COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status != 'paid' AND p.quote_total IS NOT NULL), 0) as pending
+  FROM leads l
+  LEFT JOIN projects p ON l.id = p.lead_id
+  WHERE l.company_id = ${companyId}
+    AND l.deleted = false
+`;
+const globalStats = statsResult[0];
+
     // ── Status counts (always unfiltered by status) ───────────
     const statusCountsResult = await sql`
       SELECT status, COUNT(*) as count
@@ -207,6 +221,7 @@ export async function GET(request: Request, { params }: Props) {
       leads: processedLeads,
       pagination: { page, pages, total, limit },
       statusCounts,
+        globalStats, // ← add this
     });
 
   } catch (error) {

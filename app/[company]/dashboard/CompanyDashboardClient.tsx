@@ -126,6 +126,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [allLeads, setAllLeads] = useState<any[]>([]);
 const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
 const [serverStatusCounts, setServerStatusCounts] = useState<Record<string, number>>({});  const [isInitialLoad, setIsInitialLoad] = useState(true);
+const [globalStats, setGlobalStats] = useState<any>(null); // ← add here
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
 
@@ -214,6 +216,8 @@ const fetchLeads = useCallback(async (page = 1, silent = false, overrides: Recor
       setAllLeads(prev => (page === 1 ? fresh : [...prev, ...fresh]));
 setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
 if (data.statusCounts) setServerStatusCounts(data.statusCounts);
+if (data.globalStats) setGlobalStats(data.globalStats); // ← add here
+
       setRefreshKey(k => k + 1);
       setLoadError('');
     } catch (e) {
@@ -382,18 +386,17 @@ useEffect(() => {
   }, [currentUser]);
 
   const refreshModalLead = useCallback(async () => {
-    await fetchLeads(1, true);
-    if (!selectedLead) return;
-    try {
-      const res = await fetch(`/api/company/${company.slug}/leads`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      const data = await res.json();
-      const updated = data.leads?.find((l: any) => l.id === selectedLead.id);
-      if (updated) setSelectedLead(updated);
-    } catch (e) { console.error('refreshModalLead:', e); }
-  }, [fetchLeads, selectedLead, company.slug]);
+  await fetchLeads(1, true);
+  if (!selectedLead) return;
+  try {
+    const res = await fetch(`/api/leads/${selectedLead.id}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    const data = await res.json();
+    if (data.success && data.lead) setSelectedLead(data.lead);
+  } catch (e) { console.error('refreshModalLead:', e); }
+}, [fetchLeads, selectedLead]);
 
   const clearFilters = useCallback(() => {
   setSearchQuery('');
@@ -720,27 +723,24 @@ const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || f
           </div>
         </header>
 
-{/* Stats bar — desktop only */}
-        <div className="hidden md:grid grid-cols-4 gap-3 mb-6">
-          {(() => {
-            const totalRevenue = allLeads.filter(l => l.payment_status === 'paid').reduce((s, l) => s + parseFloat(l.quote_total || 0), 0);
-            const pendingRevenue = allLeads.filter(l => l.quote_total && l.payment_status !== 'paid').reduce((s, l) => s + parseFloat(l.quote_total || 0), 0);
-            const activeJobs = allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length;
-            const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
-            return [
-              { label: 'Total Leads',       value: allLeads.length,        color: 'text-white'       },
-              { label: 'Active Jobs',        value: activeJobs,            color: 'text-blue-400'    },
-              { label: 'Revenue Collected',  value: fmt(totalRevenue),           color: 'text-emerald-400' },
-              { label: 'Pending',            value: fmt(pendingRevenue),            color: 'text-amber-400'  },
-            ].map((s, i) => (
-              <div key={i} className="bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-4">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{s.label}</p>
-                <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-              </div>
-            ));
-          })()}
-        </div>
-
+{/* Stats bar — desktop full, mobile slim */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-6">
+  {(() => {
+    const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
+    const gs = globalStats;
+    return [
+      { label: 'Total Leads',      value: gs?.total_leads ?? allLeads.length,        color: 'text-white'       },
+      { label: 'Active Jobs',      value: gs?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, color: 'text-blue-400' },
+      { label: 'Total Revenue',          value: fmt(gs?.revenue ?? 0),                     color: 'text-emerald-400' },
+      { label: 'Total Pending',          value: fmt(gs?.pending ?? 0),                     color: 'text-amber-400'   },
+    ].map((s, i) => (
+      <div key={i} className="bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-4 py-2.5 md:py-4">
+        <p className="text-[9px] md:text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5 md:mb-1">{s.label}</p>
+        <p className={`text-lg md:text-2xl font-black ${s.color}`}>{s.value}</p>
+      </div>
+    ));
+  })()}
+</div>
       
 
         {/* Error state */}
