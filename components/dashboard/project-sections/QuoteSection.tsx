@@ -322,134 +322,209 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* QUOTE TABLE */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b-2 border-gray-200 bg-gray-100">
-                <th className="text-left px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="text-right px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-wider w-28">Unit Price</th>
-                <th className="text-right px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-wider w-16">Qty</th>
-                <th className="text-right px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-wider w-28">Amount</th>
-                {isEditing && <th className="w-10" />}
-              </tr>
-            </thead>
-            <tbody>
-              {quoteData.length === 0 && (
-                <tr>
-                  <td colSpan={isEditing ? 5 : 4} className="py-12 text-center">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                      className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                    >
-                      <FileText className="w-6 h-6 text-slate-200" />
-                    </motion.div>
-                    <p className="text-sm font-bold text-gray-300">No line items yet</p>
-                    <p className="text-xs text-gray-200 mt-1">Click "Add Line Item" or use AI to generate</p>
-                  </td>
-                </tr>
-              )}
-              <AnimatePresence>
-                {quoteData.map((item: any, idx: number) => (
-                  <motion.tr
-                    key={item.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10, height: 0 }}
-                    transition={{ delay: idx * 0.04 }}
-                    className={`border-b border-gray-100 transition-colors ${
-                      isEditing ? 'hover:bg-indigo-50/30' : 'hover:bg-gray-50/50'
-                    } ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}
-                  >
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="text"
-                        disabled={!isEditing}
-                        value={item.description}
-                        onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                        placeholder="Item name..."
-                        className={`w-full px-3 py-2 text-sm font-medium rounded-lg outline-none transition-all ${
-                          isEditing
-                            ? 'bg-white border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-gray-900 placeholder-gray-300'
-                            : 'bg-transparent border-transparent text-gray-900'
-                        }`}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className={`flex items-center justify-end rounded-lg transition-all ${
-                        isEditing ? 'bg-white border border-gray-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100' : ''
-                      }`}>
-                        {isEditing && <span className="text-xs font-bold text-gray-400 pl-2">$</span>}
-                        <input
-                          type="number"
-                          disabled={!isEditing}
-                          value={item.unitPrice || ''}
-                          onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                          className={`w-24 px-2 py-2 text-sm font-bold text-right bg-transparent border-0 focus:ring-0 outline-none ${noSpinners} ${
-                            isEditing ? 'text-gray-900' : 'text-gray-700'
-                          }`}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className={`flex items-center justify-end rounded-lg transition-all ${
-                        isEditing ? 'bg-white border border-gray-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100' : ''
-                      }`}>
-                        <input
-                          type="number"
-                          disabled={!isEditing}
-                          value={item.quantity || ''}
-                          onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                          className={`w-full px-2 py-2 text-sm font-bold text-right bg-transparent border-0 focus:ring-0 outline-none ${noSpinners} ${
-                            isEditing ? 'text-gray-900' : 'text-gray-500'
-                          }`}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-4 py-1.5 text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <span className="text-xs font-bold text-gray-400">$</span>
-                        <span className="text-sm font-black text-gray-900">
-                          {(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </td>
-                    {isEditing && (
-                      <td className="px-2 py-1.5">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleRemoveRow(item.id)}
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </motion.button>
-                      </td>
-                    )}
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+    {/* QUOTE TABLE — desktop / CARDS — mobile */}
 
-        {/* ADD LINE ITEM */}
-        <AnimatePresence>
-          {isEditing && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden px-3 pt-3 pb-1"
-            >
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-                className="w-full h-10 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+{/* ── DESKTOP TABLE ── */}
+<div className="hidden md:block overflow-x-auto">
+  <table className="w-full border-collapse text-sm">
+    <thead>
+      <tr className="border-b border-gray-100">
+        <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Line item</th>
+        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Unit price</th>
+        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-16">Qty</th>
+        <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Amount</th>
+        {isEditing && <th className="w-9" />}
+      </tr>
+    </thead>
+    <tbody>
+      {quoteData.length === 0 ? (
+        <tr>
+          <td colSpan={isEditing ? 5 : 4}>
+            {isEditing ? (
+              <button
+                onClick={() => setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+                className="w-full py-16 flex flex-col items-center justify-center gap-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50/40 transition-colors group"
               >
-                <Plus className="w-4 h-4" /> Add Line Item
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-medium">Add first line item</span>
+              </button>
+            ) : (
+              <div className="py-12 text-center">
+                <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-4 h-4 text-gray-200" />
+                </div>
+                <p className="text-sm text-gray-300">No line items yet</p>
+              </div>
+            )}
+          </td>
+        </tr>
+      ) : (
+        <>
+          {quoteData.map((item: any) => (
+            <tr
+              key={item.id}
+              className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors group"
+            >
+              <td className="px-5 py-2.5">
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={item.description}
+                  onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                  placeholder="Item description…"
+                  className="w-full bg-transparent outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all"
+                />
+              </td>
+             <td className="px-5 py-2.5">
+  {isEditing ? (
+    <input
+      type="number"
+      value={item.unitPrice || ''}
+      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+      className={`w-full bg-transparent outline-none text-sm text-right text-gray-600 focus:bg-gray-100 focus:px-2 rounded transition-all ${noSpinners}`}
+    />
+  ) : (
+    <div className="flex items-center justify-end gap-0.5">
+      <span className="text-xs text-gray-400">$</span>
+      <span className="text-sm font-medium text-gray-900">
+        {(item.unitPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </span>
+    </div>
+  )}
+</td>
+              <td className="px-5 py-2.5">
+                <input
+                  type="number"
+                  disabled={!isEditing}
+                  value={item.quantity || ''}
+                  onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                  className={`w-full bg-transparent outline-none text-sm text-right text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all ${noSpinners}`}
+                />
+              </td>
+              <td className="px-5 py-2.5 text-right text-sm font-medium text-gray-900">
+                ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </td>
+              {isEditing && (
+                <td className="pr-3 py-2.5">
+                  <button
+                    onClick={() => handleRemoveRow(item.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              )}
+            </tr>
+          ))}
+          {isEditing && (
+  <tr>
+    <td colSpan={5} className="px-5 py-3 border-t border-dashed border-gray-200">
+      <button
+        onClick={() => setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+        className="flex items-center gap-2 text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+      >
+        <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+          <Plus className="w-3 h-3" />
+        </div>
+        Add line item
+      </button>
+    </td>
+  </tr>
+)}
+        </>
+      )}
+    </tbody>
+  </table>
+</div>
 
+{/* ── MOBILE CARDS ── */}
+<div className="md:hidden">
+  {quoteData.length === 0 ? (
+    isEditing ? (
+      <button
+        onClick={() => setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+        className="w-full py-16 flex flex-col items-center justify-center gap-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50/40 transition-colors group"
+      >
+        <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
+          <Plus className="w-4 h-4" />
+        </div>
+        <span className="text-xs font-medium">Add first line item</span>
+      </button>
+    ) : (
+      <div className="py-12 text-center">
+        <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-3">
+          <FileText className="w-4 h-4 text-gray-200" />
+        </div>
+        <p className="text-sm text-gray-300">No line items yet</p>
+      </div>
+    )
+  ) : (
+    <div className="divide-y divide-gray-100">
+      {quoteData.map((item: any) => (
+        <div key={item.id} className="px-4 py-3 relative group">
+          {/* Description */}
+          <input
+            type="text"
+            disabled={!isEditing}
+            value={item.description}
+            onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+            placeholder="Item description…"
+            className="w-full bg-transparent outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all mb-2"
+          />
+          {/* Price row */}
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+          <div className="flex items-center gap-1">
+  <span className="text-xs text-gray-400">$</span>
+  <input
+    type="number"
+    disabled={!isEditing}
+    value={item.unitPrice || ''}
+    onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+    placeholder="0"
+    className={`w-16 bg-transparent outline-none text-xs text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-1.5 rounded transition-all ${noSpinners}`}
+  />
+</div>
+            <span className="text-gray-200">×</span>
+            <input
+              type="number"
+              disabled={!isEditing}
+              value={item.quantity || ''}
+              onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+              placeholder="1"
+              className={`w-8 bg-transparent outline-none text-xs text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-1 rounded transition-all ${noSpinners}`}
+            />
+            <span className="text-gray-200">·</span>
+            <span className="text-sm font-medium text-gray-900 ml-auto">
+              ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+          {/* Delete */}
+          {isEditing && (
+            <button
+              onClick={() => handleRemoveRow(item.id)}
+              className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      ))}
+      {isEditing && (
+        <div className="px-4 py-3">
+          <button
+            onClick={() => setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add line item
+          </button>
+        </div>
+      )}
+    </div>
+  )}
+</div>
         {/* TOTAL BAR */}
         <div className="mx-4 my-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl shadow-slate-200 gap-3">
           <div className="min-w-0">
