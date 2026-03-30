@@ -350,7 +350,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
             {/* Image 1 */}
             <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-3">
               <img
-                src="/images/status-guide-1.png"
+                src="/images/pipelineimage.png"
                 alt="Card badges"
                 className="w-full h-auto object-cover"
               />
@@ -360,18 +360,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
               </div>
             </div>
 
-            {/* Image 2 */}
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-              <img
-                src="/images/status-guide-2.png"
-                alt="Status selection menu"
-                className="w-full h-auto object-cover"
-              />
-              <div className="px-4 py-3 border-t border-gray-50">
-                <p className="text-xs font-bold text-gray-700">Selection menu</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Tap any lead to change its stage from a full-screen picker.</p>
-              </div>
-            </div>
+      
           </div>
 
           {/* Live stage preview */}

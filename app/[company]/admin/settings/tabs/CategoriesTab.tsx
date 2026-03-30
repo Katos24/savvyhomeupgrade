@@ -215,15 +215,43 @@ export default function CategoriesTab({
       </div>
 
       {/* HOW IT WORKS BANNER — untouched */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3">
-        <Info className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-sm font-bold text-indigo-900">How this works</p>
-          <p className="text-xs text-indigo-700 leading-relaxed">
-            Each category can have a <span className="font-bold">Task Checklist</span> (steps your team should complete) and a <span className="font-bold">Pricing Template</span> (pre-filled line items for quotes). Both are optional — set up only what you need.
-          </p>
-        </div>
+{/* ── UPDATED STEALTH WORKFLOW BANNER ── */}
+<div className="relative group mb-8 overflow-hidden rounded-[2rem] border border-white/5 bg-[#0B0F1A] p-px shadow-2xl">
+  {/* Animated Gradient Border Effect */}
+  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-transparent to-emerald-500/20 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+  
+  <div className="relative bg-[#0F172A] rounded-[calc(2rem-1px)] p-6 flex items-start gap-6">
+    {/* Icon with Neon Glow */}
+    <div className="relative shrink-0">
+      <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+      <div className="relative w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center shadow-inner">
+        <div className="w-2 h-2 rounded-full bg-indigo-500 absolute top-3 right-3 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+        <Info className="w-7 h-7 text-indigo-400" />
       </div>
+    </div>
+
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+          Automation Guide
+        </span>
+        <div className="h-px flex-1 bg-gradient-to-r from-indigo-500/20 to-transparent" />
+      </div>
+      
+      <p className="text-sm leading-relaxed text-gray-400 max-w-2xl">
+        Add or delete categories to match your trades. Attach 
+        <span className="text-white font-bold px-1.5 py-0.5 bg-indigo-500/10 rounded-md border border-indigo-500/20 mx-1">
+          Task Checklists
+        </span> 
+        or 
+        <span className="text-white font-bold px-1.5 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/20 mx-1">
+          Pricing Templates
+        </span> 
+        to instantly pre-populate new projects when a category is selected.
+      </p>
+    </div>
+  </div>
+</div>
 
       {/* UNSAVED CHANGES BANNER — untouched */}
       {isDirty && (
@@ -279,61 +307,64 @@ export default function CategoriesTab({
             const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
             return (
               <motion.div
-                key={cat.value}
-                layout
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={spring}
-                className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
-              >
-                {/* Card top */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                    <Layers className="w-5 h-5 text-indigo-500" />
-                  </div>
-                  <button
-                    onClick={() => setDeleteConfirm({ index, label: cat.label })}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+  key={cat.value}
+  layout
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="group relative bg-[#111827] border border-gray-800 rounded-[2rem] p-6 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(79,70,229,0.1)] transition-all duration-300"
+>
+  {/* Card Top: Icon & Delete */}
+  <div className="flex items-start justify-between mb-5">
+    <div className="w-12 h-12 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+      <Layers className="w-6 h-6 text-indigo-400" />
+    </div>
+    <button
+      onClick={() => setDeleteConfirm({ index, label: cat.label })}
+      className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+    >
+      <Trash2 className="w-4 h-4" />
+    </button>
+  </div>
 
-                <h3 className="text-sm font-black text-gray-900 mb-3 leading-tight">{cat.label}</h3>
+  <h3 className="text-base font-black text-white mb-4 tracking-tight">{cat.label}</h3>
 
-                {/* Status pills */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full ${
-                    taskCount > 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <CheckSquare className="w-2.5 h-2.5" />
-                    {taskCount > 0 ? `${taskCount} tasks` : 'No tasks'}
-                  </span>
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full ${
-                    quoteTemplate ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <DollarSign className="w-2.5 h-2.5" />
-                    {quoteTemplate ? `${quoteTemplate.items.length} items` : 'No pricing'}
-                  </span>
-                </div>
+  {/* ── UPDATED PILLS ── */}
+  <div className="flex flex-wrap gap-2 mb-6">
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border ${
+      taskCount > 0 
+        ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' 
+        : 'bg-gray-800/50 border-gray-700 text-gray-500'
+    }`}>
+      <CheckSquare className="w-3 h-3" />
+      {taskCount > 0 ? `${taskCount} ${taskCount === 1 ? 'Task' : 'Tasks'}` : 'No Tasks'}
+    </span>
 
-                {/* Action buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => openTaskEditor(index)}
-                    className="py-2.5 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide border border-gray-100 text-gray-500 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-200"
-                  >
-                    <CheckSquare className="w-3.5 h-3.5" /> Tasks
-                  </button>
-                  <button
-                    onClick={() => openQuoteEditor(cat.value)}
-                    className="py-2.5 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide border border-gray-100 text-gray-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200"
-                  >
-                    <DollarSign className="w-3.5 h-3.5" /> Pricing
-                  </button>
-                </div>
-              </motion.div>
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border ${
+      quoteTemplate 
+        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+        : 'bg-gray-800/50 border-gray-700 text-gray-500'
+    }`}>
+      <DollarSign className="w-3 h-3" />
+      {quoteTemplate ? `${quoteTemplate.items.length} ${quoteTemplate.items.length === 1 ? 'Item' : 'Items'}` : 'No Pricing'}
+    </span>
+  </div>
+
+  {/* ── UPDATED BUTTONS ── */}
+  <div className="grid grid-cols-2 gap-3">
+    <button
+      onClick={() => openTaskEditor(index)}
+      className="py-3 flex items-center justify-center gap-2 rounded-xl text-[11px] font-black uppercase tracking-widest bg-gray-900 border border-gray-800 text-gray-400 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all"
+    >
+      <Plus className="w-3 h-3" /> Tasks
+    </button>
+    <button
+      onClick={() => openQuoteEditor(cat.value)}
+      className="py-3 flex items-center justify-center gap-2 rounded-xl text-[11px] font-black uppercase tracking-widest bg-gray-900 border border-gray-800 text-gray-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all"
+    >
+      <Plus className="w-3 h-3" /> Pricing
+    </button>
+  </div>
+</motion.div>
             );
           })}
         </AnimatePresence>
