@@ -1,8 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Mail, Copy, RotateCcw, Eye, EyeOff, Check, Sparkles, X } from 'lucide-react';
+import {
+  Mail, Copy, RotateCcw, Eye, Check, Sparkles,
+  Save, AlertCircle, Calendar, CreditCard, FileText
+} from 'lucide-react';
+
+const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
 
 export default function EmailTemplatesTab({ company, currentUser }: { company: any; currentUser: any }) {
   const router = useRouter();
@@ -11,7 +17,6 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
   const [error, setError] = useState('');
   const [copiedVar, setCopiedVar] = useState('');
 
-  // Default templates
   const defaultTemplates = {
     quote: {
       subject: 'Your Quote from {{company_name}}',
@@ -62,12 +67,6 @@ Best regards,
 
   const [templates, setTemplates] = useState(company.email_templates || defaultTemplates);
   const [activeTemplate, setActiveTemplate] = useState<'quote' | 'schedule' | 'payment'>('quote');
-  
-  // Brand colors
-  const [brandColor1, setBrandColor1] = useState(company.email_brand_color_1 || '#667eea');
-  const [brandColor2, setBrandColor2] = useState(company.email_brand_color_2 || '#764ba2');
-  const [logoUrl, setLogoUrl] = useState(company.logo_url || '');
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const availableVariables = {
     quote: ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{quote_total}}', '{{project_description}}'],
@@ -76,13 +75,7 @@ Best regards,
   };
 
   const handleUpdateTemplate = (type: 'quote' | 'schedule' | 'payment', field: 'subject' | 'body', value: string) => {
-    setTemplates({
-      ...templates,
-      [type]: {
-        ...templates[type],
-        [field]: value,
-      },
-    });
+    setTemplates({ ...templates, [type]: { ...templates[type], [field]: value } });
   };
 
   const handleCopyVariable = (variable: string) => {
@@ -92,34 +85,21 @@ Best regards,
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
+    setLoading(true); setError(''); setSuccess('');
     try {
       const response = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-email-templates',
-          data: {
-            email_templates: templates,
-          },
-        }),
+        body: JSON.stringify({ action: 'update-email-templates', data: { email_templates: templates } }),
       });
-
       const data = await response.json();
-
       if (data.success) {
-        setSuccess('Email templates saved successfully! Refreshing page...');
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        setSuccess('Templates saved!');
+        setTimeout(() => window.location.reload(), 1500);
       } else {
         setError(data.error || 'Failed to save email templates');
       }
-    } catch (err) {
-      console.error('Save error:', err);
+    } catch {
       setError('Failed to save email templates');
     } finally {
       setLoading(false);
@@ -127,11 +107,8 @@ Best regards,
   };
 
   const handleResetToDefault = () => {
-    if (confirm('Are you sure you want to reset this template to default?')) {
-      setTemplates({
-        ...templates,
-        [activeTemplate]: defaultTemplates[activeTemplate],
-      });
+    if (confirm('Reset this template to default?')) {
+      setTemplates({ ...templates, [activeTemplate]: defaultTemplates[activeTemplate] });
     }
   };
 
@@ -139,8 +116,6 @@ Best regards,
     const template = templates[activeTemplate];
     let subject = template.subject;
     let body = template.body;
-
-    // Replace variables with sample data
     const replacements: Record<string, string> = {
       '{{company_name}}': company.name,
       '{{company_phone}}': company.phone || '(555) 123-4567',
@@ -153,248 +128,223 @@ Best regards,
       '{{payment_amount}}': '1,250',
       '{{due_date}}': 'March 30, 2024',
     };
-
     Object.entries(replacements).forEach(([key, value]) => {
       const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
       subject = subject.replace(regex, value);
       body = body.replace(regex, value);
     });
-
     return { subject, body };
   };
 
   const preview = getPreviewText();
 
-  const templateConfig = {
-    quote: { icon: '💰', color: 'emerald', label: 'Quote Email' },
-    schedule: { icon: '📅', color: 'blue', label: 'Schedule Confirmation' },
-    payment: { icon: '💳', color: 'purple', label: 'Payment Reminder' },
+  const templateConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+    quote:    { icon: <FileText className="w-3.5 h-3.5" />,   label: 'Quote',    color: 'text-emerald-500' },
+    schedule: { icon: <Calendar className="w-3.5 h-3.5" />,   label: 'Schedule', color: 'text-blue-500'    },
+    payment:  { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'Payment',  color: 'text-violet-500'  },
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="pb-8">
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Email Templates</h2>
-          <p className="text-sm sm:text-base text-slate-600">Customize automated email notifications sent to customers</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-purple-600" />
-          <span className="text-xs font-semibold text-purple-700 hidden sm:inline">Live Preview</span>
-        </div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Email templates</h2>
+        <p className="text-sm text-gray-400 mt-1">Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
       </div>
 
-      {/* Success/Error Messages */}
-      {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm sm:text-base animate-in slide-in-from-top-2">
-          <Check className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1">{success}</span>
-        </div>
-      )}
+      {/* Alerts */}
+      <AnimatePresence>
+        {success && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-bold flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0" /> {success}
+          </motion.div>
+        )}
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-sm sm:text-base">
-          {error}
-        </div>
-      )}
-
-      {/* Template Selector - Mobile Optimized */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+      {/* Template tabs */}
+      <div className="flex gap-1.5 mb-5 p-1 bg-gray-100 rounded-xl w-fit">
         {Object.entries(templateConfig).map(([key, config]) => (
-          <button
+          <motion.button
             key={key}
+            whileTap={{ scale: 0.96 }}
             onClick={() => setActiveTemplate(key as any)}
-            className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 font-semibold rounded-lg transition text-sm sm:text-base ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
               activeTemplate === key
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <span className="text-lg">{config.icon}</span>
-            <span className="whitespace-nowrap">{config.label}</span>
-          </button>
+            <span className={activeTemplate === key ? config.color : 'text-gray-400'}>
+              {config.icon}
+            </span>
+            {config.label}
+          </motion.button>
         ))}
       </div>
 
-      {/* Main Content - Split Screen on Desktop, Stacked on Mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        
-        {/* LEFT: Editor */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 space-y-4 sm:space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-blue-600" />
-              Edit Template
-            </h3>
-            <button
-              onClick={handleResetToDefault}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition text-xs sm:text-sm"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          </div>
+      {/* Main grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* Available Variables */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-            <h4 className="font-bold text-xs sm:text-sm text-blue-900 mb-2 sm:mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Available Variables
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableVariables[activeTemplate].map((variable) => (
-                <button
-                  key={variable}
-                  onClick={() => handleCopyVariable(variable)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono transition ${
-                    copiedVar === variable
-                      ? 'bg-emerald-100 border border-emerald-300 text-emerald-700'
-                      : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-100'
-                  }`}
-                  title="Click to copy"
-                >
-                  {variable}
-                  {copiedVar === variable ? (
-                    <Check className="w-3 h-3" />
-                  ) : (
-                    <Copy className="w-3 h-3" />
-                  )}
-                </button>
-              ))}
+        {/* LEFT — editor */}
+        <div className="space-y-4">
+
+          {/* Variables */}
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <p className="text-xs font-bold text-gray-700">Available variables</p>
+              <p className="text-[10px] text-gray-400 ml-auto">Click to copy</p>
             </div>
-            <p className="text-xs text-blue-700 mt-2 sm:mt-3">
-              💡 Click to copy. Variables are replaced with actual data when emails are sent.
-            </p>
+            <div className="px-4 py-3 flex flex-wrap gap-1.5">
+              <AnimatePresence mode="popLayout">
+                {availableVariables[activeTemplate].map((variable) => (
+                  <motion.button
+                    key={variable}
+                    layout
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleCopyVariable(variable)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-all border ${
+                      copiedVar === variable
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600'
+                    }`}
+                  >
+                    {variable}
+                    {copiedVar === variable
+                      ? <Check className="w-2.5 h-2.5" />
+                      : <Copy className="w-2.5 h-2.5" />
+                    }
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Subject Line */}
-          <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
-              Subject Line
-            </label>
-            <input
-              type="text"
-              value={templates[activeTemplate].subject}
-              onChange={(e) => handleUpdateTemplate(activeTemplate, 'subject', e.target.value)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm sm:text-base"
-              placeholder="Email subject line"
-            />
-          </div>
+          {/* Editor */}
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-indigo-500" />
+                <p className="text-xs font-bold text-gray-700">Edit template</p>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleResetToDefault}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-lg text-[11px] font-bold transition"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset
+              </motion.button>
+            </div>
 
-          {/* Email Body */}
-          <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
-              Email Body
-            </label>
-            <textarea
-              value={templates[activeTemplate].body}
-              onChange={(e) => handleUpdateTemplate(activeTemplate, 'body', e.target.value)}
-              rows={10}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-xs sm:text-sm transition resize-none"
-              placeholder="Email body content"
-            />
-          </div>
+            <div className="px-4 py-4 space-y-3">
+              {/* Subject */}
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Subject line</label>
+                <input
+                  type="text"
+                  value={templates[activeTemplate].subject}
+                  onChange={e => handleUpdateTemplate(activeTemplate, 'subject', e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition placeholder-gray-300"
+                />
+              </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-200">
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm sm:text-base"
-            >
-              {loading ? 'Saving...' : 'Save Email Templates'}
-            </button>
+              {/* Body */}
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email body</label>
+                <textarea
+                  value={templates[activeTemplate].body}
+                  onChange={e => handleUpdateTemplate(activeTemplate, 'body', e.target.value)}
+                  rows={12}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition resize-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="px-4 pb-4">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleSave}
+                disabled={loading}
+                className="w-full py-3 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                {loading
+                  ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <Save className="w-3.5 h-3.5" />
+                }
+                {loading ? 'Saving...' : 'Save templates'}
+              </motion.button>
+            </div>
           </div>
         </div>
 
-        {/* RIGHT: Live Preview */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 lg:sticky lg:top-4 lg:self-start">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-purple-600" />
-              Live Preview
-            </h3>
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
-              Sample Data
-            </span>
-          </div>
-
-          {/* Email Preview Card */}
-          <div className="border-2 border-slate-200 rounded-xl overflow-hidden shadow-lg">
-            {/* Branded Email Header with Gradient */}
-            <div 
-              className="px-4 py-6 relative overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${company.email_brand_color_1 || '#667eea'} 0%, ${company.email_brand_color_2 || '#764ba2'} 100%)`
-              }}
-            >
-              {/* Logo */}
-              {company.logo_url && (
-                <div className="flex justify-center mb-3">
-                  <img 
-                    src={company.logo_url} 
-                    alt={company.name}
-                    className="h-12 w-auto object-contain"
-                  />
-                </div>
-              )}
-              
-              {/* Company Name */}
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-white">
-                  {company.name}
-                </h2>
-                {company.phone && (
-                  <p className="text-sm text-white/90 mt-1">
-                    {company.phone}
-                  </p>
-                )}
+        {/* RIGHT — preview */}
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Eye className="w-3.5 h-3.5 text-violet-500" />
+                <p className="text-xs font-bold text-gray-700">Live preview</p>
               </div>
+              <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Sample data</span>
             </div>
 
-            {/* Email Metadata */}
-            <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 border-b border-slate-200">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-600">From:</p>
-                  <p className="text-sm font-bold text-slate-900 truncate">{company.name}</p>
+            {/* Email mockup */}
+            <div className="p-4">
+              <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+
+                {/* Branded header */}
+                <div
+                  className="px-5 py-6 text-center"
+                  style={{ background: `linear-gradient(135deg, ${company.email_brand_color_1 || '#6366f1'}, ${company.email_brand_color_2 || '#4f46e5'})` }}
+                >
+                  {company.logo_url && (
+                    <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain mx-auto mb-3" />
+                  )}
+                  <p className="text-white font-black text-base">{company.name}</p>
+                  {company.phone && <p className="text-white/70 text-xs mt-1">{company.phone}</p>}
+                </div>
+
+                {/* Meta */}
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-400 w-10 shrink-0">From</span>
+                    <span className="text-xs font-bold text-gray-700">{company.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-400 w-10 shrink-0">To</span>
+                    <span className="text-xs text-gray-500">john.smith@email.com</span>
+                  </div>
+                </div>
+
+                {/* Subject */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-[10px] font-bold text-gray-400 mb-1">Subject</p>
+                  <p className="text-sm font-bold text-gray-900 leading-snug">{preview.subject}</p>
+                </div>
+
+                {/* Body */}
+                <div className="px-4 py-4 bg-white">
+                  <pre className="whitespace-pre-wrap text-xs text-gray-600 font-sans leading-relaxed">{preview.body}</pre>
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-center">
+                  <p className="text-[10px] text-gray-400">Powered by Lead2Project</p>
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-600 mb-1">To:</p>
-                <p className="text-sm text-slate-700">john.smith@email.com</p>
-              </div>
-            </div>
 
-            {/* Email Subject */}
-            <div className="bg-white px-4 py-3 border-b border-slate-200">
-              <p className="text-xs font-semibold text-slate-600 mb-1">Subject:</p>
-              <p className="text-sm sm:text-base font-bold text-slate-900 break-words">
-                {preview.subject}
+              <p className="text-[10px] text-gray-300 text-center mt-3 font-medium">
+                Variables replaced with real customer data on send
               </p>
             </div>
-
-            {/* Email Body */}
-            <div className="bg-white px-4 py-4 min-h-[300px]">
-              <pre className="whitespace-pre-wrap text-xs sm:text-sm text-slate-700 font-sans leading-relaxed break-words">
-                {preview.body}
-              </pre>
-            </div>
-
-            {/* Email Footer */}
-            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
-              <p className="text-xs text-slate-500 text-center">
-                This is a preview using sample data
-              </p>
-            </div>
-          </div>
-
-          {/* Info Box */}
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-xs text-blue-900">
-              <strong>💡 Tip:</strong> Changes appear instantly in the preview. Test your template before saving!
-            </p>
           </div>
         </div>
       </div>

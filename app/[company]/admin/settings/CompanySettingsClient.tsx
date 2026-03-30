@@ -268,8 +268,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </div>
         </header>
 
-        <div className="max-w-4xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="bg-white rounded-[2rem] p-6 shadow-2xl">
+        <div className="max-w-5xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
+  <div className="bg-white rounded-[2rem] p-4 shadow-2xl">
             {renderTabContent(activeTab)}
           </div>
         </div>

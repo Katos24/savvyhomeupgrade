@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, RotateCcw, CheckSquare, Trash2, Save,
   AlertTriangle, Layers, DollarSign, ChevronRight,
@@ -23,6 +24,8 @@ const fmt = (n: number) =>
 const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
+const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function CategoriesTab({
@@ -32,7 +35,6 @@ export default function CategoriesTab({
   company: any;
   currentUser?: any;
 }) {
-  // ── Category state ──
   const defaultCategories =
     CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
 
@@ -41,27 +43,17 @@ export default function CategoriesTab({
   );
   const [useDefaults, setUseDefaults] = useState(!company.form_categories?.length);
   const [isDirty, setIsDirty] = useState(false);
-
-  // ── Save state ──
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
-
-  // ── Add category ──
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatError, setNewCatError] = useState('');
-
-  // ── Delete confirm ──
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
-
-  // ── Task editor ──
   const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [taskInputError, setTaskInputError] = useState(false);
-
-  // ── Quote editor ──
   const [quoteTemplates, setQuoteTemplates] = useState<QuoteTemplate[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
   const [quoteEditorCatValue, setQuoteEditorCatValue] = useState<string | null>(null);
@@ -72,10 +64,7 @@ export default function CategoriesTab({
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
 
-  // ── Unsaved-changes banner ──
   const markDirty = useCallback(() => setIsDirty(true), []);
-
-  // ─── LOAD QUOTE TEMPLATES ────────────────────────────────────────────────────
 
   useEffect(() => {
     async function load() {
@@ -89,84 +78,49 @@ export default function CategoriesTab({
     load();
   }, [company.slug]);
 
-  // ─── CATEGORY ACTIONS ─────────────────────────────────────────────────────
-
   const handleAddCategory = () => {
-    if (!newCatLabel.trim()) {
-      setNewCatError('Please enter a category name.');
-      return;
-    }
+    if (!newCatLabel.trim()) { setNewCatError('Please enter a category name.'); return; }
     const value = newCatLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     setCategories(prev => [...prev, { value, label: newCatLabel.trim(), task_templates: [] }]);
-    setNewCatLabel('');
-    setNewCatError('');
-    setShowAddForm(false);
-    setUseDefaults(false);
-    markDirty();
+    setNewCatLabel(''); setNewCatError(''); setShowAddForm(false); setUseDefaults(false); markDirty();
   };
 
   const confirmDeleteCategory = () => {
     if (!deleteConfirm) return;
     setCategories(prev => prev.filter((_, i) => i !== deleteConfirm.index));
-    setUseDefaults(false);
-    setDeleteConfirm(null);
-    markDirty();
+    setUseDefaults(false); setDeleteConfirm(null); markDirty();
   };
 
   const handleReset = () => {
     if (!confirm('Reset to default trade list? Any custom categories will be lost.')) return;
-    setCategories(defaultCategories);
-    setUseDefaults(true);
-    markDirty();
+    setCategories(defaultCategories); setUseDefaults(true); markDirty();
   };
 
-  // ─── SAVE CATEGORIES ──────────────────────────────────────────────────────
-
   const handleSave = async () => {
-    setSaving(true);
-    setSaveError('');
-    setSaveSuccess(false);
+    setSaving(true); setSaveError(''); setSaveSuccess(false);
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-categories',
-          data: { form_categories: useDefaults ? null : categories },
-        }),
+        body: JSON.stringify({ action: 'update-categories', data: { form_categories: useDefaults ? null : categories } }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSaveSuccess(true);
-        setIsDirty(false);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } else {
-        setSaveError(data.error || 'Failed to save. Please try again.');
-      }
-    } catch {
-      setSaveError('Network error. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+      if (data.success) { setSaveSuccess(true); setIsDirty(false); setTimeout(() => setSaveSuccess(false), 3000); }
+      else setSaveError(data.error || 'Failed to save. Please try again.');
+    } catch { setSaveError('Network error. Please try again.'); }
+    finally { setSaving(false); }
   };
-
-  // ─── TASK EDITOR ──────────────────────────────────────────────────────────
 
   const openTaskEditor = (index: number) => {
     setTaskEditorCatIndex(index);
     setEditingTasks(categories[index].task_templates || []);
-    setNewTaskLabel('');
-    setTaskInputError(false);
+    setNewTaskLabel(''); setTaskInputError(false);
   };
 
   const addTask = () => {
     if (!newTaskLabel.trim()) { setTaskInputError(true); return; }
-    setEditingTasks(prev => [
-      ...prev,
-      { id: `task_${Date.now()}`, label: newTaskLabel.trim(), order: prev.length + 1 },
-    ]);
-    setNewTaskLabel('');
-    setTaskInputError(false);
+    setEditingTasks(prev => [...prev, { id: `task_${Date.now()}`, label: newTaskLabel.trim(), order: prev.length + 1 }]);
+    setNewTaskLabel(''); setTaskInputError(false);
   };
 
   const saveTaskTemplates = () => {
@@ -177,42 +131,25 @@ export default function CategoriesTab({
       updated[taskEditorCatIndex] = { ...updated[taskEditorCatIndex], task_templates: editingTasks };
       return updated;
     });
-    setUseDefaults(false);
-    setTaskEditorCatIndex(null);
-    markDirty();
+    setUseDefaults(false); setTaskEditorCatIndex(null); markDirty();
   };
-
-  // ─── QUOTE EDITOR ─────────────────────────────────────────────────────────
 
   const openQuoteEditor = (catValue: string) => {
     const existing = quoteTemplates.find(t => t.category === catValue);
     setQuoteEditorCatValue(catValue);
-    setEditingLineItems(
-      existing ? existing.items.map((item, i) => ({ ...item, id: `item_${Date.now()}_${i}` })) : []
-    );
+    setEditingLineItems(existing ? existing.items.map((item, i) => ({ ...item, id: `item_${Date.now()}_${i}` })) : []);
     setEditingQuoteId(existing?.id || null);
     setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
-    setLineItemError('');
-    setQuoteError('');
+    setLineItemError(''); setQuoteError('');
   };
 
   const addLineItem = () => {
-    if (!newLineItem.description.trim()) {
-      setLineItemError('Enter a description.');
-      return;
-    }
-    if (!newLineItem.unitPrice || isNaN(parseFloat(newLineItem.unitPrice))) {
-      setLineItemError('Enter a valid price.');
-      return;
-    }
+    if (!newLineItem.description.trim()) { setLineItemError('Enter a description.'); return; }
+    if (!newLineItem.unitPrice || isNaN(parseFloat(newLineItem.unitPrice))) { setLineItemError('Enter a valid price.'); return; }
     const qty = parseFloat(newLineItem.quantity) || 1;
     const price = parseFloat(newLineItem.unitPrice);
-    setEditingLineItems(prev => [
-      ...prev,
-      { id: `item_${Date.now()}`, description: newLineItem.description.trim(), quantity: qty, unitPrice: price, amount: qty * price },
-    ]);
-    setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
-    setLineItemError('');
+    setEditingLineItems(prev => [...prev, { id: `item_${Date.now()}`, description: newLineItem.description.trim(), quantity: qty, unitPrice: price, amount: qty * price }]);
+    setNewLineItem({ description: '', quantity: '1', unitPrice: '' }); setLineItemError('');
   };
 
   const updateLineItem = (id: string, field: string, value: any) => {
@@ -220,31 +157,18 @@ export default function CategoriesTab({
       prev.map(item => {
         if (item.id !== id) return item;
         const updated = { ...item, [field]: field === 'description' ? value : parseFloat(value) || 0 };
-        if (field === 'quantity' || field === 'unitPrice')
-          updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
+        if (field === 'quantity' || field === 'unitPrice') updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
         return updated;
       })
     );
   };
 
   const saveQuoteTemplate = async () => {
-    if (newLineItem.description.trim() || newLineItem.unitPrice) {
-      setLineItemError('Click + to add this item before saving.');
-      return;
-    }
-    if (editingLineItems.length === 0) {
-      setQuoteError('Add at least one line item to this template.');
-      return;
-    }
-    setQuoteSaving(true);
-    setQuoteError('');
+    if (newLineItem.description.trim() || newLineItem.unitPrice) { setLineItemError('Click + to add this item before saving.'); return; }
+    if (editingLineItems.length === 0) { setQuoteError('Add at least one line item to this template.'); return; }
+    setQuoteSaving(true); setQuoteError('');
     const total = editingLineItems.reduce((s, i) => s + i.amount, 0);
-    const templateData: QuoteTemplate = {
-      id: editingQuoteId || `custom_${Date.now()}`,
-      category: quoteEditorCatValue!,
-      items: editingLineItems,
-      total,
-    };
+    const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()}`, category: quoteEditorCatValue!, items: editingLineItems, total };
     try {
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
         method: 'POST',
@@ -253,19 +177,13 @@ export default function CategoriesTab({
       });
       const result = await res.json();
       if (result.success) {
-        // Refresh templates list
         const refreshed = await fetch(`/api/company/${company.slug}/quote-templates`);
         const refreshedData = await refreshed.json();
         if (refreshedData.success) setQuoteTemplates(refreshedData.templates || []);
         setQuoteEditorCatValue(null);
-      } else {
-        setQuoteError(result.error || 'Failed to save quote template.');
-      }
-    } catch {
-      setQuoteError('Network error. Please try again.');
-    } finally {
-      setQuoteSaving(false);
-    }
+      } else setQuoteError(result.error || 'Failed to save quote template.');
+    } catch { setQuoteError('Network error. Please try again.'); }
+    finally { setQuoteSaving(false); }
   };
 
   const deleteQuoteTemplate = async () => {
@@ -278,24 +196,17 @@ export default function CategoriesTab({
         body: JSON.stringify({ action: 'delete', templateId: editingQuoteId }),
       });
       const result = await res.json();
-      if (result.success) {
-        setQuoteTemplates(prev => prev.filter(t => t.id !== editingQuoteId));
-        setQuoteEditorCatValue(null);
-      }
+      if (result.success) { setQuoteTemplates(prev => prev.filter(t => t.id !== editingQuoteId)); setQuoteEditorCatValue(null); }
     } catch {}
   };
-
-  // ─── DERIVED ──────────────────────────────────────────────────────────────
 
   const activeQuoteEditorCat = categories.find(c => c.value === quoteEditorCatValue);
   const quoteEditorTotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
-
   return (
     <div className="max-w-4xl mx-auto pb-32 px-2 space-y-6">
 
-      {/* ── PAGE HEADER ── */}
+      {/* PAGE HEADER — untouched */}
       <div className="pt-2">
         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Service Categories</h2>
         <p className="text-sm text-gray-500 mt-1 leading-relaxed max-w-lg">
@@ -303,7 +214,7 @@ export default function CategoriesTab({
         </p>
       </div>
 
-      {/* ── HOW IT WORKS BANNER ── */}
+      {/* HOW IT WORKS BANNER — untouched */}
       <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3">
         <Info className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
         <div className="space-y-1">
@@ -314,7 +225,7 @@ export default function CategoriesTab({
         </div>
       </div>
 
-      {/* ── UNSAVED CHANGES STICKY BANNER ── */}
+      {/* UNSAVED CHANGES BANNER — untouched */}
       {isDirty && (
         <div className="sticky top-0 z-30 -mx-2">
           <div className="bg-amber-500 text-white px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
@@ -322,130 +233,119 @@ export default function CategoriesTab({
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span className="text-sm font-bold">You have unsaved changes to your categories.</span>
             </div>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-white text-amber-600 font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl shrink-0 active:scale-95 transition disabled:opacity-60"
-            >
+            <button onClick={handleSave} disabled={saving} className="bg-white text-amber-600 font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl shrink-0 active:scale-95 transition disabled:opacity-60">
               {saving ? 'Saving...' : 'Save Now'}
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STATUS MESSAGES ── */}
-      {saveSuccess && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl font-bold text-sm">
-          Categories saved successfully.
-        </div>
-      )}
-      {saveError && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl font-bold text-sm flex gap-2 items-center">
-          <AlertCircle className="w-4 h-4 shrink-0" /> {saveError}
-        </div>
-      )}
+      {/* STATUS — untouched */}
+      {saveSuccess && <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl font-bold text-sm">Categories saved successfully.</div>}
+      {saveError && <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl font-bold text-sm flex gap-2 items-center"><AlertCircle className="w-4 h-4 shrink-0" /> {saveError}</div>}
 
       {/* ── ADD CATEGORY ── */}
-      <div className="bg-white border-2 border-dashed border-gray-200 rounded-[2rem] p-4">
-        {showAddForm ? (
-          <div className="space-y-3">
-            <div>
+      <div className={`rounded-2xl border-2 border-dashed transition-all ${showAddForm ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-200 hover:border-indigo-200'}`}>
+        <AnimatePresence mode="wait">
+          {showAddForm ? (
+            <motion.div key="form" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={spring} className="p-4 space-y-3">
               <input
                 value={newCatLabel}
                 onChange={e => { setNewCatLabel(e.target.value); setNewCatError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                className={`w-full bg-gray-50 border-2 rounded-2xl px-5 py-4 font-bold focus:outline-none text-gray-900 transition ${newCatError ? 'border-red-400 bg-red-50' : 'border-transparent focus:border-indigo-200'}`}
+                className={`w-full bg-white border-2 rounded-xl px-4 py-3 font-bold focus:outline-none text-gray-900 text-sm transition ${newCatError ? 'border-red-400' : 'border-indigo-200 focus:border-indigo-400'}`}
                 placeholder="e.g. Plumbing, HVAC, Roofing..."
                 autoFocus
               />
-              {newCatError && (
-                <p className="text-xs font-bold text-red-600 mt-1 ml-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {newCatError}
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleAddCategory} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm active:scale-95 transition">
-                Add Category
-              </button>
-              <button onClick={() => { setShowAddForm(false); setNewCatLabel(''); setNewCatError(''); }} className="flex-1 py-3.5 bg-gray-100 text-gray-500 rounded-2xl font-bold text-sm">
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="w-full py-4 flex items-center justify-center gap-2 text-indigo-500 font-black text-sm hover:bg-indigo-50/50 rounded-2xl transition-all"
-          >
-            <Plus className="w-5 h-5" /> Add New Category
-          </button>
-        )}
+              {newCatError && <p className="text-xs font-bold text-red-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {newCatError}</p>}
+              <div className="flex gap-2">
+                <button onClick={handleAddCategory} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm transition active:scale-95">Add Category</button>
+                <button onClick={() => { setShowAddForm(false); setNewCatLabel(''); setNewCatError(''); }} className="flex-1 py-3 bg-white border border-gray-200 text-gray-500 rounded-xl font-bold text-sm hover:bg-gray-50 transition">Cancel</button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.button key="trigger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddForm(true)} className="w-full py-5 flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-600 font-bold text-sm transition">
+              <Plus className="w-4 h-4" /> Add new category
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── CATEGORY GRID ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {categories.map((cat, index) => {
-          const taskCount = cat.task_templates?.length || 0;
-          const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
-          return (
-            <div key={index} className="bg-white border border-gray-200 rounded-[2rem] p-5 hover:shadow-lg transition-all group">
-              {/* Card Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600">
-                  <Layers className="w-5 h-5" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <AnimatePresence>
+          {categories.map((cat, index) => {
+            const taskCount = cat.task_templates?.length || 0;
+            const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
+            return (
+              <motion.div
+                key={cat.value}
+                layout
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={spring}
+                className="group bg-white border border-gray-100 rounded-2xl p-5 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
+              >
+                {/* Card top */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                    <Layers className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <button
+                    onClick={() => setDeleteConfirm({ index, label: cat.label })}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setDeleteConfirm({ index, label: cat.label })}
-                  className="p-2 text-gray-300 hover:text-red-500 transition-all"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
 
-              {/* Category Name */}
-              <h3 className="text-base font-black text-gray-900 leading-tight mb-3">{cat.label}</h3>
+                <h3 className="text-sm font-black text-gray-900 mb-3 leading-tight">{cat.label}</h3>
 
-              {/* Status Pills */}
-              <div className="flex flex-wrap gap-2 mb-5">
-                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${taskCount > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}>
-                  {taskCount > 0 ? `${taskCount} Tasks` : 'No Tasks'}
-                </span>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${quoteTemplate ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
-                  {quoteTemplate ? `${quoteTemplate.items.length} Pricing Items` : 'No Pricing'}
-                </span>
-              </div>
+                {/* Status pills */}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full ${
+                    taskCount > 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    <CheckSquare className="w-2.5 h-2.5" />
+                    {taskCount > 0 ? `${taskCount} tasks` : 'No tasks'}
+                  </span>
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full ${
+                    quoteTemplate ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    <DollarSign className="w-2.5 h-2.5" />
+                    {quoteTemplate ? `${quoteTemplate.items.length} items` : 'No pricing'}
+                  </span>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => openTaskEditor(index)}
-                  className="py-3 bg-gray-50 hover:bg-indigo-600 text-gray-500 hover:text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-1.5"
-                >
-                  <CheckSquare className="w-3.5 h-3.5" /> Tasks
-                </button>
-                <button
-                  onClick={() => openQuoteEditor(cat.value)}
-                  className="py-3 bg-gray-50 hover:bg-emerald-600 text-gray-500 hover:text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-1.5"
-                >
-                  <DollarSign className="w-3.5 h-3.5" /> Pricing
-                </button>
-              </div>
-            </div>
-          );
-        })}
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => openTaskEditor(index)}
+                    className="py-2.5 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide border border-gray-100 text-gray-500 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-200"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" /> Tasks
+                  </button>
+                  <button
+                    onClick={() => openQuoteEditor(cat.value)}
+                    className="py-2.5 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide border border-gray-100 text-gray-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200"
+                  >
+                    <DollarSign className="w-3.5 h-3.5" /> Pricing
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
-      {/* ── SAVE / RESET FOOTER ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-100 shadow-2xl px-4 py-4 flex gap-3 sm:static sm:bg-transparent sm:border-0 sm:shadow-none sm:px-0 sm:py-0 sm:flex">
-     
+      {/* SAVE FOOTER */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-2xl px-4 py-4 flex gap-3 sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:shadow-none sm:px-0 sm:py-0">
         <button
           onClick={handleSave}
           disabled={saving}
           className={`flex-1 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50 ${
-            isDirty
-              ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200'
-              : 'bg-gray-100 text-gray-400'
+            isDirty ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-gray-100 text-gray-400'
           }`}
         >
           <Save className="w-5 h-5" /> {saving ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
@@ -456,327 +356,284 @@ export default function CategoriesTab({
       {/* ════════════════════════════════════════════
           TASK EDITOR MODAL
       ════════════════════════════════════════════ */}
-      {taskEditorCatIndex !== null && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full max-w-xl sm:rounded-[3rem] h-[92vh] sm:h-auto overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
-
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-0.5">Task Checklist</p>
-                <h3 className="text-lg font-black text-gray-900">{categories[taskEditorCatIndex].label}</h3>
-                <p className="text-xs text-gray-400 mt-0.5">These steps will auto-load when a new project uses this category.</p>
+      <AnimatePresence>
+        {taskEditorCatIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={spring}
+              className="bg-white w-full max-w-xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh] sm:h-auto overflow-hidden flex flex-col shadow-2xl"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-gray-200" />
               </div>
-              <button onClick={() => setTaskEditorCatIndex(null)} className="p-3 bg-gray-100 rounded-2xl hover:bg-gray-200 transition">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Add input */}
-              <div className={`flex gap-2 p-2 rounded-[2rem] border-2 transition-all ${taskInputError ? 'bg-red-50 border-red-400' : 'bg-indigo-50/50 border-dashed border-indigo-100'}`}>
-                <input
-                  value={newTaskLabel}
-                  onChange={e => { setNewTaskLabel(e.target.value); setTaskInputError(false); }}
-                  onKeyDown={e => e.key === 'Enter' && addTask()}
-                  placeholder="Add a step, e.g. Check for leaks..."
-                  className="flex-1 bg-transparent border-none font-bold text-gray-900 focus:ring-0 px-4 text-sm"
-                />
-                <button onClick={addTask} className="bg-indigo-600 text-white p-3 rounded-2xl active:scale-90 transition">
-                  <Plus className="w-5 h-5" />
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Task checklist</p>
+                  <h3 className="text-lg font-black text-gray-900">{categories[taskEditorCatIndex]?.label}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Auto-loads when a project uses this category.</p>
+                </div>
+                <button onClick={() => setTaskEditorCatIndex(null)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition mt-0.5">
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
-              {taskInputError && (
-                <p className="text-xs font-black text-red-600 ml-4 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Click + to add the step first.
-                </p>
-              )}
 
-              {/* Task list */}
-              <div className="space-y-2">
-                {editingTasks.length === 0 && (
-                  <div className="py-8 text-center text-gray-300 text-sm font-bold">
-                    No steps yet. Add your first one above.
-                  </div>
-                )}
-                {editingTasks.map(task => (
-                  <div key={task.id} className="bg-gray-50 rounded-2xl px-4 py-3.5 flex items-center gap-3 border border-transparent hover:border-indigo-100 transition">
-                    <span className="text-gray-900 font-bold text-sm flex-1">{task.label}</span>
-                    <button onClick={() => setEditingTasks(editingTasks.filter(t => t.id !== task.id))} className="text-gray-300 hover:text-red-500 transition">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                {/* Add input */}
+                <div className={`flex gap-2 p-2 rounded-2xl border-2 transition-all ${taskInputError ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-transparent focus-within:border-indigo-200'}`}>
+                  <input
+                    value={newTaskLabel}
+                    onChange={e => { setNewTaskLabel(e.target.value); setTaskInputError(false); }}
+                    onKeyDown={e => e.key === 'Enter' && addTask()}
+                    placeholder="Add a step, e.g. Check for leaks..."
+                    className="flex-1 bg-transparent border-none font-medium text-gray-900 focus:ring-0 px-3 text-sm placeholder-gray-300 outline-none"
+                  />
+                  <button onClick={addTask} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-xl transition active:scale-90">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                {taskInputError && <p className="text-xs font-bold text-red-500 flex items-center gap-1 ml-1"><AlertCircle className="w-3 h-3" /> Click + to add the step first.</p>}
+
+                {/* Task list */}
+                <AnimatePresence>
+                  {editingTasks.length === 0 ? (
+                    <div className="py-10 text-center text-gray-300 text-sm font-medium">No steps yet. Add your first one above.</div>
+                  ) : (
+                    editingTasks.map((task, i) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                        transition={{ ...spring, delay: i * 0.03 }}
+                        className="group flex items-center gap-3 bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl px-4 py-3 transition-all"
+                      >
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0" />
+                        <span className="text-gray-800 font-medium text-sm flex-1">{task.label}</span>
+                        <button
+                          onClick={() => setEditingTasks(editingTasks.filter(t => t.id !== task.id))}
+                          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
 
-            <div className="p-5 border-t border-gray-100 bg-gray-50/50 grid grid-cols-2 gap-3">
-              <button onClick={() => setTaskEditorCatIndex(null)} className="py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-500 text-sm">
-                Cancel
-              </button>
-              <button onClick={saveTaskTemplates} className="py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-100 active:scale-95 transition">
-                Apply Checklist
-              </button>
-            </div>
-
-            {/* Reminder: still need to save categories */}
-            <div className="px-5 pb-4 text-center">
-              <p className="text-[10px] font-bold text-amber-600 flex items-center justify-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> Remember to hit Save Changes on the main page to keep this.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Footer */}
+              <div className="p-5 border-t border-gray-50 grid grid-cols-2 gap-3">
+                <button onClick={() => setTaskEditorCatIndex(null)} className="py-3.5 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-500 text-sm transition">Cancel</button>
+                <button onClick={saveTaskTemplates} className="py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm shadow-lg shadow-indigo-100 active:scale-95 transition">Apply checklist</button>
+              </div>
+              <div className="px-5 pb-4 text-center">
+                <p className="text-[10px] font-bold text-amber-500 flex items-center justify-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Save changes on the main page to keep this.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
       {/* ════════════════════════════════════════════
           QUOTE / PRICING EDITOR MODAL
       ════════════════════════════════════════════ */}
-      {quoteEditorCatValue !== null && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div className="bg-white w-full max-w-2xl sm:rounded-[2rem] h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-0.5">Pricing Template</p>
-          <h3 className="text-lg font-black text-gray-900">{activeQuoteEditorCat?.label}</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          {editingQuoteId && (
-            <button onClick={deleteQuoteTemplate} className="p-2 text-gray-300 hover:text-red-500 transition">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-          <button onClick={() => setQuoteEditorCatValue(null)} className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-5 space-y-3">
-
-        {/* ── COLUMN HEADERS — desktop only ── */}
-        <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 px-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Item</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">$ Price</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Qty</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">Total</span>
-          <span />
-        </div>
-
-        {/* ── EXISTING LINE ITEMS ── */}
-        {editingLineItems.length === 0 && (
-          <div className="py-8 text-center text-gray-300 text-sm font-bold">
-            No items yet. Add your first line item below.
-          </div>
-        )}
-
-        {editingLineItems.map(item => (
-          <div key={item.id}>
-            {/* Desktop row */}
-            <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center bg-gray-50 rounded-xl px-3 py-2 border border-transparent hover:border-emerald-100 transition">
-              <input
-                value={item.description}
-                onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                className="bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm w-full"
-                placeholder="Description"
-              />
-              <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-                <input
-                  type="number"
-                  value={item.unitPrice}
-                  onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                  className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 ${noSpinners}`}
-                />
+      <AnimatePresence>
+        {quoteEditorCatValue !== null && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={spring}
+              className="bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2rem] h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-gray-200" />
               </div>
-              <input
-                type="number"
-                value={item.quantity}
-                onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 ${noSpinners}`}
-              />
-              <span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount)}</span>
-              <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-500 transition flex justify-center">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Mobile row */}
-            <div className="sm:hidden bg-gray-50 rounded-xl p-3 border border-transparent hover:border-emerald-100 transition space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <input
-                  value={item.description}
-                  onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                  className="flex-1 bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm"
-                  placeholder="Description"
-                />
-                <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-500 transition shrink-0">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
-                  <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-                  <input
-                    type="number"
-                    value={item.unitPrice}
-                    onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                    className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 ${noSpinners}`}
-                    placeholder="0.00"
-                  />
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-gray-50 flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Pricing template</p>
+                  <h3 className="text-lg font-black text-gray-900">{activeQuoteEditorCat?.label}</h3>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase">Qty</span>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                    className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 ${noSpinners}`}
-                  />
+                <div className="flex items-center gap-2">
+                  {editingQuoteId && (
+                    <button onClick={deleteQuoteTemplate} className="p-2 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button onClick={() => setQuoteEditorCatValue(null)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
                 </div>
-                <span className="font-black text-emerald-600 text-sm ml-auto">{fmt(item.amount)}</span>
               </div>
-            </div>
-          </div>
-        ))}
 
-        {/* ── ADD NEW LINE ITEM ── */}
-        <div className={`rounded-xl border-2 border-dashed transition-all ${lineItemError ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50/50'}`}>
-          {/* Desktop add row */}
-          <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center px-3 py-2">
-            <input
-              value={newLineItem.description}
-              onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }}
-              onKeyDown={e => e.key === 'Enter' && addLineItem()}
-              className="bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300 w-full"
-              placeholder="Add item, e.g. Labor – 2 hrs..."
-            />
-            <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-              <input
-                type="number"
-                value={newLineItem.unitPrice}
-                onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }}
-                onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                placeholder="0.00"
-                className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 ${noSpinners}`}
-              />
-            </div>
-            <input
-              type="number"
-              value={newLineItem.quantity}
-              onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })}
-              className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 ${noSpinners}`}
-            />
-            <span className="text-right font-black text-gray-300 text-sm">
-              {newLineItem.unitPrice && newLineItem.quantity
-                ? fmt(parseFloat(newLineItem.unitPrice) * parseFloat(newLineItem.quantity))
-                : '—'}
-            </span>
-            <button onClick={addLineItem} className="bg-emerald-600 text-white rounded-lg w-7 h-7 flex items-center justify-center active:scale-90 transition">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-2">
 
-          {/* Mobile add row */}
-          <div className="sm:hidden p-3 space-y-2">
-            <input
-              value={newLineItem.description}
-              onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }}
-              className="w-full bg-transparent border-none font-semibold text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300"
-              placeholder="Add item, e.g. Labor – 2 hrs..."
-            />
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
-                <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-                <input
-                  type="number"
-                  value={newLineItem.unitPrice}
-                  onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }}
-                  placeholder="0.00"
-                  className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 ${noSpinners}`}
-                />
+                {/* Column headers — desktop */}
+                <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 px-1 mb-1">
+                  {['Item', '$ Price', 'Qty', 'Total', ''].map((h, i) => (
+                    <span key={i} className={`text-[10px] font-bold uppercase tracking-widest text-gray-400 ${i > 0 ? 'text-right' : ''}`}>{h}</span>
+                  ))}
+                </div>
+
+                {/* Empty state */}
+                {editingLineItems.length === 0 && (
+                  <div className="py-10 text-center text-gray-300 text-sm font-medium">No items yet. Add your first line item below.</div>
+                )}
+
+                {/* Line items */}
+                <AnimatePresence>
+                  {editingLineItems.map((item, i) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                      transition={{ ...spring, delay: i * 0.03 }}
+                    >
+                      {/* Desktop */}
+                      <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 transition-all group">
+                        <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm w-full outline-none" placeholder="Description" />
+                        <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                          <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                          <input type="number" value={item.unitPrice} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none ${noSpinners}`} />
+                        </div>
+                        <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 outline-none ${noSpinners}`} />
+                        <span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount)}</span>
+                        <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all flex justify-center">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Mobile */}
+                      <div className="sm:hidden bg-gray-50 rounded-xl p-3 space-y-2 group">
+                        <div className="flex items-center justify-between gap-2">
+                          <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="flex-1 bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm outline-none" placeholder="Description" />
+                          <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="text-gray-300 hover:text-red-400 shrink-0"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
+                            <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                            <input type="number" value={item.unitPrice} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 outline-none ${noSpinners}`} placeholder="0.00" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-gray-400 font-bold">Qty</span>
+                            <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 outline-none ${noSpinners}`} />
+                          </div>
+                          <span className="font-black text-emerald-600 text-sm ml-auto">{fmt(item.amount)}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Add new line item */}
+                <div className={`rounded-xl border-2 border-dashed transition-all ${lineItemError ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50/50 focus-within:border-indigo-200'}`}>
+                  {/* Desktop */}
+                  <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center px-3 py-2">
+                    <input value={newLineItem.description} onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }} onKeyDown={e => e.key === 'Enter' && addLineItem()} className="bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300 outline-none w-full" placeholder="Add item, e.g. Labor – 2 hrs..." />
+                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                      <input type="number" value={newLineItem.unitPrice} onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }} onKeyDown={e => e.key === 'Enter' && addLineItem()} placeholder="0.00" className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none ${noSpinners}`} />
+                    </div>
+                    <input type="number" value={newLineItem.quantity} onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })} className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 outline-none ${noSpinners}`} />
+                    <span className="text-right font-black text-gray-300 text-sm">
+                      {newLineItem.unitPrice && newLineItem.quantity ? fmt(parseFloat(newLineItem.unitPrice) * parseFloat(newLineItem.quantity)) : '—'}
+                    </span>
+                    <button onClick={addLineItem} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg w-7 h-7 flex items-center justify-center active:scale-90 transition">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Mobile */}
+                  <div className="sm:hidden p-3 space-y-2">
+                    <input value={newLineItem.description} onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }} className="w-full bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300 outline-none" placeholder="Add item, e.g. Labor – 2 hrs..." />
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
+                        <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
+                        <input type="number" value={newLineItem.unitPrice} onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }} placeholder="0.00" className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 outline-none ${noSpinners}`} />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold">Qty</span>
+                        <input type="number" value={newLineItem.quantity} onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })} className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 outline-none ${noSpinners}`} />
+                      </div>
+                      <button onClick={addLineItem} className="bg-emerald-600 text-white rounded-lg w-9 h-9 flex items-center justify-center active:scale-90 transition shrink-0">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {lineItemError && <p className="px-3 pb-2 text-xs font-bold text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {lineItemError}</p>}
+                </div>
+
+                {quoteError && (
+                  <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold flex gap-2 items-center">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {quoteError}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-gray-400 font-bold uppercase">Qty</span>
-                <input
-                  type="number"
-                  value={newLineItem.quantity}
-                  onChange={e => setNewLineItem({ ...newLineItem, quantity: e.target.value })}
-                  className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 ${noSpinners}`}
-                />
+
+              {/* Footer */}
+              <div className="px-5 py-4 border-t border-gray-50 bg-gray-50/50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Template total</span>
+                  <span className="text-2xl font-black text-emerald-600">{fmt(quoteEditorTotal)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setQuoteEditorCatValue(null)} className="py-3.5 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-bold text-gray-500 text-sm transition">Cancel</button>
+                  <button onClick={saveQuoteTemplate} disabled={quoteSaving} className="py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm active:scale-95 transition disabled:opacity-50 shadow-lg shadow-emerald-100">
+                    {quoteSaving ? 'Saving...' : 'Save template'}
+                  </button>
+                </div>
               </div>
-              <button onClick={addLineItem} className="bg-emerald-600 text-white rounded-lg w-9 h-9 flex items-center justify-center active:scale-90 transition shrink-0">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {lineItemError && (
-            <p className="px-3 pb-2 text-xs font-bold text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {lineItemError}
-            </p>
-          )}
-        </div>
-
-        {quoteError && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-bold flex gap-2 items-center">
-            <AlertCircle className="w-4 h-4 shrink-0" /> {quoteError}
-          </div>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Template Total</span>
-          <span className="text-2xl font-black text-emerald-600">{fmt(quoteEditorTotal)}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => setQuoteEditorCatValue(null)} className="py-3.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-500 text-sm">
-            Cancel
-          </button>
-          <button onClick={saveQuoteTemplate} disabled={quoteSaving} className="py-3.5 bg-emerald-600 text-white rounded-xl font-black text-sm active:scale-95 transition disabled:opacity-50">
-            {quoteSaving ? 'Saving...' : 'Save Template'}
-          </button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-)}
+      </AnimatePresence>
 
 
       {/* ════════════════════════════════════════════
-          DELETE CATEGORY CONFIRM
+          DELETE CONFIRM
       ════════════════════════════════════════════ */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[120] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in duration-200 text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2">Remove Category?</h3>
-            <p className="text-sm text-gray-500 mb-2 leading-relaxed">
-              This will remove <span className="font-bold text-gray-900">"{deleteConfirm.label}"</span> from your list.
-            </p>
-            <p className="text-xs text-amber-600 font-bold mb-8">
-              Any task checklist for this category will also be removed. Pricing templates are stored separately and won't be deleted.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition">
-                Keep it
-              </button>
-              <button onClick={confirmDeleteCategory} className="py-4 bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 transition">
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.94, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 12 }}
+              transition={spring}
+              className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl text-center"
+            >
+              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-5 mx-auto">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-2">Remove category?</h3>
+              <p className="text-sm text-gray-500 mb-2 leading-relaxed">
+                This will remove <span className="font-bold text-gray-900">"{deleteConfirm.label}"</span> from your list.
+              </p>
+              <p className="text-xs text-amber-600 font-bold mb-8">
+                Task checklists for this category will also be removed. Pricing templates are stored separately and won't be deleted.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition">Keep it</button>
+                <button onClick={confirmDeleteCategory} className="py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 transition">Remove</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -1,0 +1,69 @@
+'use client';
+
+import Link from 'next/link';
+import { Zap, Settings } from 'lucide-react';
+import { fmt } from '@/components/demo/types'
+
+
+type Props = {
+  darkMode: boolean;
+  totalLeads: number;
+  activeJobs: number;
+  totalRevenue: number;
+  pendingRevenue: number;
+  onShowSettings: () => void;
+};
+
+export default function DemoHeader({ darkMode, totalLeads, activeJobs, totalRevenue, pendingRevenue, onShowSettings }: Props) {
+  const cardBg = darkMode ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200';
+  const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
+  const textMuted = darkMode ? 'text-white/40' : 'text-gray-400';
+
+  return (
+    <>
+      {/* Top bar */}
+      <header className={`backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] px-4 py-3 sm:p-5 mb-6 border shadow-sm ${cardBg}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg">
+              T
+            </div>
+            <div className={`border-l pl-3 ${darkMode ? 'border-white/10' : 'border-gray-200'}`}>
+              <h1 className={`text-sm sm:text-base font-black tracking-tight leading-none ${textPrimary}`}>Torres Roofing & Construction</h1>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold block mt-1">Dashboard</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onShowSettings}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
+                darkMode ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" /> Settings preview
+            </button>
+            <Link href="/signup" className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition shadow-lg">
+              <Zap className="w-4 h-4" /> Get Started
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total Leads',        value: totalLeads,          sub: 'all time',         color: textPrimary        },
+          { label: 'Active Jobs',        value: activeJobs,          sub: 'in pipeline',      color: 'text-blue-400'    },
+          { label: 'Revenue Collected',  value: fmt(totalRevenue),   sub: 'paid',             color: 'text-emerald-400' },
+          { label: 'Pending',            value: fmt(pendingRevenue), sub: 'awaiting payment', color: 'text-amber-400'   },
+        ].map((s, i) => (
+          <div key={i} className={`border rounded-2xl px-4 py-4 ${cardBg}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${textMuted}`}>{s.label}</p>
+            <p className={`text-xl sm:text-2xl font-black ${s.color}`}>{s.value}</p>
+            <p className={`text-[10px] mt-0.5 ${textMuted}`}>{s.sub}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
