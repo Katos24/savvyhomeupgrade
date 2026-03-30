@@ -42,6 +42,8 @@ export default function QuoteSection({
   const [pendingAiItems, setPendingAiItems] = useState<any[] | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+
 
   // Load category template
   useEffect(() => {
@@ -124,6 +126,13 @@ export default function QuoteSection({
 
   const handleRemoveRow = (id: number) =>
     setQuoteData(quoteData.filter((item: any) => item.id !== id));
+
+  const handleDoneEditing = () => {
+  setQuoteData((prev: any[]) =>
+    prev.map((item) => (item.id === editingItem.id ? editingItem : item))
+  );
+  setEditingItem(null);
+};
 
   const handleSave = async () => {
     if (!hasProject) { toast.error('Convert to project first'); return; }
@@ -445,86 +454,216 @@ export default function QuoteSection({
     isEditing ? (
       <button
         onClick={() => setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-        className="w-full py-16 flex flex-col items-center justify-center gap-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50/40 transition-colors group"
+        className="w-full py-16 flex flex-col items-center justify-center gap-2 group"
       >
         <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-gray-300 group-hover:text-indigo-400" />
         </div>
-        <span className="text-xs font-medium">Add first line item</span>
+        <span className="text-xs font-medium text-gray-400 group-hover:text-indigo-500 transition-colors">Add first line item</span>
       </button>
     ) : (
       <div className="py-12 text-center">
         <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-3">
           <FileText className="w-4 h-4 text-gray-200" />
         </div>
-        <p className="text-sm text-gray-300">No line items yet</p>
+        <p className="text-sm text-gray-400">No line items yet</p>
       </div>
     )
   ) : (
-    <div className="divide-y divide-gray-100">
+    <div className="p-3 flex flex-col gap-2">
       {quoteData.map((item: any) => (
-        <div key={item.id} className="px-4 py-3 relative group">
-          {/* Description */}
-          <input
-            type="text"
-            disabled={!isEditing}
-            value={item.description}
-            onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-            placeholder="Item description…"
-            className="w-full bg-transparent outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all mb-2"
-          />
-          {/* Price row */}
-          <div className="flex items-center gap-3 text-xs text-gray-400">
-          <div className="flex items-center gap-1">
-  <span className="text-xs text-gray-400">$</span>
-  <input
-    type="number"
-    disabled={!isEditing}
-    value={item.unitPrice || ''}
-    onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-    placeholder="0"
-    className={`w-16 bg-transparent outline-none text-xs text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-1.5 rounded transition-all ${noSpinners}`}
-  />
-</div>
-            <span className="text-gray-200">×</span>
-            <input
-              type="number"
-              disabled={!isEditing}
-              value={item.quantity || ''}
-              onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-              placeholder="1"
-              className={`w-8 bg-transparent outline-none text-xs text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-1 rounded transition-all ${noSpinners}`}
-            />
-            <span className="text-gray-200">·</span>
-            <span className="text-sm font-medium text-gray-900 ml-auto">
-              ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
+        <div
+          key={item.id}
+          onClick={() => isEditing && setEditingItem(item)}
+          className={`bg-white border border-gray-200 rounded-2xl p-4 transition-all ${
+            isEditing ? 'cursor-pointer active:scale-[0.98] active:bg-gray-50' : ''
+          }`}
+        >
+          {/* Title */}
+          <p className="text-sm font-semibold text-gray-900 mb-3">
+            {item.description || <span className="text-gray-300 font-normal">No description</span>}
+          </p>
+          {/* Fields row */}
+          <div className="flex items-center gap-3">
+            {/* Amount */}
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Amount</p>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-xs font-bold text-gray-500">$</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            {/* Divider */}
+            <div className="w-px h-8 bg-gray-100" />
+            {/* Unit price */}
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Unit price</p>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-xs font-bold text-gray-400">$</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  {(item.unitPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            {/* Divider */}
+            <div className="w-px h-8 bg-gray-100" />
+            {/* Qty */}
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Qty</p>
+              <span className="text-sm font-semibold text-gray-700">{item.quantity}</span>
+            </div>
+            {/* Delete — only in edit mode */}
+            {isEditing && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleRemoveRow(item.id); }}
+                className="ml-auto p-2 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          {/* Delete */}
-          {isEditing && (
-            <button
-              onClick={() => handleRemoveRow(item.id)}
-              className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       ))}
+
+      {/* Add card */}
       {isEditing && (
-        <div className="px-4 py-3">
-          <button
-            onClick={() => setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add line item
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
+            setQuoteData([...quoteData, newItem]);
+            setEditingItem(newItem);
+          }}
+          className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all group"
+        >
+          <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-indigo-400 flex items-center justify-center transition-colors">
+            <Plus className="w-3 h-3 text-gray-400 group-hover:text-indigo-500" />
+          </div>
+          <span className="text-xs font-semibold text-gray-400 group-hover:text-indigo-500 transition-colors">Add line item</span>
+        </button>
       )}
     </div>
   )}
 </div>
+
+{/* ── BOTTOM SHEET EDITOR ── */}
+<AnimatePresence>
+  {editingItem && (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setEditingItem(null)}
+        className="fixed inset-0 z-[400] bg-black/40 backdrop-blur-sm md:hidden"
+      />
+      {/* Sheet */}
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <p className="text-sm font-bold text-gray-900">Edit item</p>
+          <div className="flex items-center gap-2">
+            <button
+  onClick={() => {
+    if (!editingItem.description && !editingItem.unitPrice) {
+      handleRemoveRow(editingItem.id);
+    }
+    setEditingItem(null);
+  }}
+  className="px-4 py-1.5 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+>
+  Cancel
+</button>
+            <button
+  onClick={handleDoneEditing}
+  className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-xl transition-colors hover:bg-indigo-700"
+>
+  Done
+</button>
+          </div>
+        </div>
+
+        {/* Fields */}
+        <div className="px-5 py-4 flex flex-col gap-4">
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Description</label>
+            <input
+              type="text"
+              value={editingItem.description}
+              onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+              placeholder="Item name or description…"
+              autoFocus
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            {/* Unit price */}
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Unit price</label>
+              <div className="flex items-center gap-1.5 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <span className="text-sm font-bold text-gray-400">$</span>
+                <input
+                  type="number"
+                  value={editingItem.unitPrice || ''}
+                  onChange={(e) => {
+                    const unitPrice = parseFloat(e.target.value) || 0;
+                    setEditingItem({ ...editingItem, unitPrice, amount: unitPrice * editingItem.quantity });
+                  }}
+                  placeholder="0.00"
+                  className={`flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder-gray-300 ${noSpinners}`}
+                />
+              </div>
+            </div>
+            {/* Qty */}
+            <div className="w-24">
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Qty</label>
+              <input
+                type="number"
+                value={editingItem.quantity || ''}
+                onChange={(e) => {
+                  const quantity = parseInt(e.target.value) || 0;
+                  setEditingItem({ ...editingItem, quantity, amount: editingItem.unitPrice * quantity });
+                }}
+                placeholder="1"
+                className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 text-center outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all ${noSpinners}`}
+              />
+            </div>
+          </div>
+
+          {/* Live amount preview */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+            <span className="text-xs font-bold text-gray-500">Line total</span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs font-bold text-gray-500">$</span>
+              <span className="text-base font-bold text-gray-900">
+                {((editingItem.unitPrice || 0) * (editingItem.quantity || 0)).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
         {/* TOTAL BAR */}
         <div className="mx-4 my-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl shadow-slate-200 gap-3">
           <div className="min-w-0">
