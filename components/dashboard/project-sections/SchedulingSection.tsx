@@ -258,7 +258,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           </div>
 
           {/* DATE & TIME — single row */}
-          <div className="grid grid-cols-2 gap-2">
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
            <div className="min-w-0">
   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Date</label>
   <input
