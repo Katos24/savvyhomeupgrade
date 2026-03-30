@@ -664,54 +664,78 @@ export default function QuoteSection({
     </>
   )}
 </AnimatePresence>
-        {/* TOTAL BAR */}
-        <div className="mx-4 my-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl shadow-slate-200 gap-3">
-          <div className="min-w-0">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Quote Total</p>
-            <motion.p
-              key={total}
-              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-              className="text-2xl font-black text-white"
-            >
-              {fmt(total)}
-            </motion.p>
-          </div>
-          <div className="shrink-0">
-            <AnimatePresence mode="wait">
-              {isEditing ? (
-                <motion.button
-                  key="save"
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest shadow-lg"
-                >
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Save Quote
-                </motion.button>
-              ) : (
-                <motion.div
-                  key="send"
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <SendCustomerEmailButtons
-                    leadId={lead.id}
-                    type="quote"
-                    currentUser={currentUser}
-                    onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
-                    hasQuote={quoteData.length > 0}
-                    quoteSentAt={outboxLog[0]?.created_at || null}
-                    disabled={!hasProject}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+{/* TOTAL BAR */}
+<div className="mx-4 mt-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl shadow-slate-200 gap-3">
+  <div className="min-w-0">
+    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Quote Total</p>
+    <motion.p
+      key={total}
+      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+      className="text-2xl font-black text-white"
+    >
+      {fmt(total)}
+    </motion.p>
+  </div>
+  <div className="shrink-0">
+    <AnimatePresence mode="wait">
+      {isEditing ? (
+        <motion.button
+          key="save"
+          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest shadow-lg"
+        >
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          Save Quote
+        </motion.button>
+      ) : (
+        <motion.div
+          key="send"
+          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+        >
+          <SendCustomerEmailButtons
+            leadId={lead.id}
+            type="quote"
+            currentUser={currentUser}
+            onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
+            hasQuote={quoteData.length > 0}
+quoteSentAt={null}
+            disabled={!hasProject}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+</div>
+
+{/* LAST SENT BADGE */}
+{outboxLog[0] && !isEditing && (
+  <div className="mx-4 mb-4 mt-2 flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl">
+    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${outboxLog[0].status === 'failed' ? 'bg-red-400' : 'bg-emerald-400'}`} />
+    <p className="text-xs text-gray-500 flex-1">
+      {outboxLog[0].status === 'failed' ? 'Last send failed' : 'Last sent'}{' '}
+      <span className="font-semibold text-gray-700">
+        {new Date(outboxLog[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </span>
+      {outboxLog[0].sent_by_email && (
+        <span className="text-gray-400"> · {outboxLog[0].sent_by_email}</span>
+      )}
+    </p>
+    {outboxLog[0].html_body && (
+      <button
+        onClick={() => setPreviewHtml(outboxLog[0].html_body)}
+        className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-indigo-500 transition-colors shrink-0"
+      >
+        <Eye className="w-3 h-3" /> View
+      </button>
+    )}
+  </div>
+)}
 
         {/* EMAIL HISTORY */}
-        {outboxLog.length > 0 && (
+{outboxLog.length > 1 && (
           <div className="px-4 pb-4 pt-1">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
               <Mail className="w-3 h-3" /> Proposal History
