@@ -548,8 +548,8 @@ const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || f
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}
-        role="status"
+style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' : '#f8fafc' }}    
+    role="status"
         aria-label="Loading dashboard"
       >
         <div className="text-center">
@@ -565,10 +565,11 @@ const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || f
   // -------------------------------------------------------------------------
 
   return (
-    <div
-      className="min-h-screen relative selection:bg-indigo-500/30"
-      style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}
-    >
+  <div
+  className={`min-h-screen relative selection:bg-indigo-500/30 ${
+  isDark ? 'bg-[#1e293b]' : 'bg-gray-50'
+}`}
+>
       <Toaster position="top-right" richColors />
 
       {/* Skip nav for accessibility */}

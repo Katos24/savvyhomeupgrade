@@ -20,6 +20,7 @@ type PaymentUpdateProps = {
 export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject, companySlug }: PaymentUpdateProps) {
   const [saving, setSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -33,10 +34,15 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   useEffect(() => {
-    const amount = lead?.payment_amount || '';
-    const total = parseFloat(lead?.quote_total || '0');
-    const paid = parseFloat(amount || '0');
-    setPaymentAmount(amount);
+  const amount = lead?.payment_amount || '';
+  const total = parseFloat(lead?.quote_total || '0');
+  const paid = parseFloat(amount || '0');
+  const num = parseFloat(amount || '0');
+  const formatted = num > 0
+    ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '';
+  setPaymentAmount(formatted);
+  setRawAmount(num > 0 ? num.toString() : '');
     setPaymentMethod(lead?.payment_method || '');
     setPaymentDate(lead?.payment_date ? String(lead.payment_date).split('T')[0] : '');
     setPaymentNotes(lead?.payment_notes || '');
@@ -56,14 +62,16 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
     fetchOutbox();
   }, [lead?.id, companySlug]);
 
-  useEffect(() => {
-    if (markPaidInFull && lead?.quote_total) {
-      setPaymentAmount(lead.quote_total.toString());
-      if (!paymentDate) {
-        setPaymentDate(new Date().toISOString().split('T')[0]);
-      }
+useEffect(() => {
+  if (markPaidInFull && lead?.quote_total) {
+    const num = parseFloat(lead.quote_total);
+    setRawAmount(num.toString());
+    setPaymentAmount(num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    if (!paymentDate) {
+      setPaymentDate(new Date().toISOString().split('T')[0]);
     }
-  }, [markPaidInFull, lead?.quote_total]);
+  }
+}, [markPaidInFull, lead?.quote_total]);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -74,8 +82,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   };
 
   const total = parseFloat(lead?.quote_total || '0');
-  const paid = parseFloat(paymentAmount || '0');
-  const remaining = Math.max(total - paid, 0);
+const paid = parseFloat(rawAmount || paymentAmount.replace(/,/g, '') || '0');  const remaining = Math.max(total - paid, 0);
   const isPaid = total > 0 && paid >= total;
   const isPartial = paid > 0 && !isPaid;
 
@@ -87,8 +94,7 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
   const handleSave = async () => {
     setError('');
     if (!hasProject) { toast.error('Convert to project first'); return; }
-    const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount);
-    if (isNaN(amount)) { setError('Please enter a valid number.'); return; }
+const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g, ''));    if (isNaN(amount)) { setError('Please enter a valid number.'); return; }
     setSaving(true);
     try {
       const res = await fetch('/api/leads/update', {
@@ -262,16 +268,28 @@ export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject
             <div className="min-w-0">
               <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">Amount</label>
               <input
-                type="number"
-                step="0.01"
-                value={paymentAmount}
-                onChange={(e) => {
-                  setPaymentAmount(e.target.value);
-                  if (markPaidInFull && e.target.value !== lead?.quote_total?.toString()) setMarkPaidInFull(false);
-                }}
-                className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none transition-colors focus:border-indigo-300"
-                placeholder="0.00"
-              />
+  type="text"
+  inputMode="decimal"
+  value={paymentAmount}
+  onChange={e => {
+    const stripped = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1');
+    setRawAmount(stripped);
+    setPaymentAmount(stripped);
+    if (markPaidInFull && parseFloat(stripped) !== parseFloat(lead?.quote_total || '0')) {
+      setMarkPaidInFull(false);
+    }
+  }}
+  onFocus={() => {
+    setPaymentAmount(rawAmount || paymentAmount.replace(/,/g, ''));
+  }}
+  onBlur={() => {
+    const num = parseFloat(rawAmount || paymentAmount.replace(/,/g, '') || '0');
+    if (isNaN(num) || num === 0) { setPaymentAmount(''); setRawAmount(''); return; }
+    setPaymentAmount(num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  }}
+  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none transition-colors focus:border-indigo-300"
+  placeholder="0.00"
+/>
             </div>
 
             <div className="min-w-0">

@@ -238,8 +238,8 @@ export default function DemoPage() {
   const pendingRevenue = leads.filter(l => l.quote_total && l.payment_status !== 'paid').reduce((s, l) => s + Number(l.quote_total || 0), 0);
 
   const bg = darkMode
-    ? 'min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950'
-    : 'min-h-screen bg-gray-50';
+  ? 'min-h-screen bg-[#1e293b]'
+  : 'min-h-screen bg-gray-50';
 
   const cardBg = darkMode ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';

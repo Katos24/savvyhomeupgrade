@@ -21,7 +21,7 @@ export default function LeadCard({ lead, darkMode, onClick }: Props) {
     return (
       <div
         onClick={onClick}
-        className={`group relative flex bg-[#0A0C10] border border-[#1C2029] rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-blue-500/50 shadow-sm hover:shadow-xl cursor-pointer ${isCompleted ? 'opacity-60' : ''}`}
+        className={`group relative flex bg-[#141821] border border-[#2a2f3d] rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-blue-500/50 shadow-sm hover:shadow-xl cursor-pointer ${isCompleted ? 'opacity-60' : ''}`}
       >
         <div className="w-1.5 shrink-0" style={{ backgroundColor: s.hex }} />
         <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
