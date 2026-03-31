@@ -663,7 +663,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 relative z-10">
 
         {/* Top bar */}
-        <header className="bg-white/[0.03] backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] px-4 py-3 sm:p-5 mb-6 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]">
+        <header className={`backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] px-4 py-3 sm:p-5 mb-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] ${isDark ? 'bg-white/[0.03] border border-white/10' : 'bg-white border border-gray-200'}`}>
           <div className="flex items-center justify-between gap-3">
 
             {/* Left: hamburger + brand */}
@@ -696,7 +696,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
               )}
 
               <div className="min-w-0 border-l border-white/10 pl-3">
-                <h1 className="text-sm sm:text-base font-black text-white tracking-tight truncate leading-none">
+                <h1 className={`text-sm sm:text-base font-black tracking-tight truncate leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {company.name}
                 </h1>
                 <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold block mt-1">
@@ -729,15 +729,15 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
   {(() => {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
     const gs = globalStats;
-    return [
-      { label: 'Total Leads',      value: gs?.total_leads ?? allLeads.length,        color: 'text-white'       },
-      { label: 'Active Jobs',      value: gs?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, color: 'text-blue-400' },
-      { label: 'Total Revenue',          value: fmt(gs?.revenue ?? 0),                     color: 'text-emerald-400' },
-      { label: 'Total Pending',          value: fmt(gs?.pending ?? 0),                     color: 'text-amber-400'   },
-    ].map((s, i) => (
-      <div key={i} className="bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-4 py-2.5 md:py-4">
-        <p className="text-[9px] md:text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5 md:mb-1">{s.label}</p>
-        <p className={`text-lg md:text-2xl font-black ${s.color}`}>{s.value}</p>
+   return [
+  { label: 'Total Leads',      value: gs?.total_leads ?? allLeads.length,        color: isDark ? 'text-white' : 'text-gray-900' },
+  { label: 'Active Jobs',      value: gs?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, color: 'text-blue-500' },
+  { label: 'Total Revenue',    value: fmt(gs?.revenue ?? 0),                     color: 'text-emerald-500' },
+  { label: 'Total Pending',    value: fmt(gs?.pending ?? 0),                     color: 'text-amber-500'   },
+].map((s, i) => (
+      <div key={i} className={`border rounded-xl md:rounded-2xl px-3 md:px-4 py-2.5 md:py-4 ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200'}`}>
+  <p className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-0.5 md:mb-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>{s.label}</p>
+<p className={`text-lg md:text-2xl font-black ${s.color}`}>{s.value}</p>
       </div>
     ));
   })()}
@@ -779,7 +779,7 @@ onChange={e => {
   fetchLeads(1, true, { search: '' });
 }
 }}                aria-label="Search leads"
-                className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-500 focus:outline-none text-white placeholder-white/30 text-sm font-medium transition-all"
+className={`w-full pl-11 pr-10 py-3.5 rounded-xl focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder-white/30' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-400'}`}
               />
               {searchQuery && (
                 <button
@@ -799,9 +799,9 @@ onClick={() => {
               onClick={() => setShowAdvancedFilters(v => !v)}
               aria-label="Toggle advanced filters"
               aria-expanded={showAdvancedFilters}
-              className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilters ? 'bg-indigo-600 border-indigo-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilters ? 'bg-indigo-600 border-indigo-500' : isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
             >
-              <Filter className="w-5 h-5 text-white" aria-hidden />
+<Filter className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-600'}`} aria-hidden />
               {hasActiveFilters && !showAdvancedFilters && (
                 <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-400 rounded-full" aria-hidden />
               )}
@@ -844,7 +844,7 @@ onClick={() => {
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterStatus('all')}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-500' : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'}`}
             >
 All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
             </button>
@@ -852,7 +852,7 @@ All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
               <button
                 key={s.value}
                 onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500' : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'}`}
               >
                 {s.label} ({statusCounts[s.value]})
               </button>
@@ -866,7 +866,7 @@ All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
                 value={timeFilter}
                 onChange={e => setTimeFilter(e.target.value as TimeFilter)}
                 aria-label="Filter by time"
-                className="w-full appearance-none pl-3 pr-8 py-3 bg-slate-800/60 border border-white/10 rounded-xl text-sm font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50 transition cursor-pointer"
+className={`w-full appearance-none pl-3 pr-8 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/50 transition cursor-pointer ${isDark ? 'bg-slate-800/60 border border-white/10 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -965,9 +965,9 @@ All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
               {groups.map(({ title, leads }) => leads.length > 0 && (
                 <section key={title} aria-label={`${title} leads`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">{title}</h2>
-                    <div className="h-px flex-1 bg-white/5" aria-hidden />
-                    <span className="text-[10px] font-black bg-white/5 px-2 py-1 rounded-md text-slate-500">{leads.length}</span>
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500">{title}</h2>
+<div className={`h-px flex-1 ${isDark ? 'bg-white/5' : 'bg-gray-200'}`} aria-hidden />
+<span className={`text-[10px] font-black px-2 py-1 rounded-md ${isDark ? 'bg-white/5 text-slate-500' : 'bg-gray-100 text-gray-400'}`}>{leads.length}</span>
                   </div>
                   <CardsView
   leads={leads}
