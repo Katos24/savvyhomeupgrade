@@ -85,55 +85,71 @@ async function getCurrentUser(userId: number): Promise<CurrentUser | null> {
 async function getOutboxData(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
 
-  // First 25 outbox emails
-  const outboxEmails = await sql`
-    SELECT * FROM email_outbox
-    WHERE company_id = ${companyId}
-    ORDER BY created_at DESC
-    LIMIT 25
-  `;
+  const [outboxEmails, outboxTotal, projects, legacyTotal, statsRows] = await Promise.all([
+    sql`
+      SELECT * FROM email_outbox
+      WHERE company_id = ${companyId}
+      ORDER BY created_at DESC
+      LIMIT 25
+    `,
+    sql`SELECT COUNT(*) as total FROM email_outbox WHERE company_id = ${companyId}`,
+    sql`
+      SELECT id, lead_id, customer_name, customer_email,
+        COALESCE(quote_emails, '[]'::jsonb) AS quote_emails,
+        COALESCE(schedule_emails, '[]'::jsonb) AS schedule_emails
+      FROM projects
+      WHERE company_id = ${companyId}
+        AND (
+          jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
+          OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
+        )
+      ORDER BY updated_at DESC
+      LIMIT 25
+    `,
+    sql`
+      SELECT COUNT(*) as total FROM projects
+      WHERE company_id = ${companyId}
+        AND (
+          jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
+          OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
+        )
+    `,
+    sql`
+      SELECT
+COUNT(*) FILTER (WHERE status != 'failed') as sent,
+        COUNT(*) FILTER (WHERE type = 'payment_reminder') as reminders,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed,
+        COALESCE(SUM(
+          CASE WHEN type = 'quote'
+          THEN COALESCE((metadata->>'quote_total')::numeric, 0)
+          ELSE 0 END
+        ), 0) as revenue
+      FROM email_outbox
+      WHERE company_id = ${companyId}
+    `,
+  ]);
 
-  // Total outbox count
-  const outboxTotal = await sql`
-    SELECT COUNT(*) as total FROM email_outbox
-    WHERE company_id = ${companyId}
-  `;
-
-  // First 25 old projects with emails stored on the project row
-  const projects = await sql`
-    SELECT
-      id,
-      lead_id,
-      customer_name,
-      customer_email,
-      COALESCE(quote_emails, '[]'::jsonb) AS quote_emails,
-      COALESCE(schedule_emails, '[]'::jsonb) AS schedule_emails
-    FROM projects
-    WHERE company_id = ${companyId}
-      AND (
-        jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
-        OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
-      )
-    ORDER BY updated_at DESC
-    LIMIT 25
-  `;
-
-  // Total old project email count (count individual emails not rows)
-  const legacyTotal = await sql`
-    SELECT COUNT(*) as total FROM projects
-    WHERE company_id = ${companyId}
-      AND (
-        jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
-        OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
-      )
-  `;
+  const stats = statsRows[0];
+console.log('SERVER totalStats:', {
+  sent: parseInt(stats.sent) + parseInt(legacyTotal[0].total),
+  revenue: parseFloat(stats.revenue) || 0,
+  reminders: parseInt(stats.reminders) || 0,
+  failed: parseInt(stats.failed) || 0,
+});
 
   return {
     outboxEmails,
     projects,
     outboxTotal: parseInt(outboxTotal[0].total) + parseInt(legacyTotal[0].total),
+    totalStats: {
+      sent: parseInt(outboxTotal[0].total) + parseInt(legacyTotal[0].total),
+      revenue: parseFloat(stats.revenue) || 0,
+      reminders: parseInt(stats.reminders) || 0,
+      failed: parseInt(stats.failed) || 0,
+    },
   };
 }
+
 
 export default async function OutboxPage({ params }: PageProps) {
   const { company: companySlug } = await params;
@@ -148,12 +164,13 @@ export default async function OutboxPage({ params }: PageProps) {
 
   if (!currentUser) redirect('/login');
 
-  return (
-    <OutboxClient
-      company={company}
-      projects={outboxData.projects as any}
-      outboxEmails={outboxData.outboxEmails as any}
-      totalEmails={outboxData.outboxTotal}
-    />
-  );
+return (
+  <OutboxClient
+    company={company}
+    projects={outboxData.projects as any}
+    outboxEmails={outboxData.outboxEmails as any}
+    totalEmails={outboxData.outboxTotal}
+    totalStats={outboxData.totalStats}
+  />
+);
 }
