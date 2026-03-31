@@ -212,80 +212,7 @@ className="w-full h-auto px-4 lg:px-0"
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 2 — PRODUCT UI SHOWCASE
-// Focus: The "Job Card" as the single source of truth
-// ─────────────────────────────────────────────────────────────────────────────
-function ProductShowcase() {
-  const { ref, visible } = useFadeIn();
 
-  return (
-    <section className="border-y" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
-      <div
-        ref={ref}
-        className="max-w-6xl mx-auto px-5 py-24 text-center"
-        style={{ 
-          opacity: visible ? 1 : 0, 
-          transform: visible ? 'none' : 'translateY(20px)', 
-          transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
-        }}
-      >
-        <div className="max-w-3xl mx-auto mb-16">
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4"
-            style={{ color: '#1a6645' }}>
-            The Command Center
-          </p>
-          <h2 className="font-black tracking-tight mb-6"
-            style={{ fontSize: 'clamp(32px, 5vw, 54px)', color: '#0F1F3D', lineHeight: 1.1 }}>
-            One card. <span style={{ color: '#1a6645' }}>Zero friction.</span>
-          </h2>
-          <p className="text-lg font-medium text-slate-600 leading-relaxed">
-            Every photo, email, and payment lives inside a single, unified job card. 
-            Update status, schedule crews, and send digital quotes without ever leaving the page.
-          </p>
-        </div>
-
-        {/* The Image Container with "Framer" styling */}
-        <div className="relative group">
-          {/* Subtle glow behind the image */}
-          <div className="absolute inset-0 bg-[#1a6645]/5 blur-[100px] rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000" />
-          
-          <img
-            src="/images/product-ui.png" // This is your 'replicate-prediction' image
-            alt="Lead2Project job card with scheduling, quotes and payments"
-            className="relative z-10 w-full h-auto shadow-2xl transition-all duration-700"
-            style={{ 
-              borderRadius: 24, 
-              border: '1px solid rgba(15,31,61,0.08)',
-              boxShadow: '0 40px 100px -20px rgba(15,31,61,0.2)' 
-            }}
-          />
-
-          {/* Floating Feature Tags for "Aesthetic" context */}
-          
-          <div className="hidden lg:block absolute bottom-20 -right-8 z-20 bg-[#1a6645] px-4 py-2 rounded-xl shadow-lg text-white animate-float-delayed">
-             <span className="text-[12px] font-black tracking-wide">Email Confirmation Sent</span>
-          </div>
-        </div>
-
-        {/* Quick Benefits Grid below the image */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 max-w-4xl mx-auto">
-          {[
-            { label: 'Status Tracking', desc: 'New to Paid' },
-            { label: 'One-Click Email', desc: 'No more typing' },
-            { label: 'Mobile Sync', desc: 'Office to Field' },
-            { label: 'Team Assign', desc: 'Who is where' },
-          ].map((item, i) => (
-            <div key={i} className="text-center">
-              <p className="text-[14px] font-black text-[#0F1F3D] mb-1">{item.label}</p>
-              <p className="text-[12px] font-bold text-[#1a6645] uppercase tracking-wider">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 // ─────────────────────────────────────────────────────────────────────────────
 // FEATURE TABS — Operational Focus (#F7F5F0 bg)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1924,7 +1851,6 @@ export default function Home() {
       <Hero />
       {/* 2. TRUST BAR — stats strip */}
 
-<ProductShowcase />
 
 
 <LeadCapture />
