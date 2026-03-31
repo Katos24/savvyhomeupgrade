@@ -141,11 +141,11 @@ export async function POST(
     if (action === 'create') {
       currentTemplates.push(template);
       
-      await sql`
-        UPDATE companies 
-        SET quote_templates = ${JSON.stringify(currentTemplates)}
-        WHERE id = ${company.id}
-      `;
+     await sql`
+  UPDATE companies 
+  SET quote_templates = ${JSON.stringify(currentTemplates)}::jsonb
+  WHERE id = ${company.id}
+`;
 
       return NextResponse.json({ 
         success: true, 
@@ -164,10 +164,10 @@ export async function POST(
       currentTemplates[index] = template;
       
       await sql`
-        UPDATE companies 
-        SET quote_templates = ${JSON.stringify(currentTemplates)}
-        WHERE id = ${company.id}
-      `;
+  UPDATE companies 
+  SET quote_templates = ${JSON.stringify(currentTemplates)}::jsonb
+  WHERE id = ${company.id}
+`;
 
       return NextResponse.json({ 
         success: true, 
@@ -179,11 +179,11 @@ export async function POST(
     if (action === 'delete') {
       currentTemplates = currentTemplates.filter((t: any) => t.id !== templateId);
       
-      await sql`
-        UPDATE companies 
-        SET quote_templates = ${JSON.stringify(currentTemplates)}
-        WHERE id = ${company.id}
-      `;
+     await sql`
+  UPDATE companies 
+  SET quote_templates = ${JSON.stringify(currentTemplates)}::jsonb
+  WHERE id = ${company.id}
+`;
 
       return NextResponse.json({ 
         success: true, 

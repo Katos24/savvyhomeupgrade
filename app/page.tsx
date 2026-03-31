@@ -119,7 +119,7 @@ function Hero() {
                 {[
                   'Photo & video uploads',
                   'Instant lead capture',
-                  'One-click quotes',
+                  'Send emails with one click',
                   'Full job tracking',
                 ].map(label => (
                   <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border shadow-sm"
@@ -163,9 +163,9 @@ function Hero() {
             </div>
 
             {/* RIGHT — hero image */}
-            <div
-              className="relative w-full lg:flex items-center justify-center mt-8 lg:mt-0"
-              style={{
+<div
+  className="relative w-full lg:flex items-center justify-center mt-8 lg:mt-0"           
+  style={{
                 opacity: mounted ? 1 : 0,
                 transform: mounted ? 'none' : 'translateY(24px) scale(0.97)',
                 transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
@@ -184,11 +184,16 @@ function Hero() {
               </div>
 
               <img
-                src="/images/heroimagefull.png"
-                alt="Customer submitting job photos — leads landing on your dashboard"
-                className="w-full h-auto"
-                style={{ borderRadius: 24, filter: 'drop-shadow(0 32px 80px rgba(0,0,0,0.18))' }}
-              />
+  src="/images/heroimagefull.png"
+  alt="Customer submitting job photos — leads landing on your dashboard"
+className="w-full h-auto px-4 lg:px-0"
+  style={{
+    borderRadius: 24,
+    filter: 'drop-shadow(0 32px 80px rgba(0,0,0,0.18))',
+    maxWidth: '100%',
+    display: 'block',
+  }}
+/>
 
               {/* Floating badge — bottom right */}
               <div className="absolute -bottom-3 right-6 bg-[#0F1F3D] text-white px-4 py-2.5 rounded-xl text-[12px] font-bold shadow-2xl flex items-center gap-2">
@@ -386,29 +391,15 @@ function LeadCapture() {
       ],
       quote: "Seeing my outstanding balance in red made me realize I had $11k just sitting out there. I collected it all in two days.",
       author: 'Carl B., ProClean Services',
-      visual: (
-        <div className="w-full h-full bg-[#111827] flex flex-col p-6 justify-center gap-3">
-          {[
-            { name: 'Marcus Rivera', amount: '$8,400', status: 'Paid', color: '#10b981' },
-            { name: 'Maria Reyes', amount: '$1,200', status: 'Unpaid', color: '#ef4444' },
-          ].map((row, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full" style={{ background: row.color }} />
-                <span className="text-xs font-bold text-white">{row.name}</span>
-              </div>
-              <span className="text-xs font-black text-white">{row.amount}</span>
-            </div>
-          ))}
-          <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Outstanding</p>
-            <p className="text-2xl font-black text-red-500">$11,150</p>
-          </div>
-          <button className="mt-2 py-2 flex items-center justify-center gap-2 text-[10px] font-black text-slate-400 uppercase border border-white/10 rounded-lg">
-             <Download size={12} /> Download CSV
-          </button>
-        </div>
-      ),
+     visual: (
+  <div className="relative w-full h-full bg-white">
+    <img
+      src="/images/payment-tab.png"
+      alt="Payment tracking"
+      className="w-full h-full object-cover object-top"
+    />
+  </div>
+),
     },
     {
       label: 'Stay Sharp',
@@ -426,26 +417,14 @@ function LeadCapture() {
       quote: "The Outbox is a lifesaver. When a client says 'I never got the quote,' I can see exactly when it was sent.",
       author: 'James P., Peak Roofing Co.',
       visual: (
-        <div className="w-full h-full bg-slate-900 flex items-center justify-center p-6">
-           <div className="w-full bg-slate-800 rounded-xl overflow-hidden shadow-2xl border border-white/10">
-              <div className="p-3 bg-slate-700/50 border-b border-white/5 text-[10px] font-bold text-slate-400">GLOBAL OUTBOX</div>
-              <div className="p-4 space-y-3">
-                 <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-white">Quote Sent: Anthony Vino</span>
-                    <span className="text-slate-500">2m ago</span>
-                 </div>
-                 <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-white">Confirmation: J. Simpson</span>
-                    <span className="text-slate-500">1h ago</span>
-                 </div>
-                 <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-white text-green-400 underline">Daily Digest Delivered</span>
-                    <span className="text-slate-500">6:00 AM</span>
-                 </div>
-              </div>
-           </div>
-        </div>
-      ),
+  <div className="relative w-full h-full bg-white">
+    <img
+      src="/images/outboxfeature.png"
+      alt="Global outbox and daily digest"
+      className="w-full h-full object-cover object-top"
+    />
+  </div>
+),
     },
   ];
 
@@ -920,214 +899,116 @@ function HowItWorks() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BUILT AROUND YOUR BUSINESS — DARK MODE EDITION
+// Settings showcase — 4 panels showing the most important settings: branding, intake form, emails, payments. Subtle fade/slide animation on scroll. Use the existing useFadeIn hook for this.
 // ───────────────────────────────────────
 
-function BusinessSection() {
+function SettingsShowcase() {
   const { ref, visible } = useFadeIn();
 
-  const customizations = [
+  const screens = [
     {
-      icon: <Layout size={16} />,
-      title: 'Custom pipeline stages',
-      desc: 'Define your own workflow — New, Quoted, Scheduled, Paid — whatever fits how you close jobs.',
+      num: '01',
+      title: 'Your business identity',
+      desc: 'Logo, booking link, QR code — everything customers need to find you.',
+      src: '/images/company-settings.png',
+      alt: 'Company profile settings',
     },
     {
-      icon: <FileText size={16} />,
-      title: 'Quote templates by category',
-      desc: 'Build line-item templates for roofing, gutters, cleaning — load them in one click when quoting.',
+      num: '02',
+      title: 'Everything configurable',
+      desc: 'Pipeline, categories, forms, emails, team — all in one place.',
+      src: '/images/system-config.png',
+      alt: 'System configuration overview',
     },
     {
-      icon: <CheckSquare size={16} />,
-      title: 'Task templates per category',
-      desc: 'Attach a custom checklist to every job type so your crew never misses a step.',
+      num: '03',
+      title: 'Your intake form',
+      desc: 'Toggle address, photos, dates, and custom questions on or off.',
+      src: '/images/booking-form.png',
+      alt: 'Booking form settings',
     },
-    {
-      icon: <Mail size={16} />,
-      title: 'Branded email templates',
-      desc: 'Customize your quote, confirmation, and reminder emails with your logo and voice.',
-    },
-    {
-      icon: <QrCode size={16} />,
-      title: 'Custom intake form',
-      desc: 'Control exactly what customers fill out — questions, photos, address, preferred dates, colors.',
-    },
-    {
-      icon: <SlidersHorizontal size={16} />,
-      title: 'Pipeline & category control',
-      desc: 'Add, rename, or reorder your job categories and pipeline stages at any time.',
-    },
+   {
+  num: '04',
+  title: 'Your customer emails',
+  desc: 'Customize once — your customers receive branded, professional emails every time.',
+  src: null, // two images side by side
+  alt: 'Email template settings',
+},
   ];
 
   return (
-    <section className="py-32 px-6 bg-[#080C14] border-t border-white/[0.05] overflow-hidden">
+    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
         <div
           ref={ref}
-          className="text-center mb-20"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          className="text-center mb-16"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(20px)',
+            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
-          <span className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.2em] mb-6">
-            <SlidersHorizontal className="w-3.5 h-3.5" /> Built around your business
-          </span>
-          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9] mb-6">
-            Your workflow.<br />
-            <span className="text-slate-500">Not ours.</span>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
+            Settings that actually matter
+          </p>
+          <h2
+            className="font-black tracking-tight mb-5"
+            style={{ fontSize: 'clamp(32px, 5vw, 58px)', color: '#0F1F3D', lineHeight: 1.05 }}
+          >
+            Everything configured.<br />
+            <span style={{ color: '#1a6645' }}>Nothing left to guess.</span>
           </h2>
-          <p className="text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
-            Customize every part of Lead2Project to match how you actually run your business — then let the Daily Digest keep you on top of it every morning.
+          <p className="text-lg font-medium max-w-xl mx-auto leading-relaxed" style={{ color: '#4A5568' }}>
+            Set it up once. Your booking form, emails, and payments work exactly how you want — every job, every time.
           </p>
         </div>
 
-        {/* Two column layout */}
-        <div className="grid lg:grid-cols-2 gap-16 items-start">
-
-          {/* LEFT — customization grid */}
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-8">
-              What you can customize
-            </p>
-            <div className="grid gap-4">
-              {customizations.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex gap-4 p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300"
-                  style={{
-                    opacity: visible ? 1 : 0,
-                    transform: visible ? 'none' : 'translateY(16px)',
-                    transition: `all 0.6s ease ${i * 0.08}s`,
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 text-blue-400 mt-0.5">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <p className="text-white font-black text-sm mb-1">{item.title}</p>
-                    <p className="text-slate-500 text-sm font-medium leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT — digest callout */}
-          <div className="lg:sticky lg:top-24 space-y-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
-              Then wake up to this
-            </p>
-
-            {/* Email card */}
-            <div className="bg-white rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.5)]">
-
-              {/* Email header */}
-              <div className="bg-[#0d1117] px-6 py-5">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-                      <span className="text-[8px] font-black text-white">L</span>
-                    </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Lead2Project</span>
-                  </div>
-                  <span className="text-[9px] text-slate-600">6:00 AM · Today</span>
-                </div>
-                <p className="text-white font-black text-sm mt-3">Your Morning Briefing</p>
-                <p className="text-slate-500 text-[10px] mt-0.5">Here's everything you need to start the day.</p>
-              </div>
-
-              {/* Pending revenue */}
-              <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Pending Revenue</p>
-                  <p className="text-2xl font-black text-amber-500 tracking-tight mt-0.5">$37,194</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">New Leads</p>
-                  <p className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">+3</p>
-                </div>
-              </div>
-
-              {/* Today's jobs */}
-              <div className="px-6 pt-4 pb-2">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Today's Schedule</p>
-                <div className="space-y-2">
-                  {[
-                    { name: 'Marcus Rivera',  time: '8:15 AM',  cat: 'Roofing',  dot: '#10b981' },
-                    { name: 'Diane Holloway', time: '11:30 AM', cat: 'Plumbing', dot: '#3b82f6' },
-                  ].map((job, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: job.dot }} />
-                        <span className="text-[11px] font-bold text-slate-800">{job.name}</span>
-                        <span className="text-[9px] text-slate-400 font-medium">{job.cat}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-slate-500">{job.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Overdue */}
-              <div className="px-6 pt-3 pb-2">
-                <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3">Overdue Payments</p>
-                <div className="space-y-2">
-                  {[
-                    { name: 'Jack Thomas', amount: '$3,550', days: '5 days overdue' },
-                    { name: 'Tony Marino', amount: '$1,200', days: '12 days overdue' },
-                  ].map((p, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
-                      <div>
-                        <span className="text-[11px] font-bold text-slate-800">{p.name}</span>
-                        <span className="text-[9px] text-red-400 font-bold ml-2">{p.days}</span>
-                      </div>
-                      <span className="text-[11px] font-black text-red-500">{p.amount}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stale leads */}
-              <div className="px-6 pt-3 pb-4">
-                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-3">Needs Follow-Up</p>
-                <div className="space-y-2">
-                  {[
-                    { name: 'Sarah Mitchell', days: '4 days ago', cat: 'Roofing' },
-                    { name: 'Carl Bennett',   days: '6 days ago', cat: 'Gutters' },
-                  ].map((l, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
-                      <span className="text-[11px] font-bold text-slate-800">{l.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-slate-400">{l.cat}</span>
-                        <span className="text-[9px] font-bold text-amber-500">{l.days}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA */}
-              <div className="px-6 pb-5">
-                <div className="w-full bg-[#0d1117] rounded-xl py-3 flex items-center justify-center gap-2">
-                  <span className="text-[11px] font-black text-white uppercase tracking-widest">Open Dashboard</span>
-                  <ChevronRight size={12} className="text-slate-500" />
-                </div>
-                <p className="text-center text-[9px] text-slate-400 mt-3">lead2project.com · Unsubscribe</p>
-              </div>
-            </div>
-
-            {/* Digest callout strip */}
-            <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-amber-500/20 bg-amber-500/5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                <Mail size={14} className="text-amber-400" />
-              </div>
+        {/* 2x2 Grid */}
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-8"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(24px)',
+            transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s',
+          }}
+        >
+         {screens.map((screen, i) => (
+  <div key={i} className="flex flex-col gap-4">
+    {/* Image */}
+    {screen.src ? (
+      <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC' }}>
+        <img src={screen.src} alt={screen.alt} style={{ width: '100%', height: 'auto', display: 'block' }} />
+      </div>
+    ) : (
+      <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+        <img src="/images/email-templates.png" alt="Email template editor" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        <img src="/images/email-sent.png" alt="Email received by customer" style={{ width: '100%', height: 'auto', display: 'block' }} />
+      </div>
+    )}
+              {/* Caption */}
               <div>
-                <p className="text-white font-black text-sm">6AM Daily Digest</p>
-                <p className="text-slate-500 text-xs font-medium">Your schedule, overdue payments, and stale leads — every morning, no login needed.</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="text-[9px] font-black uppercase tracking-widest"
+                    style={{ color: '#1a6645' }}
+                  >
+                    {screen.num}
+                  </span>
+                  <div style={{ height: 1, flex: 1, background: '#D9D2C8' }} />
+                </div>
+                <p className="font-black text-sm mb-1" style={{ color: '#0F1F3D' }}>
+                  {screen.title}
+                </p>
+                <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                  {screen.desc}
+                </p>
               </div>
             </div>
-          </div>
+          ))}
         </div>
+
       </div>
     </section>
   );
@@ -1543,13 +1424,11 @@ export default function Home() {
       <HowItWorks />
 
 
+<SettingsShowcase />
 
 
 
-
-      {/* 6. DAILY DIGEST + OUTBOX — dark section, email preview + copy */}
-      <BusinessSection />
-
+  
 
       {/* 7. VS JOBBER — light section, two-column comparison */}
       <Comparison />

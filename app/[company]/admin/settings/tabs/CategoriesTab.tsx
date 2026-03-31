@@ -134,10 +134,23 @@ export default function CategoriesTab({
     setUseDefaults(false); setTaskEditorCatIndex(null); markDirty();
   };
 
-  const openQuoteEditor = (catValue: string) => {
-    const existing = quoteTemplates.find(t => t.category === catValue);
+ const openQuoteEditor = (catValue: string) => {
+  const existing = quoteTemplates.find(t => t.category === catValue);
+  console.log('🔍 existing:', JSON.stringify(existing));  
+
+
     setQuoteEditorCatValue(catValue);
-    setEditingLineItems(existing ? existing.items.map((item, i) => ({ ...item, id: `item_${Date.now()}_${i}` })) : []);
+setEditingLineItems(
+  existing
+    ? existing.items.map((item, i) => ({
+        ...item,
+        id: `item_${Date.now() + i}_${i}`,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: Number(item.unitPrice) || 0,
+        amount: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0),
+      }))
+    : []
+);
     setEditingQuoteId(existing?.id || null);
     setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
     setLineItemError(''); setQuoteError('');
@@ -167,8 +180,18 @@ export default function CategoriesTab({
     if (newLineItem.description.trim() || newLineItem.unitPrice) { setLineItemError('Click + to add this item before saving.'); return; }
     if (editingLineItems.length === 0) { setQuoteError('Add at least one line item to this template.'); return; }
     setQuoteSaving(true); setQuoteError('');
-    const total = editingLineItems.reduce((s, i) => s + i.amount, 0);
-    const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()}`, category: quoteEditorCatValue!, items: editingLineItems, total };
+   const itemsWithAmounts = editingLineItems.map(item => {
+  const qty = Number(item.quantity) || 1;
+  const price = Number(item.unitPrice) || (item.amount ? item.amount / qty : 0);
+  return {
+    ...item,
+    quantity: qty,
+    unitPrice: price,
+    amount: qty * price,
+  };
+});
+const total = itemsWithAmounts.reduce((s, i) => s + i.amount, 0);
+const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()}`, category: quoteEditorCatValue!, items: itemsWithAmounts, total };
     try {
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
         method: 'POST',
@@ -396,8 +419,7 @@ export default function CategoriesTab({
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={spring}
-              className="bg-white w-full max-w-xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh] sm:h-auto overflow-hidden flex flex-col shadow-2xl"
-            >
+className="bg-white w-full max-w-xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"            >
               {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden">
                 <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -485,8 +507,7 @@ export default function CategoriesTab({
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={spring}
-              className="bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2rem] h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
-            >
+className="bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh] sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"            >
               {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden">
                 <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -537,10 +558,11 @@ export default function CategoriesTab({
                         <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm w-full outline-none" placeholder="Description" />
                         <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                           <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-                          <input type="number" value={item.unitPrice} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none ${noSpinners}`} />
-                        </div>
-                        <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:ring-0 outline-none ${noSpinners}`} />
-                        <span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount)}</span>
+<input type="text" inputMode="decimal" value={item.unitPrice || ''} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className="flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none" />
+                   </div>
+                        <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all ${noSpinners}`} />
+<span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount || 0)}
+</span>
                         <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all flex justify-center">
                           <X className="w-4 h-4" />
                         </button>
@@ -555,13 +577,13 @@ export default function CategoriesTab({
                         <div className="flex items-center gap-2">
                           <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden flex-1">
                             <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-                            <input type="number" value={item.unitPrice} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 outline-none ${noSpinners}`} placeholder="0.00" />
+<input type="text" inputMode="decimal" value={item.unitPrice ?? ''} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className="flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 py-2 focus:ring-0 outline-none" placeholder="0.00" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-[10px] text-gray-400 font-bold">Qty</span>
                             <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 outline-none ${noSpinners}`} />
                           </div>
-                          <span className="font-black text-emerald-600 text-sm ml-auto">{fmt(item.amount)}</span>
+<span className="font-black text-emerald-600 text-sm ml-auto">{fmt((item.quantity || 1) * (item.unitPrice || 0))}</span>
                         </div>
                       </div>
                     </motion.div>
@@ -573,7 +595,7 @@ export default function CategoriesTab({
                   {/* Desktop */}
                   <div className="hidden sm:grid sm:grid-cols-[1fr_110px_70px_80px_32px] gap-2 items-center px-3 py-2">
                     <input value={newLineItem.description} onChange={e => { setNewLineItem({ ...newLineItem, description: e.target.value }); setLineItemError(''); }} onKeyDown={e => e.key === 'Enter' && addLineItem()} className="bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm placeholder:text-gray-300 outline-none w-full" placeholder="Add item, e.g. Labor – 2 hrs..." />
-                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+<div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
                       <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
                       <input type="number" value={newLineItem.unitPrice} onChange={e => { setNewLineItem({ ...newLineItem, unitPrice: e.target.value }); setLineItemError(''); }} onKeyDown={e => e.key === 'Enter' && addLineItem()} placeholder="0.00" className={`flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none ${noSpinners}`} />
                     </div>
