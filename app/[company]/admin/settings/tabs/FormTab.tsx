@@ -83,6 +83,16 @@ export default function FormTab({ company, currentUser }: { company: any; curren
     return base;
   });
 
+  const getCtaHeading = () => {
+  if (company.cta_heading) return company.cta_heading;
+  switch (company.business_type) {
+    case 'restaurant': return 'Order Your Custom Meal';
+    case 'salon': return 'Book Your Appointment';
+    case 'photography': return 'Request a Photo Session';
+    default: return 'Submit Your Request';
+  }
+};
+
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
@@ -254,8 +264,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                       className="h-full"
                     >
                       {previewStep === 1 && (
-                        <PreviewStep1
-                          heading={company.cta_heading || ''}
+                       <PreviewStep1
+  heading={getCtaHeading()}
                           categories={categories}
                           brandColor1={brandColor1}
                           brandColor2={brandColor2}
@@ -577,7 +587,6 @@ className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors curso
     </motion.div>
   );
 }
-
 /* ─────────────────── QUESTION EDITOR ─────────────────── */
 function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChange, onSave, onCancel }: {
   question: CustomQuestion; newOption: string; isEditing: boolean;
@@ -677,47 +686,89 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
 }
 
 /* ─────────────────── PREVIEW STEP 1 ─────────────────── */
-function PreviewStep1({ heading, categories, brandColor1, brandColor2, logoUrl, companyName }: {
+function PreviewStep1({heading, categories, brandColor1, brandColor2, logoUrl, companyName }: {
   heading: string; categories: Category[]; brandColor1: string; brandColor2: string;
   logoUrl?: string | null; companyName?: string;
 }) {
-  const input = "w-full h-8 bg-gray-50 border border-gray-100 rounded-lg px-3 text-gray-300 text-[10px] flex items-center";
+  const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-2xl px-3 text-gray-300 text-[10px] flex items-center gap-2";
+
   return (
-    <div>
-      <div className="p-5 text-white rounded-t-[2rem]" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
-        <div className="w-8 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-        {logoUrl && <img src={logoUrl} alt="" className="h-7 w-auto object-contain mb-3" />}
-        <h3 className="text-sm font-bold leading-tight">{heading || 'Request a Free Quote'}</h3>
-        <div className="flex items-center gap-2 mt-3 text-[9px]">
-          <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}><span className="font-black text-[8px]">1</span></div>
-          <span className="text-white font-bold">Basic Info</span>
+    <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+      {/* Header */}
+      <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
+        <div className="w-6 h-0.5 bg-white/20 rounded-full mx-auto mb-3" />
+        {logoUrl && <img src={logoUrl} alt="" className="h-6 w-auto object-contain mb-2" />}
+        <h3 className="text-xs font-black leading-tight">{heading || 'Request a Free Quote'}</h3>
+        <div className="flex items-center gap-2 mt-2.5 text-[9px]">
+          <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}>
+            <span className="font-black text-[7px]">1</span>
+          </div>
+          <span className="text-white font-black uppercase tracking-widest text-[8px]">Your Info</span>
           <div className="flex-1 h-px bg-white/20" />
-          <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center"><span className="font-black text-[8px]">2</span></div>
-          <span className="text-white/60">Details</span>
+          <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
+            <span className="font-black text-[7px]">2</span>
+          </div>
+          <span className="text-white/50 font-black uppercase tracking-widest text-[8px]">Details</span>
         </div>
       </div>
-      <div className="px-4 py-4 space-y-2.5">
-        {[
-          { icon: <User className="w-2.5 h-2.5 text-blue-400" />, placeholder: 'John Smith' },
-          { icon: <Mail className="w-2.5 h-2.5 text-blue-400" />, placeholder: 'john@example.com' },
-          { icon: <Phone className="w-2.5 h-2.5 text-green-400" />, placeholder: '(555) 123-4567' },
-        ].map((f, i) => (
-          <div key={i} className={`${input} gap-2`}>
-            {f.icon}<span>{f.placeholder}</span>
+
+      {/* Fields */}
+      <div className="p-4 space-y-2">
+        <div>
+          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Full Name</p>
+          <div className={inputClass}>
+            <User className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+            <span>John Smith</span>
           </div>
-        ))}
-        <div className={`${input} gap-2 justify-between`}>
-          <div className="flex items-center gap-2">
-            <Building className="w-2.5 h-2.5 text-amber-400" />
-            <span>{categories[0]?.label || 'Select service...'}</span>
+        </div>
+        <div>
+          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Email</p>
+          <div className={inputClass}>
+            <Mail className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+            <span>john@example.com</span>
           </div>
-          <ChevronRight className="w-2.5 h-2.5 rotate-90" />
         </div>
-        <div className="w-full h-14 bg-gray-50 border border-gray-100 rounded-lg px-3 pt-2 text-gray-300 text-[10px]">
-          Tell us what you need done...
+        <div>
+          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Phone</p>
+          <div className={inputClass}>
+            <Phone className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+            <span>(555) 123-4567</span>
+          </div>
         </div>
-        <button className="w-full py-2 text-white rounded-lg font-bold text-[10px] shadow-sm" style={{ background: `linear-gradient(to right, ${brandColor1}, ${brandColor2})` }}>
-          Continue to step 2 →
+        <div>
+          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Service Needed</p>
+          <div className="flex flex-wrap gap-1">
+            {categories.slice(0, 3).map((cat, i) => (
+              <div
+                key={i}
+                className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                  i === 0
+                    ? 'text-white border-transparent'
+                    : 'bg-gray-50 text-gray-400 border-gray-200'
+                }`}
+                style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+              >
+                {cat.label}
+              </div>
+            ))}
+            {categories.length > 3 && (
+              <div className="px-2 py-1 rounded-lg text-[8px] font-bold border bg-gray-50 text-gray-300 border-gray-200">
+                +{categories.length - 3}
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Tell Us About Your Project</p>
+          <div className="w-full h-14 bg-gray-50 border border-gray-200 rounded-2xl px-3 pt-2 text-gray-300 text-[10px]">
+            Describe what you need done...
+          </div>
+        </div>
+        <button
+          className="w-full py-2 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-sm mt-1"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
+          Continue
         </button>
       </div>
     </div>
@@ -730,81 +781,161 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
   brandColor1: string; brandColor2: string;
   companyName?: string; canUsePhotoUpload: boolean;
 }) {
-  const input = "w-full h-8 bg-gray-50 border border-gray-100 rounded-lg px-3 text-gray-300 text-[10px] flex items-center";
+  const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-2xl px-3 text-gray-300 text-[10px] flex items-center gap-2";
+  const labelClass = "text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1";
+
   const hasAnything = fieldConfig.address.enabled || fieldConfig.preferred_date.enabled ||
     fieldConfig.preferred_time.enabled || fieldConfig.lead_source.enabled ||
     (canUsePhotoUpload && fieldConfig.file_upload.enabled) || customQuestions.length > 0;
 
   return (
-    <div>
-      <div className="px-4 py-4 text-white rounded-t-[2rem]" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
-        <div className="flex items-center gap-1.5 text-[9px] mb-2">
-          <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center"><span className="font-black text-[8px]">1</span></div>
-          <ChevronRight className="w-2.5 h-2.5 opacity-50" />
-          <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}><span className="font-black text-[8px]">2</span></div>
+    <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+      {/* Header */}
+      <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
+        <div className="flex items-center gap-1.5 text-[8px] mb-2">
+          <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
+            <span className="font-black text-[7px]">1</span>
+          </div>
+          <ChevronRight className="w-2 h-2 opacity-40" />
+          <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}>
+            <span className="font-black text-[7px]">2</span>
+          </div>
         </div>
-        <h3 className="text-sm font-bold">Request received!</h3>
-        <p className="text-white/60 text-[10px] mt-0.5">A few more details — all optional.</p>
+        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/50 mb-0.5">Step 2 of 2</p>
+        <h3 className="text-xs font-black">Your request is saved.</h3>
+        <p className="text-white/60 text-[9px] mt-0.5 font-medium">A few more details — all optional.</p>
       </div>
-      <div className="px-4 py-4 space-y-2.5">
+
+      {/* Fields */}
+      <div className="p-4 space-y-2.5">
         {!hasAnything && (
-          <div className="py-10 text-center">
-            <p className="text-[11px] text-gray-300">No optional fields enabled</p>
-            <p className="text-[10px] text-gray-200 mt-1">Toggle fields on the right to see them here</p>
+          <div className="py-8 text-center">
+            <p className="text-[10px] text-gray-300 font-medium">No optional fields enabled</p>
+            <p className="text-[9px] text-gray-200 mt-1">Toggle fields on to see them here</p>
           </div>
         )}
+
         {fieldConfig.address.enabled && (
           <>
-            <div className={`${input} gap-2`}>
-              <MapPin className="w-2.5 h-2.5 text-rose-400" />
-              <span>Start typing your address...</span>
+            <div>
+              <p className={labelClass}>Address</p>
+              <div className={inputClass}>
+                <MapPin className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+                <span>Start typing your address...</span>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <div className={`${input} gap-1.5`}><MapPin className="w-2.5 h-2.5 text-emerald-400" /><span>Zip</span></div>
-              <div className={`${input}`}><span className="text-gray-200">Unit / Apt</span></div>
+              <div>
+                <p className={labelClass}>Zip Code</p>
+                <div className={inputClass}><span>12345</span></div>
+              </div>
+              <div>
+                <p className={labelClass}>Unit / Apt</p>
+                <div className={inputClass}><span>Apt 4B</span></div>
+              </div>
             </div>
           </>
         )}
+
         {(fieldConfig.preferred_date.enabled || fieldConfig.preferred_time.enabled) && (
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className={`grid gap-1.5 ${fieldConfig.preferred_date.enabled && fieldConfig.preferred_time.enabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {fieldConfig.preferred_date.enabled && (
-              <div className={`${input} gap-1.5`}><Calendar className="w-2.5 h-2.5 text-emerald-400" /><span>Date</span></div>
+              <div>
+                <p className={labelClass}>Preferred Date</p>
+                <div className={inputClass}>
+                  <Calendar className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+                  <span>MM/DD/YYYY</span>
+                </div>
+              </div>
             )}
             {fieldConfig.preferred_time.enabled && (
-              <div className={`${input} gap-1.5`}><Clock className="w-2.5 h-2.5 text-blue-400" /><span>Time</span></div>
+              <div>
+                <p className={labelClass}>Preferred Time</p>
+                <div className={inputClass}>
+                  <Clock className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+                  <span>Morning, 2PM...</span>
+                </div>
+              </div>
             )}
           </div>
         )}
+
         {customQuestions.map(q => (
           <div key={q.id}>
-            <p className="text-[9px] font-bold text-gray-500 mb-1 ml-0.5">{q.label}</p>
-            {q.type === 'text' && <div className={input}><span>Your answer...</span></div>}
-            {q.type === 'select' && <div className={`${input} justify-between`}><span>Select one...</span><ChevronRight className="w-2.5 h-2.5 rotate-90" /></div>}
+            <p className={labelClass}>{q.label}</p>
+            {q.type === 'text' && (
+              <div className={inputClass}>
+                <HelpCircle className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+                <span>Your answer...</span>
+              </div>
+            )}
+            {q.type === 'select' && (
+              <div className="flex flex-wrap gap-1">
+                {q.options?.slice(0, 3).map((opt, i) => (
+                  <div
+                    key={i}
+                    className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                      i === 0 ? 'text-white border-transparent' : 'bg-gray-50 text-gray-400 border-gray-200'
+                    }`}
+                    style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            )}
             {q.type === 'checkbox' && (
               <div className="flex gap-1.5">
-                <div className="flex-1 flex items-center gap-1.5 py-1.5 px-2 border border-gray-100 rounded-lg text-[9px] text-gray-300"><div className="w-2.5 h-2.5 rounded-full border border-gray-200" /> Yes</div>
-                <div className="flex-1 flex items-center gap-1.5 py-1.5 px-2 border border-gray-100 rounded-lg text-[9px] text-gray-300"><div className="w-2.5 h-2.5 rounded-full border border-gray-200" /> No</div>
+                <div className="flex-1 flex items-center gap-1.5 h-9 px-3 border border-gray-200 rounded-2xl text-[9px] text-gray-300 bg-gray-50">
+                  <div className="w-2.5 h-2.5 rounded-full border border-gray-300" /> Yes
+                </div>
+                <div className="flex-1 flex items-center gap-1.5 h-9 px-3 border border-gray-200 rounded-2xl text-[9px] text-gray-300 bg-gray-50">
+                  <div className="w-2.5 h-2.5 rounded-full border border-gray-300" /> No
+                </div>
               </div>
             )}
           </div>
         ))}
+
         {fieldConfig.lead_source.enabled && (
-          <div className={`${input} justify-between gap-2`}>
-            <div className="flex items-center gap-2"><HelpCircle className="w-2.5 h-2.5 text-violet-400" /><span>How did you hear about us?</span></div>
-            <ChevronRight className="w-2.5 h-2.5 rotate-90 shrink-0" />
+          <div>
+            <p className={labelClass}>How Did You Hear About Us?</p>
+            <div className="flex flex-wrap gap-1">
+              {['Google', 'Referral', 'Yard Sign', 'Other'].map((s, i) => (
+                <div
+                  key={i}
+                  className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                    i === 0 ? 'text-white border-transparent' : 'bg-gray-50 text-gray-400 border-gray-200'
+                  }`}
+                  style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
         {canUsePhotoUpload && fieldConfig.file_upload.enabled && (
-          <div className="border-2 border-dashed border-gray-100 rounded-lg p-3 text-center">
-            <ImageIcon className="w-4 h-4 text-gray-200 mx-auto mb-1" />
-            <p className="text-[9px] text-gray-300 font-medium">Tap to attach photos</p>
+          <div>
+            <p className={labelClass}>Photos or Videos</p>
+            <div className="border-2 border-dashed border-gray-200 rounded-2xl p-3 text-center bg-gray-50">
+              <ImageIcon className="w-4 h-4 text-gray-300 mx-auto mb-1" />
+              <p className="text-[9px] text-gray-300 font-medium">Click or drag photos here</p>
+            </div>
           </div>
         )}
+
         {hasAnything && (
-          <button className="w-full py-2 text-white rounded-lg font-bold text-[10px] shadow-sm" style={{ background: `linear-gradient(to right, ${brandColor1}, ${brandColor2})` }}>
-            Submit request
+          <button
+            className="w-full py-2 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-sm"
+            style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+          >
+            Submit Details
           </button>
         )}
+
+     
       </div>
     </div>
   );
@@ -815,18 +946,20 @@ function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl 
   message: string; brandColor1: string; brandColor2: string; companyName?: string; logoUrl?: string | null;
 }) {
   return (
-    <div className="min-h-full flex items-center justify-center p-6 bg-gray-50 rounded-[2rem]">
-      <div className="w-full bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-50">
-        {logoUrl && <img src={logoUrl} alt="" className="h-7 w-auto object-contain mx-auto mb-4" />}
-        <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
-          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`, boxShadow: `0 8px 24px ${brandColor1}40` }}>
+    <div className="min-h-full flex items-center justify-center p-6 bg-gray-50 rounded-3xl">
+      <div className="w-full bg-white rounded-3xl p-6 text-center shadow-md border border-gray-200">
+        {logoUrl && <img src={logoUrl} alt="" className="h-6 w-auto object-contain mx-auto mb-4" />}
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
           <Check className="w-5 h-5 text-white" strokeWidth={3} />
         </div>
-        <h3 className="text-sm font-bold text-gray-900 mb-2">Request received!</h3>
-        <p className="text-[11px] text-gray-400 leading-relaxed">
+        <h3 className="text-sm font-black text-gray-900 mb-2">Request received!</h3>
+        <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
           {message || "We've got your request and will be in touch soon."}
         </p>
-        <p className="text-[9px] text-gray-200 mt-4 uppercase tracking-widest font-medium">Powered by Lead2Project</p>
+        <p className="text-[9px] text-gray-300 mt-4 uppercase tracking-widest font-black">Powered by Lead2Project</p>
       </div>
     </div>
   );
