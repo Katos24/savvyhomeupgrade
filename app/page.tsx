@@ -538,14 +538,24 @@ function LeadCapture() {
 // Replace the existing FastDemoForm function with this entire block
 // ─────────────────────────────────────────────────────────────────────────────
 function FastDemoForm() {
-  type Phase = 'idle'|'typing-address'|'typing-zip'|'pick-date'|'pick-time'|'dropping-photo'|'done'|'reset';
+  type Phase = 
+    'idle'|
+    'step1-typing-name'|'step1-typing-email'|'step1-typing-phone'|'step1-typing-category'|'step1-typing-desc'|'step1-done'|
+    'transitioning'|
+    'typing-address'|'typing-zip'|'pick-date'|'pick-time'|'dropping-photo'|'done';
+
   const [phase, setPhase] = useState<Phase>('idle');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [desc, setDesc] = useState('');
   const [address, setAddress] = useState('');
   const [zip, setZip] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoDrop, setPhotoDrop] = useState(false);
+  const [showStep1, setShowStep1] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const ADDRESS = '42 Maple Ave, Brooklyn NY';
@@ -553,12 +563,10 @@ function FastDemoForm() {
 
   useEffect(() => {
     let running = true;
-
     function go(fn: () => void, ms: number) {
       if (!running) return;
       timerRef.current = setTimeout(fn, ms);
     }
-
     function typeStr(target: string, setter: (v: string) => void, speed: number, onDone: () => void) {
       let i = 0;
       function step() {
@@ -572,36 +580,46 @@ function FastDemoForm() {
     }
 
     function run() {
-      setPhase('idle');
-      setAddress(''); setZip(''); setDate(''); setTime('');
-      setPhotoVisible(false); setPhotoDrop(false);
+  setPhase('idle');
+  setShowStep1(true);
+  // Pre-fill step 1
+  setName('Marcus Rivera');
+  setEmail('marcus@email.com');
+  setPhone('(555) 482-9301');
+  setDesc('Damaged roof after storm, needs full inspection');
+  // Pre-fill step 2
+  setAddress('42 Maple Ave, Brooklyn NY');
+  setZip('11201');
+  setDate('Apr 12');
+  setTime('Morning');
+  setPhotoVisible(false);
+  setPhotoDrop(false);
 
+  // Show step 1 pre-filled briefly
+  go(() => {
+    setPhase('step1-done');
+    go(() => {
+      setPhase('transitioning');
       go(() => {
-        setPhase('typing-address');
-        typeStr(ADDRESS, setAddress, 32, () => {
-          setPhase('typing-zip');
-          typeStr(ZIP, setZip, 50, () => {
-            setPhase('pick-date');
+        // Switch to step 2 — already pre-filled
+        setShowStep1(false);
+        setPhase('pick-date'); // any non-idle phase so fields show as filled
+        go(() => {
+          // Pause so user sees step 2 filled out
+          setPhase('dropping-photo');
+          go(() => {
+            setPhotoVisible(true);
             go(() => {
-              setDate('Apr 12');
-              setPhase('pick-time');
-              go(() => {
-                setTime('Morning');
-                setPhase('dropping-photo');
-                go(() => {
-                  setPhotoVisible(true);
-                  go(() => {
-                    setPhotoDrop(true);
-                    setPhase('done');
-                    go(run, 3000);
-                  }, 550);
-                }, 480);
-              }, 480);
-            }, 480);
-          });
-        });
-      }, 600);
-    }
+              setPhotoDrop(true);
+              setPhase('done');
+              go(run, 3000);
+            }, 550);
+          }, 480);
+        }, 1200); // pause on step 2 pre-filled before photo drop
+      }, 700);
+    }, 1200);
+  }, 300);
+}
 
     run();
     return () => { running = false; if (timerRef.current) clearTimeout(timerRef.current); };
@@ -610,63 +628,156 @@ function FastDemoForm() {
   const cursor = (active: boolean) =>
     active ? <span className="inline-block w-px h-3 bg-blue-500 ml-0.5 align-middle animate-pulse" /> : null;
 
-  const box = (active: boolean, filled: boolean) =>
-    `w-full border rounded-xl px-3 py-2.5 flex items-center gap-2 transition-all duration-150 bg-slate-50 ${
-      active ? 'border-blue-400 ring-2 ring-blue-50' : filled ? 'border-slate-200' : 'border-slate-100'
-    }`;
+ const box = (active: boolean, filled: boolean) =>
+  `w-full border rounded-xl px-3 py-2 flex items-center gap-2 transition-all duration-150 bg-white ${
+    active ? 'border-blue-400 ring-2 ring-blue-50' : filled ? 'border-slate-200' : 'border-slate-100 bg-slate-50'
+  }`;
 
   const progress =
     phase === 'done' ? 100 :
-    phase === 'dropping-photo' ? 78 :
-    phase === 'pick-time' ? 62 :
-    phase === 'pick-date' ? 46 :
-    phase === 'typing-zip' ? 30 :
-    phase === 'typing-address' ? 12 : 0;
+    phase === 'dropping-photo' ? 85 :
+    phase === 'pick-time' ? 70 :
+    phase === 'pick-date' ? 55 :
+    phase === 'typing-zip' ? 42 :
+    phase === 'typing-address' ? 30 :
+    phase === 'transitioning' ? 20 :
+    phase === 'step1-done' ? 18 :
+    phase === 'step1-typing-desc' ? 14 :
+    phase === 'step1-typing-phone' ? 10 :
+    phase === 'step1-typing-email' ? 6 :
+    phase === 'step1-typing-name' ? 2 : 0;
 
   return (
-    <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden max-w-sm mx-auto">
+    <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden w-full">
 
       {/* App header */}
-      <div className="bg-[#f4f5f9] px-5 py-3.5 border-b border-slate-200/70 flex items-center gap-3">
-        <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center">
-          <span className="text-[9px] font-black text-slate-700">RL</span>
+<div className="bg-[#f4f5f9] px-4 py-2.5 border-b border-slate-200/70 flex items-center gap-2">
+        <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center overflow-hidden">
+          <img
+            src="/images/ridgelinelogo.png"
+            alt="Ridge Line Roofing"
+            style={{ width: 28, height: 28, objectFit: 'contain' }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).parentElement!.innerHTML = '<span style="font-size:9px;font-weight:900;color:#334155">RL</span>';
+            }}
+          />
         </div>
         <p className="text-[12px] font-bold text-slate-800">Ridge Line Roofing</p>
       </div>
 
-      {/* Step indicator — step 1 done, step 2 active */}
-      <div className="px-5 pt-4 pb-2">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-            <Check size={11} className="text-white" strokeWidth={3} />
+      {/* Step indicator */}
+<div className="px-4 pt-3 pb-2">
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
+            !showStep1 ? 'bg-emerald-500' : 'bg-blue-600'
+          }`}>
+            {!showStep1
+              ? <Check size={12} className="text-white" strokeWidth={3} />
+              : <span className="text-[11px] font-black text-white">1</span>
+            }
           </div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest line-through decoration-slate-300">Your Info</span>
-          <ChevronRight size={10} className="text-slate-300 shrink-0" />
-          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-black text-white">2</span>
+          <span className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+            !showStep1 ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+          }`}>Your Info</span>
+          <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
+            !showStep1 ? 'bg-blue-600' : 'bg-slate-200'
+          }`}>
+            <span className={`text-[11px] font-black ${!showStep1 ? 'text-white' : 'text-slate-400'}`}>2</span>
           </div>
-          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Details</span>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${
+            !showStep1 ? 'text-slate-900' : 'text-slate-400'
+          }`}>Details</span>
         </div>
         <div className="h-0.5 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      {/* Saved confirmation banner */}
-      <div className="mx-5 mb-3 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-          <Check size={9} className="text-white" strokeWidth={3} />
-        </div>
-        <p className="text-[10px] font-bold text-emerald-700 leading-tight">Your request is saved! Add details for a faster quote.</p>
-      </div>
+      {/* STEP 1 */}
+      {showStep1 ? (
+<div className="px-4 pb-4 space-y-2">
+          {/* Full Name */}
+          <div>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Full Name</label>
+            <div className={box(phase === 'step1-typing-name', name.length > 0)}>
+              <User size={14} className="text-slate-400 shrink-0" />
+              <span className="text-[11px] font-medium text-slate-800 min-h-[16px] flex-1">
+                {name || <span className="text-slate-300">John Smith</span>}
+                {cursor(phase === 'step1-typing-name')}
+              </span>
+            </div>
+          </div>
 
-      <div className="px-5 pb-5 space-y-2.5">
+          {/* Email */}
+          <div>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Email</label>
+            <div className={box(phase === 'step1-typing-email', email.length > 0)}>
+              <Mail size={14} className="text-slate-400 shrink-0" />
+              <span className="text-[13px] font-medium text-slate-800 min-h-[18px] flex-1 truncate">
+                {email || <span className="text-slate-300">your@email.com</span>}
+                {cursor(phase === 'step1-typing-email')}
+              </span>
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Phone</label>
+            <div className={box(phase === 'step1-typing-phone', phone.length > 0)}>
+              <Phone size={14} className="text-slate-400 shrink-0" />
+              <span className="text-[11px] font-medium text-slate-800 min-h-[16px] flex-1">
+                {phone || <span className="text-slate-300">(555) 000-0000</span>}
+                {cursor(phase === 'step1-typing-phone')}
+              </span>
+            </div>
+          </div>
+
+          {/* Service Needed */}
+          <div>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Service Needed</label>
+            <div className={box(false, true)}>
+              <LayoutGrid size={14} className="text-slate-400 shrink-0" />
+              <span className="text-[13px] font-medium text-slate-800">Roof Replacement</span>
+            </div>
+          </div>
+
+          {/* Project Description */}
+          <div>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Tell us about your project</label>
+            <div className={`${box(phase === 'step1-typing-desc', desc.length > 0)} items-start min-h-[48px]`}>
+              <AlignLeft size={14} className="text-slate-400 shrink-0 mt-0.5" />
+              <span className="text-[11px] font-medium text-slate-800 min-h-[16px] flex-1">
+                {desc || <span className="text-slate-300">Describe the job...</span>}
+                {cursor(phase === 'step1-typing-desc')}
+              </span>
+            </div>
+          </div>
+
+          {/* Continue button */}
+          <button className={`w-full py-2.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-2 transition-all duration-300 ${
+            phase === 'step1-done' || phase === 'transitioning'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-400'
+          }`}>
+            {phase === 'transitioning'
+              ? <><Check size={14} strokeWidth={3} /> Moving to Details...</>
+              : <>Continue <ChevronRight size={14} /></>
+            }
+          </button>
+          <p className="text-center text-[5px] font-bold text-slate-400 uppercase tracking-widest">
+            Continue to additional details (optional)
+          </p>
+        </div>
+      ) : (
+
+      /* STEP 2 */
+<div className="px-4 pb-4 space-y-2">
 
         {/* Address field */}
         <div>
-          <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
-            Address <span className="text-red-400">*</span>
-          </label>
+          <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Address</label>
           <div className={box(phase === 'typing-address', address.length > 0)}>
             <MapPin size={13} className="text-red-400 shrink-0" />
             <span className="text-[12px] font-medium text-slate-800 min-h-[16px] flex-1 truncate">
@@ -676,10 +787,10 @@ function FastDemoForm() {
           </div>
         </div>
 
-        {/* Zip + Apt row */}
+        {/* Zip + Apt */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Zip Code</label>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Zip Code</label>
             <div className={box(phase === 'typing-zip', zip.length > 0)}>
               <MapPin size={13} className="text-emerald-400 shrink-0" />
               <span className="text-[12px] font-medium text-slate-800 min-h-[16px]">
@@ -689,7 +800,7 @@ function FastDemoForm() {
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Unit / Apt</label>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Unit / Apt</label>
             <div className={box(false, false)}>
               <HomeIcon size={13} className="text-slate-300 shrink-0" />
               <span className="text-[12px] text-slate-300">Apt 4B</span>
@@ -697,10 +808,10 @@ function FastDemoForm() {
           </div>
         </div>
 
-        {/* Date + Time row */}
+        {/* Date + Time */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Preferred Date</label>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Preferred Date</label>
             <div className={box(phase === 'pick-date', date.length > 0)}>
               <Calendar size={13} className="text-emerald-500 shrink-0" />
               <span className={`text-[12px] font-medium min-h-[16px] transition-all ${date ? 'text-slate-800' : 'text-slate-300'}`}>
@@ -709,7 +820,7 @@ function FastDemoForm() {
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Preferred Time</label>
+            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Preferred Time</label>
             <div className={box(phase === 'pick-time', time.length > 0)}>
               <Clock size={13} className="text-blue-400 shrink-0" />
               <span className={`text-[12px] font-medium min-h-[16px] transition-all ${time ? 'text-slate-800' : 'text-slate-300'}`}>
@@ -719,22 +830,19 @@ function FastDemoForm() {
           </div>
         </div>
 
-        {/* Photo upload zone */}
+        {/* Photo upload */}
         <div>
-          <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
+          <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">
             Photos <span className="font-normal text-slate-400 normal-case">— helps us quote faster</span>
           </label>
           <div className={`border-2 border-dashed rounded-xl transition-all duration-400 ${
-            photoDrop
-              ? 'border-blue-400 bg-blue-50'
-              : photoVisible
-              ? 'border-blue-300 bg-blue-50/40'
-              : 'border-slate-200 bg-slate-50'
+            photoDrop ? 'border-blue-400 bg-blue-50' :
+            photoVisible ? 'border-blue-300 bg-blue-50/40' :
+            'border-slate-200 bg-slate-50'
           }`}>
             {photoDrop ? (
-              // Photo landed
               <div className="p-2">
-                <div className="relative w-full h-[72px] rounded-lg overflow-hidden">
+<div className="relative w-full h-[48px] rounded-lg overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-sky-300 via-slate-400 to-slate-600" />
                   <div className="absolute bottom-0 left-0 right-0 h-8 bg-slate-700" style={{ clipPath: 'polygon(0 100%, 50% 20%, 100% 100%)' }} />
                   <div className="absolute bottom-0 inset-x-0 bg-black/50 px-2 py-1">
@@ -743,15 +851,13 @@ function FastDemoForm() {
                 </div>
               </div>
             ) : photoVisible ? (
-              // Dragging in — bouncing icon
-              <div className="py-4 text-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1.5 animate-bounce">
+<div className="py-2 text-center">
+                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1 animate-bounce">
                   <ImageIcon size={14} className="text-blue-500" />
                 </div>
                 <p className="text-[10px] font-bold text-blue-500">Drop photo here...</p>
               </div>
             ) : (
-              // Idle
               <div className="py-4 text-center">
                 <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1.5">
                   <ImageIcon size={14} className="text-slate-400" />
@@ -764,7 +870,7 @@ function FastDemoForm() {
         </div>
 
         {/* Submit */}
-        <button className={`w-full py-3 rounded-xl text-[13px] font-black flex items-center justify-center gap-2 transition-all duration-500 shadow-sm ${
+       <button className={`w-full py-2.5 rounded-xl text-[11px] font-black flex items-center justify-center gap-2 transition-all duration-500 shadow-sm ${
           phase === 'done' ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'
         }`}>
           {phase === 'done'
@@ -772,15 +878,11 @@ function FastDemoForm() {
             : <><Upload size={14} /> Submit Details</>
           }
         </button>
-
-        <div className="text-center">
-        </div>
-
       </div>
+      )}
     </div>
   );
 }
-
 
 function HowItWorks() {
   const { ref, visible } = useFadeIn();
@@ -788,106 +890,122 @@ function HowItWorks() {
   const steps = [
     {
       number: '01',
-      color: 'blue',
-      title: 'Customer scans QR or clicks link',
-      desc: 'Print it on your truck, yard sign, or Instagram bio. One scan opens your booking form — no app, no login, no friction.',
+      tag: 'Distribution',
+      title: 'Deploy your QR link',
+      desc: 'Print it on yard signs, truck wraps, or your Instagram bio. One scan opens your portal — no app, no login, zero friction.',
       image: '/images/qr-scan-2.png',
-      visual: null,
+      color: 'from-blue-500/10 to-transparent',
+      borderColor: 'group-hover:border-blue-500/40',
     },
     {
       number: '02',
-      color: 'indigo',
-      title: 'Fills out your form',
-      desc: 'They enter their info, describe the job, upload photos. You get everything you need before the first call.',
-      image: null,
+      tag: 'Data Capture',
+      title: 'Customer fills the form',
+      desc: 'They provide the address, pick a time, and upload roof photos. You get a full project briefing before the first call.',
       visual: 'demo-form',
+      color: 'from-indigo-500/10 to-transparent',
+      borderColor: 'group-hover:border-indigo-500/40',
     },
     {
       number: '03',
-      color: 'emerald',
+      tag: 'Automation',
       title: 'Lands on your dashboard',
-      desc: 'The lead arrives instantly. AI drafts the quote. Review, click once, and it\'s in their inbox.',
+      desc: 'The lead arrives instantly. AI maps the category to your pricing templates. Review, click once, and the quote is sent.',
       image: '/images/dashboard-jobsite.png',
-      visual: null,
+      color: 'from-emerald-500/10 to-transparent',
+      borderColor: 'group-hover:border-emerald-500/40',
     },
   ];
 
-  const colorMap: Record<string, string> = {
-    blue:    'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    indigo:  'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-  };
-
-  const glowMap: Record<string, string> = {
-    blue:    'bg-blue-600',
-    indigo:  'bg-indigo-600',
-    emerald: 'bg-emerald-600',
-  };
-
   return (
-    <section id="how-it-works" className="py-32 px-6 bg-[#080C14] overflow-hidden border-t border-white/[0.05]">
-      <div className="max-w-6xl mx-auto">
+    <section id="how-it-works" className="py-32 px-6 bg-[#06080F] overflow-hidden border-t border-white/[0.03]">
+      <div className="max-w-7xl mx-auto">
 
-        {/* Header */}
+        {/* --- HEADER --- */}
         <div
           ref={ref}
-          className="text-center mb-20"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(30px)', transition: 'all 0.8s ease' }}
+          className="max-w-4xl mb-24"
+          style={{ 
+            opacity: visible ? 1 : 0, 
+            transform: visible ? 'none' : 'translateY(30px)', 
+            transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1)' 
+          }}
         >
-          <p className="text-[12px] font-black uppercase tracking-[0.3em] text-blue-500 mb-5">The Workflow</p>
-          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">
-            Three steps.<br />
-            <span className="text-slate-600 font-medium italic">That's all it takes.</span>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-[1px] bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-500">The Workflow</span>
+          </div>
+          <h2 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
+            Simple. <span className="text-gray-800 italic font-medium">Automatic.</span><br />
+            Built for Scale.
           </h2>
         </div>
 
-        {/* Grid — 2 top + 1 centered on mobile, 3 across on desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* --- STEPS GRID (RESPONSIVE) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step, i) => (
             <div
               key={i}
-              className={`flex flex-col rounded-[2rem] border border-white/[0.06] bg-white/[0.02] overflow-hidden hover:border-white/10 hover:bg-white/[0.04] transition-all duration-500 ${
-                i === 2 ? 'col-span-2 lg:col-span-1' : ''
-              }`}
+              className={`group relative flex flex-col rounded-[2.5rem] border border-white/[0.06] bg-[#0B0F1A] overflow-hidden transition-all duration-700 ${step.borderColor} ${
+                i === 1 ? 'lg:scale-[1.05] z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''
+              } ${i === 2 ? 'md:col-span-2 lg:col-span-1' : ''}`} // Centers 3rd item on tablet
               style={{
                 opacity: visible ? 1 : 0,
-                transform: visible ? 'none' : 'translateY(24px)',
-                transition: `all 0.7s ease ${i * 0.12}s`,
+                transform: visible ? 'none' : `translateY(${40 + i * 20}px)`,
+                transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.15}s`,
               }}
             >
-              {/* Visual */}
-<div className={`relative overflow-hidden ${step.visual === 'demo-form' ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
-                <div className={`absolute -inset-10 rounded-full opacity-10 blur-[80px] ${glowMap[step.color]}`} />
-                {step.visual === 'demo-form' ? (
-                  <div className="relative w-full h-full flex items-start justify-center p-3 bg-[#0d1117] overflow-hidden">
-  <div className="scale-[0.55] origin-top-center w-full">
-    <FastDemoForm />
-  </div>
-</div>
-                ) : step.image ? (
-                  <img
-                    src={step.image}
-                    alt={step.title}
-                    className="w-full h-full object-cover object-top opacity-80 hover:opacity-100 transition-opacity duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#0d1117] flex items-center justify-center border-b border-white/5">
-                    <Sparkles className="text-white/10" size={40} />
-                  </div>
-                )}
-              </div>
+              {/* Subtle Hover Glow */}
+              <div className={`absolute inset-0 bg-gradient-to-b ${step.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
 
-              {/* Copy */}
-              <div className="p-6 flex flex-col gap-3 flex-1">
-                <div className={`inline-flex items-center self-start px-3 py-1 rounded-xl border text-[10px] font-black uppercase tracking-[0.2em] ${colorMap[step.color]}`}>
-                  Step {step.number}
+              <div className="relative p-8 md:p-10 flex flex-col h-full">
+                <div className="flex items-center justify-between mb-8">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400">
+                    Step {step.number}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600 group-hover:text-white/40 transition-colors">
+                    {step.tag}
+                  </span>
                 </div>
-                <h3 className="text-lg font-black text-white leading-tight tracking-tight">
-                  {step.title}
-                </h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                  {step.desc}
-                </p>
+                
+                <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{step.title}</h3>
+                <p className="text-[15px] text-gray-500 font-medium leading-relaxed mb-12">{step.desc}</p>
+
+                {/* --- VISUAL AREA (HEIGHT SYNCED AT 520PX) --- */}
+                <div className="mt-auto relative">
+                  {step.visual === 'demo-form' ? (
+                    <div className="relative pt-4 flex justify-center">
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-indigo-500/10 blur-[80px] rounded-full" />
+                      
+                      {/* Fixed height 520px container */}
+                      <div className="relative w-full max-w-[280px] h-[520px] shadow-2xl rounded-[2.5rem] overflow-hidden border border-white/10">
+                        <FastDemoForm />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Step 1 & 3: Photos forced into matching 520px Vertical Ratio */
+                    <div className="relative w-full max-w-[280px] h-[520px] mx-auto rounded-[2.5rem] overflow-hidden border border-white/[0.08] bg-gray-950 group-hover:border-white/20 transition-all duration-500 shadow-2xl">
+                      {/* Glass Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-white/[0.05] z-10" />
+                      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-950 to-transparent z-10 opacity-90" />
+                      
+                      <img
+                        src={step.image}
+                        alt={step.title}
+                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
+                      />
+                      
+                      {/* Status Badge */}
+                      <div className="absolute bottom-8 inset-x-0 z-20 flex justify-center">
+                        <div className="px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
+                           <span className="text-[10px] font-black text-white/60 uppercase tracking-widest italic">
+                              {step.number === '01' ? 'Yard Sign QR' : 'Lead Dashboard'}
+                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -896,8 +1014,6 @@ function HowItWorks() {
     </section>
   );
 }
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings showcase — 4 panels showing the most important settings: branding, intake form, emails, payments. Subtle fade/slide animation on scroll. Use the existing useFadeIn hook for this.
 // ───────────────────────────────────────
@@ -1306,6 +1422,107 @@ function SettingsShowcase() {
   );
 }
 
+// AI Banner with 3 feature cards, appears after the 2x2 grid
+
+
+function AIBanner() {
+  const { ref, visible } = useFadeIn();
+
+  return (
+    <section
+      ref={ref}
+      className="px-6 py-16 border-y"
+      style={{
+        backgroundColor: '#080C14',
+        borderColor: 'rgba(255,255,255,0.05)',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(20px)',
+        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+    >
+      <div className="max-w-5xl mx-auto">
+        {/* Label */}
+        <div className="flex items-center gap-3 mb-8">
+          <span className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+            <Sparkles className="w-3 h-3" /> AI Features — Pro Plan
+          </span>
+          <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.04)' }} />
+        </div>
+
+        {/* Headline + cards side by side on desktop */}
+        <div className="grid lg:grid-cols-[1fr_2fr] gap-10 items-center">
+
+          {/* Left — headline */}
+          <div>
+            <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-[1.05] mb-3">
+              AI that works<br />
+              <span className="text-violet-400">before you do.</span>
+            </h3>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+              Every lead gets analyzed the moment it arrives — no prompts, no setup, no extra steps.
+            </p>
+          </div>
+
+          {/* Right — 3 feature cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                icon: <Sparkles size={16} />,
+                title: 'AI Project Brief',
+                desc: 'Instant summary of every lead — photos, scope, and job details — ready before your first call.',
+                color: '#8B5CF6',
+                bg: 'rgba(139,92,246,0.08)',
+                border: 'rgba(139,92,246,0.15)',
+              },
+              {
+                icon: <MessageCircle size={16} />,
+                title: 'AI Assistant',
+                desc: 'Ask anything about your pipeline. Draft follow-ups, get job summaries, pull lead details fast.',
+                color: '#6366F1',
+                bg: 'rgba(99,102,241,0.08)',
+                border: 'rgba(99,102,241,0.15)',
+              },
+              {
+                icon: <FileText size={16} />,
+                title: 'AI Quote Draft',
+                desc: 'AI suggests line items from job details. You review every number before anything gets sent.',
+                color: '#A78BFA',
+                bg: 'rgba(167,139,250,0.08)',
+                border: 'rgba(167,139,250,0.15)',
+                note: 'You approve before sending',
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  background: item.bg,
+                  border: `1px solid ${item.border}`,
+                  borderRadius: 16,
+                  padding: '18px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'none' : 'translateY(12px)',
+                  transition: `all 0.6s ease ${0.1 + i * 0.1}s`,
+                }}
+              >
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: `${item.color}20`, border: `1px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color }}>
+                  {item.icon}
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 800, color: '#F1F5F9', margin: 0 }}>{item.title}</p>
+                <p style={{ fontSize: 11, color: '#64748B', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>{item.desc}</p>
+                {item.note && (
+                  <p style={{ fontSize: 9, color: item.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>✓ {item.note}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 7 — THE "ALL-IN-ONE" UPGRADE
@@ -1716,7 +1933,9 @@ export default function Home() {
       <HowItWorks />
 
 
-<SettingsShowcase />
+  <SettingsShowcase />
+
+  <AIBanner />
 
 
 

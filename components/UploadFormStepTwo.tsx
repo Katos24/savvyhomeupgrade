@@ -187,10 +187,10 @@ export default function UploadFormStepTwo({
           {showAddress && isLoaded && !loadError && (
             <>
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <MapPin className="w-4 h-4 text-red-500" />
-                  Address {fieldConfig.address.required ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
-                </label>
+               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+  <MapPin className="w-4 h-4 text-red-500" />
+  Address
+</label>
                 <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
                   <input
                     type="text"
@@ -419,17 +419,7 @@ export default function UploadFormStepTwo({
             </button>
           </div>
 
-          {/* Skip link */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={onSkip}
-              disabled={disabled}
-              className="text-sm text-gray-400 hover:text-gray-600 transition underline underline-offset-2"
-            >
-              Skip for now
-            </button>
-          </div>
+         
 
           {/* Company website */}
           {companyWebsite && (

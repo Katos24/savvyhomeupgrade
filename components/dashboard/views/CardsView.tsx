@@ -134,10 +134,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                 </h3>
                 
                 <div className={`flex items-center gap-3 mt-2 text-[10px] font-bold uppercase tracking-wider ${t.textSecondary}`}>
-                  <div className="flex items-center gap-1.5">
-                    <Briefcase className={`w-3.5 h-3.5 ${t.textMuted}`} />
-                    <span className="truncate max-w-[100px]">{lead.category || 'General'}</span>
-                  </div>
+                  
                   <div className="flex items-center gap-1.5">
                     <User className={`w-3.5 h-3.5 ${t.textMuted}`} />
                     <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
@@ -151,54 +148,65 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                 </div>
               </div>
 
+
               {/* Schedule Box */}
               {!isStarter && (
-                <div className={`grid grid-cols-2 gap-2 mb-6 ${t.innerBg} p-4 rounded-2xl border ${t.innerBorder}`}>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
-                    <div className="flex items-center gap-2 text-indigo-400 font-black text-[12px] italic">
-                      <Calendar className="w-4 h-4" />
-                      {lead.scheduled_date 
-                        ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                        : 'TBD'}
+                <div className="mb-4">
+                  <div className={`grid grid-cols-2 gap-2 ${t.innerBg} p-4 rounded-2xl border ${t.innerBorder}`}>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
+                      <div className="flex items-center gap-2 text-indigo-400 font-black text-[12px] italic">
+                        <Calendar className="w-4 h-4" />
+                        {lead.scheduled_date 
+                          ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : 'TBD'}
+                      </div>
+                    </div>
+                    <div className={`flex flex-col gap-1.5 border-l ${t.innerBorder} pl-4`}>
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Arrival</span>
+                      <div className="flex items-center gap-2 text-slate-300 font-black text-[12px] italic">
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        {formatScheduledTime(lead.scheduled_time)}
+                      </div>
                     </div>
                   </div>
-                  <div className={`flex flex-col gap-1.5 border-l ${t.innerBorder} pl-4`}>
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Arrival</span>
-                    <div className="flex items-center gap-2 text-slate-300 font-black text-[12px] italic">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      {formatScheduledTime(lead.scheduled_time)}
-                    </div>
+                  {/* Category below schedule box */}
+                  <div className={`flex items-center gap-1.5 mt-2 px-1 text-[9px] font-black uppercase tracking-widest ${t.textMuted}`}>
+                    <Briefcase className="w-3 h-3" />
+                    {lead.category ? lead.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General'}
                   </div>
                 </div>
               )}
 
               {/* Footer */}
-              <div className={`flex items-center justify-between pt-4 border-t ${t.cardBorder}`}>
-                {!isStarter ? (
-                  <div className="flex flex-col">
-                    <div className={`${t.textHeading} font-black text-lg tracking-tight`}>
-                      {lead.quote_total 
-                        ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
-                        : <span className={`${t.textEmpty} text-[10px] uppercase tracking-[0.2em] opacity-40`}>Pending Quote</span>}
-                    </div>
-                    <div className={`text-[9px] font-black uppercase tracking-widest mt-0.5 flex items-center gap-1.5 ${
-                      lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-slate-500'
-                    }`}>
-                      <div className={`w-1 h-1 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-                      {lead.payment_status || 'Unpaid'}
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`text-[10px] font-bold uppercase tracking-widest ${t.textMuted}`}>
-                    {lead.category || 'General'}
-                  </div>
-                )}
+<div className={`flex items-center justify-between pt-4 border-t ${t.cardBorder}`}>
+  {!isStarter ? (
+    <div className="flex flex-col gap-1">
+      <div className={`${t.textHeading} font-black text-lg tracking-tight`}>
+        {lead.quote_total 
+          ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
+          : <span className={`${t.textEmpty} text-[10px] uppercase tracking-[0.2em] opacity-40`}>Pending Quote</span>}
+      </div>
+      <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+        lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-slate-500'
+      }`}>
+        <div className={`w-1 h-1 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+        {lead.payment_status || 'Unpaid'}
+      </div>
+     
+    </div>
+  ) : (
+    <div className="flex flex-col gap-1">
+      <div className={`text-[10px] font-bold uppercase tracking-widest ${t.textMuted}`}>
+        {lead.category ? lead.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General'}
+      </div>
+    </div>
+  )}
 
-                <div className={`h-10 w-10 rounded-2xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg active:scale-90`}>
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
+  <div className={`h-10 w-10 rounded-2xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg active:scale-90`}>
+    <ChevronRight className="w-5 h-5" />
+  </div>
+</div>
 
             </div>
           </motion.div>
