@@ -621,41 +621,43 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       </div>
 
       {/* Onboarding banner */}
-{/* Setup checklist */}
-      {!setupComplete && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-10">
-          <div
-            className="rounded-2xl border border-white/10 px-5 py-4 flex items-center gap-4"
-            style={{ background: 'rgba(255,255,255,0.03)' }}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-2">
-                Account setup
-              </p>
-              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${(setupDoneCount / setupItems.length) * 100}%`,
-                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                  }}
-                />
-              </div>
-              <p className="text-xs text-white/30 mt-1.5">
-                {setupDoneCount} of {setupItems.length} complete
-              </p>
-            </div>
+{!setupComplete && (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-10">
+    <div
+      className="rounded-2xl border border-indigo-500/20 px-5 py-4 flex items-center gap-4"
+      style={{ background: 'rgba(99,102,241,0.08)' }}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black text-white leading-snug">
+          Your booking link isn't live yet —{' '}
+          <span className="text-indigo-300">customers can't find you.</span>
+        </p>
+        <div className="flex items-center gap-3 mt-2.5">
+          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${(setupDoneCount / setupItems.length) * 100}%`,
+                background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+              }}
+            />
+          </div>
+          <p className="text-[11px] font-black text-white/30 shrink-0 tabular-nums">
+            {setupDoneCount}/{setupItems.length} done
+          </p>
+        </div>
+      </div>
             <a
                       
               href={`/${company.slug}/admin/settings`}
               className="shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white rounded-xl transition hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
             >
-              Finish Setup
-            </a>
-          </div>
-        </div>
-      )}
+               Complete Setup
+      </a>
+    </div>
+  </div>
+)}
 
       {/* ------------------------------------------------------------------ */}
       {/* Main content                                                         */}
