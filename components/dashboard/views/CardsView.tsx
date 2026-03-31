@@ -187,12 +187,23 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
           ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
           : <span className={`${t.textEmpty} text-[10px] uppercase tracking-[0.2em] opacity-40`}>Pending Quote</span>}
       </div>
-      <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
-        lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-slate-500'
-      }`}>
-        <div className={`w-1 h-1 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-        {lead.payment_status || 'Unpaid'}
-      </div>
+     <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+  lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-slate-500'
+}`}>
+  <div className={`w-1 h-1 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+  {lead.payment_status || 'Unpaid'}
+</div>
+
+{(lead.quote_accepted_at || lead.quote_declined_at) && (
+  <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+    lead.quote_accepted_at ? 'text-emerald-500' : 'text-red-500'
+  }`}>
+    <div className={`w-1 h-1 rounded-full ${
+      lead.quote_accepted_at ? 'bg-emerald-500' : 'bg-red-500'
+    }`} />
+    Quote {lead.quote_accepted_at ? 'Accepted' : 'Declined'}
+  </div>
+)}
      
     </div>
   ) : (
