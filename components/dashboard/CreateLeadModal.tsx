@@ -289,8 +289,8 @@ export default function CreateLeadModal({
                       <>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Service Address {fieldConfig?.address?.required && <span className="text-red-400">*</span>}
-                          </label>
+  Service Address
+</label>
                           <div className="relative">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none z-10" />
                             <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
@@ -298,7 +298,7 @@ export default function CreateLeadModal({
                                 type="text"
                                 value={formData.address_line_1}
                                 onChange={e => setFormData({ ...formData, address_line_1: e.target.value })}
-                                placeholder="Start typing your address..."
+                                placeholder="Start typing address..."
                                 className={`${inputClass} pl-12`}
                               />
                             </Autocomplete>

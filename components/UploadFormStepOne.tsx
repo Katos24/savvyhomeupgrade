@@ -1,9 +1,11 @@
 'use client';
 
 import {
-  User, Mail, Phone, FileText, Building, Loader2, ChevronRight,
+  User, Mail, Phone, FileText, Building, Loader2, ChevronRight, Check,
 } from 'lucide-react';
-import type { Category } from '@/lib/formCategories';
+import { useState } from 'react';
+import { DESCRIPTION_PLACEHOLDERS, type Category } from '@/lib/formCategories';
+
 
 interface StepOneProps {
   formData: {
@@ -27,6 +29,7 @@ interface StepOneProps {
   brandColor2?: string | null;
   showHeader?: boolean;
   hasStep2?: boolean;
+  businessType?: string;
 }
 
 const formatPhoneNumber = (value: string): string => {
@@ -36,6 +39,11 @@ const formatPhoneNumber = (value: string): string => {
   if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 };
+
+const labelClass = 'text-xs font-black text-gray-700 uppercase tracking-[0.12em] ml-1';
+
+const inputClass =
+  'w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all';
 
 export default function UploadFormStepOne({
   formData,
@@ -52,17 +60,25 @@ export default function UploadFormStepOne({
   brandColor2 = '#8b5cf6',
   showHeader = false,
   hasStep2 = true,
+  businessType = 'general',
 }: StepOneProps) {
   const color1 = brandColor1 || '#6366f1';
   const color2 = brandColor2 || '#8b5cf6';
 
-  const inputClass =
-    'w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all';
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [descFocused, setDescFocused] = useState(false);
+
+  const phoneDigits = formData.phone.replace(/\D/g, '');
+  const phoneValid = phoneDigits.length === 10;
+  const phoneInvalid = phoneTouched && !phoneValid && formData.phone.length > 0;
+
+  const descMax = 500;
+  const descCount = formData.description.length;
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 py-6 space-y-5">
 
-      {/* Optional standalone header (if not using FormHeader/FormHero) */}
+      {/* Optional standalone header */}
       {showHeader && (
         <div className="text-center mb-2">
           {logoUrl && (
@@ -100,13 +116,13 @@ export default function UploadFormStepOne({
         </div>
       )}
 
-      {/* Form card */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 space-y-4">
+      {/* Form card — stronger shadow + border for trust */}
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+        <div className="p-5 space-y-5">
 
           {/* Name */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
+            <label className={labelClass}>Full Name</label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
               <input
@@ -120,72 +136,139 @@ export default function UploadFormStepOne({
             </div>
           </div>
 
-          {/* Email + Phone - single column on all screens */}
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={e => onChange('email', e.target.value)}
-                  disabled={submitting}
-                  className={inputClass}
-                  placeholder="john@example.com"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone</label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={e => onChange('phone', formatPhoneNumber(e.target.value))}
-                  disabled={submitting}
-                  className={inputClass}
-                  placeholder="(555) 000-0000"
-                  maxLength={14}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Service Category */}
+          {/* Email */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Service Needed</label>
+            <label className={labelClass}>Email</label>
             <div className="relative">
-              <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-              <select
-                value={formData.category}
-                onChange={e => onChange('category', e.target.value)}
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={e => onChange('email', e.target.value)}
                 disabled={submitting}
-                className={`${inputClass} appearance-none cursor-pointer`}
-              >
-                <option value="">Select a service...</option>
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
+                className={inputClass}
+                placeholder="john@example.com"
+              />
             </div>
           </div>
 
-          {/* Description */}
+          {/* Phone — inline validation */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Tell Us About Your Project</label>
+            <label className={labelClass}>Phone</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={e => {
+                  onChange('phone', formatPhoneNumber(e.target.value));
+                  setPhoneTouched(true);
+                }}
+                onBlur={() => setPhoneTouched(true)}
+                disabled={submitting}
+                className={`${inputClass} pr-10 ${
+                  phoneInvalid
+                    ? 'border-red-300 focus:border-red-400 focus:ring-red-500/10'
+                    : phoneValid && phoneTouched
+                    ? 'border-green-300 focus:border-green-400 focus:ring-green-500/10'
+                    : ''
+                }`}
+                placeholder="(555) 000-0000"
+                maxLength={14}
+              />
+              {/* Inline status icon */}
+              {phoneTouched && formData.phone.length > 0 && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {phoneValid ? (
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-green-600" strokeWidth={3} />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                      <span className="text-red-500 text-[10px] font-black">!</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {phoneInvalid && (
+              <p className="text-xs text-red-500 font-semibold ml-1">Enter a valid 10-digit number</p>
+            )}
+          </div>
+
+          {/* Service Category — pills */}
+          <div className="space-y-2">
+            <label className={labelClass}>Service Needed</label>
+            {categories.length <= 8 ? (
+              <div className="flex flex-wrap gap-2">
+                {categories.map(cat => {
+                  const selected = formData.category === cat.value;
+                  return (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => onChange('category', cat.value)}
+                      disabled={submitting}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
+                        selected
+                          ? 'text-white border-transparent shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                      }`}
+                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              // Fallback to dropdown if too many categories
+              <div className="relative">
+                <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                <select
+                  value={formData.category}
+                  onChange={e => onChange('category', e.target.value)}
+                  disabled={submitting}
+                  className={`${inputClass} appearance-none cursor-pointer`}
+                >
+                  <option value="">Select a service...</option>
+                  {categories.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Description — with char count + better placeholder */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between ml-1 mr-1">
+              <label className={labelClass}>Tell Us About Your Project</label>
+              <span className={`text-[11px] font-bold tabular-nums transition-colors ${
+                descCount > descMax * 0.9 ? 'text-red-400' : 'text-gray-300'
+              }`}>
+                {descCount}/{descMax}
+              </span>
+            </div>
             <div className="relative">
               <FileText className="absolute left-4 top-4 w-4 h-4 text-gray-300" />
               <textarea
                 value={formData.description}
-                onChange={e => onChange('description', e.target.value)}
+                onChange={e => onChange('description', e.target.value.slice(0, descMax))}
+                onFocus={() => setDescFocused(true)}
+                onBlur={() => setDescFocused(false)}
                 disabled={submitting}
                 rows={4}
                 className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none"
-                placeholder="Describe what you need done, any important details..."
+                placeholder={DESCRIPTION_PLACEHOLDERS[businessType] ?? DESCRIPTION_PLACEHOLDERS.general}
               />
             </div>
+            {/* Tip shown on focus */}
+            {descFocused && descCount === 0 && (
+              <p className="text-[11px] text-gray-400 font-medium ml-1">
+                The more detail you give, the faster we can get you a quote.
+              </p>
+            )}
           </div>
         </div>
 

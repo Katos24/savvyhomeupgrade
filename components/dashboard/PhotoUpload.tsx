@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   Camera, Plus, Loader2, Image as ImageIcon,
-  X, ChevronLeft, ChevronRight, Download,
+  X, ChevronLeft, ChevronRight, Download, UploadCloud,
 } from 'lucide-react';
 
 type Photo = string | { url: string; thumbnail: string };
@@ -349,7 +349,7 @@ export default function PhotoUpload({
 
   const projectPhotoUrls = localPhotos.map(getUrl);
 
-  return (
+ return (
     <>
       {lightbox && (
         <Lightbox
@@ -360,7 +360,7 @@ export default function PhotoUpload({
         />
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-5">
 
         {/* Customer Photos */}
         {customerPhotos.length > 0 && (
@@ -371,13 +371,12 @@ export default function PhotoUpload({
                 Submitted by Customer ({customerPhotos.length})
               </p>
             </div>
-            {/* 3 cols on mobile, 4 on larger screens */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {customerPhotos.map((url, i) => (
                 <button
                   key={i}
                   onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
-                  className="group relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-pink-300 hover:shadow-md transition-all"
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-pink-300 hover:shadow-md transition-all"
                 >
                   <img
                     src={url}
@@ -398,33 +397,33 @@ export default function PhotoUpload({
         {/* Project Gallery Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-slate-100 rounded-lg text-slate-600">
-              <Camera className="w-4 h-4" />
+            <div className="p-1.5 bg-slate-100 rounded-lg">
+              <Camera className="w-4 h-4 text-slate-600" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-tight text-slate-900">Project Gallery</h3>
-            <span className="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full border border-indigo-100">
+            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full border border-indigo-100">
               {localPhotos.length}
             </span>
           </div>
           {localPhotos.length > 0 && (
             <label
               htmlFor={`photo-upload-${leadId}`}
-              className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 cursor-pointer uppercase tracking-widest flex items-center gap-1 py-2 px-3 -mr-2 active:opacity-70"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-indigo-700 transition-all active:scale-95 shadow-sm"
             >
-              <Plus className="w-3 h-3" /> Add More
+              <Plus className="w-3 h-3" />
+              Add Photos
             </label>
           )}
         </div>
 
-        {/* Project Photo Grid */}
+        {/* Photo Grid */}
         {localPhotos.length > 0 ? (
-          // 3 cols on mobile, 4 on larger screens
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
             {localPhotos.map((photo, index) => (
               <button
                 key={index}
                 onClick={() => setLightbox({ photos: projectPhotoUrls, index, label: 'Project Gallery' })}
-                className="group relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all"
               >
                 <img
                   src={getThumb(photo)}
@@ -440,19 +439,28 @@ export default function PhotoUpload({
             ))}
           </div>
         ) : (
-          <div className="border-2 border-dashed border-slate-100 rounded-[2rem] p-10 sm:p-12 text-center bg-slate-50/30">
-            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-              <ImageIcon className="w-8 h-8 text-slate-200" />
+          /* Empty State */
+          <label
+            htmlFor={`photo-upload-${leadId}`}
+            className="group flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all cursor-pointer active:bg-indigo-50"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-indigo-200 group-hover:shadow-md transition-all">
+              <UploadCloud className="w-8 h-8 text-slate-300 group-hover:text-indigo-400 transition-colors" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900">No project photos yet</h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-[220px] mx-auto leading-relaxed">
-              Upload site photos to track progress and keep the job organized.
-            </p>
-          </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Upload Project Photos</p>
+              <p className="text-xs text-slate-400 font-medium">Track progress and keep the job organized</p>
+              <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight mt-2">JPG, PNG · Max 10MB</p>
+            </div>
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md group-hover:bg-indigo-700 transition-all">
+              <Camera className="w-4 h-4" />
+              Add Photos
+            </div>
+          </label>
         )}
 
-        {/* Upload Area */}
-        <div className="relative">
+        {/* Upload input + progress */}
+        <div>
           <input
             ref={photoInputRef}
             type="file"
@@ -464,39 +472,25 @@ export default function PhotoUpload({
             id={`photo-upload-${leadId}`}
           />
 
-          {uploadingPhotos ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-                  <span className="text-sm font-bold text-slate-700">Uploading...</span>
+          {uploadingPhotos && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                  <span className="text-sm font-bold text-slate-700">Uploading photos...</span>
                 </div>
                 <span className="text-xs font-black text-slate-400">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="bg-indigo-600 h-full transition-all duration-300 ease-out"
+                  className="bg-indigo-600 h-full transition-all duration-300 ease-out rounded-full"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
             </div>
-          ) : (
-            <label
-              htmlFor={`photo-upload-${leadId}`}
-              className="group flex flex-col items-center justify-center p-8 rounded-[2rem] border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer active:bg-indigo-100"
-            >
-              <div className="p-4 bg-white rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                <Camera className="w-6 h-6 text-indigo-600" />
-              </div>
-              <span className="text-sm font-black text-indigo-900 uppercase tracking-widest">
-                Upload New Photos
-              </span>
-              <span className="text-[10px] text-indigo-400 mt-2 font-bold uppercase tracking-tight">
-                JPG, PNG • Max 10MB per file
-              </span>
-            </label>
           )}
         </div>
+
       </div>
     </>
   );

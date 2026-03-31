@@ -64,7 +64,7 @@ export default function UploadForm({
   companySlug,
   companyId,
   showHeader = true,
-  headerTitle = 'Submit Your Project',
+  headerTitle = 'Submit Your Request',
   headerSubtitle = 'Fast, professional service tailored to your needs.',
 }: UploadFormProps) {
   const router = useRouter();
@@ -327,23 +327,24 @@ export default function UploadForm({
 
       <main className="pb-16">
         {step === 1 && (
-          <UploadFormStepOne
-            formData={step1Data}
-            categories={categories}
-            onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
-            onSubmit={handleStep1Submit}
-            submitting={submittingStep1}
-            error={step1Error}
-            ctaHeading={getCtaHeading()}
-            headerSubtitle={headerSubtitle}
-            logoUrl={company?.logo_url}
-            companyName={company?.name}
-            companyWebsite={company?.website}
-            brandColor1={company?.email_brand_color_1}
-            brandColor2={company?.email_brand_color_2}
-            showHeader={false}
-            hasStep2={hasStep2Content}
-          />
+         <UploadFormStepOne
+  formData={step1Data}
+  categories={categories}
+  onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
+  onSubmit={handleStep1Submit}
+  submitting={submittingStep1}
+  error={step1Error}
+  ctaHeading={getCtaHeading()}
+  headerSubtitle={headerSubtitle}
+  logoUrl={company?.logo_url}
+  companyName={company?.name}
+  companyWebsite={company?.website}
+  brandColor1={company?.email_brand_color_1}
+  brandColor2={company?.email_brand_color_2}
+  showHeader={false}
+  hasStep2={hasStep2Content}
+  businessType={businessType}
+/>
         )}
 
         {step === 2 && (
