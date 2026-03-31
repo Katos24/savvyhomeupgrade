@@ -58,10 +58,11 @@ export default function CreateLeadModal({
     ac.setComponentRestrictions({ country: 'us' });
   };
 
-  const onPlaceChanged = () => {
+const onPlaceChanged = () => {
+  try {
     if (!autocompleteRef.current) return;
     const place = autocompleteRef.current.getPlace();
-    if (!place.formatted_address) return;
+    if (!place?.formatted_address) return;
 
     let city = '';
     let zip = '';
@@ -84,7 +85,10 @@ export default function CreateLeadModal({
       city,
       zip_code: zip,
     }));
-  };
+  } catch {
+    // Google Maps autocomplete failed silently — user can still type manually
+  }
+};
 
   if (!isOpen) return null;
 

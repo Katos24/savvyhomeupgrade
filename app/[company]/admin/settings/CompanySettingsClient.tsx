@@ -250,6 +250,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     }
   };
 
+// UI//
+
   if (activeTab) {
     return (
       <div className="min-h-screen bg-slate-900">
@@ -293,218 +295,271 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-8 sm:space-y-12">
 
         {/* IDENTITY HERO */}
-        <section className="bg-white rounded-3xl sm:rounded-[3rem] shadow-2xl shadow-black/20 overflow-hidden">
-          <div className="h-2 sm:h-3 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
+<section className="bg-white rounded-3xl sm:rounded-[3rem] shadow-2xl shadow-black/20 overflow-hidden">
+  {/* Brand color bar */}
+  <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
 
-          <div className="p-5 sm:p-8 lg:p-12 space-y-5 sm:space-y-6">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="relative shrink-0">
-                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
-                  {logoPreview
-                    ? <img src={logoPreview} className="w-full h-full object-contain p-2" alt="Logo" />
-                    : <span className="text-2xl sm:text-3xl font-black text-slate-200">{formData.name.charAt(0)}</span>
-                  }
-                </div>
-                {isEditing && (
-                  <label className="absolute -bottom-1 -right-1 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
-                    <Camera className="w-3.5 h-3.5" />
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setLogoFile(file);
-                        const reader = new FileReader();
-                        reader.onloadend = () => setLogoPreview(reader.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }} />
-                  </label>
-                )}
-              </div>
+  <div className="p-5 sm:p-8 lg:p-10 space-y-6">
 
-              <div className="flex-1 min-w-0">
-                {!isEditing
-                  ? <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate leading-tight">{formData.name}</h2>
-                  : <input
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-indigo-200 focus:border-indigo-500 w-full bg-transparent leading-tight pb-1"
-                      placeholder="Company Name"
-                    />
-                }
-<div className="mt-2 w-full max-w-[360px]">
-  <div className="bg-gradient-to-r from-indigo-50 to-white border border-indigo-200 rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition">
-    
-    <div className="text-sm font-mono flex items-center flex-wrap">
-      <span className="text-[11px] font-mono text-slate-600 truncate">
-  <span>lead2project.com/</span>
-  <span className="text-indigo-600 font-semibold">
-    {publicLink?.split('/').pop() || 'your-company'}
-  </span>
-</span>
-      
-      
+    {/* Top row — logo + name + edit */}
+    <div className="flex items-center gap-4">
+
+      {/* Logo */}
+      <div className="relative shrink-0">
+        <div
+          className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-black/5 flex items-center justify-center overflow-hidden"
+          style={{ boxShadow: `0 4px 20px color-mix(in srgb, ${formData.color1} 15%, transparent)` }}
+        >
+          {logoPreview
+            ? <img src={logoPreview} className="w-full h-full object-contain p-2" alt="Logo" />
+            : <span className="text-2xl sm:text-3xl font-black text-slate-200">{formData.name.charAt(0)}</span>
+          }
+        </div>
+        {isEditing && (
+          <label className="absolute -bottom-1 -right-1 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
+            <Camera className="w-3.5 h-3.5" />
+            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setLogoFile(file);
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoPreview(reader.result as string);
+                reader.readAsDataURL(file);
+              }
+            }} />
+          </label>
+        )}
+      </div>
+
+      {/* Name + plan badge */}
+      <div className="flex-1 min-w-0">
+        {!isEditing
+          ? <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate leading-tight">{formData.name}</h2>
+          : <input
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-indigo-200 focus:border-indigo-500 w-full bg-transparent leading-tight pb-1"
+              placeholder="Company Name"
+            />
+        }
+        <div className="flex items-center gap-2 mt-1.5">
+          <span
+            className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-white"
+            style={{ background: `linear-gradient(135deg, ${formData.color1}, ${formData.color2})` }}
+          >
+            {planTier} plan
+          </span>
+        </div>
+      </div>
+
+      {!isEditing && (
+        <button
+          onClick={() => setIsEditing(true)}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition shadow-md"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Edit</span>
+        </button>
+      )}
     </div>
 
+    {/* Booking link */}
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${formData.color1} 5%, white), white)`,
+        borderColor: `color-mix(in srgb, ${formData.color1} 20%, transparent)`,
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${formData.color1}, ${formData.color2})` }}
+      >
+        <Globe className="w-4 h-4 text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Your Booking Link</p>
+        <p className="text-sm font-mono font-bold text-slate-700 truncate">
+          lead2project.com/<span style={{ color: formData.color1 }}>{publicLink?.split('/').pop() || 'your-company'}</span>
+        </p>
+      </div>
+      <button
+        onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+        style={{
+          background: copied ? '#dcfce7' : `color-mix(in srgb, ${formData.color1} 10%, white)`,
+          color: copied ? '#16a34a' : formData.color1,
+        }}
+      >
+        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+        <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
+      </button>
+    </div>
+
+    {/* Fields */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      <div className="space-y-1.5">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
+        {isEditing
+          ? <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition" />
+          : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+              <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+              <span className="truncate">{formData.email || 'Not set'}</span>
+            </div>
+        }
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
+        {isEditing
+          ? <input type="text" value={formData.phone} placeholder="(555) 555-5555"
+              onChange={e => {
+                const input = e.target.value.replace(/\D/g, '');
+                if (input.length <= 10) setFormData({ ...formData, phone: formatPhone(input) });
+              }}
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition font-medium"
+            />
+          : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+              <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+              <span>{formData.phone || 'Not set'}</span>
+            </div>
+        }
+      </div>
+
+    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
+    {isEditing
+      ? <input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })}
+          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition"
+          placeholder="https://yourwebsite.com"
+        />
+      : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+          <Globe className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="truncate flex-1">{formData.website || 'Not set'}</span>
+          {formData.website && (
+            <a href={formData.website} target="_blank" className="text-indigo-500 hover:text-indigo-600 shrink-0">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+    }
   </div>
 
-  <p className="text-xs text-slate-500 mt-1 ml-1">
-    Your public booking link
-  </p>
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+      <Palette className="w-3 h-3" /> Brand Colors
+    </label>
+    {isEditing ? (
+      <div className="flex gap-3">
+        <input type="color" value={formData.color1} onChange={e => setFormData({ ...formData, color1: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
+        <input type="color" value={formData.color2} onChange={e => setFormData({ ...formData, color2: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
+      </div>
+    ) : (
+     <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl">
+  <div className="w-6 h-6 rounded-lg shadow-sm border border-black/5 shrink-0" style={{ background: formData.color1 }} />
+  <span className="text-xs font-mono font-bold text-slate-500 truncate hidden sm:block">{formData.color1}</span>
+  <div className="w-px h-4 bg-slate-200 shrink-0" />
+  <div className="w-6 h-6 rounded-lg shadow-sm border border-black/5 shrink-0" style={{ background: formData.color2 }} />
+  <span className="text-xs font-mono font-bold text-slate-500 truncate hidden sm:block">{formData.color2}</span>
 </div>
-              </div>
+    )}
+  </div>
+</div>
+    </div>
 
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition shadow-md"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Edit</span>
-                </button>
-              )}
+    {isEditing && (
+      <div className="flex gap-3 pt-1">
+        <button onClick={() => setIsEditing(false)}
+          className="flex items-center justify-center gap-1.5 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition">
+          <X className="w-4 h-4" /> Cancel
+        </button>
+        <button onClick={handleSaveIdentity} disabled={loading}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]">
+          <Save className="w-4 h-4" /> {loading ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    )}
+
+    {/* Action buttons */}
+    {!isEditing && (
+      <div className="grid grid-cols-3 gap-2.5">
+
+        {/* QR Code */}
+        <button
+          onClick={() => setShowQrModal(true)}
+          className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 border border-slate-100 hover:border-slate-200 rounded-2xl transition-all active:scale-95"
+        >
+          {qrCodeUrl
+            ? <img src={qrCodeUrl} className="w-8 h-8 rounded-md" alt="QR" />
+            : <div className="w-8 h-8 bg-slate-200 rounded-md animate-pulse" />
+          }
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">QR Code</span>
+        </button>
+
+     {/* View Form */}
+<a
+  href={publicLink}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 border border-slate-100 hover:border-slate-200 rounded-2xl transition-all active:scale-95"
+>
+  <ExternalLink className="w-5 h-5 text-slate-500 group-hover:text-indigo-500 transition-colors" />
+  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+    View Form
+  </span>
+</a>
+
+        {/* Daily Digest */}
+        {can(planTier, 'daily_digest') ? (
+          <button
+            onClick={async () => {
+              const newVal = !digestEnabled;
+              setDigestEnabled(newVal);
+              await fetch(`/api/company/${company.slug}/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'update-notifications',
+                  data: {
+                    reminder_settings: company.reminder_settings,
+                    notification_preferences: {
+                      ...(company.notification_preferences || {}),
+                      daily_digest: { enabled: newVal },
+                      digest_recipient: 'company',
+                    },
+                  },
+                }),
+              });
+            }}
+            className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 ${
+              digestEnabled
+                ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+                : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+            }`}
+          >
+            <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
+              {digestEnabled ? 'Daily Digest On' : 'Daily Digest Off'}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => openTab('billing')}
+            className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 active:scale-95"
+          >
+            <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-300 group-hover:text-purple-400 uppercase tracking-widest transition-colors">Digest</p>
+              <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mt-0.5">Pro</p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
-                {isEditing
-                  ? <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition" />
-                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                      <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="truncate">{formData.email || 'Not set'}</span>
-                    </div>
-                }
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
-                {isEditing
-                  ? <input type="text" value={formData.phone} placeholder="(555) 555-5555"
-                      onChange={e => {
-                        const input = e.target.value.replace(/\D/g, '');
-                        if (input.length <= 10) setFormData({ ...formData, phone: formatPhone(input) });
-                      }}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition font-medium"
-                    />
-                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{formData.phone || 'Not set'}</span>
-                    </div>
-                }
-              </div>
-
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
-                {isEditing
-                  ? <input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition"
-                      placeholder="https://yourwebsite.com"
-                    />
-                  : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
-                      <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="truncate flex-1">{formData.website || 'Not set'}</span>
-                      {formData.website && (
-                        <a href={formData.website} target="_blank" className="text-indigo-500 hover:text-indigo-600 shrink-0">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
-                }
-              </div>
-
-              {isEditing && (
-                <div className="sm:col-span-2 space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <Palette className="w-3 h-3" /> Brand Colors
-                  </label>
-                  <div className="flex gap-4">
-                    <input type="color" value={formData.color1} onChange={e => setFormData({ ...formData, color1: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
-                    <input type="color" value={formData.color2} onChange={e => setFormData({ ...formData, color2: e.target.value })} className="w-14 h-14 rounded-2xl cursor-pointer bg-slate-50 border border-slate-100 p-1 shadow-sm hover:scale-105 transition" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {isEditing && (
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setIsEditing(false)}
-                  className="flex items-center justify-center gap-1.5 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition">
-                  <X className="w-4 h-4" /> Cancel
-                </button>
-                <button onClick={handleSaveIdentity} disabled={loading}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]">
-                  <Save className="w-4 h-4" /> {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            )}
-
-            {!isEditing && (
-              <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => setShowQrModal(true)}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all">
-                  {qrCodeUrl && <img src={qrCodeUrl} className="w-8 h-8" alt="QR" />}
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">QR Code</span>
-                </button>
-
-                <button
-                  onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition">
-                  {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  <span className="text-[10px] font-black uppercase tracking-wide">{copied ? 'Copied!' : 'Copy Link'}</span>
-                </button>
-
-                <a href={publicLink} target="_blank"
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all">
-                  <ExternalLink className="w-5 h-5 text-slate-500" />
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">View Form</span>
-                </a>
-
-                {/* Daily Digest — Business only */}
-                {can(planTier, 'daily_digest') ? (
-                  <button
-                    onClick={async () => {
-                      const newVal = !digestEnabled;
-                      setDigestEnabled(newVal);
-                      await fetch(`/api/company/${company.slug}/settings`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          action: 'update-notifications',
-                          data: {
-                            reminder_settings: company.reminder_settings,
-                            notification_preferences: {
-                              ...(company.notification_preferences || {}),
-                              daily_digest: { enabled: newVal },
-                              digest_recipient: 'company',
-                            },
-                          },
-                        }),
-                      });
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-3 border rounded-2xl transition-all ${
-                      digestEnabled ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-100 text-slate-400'
-                    }`}
-                  >
-                    <Mail className={`w-5 h-5 ${digestEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
-                    <span className="text-[10px] font-black uppercase tracking-wide">
-                      {digestEnabled ? 'Digest On' : 'Digest Off'}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openTab('billing')}
-                    className="flex flex-col items-center justify-center gap-1.5 p-3 bg-slate-50 border border-slate-200 border-dashed rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 group"
-                  >
-                    <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition" />
-                    <span className="text-[10px] font-black uppercase tracking-wide text-slate-300 group-hover:text-purple-400 transition">Digest</span>
-                    <span className="text-[8px] font-black uppercase tracking-wide text-purple-400">Business</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</section>
 
         {/* MODULE GRID */}
         <div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import UnhandledRejectionLogger from "@/components/UnhandledRejectionLogger";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -79,8 +80,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}>
-        {children}
+    <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}>
+  <UnhandledRejectionLogger />
+  {children}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-4TG9X39EQ5"
           strategy="afterInteractive"

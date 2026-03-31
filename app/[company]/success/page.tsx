@@ -96,9 +96,49 @@ export default async function SuccessPage({ params }: PageProps) {
 
         @keyframes rise { from { opacity: 0; transform: translateY(32px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        .logo-wrap { margin-bottom: 28px; animation: fadein 0.4s 0.1s ease both; }
-        .logo-wrap img { height: 48px; width: auto; object-fit: contain; max-width: 180px; }
+   /* ─── IMPROVED LOGO HERO ─── */
+.logo-hero {
+  position: relative;
+  width: 100px; 
+  height: 100px;
+  margin: 0 auto 32px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  
+  /* Modern Glassmorphism Base */
+  background: white;
+  border-radius: 30px; /* Squircle look */
+  
+  /* Double Border: One thin solid, one soft brand glow */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+    0 10px 20px -5px color-mix(in srgb, var(--brand1) 15%, transparent),
+    inset 0 0 0 2px white,
+    inset 0 0 12px color-mix(in srgb, var(--brand1) 5%, transparent);
+    
+  animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
 
+/* Subtle background ring for extra depth */
+.logo-hero::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 38px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  opacity: 0.1;
+  z-index: -1;
+}
+
+.logo-hero img {
+  width: 65%; 
+  height: 65%;
+  object-fit: contain;
+  /* Helps logos with transparency feel "grounded" */
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
+}
         .check-ring {
           width: 72px; height: 72px; border-radius: 50%;
           margin: 0 auto 24px;
@@ -182,22 +222,27 @@ export default async function SuccessPage({ params }: PageProps) {
         <div className="orb orb-2" />
 
         <div className="card">
-          {company.logo_url && (
-            <div className="logo-wrap">
-              <img src={company.logo_url} alt={company.name} />
-            </div>
-          )}
-
-          <div className="check-ring">
-            <div className="dots">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="dot" />
-              ))}
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
+         {company.logo_url ? (
+  <div className="logo-hero">
+    <div className="dots">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="dot" />
+      ))}
+    </div>
+    <img src={company.logo_url} alt={company.name} />
+  </div>
+) : (
+  <div className="check-ring">
+    <div className="dots">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="dot" />
+      ))}
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  </div>
+)}
 
           <h1 className="headline">{headline}</h1>
           <p className="subtext">{subtext}</p>

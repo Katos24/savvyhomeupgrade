@@ -123,11 +123,12 @@ export default function UploadFormStepTwo({
     autocompleteRef.current = ac;
     ac.setComponentRestrictions({ country: 'us' });
   };
-
-  const onPlaceChanged = () => {
+  
+const onPlaceChanged = () => {
+  try {
     if (!autocompleteRef.current) return;
     const place = autocompleteRef.current.getPlace();
-    if (!place.formatted_address) return;
+    if (!place?.formatted_address) return;
 
     let city = '';
     let zip = '';
@@ -146,7 +147,10 @@ export default function UploadFormStepTwo({
     onChange('address_line_1', place.formatted_address);
     onChange('city', city);
     onChange('zip_code', zip);
-  };
+  } catch (e) {
+    // Google Maps autocomplete failed silently — user can still type manually
+  }
+};
 
   const disabled = submitting || compressing;
   const color1 = brandColor1 || '#2563eb';

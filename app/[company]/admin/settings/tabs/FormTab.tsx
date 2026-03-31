@@ -941,25 +941,70 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
   );
 }
 
-/* ─────────────────── PREVIEW STEP 3 ─────────────────── */
 function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl }: {
   message: string; brandColor1: string; brandColor2: string; companyName?: string; logoUrl?: string | null;
 }) {
   return (
-    <div className="min-h-full flex items-center justify-center p-6 bg-gray-50 rounded-3xl">
-      <div className="w-full bg-white rounded-3xl p-6 text-center shadow-md border border-gray-200">
-        {logoUrl && <img src={logoUrl} alt="" className="h-6 w-auto object-contain mx-auto mb-4" />}
-        <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
-          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-        >
-          <Check className="w-5 h-5 text-white" strokeWidth={3} />
-        </div>
-        <h3 className="text-sm font-black text-gray-900 mb-2">Request received!</h3>
-        <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+    <div className="min-h-full flex items-center justify-center p-4 bg-gray-50 rounded-3xl">
+      <div className="w-full bg-white rounded-3xl p-5 text-center shadow-md border border-gray-200">
+
+        {/* Logo hero — matches success page */}
+        {logoUrl ? (
+          <div
+            className="relative w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border border-black/5"
+            style={{
+              background: 'white',
+              boxShadow: `0 4px 12px color-mix(in srgb, ${brandColor1} 15%, transparent)`,
+            }}
+          >
+            {/* Soft brand ring behind */}
+            <div
+              className="absolute -inset-1.5 rounded-[18px] opacity-10 -z-10"
+              style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+            />
+            <img
+              src={logoUrl}
+              alt=""
+              className="w-10 h-10 object-contain"
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.08))' }}
+            />
+          </div>
+        ) : (
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+          >
+            <Check className="w-5 h-5 text-white" strokeWidth={3} />
+          </div>
+        )}
+
+        <h3 className="text-sm font-black text-gray-900 mb-1.5">Request received!</h3>
+        <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
           {message || "We've got your request and will be in touch soon."}
         </p>
-        <p className="text-[9px] text-gray-300 mt-4 uppercase tracking-widest font-black">Powered by Lead2Project</p>
+
+        {/* Steps */}
+        <div className="mt-4 space-y-2 text-left">
+          {[
+            { label: 'Check your email', sub: 'Confirmation sent to your inbox' },
+            { label: "We'll reach out shortly", sub: 'Our team reviews every request' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-xl border border-gray-100">
+              <div
+                className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-[10px]"
+                style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${brandColor1} 12%, white), color-mix(in srgb, ${brandColor2} 12%, white))` }}
+              >
+                {i === 0 ? '✉' : '⏳'}
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-gray-800">{s.label}</p>
+                <p className="text-[8px] text-gray-400 font-medium">{s.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[8px] text-gray-300 mt-4 uppercase tracking-widest font-black">Powered by Lead2Project</p>
       </div>
     </div>
   );
