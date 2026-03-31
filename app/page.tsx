@@ -906,19 +906,116 @@ function SettingsShowcase() {
   const { ref, visible } = useFadeIn();
 
   const screens = [
-    {
-      num: '01',
-      title: 'Your business identity',
-      desc: 'Logo, booking link, QR code — everything customers need to find you.',
-      src: '/images/company-settings.png',
-      alt: 'Company profile settings',
-    },
+   {
+  num: '01',
+  title: 'Your business identity',
+  desc: 'Logo, booking link, QR code, phone, and website — everything customers need to find and trust you.',
+  src: null,
+  alt: 'Company profile settings',
+  visual: (
+  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    {/* Gradient bar */}
+    <div style={{ height: 5, borderRadius: 3, background: 'linear-gradient(to right, #6366f1, #8b5cf6, #dc2626)' }} />
+
+    {/* Logo + name + edit */}
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 12, background: '#fff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+          <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 44, height: 44, objectFit: 'contain' }} 
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        </div>
+        <div>
+          <p style={{ fontSize: 17, fontWeight: 900, color: '#FFFFFF', margin: '0 0 6px', letterSpacing: '-0.01em' }}>Ridge Line Roofing</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#1E293B', border: '1px solid #334155', borderRadius: 8, padding: '5px 10px' }}>
+            <span style={{ fontSize: 10, color: '#94A3B8' }}>lead2project.com/</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#818CF8' }}>ridge-line-roofing</span>
+          </div>
+          <p style={{ fontSize: 10, color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>Your public booking link</p>
+        </div>
+      </div>
+      <div style={{ background: '#1E293B', borderRadius: 10, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #334155', flexShrink: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#E2E8F0' }}>✏ EDIT</span>
+      </div>
+    </div>
+
+    {/* Fields */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div>
+        <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Support Email</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Mail size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>info@ridgelineroofing.com</span>
+        </div>
+      </div>
+      <div>
+        <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Business Phone</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Phone size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>(555) 522-2444</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Website */}
+    <div>
+      <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Company Website</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Globe size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>ridgelineroofing.com</span>
+        </div>
+        <ArrowRight size={13} style={{ color: '#475569' }} />
+      </div>
+    </div>
+
+    {/* Action buttons */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+      {[
+        { label: 'QR Code', icon: <QrCode size={16} />, bg: '#1E293B', border: '#334155', color: '#94A3B8' },
+        { label: 'Copy Link', icon: <FileText size={16} />, bg: '#4F46E5', border: '#4F46E5', color: '#fff' },
+        { label: 'View Form', icon: <ArrowRight size={16} />, bg: '#1E293B', border: '#334155', color: '#94A3B8' },
+        { label: 'Digest On', icon: <Mail size={16} />, bg: '#1E2D4A', border: '#2D4A7A', color: '#818CF8' },
+      ].map((btn, i) => (
+        <div key={i} style={{ background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 12, padding: '12px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: btn.color }}>{btn.icon}</span>
+          <span style={{ fontSize: 8, fontWeight: 800, color: btn.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{btn.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+),
+},
     {
       num: '02',
       title: 'Everything configurable',
       desc: 'Pipeline, categories, forms, emails, team — all in one place.',
       src: '/images/system-config.png',
       alt: 'System configuration overview',
+      visual: (
+  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <p style={{ fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>System Configuration</p>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+      {[
+        { label: 'Pipeline', desc: 'Customize your lead stages', icon: <SlidersHorizontal size={16} />, color: '#F59E0B', bg: '#FEF3C7' },
+        { label: 'Categories', desc: 'Add your service types', icon: <LayoutGrid size={16} />, color: '#6366F1', bg: '#EEF2FF' },
+        { label: 'Booking Form', desc: 'Control what customers fill out', icon: <FileText size={16} />, color: '#F97316', bg: '#FFF7ED' },
+        { label: 'Automations', desc: 'Personalize customer emails', icon: <Mail size={16} />, color: '#3B82F6', bg: '#EFF6FF' },
+        { label: 'Team', desc: 'Invite crew and assign leads', icon: <User size={16} />, color: '#06B6D4', bg: '#ECFEFF' },
+        { label: 'Billing', desc: 'Manage your plan', icon: <CreditCard size={16} />, color: '#10B981', bg: '#ECFDF5' },
+      ].map((item, i) => (
+        <div key={i} style={{ background: '#fff', borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: item.color }}>{item.icon}</span>
+          </div>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>{item.label}</p>
+            <p style={{ fontSize: 10, fontWeight: 500, color: '#64748B', margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+),
     },
     {
       num: '03',
@@ -926,6 +1023,95 @@ function SettingsShowcase() {
       desc: 'Toggle address, photos, dates, and custom questions on or off.',
       src: '/images/booking-form.png',
       alt: 'Booking form settings',
+      visual: (
+  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
+    {/* Header */}
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div>
+        <p style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', margin: '0 0 2px', background: '#fff', display: 'inline-block', padding: '0 4px', borderRadius: 4 }}>Booking Form</p>
+        <p style={{ fontSize: 10, color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>Control what customers fill out when they request a job.</p>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, padding: '5px 10px', fontSize: 10, fontWeight: 700, color: '#475569' }}>Copy link</div>
+        <div style={{ background: '#4F46E5', borderRadius: 8, padding: '5px 10px', fontSize: 10, fontWeight: 700, color: '#fff' }}>Save</div>
+      </div>
+    </div>
+
+    {/* Two col layout */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12 }}>
+      {/* LEFT — phone preview */}
+      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+        {/* Gradient header */}
+        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #dc2626)', padding: '14px 12px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 7, color: '#fff', fontWeight: 900 }}>1</span>
+            </div>
+            <ArrowRight size={8} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 7, color: '#4F46E5', fontWeight: 900 }}>2</span>
+            </div>
+          </div>
+          <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>Request received!</p>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>A few more details — all optional.</p>
+        </div>
+        {/* Form fields */}
+        <div style={{ padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {['Start typing your address...', 'Zip', 'Date'].map((ph, i) => (
+            <div key={i} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '5px 8px', fontSize: 9, color: '#CBD5E1', fontWeight: 500 }}>{ph}</div>
+          ))}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '5px 8px' }}>
+            <p style={{ fontSize: 9, fontWeight: 700, color: '#374151', margin: '0 0 3px' }}>What is your budget range?</p>
+            <p style={{ fontSize: 9, color: '#CBD5E1', margin: 0 }}>Select one...</p>
+          </div>
+          <div style={{ background: 'linear-gradient(135deg, #6366f1, #dc2626)', borderRadius: 6, padding: '7px', textAlign: 'center' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#fff' }}>Submit request</span>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT — controls */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Step 1 locked */}
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '8px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 9 }}>🔒</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#374151' }}>Step 1 — always collected</span>
+          </div>
+          <p style={{ fontSize: 9, color: '#94A3B8', margin: 0 }}>Full name · Email · Phone · Service category</p>
+        </div>
+
+        {/* Step 2 toggles */}
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#0F172A' }}>Step 2 — extra details</span>
+            <span style={{ fontSize: 8, fontWeight: 800, color: '#4F46E5', background: '#EEF2FF', padding: '2px 6px', borderRadius: 4 }}>YOU CONTROL THESE</span>
+          </div>
+          {[
+            { label: 'Service address', on: true },
+            { label: 'Preferred date', on: true },
+            { label: 'Preferred time', on: false },
+            { label: 'How did you hear about us?', on: false },
+            { label: 'Photo / video upload', on: true },
+          ].map((row, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: row.on ? '#0F172A' : '#94A3B8' }}>{row.label}</span>
+              <div style={{ width: 28, height: 16, borderRadius: 8, background: row.on ? '#4F46E5' : '#CBD5E1', display: 'flex', alignItems: 'center', padding: '0 2px', justifyContent: row.on ? 'flex-end' : 'flex-start' }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Custom questions */}
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#0F172A' }}>Your own questions</span>
+          <div style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, padding: '3px 8px', fontSize: 9, fontWeight: 700, color: '#475569' }}>+ Add</div>
+        </div>
+      </div>
+    </div>
+  </div>
+),
     },
    {
   num: '04',
@@ -933,6 +1119,108 @@ function SettingsShowcase() {
   desc: 'Customize once — your customers receive branded, professional emails every time.',
   src: null, // two images side by side
   alt: 'Email template settings',
+  visual: (
+  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    {/* Header */}
+    <div>
+      <p style={{ fontSize: 15, fontWeight: 900, color: '#F1F5F9', margin: '0 0 2px' }}>Email templates</p>
+      <p style={{ fontSize: 9, color: '#64748B', margin: 0, fontWeight: 500 }}>Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
+    </div>
+
+    {/* Tabs */}
+    <div style={{ display: 'flex', gap: 6 }}>
+      {['Quote', 'Schedule', 'Payment'].map((tab, i) => (
+        <div key={i} style={{
+          padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700,
+          background: i === 1 ? '#1E293B' : 'transparent',
+          color: i === 1 ? '#F1F5F9' : '#475569',
+          border: i === 1 ? '1px solid #334155' : '1px solid transparent'
+        }}>{tab}</div>
+      ))}
+    </div>
+
+    {/* Two col */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+      {/* LEFT — editor */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Variables */}
+        <div style={{ background: '#1E293B', borderRadius: 10, padding: '10px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9' }}>✦ Available variables</span>
+            <span style={{ fontSize: 9, color: '#475569' }}>Click to copy</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{scheduled_date}}', '{{scheduled_time}}', '{{customer_address}}'].map((v, i) => (
+              <span key={i} style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '2px 6px', fontSize: 8, fontWeight: 600, color: '#94A3B8', fontFamily: 'monospace' }}>{v}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Edit template */}
+        <div style={{ background: '#1E293B', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9' }}>✉ Edit template</span>
+            <span style={{ fontSize: 9, color: '#475569' }}>↺ Reset</span>
+          </div>
+          <div>
+            <p style={{ fontSize: 8, fontWeight: 800, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Subject line</p>
+            <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '5px 8px', fontSize: 9, color: '#CBD5E1' }}>
+              Appointment Scheduled - {'{{company_name}}'}
+            </div>
+          </div>
+          <div>
+            <p style={{ fontSize: 8, fontWeight: 800, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Email body</p>
+            <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '6px 8px', fontSize: 8, color: '#94A3B8', fontFamily: 'monospace', lineHeight: 1.6 }}>
+              Hi {'{{customer_name}}'},<br />
+              Your appointment has been scheduled!<br /><br />
+              Date: {'{{scheduled_date}}'}<br />
+              Time: {'{{scheduled_time}}'}<br />
+              Address: {'{{customer_address}}'}
+            </div>
+          </div>
+          <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 8, padding: '7px', textAlign: 'center' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Save Templates</span>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT — live preview */}
+      <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #dc2626)', padding: '14px 12px', textAlign: 'center' }}>
+          <div style={{ width: 32, height: 32, background: '#fff', borderRadius: 6, margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+  <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 26, height: 26, objectFit: 'contain' }}
+    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+</div>
+          <p style={{ fontSize: 10, fontWeight: 900, color: '#fff', margin: '0 0 1px' }}>Ridge Line Roofing</p>
+          <p style={{ fontSize: 8, color: 'rgba(255,255,255,0.7)', margin: 0 }}>(233) 333-3322</p>
+        </div>
+        {/* Email body */}
+        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', gap: 4, fontSize: 8 }}>
+            <span style={{ color: '#94A3B8' }}>From</span>
+            <span style={{ fontWeight: 700, color: '#0F172A' }}>Ridge Line Roofing</span>
+          </div>
+          <div style={{ display: 'flex', gap: 4, fontSize: 8 }}>
+            <span style={{ color: '#94A3B8' }}>To</span>
+            <span style={{ color: '#475569' }}>john.smith@email.com</span>
+          </div>
+          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 5 }}>
+            <p style={{ fontSize: 8, color: '#94A3B8', margin: '0 0 2px' }}>Subject</p>
+            <p style={{ fontSize: 9, fontWeight: 800, color: '#0F172A', margin: 0 }}>Appointment Scheduled - Ridge Line Roofing</p>
+          </div>
+          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 5, fontSize: 8, color: '#374151', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 3px' }}>Hi John Smith,</p>
+            <p style={{ margin: '0 0 3px' }}>Your appointment has been scheduled!</p>
+            <p style={{ margin: 0, color: '#64748B' }}>Date: March 15, 2024<br />Time: 10:00 AM<br />Address: 123 Main St, Anytown</p>
+          </div>
+          <p style={{ fontSize: 7, color: '#CBD5E1', textAlign: 'center', margin: '4px 0 0' }}>Powered by Lead2Project</p>
+        </div>
+      </div>
+    </div>
+  </div>
+),
 },
   ];
 
@@ -977,16 +1265,20 @@ function SettingsShowcase() {
          {screens.map((screen, i) => (
   <div key={i} className="flex flex-col gap-4">
     {/* Image */}
-    {screen.src ? (
-      <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC' }}>
-        <img src={screen.src} alt={screen.alt} style={{ width: '100%', height: 'auto', display: 'block' }} />
-      </div>
-    ) : (
-      <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-        <img src="/images/email-templates.png" alt="Email template editor" style={{ width: '100%', height: 'auto', display: 'block' }} />
-        <img src="/images/email-sent.png" alt="Email received by customer" style={{ width: '100%', height: 'auto', display: 'block' }} />
-      </div>
-    )}
+  {'visual' in screen && screen.visual ? (
+  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden' }}>
+    {screen.visual}
+  </div>
+) : screen.src ? (
+  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC' }}>
+    <img src={screen.src} alt={screen.alt} style={{ width: '100%', height: 'auto', display: 'block' }} />
+  </div>
+) : (
+  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+    <img src="/images/email-templates.png" alt="Email template editor" style={{ width: '100%', height: 'auto', display: 'block' }} />
+    <img src="/images/email-sent.png" alt="Email received by customer" style={{ width: '100%', height: 'auto', display: 'block' }} />
+  </div>
+)}
               {/* Caption */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
