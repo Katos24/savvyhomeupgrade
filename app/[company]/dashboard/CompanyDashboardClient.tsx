@@ -811,30 +811,28 @@ className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilter
 
 <div className="flex items-center gap-2">
   <button
-    onClick={() => setIsDark(v => !v)}
-    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-    className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition text-white/60 hover:text-white"
-  >
+  onClick={() => setIsDark(v => !v)}
+  aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+  className={`p-2.5 rounded-xl border transition ${isDark ? 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+>
+
+
     {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
   </button>
-  <div className="flex bg-white/5 border border-white/10 rounded-xl p-1" role="group" aria-label="View mode">
-    <button
-      onClick={() => setCurrentView('cards')}
-      aria-label="Cards view"
-      aria-pressed={currentView === 'cards'}
-      className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
-    >
-      <LayoutGrid className="w-4 h-4" aria-hidden />
-    </button>
-    <button
-      onClick={() => setCurrentView('table')}
-      aria-label="Table view"
-      aria-pressed={currentView === 'table'}
-      className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}
-    >
-      <List className="w-4 h-4" aria-hidden />
-    </button>
-  </div>
+ <div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
+  <button
+    onClick={() => setCurrentView('cards')}
+    className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
+  >
+    <LayoutGrid className="w-4 h-4" aria-hidden />
+  </button>
+  <button
+    onClick={() => setCurrentView('table')}
+    className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
+  >
+    <List className="w-4 h-4" aria-hidden />
+  </button>
+</div>
 </div>     
            
 
