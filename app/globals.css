@@ -261,3 +261,9 @@ select,
 textarea {
   font-size: 16px;
 }
+
+/* AFTER — add this */
+.pac-container {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}

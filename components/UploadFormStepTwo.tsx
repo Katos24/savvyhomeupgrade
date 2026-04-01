@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 import {
   MapPin,
   Home,
@@ -16,7 +15,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-const libraries: ('places')[] = ['places'];
 
 type CustomQuestion = {
   id: string;
@@ -106,52 +104,14 @@ export default function UploadFormStepTwo({
   onSubmit,
   onSkip,
 }: StepTwoProps) {
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
+const inputRef = useRef<HTMLInputElement | null>(null);
   const showAddress = fieldConfig.address.enabled;
   const showDate = fieldConfig.preferred_date.enabled;
   const showTime = fieldConfig.preferred_time.enabled;
   const showLeadSource = fieldConfig.lead_source.enabled;
   const showFileUpload = fieldConfig.file_upload.enabled;
 
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
-
-  const onLoadAutocomplete = (ac: google.maps.places.Autocomplete) => {
-    autocompleteRef.current = ac;
-    ac.setComponentRestrictions({ country: 'us' });
-  };
-  
-const onPlaceChanged = () => {
-  try {
-    if (!autocompleteRef.current) return;
-    const place = autocompleteRef.current.getPlace();
-    if (!place?.formatted_address) return;
-
-    let city = '';
-    let zip = '';
-    if (place.address_components) {
-      const locality = place.address_components.find(c => c.types.includes('locality'));
-      const sublocality = place.address_components.find(c =>
-        c.types.includes('sublocality') || c.types.includes('sublocality_level_1')
-      );
-      const adminArea3 = place.address_components.find(c =>
-        c.types.includes('administrative_area_level_3')
-      );
-      const postal = place.address_components.find(c => c.types.includes('postal_code'));
-      city = locality?.long_name || sublocality?.long_name || adminArea3?.long_name || '';
-      zip = postal?.long_name || '';
-    }
-    onChange('address_line_1', place.formatted_address);
-    onChange('city', city);
-    onChange('zip_code', zip);
-  } catch (e) {
-    // Google Maps autocomplete failed silently — user can still type manually
-  }
-};
-
+ 
   const disabled = submitting || compressing;
   const color1 = brandColor1 || '#2563eb';
   const color2 = brandColor2 || '#3b82f6';
@@ -198,52 +158,61 @@ const onPlaceChanged = () => {
           )}
 
           {/* Address */}
-          {showAddress && isLoaded && !loadError && (
-            <>
-              <div>
-                <label className={labelClass}>Address</label>
-                <div className="mt-2">
-                  <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
-                    <input
-                      type="text"
-                      autoComplete="off"
-                      value={formData.address_line_1}
-                      onChange={e => onChange('address_line_1', e.target.value)}
-                      className={inputClass}
-                      placeholder="Start typing your address..."
-                      disabled={disabled}
-                    />
-                  </Autocomplete>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Zip Code</label>
-                  <input
-                    type="text"
-                    value={formData.zip_code}
-                    onChange={e => onChange('zip_code', e.target.value.replace(/\D/g, '').slice(0, 5))}
-                    className={`${inputClass} mt-2`}
-                    placeholder="12345"
-                    maxLength={5}
-                    disabled={disabled}
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>Unit / Apt</label>
-                  <input
-                    type="text"
-                    value={formData.address_line_2}
-                    onChange={e => onChange('address_line_2', e.target.value)}
-                    className={`${inputClass} mt-2`}
-                    placeholder="Apt 4B"
-                    disabled={disabled}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
+{showAddress && (
+  <>
+    <div>
+      <label className={labelClass}>Street Address</label>
+      <input
+        type="text"
+        autoComplete="street-address"
+        value={formData.address_line_1}
+        onChange={e => onChange('address_line_1', e.target.value)}
+        className={`${inputClass} mt-2`}
+        placeholder="123 Main St"
+        disabled={disabled}
+      />
+    </div>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <label className={labelClass}>City</label>
+        <input
+          type="text"
+          autoComplete="address-level2"
+          value={formData.city}
+          onChange={e => onChange('city', e.target.value)}
+          className={`${inputClass} mt-2`}
+          placeholder="New York"
+          disabled={disabled}
+        />
+      </div>
+      <div>
+        <label className={labelClass}>Zip Code</label>
+        <input
+          type="text"
+          autoComplete="postal-code"
+          value={formData.zip_code}
+          onChange={e => onChange('zip_code', e.target.value.replace(/\D/g, '').slice(0, 5))}
+          className={`${inputClass} mt-2`}
+          placeholder="12345"
+          maxLength={5}
+          disabled={disabled}
+        />
+      </div>
+    </div>
+    <div>
+      <label className={labelClass}>Unit / Apt</label>
+      <input
+        type="text"
+        autoComplete="address-line2"
+        value={formData.address_line_2}
+        onChange={e => onChange('address_line_2', e.target.value)}
+        className={`${inputClass} mt-2`}
+        placeholder="Apt 4B"
+        disabled={disabled}
+      />
+    </div>
+  </>
+)}
           {/* Date + Time */}
           {(showDate || showTime) && (
             <div className={`grid gap-4 ${showDate && showTime ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -460,17 +429,19 @@ const onPlaceChanged = () => {
             </div>
           )}
 
-          {/* Submit */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={disabled}
-              className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:opacity-90"
-              style={{
-                background: `linear-gradient(to right, ${color1}, ${color2})`
-              }}
-            >
+        {/* Submit */}
+<div className="pt-2 relative z-10">
+  <button
+    type="button"
+    onClick={onSubmit}
+    disabled={disabled}
+    className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:opacity-90"
+    style={{
+      background: `linear-gradient(to right, ${color1}, ${color2})`,
+      position: 'relative',
+      zIndex: 60,
+    }}
+  >
               {submitting ? (
                 <><Loader2 className="w-5 h-5 animate-spin" />{uploadProgress || 'Saving...'}</>
               ) : (
