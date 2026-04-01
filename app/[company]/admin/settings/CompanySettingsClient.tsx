@@ -246,7 +246,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
       case 'categories':      return <CategoriesTab company={company} currentUser={currentUser} />;
       case 'team':            return <TeamTab company={company} currentUser={currentUser} />;
       case 'billing':         return <BillingTab company={company} currentUser={currentUser} />;
-      case 'notifications':   return <NotificationsTab company={company} currentUser={currentUser} />;
     }
   };
 
@@ -571,7 +570,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
             <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
-            <MenuCard icon={Bell} label="Notifications" desc="Get a morning digest of jobs, unpaid invoices, stale leads, and follow-ups that need attention." color="#6366f1" onClick={() => openTab('notifications')} locked={!can(planTier, 'settings_notifications')} requiredPlan="Pro" />
           </div>
         </div>
 
