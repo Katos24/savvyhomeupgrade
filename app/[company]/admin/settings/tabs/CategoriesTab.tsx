@@ -397,7 +397,7 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-      {/* ── QUOTE EDITOR — SPREADSHEET TABLE ────────────────────────────── */}
+{/* ── QUOTE EDITOR — SPREADSHEET TABLE ────────────────────────────── */}
       <AnimatePresence>
         {quoteEditorOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -405,15 +405,15 @@ useEffect(() => {
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={spring}
               className="bg-[#0F172A] w-full max-w-3xl rounded-t-3xl sm:rounded-3xl h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-white/10"
             >
-              {/* Modal Header */}
+              {/* Header */}
               <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
-                <h3 className="text-xl font-black text-white">{activeQuoteEditorCat?.label} Pricing</h3>
+                <h3 className="text-xl font-black text-white">Pricing Template</h3>
                 <button onClick={() => setQuoteEditorOpen(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition">
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
 
-              {/* TABLE HEADERS - Hidden on mobile */}
+              {/* TABLE HEADERS (Desktop Only) */}
               <div className="hidden sm:grid grid-cols-[1fr_120px_80px_100px_40px] gap-0 px-6 py-3 bg-[#020617] border-b border-white/10">
                 {['Item Description', 'Unit Price', 'Qty', 'Total', ''].map((h, i) => (
                   <span key={i} className={`text-[10px] font-black uppercase tracking-widest text-gray-400 ${i > 0 && i < 4 ? 'text-right' : ''}`}>{h}</span>
@@ -424,20 +424,18 @@ useEffect(() => {
               <div className="flex-1 overflow-y-auto divide-y divide-white/[0.05]">
                 {editingLineItems.map((item) => (
                   <div key={item.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] gap-2 sm:gap-0 p-4 sm:p-0 sm:items-center hover:bg-white/[0.02]">
-                    {/* Desc */}
                     <div className="sm:px-6">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase">Description</span>
+                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Description</span>
                       <input 
                         value={item.description} 
                         onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                        className="w-full bg-transparent border-none text-white font-bold text-sm sm:py-4 focus:ring-0" 
+                        className="w-full bg-transparent border-none text-white font-bold text-sm sm:py-4 focus:ring-0 outline-none" 
                       />
                     </div>
-                    {/* Price */}
                     <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase">Unit Price</span>
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-1">$</span>
+                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Price</span>
+                      <div className="flex items-center sm:justify-end">
+                        <span className="text-gray-500 mr-1 text-xs">$</span>
                         <input 
                           type="number" 
                           value={item.unitPrice || ''} 
@@ -446,9 +444,8 @@ useEffect(() => {
                         />
                       </div>
                     </div>
-                    {/* Qty */}
                     <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase">Quantity</span>
+                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Qty</span>
                       <input 
                         type="number" 
                         value={item.quantity || ''} 
@@ -456,38 +453,36 @@ useEffect(() => {
                         className={`w-full bg-transparent border-none text-white sm:text-right font-bold text-sm focus:ring-0 ${noSpinners}`} 
                       />
                     </div>
-                    {/* Total */}
                     <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase">Line Total</span>
-                      <div className="text-emerald-400 font-black text-sm sm:text-right sm:py-4">
-                        {fmt(item.amount)}
-                      </div>
+                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Total</span>
+                      <div className="text-emerald-400 font-black text-sm sm:text-right sm:py-4">{fmt(item.amount)}</div>
                     </div>
-                    {/* Delete */}
-                    <div className="flex justify-end sm:justify-center">
-                      <button onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))} className="p-2 text-gray-500 hover:text-red-400">
+                    <div className="flex justify-end sm:justify-center px-2">
+                      <button onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))} className="p-2 text-gray-600 hover:text-red-400">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ))}
 
-                {/* ADD NEW ITEM ROW */}
-                <div className="p-4 sm:p-0 bg-emerald-500/5 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center">
+                {/* ADD NEW ITEM ROW (Keyboard & Error Support) */}
+                <div className={`p-4 sm:p-0 transition-colors duration-300 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center ${lineItemError ? 'bg-red-500/10' : 'bg-emerald-500/5'}`}>
                   <div className="sm:px-6">
                     <input 
                       value={newDesc} 
-                      onChange={e => {setNewDesc(e.target.value); setAddingItem(true);}} 
-                      placeholder="+ Add item description..." 
-                      className="w-full bg-transparent border-none text-emerald-400 font-black text-sm py-4 focus:ring-0 placeholder:text-emerald-900" 
+                      onChange={e => {setNewDesc(e.target.value); setLineItemError('');}} 
+                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
+                      placeholder="Enter description..." 
+                      className="w-full bg-transparent border-none text-white font-black text-sm py-4 focus:ring-0 placeholder:text-gray-600" 
                     />
                   </div>
                   <div className="sm:border-l border-white/10 sm:px-4 flex items-center">
-                    <span className="text-emerald-800 mr-1">$</span>
+                    <span className="text-emerald-500 mr-1 text-xs">$</span>
                     <input 
                       type="number" 
                       value={newPrice} 
-                      onChange={e => setNewPrice(e.target.value)} 
+                      onChange={e => {setNewPrice(e.target.value); setLineItemError('');}} 
+                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
                       placeholder="0.00"
                       className={`w-full bg-transparent border-none text-white sm:text-right font-black text-sm focus:ring-0 ${noSpinners}`} 
                     />
@@ -497,27 +492,40 @@ useEffect(() => {
                       type="number" 
                       value={newQty} 
                       onChange={e => setNewQty(e.target.value)} 
+                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
                       className={`w-full bg-transparent border-none text-white sm:text-right font-bold text-sm focus:ring-0 ${noSpinners}`} 
                     />
                   </div>
-                  <div className="hidden sm:block sm:border-l border-white/10 px-4 text-right text-emerald-400/50 font-black">
+                  <div className="hidden sm:block sm:border-l border-white/10 px-4 text-right text-emerald-400 font-black">
                     {newPrice ? fmt(parseFloat(newPrice) * parseFloat(newQty)) : '—'}
                   </div>
                   <div className="flex justify-end p-2 sm:p-0">
-                    <button onClick={addLineItem} className="bg-emerald-600 text-white p-2 rounded-lg"><Plus className="w-4 h-4" /></button>
+                    <button onClick={addLineItem} className="bg-emerald-600 text-white p-2 rounded-lg active:scale-90 transition"><Plus className="w-4 h-4" /></button>
                   </div>
                 </div>
               </div>
 
               {/* FOOTER */}
               <div className="p-6 bg-[#020617] border-t border-white/10">
+                {lineItemError && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-400 text-xs font-black rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" /> {lineItemError}
+                  </motion.div>
+                )}
+                
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-xs font-black uppercase tracking-widest text-gray-500">Total Template</span>
-                  <span className="text-2xl font-black text-white text-emerald-400">{fmt(quoteEditorTotal)}</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-gray-500">Total</span>
+                  <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
                 </div>
+                
                 <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => setQuoteEditorOpen(false)} className="py-4 bg-white/5 text-gray-400 rounded-2xl font-black uppercase text-xs tracking-widest">Close</button>
-                  <button onClick={saveQuoteTemplate} className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-900/40">Save Template</button>
+                  <button onClick={() => setQuoteEditorOpen(false)} className="py-4 bg-white/5 text-gray-400 rounded-2xl font-black uppercase text-xs">Close</button>
+                  <button 
+                    onClick={saveQuoteTemplate}
+                    className={`py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all duration-300 ${lineItemError ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-900/40'}`}
+                  >
+                    Save Template
+                  </button>
                 </div>
               </div>
             </motion.div>
