@@ -12,7 +12,7 @@ import { CATEGORY_MAP } from '@/lib/formCategories';
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 type TaskTemplate = { id: string; label: string; order: number };
-type LineItem = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
+type LineItem = { id: string; description: string; quantity: string; unitPrice: string; amount: number };
 type QuoteTemplate = { id: string; category: string; items: LineItem[]; total: number };
 type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
 
@@ -25,6 +25,16 @@ const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
+
+const getAmount = (item: LineItem) => {
+  const qty = parseFloat(item.quantity || '1');
+  const price = parseFloat(item.unitPrice || '0');
+
+  const safeQty = isNaN(qty) ? 1 : qty;
+  const safePrice = isNaN(price) ? 0 : price;
+
+  return Number((safeQty * safePrice).toFixed(2));
+};
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
@@ -134,21 +144,24 @@ export default function CategoriesTab({
     setUseDefaults(false); setTaskEditorCatIndex(null); markDirty();
   };
 
- const openQuoteEditor = (catValue: string) => {
+const openQuoteEditor = (catValue: string) => {
   const existing = quoteTemplates.find(t => t.category === catValue);
-  console.log('🔍 existing:', JSON.stringify(existing));  
-
+  console.log('items raw:', existing?.items.map(i => ({ unitPrice: i.unitPrice, type: typeof i.unitPrice })));
 
     setQuoteEditorCatValue(catValue);
 setEditingLineItems(
   existing
-    ? existing.items.map((item, i) => ({
-        ...item,
-        id: `item_${Date.now() + i}_${i}`,
-        quantity: Number(item.quantity) || 1,
-        unitPrice: Number(item.unitPrice) || 0,
-        amount: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0),
-      }))
+    ? existing.items.map((item: any, i: number) => {
+        const qty = parseFloat(String(item.quantity ?? item.qty ?? 1)) || 1;
+        const price = parseFloat(String(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0)) || 0;
+        return {
+          id: `item_${Date.now() + i}_${i}`,
+          description: item.description || item.label || '',
+          quantity: String(qty),
+unitPrice: price ? String(price) : '',
+amount: calcAmount(qty, price),
+        };
+      })
     : []
 );
     setEditingQuoteId(existing?.id || null);
@@ -156,40 +169,57 @@ setEditingLineItems(
     setLineItemError(''); setQuoteError('');
   };
 
-  const addLineItem = () => {
-    if (!newLineItem.description.trim()) { setLineItemError('Enter a description.'); return; }
-    if (!newLineItem.unitPrice || isNaN(parseFloat(newLineItem.unitPrice))) { setLineItemError('Enter a valid price.'); return; }
-    const qty = parseFloat(newLineItem.quantity) || 1;
-    const price = parseFloat(newLineItem.unitPrice);
-    setEditingLineItems(prev => [...prev, { id: `item_${Date.now()}`, description: newLineItem.description.trim(), quantity: qty, unitPrice: price, amount: qty * price }]);
-    setNewLineItem({ description: '', quantity: '1', unitPrice: '' }); setLineItemError('');
-  };
+ const addLineItem = () => {
+  if (!newLineItem.description.trim()) { setLineItemError('Enter a description.'); return; }
+  if (!newLineItem.unitPrice || isNaN(parseFloat(newLineItem.unitPrice))) { setLineItemError('Enter a valid price.'); return; }
+  const qty = parseFloat(newLineItem.quantity) || 1;
+  const price = parseFloat(newLineItem.unitPrice);
+  setEditingLineItems(prev => [
+    ...prev,
+    {
+      id: `item_${Date.now()}`,
+      description: newLineItem.description.trim(),
+      quantity: String(qty),
+      unitPrice: String(price),
+      amount: calcAmount(qty, price),
+    }
+  ]);
+  setNewLineItem({ description: '', quantity: '1', unitPrice: '' });
+  setLineItemError('');
+};
 
-  const updateLineItem = (id: string, field: string, value: any) => {
-    setEditingLineItems(prev =>
-      prev.map(item => {
-        if (item.id !== id) return item;
-        const updated = { ...item, [field]: field === 'description' ? value : parseFloat(value) || 0 };
-        if (field === 'quantity' || field === 'unitPrice') updated.amount = (updated.quantity || 1) * (updated.unitPrice || 0);
-        return updated;
-      })
-    );
-  };
+const calcAmount = (q: any, p: any) => {
+  const qty = parseFloat(q);
+  const price = parseFloat(p);
+  return (isNaN(qty) ? 1 : qty) * (isNaN(price) ? 0 : price);
+};
+
+
+ // AFTER — use `updated` not `item` so the new value is included
+const updateLineItem = (id: string, field: string, value: any) => {
+  setEditingLineItems(prev =>
+    prev.map(item => {
+      if (item.id !== id) return item;
+      const updated = { ...item, [field]: value };
+      const qty = parseFloat(String(updated.quantity).replace(/[^0-9.]/g, '')) || 1;
+      const price = parseFloat(String(updated.unitPrice).replace(/[^0-9.]/g, '')) || 0;
+      updated.amount = qty * price;
+      return updated;
+    })
+  );
+};
 
   const saveQuoteTemplate = async () => {
     if (newLineItem.description.trim() || newLineItem.unitPrice) { setLineItemError('Click + to add this item before saving.'); return; }
     if (editingLineItems.length === 0) { setQuoteError('Add at least one line item to this template.'); return; }
     setQuoteSaving(true); setQuoteError('');
-   const itemsWithAmounts = editingLineItems.map(item => {
-  const qty = Number(item.quantity) || 1;
-  const price = Number(item.unitPrice) || (item.amount ? item.amount / qty : 0);
-  return {
-    ...item,
-    quantity: qty,
-    unitPrice: price,
-    amount: qty * price,
-  };
+// AFTER
+const itemsWithAmounts = editingLineItems.map(item => {
+  const qty = parseFloat(String(item.quantity).replace(/[^0-9.]/g, '')) || 1;
+  const price = parseFloat(String(item.unitPrice).replace(/[^0-9.]/g, '')) || 0;
+  return { ...item, quantity: String(qty), unitPrice: String(price), amount: qty * price };
 });
+
 const total = itemsWithAmounts.reduce((s, i) => s + i.amount, 0);
 const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()}`, category: quoteEditorCatValue!, items: itemsWithAmounts, total };
     try {
@@ -224,72 +254,39 @@ const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()
   };
 
   const activeQuoteEditorCat = categories.find(c => c.value === quoteEditorCatValue);
-  const quoteEditorTotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-
+const quoteEditorTotal = editingLineItems.reduce(
+  (sum, item) => sum + getAmount(item),
+  0
+);
   return (
     <div className="max-w-4xl mx-auto pb-32 px-2 space-y-6">
 
       {/* PAGE HEADER — untouched */}
-      <div className="pt-2">
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Service Categories</h2>
-        <p className="text-sm text-gray-500 mt-1 leading-relaxed max-w-lg">
-          When a new project is submitted, the system can automatically pre-load the right tasks and pricing — based on the category selected.
-        </p>
-      </div>
+<div className="pt-2 pb-2">
+  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Service Categories</h2>
+  <p className="text-sm text-gray-400 mt-1 leading-relaxed max-w-lg">
+    Auto-load tasks and pricing when a project category is selected.
+  </p>
+</div>
 
       {/* HOW IT WORKS BANNER — untouched */}
 {/* ── UPDATED STEALTH WORKFLOW BANNER ── */}
-<div className="relative group mb-8 overflow-hidden rounded-[2rem] border border-white/5 bg-[#0B0F1A] p-px shadow-2xl">
-  {/* Animated Gradient Border Effect */}
-  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-transparent to-emerald-500/20 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
-  
-  <div className="relative bg-[#0F172A] rounded-[calc(2rem-1px)] p-6 flex items-start gap-6">
-    {/* Icon with Neon Glow */}
-    <div className="relative shrink-0">
-      <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
-      <div className="relative w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center shadow-inner">
-        <div className="w-2 h-2 rounded-full bg-indigo-500 absolute top-3 right-3 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-        <Info className="w-7 h-7 text-indigo-400" />
-      </div>
-    </div>
-
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-          Automation Guide
-        </span>
-        <div className="h-px flex-1 bg-gradient-to-r from-indigo-500/20 to-transparent" />
-      </div>
-      
-      <p className="text-sm leading-relaxed text-gray-400 max-w-2xl">
-        Add or delete categories to match your trades. Attach 
-        <span className="text-white font-bold px-1.5 py-0.5 bg-indigo-500/10 rounded-md border border-indigo-500/20 mx-1">
-          Task Checklists
-        </span> 
-        or 
-        <span className="text-white font-bold px-1.5 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/20 mx-1">
-          Pricing Templates
-        </span> 
-        to instantly pre-populate new projects when a category is selected.
-      </p>
-    </div>
+<div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5 flex items-start gap-4 mb-8">
+  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+    <Info className="w-5 h-5 text-indigo-500" />
+  </div>
+  <div>
+    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Automation Guide</span>
+    <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+      Add or delete categories to match your trades. Attach{' '}
+      <span className="font-bold text-indigo-600">Task Checklists</span> or{' '}
+      <span className="font-bold text-emerald-600">Pricing Templates</span>{' '}
+      to auto-populate new projects when a category is selected.
+    </p>
   </div>
 </div>
 
-      {/* UNSAVED CHANGES BANNER — untouched */}
-      {isDirty && (
-        <div className="sticky top-0 z-30 -mx-2">
-          <div className="bg-amber-500 text-white px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span className="text-sm font-bold">You have unsaved changes to your categories.</span>
-            </div>
-            <button onClick={handleSave} disabled={saving} className="bg-white text-amber-600 font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl shrink-0 active:scale-95 transition disabled:opacity-60">
-              {saving ? 'Saving...' : 'Save Now'}
-            </button>
-          </div>
-        </div>
-      )}
+    
 
       {/* STATUS — untouched */}
       {saveSuccess && <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl font-bold text-sm">Categories saved successfully.</div>}
@@ -315,9 +312,14 @@ const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()
               </div>
             </motion.div>
           ) : (
-            <motion.button key="trigger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddForm(true)} className="w-full py-5 flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-600 font-bold text-sm transition">
-              <Plus className="w-4 h-4" /> Add new category
-            </motion.button>
+<motion.button
+  key="trigger"
+  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  onClick={() => setShowAddForm(true)}
+  className="w-full py-5 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm rounded-2xl transition active:scale-95 shadow-lg shadow-indigo-100"
+>
+  <Plus className="w-4 h-4" /> Add New Category
+</motion.button>
           )}
         </AnimatePresence>
       </div>
@@ -329,12 +331,12 @@ const templateData: QuoteTemplate = { id: editingQuoteId || `custom_${Date.now()
             const taskCount = cat.task_templates?.length || 0;
             const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
             return (
-              <motion.div
+// AFTER
+<motion.div
   key={cat.value}
-  layout
   initial={{ opacity: 0, y: 10 }}
   animate={{ opacity: 1, y: 0 }}
-  className="group relative bg-[#111827] border border-gray-800 rounded-[2rem] p-6 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(79,70,229,0.1)] transition-all duration-300"
+  className="group relative bg-[#111827] border border-gray-800 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(79,70,229,0.08)] transition-all duration-300"
 >
   {/* Card Top: Icon & Delete */}
   <div className="flex items-start justify-between mb-5">
@@ -558,10 +560,10 @@ className="bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh]
                         <input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="bg-transparent border-none font-medium text-gray-900 focus:ring-0 text-sm w-full outline-none" placeholder="Description" />
                         <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                           <span className="pl-2 text-gray-400 text-sm font-bold">$</span>
-<input type="text" inputMode="decimal" value={item.unitPrice || ''} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className="flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none" />
+<input type="text" inputMode="decimal" value={item.unitPrice ?? ''} onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)} className="flex-1 bg-transparent border-none text-right font-bold text-gray-900 text-sm pr-2 focus:ring-0 outline-none" />
                    </div>
                         <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-1.5 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all ${noSpinners}`} />
-<span className="text-right font-black text-emerald-600 text-sm">{fmt(item.amount || 0)}
+<span className="text-right font-black text-emerald-600 text-sm">{fmt(getAmount(item))}
 </span>
                         <button onClick={() => setEditingLineItems(prev => prev.filter(i => i.id !== item.id))} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all flex justify-center">
                           <X className="w-4 h-4" />
@@ -583,7 +585,10 @@ className="bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2rem] h-[92vh]
                             <span className="text-[10px] text-gray-400 font-bold">Qty</span>
                             <input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', e.target.value)} className={`w-12 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-900 text-sm py-2 focus:ring-0 outline-none ${noSpinners}`} />
                           </div>
-<span className="font-black text-emerald-600 text-sm ml-auto">{fmt((item.quantity || 1) * (item.unitPrice || 0))}</span>
+<span className="font-black text-emerald-600 text-sm ml-auto">{fmt(
+  (parseFloat(item.quantity || '1') || 1) *
+  (parseFloat(item.unitPrice || '0') || 0)
+)}</span>
                         </div>
                       </div>
                     </motion.div>
