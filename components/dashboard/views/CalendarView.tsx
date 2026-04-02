@@ -132,7 +132,7 @@ const textDay = isDark ? 'text-white' : 'text-gray-400';
               className={`min-h-[52px] sm:min-h-[100px] border-r border-b p-1 sm:p-2 transition ${border} ${cellBg} ${isLastCol ? 'border-r-0' : ''}`}
             >
               {/* Day number */}
-              <div className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full text-[10px] sm:text-xs font-black mb-1${
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full text-[10px] sm:text-xs font-black mb-1 ${
                 todayCell
                   ? 'bg-indigo-600 text-white'
                   : isDark ? 'text-white' : 'text-gray-500'
@@ -152,9 +152,7 @@ const textDay = isDark ? 'text-white' : 'text-gray-400';
                       className="w-full text-left px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold truncate transition hover:opacity-80"
 style={{ backgroundColor: `${hex}30`, color: isDark ? '#ffffff' : hex }}
                     >
-                      <span className="hidden sm:inline">
-                        {lead.scheduled_time ? formatTime12h(lead.scheduled_time) + ' ' : ''}
-                      </span>
+                     
 <span className="hidden sm:inline">
   {lead.scheduled_time ? formatTime12h(lead.scheduled_time) + ' ' : ''}
   {lead.name.split(' ')[0]}
@@ -174,57 +172,7 @@ style={{ backgroundColor: `${hex}30`, color: isDark ? '#ffffff' : hex }}
         })}
       </div>
 
-      {/* Scheduled jobs list */}
-      {scheduledLeads.length > 0 && (
-        <div className={`border-t ${border}`}>
-          <div className={`px-5 py-3 border-b ${border}`}>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-              All Scheduled Jobs ({scheduledLeads.length})
-            </p>
-          </div>
-          <div className="divide-y" style={{ borderColor: isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6' }}>
-            {scheduledLeads
-              .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
-              .map(lead => {
-                const hex = getStatusHex(lead);
-                return (
-                  <button
-                    key={lead.id}
-                    onClick={() => onSelectLead(lead)}
-                    className={`w-full flex items-center gap-3 px-5 py-3 text-left transition ${isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50'}`}
-                  >
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: hex }} />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{lead.name}</p>
-                      <p className={`text-xs truncate ${isDark ? 'text-white/40' : 'text-gray-400'}`}>{lead.category}</p>
-                    </div>
-                    <div className="text-right shrink-0 flex flex-col gap-0.5">
-                      {lead.scheduled_date && (
-                        <p className={`text-xs font-bold flex items-center gap-1 justify-end ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                          <Calendar className="w-3 h-3" />
-                          {formatDateNice(lead.scheduled_date)}
-                        </p>
-                      )}
-                      {lead.scheduled_time && (
-                        <p className={`text-[10px] flex items-center gap-1 justify-end ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                          <Clock className="w-3 h-3" />
-                          {formatTime12h(lead.scheduled_time)}
-                        </p>
-                      )}
-                      {lead.assigned_to && (
-                        <p className={`text-[10px] flex items-center gap-1 justify-end ${isDark ? 'text-white/20' : 'text-gray-300'}`}>
-                          <User className="w-3 h-3" />
-                          {lead.assigned_to}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-          </div>
-        </div>
-      )}
-
+     
       {scheduledLeads.length === 0 && (
         <div className={`px-5 py-10 text-center border-t ${border}`}>
           <Calendar className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-white/10' : 'text-gray-200'}`} />
