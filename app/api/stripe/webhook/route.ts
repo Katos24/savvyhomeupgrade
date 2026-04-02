@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { headers } from 'next/headers';
 import {
+  sendWelcomeEmail,
   sendSubscriptionCancelledEmail,
   sendPaymentFailedEmail,
   sendCancellationScheduledEmail,
@@ -38,13 +39,14 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const companyId = session.metadata?.companyId;
-      const plan = session.metadata?.plan || 'starter';
+      const plan = (session.metadata?.plan || 'starter') as 'starter' | 'basic' | 'pro';
 
       if (!companyId) {
         console.error('No companyId in session metadata');
         break;
       }
 
+      // Update subscription status
       await sql`
         UPDATE companies 
         SET 
@@ -55,6 +57,31 @@ export async function POST(req: NextRequest) {
           plan_tier = ${plan}
         WHERE id = ${parseInt(companyId)}
       `;
+
+      // ── Send welcome email NOW (after payment confirmed) ──
+      try {
+        const company = await sql`
+          SELECT name, email, slug FROM companies
+          WHERE id = ${parseInt(companyId)}
+          LIMIT 1
+        `;
+
+        if (company[0]) {
+          await sendWelcomeEmail({
+            userEmail:   company[0].email,
+            userName:    company[0].name,
+            companyName: company[0].name,
+            companySlug: company[0].slug,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
+            formUrl:      `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}`,
+            plan,
+          });
+          console.log('✅ Welcome email sent after payment for:', company[0].email);
+        }
+      } catch (emailError) {
+        // Don't fail the webhook if email fails — subscription is already active
+        console.error('Failed to send welcome email from webhook:', emailError);
+      }
 
       break;
     }
@@ -69,8 +96,6 @@ export async function POST(req: NextRequest) {
       if (priceId === process.env.STRIPE_BASIC_PRICE_ID)   planTier = 'basic';
       if (priceId === process.env.STRIPE_PRO_PRICE_ID)     planTier = 'pro';
 
-      // If a downgrade schedule is still pending, don't apply the new plan yet —
-      // the schedule will fire at period end and trigger another updated event
       const hasActiveSchedule = !!subscription.schedule;
       if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
         planTier = null;
@@ -87,7 +112,6 @@ export async function POST(req: NextRequest) {
         ? new Date(subscription.cancel_at * 1000)
         : null;
 
-      // ── 1. DB write first ──
       if (planTier) {
         await sql`
           UPDATE companies
@@ -114,13 +138,9 @@ export async function POST(req: NextRequest) {
         `;
       }
 
-      // ── 2. Plan change email after DB is updated ──
-      // Only fires when the price actually changed (e.g. scheduled downgrade executed,
-      // or an upgrade was applied). Skipped for status-only updates.
       if (planTier) {
         try {
           const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
-          const PLAN_ORDER = ['starter', 'basic', 'pro'];
           const previousPlan =
             previousPriceId === process.env.STRIPE_STARTER_PRICE_ID ? 'starter' :
             previousPriceId === process.env.STRIPE_BASIC_PRICE_ID   ? 'basic'   :
@@ -151,7 +171,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // ── 3. Cancellation scheduled email ──
       if (isCancelling) {
         try {
           const company = await sql`

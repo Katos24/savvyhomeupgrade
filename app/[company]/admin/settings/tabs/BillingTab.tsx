@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard, Calendar, CheckCircle, AlertCircle, Sparkles,
-  Zap, ArrowRight, Lock, TrendingUp, Clock
+  Zap, ArrowRight, Lock, TrendingUp, Clock, X
 } from 'lucide-react';
 import { PLAN_CONFIG } from '@/lib/permissions';
 
@@ -12,18 +13,26 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
   const [changingPlan, setChangingPlan] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activePlan, setActivePlan] = useState<'starter' | 'basic' | 'pro'>(
-    (company.plan_tier || 'starter') as 'starter' | 'basic' | 'pro'
+  
+  // Modal State
+  const [confirmModal, setConfirmModal] = useState<{ 
+    isOpen: boolean; 
+    plan: 'basic' | 'pro' | null 
+  }>({ isOpen: false, plan: null });
+
+  const [activePlan, setActivePlan] = useState<'basic' | 'pro'>(
+    (company.plan_tier === 'pro' ? 'pro' : 'basic')
   );
+  
   const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
     company.pending_downgrade_at
       ? { periodEnd: Math.floor(new Date(company.pending_downgrade_at).getTime() / 1000) }
       : null
   );
 
-  const planConfig = PLAN_CONFIG[activePlan] || PLAN_CONFIG.starter;
-  const isActive = ['active', 'trialing'].includes(company.subscription_status);
   const isTrialing = company.subscription_status === 'trialing';
+
+  // --- ACTIONS ---
 
   async function handleManageSubscription() {
     setLoading(true);
@@ -35,34 +44,19 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         body: JSON.stringify({ companyId: company.id }),
       });
       const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError('Unable to open billing portal. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      setError('Error opening billing portal. Please try again.');
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setError('Unable to open billing portal.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleChangePlan(newPlan: 'starter' | 'basic' | 'pro') {
-    if (changingPlan) return;
-    if (newPlan === activePlan && !pendingDowngrade) return;
+  async function executePlanChange() {
+    const newPlan = confirmModal.plan;
+    if (!newPlan || isTrialing) return;
 
-    const ORDER = ['starter', 'basic', 'pro'] as const;
-    const isUpgrade = ORDER.indexOf(newPlan) > ORDER.indexOf(activePlan);
-
-    const confirmed = window.confirm(
-      isUpgrade
-        ? `Upgrade to ${PLAN_CONFIG[newPlan].label} ($${PLAN_CONFIG[newPlan].price}/mo)? The price difference will be prorated on your next invoice.`
-        : `Downgrade to ${PLAN_CONFIG[newPlan].label} ($${PLAN_CONFIG[newPlan].price}/mo)? You'll keep your current access until the end of your billing period.`
-    );
-
-    if (!confirmed) return;
-
+    setConfirmModal({ isOpen: false, plan: null });
     setChangingPlan(true);
     setError('');
     setSuccess('');
@@ -77,335 +71,206 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to change plan');
 
-      if (isUpgrade) {
-        setActivePlan(newPlan);
+      if (newPlan === 'pro') {
+        setActivePlan('pro');
         setPendingDowngrade(null);
-        setSuccess(`Upgraded to ${PLAN_CONFIG[newPlan].label}! Your new features are available now.`);
+        setSuccess(`Upgraded to Pro! Premium features are now active.`);
       } else {
         setPendingDowngrade({ periodEnd: data.periodEnd });
-        setSuccess("Downgrade scheduled. You'll keep your current access until the end of your billing period.");
+        setSuccess("Downgrade scheduled for end of cycle.");
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Something went wrong.');
     } finally {
       setChangingPlan(false);
     }
   }
 
-  const getStatusInfo = () => {
-    switch (company.subscription_status) {
-      case 'active':
-        return { icon: CheckCircle, text: 'Active', color: 'text-green-700', iconColor: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' };
-      case 'trialing':
-        return { icon: Sparkles, text: 'Free Trial', color: 'text-blue-700', iconColor: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' };
-      case 'past_due':
-        return { icon: AlertCircle, text: 'Payment Due', color: 'text-amber-700', iconColor: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' };
-      case 'canceled':
-        return { icon: AlertCircle, text: 'Canceled', color: 'text-red-700', iconColor: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
-      default:
-        return { icon: AlertCircle, text: 'Inactive', color: 'text-gray-700', iconColor: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200' };
-    }
-  };
-
-  const statusInfo = getStatusInfo();
-  const StatusIcon = statusInfo.icon;
-
   if (currentUser.role !== 'owner') {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-slate-400" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Owner Access Only</h3>
-          <p className="text-slate-600">Only the company owner can access billing and subscription settings.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <Lock className="w-12 h-12 text-slate-300 mb-4" />
+        <h3 className="text-xl font-black text-slate-900">Owner Access Only</h3>
       </div>
     );
   }
 
+  const statusInfo = {
+    active: { icon: CheckCircle, text: 'Active', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    past_due: { icon: AlertCircle, text: 'Past Due', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
+  }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || { icon: AlertCircle, text: 'Inactive', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' };
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Billing & Subscription</h2>
-        <p className="text-sm sm:text-base text-slate-600">Manage your subscription, payment methods, and billing history.</p>
+    <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
+      
+      {/* ── STATUS CARDS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className={`md:col-span-2 p-6 rounded-[2.5rem] border ${statusInfo.border} ${statusInfo.bg} flex items-center justify-between`}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+              <statusInfo.icon className={`w-6 h-6 ${statusInfo.color}`} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subscription</p>
+              <p className={`text-xl font-black ${statusInfo.color}`}>{statusInfo.text}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleManageSubscription}
+            disabled={loading}
+            className="px-5 py-3 bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-200 transition-all active:scale-95 font-black text-xs uppercase tracking-wider"
+          >
+            {loading ? '...' : 'Manage'}
+          </button>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="p-6 rounded-[2.5rem] border border-slate-200 bg-white flex flex-col justify-center"
+        >
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cycle</p>
+          <p className="text-xl font-black text-slate-900 mt-1">Monthly</p>
+        </motion.div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 text-lg leading-none">&times;</button>
-        </div>
+      {/* ── TRIAL BANNER ── */}
+      {isTrialing && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="p-6 rounded-[2.5rem] bg-slate-950 text-white flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 blur-[80px]" />
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/40">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <div className="text-center md:text-left flex-1">
+            <p className="font-black text-lg">Trialing Pro Features</p>
+            <p className="text-slate-400 text-sm">Ends {new Date(company.trial_ends_at).toLocaleDateString()}. Changes disabled during trial.</p>
+          </div>
+          <button 
+            onClick={handleManageSubscription} 
+            className="w-full md:w-auto px-8 py-4 bg-white text-slate-950 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg"
+          >
+            Manage Billing
+          </button>
+        </motion.div>
       )}
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg flex items-center gap-2 text-sm">
-          <CheckCircle className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1">{success}</span>
-          <button onClick={() => setSuccess('')} className="text-green-500 hover:text-green-700 text-lg leading-none">&times;</button>
-        </div>
-      )}
+      {/* ── FEEDBACK MESSAGES ── */}
+      <AnimatePresence>
+        {error && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-rose-50 text-rose-700 p-4 rounded-2xl text-sm font-bold border border-rose-100 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" /> {error}
+          </motion.div>
+        )}
+        {success && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl text-sm font-bold border border-emerald-100 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" /> {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Pending downgrade banner */}
-      {pendingDowngrade && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
-          <Clock className="w-5 h-5 flex-shrink-0 text-amber-600" />
-          <span className="flex-1">
-            Your plan will switch on{' '}
-            <strong>
-              {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', {
-                month: 'long', day: 'numeric', year: 'numeric'
-              })}
-            </strong>
-            . You have full access until then.
-          </span>
-        </div>
-      )}
+      {/* ── PLAN SELECTION ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        {(['basic', 'pro'] as const).map((planKey, idx) => {
+          const config = PLAN_CONFIG[planKey];
+          const isCurrent = planKey === activePlan && !pendingDowngrade;
+          const isPro = planKey === 'pro';
 
-      {/* Main Billing Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-
-        {/* Status Banner */}
-        <div className={`${statusInfo.bg} ${statusInfo.border} border-b px-4 sm:px-6 py-4`}>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/60 flex items-center justify-center">
-                <StatusIcon className={`w-5 h-5 ${statusInfo.iconColor}`} />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium">Subscription Status</p>
-                <p className={`text-lg sm:text-xl font-bold ${statusInfo.color}`}>{statusInfo.text}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleManageSubscription}
-              disabled={loading}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm"
+          return (
+            <motion.div
+              key={planKey}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
+              className={`relative p-8 rounded-[3rem] border-2 transition-all duration-300 flex flex-col ${
+                isCurrent ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 bg-white'
+              } ${isTrialing && !isCurrent ? 'opacity-60 grayscale-[0.3]' : ''}`}
             >
-              <CreditCard className="w-4 h-4" />
-              {loading ? 'Loading...' : 'Manage Billing'}
-            </button>
-          </div>
-        </div>
-
-        {/* Subscription Details */}
-        <div className="p-4 sm:p-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-            {/* Plan Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                {activePlan === 'pro'
-                  ? <Sparkles className="w-5 h-5 text-indigo-600" />
-                  : activePlan === 'basic'
-                  ? <Zap className="w-5 h-5 text-blue-600" />
-                  : <Zap className="w-5 h-5 text-slate-500" />}
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Current Plan</p>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">{planConfig.label}</p>
-              <p className="text-slate-600 font-semibold">
-                ${planConfig.price}<span className="text-sm font-normal">/month</span>
-              </p>
-              {pendingDowngrade && (
-                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Switching on {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
+              {isPro && (
+                <div className="absolute -top-3 right-10 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
+                  PRO FEATURES
+                </div>
               )}
-            </div>
 
-            {/* Billing Period */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-5 h-5 text-purple-600" />
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Billing Period</p>
-              </div>
-              <p className="text-lg sm:text-xl font-bold text-slate-900">Monthly</p>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">Auto-renews each month</p>
-            </div>
-
-            {/* Trial End Date */}
-            {company.trial_ends_at && isTrialing && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-5 h-5 text-green-600" />
-                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Trial Ends</p>
+              <div className="flex justify-between items-start mb-6">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPro ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                  {isPro ? <Sparkles className="w-7 h-7 text-indigo-600" /> : <Zap className="w-7 h-7 text-slate-600" />}
                 </div>
-                <p className="text-lg sm:text-xl font-bold text-slate-900">
-                  {new Date(company.trial_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                  {Math.ceil((new Date(company.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days remaining
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Trial Lock Message */}
-          {isTrialing && (
-            <div className="border-t border-slate-200 pt-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-start gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-blue-900 mb-1">You're on a free trial</p>
-                  <p className="text-sm text-blue-700">
-                    You have full access until your trial ends on{' '}
-                    <strong>
-                      {new Date(company.trial_ends_at).toLocaleDateString('en-US', {
-                        month: 'long', day: 'numeric', year: 'numeric'
-                      })}
-                    </strong>
-                    . You can change your plan after your trial converts to a paid subscription.
-                  </p>
+                <div className="text-right">
+                  <p className="text-4xl font-black text-slate-900">${config.price}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">/ month</p>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Plan Switcher — hidden during trial */}
-          {isActive && !isTrialing && (
-            <div className="border-t border-slate-200 pt-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Change Plan</h3>
-              {/* 3 cols on all screen sizes, compact cards */}
-              <div className="grid grid-cols-3 gap-3">
-                {(['starter', 'basic', 'pro'] as const).map((planKey) => {
-                  const config = PLAN_CONFIG[planKey];
-                  const ORDER = ['starter', 'basic', 'pro'] as const;
-                  const isCurrent = planKey === activePlan && !pendingDowngrade;
-                  const isPendingDowngradePlan = ORDER.indexOf(planKey) < ORDER.indexOf(activePlan) && !!pendingDowngrade;
-                  const isUpgrade = ORDER.indexOf(planKey) > ORDER.indexOf(activePlan);
+              <h4 className="text-2xl font-black text-slate-900 mb-4">{config.label}</h4>
+              <ul className="space-y-4 mb-10 flex-1">
+                {config.features.map((f) => (
+                  <li key={f} className="flex items-start gap-3 text-sm text-slate-600 font-bold leading-tight">
+                    <CheckCircle className={`w-5 h-5 shrink-0 ${isPro ? 'text-indigo-500' : 'text-slate-400'}`} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
 
-                  return (
-                    <div
-                      key={planKey}
-                      className={`relative rounded-xl border-2 p-4 transition flex flex-col ${
-                        isCurrent
-                          ? 'border-blue-500 bg-blue-50/50'
-                          : isPendingDowngradePlan
-                          ? 'border-amber-300 bg-amber-50/30'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      {isCurrent && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                          CURRENT
-                        </span>
-                      )}
-                      {isPendingDowngradePlan && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                          PENDING
-                        </span>
-                      )}
-                      {planKey === 'pro' && !isCurrent && !pendingDowngrade && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                          POPULAR
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-1.5 mb-1">
-                        {planKey === 'pro'
-                          ? <Sparkles className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                          : planKey === 'basic'
-                          ? <Zap className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          : <Zap className="w-4 h-4 text-slate-400 flex-shrink-0" />}
-                        <h4 className="text-sm font-bold text-slate-900">{config.label}</h4>
-                      </div>
-
-                      <div className="flex items-baseline gap-0.5 mb-3">
-                        <span className="text-xl font-extrabold text-slate-900">${config.price}</span>
-                        <span className="text-slate-500 text-xs">/mo</span>
-                      </div>
-
-                      <ul className="space-y-1 mb-4 flex-1">
-                        {config.features.slice(0, 4).map((f) => (
-                          <li key={f} className="flex items-start gap-1.5 text-xs text-slate-600">
-                            <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="leading-tight">{f}</span>
-                          </li>
-                        ))}
-                        {config.features.length > 4 && (
-                          <li className="text-xs text-slate-400 pl-4.5">
-                            +{config.features.length - 4} more
-                          </li>
-                        )}
-                      </ul>
-
-                      {/* Button area */}
-                      {isPendingDowngradePlan ? (
-                        <div className="w-full py-2 px-3 rounded-lg text-xs bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center gap-1">
-                          <Clock className="w-3 h-3 flex-shrink-0" />
-                          Starts {new Date(pendingDowngrade!.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </div>
-                      ) : planKey !== 'starter' && planKey === activePlan.valueOf() && pendingDowngrade ? (
-                        <button
-                          onClick={() => handleChangePlan(planKey)}
-                          disabled={changingPlan}
-                          className="w-full py-2 px-3 rounded-lg font-semibold text-xs transition flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-50"
-                        >
-                          {changingPlan ? 'Processing...' : 'Keep Plan'}
-                        </button>
-                      ) : !isCurrent ? (
-                        <button
-                          onClick={() => handleChangePlan(planKey)}
-                          disabled={changingPlan}
-                          className={`w-full py-2 px-3 rounded-lg font-semibold text-xs transition flex items-center justify-center gap-1 ${
-                            isUpgrade
-                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {changingPlan ? 'Processing...' : isUpgrade ? (
-                            <><TrendingUp className="w-3 h-3" /> Upgrade</>
-                          ) : (
-                            'Switch'
-                          )}
-                        </button>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-slate-500 mt-3">
-                Upgrades take effect immediately and are prorated. Downgrades take effect at the end of your current billing period.
-              </p>
-            </div>
-          )}
-
-          {/* Features List */}
-          <div className="border-t border-slate-200 pt-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">{planConfig.label} Plan Features</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {planConfig.features.map(feature => (
-                <div key={feature} className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="w-3 h-3 text-green-600" />
-                  </div>
-                  <p className="text-sm text-slate-700">{feature}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <CreditCard className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-blue-900 mb-1">Manage Your Subscription</p>
-                <p className="text-xs sm:text-sm text-blue-800">
-                  Click "Manage Billing" to update payment methods, view invoices, or cancel your subscription through our secure billing portal.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+              <button
+                onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
+                disabled={changingPlan || isCurrent || isTrialing}
+                className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
+                  isCurrent 
+                    ? 'bg-indigo-100 text-indigo-600 cursor-default' 
+                    : isTrialing
+                      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                      : isPro 
+                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200' 
+                        : 'bg-slate-900 text-white'
+                }`}
+              >
+                {isCurrent ? 'Current Plan' : isTrialing ? 'Trial Active' : changingPlan ? '...' : `Select ${config.label}`}
+              </button>
+            </motion.div>
+          );
+        })}
       </div>
+
+      {/* ── CUSTOM CONFIRM MODAL ── */}
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setConfirmModal({ isOpen: false, plan: null })}
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100]" 
+            />
+            <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 pointer-events-none">
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl pointer-events-auto border border-slate-100"
+              >
+                <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center ${confirmModal.plan === 'pro' ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                  {confirmModal.plan === 'pro' ? <TrendingUp className="w-8 h-8 text-indigo-600" /> : <Clock className="w-8 h-8 text-slate-600" />}
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">Confirm Change</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
+                  {confirmModal.plan === 'pro' 
+                    ? `Upgrade to Pro ($79.99/mo) and unlock custom forms, photo uploads, and more.`
+                    : `Switching to Basic ($49.99/mo). Your features will change at the end of the current cycle.`}
+                </p>
+                <div className="space-y-3">
+                  <button onClick={executePlanChange} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100">
+                    Confirm Change
+                  </button>
+                  <button onClick={() => setConfirmModal({ isOpen: false, plan: null })} className="w-full py-4 text-slate-400 font-black text-sm">
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

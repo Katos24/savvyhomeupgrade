@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { CATEGORY_MAP, DEFAULT_STATUSES, ADDRESS_CONFIG } from '@/lib/formCategories';
-import { sendWelcomeEmail } from '@/lib/email';
 import { isReservedSlug } from '@/lib/reservedSlugs';
+
+// ── sendWelcomeEmail intentionally removed ──
+// Welcome email now fires from the Stripe webhook after payment confirms,
+// so only paying customers receive it and ghost accounts don't.
 
 export async function POST(req: NextRequest) {
   try {
@@ -112,20 +115,6 @@ export async function POST(req: NextRequest) {
       )
       RETURNING id
     `;
-
-    try {
-      await sendWelcomeEmail({
-        userEmail: email,
-        userName: ownerName,
-        companyName: companyName,
-        companySlug: slug,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard`,
-        formUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
-        plan,
-      });
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-    }
 
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
