@@ -281,8 +281,8 @@ useEffect(() => {
 
  
 
-      {/* ── CATEGORY GRID ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  {/* ── CATEGORY GRID ────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-24"> {/* Added pb-24 to prevent grid from hiding behind the Save bar */}
         {categories.map((cat, index) => {
           const taskCount = cat.task_templates?.length || 0;
           const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
@@ -297,7 +297,10 @@ useEffect(() => {
                 <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center">
                   <Layers className="w-5 h-5 text-indigo-400" />
                 </div>
-                <button onClick={() => setDeleteConfirm({ index, label: cat.label })} className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+                <button 
+                  onClick={() => setDeleteConfirm({ index, label: cat.label })} 
+                  className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -325,17 +328,58 @@ useEffect(() => {
         })}
       </div>
 
-      {/* ── BOTTOM SAVE ──────────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-md border-t border-gray-100 shadow-xl px-4 py-4 sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:shadow-none sm:px-0 sm:py-0">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50 ${isDirty ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-100' : 'bg-gray-100 text-gray-400'}`}
-        >
-          <Save className="w-5 h-5" />
-          {saving ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
-        </button>
-      </div>
+      {/* ── SMART MOBILE SAVE BAR ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {isDirty && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed bottom-0 left-0 right-0 z-[110] bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 pt-4 pb-safe sm:pb-6"
+          >
+            <div className="max-w-4xl mx-auto flex flex-col gap-3">
+              {/* Optional "Unsaved Changes" text for clarity */}
+              <div className="flex items-center justify-center gap-2 text-amber-600">
+                 <AlertCircle className="w-3 h-3 animate-pulse" />
+                 <span className="text-[10px] font-black uppercase tracking-tighter">You have unsaved changes</span>
+              </div>
+              
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-lg shadow-blue-200"
+              >
+                {saving ? (
+                   <div className="flex items-center gap-2">
+                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                     <span>Syncing...</span>
+                   </div>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Save All Categories
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── SUCCESS TOAST (Floats above everything) ─────────────────────── */}
+      <AnimatePresence>
+        {saveSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[120] bg-emerald-600 text-white px-6 py-3 rounded-full font-black text-sm shadow-2xl flex items-center gap-2 whitespace-nowrap"
+          >
+            <CheckSquare className="w-4 h-4" /> Changes Saved Successfully
+          </motion.div>
+        )}
+      </AnimatePresence>
 
  {/* ── TASK EDITOR MODAL ────────────────────────────────────────────── */}
       <AnimatePresence>
