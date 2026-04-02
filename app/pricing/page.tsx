@@ -129,7 +129,7 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-2">
-<span className="text-5xl font-extrabold text-white">$49</span>
+<span className="text-5xl font-extrabold text-white">$49.99</span>
               <span className="text-slate-400 text-sm">/month</span>
             </div>
 
@@ -208,7 +208,7 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-5xl font-extrabold text-white">$99</span>
+              <span className="text-5xl font-extrabold text-white">$79.99</span>
               <span className="text-slate-400 text-sm">/month</span>
             </div>
 

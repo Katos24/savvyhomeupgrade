@@ -1558,7 +1558,7 @@ function Pricing() {
   const plans = [
     {
       name: 'Basic',
-      price: 49,
+      price: 49.99,
       desc: 'Your entire digital storefront and job tracking in one link.',
       highlight: false,
       cta: 'Start 14-Day Free Trial',
@@ -1576,7 +1576,7 @@ function Pricing() {
     },
     {
       name: 'Pro',
-      price: 99,
+      price: 79.99,
       desc: 'The complete AI-powered office for contractors who want to scale.',
       highlight: true,
       cta: 'Go Pro — 14 Days Free',

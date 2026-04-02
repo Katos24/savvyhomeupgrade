@@ -32,7 +32,7 @@ const PLAN_CONFIG = {
   },
   basic: {
     label: 'Basic',
-    price: '$49',
+    price: '$49.99',
     tagline: 'Perfect for getting organized.',
     features: [
       'Unlimited lead tracking',
@@ -47,7 +47,7 @@ const PLAN_CONFIG = {
   },
   pro: {
     label: 'Pro',
-    price: '$99',
+    price: '$79.99',
     tagline: 'The full operating system.',
     features: [
       'Everything in Basic',

@@ -1006,7 +1006,7 @@ return (
     href={`/${companySlug}/admin/settings`}
     className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition"
   >
-    Upgrade to Pro — $99.99/mo
+    Upgrade to Pro — $79.99/mo
   </a>
 </motion.div>
                 )

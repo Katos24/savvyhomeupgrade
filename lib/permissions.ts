@@ -17,7 +17,7 @@
 // Plans:
 //   starter → $29.99 — lead capture only, no workflow tools
 //   basic   → $49.99 — full workflow, no emails, no AI
-//   pro     → $99.99 — everything + one-click emails + AI
+//   pro     → $79.99 — everything + one-click emails + AI
 // ============================================================
 
 // ── Plan types ────────────────────────────────────────────────
@@ -137,8 +137,8 @@ stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
   },
   pro: {
     label:        'Pro',
-    price:        99.99,
-    priceLabel:   '$99.99/mo',
+    price:        79.99,
+    priceLabel:   '$79.99/mo',
     description:  'Automation + AI for serious contractors',
 stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
     features: [

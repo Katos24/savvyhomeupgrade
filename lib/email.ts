@@ -814,7 +814,7 @@ export async function sendWelcomeEmail({
     },
     pro: {
       label: 'Pro',
-      price: '$99.99/mo',
+      price: '$79.99/mo',
       features: ['Everything in Basic', 'One-click emails', 'AI quote generator', 'Daily digest', 'Email outbox'],
       color: '#8b5cf6',
     },

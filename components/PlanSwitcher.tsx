@@ -5,12 +5,12 @@ import { useState } from 'react';
 const PLANS = {
   basic: {
     label: 'Basic',
-    price: '$49',
+    price: '$49.99',
     description: 'Lead tracking, contact forms, CSV export',
   },
   pro: {
     label: 'Pro',
-    price: '$99',
+    price: '$79.99',
     description: 'Everything in Basic + projects, quotes, AI features',
   },
 };
@@ -41,8 +41,8 @@ export default function PlanSwitcher({
     const isUpgrade = newPlan === 'pro';
     const confirmed = window.confirm(
       isUpgrade
-        ? 'Upgrade to Pro ($99/mo)? The price difference will be prorated on your next invoice.'
-        : 'Downgrade to Basic ($49/mo)? You\'ll receive a prorated credit on your next invoice.'
+        ? 'Upgrade to Pro ($79.99/mo)? The price difference will be prorated on your next invoice.'
+        : 'Downgrade to Basic ($49.99/mo)? You\'ll receive a prorated credit on your next invoice.'
     );
 
     if (!confirmed) return;

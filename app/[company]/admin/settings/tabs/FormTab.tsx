@@ -375,7 +375,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                   title="Photo & Video Uploads"
                   description="Let customers attach job site photos — available on Pro."
                   planLabel="Pro"
-                  priceLabel="$99.99/mo"
+                  priceLabel="$79.99/mo"
                   companySlug={company.slug}
                 />
               )}
@@ -402,7 +402,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 title="Custom Questions"
                 description='Ask customers anything — budget range, gate codes, pet info. Available on Pro.'
                 planLabel="Pro"
-                priceLabel="$99.99/mo"
+                priceLabel="$79.99/mo"
                 companySlug={company.slug}
               />
             ) : (

@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const PLAN_PRICE_IDS: Record<string, string> = {
   starter: process.env.STRIPE_STARTER_PRICE_ID || '',
   basic:   process.env.STRIPE_BASIC_PRICE_ID || '',
+  growth:  process.env.STRIPE_GROWTH_PRICE_ID || '',
   pro:     process.env.STRIPE_PRO_PRICE_ID || '',
 };
 

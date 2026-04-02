@@ -14,8 +14,8 @@ type SubscribeButtonProps = {
 
 const PLAN_PRICES: Record<string, string> = {
   starter: '$29/month',
-  basic: '$49/month',
-  pro: '$99/month',
+  basic: '$49.99/month',
+  pro: '$79.99/month',
 };
 
 export default function SubscribeButton({
