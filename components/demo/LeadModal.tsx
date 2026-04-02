@@ -313,41 +313,21 @@ const handleStatusChange = (newStatus: string) => {
             {/* Status chips */}
             <div className="flex items-center gap-2 flex-wrap mb-4">
 <div className="relative">
-  <button
-    onClick={() => setShowStatusMenu(v => !v)}
-    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded transition hover:opacity-80"
+  <select
+    value={lead.status}
+    onChange={e => {
+      const newStatus = e.target.value;
+      onUpdate({ status: newStatus });
+      if (newStatus === 'completed') setShowCompletedPrompt(true);
+    }}
+    className="appearance-none pl-3 pr-7 py-1.5 rounded text-xs font-bold cursor-pointer focus:outline-none"
     style={{ background: `${s.hex}25`, color: s.hex, border: `1px solid ${s.hex}40` }}
   >
-    {statusLabels[lead.status] || 'New'}
-    <ChevronDown className="w-3 h-3" />
-  </button>
-  <AnimatePresence>
-    {showStatusMenu && (
-      <motion.div
-        initial={{ opacity: 0, y: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 4, scale: 0.97 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        className="absolute top-full left-0 mt-1.5 z-50 bg-[#1e1b4b] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
-      >
-        {STATUS_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => handleStatusChange(opt.value)}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold hover:bg-white/10 transition text-left"
-          >
-            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: opt.hex }} />
-            <span style={{ color: lead.status === opt.value ? opt.hex : 'rgba(255,255,255,0.7)' }}>
-              {opt.label}
-            </span>
-            {lead.status === opt.value && (
-              <CheckCircle2 className="w-3 h-3 ml-auto" style={{ color: opt.hex }} />
-            )}
-          </button>
-        ))}
-      </motion.div>
-    )}
-  </AnimatePresence>
+   {STATUS_OPTIONS.filter(opt => opt.value !== 'cancelled').map(opt => (
+  <option key={opt.value} value={opt.value}>{opt.label}</option>
+))}
+  </select>
+  <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: s.hex }} />
 </div>
               {lead.scheduled_date ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded"
