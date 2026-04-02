@@ -397,141 +397,156 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-{/* ── QUOTE EDITOR — SPREADSHEET TABLE ────────────────────────────── */}
-      <AnimatePresence>
-        {quoteEditorOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={spring}
-              className="bg-[#0F172A] w-full max-w-3xl rounded-t-3xl sm:rounded-3xl h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-white/10"
-            >
-              {/* Header */}
-              <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-[#1E293B]">
-                <h3 className="text-xl font-black text-white">Pricing Template</h3>
-                <button onClick={() => setQuoteEditorOpen(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition">
-                  <X className="w-5 h-5 text-white" />
+{/* ── QUOTE EDITOR — RESPONSIVE SPREADSHEET/CARD ────────────────────────────── */}
+<AnimatePresence>
+  {quoteEditorOpen && (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <motion.div
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={spring}
+        className="bg-[#0F172A] w-full max-w-3xl rounded-t-3xl sm:rounded-3xl h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-white/10"
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-[#1E293B] shrink-0">
+          <div>
+            <h3 className="text-lg font-black text-white">Pricing Template</h3>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{activeQuoteEditorCat?.label}</p>
+          </div>
+          <button onClick={() => setQuoteEditorOpen(false)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition">
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        {/* TABLE HEADERS (Desktop Only) */}
+        <div className="hidden sm:grid grid-cols-[1fr_120px_80px_100px_40px] gap-0 px-6 py-3 bg-[#020617] border-b border-white/10">
+          {['Item Description', 'Unit Price', 'Qty', 'Total', ''].map((h, i) => (
+            <span key={i} className={`text-[10px] font-black uppercase tracking-widest text-gray-400 ${i > 0 && i < 4 ? 'text-right' : ''}`}>{h}</span>
+          ))}
+        </div>
+
+        {/* SCROLLABLE BODY */}
+        <div className="flex-1 overflow-y-auto divide-y divide-white/[0.05] pb-24 sm:pb-0">
+          {editingLineItems.map((item) => (
+            <div key={item.id} className="relative flex flex-col sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] gap-3 sm:gap-0 p-5 sm:p-0 sm:items-center hover:bg-white/[0.02]">
+              
+              {/* Description */}
+              <div className="sm:px-6">
+                <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Description</span>
+                <input 
+                  value={item.description} 
+                  onChange={e => updateLineItem(item.id, 'description', e.target.value)}
+                  className="w-full bg-white/5 sm:bg-transparent border border-white/10 sm:border-none rounded-lg px-3 py-2 sm:py-4 text-white font-bold text-sm focus:ring-1 focus:ring-indigo-500 outline-none" 
+                />
+              </div>
+
+              {/* Mobile Triple Row (Price, Qty, Total) */}
+              <div className="grid grid-cols-3 sm:contents gap-2">
+                <div className="flex flex-col sm:border-l border-white/5 sm:px-4">
+                  <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1 text-center">Price</span>
+                  <div className="flex items-center sm:justify-end bg-white/5 sm:bg-transparent border border-white/10 sm:border-none rounded-lg px-2">
+                    <span className="text-gray-500 text-xs">$</span>
+                    <input 
+                      type="number" 
+                      value={item.unitPrice || ''} 
+                      onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
+                      className={`w-full bg-transparent border-none text-white sm:text-right font-black text-sm py-2 focus:ring-0 ${noSpinners}`} 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:border-l border-white/5 sm:px-4">
+                  <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1 text-center">Qty</span>
+                  <input 
+                    type="number" 
+                    value={item.quantity || ''} 
+                    onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
+                    className={`w-full bg-white/5 sm:bg-transparent border border-white/10 sm:border-none rounded-lg text-white text-center sm:text-right font-bold text-sm py-2 focus:ring-0 ${noSpinners}`} 
+                  />
+                </div>
+
+                <div className="flex flex-col sm:border-l border-white/5 sm:px-4">
+                  <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1 text-center">Total</span>
+                  <div className="text-emerald-400 font-black text-sm text-center sm:text-right sm:py-4 h-full flex items-center justify-center sm:justify-end">
+                    {fmt(item.amount)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Delete (Floating on mobile) */}
+              <div className="absolute top-4 right-4 sm:static flex justify-end sm:justify-center">
+                <button onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))} className="p-2 text-gray-500 hover:text-red-400 bg-white/5 sm:bg-transparent rounded-lg">
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+          ))}
 
-              {/* TABLE HEADERS (Desktop Only) */}
-              <div className="hidden sm:grid grid-cols-[1fr_120px_80px_100px_40px] gap-0 px-6 py-3 bg-[#020617] border-b border-white/10">
-                {['Item Description', 'Unit Price', 'Qty', 'Total', ''].map((h, i) => (
-                  <span key={i} className={`text-[10px] font-black uppercase tracking-widest text-gray-400 ${i > 0 && i < 4 ? 'text-right' : ''}`}>{h}</span>
-                ))}
+          {/* ADD NEW ITEM SECTION */}
+          <div className={`p-5 sm:p-0 border-t border-dashed border-white/10 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center ${lineItemError ? 'bg-red-500/5' : 'bg-emerald-500/5'}`}>
+            <div className="sm:px-6 mb-3 sm:mb-0">
+              <input 
+                value={newDesc} 
+                onChange={e => {setNewDesc(e.target.value); setLineItemError('');}} 
+                onKeyDown={e => e.key === 'Enter' && addLineItem()}
+                placeholder="Item name (e.g. Labor)" 
+                className="w-full bg-white/10 sm:bg-transparent border border-white/10 sm:border-none rounded-xl px-4 py-3 sm:py-4 text-white font-black text-sm focus:ring-1 focus:ring-emerald-500 placeholder:text-gray-600 outline-none" 
+              />
+            </div>
+            
+            <div className="grid grid-cols-[1fr_80px_60px] sm:contents gap-2">
+              <div className="sm:border-l border-white/10 sm:px-4 flex items-center bg-white/10 sm:bg-transparent border border-white/10 sm:border-none rounded-xl px-3">
+                <span className="text-emerald-500 mr-1 text-xs">$</span>
+                <input 
+                  type="number" 
+                  value={newPrice} 
+                  onChange={e => {setNewPrice(e.target.value); setLineItemError('');}} 
+                  placeholder="0.00"
+                  className={`w-full bg-transparent border-none text-white sm:text-right font-black text-sm py-3 focus:ring-0 ${noSpinners}`} 
+                />
               </div>
-
-              {/* TABLE BODY */}
-              <div className="flex-1 overflow-y-auto divide-y divide-white/[0.05]">
-                {editingLineItems.map((item) => (
-                  <div key={item.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] gap-2 sm:gap-0 p-4 sm:p-0 sm:items-center hover:bg-white/[0.02]">
-                    <div className="sm:px-6">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Description</span>
-                      <input 
-                        value={item.description} 
-                        onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                        className="w-full bg-transparent border-none text-white font-bold text-sm sm:py-4 focus:ring-0 outline-none" 
-                      />
-                    </div>
-                    <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Price</span>
-                      <div className="flex items-center sm:justify-end">
-                        <span className="text-gray-500 mr-1 text-xs">$</span>
-                        <input 
-                          type="number" 
-                          value={item.unitPrice || ''} 
-                          onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                          className={`w-full bg-transparent border-none text-white sm:text-right font-black text-sm focus:ring-0 ${noSpinners}`} 
-                        />
-                      </div>
-                    </div>
-                    <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Qty</span>
-                      <input 
-                        type="number" 
-                        value={item.quantity || ''} 
-                        onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                        className={`w-full bg-transparent border-none text-white sm:text-right font-bold text-sm focus:ring-0 ${noSpinners}`} 
-                      />
-                    </div>
-                    <div className="flex sm:block flex-col sm:border-l border-white/5 sm:px-4">
-                      <span className="sm:hidden text-[10px] font-black text-indigo-400 uppercase block mb-1">Total</span>
-                      <div className="text-emerald-400 font-black text-sm sm:text-right sm:py-4">{fmt(item.amount)}</div>
-                    </div>
-                    <div className="flex justify-end sm:justify-center px-2">
-                      <button onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))} className="p-2 text-gray-600 hover:text-red-400">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {/* ADD NEW ITEM ROW (Keyboard & Error Support) */}
-                <div className={`p-4 sm:p-0 transition-colors duration-300 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center ${lineItemError ? 'bg-red-500/10' : 'bg-emerald-500/5'}`}>
-                  <div className="sm:px-6">
-                    <input 
-                      value={newDesc} 
-                      onChange={e => {setNewDesc(e.target.value); setLineItemError('');}} 
-                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                      placeholder="Enter description..." 
-                      className="w-full bg-transparent border-none text-white font-black text-sm py-4 focus:ring-0 placeholder:text-gray-600" 
-                    />
-                  </div>
-                  <div className="sm:border-l border-white/10 sm:px-4 flex items-center">
-                    <span className="text-emerald-500 mr-1 text-xs">$</span>
-                    <input 
-                      type="number" 
-                      value={newPrice} 
-                      onChange={e => {setNewPrice(e.target.value); setLineItemError('');}} 
-                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                      placeholder="0.00"
-                      className={`w-full bg-transparent border-none text-white sm:text-right font-black text-sm focus:ring-0 ${noSpinners}`} 
-                    />
-                  </div>
-                  <div className="sm:border-l border-white/10 sm:px-4">
-                    <input 
-                      type="number" 
-                      value={newQty} 
-                      onChange={e => setNewQty(e.target.value)} 
-                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                      className={`w-full bg-transparent border-none text-white sm:text-right font-bold text-sm focus:ring-0 ${noSpinners}`} 
-                    />
-                  </div>
-                  <div className="hidden sm:block sm:border-l border-white/10 px-4 text-right text-emerald-400 font-black">
-                    {newPrice ? fmt(parseFloat(newPrice) * parseFloat(newQty)) : '—'}
-                  </div>
-                  <div className="flex justify-end p-2 sm:p-0">
-                    <button onClick={addLineItem} className="bg-emerald-600 text-white p-2 rounded-lg active:scale-90 transition"><Plus className="w-4 h-4" /></button>
-                  </div>
-                </div>
+              <div className="sm:border-l border-white/10 sm:px-4">
+                <input 
+                  type="number" 
+                  value={newQty} 
+                  onChange={e => setNewQty(e.target.value)} 
+                  className={`w-full bg-white/10 sm:bg-transparent border border-white/10 sm:border-none rounded-xl text-white text-center sm:text-right font-bold text-sm py-3 focus:ring-0 ${noSpinners}`} 
+                />
               </div>
-
-              {/* FOOTER */}
-              <div className="p-6 bg-[#020617] border-t border-white/10">
-                {lineItemError && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-400 text-xs font-black rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" /> {lineItemError}
-                  </motion.div>
-                )}
-                
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-xs font-black uppercase tracking-widest text-gray-500">Total</span>
-                  <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => setQuoteEditorOpen(false)} className="py-4 bg-white/5 text-gray-400 rounded-2xl font-black uppercase text-xs">Close</button>
-                  <button 
-                    onClick={saveQuoteTemplate}
-                    className={`py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all duration-300 ${lineItemError ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-900/40'}`}
-                  >
-                    Save Template
-                  </button>
-                </div>
+              <div className="flex items-center justify-center sm:border-l border-white/10">
+                <button onClick={addLineItem} className="bg-emerald-600 text-white w-full h-full sm:w-10 sm:h-10 rounded-xl flex items-center justify-center active:scale-90 transition shadow-lg shadow-emerald-900/20">
+                  <Plus className="w-5 h-5" />
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER - Sticky */}
+        <div className="p-6 bg-[#020617] border-t border-white/10 shrink-0">
+          {lineItemError && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-400 text-[10px] font-black rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> {lineItemError}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+          
+          <div className="flex justify-between items-center mb-6 px-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total Estimate</span>
+            <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => setQuoteEditorOpen(false)} className="py-4 bg-white/5 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest">Cancel</button>
+            <button 
+              onClick={saveQuoteTemplate}
+              className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-900/40 active:scale-95 transition"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* ── DELETE CONFIRM ───────────────────────────────────────────────── */}
       <AnimatePresence>
