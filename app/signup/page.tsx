@@ -181,26 +181,64 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
                 important
               />
               
-              {/* THE SLUG WARNING SECTION */}
+           {/* THE DUAL PORTAL PREVIEW */}
+           {/* THE PORTAL ARCHITECTURE PREVIEW */}
               {formData.slug && (
-                <div className="relative group">
-                  <div className="px-4 py-4 bg-indigo-600 rounded-2xl border border-indigo-500 shadow-md shadow-indigo-100 transition-all">
-                    <div className="flex items-start gap-3">
-                        <div className="p-2 bg-white/10 rounded-lg">
-                            <Link2 className="w-4 h-4 text-white" />
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
+                  <div className="relative space-y-3">
+                    
+                    {/* 1. PUBLIC INTAKE PORTAL */}
+                    <div className="relative z-10 p-5 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm overflow-hidden group">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-indigo-600 rounded-xl">
+                          <Eye className="w-4 h-4 text-white" />
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest leading-none mb-1">Permanent Portal URL</p>
-                            <p className="text-base font-bold text-white truncate">lead2project.com/<span className="underline decoration-indigo-400 underline-offset-4">{formData.slug}</span></p>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 leading-none mb-1">Public Intake Portal</p>
+                          <p className="text-[9px] font-bold text-slate-400">Where customers request quotes & book projects</p>
                         </div>
+                      </div>
+                      
+                      {/* URL Box - Handles long strings */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-2 overflow-hidden">
+                        <Link2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <code className="text-sm font-black text-slate-700 break-all leading-tight">
+                          lead2project.com/<span className="text-indigo-600">{formData.slug}</span>
+                        </code>
+                      </div>
+                    </div>
+
+                    {/* Connecting Arrow Line */}
+                    <div className="absolute left-9 top-1/2 bottom-0 w-0.5 bg-dashed bg-slate-200 -z-0 h-20 border-l-2 border-dashed border-slate-200 ml-[-1px]" />
+
+                    {/* 2. PRIVATE ADMIN DASHBOARD */}
+                    <div className="relative z-10 p-5 bg-[#0F172A] border-2 border-slate-800 rounded-3xl shadow-xl overflow-hidden group">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-slate-700 rounded-xl">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Internal Dashboard</p>
+                          <p className="text-[9px] font-bold text-slate-500">Where you manage leads and convert to projects</p>
+                        </div>
+                      </div>
+
+                      {/* URL Box */}
+                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center gap-2 overflow-hidden">
+                        <Lock className="w-4 h-4 text-slate-500 shrink-0" />
+                        <code className="text-sm font-black text-white break-all leading-tight">
+                          lead2project.com/<span className="text-indigo-400">{formData.slug}</span>/dashboard
+                        </code>
+                      </div>
                     </div>
                   </div>
-                  
+
                   {/* Warning Callout */}
-                  <div className="mt-2 flex items-center gap-2 px-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-tighter">
-                      Attention: This URL is permanent and cannot be changed later.
+                  <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 rounded-2xl border border-amber-100">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-bold text-amber-800 leading-snug">
+                      Your slug <span className="underline font-black text-amber-900">"{formData.slug}"</span> is permanent. 
+                      Clients will see this name when they submit requests.
                     </p>
                   </div>
                 </div>

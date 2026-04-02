@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Search, X, LayoutGrid, List, Inbox, Zap, Eye, ArrowRight, Sun, Moon, Settings } from 'lucide-react';
+import {
+  Search, X, LayoutGrid, List, Inbox, ArrowRight,
+  Plus, Calendar, ChevronLeft, ChevronRight,
+  MousePointer2, Sparkles, Zap, CheckCircle2, Bell, Mail, Users, CreditCard, Settings
+} from 'lucide-react';
 import DemoBanner from '@/components/demo/DemoBanner';
 import DemoHeader from '@/components/demo/DemoHeader';
 import LeadCard from '@/components/demo/LeadCard';
 import LeadModal from '@/components/demo/LeadModal';
 import SettingsPreviewCard from '@/components/demo/SettingsPreviewCard';
 import DemoAIButton from '@/components/demo/DemoAIButton';
-
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -54,10 +58,10 @@ const INITIAL_LEADS: Lead[] = [
       { id: 't3', label: 'Schedule before adjuster visit', done: false },
     ],
     quote_items: [
-  { id: 'q1', description: 'Shingle replacement — 3 squares', quantity: 3, unitPrice: 850, amount: 2550 },
-  { id: 'q2', description: 'Underlayment & materials', quantity: 1, unitPrice: 950, amount: 950 },
-  { id: 'q3', description: 'Labor & cleanup', quantity: 1, unitPrice: 700, amount: 700 },
-],
+      { id: 'q1', description: 'Shingle replacement — 3 squares', quantity: 3, unitPrice: 850, amount: 2550 },
+      { id: 'q2', description: 'Underlayment & materials', quantity: 1, unitPrice: 950, amount: 950 },
+      { id: 'q3', description: 'Labor & cleanup', quantity: 1, unitPrice: 700, amount: 700 },
+    ],
     ai_brief: {
       summary: 'Storm damage job, high urgency. Customer has insurance claim in progress. Schedule estimate before adjuster visit.',
       urgency: 'high',
@@ -140,11 +144,11 @@ const INITIAL_LEADS: Lead[] = [
     description: 'Roof is leaking near the chimney after heavy rain. Water stains on ceiling in master bedroom.',
     quote_total: '1850.00', payment_status: 'unpaid', file_urls: ['photo1.jpg'],
     tasks: [{ id: 't1', label: 'Schedule site visit', done: false }],
-quote_items: [
-  { id: 'q1', description: 'Chimney flashing repair', quantity: 1, unitPrice: 950, amount: 950 },
-  { id: 'q2', description: 'Shingle patch & sealant', quantity: 1, unitPrice: 600, amount: 600 },
-  { id: 'q3', description: 'Interior water damage assessment', quantity: 1, unitPrice: 300, amount: 300 },
-],
+    quote_items: [
+      { id: 'q1', description: 'Chimney flashing repair', quantity: 1, unitPrice: 950, amount: 950 },
+      { id: 'q2', description: 'Shingle patch & sealant', quantity: 1, unitPrice: 600, amount: 600 },
+      { id: 'q3', description: 'Interior water damage assessment', quantity: 1, unitPrice: 300, amount: 300 },
+    ],
     ai_brief: null,
   },
   {
@@ -170,14 +174,14 @@ quote_items: [
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 52).toISOString(),
     address_line_1: '555 Hickory Rd', city: 'Yonkers', zip_code: '10701',
     description: 'Full interior repaint of 3 bedroom house. Ceilings, walls, and trim. Need color consultation.',
-    quote_total: '3400.00', payment_status: 'unpaid',
-    file_urls: [],
+    quote_total: '3400.00', payment_status: 'unpaid', file_urls: [],
     tasks: [{ id: 't1', label: 'Send color swatches', done: false }],
-quote_items: [
-  { id: 'q1', description: 'Interior paint — 3 bed / 2 bath', quantity: 1, unitPrice: 2200, amount: 2200 },
-  { id: 'q2', description: 'Ceiling paint', quantity: 1, unitPrice: 700, amount: 700 },
-  { id: 'q3', description: 'Trim & doors', quantity: 1, unitPrice: 500, amount: 500 },
-],    ai_brief: null,
+    quote_items: [
+      { id: 'q1', description: 'Interior paint — 3 bed / 2 bath', quantity: 1, unitPrice: 2200, amount: 2200 },
+      { id: 'q2', description: 'Ceiling paint', quantity: 1, unitPrice: 700, amount: 700 },
+      { id: 'q3', description: 'Trim & doors', quantity: 1, unitPrice: 500, amount: 500 },
+    ],
+    ai_brief: null,
   },
 ];
 
@@ -203,6 +207,326 @@ export const timeAgo = (dateStr: string) => {
   return `${Math.floor(hrs / 24)}d ago`;
 };
 
+const formatDateNice = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const formatTime12h = (timeStr: string) => {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+};
+
+
+// ADD before BrowserChrome component
+const TOUR_STEPS = [
+  {
+    icon: <LayoutGrid className="w-5 h-5 text-indigo-400" />,
+    title: 'Leads land here automatically',
+    body: 'When a customer fills out your booking form, they appear here instantly — no manual entry needed.',
+  },
+  {
+    icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
+    title: 'Click any card to manage the job',
+    body: 'Each lead has quotes, tasks, scheduling, payments and photos — all in one place.',
+  },
+  {
+    icon: <Sparkles className="w-5 h-5 text-violet-400" />,
+    title: 'AI helps you prioritize',
+    body: 'Tap the purple button to ask who needs follow-up, what\'s scheduled, or what\'s unpaid.',
+  },
+];
+
+function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const current = TOUR_STEPS[step];
+  const isLast = step === TOUR_STEPS.length - 1;
+
+  return (
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[500] w-[calc(100vw-32px)] max-w-sm pointer-events-none">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 12, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.97 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+          className={`pointer-events-auto rounded-2xl shadow-2xl border p-5 ${
+            darkMode ? 'bg-[#1e293b] border-white/10' : 'bg-white border-gray-200'
+          }`}
+        >
+          <div className="flex items-start gap-3 mb-4">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              darkMode ? 'bg-white/5' : 'bg-gray-50'
+            }`}>
+              {current.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-black mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{current.title}</p>
+              <p className={`text-xs leading-relaxed ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>{current.body}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1.5">
+              {TOUR_STEPS.map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all ${
+                  i === step
+                    ? 'w-5 bg-indigo-500'
+                    : darkMode ? 'w-1.5 bg-white/15' : 'w-1.5 bg-gray-200'
+                }`} />
+              ))}
+            </div>
+            <button
+              onClick={() => isLast ? onDone() : setStep(s => s + 1)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition active:scale-95"
+            >
+              {isLast ? 'Got it' : 'Next'}
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── BROWSER CHROME ───────────────────────────────────────────────────────────
+
+function BrowserChrome({ darkMode, children }: { darkMode: boolean; children: React.ReactNode }) {
+  return (
+    <>
+      {/* Desktop: full browser chrome */}
+      <div className={`hidden sm:block rounded-2xl overflow-hidden border shadow-2xl ${
+        darkMode ? 'border-white/10 shadow-black/50' : 'border-gray-300 shadow-gray-300/60'
+      }`}>
+        <div className={`flex items-center gap-3 px-4 py-3 border-b ${
+          darkMode ? 'bg-[#0b1120] border-white/10' : 'bg-gray-200 border-gray-300'
+        }`}>
+          {/* Traffic lights */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          </div>
+          {/* URL bar */}
+          <div className="flex-1 flex justify-center">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full max-w-sm ${
+              darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-300'
+            }`}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`shrink-0 ${darkMode ? 'text-white/25' : 'text-gray-400'}`}>
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span className={`font-mono ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>lead2project.com/</span>
+              <span className={`font-mono font-semibold ${darkMode ? 'text-white/60' : 'text-gray-700'}`}>torres/dashboard</span>
+            </div>
+          </div>
+          <div className="w-[54px] shrink-0" />
+        </div>
+        <div className={darkMode ? 'bg-[#1e293b]' : 'bg-gray-50'}>
+          {children}
+        </div>
+      </div>
+
+      {/* Mobile: no chrome, just clean content */}
+      <div className={`sm:hidden rounded-2xl overflow-hidden ${
+        darkMode ? 'bg-[#1e293b]' : 'bg-gray-50'
+      }`}>
+        {children}
+      </div>
+    </>
+  );
+}
+
+// ─── DEMO CREATE MODAL ────────────────────────────────────────────────────────
+
+function DemoCreateModal({ darkMode, onClose }: { darkMode: boolean; onClose: () => void }) {
+  const [step, setStep] = useState<'form' | 'done'>('form');
+  const [form, setForm] = useState({ name: '', phone: '', email: '', category: 'Roofing', description: '' });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep('done');
+  };
+
+  const inputClass = `w-full px-4 py-3 rounded-xl border text-sm font-medium outline-none transition-all ${
+    darkMode
+      ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-indigo-500'
+      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-400'
+  }`;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className={`relative w-full max-w-md rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 ${
+        darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
+      }`}>
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-white/10" />
+        </div>
+        {step === 'form' ? (
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Add New Lead</h2>
+                <p className="text-indigo-400 text-[10px] uppercase tracking-widest font-bold mt-0.5">Demo Mode</p>
+              </div>
+              <button onClick={onClose} className={`p-2 rounded-xl transition ${darkMode ? 'hover:bg-white/5 text-white/40' : 'hover:bg-gray-100 text-gray-400'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input required placeholder="Customer name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inputClass} />
+              <div className="grid grid-cols-2 gap-3">
+                <input required placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className={inputClass} />
+                <input required type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={inputClass} />
+              </div>
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={`${inputClass} appearance-none cursor-pointer`}>
+                {['Roofing', 'Renovation', 'HVAC', 'Plumbing', 'Electrical', 'Fencing', 'Painting'].map(c => (
+                  <option key={c} value={c} className="bg-slate-900">{c}</option>
+                ))}
+              </select>
+              <textarea rows={2} placeholder="Project details..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`${inputClass} resize-none`} />
+              <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
+                <Plus className="w-5 h-5" /> Create Lead
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-indigo-400" />
+            </div>
+            <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>This is a demo!</h3>
+            <p className={`text-sm mb-6 leading-relaxed ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
+              In the real app, <span className="font-bold text-indigo-400">{form.name || 'this lead'}</span> would be instantly saved, notifications sent, and appear on your board.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={onClose} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${darkMode ? 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                Close
+              </button>
+              <Link href="/signup" className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-sm transition text-center">
+                Sign Up Free
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── CALENDAR VIEW ────────────────────────────────────────────────────────────
+
+function DemoCalendar({ leads, darkMode, onSelectLead }: { leads: Lead[]; darkMode: boolean; onSelectLead: (l: Lead) => void }) {
+  const [calDate, setCalDate] = useState(new Date(2026, 3, 1));
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const scheduledLeads = leads.filter(l => l.scheduled_date);
+  const leadsForDay = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return scheduledLeads.filter(l => l.scheduled_date?.startsWith(dateStr));
+  };
+  const today = new Date();
+  const isToday = (day: number) => today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+  const monthName = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const border = darkMode ? 'border-white/5' : 'border-gray-100';
+
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'}`}>
+      <div className={`flex items-center justify-between px-5 py-4 border-b ${border}`}>
+        <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{monthName}</h3>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setCalDate(new Date(year, month - 1, 1))} className={`p-2 rounded-lg transition ${darkMode ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}>
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button onClick={() => setCalDate(new Date(year, month + 1, 1))} className={`p-2 rounded-lg transition ${darkMode ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      <div className={`grid grid-cols-7 border-b ${border}`}>
+        {days.map(d => (
+          <div key={d} className={`py-2 text-center text-[10px] font-black uppercase tracking-widest ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {Array.from({ length: firstDay }).map((_, i) => (
+          <div key={`empty-${i}`} className={`min-h-[80px] border-r border-b ${border}`} />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dayLeads = leadsForDay(day);
+          const todayCell = isToday(day);
+          return (
+            <div key={day} className={`min-h-[80px] border-r border-b p-1.5 transition ${border} ${darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'} ${(day + firstDay - 1) % 7 === 6 ? 'border-r-0' : ''}`}>
+              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black mb-1 ${todayCell ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                {day}
+              </div>
+              <div className="space-y-0.5">
+                {dayLeads.map(lead => {
+                  const s = STATUS_OPTIONS.find(o => o.value === lead.status);
+                  return (
+                    <button key={lead.id} onClick={() => onSelectLead(lead)} className="w-full text-left px-1.5 py-1 rounded-md text-[10px] font-bold truncate transition hover:opacity-80" style={{ backgroundColor: `${s?.hex}25`, color: s?.hex }}>
+                      {lead.scheduled_time ? formatTime12h(lead.scheduled_time) : ''} {lead.name.split(' ')[0]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {scheduledLeads.length > 0 && (
+        <div className={`border-t ${border} px-5 py-4`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>Scheduled Jobs</p>
+          <div className="space-y-2">
+            {scheduledLeads.map(lead => {
+              const s = STATUS_OPTIONS.find(o => o.value === lead.status);
+              return (
+                <button key={lead.id} onClick={() => onSelectLead(lead)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ${darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}>
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s?.hex }} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{lead.name}</p>
+                    <p className={`text-xs truncate ${darkMode ? 'text-white/40' : 'text-gray-400'}`}>{lead.category}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {lead.scheduled_date && <p className={`text-xs font-bold ${darkMode ? 'text-white/60' : 'text-gray-600'}`}>{formatDateNice(lead.scheduled_date)}</p>}
+                    {lead.scheduled_time && <p className={`text-[10px] ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>{formatTime12h(lead.scheduled_time)}</p>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CLICK HINT ───────────────────────────────────────────────────────────────
+
+function ClickHint({ children, show }: { children: React.ReactNode; show: boolean }) {
+  return (
+    <div className="relative">
+      {children}
+      {show && (
+        <div className="absolute -top-2 -right-2 z-10 pointer-events-none animate-bounce">
+          <div className="bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-indigo-500/40 whitespace-nowrap">
+            <MousePointer2 className="w-2.5 h-2.5" /> Click to open
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function DemoPage() {
@@ -210,16 +534,29 @@ export default function DemoPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar'>('cards');
   const [darkMode, setDarkMode] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showAiNudge, setShowAiNudge] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [hasOpenedLead, setHasOpenedLead] = useState(false);
+  const [showTour, setShowTour] = useState(true);
+const [hasInteracted, setHasInteracted] = useState(false);
+const [dynamicCta, setDynamicCta] = useState<string | null>(null);
+const newLeadAddedRef = useRef(false);
 
   const updateLead = (id: number, updates: Partial<Lead>) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
     if (selectedLead?.id === id) setSelectedLead(prev => prev ? { ...prev, ...updates } : prev);
   };
 
+ 
+const handleSelectLead = (lead: Lead) => {
+  setSelectedLead(lead);
+  setHasOpenedLead(true);
+  setHasInteracted(true);
+  setShowTour(false);
+};
   const filtered = useMemo(() =>
     leads.filter(l => {
       if (filterStatus !== 'all' && l.status !== filterStatus) return false;
@@ -237,121 +574,219 @@ export default function DemoPage() {
   const totalRevenue = leads.filter(l => l.payment_status === 'paid').reduce((s, l) => s + Number(l.quote_total || 0), 0);
   const pendingRevenue = leads.filter(l => l.quote_total && l.payment_status !== 'paid').reduce((s, l) => s + Number(l.quote_total || 0), 0);
 
-  const bg = darkMode
-  ? 'min-h-screen bg-[#1e293b]'
-  : 'min-h-screen bg-gray-50';
-
-  const cardBg = darkMode ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200';
-  const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
   const textMuted = darkMode ? 'text-white/40' : 'text-gray-400';
-  const inputBg = darkMode ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-indigo-500' : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-400';
+  const inputBg = darkMode
+    ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-indigo-500'
+    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-400';
   const filterBtn = (active: boolean) => active
     ? 'bg-indigo-600 text-white border-indigo-500'
     : darkMode
       ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
       : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50';
 
-  return (
-    <div className={bg}>
+ 
+ 
+ // ADD before return statement
+
+// New lead slides in after 8s if user hasn't interacted
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (!hasInteracted && !newLeadAddedRef.current) {
+      newLeadAddedRef.current = true;
+      setLeads(prev => [{
+        id: 99,
+        name: 'Chris Williams',
+        email: 'chris.w@gmail.com',
+        phone: '(201) 555-0199',
+        category: 'Roofing',
+        status: 'new',
+        created_at: new Date().toISOString(),
+        address_line_1: '88 Harbor View Dr',
+        city: 'Hoboken',
+        zip_code: '07030',
+        description: 'Need full roof replacement after hail damage. Has homeowners insurance.',
+        quote_total: null,
+        payment_status: 'unpaid',
+        file_urls: ['photo1.jpg'],
+        tasks: [],
+        quote_items: [],
+        ai_brief: null,
+        isNew: true,
+      } as any, ...prev]);
+      // Remove isNew flag after animation
+      setTimeout(() => {
+        setLeads(prev => prev.map(l => l.id === 99 ? { ...l, isNew: false } : l));
+      }, 4000);
+    }
+  }, 8000);
+  return () => clearTimeout(timer);
+}, [hasInteracted]);
+
+// Dynamic CTA based on what they did
+useEffect(() => {
+  if (hasOpenedLead && !dynamicCta) {
+    setDynamicCta('You just managed a lead in 10 seconds. Imagine waking up to 10 of these every morning.');
+  }
+}, [hasOpenedLead]);
+
+useEffect(() => {
+  if (filterStatus !== 'all' && !dynamicCta) {
+    setDynamicCta('You just filtered your pipeline. In the real app this updates live as new jobs come in.');
+  }
+}, [filterStatus]);
+ 
+ 
+      return (
+    <div className={darkMode ? 'min-h-screen bg-[#0a0f1e]' : 'min-h-screen bg-gray-200'}>
       <DemoBanner darkMode={darkMode} onToggleDark={() => setDarkMode(v => !v)} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
-        <DemoHeader darkMode={darkMode} totalLeads={leads.length} activeJobs={leads.filter(l => !['completed', 'cancelled'].includes(l.status)).length} totalRevenue={totalRevenue} pendingRevenue={pendingRevenue} onShowSettings={() => setShowSettings(true)} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-12">
 
-        {/* Search + filters */}
-        <div className="flex flex-col gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-white/30' : 'text-gray-400'}`} />
-              <input
-                type="text"
-                placeholder="Search leads..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm font-medium outline-none transition-all ${inputBg}`}
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${darkMode ? 'hover:bg-white/10 text-white/40' : 'hover:bg-gray-100 text-gray-400'}`}>
-                  <X className="w-3.5 h-3.5" />
+        {/* Browser chrome wraps everything */}
+        <BrowserChrome darkMode={darkMode}>
+          <div className="px-4 sm:px-6 py-5 sm:py-8">
+            <DemoHeader
+              darkMode={darkMode}
+              totalLeads={leads.length}
+              activeJobs={leads.filter(l => !['completed', 'cancelled'].includes(l.status)).length}
+              totalRevenue={totalRevenue}
+              pendingRevenue={pendingRevenue}
+              onShowSettings={() => setShowSettings(true)}
+              onCreateLead={() => setShowCreateModal(true)}
+            />
+
+            {/* Search + filters */}
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-white/30' : 'text-gray-400'}`} />
+                  <input
+                    type="text"
+                    placeholder="Search leads..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className={`w-full pl-11 pr-4 py-3 rounded-xl border text-sm font-medium outline-none transition-all ${inputBg}`}
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${darkMode ? 'hover:bg-white/10 text-white/40' : 'hover:bg-gray-100 text-gray-400'}`}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* View toggle */}
+                <div className={`flex border rounded-xl p-1 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+                  <button onClick={() => setViewMode('cards')} className={`p-2.5 rounded-lg transition ${viewMode === 'cards' ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition ${viewMode === 'table' ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setViewMode('calendar')} className={`p-2.5 rounded-lg transition ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Create button */}
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-slate-900 hover:bg-indigo-50 rounded-xl font-bold text-sm transition shadow-lg active:scale-95 shrink-0"
+                >
+                  <Plus className="w-4 h-4 stroke-[3px]" />
+                  <span className="hidden sm:inline">Create</span>
                 </button>
+              </div>
+
+              {/* Status pills */}
+              {viewMode !== 'calendar' && (
+                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  <button onClick={() => setFilterStatus('all')} className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterBtn(filterStatus === 'all')}`}>
+                    All ({leads.length})
+                  </button>
+                  {STATUS_OPTIONS.map(s => statusCounts[s.value] > 0 && (
+                    <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterBtn(filterStatus === s.value)}`}>
+                      {s.label} ({statusCounts[s.value]})
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
-            <div className={`hidden md:flex border rounded-xl p-1 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
-              <button onClick={() => setViewMode('cards')} className={`p-2.5 rounded-lg transition ${viewMode === 'cards' ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}><LayoutGrid className="w-4 h-4" /></button>
-              <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition ${viewMode === 'table' ? 'bg-indigo-600 text-white' : darkMode ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}><List className="w-4 h-4" /></button>
-            </div>
-          </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            <button onClick={() => setFilterStatus('all')} className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterBtn(filterStatus === 'all')}`}>
-              All ({leads.length})
-            </button>
-            {STATUS_OPTIONS.map(s => statusCounts[s.value] > 0 && (
-              <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${filterBtn(filterStatus === s.value)}`}>
-                {s.label} ({statusCounts[s.value]})
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Lead grid */}
-        {viewMode === 'cards' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map(lead => (
-              <LeadCard key={lead.id} lead={lead} darkMode={darkMode} onClick={() => setSelectedLead(lead)} />
-            ))}
-          </div>
-        ) : (
-          <div className={`border rounded-2xl overflow-hidden ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'}`}>
-            <table className="w-full">
-              <thead>
-                <tr className={`border-b ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
-                  {['Customer', 'Category', 'Status', 'Quote', 'Created'].map(h => (
-                    <th key={h} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${textMuted}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((lead, i) => {
-                  const s = STATUS_OPTIONS.find(o => o.value === lead.status);
-                  return (
-                    <tr key={lead.id} onClick={() => setSelectedLead(lead)}
-                      className={`border-b cursor-pointer transition ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-50 hover:bg-gray-50'} ${i % 2 !== 0 && darkMode ? 'bg-white/[0.01]' : ''}`}>
-                      <td className="px-4 py-3">
-                        <p className={`text-sm font-bold ${textPrimary}`}>{lead.name}</p>
-                        <p className={`text-[10px] ${textMuted}`}>{lead.email}</p>
-                      </td>
-                      <td className={`px-4 py-3 text-sm ${darkMode ? 'text-white/60' : 'text-gray-500'}`}>{lead.category}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: `${s?.hex}20`, color: s?.hex }}>
-                          {s?.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-emerald-400">{lead.quote_total ? fmt(lead.quote_total) : '—'}</td>
-                      <td className={`px-4 py-3 text-[11px] ${textMuted}`}>{timeAgo(lead.created_at)}</td>
+            {/* Views */}
+            {viewMode === 'calendar' ? (
+              <DemoCalendar leads={leads} darkMode={darkMode} onSelectLead={handleSelectLead} />
+            ) : viewMode === 'cards' ? (
+             <>
+  {/* Mobile featured card hint */}
+  {!hasOpenedLead && (
+    <div className={`sm:hidden flex items-center gap-2 px-3 py-2 rounded-xl mb-3 ${
+      darkMode ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100'
+    }`}>
+      <MousePointer2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+      <p className="text-xs font-bold text-indigo-400">Tap any card to open a full lead</p>
+    </div>
+  )}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {filtered.map((lead, i) => (
+      <ClickHint key={lead.id} show={!hasOpenedLead && i === 0}>
+        <LeadCard lead={lead} darkMode={darkMode} onClick={() => handleSelectLead(lead)} />
+      </ClickHint>
+    ))}
+  </div>
+</>
+            ) : (
+              <div className={`border rounded-2xl overflow-hidden ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'}`}>
+                <table className="w-full">
+                  <thead>
+                    <tr className={`border-b ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
+                      {['Customer', 'Category', 'Status', 'Quote', 'Created'].map(h => (
+                        <th key={h} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${textMuted}`}>{h}</th>
+                      ))}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  </thead>
+                  <tbody>
+                    {filtered.map((lead, i) => {
+                      const s = STATUS_OPTIONS.find(o => o.value === lead.status);
+                      return (
+                        <tr key={lead.id} onClick={() => handleSelectLead(lead)}
+                          className={`border-b cursor-pointer transition ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-50 hover:bg-gray-50'} ${i % 2 !== 0 && darkMode ? 'bg-white/[0.01]' : ''}`}>
+                          <td className="px-4 py-3">
+                            <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{lead.name}</p>
+                            <p className={`text-[10px] ${textMuted}`}>{lead.email}</p>
+                          </td>
+                          <td className={`px-4 py-3 text-sm ${darkMode ? 'text-white/60' : 'text-gray-500'}`}>{lead.category}</td>
+                          <td className="px-4 py-3">
+                            <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: `${s?.hex}20`, color: s?.hex }}>
+                              {s?.label}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-emerald-400">{lead.quote_total ? fmt(lead.quote_total) : '—'}</td>
+                          <td className={`px-4 py-3 text-[11px] ${textMuted}`}>{timeAgo(lead.created_at)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-        {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <Inbox className={`w-10 h-10 mx-auto mb-3 ${textMuted}`} />
-            <p className={`font-bold ${textMuted}`}>No leads match your filter</p>
+            {filtered.length === 0 && viewMode !== 'calendar' && (
+              <div className="text-center py-20">
+                <Inbox className={`w-10 h-10 mx-auto mb-3 ${textMuted}`} />
+                <p className={`font-bold ${textMuted}`}>No leads match your filter</p>
+              </div>
+            )}
           </div>
-        )}
+        </BrowserChrome>
 
         {/* Bottom CTA */}
-        <div className="mt-12 bg-gradient-to-r from-indigo-900/60 to-blue-900/60 border border-indigo-500/30 rounded-[2rem] p-8 sm:p-10 text-center">
+        <div className="mt-10 bg-gradient-to-r from-indigo-900/60 to-blue-900/60 border border-indigo-500/30 rounded-[2rem] p-8 sm:p-10 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-3">Ready to run your business like this?</p>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Get your own dashboard in 2 minutes.</h2>
           <p className="text-slate-400 mb-8 max-w-lg mx-auto text-sm leading-relaxed">
-            Share your booking link, customers submit their jobs with photos — everything lands here, organized and ready to quote.
-          </p>
+  {dynamicCta || 'Share your booking link, customers submit their jobs with photos — everything lands here, organized and ready to quote.'}
+</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/signup" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-8 py-4 rounded-2xl font-extrabold text-base hover:bg-indigo-50 transition shadow-2xl">
               Start Free Trial <ArrowRight className="w-5 h-5" />
@@ -364,21 +799,46 @@ export default function DemoPage() {
         </div>
       </div>
 
-      {/* Lead modal */}
-      {selectedLead && (
-        <LeadModal
-          lead={selectedLead}
-          darkMode={darkMode}
-          onClose={() => setSelectedLead(null)}
-          onUpdate={(updates) => updateLead(selectedLead.id, updates)}
-        />
+      {/* Modals */}
+     {selectedLead && (
+  <LeadModal
+    lead={leads.find(l => l.id === selectedLead.id) || selectedLead}
+    darkMode={darkMode}
+    onClose={() => setSelectedLead(null)}
+    onUpdate={(updates) => updateLead(selectedLead.id, updates)}
+  />
+)}
+
+      {showCreateModal && (
+        <DemoCreateModal darkMode={darkMode} onClose={() => setShowCreateModal(false)} />
       )}
 
-      {/* Settings preview */}
       {showSettings && <SettingsPreviewCard onClose={() => setShowSettings(false)} />}
 
-      {/* AI button */}
       <DemoAIButton showNudge={showAiNudge} onToggle={() => setShowAiNudge(v => !v)} />
+
+        {/* Tour */}
+{showTour && (
+  <DemoTour darkMode={darkMode} onDone={() => setShowTour(false)} />
+)}
+
+{/* New lead toast notification */}
+<AnimatePresence>
+  {leads[0]?.id === 99 && (leads[0] as any).isNew && (
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+      className="fixed top-5 left-1/2 -translate-x-1/2 z-[9998] pointer-events-none"
+    >
+      <div className="flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-2xl shadow-2xl shadow-emerald-900/40 text-sm font-black whitespace-nowrap">
+        <Zap className="w-4 h-4" />
+        New lead just submitted — Chris Williams
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </div>
   );
 }

@@ -19,6 +19,7 @@ type SidebarProps = {
   onClose: () => void;
   currentView?: 'cards' | 'table';
   onViewChange?: (view: 'cards' | 'table') => void;
+  
 };
 
 export default function Sidebar({
