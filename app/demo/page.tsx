@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   Search, X, LayoutGrid, List, Inbox, ArrowRight,
   Plus, Calendar, ChevronLeft, ChevronRight,
-  MousePointer2, Sparkles, Zap, CheckCircle2, Bell, Mail, Users, CreditCard, Settings
+  MousePointer2, Sparkles, Zap, CheckCircle2, Download, Bell, Mail, Users, CreditCard, Settings
 } from 'lucide-react';
 import DemoBanner from '@/components/demo/DemoBanner';
 import DemoHeader from '@/components/demo/DemoHeader';
@@ -267,7 +267,7 @@ function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void 
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-black mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{current.title}</p>
-              <p className={`text-xs leading-relaxed ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>{current.body}</p>
+<p className={`text-[11px] leading-relaxed ${darkMode ? 'text-white/40' : 'text-gray-400'}`}>{current.body}</p>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -735,41 +735,80 @@ useEffect(() => {
     ))}
   </div>
 </>
-            ) : (
-              <div className={`border rounded-2xl overflow-hidden ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'}`}>
-                <table className="w-full">
-                  <thead>
-                    <tr className={`border-b ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
-                      {['Customer', 'Category', 'Status', 'Quote', 'Created'].map(h => (
-                        <th key={h} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest ${textMuted}`}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((lead, i) => {
-                      const s = STATUS_OPTIONS.find(o => o.value === lead.status);
-                      return (
-                        <tr key={lead.id} onClick={() => handleSelectLead(lead)}
-                          className={`border-b cursor-pointer transition ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-50 hover:bg-gray-50'} ${i % 2 !== 0 && darkMode ? 'bg-white/[0.01]' : ''}`}>
-                          <td className="px-4 py-3">
-                            <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{lead.name}</p>
-                            <p className={`text-[10px] ${textMuted}`}>{lead.email}</p>
-                          </td>
-                          <td className={`px-4 py-3 text-sm ${darkMode ? 'text-white/60' : 'text-gray-500'}`}>{lead.category}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: `${s?.hex}20`, color: s?.hex }}>
-                              {s?.label}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-emerald-400">{lead.quote_total ? fmt(lead.quote_total) : '—'}</td>
-                          <td className={`px-4 py-3 text-[11px] ${textMuted}`}>{timeAgo(lead.created_at)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+) : (
+  <div className={`border rounded-2xl overflow-hidden ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'}`}>
+    {/* Export CSV bar */}
+    <div className={`flex items-center justify-between px-4 py-2.5 border-b ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
+      <p className={`text-[10px] font-black uppercase tracking-widest ${textMuted}`}>
+        {filtered.length} records
+      </p>
+      <button
+        onClick={() => {
+          const headers = ['Name', 'Email', 'Phone', 'Category', 'Status', 'Quote Total', 'Payment', 'City', 'Created'];
+          const rows = filtered.map(l => [
+            l.name, l.email, l.phone, l.category,
+            STATUS_OPTIONS.find(o => o.value === l.status)?.label || l.status,
+            l.quote_total || '',
+            l.payment_status,
+            l.city,
+            new Date(l.created_at).toLocaleDateString('en-US'),
+          ]);
+          const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'leads-export.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        }}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+          darkMode ? 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100'
+        }`}
+      >
+        <Download className="w-3.5 h-3.5" /> Export CSV
+      </button>
+    </div>
+    {/* Horizontal scroll wrapper */}
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[600px]">
+        <thead>
+          <tr className={`border-b ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
+            {['Customer', 'Category', 'Status', 'Quote', 'Payment', 'City', 'Created'].map(h => (
+              <th key={h} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${textMuted}`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((lead, i) => {
+            const s = STATUS_OPTIONS.find(o => o.value === lead.status);
+            return (
+              <tr key={lead.id} onClick={() => handleSelectLead(lead)}
+                className={`border-b cursor-pointer transition ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-50 hover:bg-gray-50'} ${i % 2 !== 0 && darkMode ? 'bg-white/[0.01]' : ''}`}>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{lead.name}</p>
+                  <p className={`text-[10px] ${textMuted}`}>{lead.email}</p>
+                </td>
+                <td className={`px-4 py-3 text-sm whitespace-nowrap ${darkMode ? 'text-white/60' : 'text-gray-500'}`}>{lead.category}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: `${s?.hex}20`, color: s?.hex }}>
+                    {s?.label}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-bold text-emerald-400 whitespace-nowrap">{lead.quote_total ? fmt(lead.quote_total) : '—'}</td>
+                <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${
+                  lead.payment_status === 'paid' ? 'text-emerald-400 font-bold' : textMuted
+                }`}>{lead.payment_status}</td>
+                <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${textMuted}`}>{lead.city}</td>
+                <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${textMuted}`}>{timeAgo(lead.created_at)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
 
             {filtered.length === 0 && viewMode !== 'calendar' && (
               <div className="text-center py-20">
