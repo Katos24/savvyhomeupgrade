@@ -1703,17 +1703,8 @@ function Pricing() {
 
           {/* Trust Badges */}
           <div className="mt-12 sm:mt-20 flex flex-col items-center justify-center gap-6 sm:gap-8">
-            <div className="flex -space-x-3">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="w-9 h-9 sm:w-12 sm:h-12 rounded-full border-4 border-[#080C14] bg-slate-800 overflow-hidden shadow-xl">
-                  <img src={`https://i.pravatar.cc/100?img=${i+15}`} alt="contractor" />
-                </div>
-              ))}
-              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full border-4 border-[#080C14] bg-blue-600 flex items-center justify-center text-[10px] sm:text-xs font-black text-white shadow-xl">+120</div>
-            </div>
-            <p className="text-slate-500 font-bold tracking-tight text-center text-sm sm:text-base">
-              Join <span className="text-white">120+ contractors</span> switching to Lead2Project this month.
-            </p>
+         
+            
             <div className="flex items-center gap-6 sm:gap-10 opacity-30 grayscale pointer-events-none">
               <span className="text-white font-black tracking-tighter text-base sm:text-xl uppercase">Stripe Secure</span>
               <span className="text-white font-black tracking-tighter text-base sm:text-xl uppercase">256-Bit SSL</span>

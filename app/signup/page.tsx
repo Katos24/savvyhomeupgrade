@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BUSINESS_TYPES } from '@/lib/formCategories';
+import WorkspaceConfirmModal from '@/components/WorkspaceConfirmModal';
 import { 
   ArrowRight, 
   ShieldCheck, 
@@ -12,9 +13,8 @@ import {
   Loader2,
   X,
   UserPlus,
-  AlertCircle,
-  Link2,
-  EyeOff, Eye
+  Eye,
+  EyeOff, Globe
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -29,12 +29,13 @@ interface CustomInputProps {
 
 function SignupForm() {
   const searchParams = useSearchParams();
-const plan = searchParams.get('plan') || 'starter';
-  
+  const plan = searchParams.get('plan') || 'starter';
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const [formData, setFormData] = useState({
     companyName: '',
     slug: '',
@@ -67,30 +68,36 @@ const plan = searchParams.get('plan') || 'starter';
     setFormData({ ...formData, phone: formatted });
   };
 
+  // Step 1 — validate form, open confirm modal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
-      setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setLoading(false);
       return;
     }
-    
+
+    setShowConfirm(true);
+  };
+
+  // Step 2 — user confirmed in modal, fire API
+  const handleConfirm = async () => {
+    setShowConfirm(false);
+    setLoading(true);
+
     const phoneDigits = formData.phone.replace(/\D/g, '');
-    
+
     try {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
+        body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
       });
 
       const data = await response.json();
@@ -109,7 +116,16 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-      {/* Sidebar: Branding */}
+
+      {/* Confirm modal */}
+      <WorkspaceConfirmModal
+        isOpen={showConfirm}
+        slug={formData.slug}
+        onConfirm={handleConfirm}
+        onEdit={() => setShowConfirm(false)}
+      />
+
+      {/* Sidebar */}
       <div className="hidden lg:flex lg:w-[400px] bg-slate-900 p-12 flex-col justify-between text-white sticky top-0 h-screen">
         <div>
           <div className="flex items-center gap-3 mb-16 cursor-pointer" onClick={() => router.push('/')}>
@@ -122,7 +138,7 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
           <h2 className="text-4xl font-black leading-tight mb-8">
             The Operating System for <span className="text-indigo-400">Pro Services.</span>
           </h2>
-          
+
           <div className="space-y-8">
             {[
               { icon: <Clock className="w-5 h-5 text-indigo-400" />, text: 'Start with a 14-day free trial' },
@@ -143,9 +159,10 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 overflow-y-auto px-4 py-8 md:px-12 lg:px-24">
         <div className="max-w-xl mx-auto">
+
           {/* Mobile Header */}
           <div className="flex lg:hidden items-center justify-between mb-10">
             <div className="flex items-center gap-2">
@@ -173,135 +190,121 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-5">
-              <CustomInput 
-                label="Company Name" 
-                placeholder="e.g. Blueline Mechanical" 
+
+              <CustomInput
+                label="Company Name"
+                placeholder="e.g. Blueline Mechanical"
                 value={formData.companyName}
                 onChange={handleCompanyNameChange}
                 important
               />
-              
-           {/* THE DUAL PORTAL PREVIEW */}
-           {/* THE PORTAL ARCHITECTURE PREVIEW */}
-              {formData.slug && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
-                  <div className="relative space-y-3">
-                    
-                    {/* 1. PUBLIC INTAKE PORTAL */}
-                    <div className="relative z-10 p-5 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm overflow-hidden group">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-indigo-600 rounded-xl">
-                          <Eye className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 leading-none mb-1">Public Intake Portal</p>
-                          <p className="text-[9px] font-bold text-slate-400">Where customers request quotes & book projects</p>
-                        </div>
-                      </div>
-                      
-                      {/* URL Box - Handles long strings */}
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-2 overflow-hidden">
-                        <Link2 className="w-4 h-4 text-slate-400 shrink-0" />
-                        <code className="text-sm font-black text-slate-700 break-all leading-tight">
-                          lead2project.com/<span className="text-indigo-600">{formData.slug}</span>
-                        </code>
-                      </div>
-                    </div>
 
-                    {/* Connecting Arrow Line */}
-                    <div className="absolute left-9 top-1/2 bottom-0 w-0.5 bg-dashed bg-slate-200 -z-0 h-20 border-l-2 border-dashed border-slate-200 ml-[-1px]" />
+              {/* URL preview — no warning, just the two portals */}
+            {formData.slug && (
+  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 
-                    {/* 2. PRIVATE ADMIN DASHBOARD */}
-                    <div className="relative z-10 p-5 bg-[#0F172A] border-2 border-slate-800 rounded-3xl shadow-xl overflow-hidden group">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-slate-700 rounded-xl">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Internal Dashboard</p>
-                          <p className="text-[9px] font-bold text-slate-500">Where you manage leads and convert to projects</p>
-                        </div>
-                      </div>
 
-                      {/* URL Box */}
-                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center gap-2 overflow-hidden">
-                        <Lock className="w-4 h-4 text-slate-500 shrink-0" />
-                        <code className="text-sm font-black text-white break-all leading-tight">
-                          lead2project.com/<span className="text-indigo-400">{formData.slug}</span>/dashboard
-                        </code>
-                      </div>
-                    </div>
-                  </div>
+   {/* Customer Form */}
+<div className="flex flex-col gap-2 px-4 py-3 rounded-2xl border"
+  style={{ backgroundColor: '#F5F0E8', borderColor: '#C8D5B0' }}>
+  <div className="flex items-center gap-2">
+    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+      style={{ backgroundColor: '#1A3A1A' }}>
+      <Globe className="w-3 h-3 text-white" />
+    </div>
+    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#1A3A1A' }}>
+      Customer form
+    </p>
+    <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
+      style={{ color: '#1A3A1A', backgroundColor: '#C8D5B0' }}>
+      Public
+    </span>
+  </div>
+  <p className="text-[11px] font-bold leading-snug" style={{ color: '#1A3A1A' }}>
+    Share this link — customers submit requests directly to your dashboard.
+  </p>
+  <div className="border rounded-lg px-3 py-2 font-mono text-[11px] break-all leading-snug"
+    style={{ backgroundColor: 'white', borderColor: '#C8D5B0', color: '#1A3A1A' }}>
+    lead2project.com/<span className="font-black" style={{ color: '#2D5A1B' }}>{formData.slug}</span>
+  </div>
+</div>
 
-                  {/* Warning Callout */}
-                  <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-50 rounded-2xl border border-amber-100">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="text-[11px] font-bold text-amber-800 leading-snug">
-                      Your slug <span className="underline font-black text-amber-900">"{formData.slug}"</span> is permanent. 
-                      Clients will see this name when they submit requests.
-                    </p>
-                  </div>
-                </div>
-              )}
+      {/* Dashboard */}
+      <div className="flex flex-col gap-2 px-4 py-3 bg-[#0F172A] border border-slate-700 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
+            <Lock className="w-3 h-3 text-white" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Your dashboard</p>
+        </div>
+        <div className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 font-mono text-[11px] text-slate-300 break-all leading-snug">
+          lead2project.com/<span className="text-indigo-400 font-black">{formData.slug}</span>/dashboard
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">Business Type</label>
-                <select 
+                <select
                   value={formData.businessType}
                   onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
                   className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer text-base"
                 >
                   {BUSINESS_TYPES.map(type => (
-                    <option key={type.value} value={type.value}> {type.label}</option>
+                    <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <CustomInput 
-                  label="Contact Name" 
-                  placeholder="John Smith" 
+                <CustomInput
+                  label="Contact Name"
+                  placeholder="John Smith"
                   value={formData.ownerName}
-                  onChange={(v) => setFormData({...formData, ownerName: v})}
+                  onChange={(v) => setFormData({ ...formData, ownerName: v })}
                 />
-                <CustomInput 
-                  label="Phone Number" 
-                  placeholder="(555) 000-0000" 
+                <CustomInput
+                  label="Phone Number"
+                  placeholder="(555) 000-0000"
                   value={formData.phone}
                   onChange={handlePhoneChange}
                 />
               </div>
 
-              <CustomInput 
-                label="Work Email Address" 
+              <CustomInput
+                label="Work Email Address"
                 type="email"
-                placeholder="john@company.com" 
+                placeholder="john@company.com"
                 value={formData.email}
-                onChange={(v) => setFormData({...formData, email: v})}
+                onChange={(v) => setFormData({ ...formData, email: v })}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <CustomInput 
-                  label="Create Password" 
+                <CustomInput
+                  label="Create Password"
                   type="password"
-                  placeholder="••••••••" 
+                  placeholder="••••••••"
                   value={formData.password}
-                  onChange={(v) => setFormData({...formData, password: v})}
+                  onChange={(v) => setFormData({ ...formData, password: v })}
                   hint="6+ characters"
                 />
-                <CustomInput 
-                  label="Confirm Password" 
+                <CustomInput
+                  label="Confirm Password"
                   type="password"
-                  placeholder="••••••••" 
+                  placeholder="••••••••"
                   value={formData.confirmPassword}
-                  onChange={(v) => setFormData({...formData, confirmPassword: v})}
+                  onChange={(v) => setFormData({ ...formData, confirmPassword: v })}
                 />
               </div>
             </div>
 
             <div className="pt-4">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
               >
@@ -316,11 +319,11 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
               </button>
             </div>
 
-            <div className="flex flex-col items-center gap-6 py-4">
+            <div className="flex flex-col items-center gap-4 py-2">
               <div className="flex items-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-slate-300" />
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  Secure Identity Management
+                  256-bit SSL · Secure Identity Management
                 </p>
               </div>
               <p className="text-center text-slate-500 text-sm">
@@ -335,7 +338,7 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
   );
 }
 
-function CustomInput({ label, value, onChange, placeholder, type = "text", hint, important }: CustomInputProps) {
+function CustomInput({ label, value, onChange, placeholder, type = 'text', hint, important }: CustomInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
 
@@ -343,7 +346,7 @@ function CustomInput({ label, value, onChange, placeholder, type = "text", hint,
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
         <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-400'}`}>
-          {label} {important && "— Check spelling"}
+          {label}
         </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}
       </div>
@@ -372,7 +375,11 @@ function CustomInput({ label, value, onChange, placeholder, type = "text", hint,
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    }>
       <SignupForm />
     </Suspense>
   );

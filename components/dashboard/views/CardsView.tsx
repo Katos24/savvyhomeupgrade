@@ -155,7 +155,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                   <div className={`grid grid-cols-2 gap-2 ${t.innerBg} p-4 rounded-2xl border ${t.innerBorder}`}>
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
-                      <div className="flex items-center gap-2 text-indigo-400 font-black text-[12px] italic">
+<div className={`flex items-center gap-2 font-black text-[12px] italic ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                         <Calendar className="w-4 h-4" />
                         {lead.scheduled_date 
                           ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -164,10 +164,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     </div>
                     <div className={`flex flex-col gap-1.5 border-l ${t.innerBorder} pl-4`}>
                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Arrival</span>
-                      <div className="flex items-center gap-2 text-slate-300 font-black text-[12px] italic">
-                        <Clock className="w-4 h-4 text-slate-500" />
-                        {formatScheduledTime(lead.scheduled_time)}
-                      </div>
+                      <div className={`flex items-center gap-2 font-black text-[12px] italic ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
+  <Clock className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
+  {formatScheduledTime(lead.scheduled_time)}
+</div>
                     </div>
                   </div>
                   {/* Category below schedule box */}

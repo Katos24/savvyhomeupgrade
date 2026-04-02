@@ -6,11 +6,12 @@ import {
 import {
   Search, X, Plus, Menu, Filter, ChevronDown, Download,
   Loader2, Inbox, Send, Sparkles, LayoutGrid, List, ArrowUp,
-  Check, ChevronRight, Lock
+  Check, ChevronRight, Lock, Calendar, DollarSign, Clock
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
+import CalendarView from '@/components/dashboard/views/CalendarView';
 import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
@@ -50,7 +51,7 @@ type Company = {
 
 type AiMessage = { role: 'user' | 'assistant'; content: string };
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
-type ViewMode = 'cards' | 'table';
+type ViewMode = 'cards' | 'table' | 'calendar';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -671,12 +672,16 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
             {/* Left: hamburger + brand */}
             <div className="flex items-center gap-3 min-w-0">
               <button
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open navigation"
-                className="p-2.5 bg-white/5 hover:bg-indigo-600/20 rounded-xl transition border border-white/10 shrink-0"
-              >
-                <Menu className="w-5 h-5 text-white" aria-hidden />
-              </button>
+  onClick={() => setSidebarOpen(true)}
+  aria-label="Open navigation"
+  className={`p-2.5 rounded-xl transition border shrink-0 ${
+    isDark
+      ? 'bg-white/5 hover:bg-indigo-600/20 border-white/10'
+      : 'bg-gray-100 hover:bg-indigo-50 border-gray-200'
+  }`}
+>
+  <Menu className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-700'}`} aria-hidden />
+</button>
 
               {company.logo_url ? (
                 <div className="p-1.5 bg-white rounded-xl shadow-sm shrink-0">
@@ -821,7 +826,7 @@ className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilter
 
     {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
   </button>
- <div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
+<div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
   <button
     onClick={() => setCurrentView('cards')}
     className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
@@ -834,6 +839,12 @@ className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilter
   >
     <List className="w-4 h-4" aria-hidden />
   </button>
+  <button
+    onClick={() => setCurrentView('calendar')}
+    className={`p-2.5 rounded-lg transition ${currentView === 'calendar' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
+  >
+    <Calendar className="w-4 h-4" aria-hidden />
+  </button>
 </div>
 </div>     
            
@@ -841,6 +852,58 @@ className={`p-3.5 rounded-xl border transition-all relative ${showAdvancedFilter
 </div>
       
         {/* Status pills — all screen sizes */}
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+  {[
+    {
+      label: 'Scheduled Today',
+      icon: <Clock className="w-3 h-3" />,
+      active: timeFilter === 'today' && filterStatus === 'scheduled',
+      onClick: () => {
+        if (timeFilter === 'today' && filterStatus === 'scheduled') {
+          setTimeFilter('all');
+          setFilterStatus('all');
+        } else {
+          setTimeFilter('today');
+          setFilterStatus('scheduled');
+        }
+      },
+    },
+    {
+      label: 'Unpaid',
+      icon: <DollarSign className="w-3 h-3" />,
+      active: filterPayment === 'unpaid',
+      onClick: () => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid'),
+    },
+    {
+      label: 'New Leads',
+      icon: <Sparkles className="w-3 h-3" />,
+      active: filterStatus === 'new',
+      onClick: () => setFilterStatus(filterStatus === 'new' ? 'all' : 'new'),
+    },
+    {
+      label: 'Paid',
+      icon: <Check className="w-3 h-3" />,
+      active: filterPayment === 'paid',
+      onClick: () => setFilterPayment(filterPayment === 'paid' ? 'all' : 'paid'),
+    },
+  ].map(({ label, icon, active, onClick }) => (
+    <button
+      key={label}
+      onClick={onClick}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+        active
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : isDark
+          ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  ))}
+</div>
+ 
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterStatus('all')}
@@ -960,7 +1023,14 @@ className={`w-full appearance-none pl-3 pr-8 py-3 rounded-xl text-sm font-bold o
                 </button>
               )}
             </div>
-          ) : currentView === 'cards' ? (
+          ) : currentView === 'calendar' ? (
+  <CalendarView
+    leads={allLeads}
+    onSelectLead={setSelectedLead}
+    statusOptions={statusOptions}
+    isDark={isDark}
+  />
+) : currentView === 'cards' ? (
             <div className="space-y-10">
               {groups.map(({ title, leads }) => leads.length > 0 && (
                 <section key={title} aria-label={`${title} leads`}>

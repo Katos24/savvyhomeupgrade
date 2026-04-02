@@ -17,7 +17,7 @@ type SidebarProps = {
   onLogout: () => void;
   isOpen: boolean;
   onClose: () => void;
-  currentView?: 'cards' | 'table';
+currentView?: 'cards' | 'table' | 'calendar';
   onViewChange?: (view: 'cards' | 'table') => void;
   
 };

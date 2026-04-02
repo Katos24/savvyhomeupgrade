@@ -16,49 +16,38 @@ import {
 } from 'lucide-react';
 
 const PLAN_CONFIG = {
-  starter: {
-    label: 'Starter',
-    price: '$29',
-    tagline: 'Lead capture machine for solo contractors.',
-    features: [
-      'Custom QR code & booking form',
-      'Lead board (kanban view)',
-      'Photo & doc uploads on cards',
-      'Payment status tracking',
-      'Unlimited team members',
-      'Form branding (logo & colors)',
-      'Cancel anytime',
-    ],
-  },
   basic: {
-    label: 'Basic',
-    price: '$49.99',
-    tagline: 'Perfect for getting organized.',
+    name: 'Basic',
+    price: 49.99,
+    desc: 'Your entire digital storefront and job tracking in one link.',
+    highlight: false,
+    cta: 'Start 14-Day Free Trial',
     features: [
-      'Unlimited lead tracking',
-      'Cards + table view',
-      'Status management',
-      'Customer contact form',
-      'Activity log & notes',
-      'CSV export',
-      'Email support',
-      'Cancel anytime',
+      'Custom Booking Link (No Website Needed)',
+      'Branded QR Code for Trucks & Signs',
+      'Unlimited Lead Capture & Photo Uploads',
+      'Visual Lead Board (Kanban & Table)',
+      'Job Scheduling & Quote Builder',
+      'Custom Pipeline Stages & Task Lists',
+      'CSV Export for Bookkeeping',
+      'Unlimited Team Members',
     ],
   },
   pro: {
-    label: 'Pro',
-    price: '$79.99',
-    tagline: 'The full operating system.',
+    name: 'Pro',
+    price: 79.99,
+    desc: 'The complete AI-powered office for contractors who want to scale.',
+    highlight: true,
+    cta: 'Go Pro — 14 Days Free',
     features: [
       'Everything in Basic',
-      'Convert leads to projects',
-      'Quotes & payment tracking',
-      'Tasks & scheduling',
-      'Docs & photo management',
-      'Repeat customer detection',
-      'AI Brief on every job card',
-      'AI Assistant chat',
-      'Cancel anytime',
+      'AI Quote Generator from Photos ✦',
+      'AI Project Briefs for Crews ✦',
+      '6AM Daily Digest Email Briefing ✦',
+      'One-Click Email Sending (Quotes/Reminders)',
+      'Full Email Outbox & Sent History',
+      'Custom Email Templates & Branding',
+      'AI Assistant — Ask Anything ✦',
     ],
   },
 };
@@ -73,23 +62,20 @@ function SuccessPolling() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const attempts = useRef(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const MAX_ATTEMPTS = 15;      // ~60 seconds total with backoff
-  const HARD_TIMEOUT_MS = 90000; // 90 second hard stop
+  const MAX_ATTEMPTS = 15;
+  const HARD_TIMEOUT_MS = 90000;
 
-  // Animated dots
   useEffect(() => {
     const t = setInterval(() => setDots(d => (d + 1) % 4), 500);
     return () => clearInterval(t);
   }, []);
 
-  // Elapsed seconds counter for UX feedback
   useEffect(() => {
     if (status !== 'polling') return;
     const t = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
     return () => clearInterval(t);
   }, [status]);
 
-  // Hard timeout — 90s no matter what
   useEffect(() => {
     const t = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -98,35 +84,21 @@ function SuccessPolling() {
     return () => clearTimeout(t);
   }, []);
 
-  // Polling with exponential backoff
   useEffect(() => {
     if (status !== 'polling') return;
-
-    const getDelay = (attempt: number) => {
-      // 2s, 2s, 3s, 4s, 5s, 6s, 7s... capped at 8s
-      return Math.min(2000 + Math.max(0, attempt - 2) * 1000, 8000);
-    };
+    const getDelay = (attempt: number) => Math.min(2000 + Math.max(0, attempt - 2) * 1000, 8000);
 
     const poll = async () => {
       try {
         attempts.current += 1;
-
         const controller = new AbortController();
         const fetchTimeout = setTimeout(() => controller.abort(), 8000);
-
-        const res = await fetch('/api/subscription/status', {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+        const res = await fetch('/api/subscription/status', { cache: 'no-store', signal: controller.signal });
         clearTimeout(fetchTimeout);
 
-        if (!res.ok) {
-          if (attempts.current >= MAX_ATTEMPTS) setStatus('timeout');
-          return;
-        }
+        if (!res.ok) { if (attempts.current >= MAX_ATTEMPTS) setStatus('timeout'); return; }
 
         const data = await res.json();
-
         if (data.isActive) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           setSlug(data.slug);
@@ -141,38 +113,23 @@ function SuccessPolling() {
           return;
         }
 
-        // Schedule next poll with backoff
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = setTimeout(poll, getDelay(attempts.current));
-
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          // fetch timed out — retry
-          if (attempts.current >= MAX_ATTEMPTS) {
-            setStatus('timeout');
-          } else {
-            intervalRef.current = setTimeout(poll, getDelay(attempts.current));
-          }
+          if (attempts.current >= MAX_ATTEMPTS) setStatus('timeout');
+          else intervalRef.current = setTimeout(poll, getDelay(attempts.current));
         } else {
-          // Network error
-          if (attempts.current >= MAX_ATTEMPTS) {
-            setStatus('error');
-          } else {
-            intervalRef.current = setTimeout(poll, getDelay(attempts.current));
-          }
+          if (attempts.current >= MAX_ATTEMPTS) setStatus('error');
+          else intervalRef.current = setTimeout(poll, getDelay(attempts.current));
         }
       }
     };
 
-    // First poll immediately
     poll();
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [status]);
 
-  // Redirect after confirmed
   useEffect(() => {
     if (status !== 'confirmed' || !slug) return;
     const dest = onboardingCompleted ? `/${slug}/dashboard` : '/onboarding';
@@ -190,7 +147,7 @@ function SuccessPolling() {
               <Check className="w-10 h-10 text-white" strokeWidth={3} />
             </div>
           </div>
-          <h1 className="text-white text-3xl font-black mb-3">You're in! 🎉</h1>
+          <h1 className="text-white text-3xl font-black mb-3">You're in!</h1>
           <p className="text-slate-400 font-medium">Payment confirmed. Redirecting you now...</p>
         </div>
       </div>
@@ -205,33 +162,13 @@ function SuccessPolling() {
             <X className="w-8 h-8 text-amber-400" />
           </div>
           <h2 className="text-white text-2xl font-black mb-3">Taking longer than expected</h2>
-          <p className="text-slate-400 mb-2 font-medium">
-            Your payment was likely successful — Stripe can sometimes take a moment to confirm.
-          </p>
-          <p className="text-slate-500 text-sm mb-8">
-            Check your email for a confirmation, or try logging in to your dashboard.
-          </p>
+          <p className="text-slate-400 mb-2 font-medium">Your payment was likely successful — Stripe can sometimes take a moment to confirm.</p>
+          <p className="text-slate-500 text-sm mb-8">Check your email for a confirmation, or try logging in to your dashboard.</p>
           <div className="flex flex-col gap-3">
-            <button
-              onClick={() => router.push('/login')}
-              className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition"
-            >
-              Go to Login
-            </button>
-            <button
-              onClick={() => {
-                attempts.current = 0;
-                setElapsedSeconds(0);
-                setStatus('polling');
-              }}
-              className="w-full py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition"
-            >
-              Try Again
-            </button>
+            <button onClick={() => router.push('/login')} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition">Go to Login</button>
+            <button onClick={() => { attempts.current = 0; setElapsedSeconds(0); setStatus('polling'); }} className="w-full py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition">Try Again</button>
           </div>
-          <p className="text-slate-600 text-xs mt-6">
-            Need help? Email us at support@lead2project.com
-          </p>
+          <p className="text-slate-600 text-xs mt-6">Need help? Email us at support@lead2project.com</p>
         </div>
       </div>
     );
@@ -246,20 +183,10 @@ function SuccessPolling() {
             <div className="w-3 h-3 rounded-full bg-indigo-500" />
           </div>
         </div>
-        <h2 className="text-white text-xl font-black mb-2">
-          Activating your account{'.'.repeat(dots)}
-        </h2>
+        <h2 className="text-white text-xl font-black mb-2">Activating your account{'.'.repeat(dots)}</h2>
         <p className="text-slate-500 text-sm mb-4">Confirming payment with Stripe...</p>
-        {elapsedSeconds > 10 && (
-          <p className="text-slate-600 text-xs max-w-xs mx-auto">
-            This is taking a bit longer than usual. Please don't close this page.
-          </p>
-        )}
-        {elapsedSeconds > 30 && (
-          <p className="text-slate-600 text-xs max-w-xs mx-auto mt-2">
-            Almost there — Stripe webhooks occasionally have a short delay.
-          </p>
-        )}
+        {elapsedSeconds > 10 && <p className="text-slate-600 text-xs max-w-xs mx-auto">This is taking a bit longer than usual. Please don't close this page.</p>}
+        {elapsedSeconds > 30 && <p className="text-slate-600 text-xs max-w-xs mx-auto mt-2">Almost there — Stripe webhooks occasionally have a short delay.</p>}
       </div>
     </div>
   );
@@ -271,16 +198,14 @@ function CancelledScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
       <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-md">
-        <div className="text-5xl mb-6">😔</div>
-        <h1 className="text-white text-2xl font-black mb-2 text-white">Checkout Cancelled</h1>
+        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <X className="w-6 h-6 text-slate-400" />
+        </div>
+        <h1 className="text-white text-2xl font-black mb-2">Checkout Cancelled</h1>
         <p className="text-slate-400 mb-8 font-medium">No worries — your progress is saved.</p>
         <div className="flex gap-3">
-          <button onClick={() => router.back()} className="flex-1 py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">
-            Go Back
-          </button>
-          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">
-            Try Again
-          </button>
+          <button onClick={() => router.back()} className="flex-1 py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">Go Back</button>
+          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">Try Again</button>
         </div>
       </div>
     </div>
@@ -302,18 +227,13 @@ function SubscribePageContent() {
       try {
         const userRes = await fetch('/api/auth/me');
         const userData = await userRes.json();
-        if (!userData.success || !userData.user) {
-          window.location.href = '/login';
-          return;
-        }
+        if (!userData.success || !userData.user) { window.location.href = '/login'; return; }
         setCurrentUser(userData.user);
         const slug = userData.user.companySlug || userData.user.company_slug;
         if (!slug) return;
         const companyRes = await fetch(`/api/company/${slug}/info`);
         const companyData = await companyRes.json();
-        if (companyData.success && companyData.company) {
-          setCompany(companyData.company);
-        }
+        if (companyData.success && companyData.company) setCompany(companyData.company);
       } catch (err) {
         console.error('Error loading data:', err);
       } finally {
@@ -328,97 +248,87 @@ function SubscribePageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#080C14]">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen bg-[#080C14] text-white overflow-x-hidden">
+
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+      <header className="border-b border-white/[0.06] sticky top-0 z-50 bg-[#080C14]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm text-white">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-sm">
               L2P
             </div>
-            <span className="text-lg font-black tracking-tighter">Lead2Project</span>
+            <span className="text-lg font-black tracking-tighter text-white">Lead2Project</span>
           </div>
           {company?.subscription_status === 'active' && (
-            <a href={`/${company.slug}/dashboard`} className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition">
+            <a href={`/${company.slug}/dashboard`} className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-400 transition">
               ← Dashboard
             </a>
           )}
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-12 md:py-24">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full mb-6">
-            <Zap className="w-3 h-3" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Final Step</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Choose your workspace</h1>
-          <p className="text-slate-500 font-medium max-w-xl mx-auto">
-            Try any plan <span className="text-indigo-600 font-bold underline decoration-2 underline-offset-4">free for 14 days</span>. You won't be charged a cent today.
+      <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 relative">
+
+  
+        {/* Header */}
+        <div className="text-center mb-12 sm:mb-20 relative">
+          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-4 block">Final Step — Choose Your Plan</span>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-4 sm:mb-6">
+            One job pays for<br/>
+            <span className="text-slate-500">the whole year.</span>
+          </h1>
+          <p className="text-slate-400 text-base sm:text-lg font-medium max-w-xl mx-auto">
+            Try free for <span className="text-blue-400 font-bold">14 days</span>. No credit card charge today. Cancel anytime.
           </p>
         </div>
 
-<div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto mb-24">
-{(['starter', 'basic', 'pro'] as const).map((planKey) => {
-            const config = PLAN_CONFIG[planKey];
-            const isPro = planKey === 'pro';
-            
+        {/* ── Plan Cards ── */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8 max-w-5xl mx-auto mb-16 sm:mb-24 relative">
+          {(['basic', 'pro'] as const).map((planKey) => {
+            const plan = PLAN_CONFIG[planKey];
+
             return (
-              <div 
-                key={planKey} 
-                className={`relative bg-white rounded-[2.5rem] p-8 md:p-12 border-2 transition-all ${
-                  isPro 
-                  ? 'border-indigo-600 shadow-2xl shadow-indigo-100 lg:scale-105 z-10' 
-                  : 'border-slate-200 shadow-xl shadow-slate-200/50'
+              <div
+                key={planKey}
+                className={`group rounded-2xl sm:rounded-[3rem] p-4 sm:p-8 lg:p-10 border transition-all duration-500 relative ${
+                  plan.highlight
+                    ? 'bg-[#0F172A] border-blue-500 shadow-2xl shadow-blue-900/20'
+                    : 'bg-white/[0.02] border-white/[0.08] hover:border-white/20'
                 }`}
               >
-                {isPro && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-indigo-200">
-                    <Star className="w-3 h-3 fill-white" /> Most Popular
+                {plan.highlight && (
+                  <div className="absolute -top-3 sm:-top-4 left-4 sm:left-10 bg-blue-600 text-white text-[7px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-xl whitespace-nowrap">
+                    <span className="hidden sm:inline">Recommended for Growth</span>
+                    <span className="sm:hidden">Most Popular</span>
                   </div>
                 )}
 
-                <div className="mb-8">
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-1">{config.label}</h3>
-                  <p className="text-slate-400 text-sm font-bold">{config.tagline}</p>
-                </div>
-
-                <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-6xl font-black text-slate-900">{config.price}</span>
-                  <span className="text-slate-400 font-bold text-sm">/mo</span>
-                </div>
-
-                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 mb-10 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
-                    <Check className="w-6 h-6 text-white" strokeWidth={4} />
-                  </div>
-                  <div>
-                    <p className="text-emerald-800 font-black text-xs uppercase tracking-tight">14 Days Free Trial</p>
-                    <p className="text-emerald-600/80 text-[11px] font-bold">Risk-free. Cancel anytime.</p>
+                {/* Plan name + price */}
+                <div className="mb-4 sm:mb-8 mt-2 sm:mt-0">
+                  <h3 className={`text-[10px] sm:text-xl font-black uppercase tracking-widest ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`}>
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline gap-0.5 sm:gap-1 mt-1 sm:mt-2">
+                    <span className="text-3xl sm:text-5xl lg:text-7xl font-black text-white tracking-tighter">${plan.price}</span>
+                    <span className="text-slate-500 font-bold text-xs sm:text-lg">/mo</span>
                   </div>
                 </div>
 
-                <div className="space-y-4 mb-10">
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Included features</p>
-                  {config.features.map((f) => (
-                    <div key={f} className="flex items-start gap-3">
-                      <div className="mt-1 w-5 h-5 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                        <Check className="w-3 h-3 text-slate-500" strokeWidth={4} />
-                      </div>
-                      <span className="text-sm font-bold text-slate-600 leading-snug">{f}</span>
-                    </div>
-                  ))}
-                </div>
+                {/* Description */}
+                <p className="hidden sm:block text-slate-400 font-medium mb-6 sm:mb-10 text-sm sm:text-lg leading-relaxed min-h-[60px]">
+                  {plan.desc}
+                </p>
 
+                {/* CTA */}
                 {company && currentUser ? (
-                  <div className="w-full">
+                  <div className="mb-4 sm:mb-10">
                     <SubscribeButton
                       companyId={company.id}
                       companyEmail={company.email}
@@ -429,40 +339,73 @@ function SubscribePageContent() {
                     />
                   </div>
                 ) : (
-                  <div className="h-14 bg-slate-100 animate-pulse rounded-2xl" />
+                  <div className="h-12 sm:h-16 bg-white/5 animate-pulse rounded-xl sm:rounded-2xl mb-4 sm:mb-10" />
                 )}
 
-                <p className="text-xs text-center text-slate-400 mt-3">
-  All sales are final. No refunds. Cancel anytime to stop future charges.
-</p>
-                
-                <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-6 opacity-50">
-                  Secure Billing via Stripe
+                {/* Features */}
+                <div className="space-y-2 sm:space-y-4">
+                  <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-600 mb-3 sm:mb-6 border-b border-white/5 pb-2">
+                    What's included:
+                  </p>
+                  <ul className="grid gap-2 sm:gap-4">
+                    {plan.features.map(f => {
+                      const isAI = f.includes('✦');
+                      return (
+                        <li key={f} className="flex items-start gap-1.5 sm:gap-3">
+                          <div className={`mt-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shrink-0 ${
+                            isAI ? 'bg-violet-500/20' : plan.highlight ? 'bg-blue-500/20' : 'bg-white/10'
+                          }`}>
+                            <Check className={`w-2 h-2 sm:w-3 sm:h-3 ${
+                              isAI ? 'text-violet-400' : plan.highlight ? 'text-blue-400' : 'text-slate-400'
+                            }`} strokeWidth={4} />
+                          </div>
+                          <span className={`text-[9px] sm:text-sm font-semibold tracking-tight leading-tight ${
+                            isAI ? 'text-violet-200' : 'text-slate-300'
+                          }`}>
+                            {f.replace(' ✦', '')}
+                            {isAI && (
+                              <span className="ml-1 sm:ml-2 text-[7px] sm:text-[8px] bg-violet-500/20 text-violet-400 px-1 sm:px-1.5 py-0.5 rounded-md font-black border border-violet-500/30 uppercase tracking-tighter">
+                                AI
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+
+                <p className="text-[9px] sm:text-xs text-center text-slate-600 mt-6 sm:mt-8">
+                  All sales are final. Cancel anytime to stop future charges.
                 </p>
               </div>
             );
           })}
         </div>
 
-        {/* Trust Footer */}
-        <div className="max-w-4xl mx-auto border-t border-slate-200 pt-16">
-          <div className="grid md:grid-cols-3 gap-12 mb-20">
-            {[
-              { icon: <Lock className="w-5 h-5 text-indigo-500" />, title: 'Fully Secure', desc: 'Bank-grade encryption for all your business data.' },
-              { icon: <ShieldCheck className="w-5 h-5 text-indigo-500" />, title: 'PCI Compliant', desc: 'We never store your card details on our servers.' },
-              { icon: <CreditCard className="w-5 h-5 text-indigo-500" />, title: 'Easy Cancel', desc: 'No phone calls or emails needed to cancel.' },
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center md:items-start text-center md:text-left">
-                <div className="mb-4 p-3 bg-white rounded-xl shadow-sm border border-slate-100">{item.icon}</div>
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">{item.title}</h4>
-                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
+        {/* Trust + FAQ */}
+        <div className="max-w-4xl mx-auto border-t border-white/[0.06] pt-16 relative">
+
+          {/* Trust badges */}
+          <div className="flex items-center justify-center gap-8 sm:gap-12 mb-16 opacity-30 grayscale">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-white" />
+              <span className="text-white font-black tracking-tighter text-sm sm:text-lg uppercase">256-Bit SSL</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-white" />
+              <span className="text-white font-black tracking-tighter text-sm sm:text-lg uppercase">Stripe Secure</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-white" />
+              <span className="text-white font-black tracking-tighter text-sm sm:text-lg uppercase">PCI Compliant</span>
+            </div>
           </div>
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 md:p-12 shadow-sm">
-            <h3 className="text-2xl font-black text-slate-900 mb-10 flex items-center gap-3">
-              <HelpCircle className="w-6 h-6 text-indigo-600" /> FAQ
+          {/* FAQ */}
+          <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-8 md:p-12">
+            <h3 className="text-2xl font-black text-white mb-10 flex items-center gap-3">
+              <HelpCircle className="w-6 h-6 text-blue-400" /> FAQ
             </h3>
             <div className="grid md:grid-cols-2 gap-x-16 gap-y-10">
               {[
@@ -472,7 +415,7 @@ function SubscribePageContent() {
                 { q: 'What happens to my data?', a: 'If you cancel, your data is kept for 30 days in case you decide to return, then it is securely deleted.' },
               ].map(({ q, a }) => (
                 <div key={q} className="space-y-2">
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight leading-tight">{q}</h4>
+                  <h4 className="text-sm font-black text-white uppercase tracking-tight leading-tight">{q}</h4>
                   <p className="text-xs text-slate-500 font-bold leading-relaxed">{a}</p>
                 </div>
               ))}
@@ -486,7 +429,11 @@ function SubscribePageContent() {
 
 export default function SubscribePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="w-10 h-10 text-indigo-600 animate-spin" /></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#080C14] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+      </div>
+    }>
       <SubscribePageContent />
     </Suspense>
   );

@@ -6,10 +6,10 @@ export type Theme = typeof darkTheme;
 
 export const darkTheme = {
   // Page / container backgrounds
-  pageBg:        'bg-[#0A0C10]',
-  cardBg:        'bg-[#0A0C10]',
-  cardBgHover:   'hover:bg-[#0f1117]',
-  cardBorder:    'border-[#1C2029]',
+pageBg: 'bg-[#0d1117]',
+ cardBg:        'bg-[#141821]',
+cardBgHover:   'hover:bg-[#1a1f2e]',
+cardBorder:    'border-[#2a2f3d]',
   cardBorderHover:'hover:border-blue-500/50',
   innerBg:       'bg-[#161B22]/50',
   innerBorder:   'border-[#1C2029]',

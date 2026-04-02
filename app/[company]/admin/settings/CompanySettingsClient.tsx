@@ -89,6 +89,7 @@ function UpgradeOverlay({ feature, companySlug }: {
 
 export default function CompanySettingsClient({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
+const [showDigestConfirm, setShowDigestConfirm] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -511,50 +512,98 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 </a>
 
         {/* Daily Digest */}
-        {can(planTier, 'daily_digest') ? (
-          <button
-            onClick={async () => {
-              const newVal = !digestEnabled;
-              setDigestEnabled(newVal);
-              await fetch(`/api/company/${company.slug}/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'update-notifications',
-                  data: {
-                    reminder_settings: company.reminder_settings,
-                    notification_preferences: {
-                      ...(company.notification_preferences || {}),
-                      daily_digest: { enabled: newVal },
-                      digest_recipient: 'company',
+     {/* Daily Digest */}
+{can(planTier, 'daily_digest') ? (
+  <>
+    {/* Confirm popup */}
+    {showDigestConfirm && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowDigestConfirm(false)} />
+        <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+          <h3 className="text-sm font-black text-slate-900 mb-2">
+            {digestEnabled ? 'Turn off Daily Digest?' : 'Turn on Daily Digest?'}
+          </h3>
+          <p className="text-xs text-slate-500 font-medium mb-6">
+            {digestEnabled
+              ? 'You will stop receiving the 6AM daily summary email.'
+              : 'You will receive a 6AM daily summary of your leads, jobs, and payments.'}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowDigestConfirm(false)}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                const newVal = !digestEnabled;
+                setDigestEnabled(newVal);
+                setShowDigestConfirm(false);
+                await fetch(`/api/company/${company.slug}/settings`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'update-notifications',
+                    data: {
+                      reminder_settings: company.reminder_settings,
+                      notification_preferences: {
+                        ...(company.notification_preferences || {}),
+                        daily_digest: { enabled: newVal },
+                        digest_recipient: 'company',
+                      },
                     },
-                  },
-                }),
-              });
-            }}
-            className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 ${
-              digestEnabled
-                ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
-                : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
-            }`}
-          >
-            <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
-            <span className={`text-[10px] font-black uppercase tracking-widest ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
-              {digestEnabled ? 'Daily Digest On' : 'Daily Digest Off'}
-            </span>
-          </button>
-        ) : (
-          <button
-            onClick={() => openTab('billing')}
-            className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 active:scale-95"
-          >
-            <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
-            <div className="text-center">
-              <p className="text-[10px] font-black text-slate-300 group-hover:text-purple-400 uppercase tracking-widest transition-colors">Digest</p>
-              <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mt-0.5">Pro</p>
-            </div>
-          </button>
-        )}
+                  }),
+                });
+              }}
+              className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition ${
+                digestEnabled ? 'bg-rose-500 hover:bg-rose-600' : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {digestEnabled ? 'Turn Off' : 'Turn On'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Toggle row */}
+    <button
+      onClick={() => setShowDigestConfirm(true)}
+      className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 ${
+        digestEnabled
+          ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+          : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+      }`}
+    >
+      {/* Toggle pill */}
+     <div
+  className={`w-10 h-5 rounded-full relative transition-colors duration-200 flex-shrink-0 ${digestEnabled ? 'bg-indigo-500' : 'bg-slate-300'}`}
+  style={{ minWidth: '40px' }}
+>
+  <div
+    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200"
+    style={{ left: digestEnabled ? '22px' : '2px' }}
+  />
+</div>
+      <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+      <span className={`text-[10px] font-black uppercase tracking-widest ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
+        {digestEnabled ? 'Digest On' : 'Digest Off'}
+      </span>
+    </button>
+  </>
+) : (
+  <button
+    onClick={() => openTab('billing')}
+    className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 active:scale-95"
+  >
+    <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
+    <div className="text-center">
+      <p className="text-[10px] font-black text-slate-300 group-hover:text-purple-400 uppercase tracking-widest transition-colors">Digest</p>
+      <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mt-0.5">Pro</p>
+    </div>
+  </button>
+)}
       </div>
     )}
   </div>
