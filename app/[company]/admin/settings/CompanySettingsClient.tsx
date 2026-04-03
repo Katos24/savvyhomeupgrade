@@ -626,14 +626,14 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
           />
         </div>
         <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
-        <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
+      <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
   {digestEnabled ? 'Digest On' : 'Digest Off'}
-<button
-  onClick={e => { e.stopPropagation(); setShowDigestInfo(true); }}
-  className="w-4 h-4 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition shrink-0"
->
-  <span className="text-[8px] font-black text-blue-600">i</span>
-</button>
+  <div
+    onClick={e => { e.stopPropagation(); setShowDigestInfo(true); }}
+    className="w-4 h-4 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition shrink-0 cursor-pointer"
+  >
+    <span className="text-[8px] font-black text-blue-600">i</span>
+  </div>
 </span>
       </button>
 

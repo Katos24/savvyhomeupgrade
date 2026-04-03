@@ -182,8 +182,18 @@ export default function SendEmailModal({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-3">
+         {lastHtmlBody && (
+  <button
+    onClick={() => setShowPreview(true)}
+    className="w-full flex items-center justify-center gap-2 py-3 mb-3 rounded-2xl border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 text-xs font-bold transition"
+  >
+    <Eye className="w-3.5 h-3.5" />
+    Preview Last Email
+  </button>
+)}
+
+{/* Actions */}
+<div className="grid grid-cols-2 gap-3">
             <button
               onClick={onClose}
               disabled={sending}

@@ -94,6 +94,7 @@ interface Props {
     reminders: number
     failed: number
   }
+  typeCountMap?: Record<string, number>
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -247,7 +248,7 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function OutboxClient({ company, projects, outboxEmails = [], totalEmails, totalStats }: Props) {
+export default function OutboxClient({ company, projects, outboxEmails = [], totalEmails, totalStats, typeCountMap = {} }: Props) {
     console.log('totalStats:', totalStats) // ← add this
 
     const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder'>('all')
@@ -256,6 +257,27 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
   const [loadingMore, setLoadingMore] = useState(false)
 const [mounted, setMounted] = useState(false)
 useEffect(() => setMounted(true), [])
+useEffect(() => {
+    // When tab changes reset to first page and reload with type filter
+    const fetchFiltered = async () => {
+      setLoadingMore(true)
+      try {
+        const typeParam = tab !== 'all' ? `&type=${tab}` : ''
+        const res = await fetch(`/api/company/${company.slug}/outbox?page=1${typeParam}`)
+        const data = await res.json()
+        if (data.success) {
+          setAllOutboxEmails(data.emails)
+          setOutboxPage(1)
+        }
+      } catch {
+        // silent
+      } finally {
+        setLoadingMore(false)
+      }
+    }
+    // Only refetch if not the initial load
+    if (mounted) fetchFiltered()
+  }, [tab])
 const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState('')
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
@@ -263,14 +285,16 @@ const [search, setSearch] = useState('')
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
 
   // Only show load more if filters are clear and there are more server-side emails
-const hasActiveFilters = !!(search || dateRange || tab !== 'all')
-  const hasMore = !hasActiveFilters && totalEmails ? allOutboxEmails.length < totalEmails : false
+const hasActiveFilters = !!(search || dateRange)
+const tabTotal = tab === 'all' ? (totalEmails ?? 0) : (typeCountMap[tab] ?? 0)
+const hasMore = allOutboxEmails.length < tabTotal
 
-  const loadMore = async () => {
+   const loadMore = async () => {
     setLoadingMore(true)
     try {
       const nextPage = outboxPage + 1
-      const res = await fetch(`/api/company/${company.slug}/outbox?page=${nextPage}`)
+      const typeParam = tab !== 'all' ? `&type=${tab}` : ''
+      const res = await fetch(`/api/company/${company.slug}/outbox?page=${nextPage}${typeParam}`)
       const data = await res.json()
       if (data.success) {
         setAllOutboxEmails(prev => [...prev, ...data.emails])
@@ -282,7 +306,6 @@ const hasActiveFilters = !!(search || dateRange || tab !== 'all')
       setLoadingMore(false)
     }
   }
-
   const allEmails = useMemo(() => buildEmailList(projects, allOutboxEmails), [projects, allOutboxEmails])
 
   const senders = useMemo(() =>
@@ -328,10 +351,10 @@ const hasActiveFilters = !!(search || dateRange || tab !== 'all')
   const failedCount = allEmails.filter(e => e.status === 'failed').length
 
   const tabs = [
-    { key: 'all',              label: 'All',           count: allEmails.length },
-    { key: 'quote',            label: 'Quotes',        count: allEmails.filter(e => e.type === 'quote').length },
-    { key: 'schedule',         label: 'Schedules',     count: allEmails.filter(e => e.type === 'schedule').length },
-    { key: 'payment_reminder', label: 'Reminders',     count: reminderCount },
+    { key: 'all',              label: 'All',       count: totalEmails ?? allEmails.length },
+    { key: 'quote',            label: 'Quotes',    count: typeCountMap['quote'] ?? allEmails.filter(e => e.type === 'quote').length },
+    { key: 'schedule',         label: 'Schedules', count: typeCountMap['schedule'] ?? allEmails.filter(e => e.type === 'schedule').length },
+    { key: 'payment_reminder', label: 'Reminders', count: typeCountMap['payment_reminder'] ?? reminderCount },
   ] as const
 
   const toggleRow = (idx: number) => setExpandedIdx(prev => prev === idx ? null : idx)
@@ -705,7 +728,7 @@ const hasActiveFilters = !!(search || dateRange || tab !== 'all')
             <button onClick={loadMore} disabled={loadingMore}
               className="px-8 py-3 rounded-2xl text-sm font-black text-gray-400 hover:text-white transition-all disabled:opacity-40 uppercase tracking-widest"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {loadingMore ? 'Loading...' : `Load More (${(totalEmails ?? 0) - allOutboxEmails.length} remaining)`}
+{loadingMore ? 'Loading...' : `Load More (${tabTotal - allOutboxEmails.length} remaining)`}
             </button>
           </div>
         )}

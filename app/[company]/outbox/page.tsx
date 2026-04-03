@@ -85,14 +85,24 @@ async function getCurrentUser(userId: number): Promise<CurrentUser | null> {
 async function getOutboxData(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
 
-  const [outboxEmails, outboxTotal, projects, legacyTotal, statsRows] = await Promise.all([
+  const [outboxEmails, outboxTotal, projects, statsRows, typeCounts] = await Promise.all([
+
+    // ── First page of outbox emails ───────────────────────────────
     sql`
       SELECT * FROM email_outbox
       WHERE company_id = ${companyId}
       ORDER BY created_at DESC
       LIMIT 25
     `,
-    sql`SELECT COUNT(*) as total FROM email_outbox WHERE company_id = ${companyId}`,
+
+    // ── Total outbox count ────────────────────────────────────────
+    sql`
+      SELECT COUNT(*) as total
+      FROM email_outbox
+      WHERE company_id = ${companyId}
+    `,
+
+    // ── Legacy project emails (quote/schedule stored in projects) ─
     sql`
       SELECT id, lead_id, customer_name, customer_email,
         COALESCE(quote_emails, '[]'::jsonb) AS quote_emails,
@@ -106,17 +116,11 @@ async function getOutboxData(companyId: number) {
       ORDER BY updated_at DESC
       LIMIT 25
     `,
-    sql`
-      SELECT COUNT(*) as total FROM projects
-      WHERE company_id = ${companyId}
-        AND (
-          jsonb_array_length(COALESCE(quote_emails, '[]'::jsonb)) > 0
-          OR jsonb_array_length(COALESCE(schedule_emails, '[]'::jsonb)) > 0
-        )
-    `,
+
+    // ── Stats from outbox only ────────────────────────────────────
     sql`
       SELECT
-COUNT(*) FILTER (WHERE status != 'failed') as sent,
+        COUNT(*) FILTER (WHERE status != 'failed') as sent,
         COUNT(*) FILTER (WHERE type = 'payment_reminder') as reminders,
         COUNT(*) FILTER (WHERE status = 'failed') as failed,
         COALESCE(SUM(
@@ -127,29 +131,39 @@ COUNT(*) FILTER (WHERE status != 'failed') as sent,
       FROM email_outbox
       WHERE company_id = ${companyId}
     `,
+
+    // ── Per-type counts for accurate tab badges ───────────────────
+    sql`
+      SELECT type, COUNT(*) as count
+      FROM email_outbox
+      WHERE company_id = ${companyId}
+      GROUP BY type
+    `,
   ]);
 
   const stats = statsRows[0];
-console.log('SERVER totalStats:', {
-  sent: parseInt(stats.sent) + parseInt(legacyTotal[0].total),
-  revenue: parseFloat(stats.revenue) || 0,
-  reminders: parseInt(stats.reminders) || 0,
-  failed: parseInt(stats.failed) || 0,
-});
+  const total = parseInt(outboxTotal[0].total);
+
+  // Build type count map for accurate tab counts
+  const typeCountMap: Record<string, number> = {};
+  typeCounts.forEach((row: any) => {
+    typeCountMap[row.type] = parseInt(row.count);
+  });
 
   return {
     outboxEmails,
     projects,
-    outboxTotal: parseInt(outboxTotal[0].total) + parseInt(legacyTotal[0].total),
+    // Total is outbox only — legacy emails shown as supplement, not double counted
+    outboxTotal: total,
     totalStats: {
-      sent: parseInt(outboxTotal[0].total) + parseInt(legacyTotal[0].total),
-      revenue: parseFloat(stats.revenue) || 0,
+      sent:     parseInt(stats.sent)     || 0,
+      revenue:  parseFloat(stats.revenue) || 0,
       reminders: parseInt(stats.reminders) || 0,
-      failed: parseInt(stats.failed) || 0,
+      failed:   parseInt(stats.failed)   || 0,
     },
+    typeCountMap,
   };
 }
-
 
 export default async function OutboxPage({ params }: PageProps) {
   const { company: companySlug } = await params;
@@ -164,13 +178,14 @@ export default async function OutboxPage({ params }: PageProps) {
 
   if (!currentUser) redirect('/login');
 
-return (
-  <OutboxClient
-    company={company}
-    projects={outboxData.projects as any}
-    outboxEmails={outboxData.outboxEmails as any}
-    totalEmails={outboxData.outboxTotal}
-    totalStats={outboxData.totalStats}
-  />
-);
+  return (
+    <OutboxClient
+      company={company}
+      projects={outboxData.projects as any}
+      outboxEmails={outboxData.outboxEmails as any}
+      totalEmails={outboxData.outboxTotal}
+      totalStats={outboxData.totalStats}
+      typeCountMap={outboxData.typeCountMap}
+    />
+  );
 }
