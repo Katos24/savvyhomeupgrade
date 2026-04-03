@@ -14,7 +14,7 @@ export default function PrivacyPage() {
             ← Back to Home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-          <p className="text-gray-600">Last updated: February 10, 2026</p>
+          <p className="text-gray-600">Last updated: April 3, 2026</p>
         </div>
 
         {/* Content */}
@@ -58,6 +58,13 @@ export default function PrivacyPage() {
               </div>
             </div>
           </section>
+
+<section>
+  <h2 className="text-2xl font-bold text-gray-900 mb-4">2b. Photo and Media Data</h2>
+  <p className="text-gray-700 leading-relaxed">
+    Our Service allows end customers of our subscribers to upload photos, videos, and other media files as part of submitting service requests. These files are stored securely using Vercel Blob Storage. We do not use uploaded media for any purpose other than delivering the Service to the applicable subscriber. Media files are accessible only to the subscribing business and are retained for up to 30 days following account cancellation, after which they are permanently deleted.
+  </p>
+</section>
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">3. How We Use Your Information</h2>
@@ -181,9 +188,6 @@ export default function PrivacyPage() {
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-gray-700">
                 <strong>Email:</strong> privacy@lead2project.com
-              </p>
-              <p className="text-gray-700">
-                <strong>Phone:</strong> (555) 123-4567
               </p>
               <p className="text-gray-700">
                 <strong>Address:</strong> Lead2Project, New York, NY

@@ -14,7 +14,7 @@ export default function TermsPage() {
             ← Back to Home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-          <p className="text-gray-600">Last updated: February 10, 2026</p>
+          <p className="text-gray-600">Last updated: April 3, 2026</p>
         </div>
 
         {/* Content */}
@@ -93,7 +93,7 @@ export default function TermsPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Cancellation and Refunds</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  You may cancel your subscription at any time. Cancellations take effect at the end of the current billing period. We do not provide refunds for partial months or unused portions of the Service, except as required by law.
+                  You may cancel your subscription at any time. Cancellations take effect at the end of the current billing period. All sales are final. We do not provide refunds for any reason, including partial months, unused portions of the Service, or early cancellation, except as required by applicable law. By subscribing, you acknowledge and agree to this no-refund policy.
                 </p>
               </div>
             </div>
@@ -115,6 +115,13 @@ export default function TermsPage() {
               <li>Violate any applicable laws or regulations</li>
             </ul>
           </section>
+
+          <section>
+  <h2 className="text-2xl font-bold text-gray-900 mb-4">6b. Photo and Media Uploads</h2>
+  <p className="text-gray-700 leading-relaxed">
+    The Service allows customers of our subscribers to upload photos, videos, and other media files ("Media") as part of submitting service requests. By uploading Media through the Service, you represent and warrant that you have all necessary rights to upload and share such Media. Lead2Project is not responsible for any Media uploaded by users or their customers. We store Media solely to facilitate the delivery of the Service and do not claim ownership of any uploaded Media. Media may be retained for up to 30 days after account cancellation before being permanently deleted.
+  </p>
+</section>
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">6. User Content</h2>
@@ -240,9 +247,7 @@ export default function TermsPage() {
               <p className="text-gray-700">
                 <strong>Email:</strong> legal@lead2project.com
               </p>
-              <p className="text-gray-700">
-                <strong>Phone:</strong> (555) 123-4567
-              </p>
+              
               <p className="text-gray-700">
                 <strong>Address:</strong> Lead2Project, New York, NY
               </p>

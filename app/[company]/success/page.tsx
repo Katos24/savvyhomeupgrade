@@ -133,8 +133,8 @@ export default async function SuccessPage({ params }: PageProps) {
 }
 
 .logo-hero img {
-  width: 65%; 
-  height: 65%;
+  width: 75%; 
+  height: 75%;
   object-fit: contain;
   /* Helps logos with transparency feel "grounded" */
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));

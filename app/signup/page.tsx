@@ -36,6 +36,8 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -83,6 +85,11 @@ function SignupForm() {
       setError('Passwords do not match');
       return;
     }
+
+    if (!agreedToTerms) {
+  setError('Please agree to the Terms of Service to continue');
+  return;
+}
 
     setShowConfirm(true);
   };
@@ -319,6 +326,26 @@ function SignupForm() {
                 />
               </div>
             </div>
+
+            <div className="flex items-start gap-3 px-1">
+  <input
+    type="checkbox"
+    id="terms"
+    checked={agreedToTerms}
+    onChange={(e) => setAgreedToTerms(e.target.checked)}
+    className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
+  />
+  <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed cursor-pointer">
+    I agree to the{' '}
+    <a href="/terms" target="_blank" className="text-indigo-600 font-semibold hover:underline">
+      Terms of Service
+    </a>{' '}
+    and{' '}
+    <a href="/privacy" target="_blank" className="text-indigo-600 font-semibold hover:underline">
+      Privacy Policy
+    </a>
+  </label>
+</div>
 
             <div className="pt-4">
               <button

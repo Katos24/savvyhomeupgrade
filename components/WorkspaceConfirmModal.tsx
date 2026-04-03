@@ -1,53 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ArrowRight, Globe, Lock, Pencil, X } from 'lucide-react';
+import { ArrowRight, Globe, Lock, Pencil } from 'lucide-react';
 
 interface WorkspaceConfirmModalProps {
   isOpen: boolean;
   slug: string;
   onConfirm: () => void;
   onEdit: () => void;
-}
-
-const BASE_URL = 'lead2project.com';
-
-function MiniQR({ value }: { value: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const size = 64;
-    const modules = 21;
-    const cell = Math.floor(size / modules);
-
-    const seed = value.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-    
-    ctx.clearRect(0, 0, size, size);
-    for (let r = 0; r < modules; r++) {
-      for (let c = 0; c < modules; c++) {
-        const finder = (r < 7 && c < 7) || (r < 7 && c >= modules - 7) || (r >= modules - 7 && c < 7);
-        if (finder || (seed * (r + 1) * (c + 1) * 7) % 17 < 8) {
-          // Dark slate dots for high contrast on light backgrounds
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(c * cell, r * cell, cell - 0.5, cell - 0.5);
-        }
-      }
-    }
-  }, [value]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={64}
-      height={64}
-      style={{ display: 'block', borderRadius: '4px' }}
-    />
-  );
 }
 
 export default function WorkspaceConfirmModal({
@@ -57,8 +17,6 @@ export default function WorkspaceConfirmModal({
   onEdit,
 }: WorkspaceConfirmModalProps) {
   if (!isOpen || !slug) return null;
-
-  const publicUrl = `${BASE_URL}/${slug}`;
 
   return (
     <div style={{
@@ -73,79 +31,101 @@ export default function WorkspaceConfirmModal({
 
       {/* Card */}
       <div style={{
-        position: 'relative', width: '100%', maxWidth: '480px',
-        backgroundColor: '#ffffff', borderRadius: '28px',
+        position: 'relative', width: '100%', maxWidth: '460px',
+        backgroundColor: '#ffffff', borderRadius: '24px',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden',
       }}>
 
-        {/* ── HEADER: FOCUS ON SPELLING ── */}
-        <div style={{ padding: '32px 32px 24px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'inline-flex', padding: '6px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: '100px', marginBottom: '16px' }}>
+        {/* Header */}
+<div style={{ padding: 'clamp(16px, 5vw, 28px) clamp(16px, 5vw, 28px) 20px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{
+            display: 'inline-flex', padding: '5px 12px',
+            backgroundColor: '#FEF2F2', border: '1px solid #FEE2E2',
+            borderRadius: '100px', marginBottom: '14px',
+          }}>
             <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#EF4444' }}>
-              Final Review Required
+              Double-check before continuing
             </span>
           </div>
-          <h2 style={{ margin: '0 0 10px', fontSize: '24px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            Check your spelling.
+          <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            Does your URL look right?
           </h2>
-          <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: 600, lineHeight: 1.5 }}>
-            Make sure your business name is correct. <br/>
-            <span style={{ color: '#0f172a' }}>Note: Hyphens ( - ) are required between words.</span>
+          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: 500, lineHeight: 1.6 }}>
+            This becomes your permanent address — it cannot be changed later.<br />
+            Words are separated by hyphens <strong style={{ color: '#0f172a' }}>( - )</strong>.
           </p>
         </div>
 
-        {/* ── URL PREVIEW AREA ── */}
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* URL Preview */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-          {/* Public Side */}
-          <div style={{ borderRadius: '16px', border: '1px solid #C8D5B0', backgroundColor: '#F9FBF4', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid #C8D5B0', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#F5F0E8' }}>
-              <Globe size={14} color="#1A3A1A" />
-              <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#1A3A1A' }}>Customer View</span>
+          {/* Customer Form */}
+          <div style={{ borderRadius: '14px', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 14px', borderBottom: '1px solid #C8D5B0', display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#DBEAFE' }}>
+              <Globe size={12} color="#1E3A5F" />
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#1E3A5F' }}>
+                Share with customers
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, color: '#1E3A5F', backgroundColor: '#BFDBFE', padding: '2px 8px', borderRadius: '100px' }}>
+                Public
+              </span>
             </div>
-            
-            <div style={{ padding: '16px' }}>
-               <div style={{ backgroundColor: 'white', border: '1px solid #C8D5B0', borderRadius: '10px', padding: '12px', fontFamily: 'monospace', fontSize: '14px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
-                  <span style={{ color: '#94a3b8' }}>lead2project.com/</span>
-                  <span style={{ color: '#1A3A1A', fontWeight: 900 }}>{slug}</span>
-                </div>
+            <div style={{ padding: '14px' }}>
+              <div style={{ backgroundColor: 'white', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '10px 14px', fontFamily: 'monospace', fontSize: '14px', wordBreak: 'break-all' }}>
+                <span style={{ color: '#94a3b8' }}>lead2project.com/</span>
+                <span style={{ color: '#0F2744', fontWeight: 900 }}>{slug}</span>
+              </div>
             </div>
           </div>
 
-          {/* Private Side - FIXED VISIBILITY */}
-          <div style={{ borderRadius: '16px', border: '1px solid #334155', backgroundColor: '#0F172A', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1E293B' }}>
-              <Lock size={14} color="#A5B4FC" />
-              <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: '#CBD5E1' }}>Your Private Dashboard</span>
+          {/* Dashboard */}
+          <div style={{ borderRadius: '14px', border: '1px solid #334155', backgroundColor: '#0F172A', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 14px', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#1E293B' }}>
+              <Lock size={12} color="#A5B4FC" />
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A5B4FC' }}>
+                Your dashboard
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, color: '#818CF8', backgroundColor: '#1E2A4A', padding: '2px 8px', borderRadius: '100px' }}>
+                Private
+              </span>
             </div>
-            
-            <div style={{ padding: '16px' }}>
-              <div style={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '10px', padding: '12px', fontFamily: 'monospace', fontSize: '14px' }}>
-                <span style={{ color: '#64748b' }}>lead2project.com/</span>
-                <span style={{ color: '#A5B4FC', fontWeight: 900 }}>{slug}</span>
-                <span style={{ color: '#64748b' }}>/dashboard</span>
+            <div style={{ padding: '14px' }}>
+              <div style={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '10px', padding: '10px 14px', fontFamily: 'monospace', fontSize: '14px', wordBreak: 'break-all' }}>
+                <span style={{ color: '#475569' }}>lead2project.com/</span>
+                <span style={{ color: '#818CF8', fontWeight: 900 }}>{slug}</span>
+                <span style={{ color: '#475569' }}>/dashboard</span>
               </div>
             </div>
           </div>
 
         </div>
 
-        {/* ── ACTIONS ── */}
-        <div style={{ padding: '0 24px 32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Actions */}
+<div style={{ padding: '0 clamp(16px, 4vw, 24px) 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             onClick={onConfirm}
-            style={{ width: '100%', height: '56px', backgroundColor: '#4F46E5', color: 'white', border: 'none', borderRadius: '16px', fontSize: '15px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+            style={{
+              width: '100%', height: '52px', backgroundColor: '#4F46E5',
+              color: 'white', border: 'none', borderRadius: '14px',
+              fontSize: '15px', fontWeight: 800, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
           >
-            Looks Good — Activate Now
-            <ArrowRight size={18} />
+            Looks good — continue
+            <ArrowRight size={17} />
           </button>
-          
+
           <button
             onClick={onEdit}
-            style={{ width: '100%', height: '48px', backgroundColor: 'transparent', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '16px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            style={{
+              width: '100%', height: '44px', backgroundColor: 'transparent',
+              color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '14px',
+              fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+            }}
           >
-            <Pencil size={14} />
-            Go back and fix spelling
+            <Pencil size={13} />
+            Fix my spelling
           </button>
         </div>
 

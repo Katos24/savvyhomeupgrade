@@ -12,6 +12,7 @@ export function FormHeader({ company }: { company: any }) {
   src={company.logo_url}
   className="h-12 w-auto object-contain"
   alt={company.name}
+  suppressHydrationWarning
 />
           ) : (
             <div
