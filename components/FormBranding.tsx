@@ -4,15 +4,15 @@ export function FormHeader({ company }: { company: any }) {
   const color1 = company.email_brand_color_1 || '#6366f1';
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
+<header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 sticky top-0 z-40">
       <div className="max-w-2xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           {company.logo_url ? (
-            <img
-              src={company.logo_url}
-              className="h-8 w-auto object-contain"
-              alt={company.name}
-            />
+          <img
+  src={company.logo_url}
+  className="h-12 w-auto object-contain"
+  alt={company.name}
+/>
           ) : (
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-sm"
@@ -48,8 +48,9 @@ export function FormHero({ company, ctaHeading }: { company: any; ctaHeading: st
           backgroundSize: '40px 40px',
         }}
       />
-      <div className="relative max-w-xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight mb-2">
+   <div className="relative max-w-xl mx-auto">
+ 
+  <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight mb-2">
           {ctaHeading}
         </h1>
         <p className="text-sm sm:text-base opacity-80 font-medium">

@@ -114,11 +114,11 @@ export default function SubscribeButton({
   }
 
   // ── Main CTA button styles ────────────────────────────────────────────────
-  const styles = {
-    primary: 'bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98]',
-    banner:  'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-[0.98] text-center',
-    cta:     'bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-xl transition-all shadow-lg shadow-emerald-100 active:scale-[0.98]',
-  };
+ const styles = {
+  primary: 'bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98]',
+banner: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-3 sm:px-8 sm:py-5 rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-[0.98] text-center',
+  cta:     'bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-xl transition-all shadow-lg active:scale-[0.98]',
+};
 
   return (
     <>

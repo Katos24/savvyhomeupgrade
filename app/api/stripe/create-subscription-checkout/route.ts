@@ -86,13 +86,8 @@ export async function POST(req: NextRequest) {
         enabled: false,
       },
 
-      // ── Tax collection ──
-      automatic_tax: {
-        enabled: true,
-      },
+    
 
-      // ── Prefill and lock email ──
-      customer_creation: 'always',
     });
 
     return NextResponse.json({ url: session.url });

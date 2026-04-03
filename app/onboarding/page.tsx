@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import QRCodeLib from 'qrcode';
 import {
   Building, Mail, Phone, Globe, Plus, Trash2, Check, Copy, Link2,
-  ChevronRight, ChevronLeft, AlertCircle, Sparkles, ArrowRight, RotateCcw, Loader2, X
+  ChevronRight, ChevronLeft, AlertCircle, Sparkles, ArrowRight, RotateCcw, Loader2, X, Users, Settings
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 
@@ -85,10 +85,10 @@ function OnboardingWizard({ company }: { company: any }) {
   const [error, setError] = useState('');
 
   // Step 1: Company
-  const [companyData, setCompanyData] = useState({
+   const [companyData, setCompanyData] = useState({
     name: company.name || '',
     email: company.email || '',
-    phone: company.phone || '',
+    phone: formatPhone(company.phone || ''),
     website: company.website || '',
     email_brand_color_1: company.email_brand_color_1 || '#667eea',
     email_brand_color_2: company.email_brand_color_2 || '#764ba2',
@@ -246,9 +246,9 @@ function OnboardingWizard({ company }: { company: any }) {
             <div className="px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company Info</span>
             </div>
-            <div className="p-5 space-y-5">
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Logo</label>
+           <div className="p-5 space-y-5">
+  <div>
+    <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Logo</label>
                 <div className="flex items-center gap-4">
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain border border-gray-200 rounded-lg bg-gray-50" />
@@ -262,13 +262,18 @@ function OnboardingWizard({ company }: { company: any }) {
                       const f = e.target.files?.[0];
                       if (f) { setLogoFile(f); const r = new FileReader(); r.onloadend = () => setLogoPreview(r.result as string); r.readAsDataURL(f); }
                     }} className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:rounded-md cursor-pointer" />
-                    <p className="text-xs text-gray-400 mt-1">Shows in emails and your booking page</p>
+                  <p className="text-xs text-gray-400 mt-1">Shows in emails and your booking page</p>
                   </div>
                 </div>
               </div>
+
+             <p className="text-[11px] text-slate-600 bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 leading-relaxed">
+  💡 Don't worry about getting everything perfect — you can update all of this anytime in <span className="font-bold text-slate-800">Settings</span>.
+</p>
+
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">
-                  <Building className="w-3.5 h-3.5" /> Company Name <span className="text-red-400">*</span>
+                  <Building className="w-3.5 h-3.5" /> Company Name
                 </label>
                 <input type="text" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:border-indigo-400 focus:outline-none transition" placeholder="Your Company Name" />
@@ -415,13 +420,15 @@ function OnboardingWizard({ company }: { company: any }) {
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's Next</span>
               </div>
               <div className="divide-y divide-gray-50">
-                {[
-                  { emoji: '🔗', title: 'Share your booking link', desc: 'Add it to your website, social media, or email signature' },
-                  { emoji: '👥', title: 'Invite your team', desc: 'Add team members in Settings → Team to assign leads' },
-                  { emoji: '⚙️', title: 'Fine-tune in Settings', desc: 'Adjust categories, pipeline, email templates, and more anytime' },
+               {[
+                  { icon: Link2, title: 'Share your booking link', desc: 'Add it to your website, social media, or email signature' },
+                  { icon: Users, title: 'Invite your team', desc: 'Add team members in Settings → Team to assign leads' },
+                  { icon: Settings, title: 'Fine-tune in Settings', desc: 'Adjust categories, pipeline, email templates, and more anytime' },
                 ].map((tip, i) => (
                   <div key={i} className="flex items-start gap-4 px-5 py-4">
-                    <span className="text-xl flex-shrink-0 mt-0.5">{tip.emoji}</span>
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <tip.icon className="w-4 h-4 text-indigo-500" />
+                    </div>
                     <div><p className="font-semibold text-gray-800 text-sm">{tip.title}</p><p className="text-xs text-gray-400 mt-0.5">{tip.desc}</p></div>
                   </div>
                 ))}

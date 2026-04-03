@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BUSINESS_TYPES } from '@/lib/formCategories';
+import { motion } from 'framer-motion';
 import WorkspaceConfirmModal from '@/components/WorkspaceConfirmModal';
 import { 
   ArrowRight, 
@@ -14,7 +15,7 @@ import {
   X,
   UserPlus,
   Eye,
-  EyeOff, Globe
+  EyeOff, Globe, Copy, LayoutGrid
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -199,52 +200,69 @@ function SignupForm() {
                 important
               />
 
-              {/* URL preview — no warning, just the two portals */}
-            {formData.slug && (
-  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 
+  {formData.slug && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="space-y-3 pt-2"
+  >
 
-   {/* Customer Form */}
-<div className="flex flex-col gap-2 px-4 py-3 rounded-2xl border"
-  style={{ backgroundColor: '#F5F0E8', borderColor: '#C8D5B0' }}>
-  <div className="flex items-center gap-2">
-    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-      style={{ backgroundColor: '#1A3A1A' }}>
-      <Globe className="w-3 h-3 text-white" />
+    {/* Header */}
+    <div className="flex items-center gap-3 px-1">
+      <div className="h-px flex-1 bg-slate-100" />
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Previewing Your Portals</span>
+      <div className="h-px flex-1 bg-slate-100" />
     </div>
-    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#1A3A1A' }}>
-      Customer form
-    </p>
-    <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{ color: '#1A3A1A', backgroundColor: '#C8D5B0' }}>
-      Public
-    </span>
-  </div>
-  <p className="text-[11px] font-bold leading-snug" style={{ color: '#1A3A1A' }}>
-    Share this link — customers submit requests directly to your dashboard.
-  </p>
-  <div className="border rounded-lg px-3 py-2 font-mono text-[11px] break-all leading-snug"
-    style={{ backgroundColor: 'white', borderColor: '#C8D5B0', color: '#1A3A1A' }}>
-    lead2project.com/<span className="font-black" style={{ color: '#2D5A1B' }}>{formData.slug}</span>
-  </div>
-</div>
+
+    {/* Cards */}
+    <div className="grid grid-cols-2 gap-3">
+
+      {/* Customer Portal */}
+      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center shrink-0">
+            <Globe className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Customer</span>
+          <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Public</span>
+        </div>
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          <span className="font-semibold text-slate-700">Share with customers.</span> They submit requests straight to you.
+        </p>
+        <div className="rounded-xl bg-white border border-dashed border-slate-300 px-3 py-2.5 break-all">
+          <span className="text-[13px] font-medium text-slate-300">lead2project.com/</span><span className="text-[13px] font-bold text-slate-700">{formData.slug}</span>
+        </div>
+      </div>
 
       {/* Dashboard */}
-      <div className="flex flex-col gap-2 px-4 py-3 bg-[#0F172A] border border-slate-700 rounded-2xl">
+      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-700 bg-slate-900">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
-            <Lock className="w-3 h-3 text-white" />
+            <LayoutGrid className="w-3.5 h-3.5 text-white" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Your dashboard</p>
+          <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Dashboard</span>
+          <span className="ml-auto text-[10px] font-bold text-indigo-300 bg-indigo-900 border border-indigo-700 px-2 py-0.5 rounded-full">Private</span>
         </div>
-        <div className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 font-mono text-[11px] text-slate-300 break-all leading-snug">
-          lead2project.com/<span className="text-indigo-400 font-black">{formData.slug}</span>/dashboard
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          <span className="font-semibold text-slate-200">Your private view.</span> Every lead lands here — only you have access.
+        </p>
+        <div className="rounded-xl bg-slate-800 border border-dashed border-slate-600 px-3 py-2.5 break-all">
+          <span className="text-[13px] font-medium text-slate-500">lead2project.com/</span><span className="text-[13px] font-bold text-indigo-400">{formData.slug}</span><span className="text-[13px] font-medium text-slate-500">/dashboard</span>
         </div>
       </div>
 
     </div>
-  </div>
+
+    {/* Activation nudge */}
+    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100">
+      <Lock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+      <p className="text-[12px] text-indigo-600 font-medium leading-snug">
+        These portals activate instantly after your trial starts. <span className="font-bold">No charge today.</span>
+      </p>
+    </div>
+
+  </motion.div>
 )}
 
               <div className="space-y-1.5">

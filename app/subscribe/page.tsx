@@ -41,12 +41,12 @@ const PLAN_CONFIG = {
     cta: 'Go Pro — 14 Days Free',
     features: [
       'Everything in Basic',
-      'AI Quote Generator from Photos ✦',
-      'AI Project Briefs for Crews ✦',
-      '6AM Daily Digest Email Briefing ✦',
+      '6AM Daily Digest Email Briefing',
       'One-Click Email Sending (Quotes/Reminders)',
       'Full Email Outbox & Sent History',
       'Custom Email Templates & Branding',
+      'AI Quote Generator from Photos ✦',
+      'AI Project Briefs for Crews ✦',
       'AI Assistant — Ask Anything ✦',
     ],
   },
@@ -174,6 +174,7 @@ function SuccessPolling() {
     );
   }
 
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
       <div className="text-center">
@@ -205,12 +206,15 @@ function CancelledScreen() {
         <p className="text-slate-400 mb-8 font-medium">No worries — your progress is saved.</p>
         <div className="flex gap-3">
           <button onClick={() => router.back()} className="flex-1 py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">Go Back</button>
-          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">Try Again</button>
+          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">Change Plan</button>
         </div>
       </div>
     </div>
   );
 }
+
+
+
 
 // ─── Main subscribe page ──────────────────────────────────────────────────────
 function SubscribePageContent() {
