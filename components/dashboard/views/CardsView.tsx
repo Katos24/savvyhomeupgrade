@@ -158,8 +158,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
 <div className={`flex items-center gap-2 font-black text-[12px] italic ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                         <Calendar className="w-4 h-4" />
                         {lead.scheduled_date 
-                          ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                          : 'TBD'}
+? (() => {
+    const [y, m, d] = lead.scheduled_date.split('T')[0].split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  })()
+                            : 'TBD'}
                       </div>
                     </div>
                     <div className={`flex flex-col gap-1.5 border-l ${t.innerBorder} pl-4`}>

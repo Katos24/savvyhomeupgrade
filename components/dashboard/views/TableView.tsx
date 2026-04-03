@@ -79,6 +79,11 @@ export default function TableView({
     );
   };
 
+  const parseLocalDate = (dateStr: string) => {
+  const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
   const toggleEditMode = () => { setEditMode(e => !e); setSelectedIds(new Set()); setShowActionsMenu(false); };
   const toggleSelectAll = () => setSelectedIds(selectedIds.size === leads.length ? new Set() : new Set(leads.map(l => l.id)));
   const toggleSelect = (id: number) => {
@@ -427,7 +432,7 @@ export default function TableView({
                     {lead.scheduled_date
                       ? <div>
                           <div className={`${t.textPrimary} font-medium`}>
-                            {new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+{(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
                           </div>
                           {lead.scheduled_time && <div className={`text-xs ${t.textMuted}`}>{lead.scheduled_time}</div>}
                         </div>
@@ -438,7 +443,7 @@ export default function TableView({
                     {lead.preferred_date
                       ? <div>
                           <div className="text-amber-500 font-medium">
-                            {new Date(lead.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+{(() => { const [y,m,d] = lead.preferred_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
                           </div>
                           {lead.preferred_time && <div className={`text-xs ${t.textMuted}`}>{lead.preferred_time}</div>}
                         </div>
@@ -471,7 +476,8 @@ export default function TableView({
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {lead.payment_due_date
                       ? (() => {
-                          const due = new Date(lead.payment_due_date);
+const [py,pm,pd] = lead.payment_due_date.split('T')[0].split('-').map(Number);
+const due = new Date(py,pm-1,pd);
                           const isOverdue = !lead.payment_status?.includes('paid') && due < new Date();
                           return (
                             <span className={`font-medium ${isOverdue ? 'text-red-500' : t.textPrimary}`}>
