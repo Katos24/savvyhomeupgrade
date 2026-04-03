@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Clock, Send, CheckCircle, ChevronDown, ChevronRight, History } from 'lucide-react';
+import { X, Send, CheckCircle, History, ExternalLink, AlertCircle, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { createPortal } from 'react-dom';
+
 
 type Reminder = {
   lead_id: number;
@@ -51,10 +53,16 @@ function saveStorage(dismissed: boolean, sentIds: number[], hiddenIds: number[])
   } catch {}
 }
 
-export default function PaymentReminderBanner({ slug }: { slug: string }) {
+interface PaymentReminderBannerProps {
+  slug: string;
+  onSelectLead?: (lead: any) => void;
+  allLeads?: any[];
+}
+
+export default function PaymentReminderBanner({ slug, onSelectLead, allLeads = [] }: PaymentReminderBannerProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [dismissed, setDismissed] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [showTable, setShowTable] = useState(false);
   const [sending, setSending] = useState<number | null>(null);
   const [sentIds, setSentIds] = useState<number[]>([]);
   const [hiddenIds, setHiddenIds] = useState<number[]>([]);
@@ -75,7 +83,6 @@ export default function PaymentReminderBanner({ slug }: { slug: string }) {
       .finally(() => setLoaded(true));
   }, [slug]);
 
-  // ── THIS was the bug: handleSend was never passed to ReminderRow ──
   const handleSend = async (reminder: Reminder) => {
     setSending(reminder.project_id);
     try {
@@ -109,9 +116,39 @@ export default function PaymentReminderBanner({ slug }: { slug: string }) {
     saveStorage(dismissed, sentIds, updated);
   };
 
+  const handleClearAll = () => {
+    const allIds = visible.map(r => r.project_id);
+    const updated = [...hiddenIds, ...allIds];
+    setHiddenIds(updated);
+    saveStorage(dismissed, sentIds, updated);
+    setShowTable(false);
+  };
+
   const handleDismiss = () => {
     setDismissed(true);
     saveStorage(true, sentIds, hiddenIds);
+    setShowTable(false);
+  };
+
+  const handleViewProject = (reminder: Reminder) => {
+    if (!onSelectLead) return;
+    // Try to find from allLeads first
+    const lead = allLeads.find(l => l.id === reminder.lead_id);
+    if (lead) {
+      onSelectLead(lead);
+      setShowTable(false);
+      return;
+    }
+    // Fallback — fetch the lead
+    fetch(`/api/leads/${reminder.lead_id}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.lead) {
+          onSelectLead(data.lead);
+          setShowTable(false);
+        }
+      })
+      .catch(() => toast.error('Could not open project'));
   };
 
   if (!loaded || dismissed) return null;
@@ -119,110 +156,248 @@ export default function PaymentReminderBanner({ slug }: { slug: string }) {
   const visible = reminders.filter(r => !hiddenIds.includes(r.project_id));
   if (visible.length === 0) return null;
 
-  const overdue = visible.filter(r => r.is_overdue);
+  const overdue  = visible.filter(r => r.is_overdue);
   const upcoming = visible.filter(r => !r.is_overdue);
   const hasOverdue = overdue.length > 0;
+  const sorted = [...overdue, ...upcoming];
 
   return (
-    <div className="mb-4 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-      {/* COMPACT HEADER */}
+    <>
+      {/* ── Compact banner ── */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors"
-        onClick={() => setExpanded(!expanded)}
+        className={`mx-4 sm:mx-6 mb-4 rounded-xl border cursor-pointer transition-all ${
+          hasOverdue
+            ? 'bg-red-50 border-red-200 hover:bg-red-100'
+            : 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+        }`}
+        onClick={() => setShowTable(true)}
       >
-        <div className="flex items-center gap-3">
-          {expanded
-            ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          }
-          <div className="flex items-center gap-2">
-            <span className={`flex h-2 w-2 rounded-full ${hasOverdue ? 'bg-red-500 animate-pulse' : 'bg-amber-400'}`} />
-            <span className="text-xs font-bold text-slate-700">
-              {overdue.length > 0 && `${overdue.length} Overdue`}
-              {overdue.length > 0 && upcoming.length > 0 && ' • '}
-              {upcoming.length > 0 && `${upcoming.length} Due Soon`}
-            </span>
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            {hasOverdue
+              ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              : <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+            }
+            <div className="flex items-center gap-2 flex-wrap">
+              {overdue.length > 0 && (
+                <span className="text-xs font-black text-red-600">
+                  {overdue.length} Overdue
+                </span>
+              )}
+              {overdue.length > 0 && upcoming.length > 0 && (
+                <span className="text-xs text-slate-300">·</span>
+              )}
+              {upcoming.length > 0 && (
+                <span className="text-xs font-black text-amber-600">
+                  {upcoming.length} Due Soon
+                </span>
+              )}
+              <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                — click to review
+              </span>
+            </div>
           </div>
+          <button
+            onClick={e => { e.stopPropagation(); handleDismiss(); }}
+            className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-
-        <button
-          onClick={e => { e.stopPropagation(); handleDismiss(); }}
-          className="p-1 hover:text-red-500 text-slate-300 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
       </div>
 
-      {/* SLIM LIST */}
-      {expanded && (
-        <div className="divide-y divide-slate-100">
-          {[...overdue, ...upcoming].map(r => (
-            <ReminderRow
-              key={r.project_id}
-              reminder={r}
-              sending={sending === r.project_id}
-              isSent={sentIds.includes(r.project_id) || r.reminder_sent_recently}
-              onSend={handleSend}   // ← was () => {} before, now actually wired
-              onHide={handleHide}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+    {/* ── Table modal ── */}
+{showTable && typeof document !== 'undefined' && createPortal(
+  <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    {/* Backdrop */}
+    <div
+      className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+      onClick={() => setShowTable(false)}
+    />
 
-function ReminderRow({ reminder, sending, isSent, onSend, onHide }: {
-  reminder: Reminder;
-  sending: boolean;
-  isSent: boolean;
-  onSend: (r: Reminder) => void;
-  onHide: (id: number) => void;
-}) {
-  return (
-    <div className={`flex flex-wrap sm:flex-nowrap items-center justify-between px-4 py-2 group gap-3 border-l-4 ${
-      reminder.is_overdue ? 'border-l-red-500' : 'border-l-amber-400'
-    }`}>
-      <div className="flex-1 min-w-0">
+    {/* Modal */}
+    <div className="relative w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200 max-h-[85vh] flex flex-col">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+        <div>
+          <h2 className="text-base font-black text-slate-900">Payment Reminders</h2>
+          <p className="text-xs text-slate-400 font-medium mt-0.5">
+            {overdue.length > 0 && `${overdue.length} overdue`}
+            {overdue.length > 0 && upcoming.length > 0 && ' · '}
+            {upcoming.length > 0 && `${upcoming.length} due soon`}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-slate-900 truncate">{reminder.customer_name}</span>
-          <span className="text-[10px] text-slate-400 font-medium">#{reminder.project_number}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium flex-wrap">
-          <span className="text-indigo-600 font-bold">
-            ${Number(reminder.payment_amount || reminder.quote_total || 0).toLocaleString()}
-          </span>
-          <span>Due {new Date(reminder.payment_due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-          {isSent && (
-            <span className="flex items-center gap-1 text-emerald-600">
-              <History className="w-3 h-3" /> Reminded
-            </span>
-          )}
+          <button
+            onClick={handleClearAll}
+            className="text-xs font-bold text-slate-400 hover:text-red-500 transition px-3 py-1.5 rounded-lg hover:bg-red-50 flex items-center gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Clear All</span>
+          </button>
+          <button
+            onClick={() => setShowTable(false)}
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 ml-auto sm:ml-0">
-        <button
-          onClick={e => { e.stopPropagation(); onSend(reminder); }}
-          disabled={isSent || sending}
-          className={`h-8 px-3 rounded-md text-[11px] font-bold transition-all active:scale-95 ${
-            isSent
-              ? 'bg-slate-100 text-slate-400 cursor-default'
-              : sending
-              ? 'bg-slate-200 text-slate-500 cursor-wait'
-              : 'bg-slate-900 text-white hover:bg-indigo-600'
-          }`}
-        >
-          {isSent ? 'Sent' : sending ? 'Sending...' : 'Send'}
-        </button>
+      {/* Table — desktop */}
+      <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[50vh]">
+        <table className="w-full">
+          <thead className="sticky top-0 bg-white">
+            <tr className="border-b border-slate-100">
+              {['Customer', 'Amount', 'Due Date', 'Status', 'Actions'].map(h => (
+                <th key={h} className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {sorted.map(r => (
+              <tr key={r.project_id} className={`group transition ${r.is_overdue ? 'bg-red-50/30' : ''}`}>
+                <td className="px-4 py-3">
+                  <p className="text-sm font-bold text-slate-900">{r.customer_name}</p>
+                  <p className="text-[10px] text-slate-400 font-medium">#{r.project_number}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm font-black text-slate-900">
+                    ${Number(r.payment_amount || r.quote_total || 0).toLocaleString()}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`text-xs font-bold ${r.is_overdue ? 'text-red-600' : 'text-amber-600'}`}>
+                    {r.is_overdue ? 'Overdue' : 'Due'}{' '}
+                    {new Date(r.payment_due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {sentIds.includes(r.project_id) || r.reminder_sent_recently ? (
+                    <span className="flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                      <CheckCircle className="w-3 h-3" /> Sent
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {r.payment_status}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {onSelectLead && (
+                      <button
+                        onClick={() => handleViewProject(r)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 text-[11px] font-bold transition"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleSend(r)}
+                      disabled={sentIds.includes(r.project_id) || r.reminder_sent_recently || sending === r.project_id}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition ${
+                        sentIds.includes(r.project_id) || r.reminder_sent_recently
+                          ? 'bg-slate-100 text-slate-300 cursor-default'
+                          : sending === r.project_id
+                          ? 'bg-slate-200 text-slate-400 cursor-wait'
+                          : 'bg-slate-900 text-white hover:bg-indigo-600'
+                      }`}
+                    >
+                      <Send className="w-3 h-3" />
+                      {sending === r.project_id ? 'Sending...' : sentIds.includes(r.project_id) || r.reminder_sent_recently ? 'Sent' : 'Send'}
+                    </button>
+                    <button
+                      onClick={() => handleHide(r.project_id)}
+                      className="p-1.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition rounded-lg hover:bg-red-50"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
+      {/* Mobile list */}
+      <div className="sm:hidden divide-y divide-slate-100 overflow-y-auto flex-1">
+        {sorted.map(r => (
+          <div key={r.project_id} className={`px-5 py-4 ${r.is_overdue ? 'bg-red-50/40' : ''}`}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-black text-slate-900">{r.customer_name}</p>
+                  <span className="text-[10px] text-slate-400">#{r.project_number}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm font-black text-slate-900">
+                    ${Number(r.payment_amount || r.quote_total || 0).toLocaleString()}
+                  </span>
+                  <span className={`text-[10px] font-bold ${r.is_overdue ? 'text-red-500' : 'text-amber-500'}`}>
+                    {r.is_overdue ? '· Overdue' : '· Due'}{' '}
+                    {new Date(r.payment_due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => handleHide(r.project_id)}
+                className="p-1.5 text-slate-200 hover:text-red-500 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {onSelectLead && (
+                <button
+                  onClick={() => handleViewProject(r)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold transition hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Project
+                </button>
+              )}
+              <button
+                onClick={() => handleSend(r)}
+                disabled={sentIds.includes(r.project_id) || r.reminder_sent_recently || sending === r.project_id}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition ${
+                  sentIds.includes(r.project_id) || r.reminder_sent_recently
+                    ? 'bg-slate-100 text-slate-300 cursor-default'
+                    : sending === r.project_id
+                    ? 'bg-slate-200 text-slate-400'
+                    : 'bg-slate-900 text-white hover:bg-indigo-600'
+                }`}
+              >
+                <Send className="w-3.5 h-3.5" />
+                {sending === r.project_id ? 'Sending...' : sentIds.includes(r.project_id) || r.reminder_sent_recently ? 'Sent' : 'Send Reminder'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+        <p className="text-[10px] text-slate-400 font-medium">
+          Reminders reset daily
+        </p>
         <button
-          onClick={e => { e.stopPropagation(); onHide(reminder.project_id); }}
-          className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+          onClick={handleDismiss}
+          className="text-xs font-bold text-slate-400 hover:text-slate-600 transition"
         >
-          <X className="w-3.5 h-3.5" />
+          Dismiss for today
         </button>
       </div>
+
     </div>
+  </div>,
+  document.body
+)}
+    </>
   );
 }

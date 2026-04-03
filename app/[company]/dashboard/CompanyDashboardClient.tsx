@@ -618,7 +618,11 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           cancelAtPeriodEnd={company.cancel_at_period_end}
           subscriptionCancelAt={company.subscription_cancel_at}
         />
-        <PaymentReminderBanner slug={company.slug} />
+        <PaymentReminderBanner
+  slug={company.slug}
+  onSelectLead={setSelectedLead}
+  allLeads={allLeads}
+/>
       </div>
 
       {/* Onboarding banner */}
