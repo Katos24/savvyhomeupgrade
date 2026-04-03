@@ -57,7 +57,8 @@ export async function GET(request: Request, { params }: Props) {
     // ── Scheduled Today special case ──────────────────────────
     // Filter by p.scheduled_date instead of l.created_at
     const isScheduledToday = timeFilter === 'today' && status === 'scheduled';
-    const todayDateStr = new Date().toISOString().split('T')[0];
+const today = new Date();
+const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // ── Build created_at time boundary (standard filters) ─────
     let timeFrom: Date | null = null;
