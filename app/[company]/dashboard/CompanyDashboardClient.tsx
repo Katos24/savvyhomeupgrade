@@ -526,7 +526,10 @@ useEffect(() => {
  const statusCounts = serverStatusCounts;
 
 
-  const categories = useMemo(() => [...new Set(allLeads.map(l => l.category).filter(Boolean))], [allLeads]);
+const categories = useMemo(() => 
+  company.form_categories?.map((c: any) => c.value || c).filter(Boolean) || 
+  [...new Set(allLeads.map(l => l.category).filter(Boolean))],
+[company.form_categories, allLeads]);
 
 const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
     || filterPayment !== 'all' || timeFilter !== 'all' || startDate || endDate || searchQuery;
@@ -763,333 +766,352 @@ className="h-9 w-auto max-w-[120px] sm:max-w-[160px] object-contain"
           </div>
         )}
 
-    {/* Search + filters */}
-        <section aria-label="Search and filter leads" className="flex flex-col gap-3 mb-6">
+   {/* Search + filters */}
+<section aria-label="Search and filter leads" className="flex flex-col gap-3 mb-6">
 
-          {/* Row 1 — Search + Views */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 group">
-              {isSearching
-                ? <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
-                : <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" aria-hidden />
-              }
-              <input
-                type="search"
-                placeholder="Search by name, email or phone..."
-                value={searchQuery}
-                onChange={e => {
-                  const val = e.target.value;
-                  setSearchQuery(val);
-                  if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-                  if (val.trim().length >= 2) {
-                    setIsSearching(true);
-                    searchTimeoutRef.current = setTimeout(async () => {
-                      await fetchLeads(1, true, { search: val.trim() });
-                      setIsSearching(false);
-                    }, 400);
-                  } else if (val.trim() === '') {
-                    fetchLeads(1, true, { search: '' });
-                  }
-                }}
-                aria-label="Search leads"
-                className={`w-full pl-11 pr-10 py-3.5 rounded-xl focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder-white/30' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-400'}`}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40 transition"
-                >
-                  <X className="w-3.5 h-3.5" aria-hidden />
-                </button>
-              )}
+  {/* Row 1 — Search + Views */}
+  <div className="flex items-center gap-2">
+    <div className="relative flex-1 group">
+      {isSearching
+        ? <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
+        : <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" aria-hidden />
+      }
+      <input
+        type="search"
+        placeholder="Search by name, email or phone..."
+        value={searchQuery}
+        onChange={e => {
+          const val = e.target.value;
+          setSearchQuery(val);
+          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+          if (val.trim().length >= 2) {
+            setIsSearching(true);
+            searchTimeoutRef.current = setTimeout(async () => {
+              await fetchLeads(1, true, { search: val.trim() });
+              setIsSearching(false);
+            }, 400);
+          } else if (val.trim() === '') {
+            fetchLeads(1, true, { search: '' });
+          }
+        }}
+        aria-label="Search leads"
+        className={`w-full pl-11 pr-10 py-3.5 rounded-xl focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder-white/30' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-400'}`}
+      />
+      {searchQuery && (
+        <button
+          onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40 transition"
+        >
+          <X className="w-3.5 h-3.5" aria-hidden />
+        </button>
+      )}
+    </div>
+
+    <button
+      onClick={() => setIsDark(v => !v)}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className={`p-2.5 rounded-xl border transition ${isDark ? 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
+
+    <div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
+      <button onClick={() => setCurrentView('cards')} className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+        <LayoutGrid className="w-4 h-4" aria-hidden />
+      </button>
+      <button onClick={() => setCurrentView('table')} className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+        <List className="w-4 h-4" aria-hidden />
+      </button>
+      <button onClick={() => setCurrentView('calendar')} className={`p-2.5 rounded-lg transition ${currentView === 'calendar' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+        <Calendar className="w-4 h-4" aria-hidden />
+      </button>
+    </div>
+  </div>
+
+  {/* Row 2 — Smart pills + Filters dropdown */}
+  <div className="relative flex items-center gap-2">
+
+    {/* Scheduled Today */}
+    <button
+      onClick={() => {
+        const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
+        setTimeFilter(isActive ? 'all' : 'today');
+        setFilterStatus(isActive ? 'all' : 'scheduled');
+      }}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+        timeFilter === 'today' && filterStatus === 'scheduled'
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      <Clock className="w-3 h-3" />
+      <span className="hidden sm:inline">Scheduled Today</span>
+      <span className="sm:hidden">Today</span>
+    </button>
+
+    {/* Unpaid */}
+    <button
+      onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+        filterPayment === 'unpaid'
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      <DollarSign className="w-3 h-3" />
+      Unpaid
+    </button>
+
+    {/* New */}
+    <button
+      onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+        filterStatus === 'new'
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      <Sparkles className="w-3 h-3" />
+      New {(serverStatusCounts['new'] || 0) > 0 && `(${serverStatusCounts['new']})`}
+    </button>
+
+    {/* Filters button */}
+    <button
+      onClick={() => setShowAdvancedFilters(v => !v)}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+        showAdvancedFilters || filterCategory !== 'all' || filterAssignee !== 'all' || startDate || endDate || (timeFilter !== 'all' && !(timeFilter === 'today' && filterStatus === 'scheduled')) || (filterStatus !== 'all' && filterStatus !== 'new') || filterPayment === 'paid'
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      <Filter className="w-3 h-3" />
+      Filters
+      <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+    </button>
+
+    {/* Clear — only when active */}
+    {hasActiveFilters && (
+      <button
+        onClick={clearFilters}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
+      >
+        <X className="w-3 h-3" />
+        Clear
+      </button>
+    )}
+
+    {/* Filters dropdown — desktop */}
+    {showAdvancedFilters && (
+      <>
+        {/* Click outside */}
+        <div className="fixed inset-0 z-40" onClick={() => setShowAdvancedFilters(false)} />
+
+        {/* Desktop dropdown */}
+        <div className={`hidden sm:block absolute top-full left-0 mt-2 z-50 rounded-2xl border shadow-2xl p-4 w-80 animate-in fade-in slide-in-from-top-2 duration-150 ${
+          isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
+        }`}>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Assignee</label>
+              <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
+                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
+                <option value="all">Everyone</option>
+                <option value="unassigned">Unassigned</option>
+                {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+              </select>
             </div>
-
-            {/* Dark mode toggle */}
-            <button
-              onClick={() => setIsDark(v => !v)}
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              className={`p-2.5 rounded-xl border transition ${isDark ? 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            {/* View toggle */}
-            <div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
-              <button
-                onClick={() => setCurrentView('cards')}
-                className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
-              >
-                <LayoutGrid className="w-4 h-4" aria-hidden />
-              </button>
-              <button
-                onClick={() => setCurrentView('table')}
-                className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
-              >
-                <List className="w-4 h-4" aria-hidden />
-              </button>
-              <button
-                onClick={() => setCurrentView('calendar')}
-                className={`p-2.5 rounded-lg transition ${currentView === 'calendar' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}
-              >
-                <Calendar className="w-4 h-4" aria-hidden />
-              </button>
+            <div>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Category</label>
+              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
+                <option value="all">All</option>
+{categories.map(c => (
+  <option key={c} value={c}>
+    {String(c).replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+  </option>
+))}
+              </select>
+            </div>
+            <div>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Start date</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
+            </div>
+            <div>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>End date</label>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
             </div>
           </div>
 
-          {/* Row 2 — Single smart pill row */}
-          <div className="relative">
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-
-              {/* All */}
-              <button
-                onClick={() => {
-                  setFilterStatus('all');
-                  setFilterPayment('all');
-                  setTimeFilter('all');
-                }}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  filterStatus === 'all' && filterPayment === 'all' && timeFilter === 'all' && !searchQuery
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                All ({Object.values(serverStatusCounts).reduce((a, b) => a + b, 0)})
-              </button>
-
-              {/* Scheduled Today */}
-              <button
-                onClick={() => {
-                  const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
-                  setTimeFilter(isActive ? 'all' : 'today');
-                  setFilterStatus(isActive ? 'all' : 'scheduled');
-                }}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  timeFilter === 'today' && filterStatus === 'scheduled'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Clock className="w-3 h-3" />
-                Scheduled Today
-              </button>
-
-              {/* This Week */}
-              <button
-                onClick={() => setTimeFilter(timeFilter === 'week' ? 'all' : 'week')}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  timeFilter === 'week'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Calendar className="w-3 h-3" />
-                This Week
-              </button>
-
-              {/* Unpaid */}
-              <button
-                onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  filterPayment === 'unpaid'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <DollarSign className="w-3 h-3" />
-                Unpaid
-              </button>
-
-              {/* New Leads */}
-              <button
-                onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  filterStatus === 'new'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Sparkles className="w-3 h-3" />
-                New {(serverStatusCounts['new'] || 0) > 0 && `(${serverStatusCounts['new']})`}
-              </button>
-
-              {/* Quoted */}
-              <button
-                onClick={() => setFilterStatus(filterStatus === 'quoted' ? 'all' : 'quoted')}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  filterStatus === 'quoted'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <ChevronRight className="w-3 h-3" />
-                Quoted {(serverStatusCounts['quoted'] || 0) > 0 && `(${serverStatusCounts['quoted']})`}
-              </button>
-
-              {/* More pill */}
-              <button
-                onClick={() => setShowAdvancedFilters(v => !v)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap ${
-                  showAdvancedFilters || (filterStatus !== 'all' && !['new','quoted'].includes(filterStatus)) || filterCategory !== 'all' || filterAssignee !== 'all' || startDate || endDate || timeFilter === 'month'
-                    ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                More
-                <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Clear — only when filters active */}
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  aria-label="Clear all filters"
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition whitespace-nowrap bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
-                >
-                  <X className="w-3 h-3" aria-hidden />
-                  Clear
+          {/* Time */}
+          <div className="mb-3">
+            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Time period</label>
+            <div className="flex gap-1.5">
+              {(['all', 'today', 'week', 'month'] as const).map(t => (
+                <button key={t} onClick={() => setTimeFilter(t)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition ${
+                    timeFilter === t ? 'bg-indigo-600 text-white border-indigo-500'
+                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                  }`}>
+                  {t === 'all' ? 'All' : t === 'today' ? 'Today' : t === 'week' ? 'Week' : 'Month'}
                 </button>
-              )}
+              ))}
             </div>
+          </div>
 
-            {/* More popover */}
-            {showAdvancedFilters && (
-              <div
-                className={`absolute top-full left-0 mt-2 z-50 rounded-2xl border shadow-2xl p-4 w-72 animate-in fade-in slide-in-from-top-2 duration-150 ${
-                  isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
-                }`}
-              >
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  {/* Assignee */}
-                  <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Assignee</label>
-                    <select
-                      value={filterAssignee}
-                      onChange={e => setFilterAssignee(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}
-                    >
-                      <option value="all">Everyone</option>
-                      <option value="unassigned">Unassigned</option>
-                      {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-                    </select>
-                  </div>
+          {/* Status */}
+          <div className="mb-3">
+            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Status</label>
+            <div className="flex flex-wrap gap-1.5">
+              {statusOptions.map(s => (
+                <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                    filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500'
+                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                  }`}>
+                  {s.label} {(serverStatusCounts[s.value] || 0) > 0 && `(${serverStatusCounts[s.value]})`}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  {/* Category */}
-                  <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Category</label>
-                    <select
-                      value={filterCategory}
-                      onChange={e => setFilterCategory(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}
-                    >
-                      <option value="all">All</option>
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
+          {/* Payment */}
+          <div className="mb-4">
+            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Payment</label>
+            <div className="flex gap-1.5">
+              {['all', 'paid', 'unpaid'].map(p => (
+                <button key={p} onClick={() => setFilterPayment(p)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition capitalize ${
+                    filterPayment === p ? 'bg-indigo-600 text-white border-indigo-500'
+                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                  }`}>
+                  {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  {/* Start date */}
-                  <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Start date</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={e => setStartDate(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}
-                    />
-                  </div>
+          <div className={`flex gap-2 pt-3 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+            <button onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
+              className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition">
+              Clear all
+            </button>
+            <button onClick={() => setShowAdvancedFilters(false)}
+              className="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition">
+              Done
+            </button>
+          </div>
+        </div>
 
-                  {/* End date */}
-                  <div>
-                    <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>End date</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}
-                    />
-                  </div>
-                </div>
+        {/* Mobile bottom sheet */}
+        <div className="sm:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAdvancedFilters(false)} />
+          <div className={`relative rounded-t-3xl p-5 pb-8 max-h-[80vh] overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className="flex justify-center mb-4">
+              <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-white/20' : 'bg-gray-200'}`} />
+            </div>
+            <p className={`text-sm font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Filters</p>
 
-                {/* Time filter */}
-                <div className="mb-3">
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Time period</label>
-                  <div className="flex gap-2">
-                    {(['month', 'week', 'today', 'all'] as const).map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setTimeFilter(t)}
-                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold border transition capitalize ${
-                          timeFilter === t
-                            ? 'bg-indigo-600 text-white border-indigo-500'
-                            : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                        }`}
-                      >
-                        {t === 'all' ? 'All' : t === 'today' ? 'Today' : t === 'week' ? 'Week' : 'Month'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Assignee</label>
+                <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
+                  className={`w-full rounded-xl px-3 py-3 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
+                  <option value="all">Everyone</option>
+                  <option value="unassigned">Unassigned</option>
+                  {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                </select>
+              </div>
 
-                {/* Status options */}
-                <div className="mb-3">
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Status</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {statusOptions.map(s => (
-                      <button
-                        key={s.value}
-                        onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
-                          filterStatus === s.value
-                            ? 'bg-indigo-600 text-white border-indigo-500'
-                            : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                        }`}
-                      >
-                        {s.label} {(serverStatusCounts[s.value] || 0) > 0 && `(${serverStatusCounts[s.value]})`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Category</label>
+                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+                  className={`w-full rounded-xl px-3 py-3 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
+                  <option value="all">All Categories</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
 
-                {/* Payment filter */}
-                <div className="mb-4">
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Payment</label>
-                  <div className="flex gap-2">
-                    {['all', 'paid', 'unpaid'].map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setFilterPayment(p)}
-                        className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold border transition capitalize ${
-                          filterPayment === p
-                            ? 'bg-indigo-600 text-white border-indigo-500'
-                            : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                        }`}
-                      >
-                        {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className={`flex gap-2 pt-3 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
-                  <button
-                    onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition"
-                  >
-                    Clear all
-                  </button>
-                  <button
-                    onClick={() => setShowAdvancedFilters(false)}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition"
-                  >
-                    Apply
-                  </button>
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Time period</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(['all', 'today', 'week', 'month'] as const).map(t => (
+                    <button key={t} onClick={() => setTimeFilter(t)}
+                      className={`py-2.5 rounded-xl text-xs font-bold border transition ${
+                        timeFilter === t ? 'bg-indigo-600 text-white border-indigo-500'
+                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
+                      }`}>
+                      {t === 'all' ? 'All' : t === 'today' ? 'Today' : t === 'week' ? 'Week' : 'Month'}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
 
-        </section>
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Status</label>
+                <div className="flex flex-wrap gap-2">
+                  {statusOptions.map(s => (
+                    <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                        filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500'
+                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
+                      }`}>
+                      {s.label} {(serverStatusCounts[s.value] || 0) > 0 && `(${serverStatusCounts[s.value]})`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Payment</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['all', 'paid', 'unpaid'].map(p => (
+                    <button key={p} onClick={() => setFilterPayment(p)}
+                      className={`py-2.5 rounded-xl text-xs font-bold border transition capitalize ${
+                        filterPayment === p ? 'bg-indigo-600 text-white border-indigo-500'
+                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
+                      }`}>
+                      {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Start date</label>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
+                </div>
+                <div>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>End date</label>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
+                className="flex-1 py-3.5 rounded-xl text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                Clear all
+              </button>
+              <button onClick={() => setShowAdvancedFilters(false)}
+                className="flex-1 py-3.5 rounded-xl text-sm font-bold bg-indigo-600 text-white">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+</section>
+
         {/* ---------------------------------------------------------------- */}
         {/* Leads display                                                      */}
         {/* ---------------------------------------------------------------- */}
