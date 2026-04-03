@@ -90,6 +90,8 @@ function UpgradeOverlay({ feature, companySlug }: {
 export default function CompanySettingsClient({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
 const [showDigestConfirm, setShowDigestConfirm] = useState(false);
+const [showDigestInfo, setShowDigestInfo] = useState(false);
+
 
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -512,7 +514,7 @@ const [showDigestConfirm, setShowDigestConfirm] = useState(false);
 </a>
 
         {/* Daily Digest */}
-     {/* Daily Digest */}
+    {/* Daily Digest */}
 {can(planTier, 'daily_digest') ? (
   <>
     {/* Confirm popup */}
@@ -567,30 +569,77 @@ const [showDigestConfirm, setShowDigestConfirm] = useState(false);
       </div>
     )}
 
-    {/* Toggle row */}
-    <button
-      onClick={() => setShowDigestConfirm(true)}
-      className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 ${
-        digestEnabled
-          ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
-          : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
-      }`}
-    >
-      {/* Toggle pill */}
-     <div
-  className={`w-10 h-5 rounded-full relative transition-colors duration-200 flex-shrink-0 ${digestEnabled ? 'bg-indigo-500' : 'bg-slate-300'}`}
-  style={{ minWidth: '40px' }}
+    {/* Digest info modal */}
+    {showDigestInfo && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowDigestInfo(false)} />
+        <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black text-slate-900">What's in your Daily Digest?</h3>
+            <button onClick={() => setShowDigestInfo(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "Today's scheduled jobs", desc: "Every job on the books for today with time and assignee." },
+              { label: "Stale leads", desc: "Leads that haven't been touched in 3+ days." },
+              { label: "Quotes with no response", desc: "Quotes sent 2+ days ago with no accept or decline." },
+              { label: "Unpaid completed jobs", desc: "Jobs that are done but haven't been paid." },
+              { label: "Overdue payments", desc: "Payments past their due date." },
+              { label: "Due this week", desc: "Payments coming due in the next 7 days." },
+              { label: "Follow-up reminders", desc: "Any follow-up tasks due today or overdue." },
+            ].map(({ label, desc }) => (
+              <div key={label} className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-slate-800">{label}</p>
+                  <p className="text-[11px] text-slate-400 font-medium">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-slate-400 font-bold mt-4 pt-3 border-t border-slate-100 uppercase tracking-widest">
+            Delivered at 6AM daily
+          </p>
+        </div>
+      </div>
+    )}
+
+    {/* Toggle button — wrapped with i icon */}
+    <div className="relative">
+      <button
+        onClick={() => setShowDigestConfirm(true)}
+        className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 w-full ${
+          digestEnabled
+            ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+            : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
+        }`}
+      >
+        <div
+          className={`w-10 h-5 rounded-full relative transition-colors duration-200 flex-shrink-0 ${digestEnabled ? 'bg-indigo-500' : 'bg-slate-300'}`}
+          style={{ minWidth: '40px' }}
+        >
+          <div
+            className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200"
+            style={{ left: digestEnabled ? '22px' : '2px' }}
+          />
+        </div>
+        <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+        <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
+  {digestEnabled ? 'Digest On' : 'Digest Off'}
+<button
+  onClick={e => { e.stopPropagation(); setShowDigestInfo(true); }}
+  className="w-4 h-4 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition shrink-0"
 >
-  <div
-    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200"
-    style={{ left: digestEnabled ? '22px' : '2px' }}
-  />
-</div>
-      <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
-      <span className={`text-[10px] font-black uppercase tracking-widest ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
-        {digestEnabled ? 'Digest On' : 'Digest Off'}
-      </span>
-    </button>
+  <span className="text-[8px] font-black text-blue-600">i</span>
+</button>
+</span>
+      </button>
+
+      {/* i icon — top right, opens info modal */}
+     
+    </div>
   </>
 ) : (
   <button
@@ -647,15 +696,8 @@ const [showDigestConfirm, setShowDigestConfirm] = useState(false);
         {/* FOOTER */}
         <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 shadow-sm shrink-0">
-              <Bell className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">System Notifications</p>
-              <button onClick={() => openTab('notifications')} className="text-xs text-indigo-400 font-bold hover:underline">
-                Manage preferences
-              </button>
-            </div>
+           
+           
           </div>
           <a href={`/${company.slug}/dashboard/deleted-leads`} className="flex items-center gap-3 px-5 py-3 border border-red-500/10 bg-red-500/5 rounded-2xl group transition hover:bg-red-500/10">
             <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-300" />
