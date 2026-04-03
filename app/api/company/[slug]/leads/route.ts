@@ -41,7 +41,7 @@ export async function GET(request: Request, { params }: Props) {
     const companyId = companies[0].id;
 
     // ── Parse params ─────────────────────────────────────────
-    const url = new URL(request.url);
+    const url        = new URL(request.url);
     const page       = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
     const limit      = 20;
     const offset     = (page - 1) * limit;
@@ -54,49 +54,56 @@ export async function GET(request: Request, { params }: Props) {
     const startDate  = url.searchParams.get('startDate')?.trim()  || '';
     const endDate    = url.searchParams.get('endDate')?.trim()    || '';
 
-    // ── Build time boundary ───────────────────────────────────
+    // ── Scheduled Today special case ──────────────────────────
+    // Filter by p.scheduled_date instead of l.created_at
+    const isScheduledToday = timeFilter === 'today' && status === 'scheduled';
+    const todayDateStr = new Date().toISOString().split('T')[0];
+
+    // ── Build created_at time boundary (standard filters) ─────
     let timeFrom: Date | null = null;
-    let timeTo: Date | null = null;
+    let timeTo:   Date | null = null;
     const now = new Date();
 
-    if (startDate && endDate) {
-      timeFrom = new Date(startDate);
-      timeTo = new Date(endDate);
-      timeTo.setHours(23, 59, 59, 999);
-    } else if (startDate) {
-      timeFrom = new Date(startDate);
-    } else if (endDate) {
-      timeTo = new Date(endDate);
-      timeTo.setHours(23, 59, 59, 999);
-    } else if (timeFilter === 'today') {
-      timeFrom = new Date(now);
-      timeFrom.setHours(0, 0, 0, 0);
-    } else if (timeFilter === 'week') {
-      timeFrom = new Date(now);
-      timeFrom.setDate(now.getDate() - now.getDay());
-      timeFrom.setHours(0, 0, 0, 0);
-    } else if (timeFilter === 'month') {
-      timeFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (!isScheduledToday) {
+      if (startDate && endDate) {
+        timeFrom = new Date(startDate);
+        timeTo   = new Date(endDate);
+        timeTo.setHours(23, 59, 59, 999);
+      } else if (startDate) {
+        timeFrom = new Date(startDate);
+      } else if (endDate) {
+        timeTo = new Date(endDate);
+        timeTo.setHours(23, 59, 59, 999);
+      } else if (timeFilter === 'today') {
+        timeFrom = new Date(now);
+        timeFrom.setHours(0, 0, 0, 0);
+      } else if (timeFilter === 'week') {
+        timeFrom = new Date(now);
+        timeFrom.setDate(now.getDate() - now.getDay());
+        timeFrom.setHours(0, 0, 0, 0);
+      } else if (timeFilter === 'month') {
+        timeFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
     }
 
     const fromISO = timeFrom ? timeFrom.toISOString() : '2000-01-01T00:00:00.000Z';
     const toISO   = timeTo   ? timeTo.toISOString()   : '2099-12-31T23:59:59.999Z';
 
-// ── Global stats — always all time, no filters ────────────
-const statsResult = await sql`
-  SELECT
-    COUNT(*) as total_leads,
-    COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
-    COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status = 'paid'), 0) as revenue,
-    COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status != 'paid' AND p.quote_total IS NOT NULL), 0) as pending
-  FROM leads l
-  LEFT JOIN projects p ON l.id = p.lead_id
-  WHERE l.company_id = ${companyId}
-    AND l.deleted = false
-`;
-const globalStats = statsResult[0];
+    // ── Global stats — always all time, no filters ────────────
+    const statsResult = await sql`
+      SELECT
+        COUNT(*) as total_leads,
+        COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
+        COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status = 'paid'), 0) as revenue,
+        COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status != 'paid' AND p.quote_total IS NOT NULL), 0) as pending
+      FROM leads l
+      LEFT JOIN projects p ON l.id = p.lead_id
+      WHERE l.company_id = ${companyId}
+        AND l.deleted = false
+    `;
+    const globalStats = statsResult[0];
 
-    // ── Status counts (always unfiltered by status) ───────────
+    // ── Status counts (always unfiltered) ────────────────────
     const statusCountsResult = await sql`
       SELECT status, COUNT(*) as count
       FROM leads
@@ -109,95 +116,189 @@ const globalStats = statsResult[0];
       return acc;
     }, {});
 
-    // ── Count query ───────────────────────────────────────────
-    const countResult = await sql`
-      SELECT COUNT(*) as total
-      FROM leads l
-      LEFT JOIN projects p ON l.id = p.lead_id
-      WHERE l.company_id = ${companyId}
-        AND l.deleted = false
-        AND (${search} = '' OR (
-          l.name        ILIKE ${'%' + search + '%'} OR
-          l.email       ILIKE ${'%' + search + '%'} OR
-          l.phone       ILIKE ${'%' + search + '%'} OR
-          l.description ILIKE ${'%' + search + '%'}
-        ))
-        AND (${status} = ''   OR l.status = ${status})
-        AND (${category} = '' OR l.category = ${category})
-        AND (${payment} = ''  OR p.payment_status = ${payment})
-        AND (
-          ${assignee} = '' OR
-          (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
-          p.assigned_to = ${assignee}
-        )
-        AND l.created_at >= ${fromISO}
-        AND l.created_at <= ${toISO}
-    `;
-    const total = parseInt(countResult[0].total);
-    const pages = Math.ceil(total / limit);
+    // ── Queries: two separate paths ───────────────────────────
 
-    // ── Leads query ───────────────────────────────────────────
-    const leads = await sql`
-      SELECT
-        l.*,
-        p.id                     as project_id,
-        p.project_number,
-        p.status                 as job_status,
-        p.scheduled_date,
-        p.scheduled_time,
-        p.assigned_to,
-        p.estimated_hours,
-        p.actual_hours,
-        p.quote_data,
-        p.ai_brief,
-        p.quote_total,
-        p.quote_sent_at,
-        p.quote_accepted_at,
-        p.quote_declined_at,
-        p.schedule_emails,
-        p.payment_status,
-        p.quote_emails,
-        p.payment_amount,
-        p.paid_at,
-        p.payment_date,
-        p.payment_method,
-        p.payment_notes,
-        p.payment_due_date,
-        p.reminder_sent_at,
-        p.invoice_data,
-        p.invoice_sent_at,
-        p.before_photos,
-        p.after_photos,
-        p.documents,
-        p.completed_at           as job_completed_at,
-        p.notes                  as project_notes,
-        p.tasks                  as project_tasks,
-        p.follow_up_date,
-        p.internal_notes         as project_internal_notes,
-        p.follow_up_notes
-      FROM leads l
-      LEFT JOIN projects p ON l.id = p.lead_id
-      WHERE l.company_id = ${companyId}
-        AND l.deleted = false
-        AND (${search} = '' OR (
-          l.name        ILIKE ${'%' + search + '%'} OR
-          l.email       ILIKE ${'%' + search + '%'} OR
-          l.phone       ILIKE ${'%' + search + '%'} OR
-          l.description ILIKE ${'%' + search + '%'}
-        ))
-        AND (${status} = ''   OR l.status = ${status})
-        AND (${category} = '' OR l.category = ${category})
-        AND (${payment} = ''  OR p.payment_status = ${payment})
-        AND (
-          ${assignee} = '' OR
-          (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
-          p.assigned_to = ${assignee}
-        )
-        AND l.created_at >= ${fromISO}
-        AND l.created_at <= ${toISO}
-      ORDER BY l.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+    let total = 0;
+    let leads: any[] = [];
+
+    if (isScheduledToday) {
+      // ── Path A: Scheduled Today — filter by p.scheduled_date ──
+      const countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND l.status = 'scheduled'
+          AND p.scheduled_date = ${todayDateStr}
+          AND (${search} = '' OR (
+            l.name        ILIKE ${'%' + search + '%'} OR
+            l.email       ILIKE ${'%' + search + '%'} OR
+            l.phone       ILIKE ${'%' + search + '%'} OR
+            l.description ILIKE ${'%' + search + '%'}
+          ))
+          AND (${category} = '' OR l.category = ${category})
+          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (
+            ${assignee} = '' OR
+            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
+            p.assigned_to = ${assignee}
+          )
+      `;
+      total = parseInt(countResult[0].total);
+
+      leads = await sql`
+        SELECT
+          l.*,
+          p.id                     as project_id,
+          p.project_number,
+          p.status                 as job_status,
+          p.scheduled_date,
+          p.scheduled_time,
+          p.assigned_to,
+          p.estimated_hours,
+          p.actual_hours,
+          p.quote_data,
+          p.ai_brief,
+          p.quote_total,
+          p.quote_sent_at,
+          p.quote_accepted_at,
+          p.quote_declined_at,
+          p.schedule_emails,
+          p.payment_status,
+          p.quote_emails,
+          p.payment_amount,
+          p.paid_at,
+          p.payment_date,
+          p.payment_method,
+          p.payment_notes,
+          p.payment_due_date,
+          p.reminder_sent_at,
+          p.invoice_data,
+          p.invoice_sent_at,
+          p.before_photos,
+          p.after_photos,
+          p.documents,
+          p.completed_at           as job_completed_at,
+          p.notes                  as project_notes,
+          p.tasks                  as project_tasks,
+          p.follow_up_date,
+          p.internal_notes         as project_internal_notes,
+          p.follow_up_notes
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND l.status = 'scheduled'
+          AND p.scheduled_date = ${todayDateStr}
+          AND (${search} = '' OR (
+            l.name        ILIKE ${'%' + search + '%'} OR
+            l.email       ILIKE ${'%' + search + '%'} OR
+            l.phone       ILIKE ${'%' + search + '%'} OR
+            l.description ILIKE ${'%' + search + '%'}
+          ))
+          AND (${category} = '' OR l.category = ${category})
+          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (
+            ${assignee} = '' OR
+            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
+            p.assigned_to = ${assignee}
+          )
+        ORDER BY p.scheduled_time ASC NULLS LAST
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    } else {
+      // ── Path B: Standard filters — filter by l.created_at ─────
+      const countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND (${search} = '' OR (
+            l.name        ILIKE ${'%' + search + '%'} OR
+            l.email       ILIKE ${'%' + search + '%'} OR
+            l.phone       ILIKE ${'%' + search + '%'} OR
+            l.description ILIKE ${'%' + search + '%'}
+          ))
+          AND (${status} = ''   OR l.status = ${status})
+          AND (${category} = '' OR l.category = ${category})
+          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (
+            ${assignee} = '' OR
+            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
+            p.assigned_to = ${assignee}
+          )
+          AND l.created_at >= ${fromISO}
+          AND l.created_at <= ${toISO}
+      `;
+      total = parseInt(countResult[0].total);
+
+      leads = await sql`
+        SELECT
+          l.*,
+          p.id                     as project_id,
+          p.project_number,
+          p.status                 as job_status,
+          p.scheduled_date,
+          p.scheduled_time,
+          p.assigned_to,
+          p.estimated_hours,
+          p.actual_hours,
+          p.quote_data,
+          p.ai_brief,
+          p.quote_total,
+          p.quote_sent_at,
+          p.quote_accepted_at,
+          p.quote_declined_at,
+          p.schedule_emails,
+          p.payment_status,
+          p.quote_emails,
+          p.payment_amount,
+          p.paid_at,
+          p.payment_date,
+          p.payment_method,
+          p.payment_notes,
+          p.payment_due_date,
+          p.reminder_sent_at,
+          p.invoice_data,
+          p.invoice_sent_at,
+          p.before_photos,
+          p.after_photos,
+          p.documents,
+          p.completed_at           as job_completed_at,
+          p.notes                  as project_notes,
+          p.tasks                  as project_tasks,
+          p.follow_up_date,
+          p.internal_notes         as project_internal_notes,
+          p.follow_up_notes
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND (${search} = '' OR (
+            l.name        ILIKE ${'%' + search + '%'} OR
+            l.email       ILIKE ${'%' + search + '%'} OR
+            l.phone       ILIKE ${'%' + search + '%'} OR
+            l.description ILIKE ${'%' + search + '%'}
+          ))
+          AND (${status} = ''   OR l.status = ${status})
+          AND (${category} = '' OR l.category = ${category})
+          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (
+            ${assignee} = '' OR
+            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
+            p.assigned_to = ${assignee}
+          )
+          AND l.created_at >= ${fromISO}
+          AND l.created_at <= ${toISO}
+        ORDER BY l.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    }
+
+    const pages = Math.ceil(total / limit);
 
     // ── Process notes ─────────────────────────────────────────
     const processedLeads = leads.map(lead => {
@@ -221,7 +322,7 @@ const globalStats = statsResult[0];
       leads: processedLeads,
       pagination: { page, pages, total, limit },
       statusCounts,
-        globalStats, // ← add this
+      globalStats,
     });
 
   } catch (error) {
