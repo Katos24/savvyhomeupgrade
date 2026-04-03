@@ -830,8 +830,8 @@ className="h-9 w-auto max-w-[120px] sm:max-w-[160px] object-contain"
   </div>
 
   {/* Row 2 — Smart pills + Filters dropdown */}
-  <div className="relative flex items-center gap-2">
-
+<div className="relative">
+<div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
     {/* Scheduled Today */}
     <button
       onClick={() => {
@@ -899,8 +899,10 @@ className="h-9 w-auto max-w-[120px] sm:max-w-[160px] object-contain"
         <X className="w-3 h-3" />
         Clear
       </button>
+      
     )}
 
+</div>
     {/* Filters dropdown — desktop */}
     {showAdvancedFilters && (
       <>
