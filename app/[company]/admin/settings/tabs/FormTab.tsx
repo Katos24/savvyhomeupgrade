@@ -185,8 +185,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Booking Form</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Control what customers fill out when they request a job.</p>
-        </div>
+<p className="text-sm text-gray-400 mt-0.5">This is the form your customers see when they visit your public link.</p>        </div>
         <div className="flex items-center gap-3">
           {/* Copy link */}
           <motion.button
@@ -236,6 +235,23 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         )}
       </AnimatePresence>
 
+{/* ── PUBLIC URL BANNER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl mb-6">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+          <p className="text-xs text-slate-400 font-medium shrink-0">Your customer form</p>
+        </div>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-xs font-bold text-slate-700 truncate">{publicUrl}</span>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
+            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 shrink-0"
+          >
+            {urlCopied ? 'Copied!' : 'Copy'}
+          </motion.button>
+        </div>
+      </div>
 
       {/* ── MOBILE TAB BAR ── */}
       <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
@@ -284,8 +300,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                   {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Done'}
                 </motion.button>
               ))}
-              <span className="ml-auto text-[10px] text-gray-300 font-medium tracking-wide">Live preview</span>
-            </div>
+<span className="ml-auto text-[10px] text-gray-300 font-medium tracking-wide">Customer view</span>            </div>
 
             {/* Phone shell */}
             <div className="relative">
@@ -360,7 +375,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             <div className="flex items-center gap-2 mb-1">
               <Lock className="w-3.5 h-3.5 text-gray-300" />
               <span className="text-xs font-bold text-gray-400">Step 1 — always collected</span>
-            </div>
+<span className="ml-auto text-[10px] text-gray-300 font-medium hidden sm:block">Required to create a lead — can't be turned off</span>            </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
                 <span key={f} className="text-[11px] text-gray-300 font-medium">{f}</span>
