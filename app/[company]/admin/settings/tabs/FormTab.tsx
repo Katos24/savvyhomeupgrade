@@ -234,10 +234,10 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </button>
           <button
           onClick={() => setMobileTab('preview')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+         className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
             mobileTab === 'preview'
               ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-gray-400 hover:text-gray-600'
+              : 'text-indigo-400 hover:text-indigo-600'
           }`}
         >
           Preview
