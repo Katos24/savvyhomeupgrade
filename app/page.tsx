@@ -101,26 +101,26 @@ function Hero() {
                 </span>
               </div>
 
-              {/* Headline */}
+            {/* Headline */}
               <h1 className="font-black tracking-tight"
                 style={{ fontSize: 'clamp(40px, 6vw, 68px)', color: '#0F1F3D', lineHeight: 1.0 }}>
-                Quote jobs without<br />
-                <span style={{ color: '#1a6645' }}>leaving your desk.</span>
+                Work faster.<br />
+                Work smarter.<br />
+                <span style={{ color: '#1a6645' }}>Never lose a lead again.</span>
               </h1>
 
               {/* Sub */}
               <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[460px]"
                 style={{ fontSize: 'clamp(16px, 2vw, 19px)', color: '#4A5568' }}>
-                Customers scan your QR code, upload photos of the damage, and describe the job — before you ever pick up the phone. You get everything you need to send an accurate quote in minutes.
+                Sign up and get a custom link and QR code to share anywhere — truck, yard sign, social, email. Customers fill out your intake form, leads land on your dashboard instantly. From there, quote, schedule, track payments, and send branded emails in one click. Everything in one place.
               </p>
 
               {/* Pills */}
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {[
-                  'Photo & video uploads',
-                  'Instant lead capture',
-                  'Send emails with one click',
-                  'Full job tracking',
+              {[
+                  'Your link. Your form. Your workflow.',
+                  'Dashboard for leads, quotes & schedules',
+                  'One-click branded emails & payment tracking',
                 ].map(label => (
                   <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border shadow-sm"
                     style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
@@ -661,14 +661,14 @@ function FastDemoForm() {
             </div>
           </div>
 
-          {/* Service Needed */}
-          <div>
-            <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Service Needed</label>
-            <div className={box(false, true)}>
-              <LayoutGrid size={14} className="text-slate-400 shrink-0" />
-              <span className="text-[13px] font-medium text-slate-800">Roof Replacement</span>
-            </div>
-          </div>
+         {/* Service Needed */}
+              <div>
+                <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Service Needed</label>
+                <div className={box(false, true)}>
+                  <LayoutGrid size={14} className="text-slate-400 shrink-0" />
+                  <span className="text-[13px] font-medium text-slate-800">Select your service...</span>
+                </div>
+              </div>
 
           {/* Project Description */}
           <div>
@@ -817,27 +817,27 @@ function HowItWorks() {
   const steps = [
     {
       number: '01',
-      tag: 'Distribution',
-      title: 'Deploy your QR link',
-      desc: 'Print it on yard signs, truck wraps, or your Instagram bio. One scan opens your portal — no app, no login, zero friction.',
+      tag: 'Your Link',
+      title: 'Share your link everywhere',
+      desc: 'Sign up and instantly get a custom link and QR code. Put it on your truck, yard sign, Instagram, Facebook, email signature — anywhere customers can find you. One scan, no app, no login needed.',
       image: '/images/qr-scan-2.png',
       color: 'from-blue-500/10 to-transparent',
       borderColor: 'group-hover:border-blue-500/40',
     },
     {
       number: '02',
-      tag: 'Data Capture',
-      title: 'Customer fills the form',
-      desc: 'They provide the address, pick a time, and upload roof photos. You get a full project briefing before the first call.',
+      tag: 'Your Form',
+      title: 'Customers fill your custom form',
+      desc: 'They submit a request through your branded intake form — you control every field. Name, address, job type, preferred date, custom questions, photos, videos. You get exactly what you need, nothing you don\'t.',
       visual: 'demo-form',
       color: 'from-indigo-500/10 to-transparent',
       borderColor: 'group-hover:border-indigo-500/40',
     },
     {
       number: '03',
-      tag: 'Automation',
-      title: 'Lands on your dashboard',
-      desc: 'The lead arrives instantly. AI maps the category to your pricing templates. Review, click once, and the quote is sent.',
+      tag: 'Your Dashboard',
+      title: 'Manage everything in one place',
+      desc: 'Every lead lands on your dashboard instantly. Quote, schedule, track payments, send one-click branded emails, assign tasks to your team, and export your data anytime. No more sticky notes, missed calls, or lost jobs.',
       image: '/images/dashboard-jobsite.png',
       color: 'from-emerald-500/10 to-transparent',
       borderColor: 'group-hover:border-emerald-500/40',
@@ -863,8 +863,9 @@ function HowItWorks() {
             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-500">The Workflow</span>
           </div>
           <h2 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
-            Simple. <span className="text-gray-800 italic font-medium">Automatic.</span><br />
-            Built for Scale.
+            One link.<br />
+            <span className="text-gray-800 italic font-medium">Everything else</span><br />
+            takes care of itself.
           </h2>
         </div>
 
@@ -1817,7 +1818,7 @@ function Footer() {
             <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">Job management built for service contractors. One link. Every lead.</p>
           </div>
           {[
-            { heading: 'Product', links: [['Features','#features'],['Pricing','#pricing'],['Sign Up','/signup'],['Login','/login']] },
+            { heading: 'Product', links: [['Pricing','#pricing'],['Sign Up','/signup'],['Login','/login']] },
             { heading: 'Solutions', links: [['Roofing','/solutions/roofing'],['Dog Grooming','/solutions/dog-grooming'],['Cleaning','/solutions/cleaning']] },
             { heading: 'Legal', links: [['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.com']] },
           ].map(col => (
