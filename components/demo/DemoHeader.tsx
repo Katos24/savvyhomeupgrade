@@ -76,9 +76,9 @@ export default function DemoHeader({
               <Plus className="w-4 h-4 stroke-[3px]" />
               <span className="hidden xs:inline">Create</span>
             </button>
-            <Link
+           <Link
               href="/signup"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition shadow-lg"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition shadow-lg"
             >
               <Zap className="w-4 h-4" /> Get Started
             </Link>

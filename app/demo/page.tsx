@@ -226,18 +226,13 @@ const formatTime12h = (timeStr: string) => {
 const TOUR_STEPS = [
   {
     icon: <LayoutGrid className="w-5 h-5 text-indigo-400" />,
-    title: 'Leads land here automatically',
-    body: 'When a customer fills out your booking form, they appear here instantly — no manual entry needed.',
-  },
-  {
-    icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
-    title: 'Click any card to manage the job',
-    body: 'Each lead has quotes, tasks, scheduling, payments and photos — all in one place.',
+    title: 'This is your live dashboard',
+    body: 'Every lead your customers submit lands here automatically. Tap any card to manage it.',
   },
   {
     icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-    title: 'AI helps you prioritize',
-    body: 'Tap the purple button to ask who needs follow-up, what\'s scheduled, or what\'s unpaid.',
+    title: 'Quotes, tasks, scheduling — all inside',
+    body: 'Open a lead to send a quote, assign tasks, schedule a job, and track payment.',
   },
 ];
 
@@ -247,27 +242,22 @@ function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void 
   const isLast = step === TOUR_STEPS.length - 1;
 
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[500] w-[calc(100vw-32px)] max-w-sm pointer-events-none">
-      <AnimatePresence mode="wait">
+<div className="fixed top-20 sm:bottom-24 sm:top-auto left-1/2 -translate-x-1/2 z-[500] w-[calc(100vw-32px)] max-w-sm pointer-events-none">      <AnimatePresence mode="wait">
         <motion.div
           key={step}
           initial={{ opacity: 0, y: 12, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.97 }}
           transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-          className={`pointer-events-auto rounded-2xl shadow-2xl border p-5 ${
-            darkMode ? 'bg-[#1e293b] border-white/10' : 'bg-white border-gray-200'
-          }`}
+        className="pointer-events-auto rounded-2xl shadow-2xl border p-6 bg-white border-gray-200"
         >
           <div className="flex items-start gap-3 mb-4">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-              darkMode ? 'bg-white/5' : 'bg-gray-50'
-            }`}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-gray-50">
               {current.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-black mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{current.title}</p>
-<p className={`text-[11px] leading-relaxed ${darkMode ? 'text-white/40' : 'text-gray-400'}`}>{current.body}</p>
+  <p className="text-sm font-black mb-1.5 text-gray-900">{current.title}</p>
+              <p className="text-xs leading-relaxed text-gray-500">{current.body}</p>
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -276,7 +266,7 @@ function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void 
                 <div key={i} className={`h-1.5 rounded-full transition-all ${
                   i === step
                     ? 'w-5 bg-indigo-500'
-                    : darkMode ? 'w-1.5 bg-white/15' : 'w-1.5 bg-gray-200'
+                    : 'w-1.5 bg-gray-200'
                 }`} />
               ))}
             </div>
@@ -512,19 +502,8 @@ function DemoCalendar({ leads, darkMode, onSelectLead }: { leads: Lead[]; darkMo
 
 // ─── CLICK HINT ───────────────────────────────────────────────────────────────
 
-function ClickHint({ children, show }: { children: React.ReactNode; show: boolean }) {
-  return (
-    <div className="relative">
-      {children}
-      {show && (
-        <div className="absolute -top-2 -right-2 z-10 pointer-events-none animate-bounce">
-          <div className="bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-indigo-500/40 whitespace-nowrap">
-            <MousePointer2 className="w-2.5 h-2.5" /> Click to open
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function ClickHint({ children }: { children: React.ReactNode; show: boolean }) {
+  return <div className="relative">{children}</div>;
 }
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
@@ -541,9 +520,7 @@ export default function DemoPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hasOpenedLead, setHasOpenedLead] = useState(false);
   const [showTour, setShowTour] = useState(true);
-const [hasInteracted, setHasInteracted] = useState(false);
 const [dynamicCta, setDynamicCta] = useState<string | null>(null);
-const newLeadAddedRef = useRef(false);
 
   const updateLead = (id: number, updates: Partial<Lead>) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
@@ -554,7 +531,6 @@ const newLeadAddedRef = useRef(false);
 const handleSelectLead = (lead: Lead) => {
   setSelectedLead(lead);
   setHasOpenedLead(true);
-  setHasInteracted(true);
   setShowTour(false);
 };
   const filtered = useMemo(() =>
@@ -588,39 +564,6 @@ const handleSelectLead = (lead: Lead) => {
  
  // ADD before return statement
 
-// New lead slides in after 8s if user hasn't interacted
-useEffect(() => {
-  const timer = setTimeout(() => {
-    if (!hasInteracted && !newLeadAddedRef.current) {
-      newLeadAddedRef.current = true;
-      setLeads(prev => [{
-        id: 99,
-        name: 'Chris Williams',
-        email: 'chris.w@gmail.com',
-        phone: '(201) 555-0199',
-        category: 'Roofing',
-        status: 'new',
-        created_at: new Date().toISOString(),
-        address_line_1: '88 Harbor View Dr',
-        city: 'Hoboken',
-        zip_code: '07030',
-        description: 'Need full roof replacement after hail damage. Has homeowners insurance.',
-        quote_total: null,
-        payment_status: 'unpaid',
-        file_urls: ['photo1.jpg'],
-        tasks: [],
-        quote_items: [],
-        ai_brief: null,
-        isNew: true,
-      } as any, ...prev]);
-      // Remove isNew flag after animation
-      setTimeout(() => {
-        setLeads(prev => prev.map(l => l.id === 99 ? { ...l, isNew: false } : l));
-      }, 4000);
-    }
-  }, 8000);
-  return () => clearTimeout(timer);
-}, [hasInteracted]);
 
 // Dynamic CTA based on what they did
 useEffect(() => {
@@ -861,23 +804,7 @@ useEffect(() => {
   <DemoTour darkMode={darkMode} onDone={() => setShowTour(false)} />
 )}
 
-{/* New lead toast notification */}
-<AnimatePresence>
-  {leads[0]?.id === 99 && (leads[0] as any).isNew && (
-    <motion.div
-      initial={{ opacity: 0, y: -16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
-      transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-      className="fixed top-5 left-1/2 -translate-x-1/2 z-[9998] pointer-events-none"
-    >
-      <div className="flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-2xl shadow-2xl shadow-emerald-900/40 text-sm font-black whitespace-nowrap">
-        <Zap className="w-4 h-4" />
-        New lead just submitted — Chris Williams
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+
     </div>
   );
 }
