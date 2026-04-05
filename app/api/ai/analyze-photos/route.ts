@@ -5,6 +5,8 @@ import sharp from 'sharp';
 import { neon } from '@neondatabase/serverless';
 import { can, type PlanTier } from '@/lib/permissions';
 
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -48,7 +50,7 @@ const { imageUrls, category, description, company_slug } = await request.json();
     const imageContents = await Promise.all(
       imageUrls.slice(0, 4).map(async (url: string) => {
         try {
-          const response = await fetch(url);
+const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
           const arrayBuffer = await response.arrayBuffer();
           let buffer = Buffer.from(arrayBuffer);
           
@@ -92,6 +94,7 @@ const { imageUrls, category, description, company_slug } = await request.json();
         error: 'Failed to process images' 
       }, { status: 400 });
     }
+
 
 
     const message = await anthropic.messages.create({
@@ -230,7 +233,10 @@ Be thorough, specific, and realistic. Help the contractor give an accurate quote
 
     let analysis;
     try {
-      const cleanContent = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const raw = content.text;
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      const cleanContent = (start !== -1 && end !== -1) ? raw.slice(start, end + 1) : raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       analysis = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('Failed to parse Claude response:', content.text);

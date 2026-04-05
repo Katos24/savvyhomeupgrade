@@ -1,15 +1,15 @@
-// File 2: app/api/auth/accept-invite/route.ts
-// This creates the account when user accepts the invite
-
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-  const { token, name, phone, password } = await request.json();
+    const { token, name, phone, password } = await request.json();
+    const sanitizedName = typeof name === 'string' ? name.trim().slice(0, 100) : '';
+    const sanitizedPhone = typeof phone === 'string' ? phone.trim().slice(0, 20) : null;
 
-    if (!token || !name || !password) {
+
+    if (!token || !sanitizedName || !password) {
       return NextResponse.json(
         { success: false, error: 'All fields are required' },
         { status: 400 }
@@ -23,11 +23,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // Find user with valid invite token
     const users = await sql`
-      SELECT u.*, c.slug as company_slug
+      SELECT u.id, u.email, u.role, u.company_id, c.slug as company_slug
       FROM users u
       LEFT JOIN companies c ON u.company_id = c.id
       WHERE u.invite_token = ${token}
@@ -43,15 +40,12 @@ export async function POST(request: Request) {
     }
 
     const user = users[0];
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Activate account and set name/password
     await sql`
       UPDATE users
-      SET name = ${name},
-          phone = ${phone || null},
+      SET name = ${sanitizedName},
+          phone = ${sanitizedPhone},
           password = ${hashedPassword},
           is_active = true,
           invite_token = NULL,
@@ -60,11 +54,10 @@ export async function POST(request: Request) {
       WHERE id = ${user.id}
     `;
 
-
     return NextResponse.json({
       success: true,
       message: 'Account created successfully',
-      companySlug: user.company_slug
+      companySlug: user.company_slug,
     });
   } catch (error) {
     console.error('Accept invite error:', error);

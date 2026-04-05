@@ -4,6 +4,8 @@ import { neon } from '@neondatabase/serverless';
 import { can } from '@/lib/permissions';
 import type { PlanTier } from '@/lib/permissions';
 
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -56,8 +58,10 @@ if (!can(dbPlanTier, 'ai_brief')) {
     let teamListString = "No team members found.";
     if (company_slug) {
       try {
-        const teamRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/team/members?slug=${company_slug}`);
-        const teamData = await teamRes.json();
+const teamRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/team/members?slug=${company_slug}`, {
+          signal: AbortSignal.timeout(5000),
+        });
+                const teamData = await teamRes.json();
         if (teamData.success && Array.isArray(teamData.members)) {
           teamListString = teamData.members
             .map((m: any) => `ID: ${m.id} | Name: ${m.name} | Role: ${m.role || 'Tech'}`)
@@ -68,9 +72,22 @@ if (!can(dbPlanTier, 'ai_brief')) {
       }
     }
 
+   const CLAUDE_TIMEOUT_MS = 25000;
+
+    async function callWithTimeout(fn: () => Promise<Anthropic.Message>): Promise<Anthropic.Message> {
+      return Promise.race([
+        fn(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('AI request timed out. Please try again.')), CLAUDE_TIMEOUT_MS)
+        ),
+      ]);
+    }
+
     async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
       try {
-        return await anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' });
+        return await callWithTimeout(() =>
+          anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' })
+        );
       } catch (err: any) {
         const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
         if (!isRetryable) throw err;
@@ -78,13 +95,13 @@ if (!can(dbPlanTier, 'ai_brief')) {
 
       for (let attempt = 0; attempt <= 1; attempt++) {
         try {
-          return await anthropic.messages.create({ ...params, model: 'claude-haiku-4-5-20251001' });
+          return await callWithTimeout(() =>
+            anthropic.messages.create({ ...params, model: 'claude-haiku-4-5-20251001' })
+          );
         } catch (err: any) {
           const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');
           if (!isRetryable) throw err;
-          if (attempt === 0) {
-            await new Promise(r => setTimeout(r, 2000));
-          }
+          if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
         }
       }
       throw new Error('All models overloaded or rate limited. Please try again shortly.');
@@ -321,7 +338,6 @@ CRITICAL: Respond with ONLY the raw JSON object below. No markdown. No code fenc
   const end = raw.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('No JSON object found in response');
   const clean = raw.slice(start, end + 1);
-  brief = JSON.parse(clean);
       brief = JSON.parse(clean);
       brief.customer_name = customer_name;
       brief.is_project = !!project_id;

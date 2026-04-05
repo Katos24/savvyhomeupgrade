@@ -19,6 +19,8 @@ import sharp from 'sharp';
 import { neon } from '@neondatabase/serverless';
 import { can, type PlanTier } from '@/lib/permissions';
 
+export const maxDuration = 60;
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_PHOTOS        = 6;
 const MAX_DESC_LENGTH   = 2000;
@@ -69,17 +71,23 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 function checkRateLimit(companyId: number): boolean {
   const key = `rl:quote:${companyId}`;
   const now = Date.now();
+
+  // Clean stale entries to prevent memory leak
+  for (const [k, v] of rateLimitMap.entries()) {
+    if (now > v.resetAt) rateLimitMap.delete(k);
+  }
+
   const entry = rateLimitMap.get(key);
 
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_SEC * 1000 });
-    return true; // allowed
+    return true;
   }
 
-  if (entry.count >= RATE_LIMIT_MAX) return false; // blocked
+  if (entry.count >= RATE_LIMIT_MAX) return false;
 
   entry.count++;
-  return true; // allowed
+  return true;
 }
 
 // ─── Photo processor ─────────────────────────────────────────────────────────

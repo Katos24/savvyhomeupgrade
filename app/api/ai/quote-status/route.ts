@@ -72,6 +72,8 @@ export async function GET(request: Request) {
           success: true,
           status: job.status,
           message: job.status === 'pending' ? 'Waiting to start...' : 'Analyzing your project...',
+        }, {
+          headers: { 'Cache-Control': 'no-store' },
         });
 
       case 'complete':
@@ -80,6 +82,8 @@ export async function GET(request: Request) {
           status: 'complete',
           items:      job.result?.items      ?? [],
           usedPhotos: job.result?.usedPhotos ?? 0,
+        }, {
+          headers: { 'Cache-Control': 'no-store' },
         });
 
       case 'failed':

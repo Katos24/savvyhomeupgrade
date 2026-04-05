@@ -6,9 +6,16 @@ export async function POST(request: Request) {
   try {
     const { token, password } = await request.json();
 
-    if (!token || !password) {
+    if (!token || !password || typeof token !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
         { success: false, error: 'Missing token or password' },
+        { status: 400 }
+      );
+    }
+
+    if (!/^[0-9a-f]{64}$/.test(token)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid reset token format' },
         { status: 400 }
       );
     }

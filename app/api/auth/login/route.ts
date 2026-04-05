@@ -14,10 +14,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not set');
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
     const users = await sql`
-      SELECT u.*, c.slug, c.name as company_name
+      SELECT u.id, u.email, u.name, u.password, u.role, u.company_id, u.is_active, c.slug, c.name as company_name
       FROM users u
       LEFT JOIN companies c ON u.company_id = c.id
       WHERE LOWER(u.email) = ${normalizedEmail}
@@ -41,6 +49,13 @@ export async function POST(request: Request) {
       );
     }
 
+       if (user.is_active === false) {
+      return NextResponse.json(
+        { success: false, error: 'This account has been deactivated. Please contact support.' },
+        { status: 403 }
+      );
+    }
+
     try {
       await sql`
         UPDATE users
@@ -59,7 +74,7 @@ export async function POST(request: Request) {
         companyId: user.company_id,
         companySlug: user.slug,
       },
-      process.env.JWT_SECRET || 'your-secret-key-change-this',
+process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
 

@@ -24,7 +24,7 @@ if (!secret) throw new Error('JWT_SECRET is not set');
 decoded = jwt.verify(token.value, secret) as any;
 
     } catch (jwtError) {
-      console.error('JWT verification failed:', jwtError); // DEBUG
+// JWT invalid or expired
       return NextResponse.json(
         { success: false, error: 'Invalid token' }, 
         { status: 401 }
@@ -35,8 +35,9 @@ decoded = jwt.verify(token.value, secret) as any;
     const sql = neon(process.env.DATABASE_URL!);
     const users = await sql`
       SELECT 
-        u.id,
+      u.id,
         u.email,
+        u.name,
         u.role,
         u.company_id,
         c.slug as company_slug,
@@ -46,6 +47,13 @@ decoded = jwt.verify(token.value, secret) as any;
       WHERE u.id = ${decoded.userId}
         AND (u.is_active = true OR u.is_active IS NULL)
     `;
+
+    if (!decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token payload' },
+        { status: 401 }
+      );
+    }
 
     if (users.length === 0) {
       return NextResponse.json(
@@ -61,7 +69,7 @@ decoded = jwt.verify(token.value, secret) as any;
       user: {
         id: user.id,
         email: user.email,
-        name: user.email, // Using email as name since column doesn't exist
+        name: user.name || user.email,
         role: user.role,
         companyId: user.company_id,
         companySlug: user.company_slug,

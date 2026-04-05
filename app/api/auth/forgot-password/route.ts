@@ -5,12 +5,15 @@ import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
-
+const { email } = await request.json();
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
     const users = await sql`
       SELECT id, email, name
       FROM users
-      WHERE email = ${email} AND is_active = true
+      WHERE LOWER(email) = ${normalizedEmail} AND is_active = true
     `;
 
     if (users.length === 0) {
