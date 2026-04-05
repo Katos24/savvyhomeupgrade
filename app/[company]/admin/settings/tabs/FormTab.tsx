@@ -98,6 +98,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
   const [urlCopied, setUrlCopied] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
 
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/${company.slug}`
@@ -218,11 +219,36 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         )}
       </AnimatePresence>
 
+
+      {/* ── MOBILE TAB BAR ── */}
+      <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
+        <button
+          onClick={() => setMobileTab('edit')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            mobileTab === 'edit'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            mobileTab === 'preview'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          Preview
+        </button>
+      </div>
+
       {/* ── MAIN GRID ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* ── LEFT: PHONE PREVIEW ── */}
-        <div className="lg:col-span-5 order-2 lg:order-1">
+    {/* ── LEFT: PHONE PREVIEW ── */}
+        <div className={`lg:col-span-5 order-2 lg:order-1 ${mobileTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
           <div className="sticky top-6 space-y-3">
 
             {/* Step pills */}
@@ -309,8 +335,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* ── RIGHT: CONFIG ── */}
-        <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+      {/* ── RIGHT: CONFIG ── */}
+        <div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'}`}>
 
           {/* STEP 1 — subtle, locked, collapsed */}
           <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 px-5 py-3.5">
