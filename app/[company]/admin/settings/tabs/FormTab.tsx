@@ -117,28 +117,45 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const handleSaveAll = async () => {
     setLoading(true);
     setStatus({ type: null, message: '' });
-    try {
+
+    const payload = {
+      action: 'update-form',
+      data: {
+        cta: { cta_success_message: ctaSuccessMessage },
+        questions: canUseCustomQuestions ? customQuestions : [],
+        field_config: {
+          ...fieldConfig,
+          file_upload: { enabled: canUsePhotoUpload ? fieldConfig.file_upload.enabled : false },
+        },
+      },
+    };
+
+    const attempt = async () => {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-form',
-          data: {
-            cta: { cta_success_message: ctaSuccessMessage },
-            questions: canUseCustomQuestions ? customQuestions : [],
-            field_config: {
-              ...fieldConfig,
-              file_upload: { enabled: canUsePhotoUpload ? fieldConfig.file_upload.enabled : false },
-            },
-          },
-        }),
+        body: JSON.stringify(payload),
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to update settings');
+      return result;
+    };
+
+    try {
+      try {
+        await attempt();
+      } catch (firstErr) {
+        // Wait 1.5s then retry once
+        await new Promise(r => setTimeout(r, 1500));
+        await attempt();
+      }
       setStatus({ type: 'success', message: 'Form settings saved!' });
       setTimeout(() => setStatus({ type: null, message: '' }), 3000);
     } catch (err) {
-      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Something went wrong' });
+      setStatus({
+        type: 'error',
+        message: 'Connection interrupted — please try again.',
+      });
     } finally {
       setLoading(false);
     }
