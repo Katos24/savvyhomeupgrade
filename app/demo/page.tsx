@@ -287,47 +287,38 @@ function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void 
 
 function BrowserChrome({ darkMode, children }: { darkMode: boolean; children: React.ReactNode }) {
   return (
-    <>
-      {/* Desktop: full browser chrome */}
-      <div className={`hidden sm:block rounded-2xl overflow-hidden border shadow-2xl ${
-        darkMode ? 'border-white/10 shadow-black/50' : 'border-gray-300 shadow-gray-300/60'
+    <div className={`rounded-2xl overflow-hidden border shadow-2xl ${
+      darkMode ? 'border-white/10 shadow-black/50' : 'border-gray-300 shadow-gray-300/60'
+    }`}>
+      {/* Browser chrome bar — desktop only */}
+      <div className={`hidden sm:flex items-center gap-3 px-4 py-3 border-b ${
+        darkMode ? 'bg-[#0b1120] border-white/10' : 'bg-gray-200 border-gray-300'
       }`}>
-        <div className={`flex items-center gap-3 px-4 py-3 border-b ${
-          darkMode ? 'bg-[#0b1120] border-white/10' : 'bg-gray-200 border-gray-300'
-        }`}>
-          {/* Traffic lights */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-          </div>
-          {/* URL bar */}
-          <div className="flex-1 flex justify-center">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full max-w-sm ${
-              darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-300'
-            }`}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`shrink-0 ${darkMode ? 'text-white/25' : 'text-gray-400'}`}>
-                <rect x="3" y="11" width="18" height="11" rx="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <span className={`font-mono ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>lead2project.com/</span>
-              <span className={`font-mono font-semibold ${darkMode ? 'text-white/60' : 'text-gray-700'}`}>torres/dashboard</span>
-            </div>
-          </div>
-          <div className="w-[54px] shrink-0" />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
         </div>
-        <div className={darkMode ? 'bg-[#1e293b]' : 'bg-gray-50'}>
-          {children}
+        <div className="flex-1 flex justify-center">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full max-w-sm ${
+            darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-300'
+          }`}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`shrink-0 ${darkMode ? 'text-white/25' : 'text-gray-400'}`}>
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span className={`font-mono ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>lead2project.com/</span>
+            <span className={`font-mono font-semibold ${darkMode ? 'text-white/60' : 'text-gray-700'}`}>torres/dashboard</span>
+          </div>
         </div>
+        <div className="w-[54px] shrink-0" />
       </div>
 
-      {/* Mobile: no chrome, just clean content */}
-      <div className={`sm:hidden rounded-2xl overflow-hidden ${
-        darkMode ? 'bg-[#1e293b]' : 'bg-gray-50'
-      }`}>
+      {/* Content — renders once */}
+      <div className={darkMode ? 'bg-[#1e293b]' : 'bg-gray-50'}>
         {children}
       </div>
-    </>
+    </div>
   );
 }
 

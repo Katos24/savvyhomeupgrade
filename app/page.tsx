@@ -97,17 +97,17 @@ function Hero() {
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold border"
                   style={{ background: '#E8F4EF', borderColor: '#A8D5C2', color: '#1a6645' }}>
                   <Zap className="w-3 h-3" style={{ fill: '#1a6645' }} />
-                  Built for home service pros
-                </span>
+                  Built for small & mid-size businesses
+            </span>
               </div>
 
             {/* Headline */}
               <h1 className="font-black tracking-tight"
-                style={{ fontSize: 'clamp(40px, 6vw, 68px)', color: '#0F1F3D', lineHeight: 1.0 }}>
-                Work faster.<br />
-                Work smarter.<br />
-                <span style={{ color: '#1a6645' }}>Never lose a lead again.</span>
-              </h1>
+                  style={{ fontSize: 'clamp(40px, 6vw, 68px)', color: '#0F1F3D', lineHeight: 1.0 }}>
+                  Work faster.<br />
+                  Work smarter.<br />
+                  <span style={{ color: '#1a6645' }}>Never lose a job again.</span>
+                </h1>
 
               {/* Sub */}
               <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[460px]"
@@ -1815,7 +1815,7 @@ function Footer() {
               <div className="bg-blue-600 p-1.5 rounded-lg"><Zap className="text-white w-4 h-4" strokeWidth={2.5}/></div>
               <span className="font-extrabold text-slate-900 tracking-tight">L2P</span>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">Job management built for service contractors. One link. Every lead.</p>
+            <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">Job management built for small and mid-size businesses. One link. Every lead.</p>
           </div>
           {[
             { heading: 'Product', links: [['Pricing','#pricing'],['Sign Up','/signup'],['Login','/login']] },
