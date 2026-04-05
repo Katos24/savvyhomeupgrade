@@ -187,27 +187,14 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Booking Form</h1>
 <p className="text-sm text-gray-400 mt-0.5">This is the form your customers see when they visit your public link.</p>        </div>
         <div className="flex items-center gap-3">
-          {/* Copy link */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-all"
-          >
-            <AnimatePresence mode="wait">
-              {urlCopied
-                ? <motion.span key="check" {...fadeUp}><Check className="w-3.5 h-3.5 text-emerald-500" /></motion.span>
-                : <motion.span key="link" {...fadeUp}><Link2 className="w-3.5 h-3.5" /></motion.span>
-              }
-            </AnimatePresence>
-            {urlCopied ? 'Copied!' : 'Copy link'}
-          </motion.button>
+     
 
           {/* Save */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleSaveAll}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-indigo-200"
+          className="flex items-center gap-2 px-5 py-2 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all"
           >
             {loading
               ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -236,21 +223,21 @@ export default function FormTab({ company, currentUser }: { company: any; curren
       </AnimatePresence>
 
 {/* ── PUBLIC URL BANNER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl mb-6">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
-          <p className="text-xs text-slate-400 font-medium shrink-0">Your customer form</p>
+    <div className="flex items-center gap-4 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl mb-6">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <p className="text-sm font-semibold text-slate-500">Your customer form</p>
         </div>
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="text-xs font-bold text-slate-700 truncate">{publicUrl}</span>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 shrink-0"
-          >
-            {urlCopied ? 'Copied!' : 'Copy'}
-          </motion.button>
+        <div className="flex-1 min-w-0 px-4 py-2 bg-white border border-slate-200 rounded-xl">
+          <span className="text-sm font-medium text-slate-700 truncate block">{publicUrl}</span>
         </div>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
+          className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
+        >
+          {urlCopied ? 'Copied!' : 'Copy'}
+        </motion.button>
       </div>
 
       {/* ── MOBILE TAB BAR ── */}
