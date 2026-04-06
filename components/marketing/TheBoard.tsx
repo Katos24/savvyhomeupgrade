@@ -103,19 +103,28 @@ function TablePanel({ isDark }: { isDark: boolean }) {
 function CalendarPanel({ isDark }: { isDark: boolean }) {
   const cells = [...Array(3).fill(null), ...Array.from({ length: 30 }, (_, i) => i + 1)];
   while (cells.length % 7 !== 0) cells.push(null);
+  
   return (
     <div className="h-full overflow-y-auto pb-8">
       <div className="grid grid-cols-7 gap-[2px]">
-        {['S','M','T','W','T','F','S'].map(d => (
-          <div key={d} className="text-[8px] font-black text-slate-400 uppercase text-center py-1">{d}</div>
+        {/* Fixed Day Labels */}
+        {['S','M','T','W','T','F','S'].map((d, idx) => (
+          <div key={`cal-label-${idx}`} className="text-[8px] font-black text-slate-400 uppercase text-center py-1">
+            {d}
+          </div>
         ))}
+
+        {/* Fixed Day Cells */}
         {cells.map((day, i) => {
           const events = day ? (CAL_EVENTS[day] || []) : [];
+          // Use the index 'i' in the key to ensure uniqueness
           return (
-            <div key={i} className={`min-h-[48px] p-1 border ${day ? (isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100') : 'border-transparent'}`}>
+            <div key={`cell-${i}`} className={`min-h-[48px] p-1 border ${day ? (isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100') : 'border-transparent'}`}>
               {day && <span className="text-[9px] font-black text-slate-400">{day}</span>}
               {events.map((ev, j) => (
-                <div key={j} className="text-[7px] font-black text-white p-0.5 rounded truncate mt-1" style={{ background: ev.color }}>{ev.name}</div>
+                <div key={`ev-${i}-${j}`} className="text-[7px] font-black text-white p-0.5 rounded truncate mt-1" style={{ background: ev.color }}>
+                  {ev.name}
+                </div>
               ))}
             </div>
           );
