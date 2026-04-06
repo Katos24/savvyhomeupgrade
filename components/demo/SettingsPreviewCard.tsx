@@ -72,8 +72,14 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
             <div className="px-5 py-4">
               {/* Logo + name row */}
               <div className="flex items-start justify-between mb-4 -mt-8">
-               <div className="w-14 h-14 rounded-xl bg-white shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
-  <TorresLogo size={40} />
+               <div className="flex flex-col items-center">
+  <div className="w-14 h-14 rounded-xl bg-white shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+    <TorresLogo size={40} />
+  </div>
+
+  <p className="text-[10px] font-black text-gray-400 mt-1 uppercase tracking-widest">
+    Logo
+  </p>
 </div>
                 <button className="mt-8 flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl">
                   <Settings className="w-3 h-3" /> EDIT

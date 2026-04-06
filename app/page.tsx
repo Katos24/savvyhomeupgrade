@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import DashboardCycler from '@/components/marketing/DashboardCycler';
 import {
   ArrowRight, Zap, Check, Menu, X,
   QrCode, Bot, Mail, BarChart2, ChevronDown, XCircle,
   Globe, User, Phone, FileText, ChevronRight, DollarSign,
-  Search, LayoutGrid, AlignLeft, Sparkles, LayoutDashboard,
-  Calendar, Clock, SlidersHorizontal, CreditCard, MessageCircle, Download,
+  Search, LayoutGrid, AlignLeft, Sparkles, Workflow, Grid, Users,
+  Calendar, Clock, Plus, SlidersHorizontal, Settings, Copy, ExternalLink, CreditCard, MessageCircle, Download,
   MapPin, HomeIcon, Image as ImageIcon, Upload, Truck, Instagram, Bell, List
 } from 'lucide-react';
+import SettingsPreviewCard from '@/components/demo/SettingsPreviewCard';
 
 function useFadeIn(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -130,7 +132,7 @@ function Hero() {
                 Get Your Free Booking Link <ArrowRight size={18} />
               </Link>
               <a
-                href="#how-it-works"
+                href="/demo"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold border transition-all"
                 style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}
               >
@@ -566,7 +568,6 @@ function FastDemoForm() {
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 2 — HOW IT WORKS (combined: QR everywhere + 3 step cards)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -616,72 +617,81 @@ function HowItWorks() {
     >
       <div className="max-w-7xl mx-auto">
 
-        {/* ── PART 1 — Blast it everywhere ── */}
+        {/* ── PART 1 — Text left, image right ── */}
         <div
           ref={ref}
+          className="mb-20"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? 'none' : 'translateY(24px)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Header */}
-          <div className="text-center mb-10 max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
-              <span className="text-[11px] font-black uppercase tracking-[0.4em]" style={{ color: '#6366f1' }}>
-                The Workflow
-              </span>
-              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
-            </div>
-            <h2
-              className="font-black tracking-tight leading-none mb-6 text-white"
-              style={{ fontSize: 'clamp(36px, 6vw, 72px)' }}
-            >
-              One link.<br />
-              <span className="font-medium italic" style={{ color: '#374151' }}>Everything else</span><br />
-              takes care of itself.
-            </h2>
-            <p
-              className="text-base font-medium leading-relaxed mx-auto max-w-xl"
-              style={{ color: '#64748b' }}
-            >
-              Share your link anywhere customers can find you. They fill out your form, it lands on your dashboard, and you manage the whole job from there.
-            </p>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-          {/* QR branded image — full width */}
-          <div
-            className="rounded-2xl overflow-hidden mb-6"
-            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <img
-              src="/images/qrfeature.png"
-              alt="QR code on truck, yard sign, and social media"
-              className="w-full h-auto block"
-            />
-          </div>
-
-          {/* Channel pills */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-20">
-            {[
-              { icon: <Truck size={14} />, label: 'Truck wrap & decals' },
-              { icon: <Instagram size={14} />, label: 'Instagram & Facebook' },
-              { icon: <MapPin size={14} />, label: 'Yard signs & door hangers' },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold"
-                style={{
-                  borderColor: 'rgba(255,255,255,0.06)',
-                  color: '#64748b',
-                  background: 'rgba(255,255,255,0.02)',
-                }}
-              >
-                <span style={{ color: '#6366f1' }}>{item.icon}</span>
-                {item.label}
+            {/* LEFT — copy */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
+                <span className="text-[11px] font-black uppercase tracking-[0.4em]" style={{ color: '#6366f1' }}>
+                  The Workflow
+                </span>
+                <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
               </div>
-            ))}
+
+              <h2
+                className="font-black tracking-tight leading-none mb-6 text-white"
+                style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}
+              >
+                One link.<br />
+                <span className="font-medium italic" style={{ color: '#374151' }}>Everything else</span><br />
+                takes care of itself.
+              </h2>
+
+              <p className="text-base font-medium leading-relaxed mb-10" style={{ color: '#64748b', maxWidth: 480 }}>
+                Share your link anywhere customers can find you. They fill out your form, it lands on your dashboard, and you manage the whole job from there.
+              </p>
+
+              {/* Channel pills */}
+              <div className="flex flex-col gap-3">
+                {[
+                  { icon: <Truck size={14} />, label: 'Truck wrap & decals' },
+                  { icon: <Instagram size={14} />, label: 'Instagram & Facebook' },
+                  { icon: <MapPin size={14} />, label: 'Yard signs & door hangers' },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 py-3 px-4 rounded-xl border text-sm font-bold w-fit"
+                    style={{
+                      borderColor: 'rgba(255,255,255,0.06)',
+                      color: '#64748b',
+                      background: 'rgba(255,255,255,0.02)',
+                    }}
+                  >
+                    <span style={{ color: '#6366f1' }}>{item.icon}</span>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT — image */}
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                border: '1px solid rgba(255,255,255,0.06)',
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'none' : 'translateX(24px)',
+                transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.15s',
+              }}
+            >
+              <img
+                src="/images/qrfeature.png"
+                alt="QR code on truck, yard sign, and social media"
+                className="w-full h-auto block"
+              />
+            </div>
+
           </div>
         </div>
 
@@ -792,9 +802,7 @@ function HowItWorks() {
                         onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}
                       />
                       {step.badge && (
-                        <div
-                          className="absolute bottom-8 inset-x-0 z-20 flex justify-center"
-                        >
+                        <div className="absolute bottom-8 inset-x-0 z-20 flex justify-center">
                           <div
                             className="px-4 py-2 rounded-full"
                             style={{
@@ -826,12 +834,11 @@ function HowItWorks() {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 3 — THE BOARD
-// ─────────────────────────────────────────────────────────────────────────────
+
+
 function TheBoard() {
   const { ref, visible } = useFadeIn();
-
+ 
   const views = [
     {
       icon: <LayoutGrid size={16} />,
@@ -849,18 +856,11 @@ function TheBoard() {
       desc: "See your team's full schedule at a glance. Spot gaps, avoid double bookings, plan the week in seconds.",
     },
   ];
-
-  const stats = [
-    { label: 'Total Leads', value: '166', color: '#e2e8f0' },
-    { label: 'Active Jobs', value: '61', color: '#3b82f6' },
-    { label: 'Total Revenue', value: '$102k', color: '#22c55e' },
-    { label: 'Total Pending', value: '$122k', color: '#f59e0b' },
-  ];
-
+ 
   return (
     <section className="py-24 px-6" style={{ backgroundColor: '#F7F5F0' }}>
       <div className="max-w-6xl mx-auto">
-
+ 
         {/* Header */}
         <div
           ref={ref}
@@ -871,10 +871,7 @@ function TheBoard() {
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          <p
-            className="text-[11px] font-black uppercase tracking-[0.25em] mb-4"
-            style={{ color: '#1a6645' }}
-          >
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
             Your command center
           </p>
           <h2
@@ -884,77 +881,30 @@ function TheBoard() {
             Every lead. Every job. Every dollar.{' '}
             <span style={{ color: '#1a6645' }}>One screen.</span>
           </h2>
-          <p
-            className="text-lg font-medium leading-relaxed"
-            style={{ color: '#4A5568' }}
-          >
-            See everything at a glance — total leads, active jobs, revenue, and what's still unpaid. Switch between three views depending on what you need. Export it all to CSV in one click.
+          <p className="text-lg font-medium leading-relaxed" style={{ color: '#4A5568' }}>
+            See everything at a glance — total leads, active jobs, revenue, and what's still unpaid. Switch between three views depending on what you need.
           </p>
         </div>
-
-        {/* Stats strip */}
+ 
+        {/* Dashboard cycler — stats + chrome + auto-cycling views, includes dark/light toggle */}
         <div
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+          className="mb-12"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? 'none' : 'translateY(16px)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
           }}
         >
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl p-5 border"
-              style={{ background: '#0F1F3D', borderColor: '#1e2d4a' }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#64748b' }}>
-                {stat.label}
-              </p>
-              <p className="text-2xl font-black" style={{ color: stat.color }}>
-                {stat.value}
-              </p>
-            </div>
-          ))}
+          <DashboardCycler />
         </div>
-
-        {/* Board image placeholder */}
-        <div
-          className="rounded-2xl mb-12"
-          style={{
-            background: '#0F1F3D',
-            border: '2px dashed #1e2d4a',
-            aspectRatio: '16/9',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 12,
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(16px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
-          }}
-        >
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: '#1e2d4a' }}
-          >
-            <LayoutDashboard size={24} style={{ color: '#3b82f6' }} />
-          </div>
-          <p className="text-sm font-bold" style={{ color: '#475569' }}>
-            Dashboard screenshot — card / table / calendar view
-          </p>
-          <p className="text-xs font-medium" style={{ color: '#334155' }}>
-            Drop image here later
-          </p>
-        </div>
-
+ 
         {/* 3 view callouts */}
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? 'none' : 'translateY(16px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
           }}
         >
           {views.map((view, i) => (
@@ -969,16 +919,12 @@ function TheBoard() {
               >
                 <span style={{ color: '#1a6645' }}>{view.icon}</span>
               </div>
-              <p className="text-sm font-black mb-2" style={{ color: '#0F1F3D' }}>
-                {view.label}
-              </p>
-              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
-                {view.desc}
-              </p>
+              <p className="text-sm font-black mb-2" style={{ color: '#0F1F3D' }}>{view.label}</p>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>{view.desc}</p>
             </div>
           ))}
         </div>
-
+ 
         {/* CSV callout */}
         <div
           className="mt-8 rounded-2xl px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -986,7 +932,7 @@ function TheBoard() {
             background: '#E8F4EF',
             border: '1px solid #A8D5C2',
             opacity: visible ? 1 : 0,
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
           }}
         >
           <div className="flex items-center gap-3">
@@ -1003,154 +949,471 @@ function TheBoard() {
             Get Started Free
           </Link>
         </div>
-
+ 
       </div>
     </section>
   );
 }
 
-
+// FEATURE BENTO — replaces the old tabbed LeadCapture section
+// Drop-in replacement. Requires: lucide-react, useFadeIn hook from your file.
+// Visuals are placeholder divs — swap each {/* VISUAL */} comment for your img.
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+function FeatureBento() {
+  const { ref, visible } = useFadeIn();
+ 
+  return (
+    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
+      <div className="max-w-7xl mx-auto">
+ 
+        {/* Header */}
+        <div
+          ref={ref}
+          className="text-center mb-14"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
+        >
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
+            Built for the field, managed from the desk
+          </p>
+          <h2 className="font-black leading-tight tracking-tight mb-4" style={{ fontSize: 'clamp(32px, 5vw, 58px)', color: '#0F1F3D' }}>
+            One tool. Zero gaps.<br />
+            <span style={{ color: '#1a6645' }}>Leads in, money out.</span>
+          </h2>
+          <p className="text-lg font-medium max-w-2xl mx-auto leading-relaxed" style={{ color: '#4A5568' }}>
+            From the first QR scan to the final payment — no sticky notes, no missed jobs, no chasing clients.
+          </p>
+        </div>
+ 
+        {/* Bento Grid */}
+        <div
+          className="grid grid-cols-1 lg:grid-cols-12 gap-4"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.7s ease 0.15s' }}
+        >
+ 
+          {/* ── 01 Capture — wide */}
+          <div className="lg:col-span-7 flex flex-col rounded-[1.5rem] overflow-hidden border" style={{ background: 'white', borderColor: '#E5E0D8' }}>
+            {/* VISUAL — swap for: <img src="/images/qrfeature.png" className="w-full h-full object-cover object-top" alt="Intake form" /> */}
+            <div className="flex-1 min-h-[220px]" style={{ background: '#E8F4EF' }} />
+            <div className="p-6 border-t" style={{ borderColor: '#F0EDE8' }}>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: '#1a6645' }}>01 — Capture</p>
+              <h3 className="font-black text-xl mb-2 leading-tight" style={{ color: '#0F1F3D' }}>One form. Every lead.</h3>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                Branded QR on your truck, yard signs, and social bio. Collect photos, videos, budget, and job details — lands instantly on your dashboard.
+              </p>
+            </div>
+          </div>
+ 
+          {/* ── 02 Schedule — narrow */}
+          <div className="lg:col-span-5 flex flex-col rounded-[1.5rem] overflow-hidden border" style={{ background: 'white', borderColor: '#E5E0D8' }}>
+            {/* VISUAL — swap for: <img src="/images/schedulefeature.png" className="w-full h-full object-cover object-top" alt="Schedule board" /> */}
+            <div className="flex-1 min-h-[220px]" style={{ background: '#EEF2FF' }} />
+            <div className="p-6 border-t" style={{ borderColor: '#F0EDE8' }}>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: '#1a6645' }}>02 — Schedule</p>
+              <h3 className="font-black text-xl mb-2 leading-tight" style={{ color: '#0F1F3D' }}>One click to confirm.</h3>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                Assign crew and send a branded confirmation email instantly. No more "when are you coming?" texts.
+              </p>
+            </div>
+          </div>
+ 
+          {/* ── 03 Quote — narrow */}
+          <div className="lg:col-span-4 flex flex-col rounded-[1.5rem] overflow-hidden border" style={{ background: 'white', borderColor: '#E5E0D8' }}>
+            {/* VISUAL — swap for: <img src="/images/quotefeature.png" className="w-full h-full object-cover object-top" alt="Quote interface" /> */}
+            <div className="flex-1 min-h-[220px]" style={{ background: '#FFF7ED' }} />
+            <div className="p-6 border-t" style={{ borderColor: '#F0EDE8' }}>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: '#1a6645' }}>03 — Quote &amp; Win</p>
+              <h3 className="font-black text-xl mb-2 leading-tight" style={{ color: '#0F1F3D' }}>Quote from the driveway.</h3>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                Templates + AI project brief. Clients accept with one tap. Your closing rate goes up because your speed does.
+              </p>
+            </div>
+          </div>
+ 
+          {/* ── 04 Get Paid — wide */}
+          <div className="lg:col-span-8 flex flex-col rounded-[1.5rem] overflow-hidden border" style={{ background: 'white', borderColor: '#E5E0D8' }}>
+            {/* VISUAL — swap for: <img src="/images/payment-tab.png" className="w-full h-full object-cover object-top" alt="Payment tracking" /> */}
+            <div className="flex-1 min-h-[220px]" style={{ background: '#ECFDF5' }} />
+            <div className="p-6 border-t" style={{ borderColor: '#F0EDE8' }}>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: '#1a6645' }}>04 — Get Paid</p>
+              <h3 className="font-black text-xl mb-2 leading-tight" style={{ color: '#0F1F3D' }}>See exactly who owes you money.</h3>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                Track deposits, finals, and your total outstanding balance in one view. Send payment reminders in one click. Export everything to CSV at tax time.
+              </p>
+            </div>
+          </div>
+ 
+          {/* ── 05 Stay Sharp — full width, horizontal on desktop */}
+          <div className="lg:col-span-12 flex flex-col lg:flex-row rounded-[1.5rem] overflow-hidden border" style={{ background: 'white', borderColor: '#E5E0D8' }}>
+            {/* VISUAL — swap for: <img src="/images/outboxfeature.png" className="w-full lg:w-[420px] h-64 lg:h-auto object-cover object-top flex-shrink-0" alt="Global outbox" /> */}
+            <div className="w-full lg:w-[420px] h-64 lg:h-auto flex-shrink-0" style={{ background: '#F0EDE8' }} />
+            <div className="p-8 flex flex-col justify-center border-t lg:border-t-0 lg:border-l" style={{ borderColor: '#F0EDE8' }}>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3" style={{ color: '#1a6645' }}>05 — Stay Sharp</p>
+              <h3 className="font-black leading-tight mb-3" style={{ fontSize: 'clamp(22px, 3vw, 34px)', color: '#0F1F3D' }}>
+                The Global Outbox &amp;<br />Daily Digest.
+              </h3>
+              <p className="text-base font-medium leading-relaxed mb-5" style={{ color: '#6B7280', maxWidth: 480 }}>
+                6AM briefing with today's schedule, overdue tasks, and your outstanding balance. Every quote, confirmation, and reminder is logged — so when a client says "I never got it," you have proof.
+              </p>
+              <div className="px-4 py-3 text-sm font-bold" style={{ background: '#E8F4EF', borderLeft: '4px solid #1a6645', color: '#1a6645' }}>
+                💡 Know your business status without opening the app
+              </div>
+            </div>
+          </div>
+ 
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FEATURE TABS — Operational Focus (#F7F5F0 bg)
+// SETTINGS PREVIEW INLINE — full height, no scroll, paste above SettingsShowcase
 // ─────────────────────────────────────────────────────────────────────────────
-function LeadCapture() {
-  const [active, setActive] = useState(0);
-  // Ensure useFadeIn or similar intersection observer hook is defined in your file
-  const { ref, visible } = useFadeIn(); 
+
+const SHOWCASE_CONFIG_ITEMS = [
+  { icon: <Workflow className="w-5 h-5" />,   label: 'Pipeline',     desc: 'Customize your lead stages.', color: '#f59e0b', bg: '#fef3c7' },
+  { icon: <Grid className="w-5 h-5" />,        label: 'Categories',   desc: 'Each gets its own checklist and pricing template.', color: '#8b5cf6', bg: '#ede9fe' },
+  { icon: <FileText className="w-5 h-5" />,   label: 'Booking Form', desc: 'Control what customers fill out.', color: '#f97316', bg: '#ffedd5' },
+  { icon: <Mail className="w-5 h-5" />,        label: 'Automations',  desc: 'Branded emails for every touchpoint.', color: '#3b82f6', bg: '#dbeafe' },
+  { icon: <Users className="w-5 h-5" />,       label: 'Team',         desc: 'Invite crew and assign leads.', color: '#0ea5e9', bg: '#e0f2fe' },
+  { icon: <CreditCard className="w-5 h-5" />,  label: 'Billing',      desc: 'Manage your plan.', color: '#10b981', bg: '#d1fae5' },
+];
+
+function ShowcaseLogoInline({ size = 40 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#0f172a"/>
+      <polygon points="20,7 33,17 33,34 7,34 7,17" fill="#6366f1"/>
+      <polygon points="20,5 34,16 6,16" fill="#818cf8"/>
+      <rect x="25" y="9" width="4" height="8" rx="1" fill="#818cf8"/>
+      <rect x="15" y="23" width="10" height="11" rx="1.5" fill="#1e1b4b"/>
+      <rect x="7" y="21" width="7" height="7" rx="1" fill="#1e1b4b"/>
+      <line x1="10.5" y1="21" x2="10.5" y2="28" stroke="#6366f1" strokeWidth="1"/>
+      <line x1="7" y1="24.5" x2="14" y2="24.5" stroke="#6366f1" strokeWidth="1"/>
+    </svg>
+  );
+}
+
+function SettingsPreviewInline() {
+  return (
+    <div style={{ transform: 'scale(0.82)', transformOrigin: 'top left', width: '122%' }}>
+    <div className="bg-[#0f172a] rounded-[2rem] w-full shadow-2xl overflow-hidden border border-white/10">
+
+      {/* Nav */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">LEAD2PROJECT</span>
+        <span className="text-xs text-white/30 font-medium">Settings</span>
+      </div>
+
+      {/* Company card */}
+      <div className="mx-4 mt-4 bg-white rounded-2xl overflow-hidden">
+        <div className="h-10 w-full" style={{ background: 'linear-gradient(to right, #667eea, #1c0866)' }} />
+        <div className="px-5 py-4">
+
+          {/* Logo + edit */}
+          <div className="flex items-start justify-between mb-4 -mt-8">
+            <div className="flex flex-col items-center">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+                <ShowcaseLogoInline size={40} />
+              </div>
+              <p className="text-[10px] font-black text-gray-400 mt-1 uppercase tracking-widest">Logo</p>
+            </div>
+            <button className="mt-8 flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl">
+              <Settings className="w-3 h-3" /> EDIT
+            </button>
+          </div>
+
+          <p className="text-base font-black text-gray-900 mb-1">Torres Roofing & Construction</p>
+          <span className="inline-block text-[10px] font-black px-3 py-1 rounded-full text-white mb-4" style={{ background: 'linear-gradient(to right, #667eea, #1c0866)' }}>
+            PRO PLAN
+          </span>
+
+          {/* Booking link */}
+          <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              <div>
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Your Booking Link</p>
+                <p className="text-xs font-bold text-gray-700">lead2project.com/<span className="text-indigo-600">torres</span></p>
+              </div>
+            </div>
+            <button className="flex items-center gap-1 text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg">
+              <Copy className="w-3 h-3" /> COPY
+            </button>
+          </div>
+
+          {/* Info grid */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-4">
+            <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Support Email</p>
+              <div className="flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs text-gray-700 font-medium">torres@email.com</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Business Phone</p>
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs text-gray-700 font-medium">(718) 555-0100</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Company Website</p>
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs text-gray-700 font-medium">torresroofing.com</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Brand Colors</p>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full border border-gray-200" style={{ backgroundColor: '#667eea' }} />
+                <div className="w-5 h-5 rounded-full border border-gray-200" style={{ backgroundColor: '#1c0866' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid grid-cols-3 gap-2">
+            <button className="flex flex-col items-center gap-1.5 py-3 border border-gray-200 rounded-xl">
+              <QrCode className="w-4 h-4 text-gray-500" />
+              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">QR Code</span>
+            </button>
+            <button className="flex flex-col items-center gap-1.5 py-3 border border-gray-200 rounded-xl">
+              <ExternalLink className="w-4 h-4 text-gray-500" />
+              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">View Form</span>
+            </button>
+            <button className="flex flex-col items-center gap-1.5 py-3 border border-indigo-200 bg-indigo-50 rounded-xl">
+              <Mail className="w-4 h-4 text-indigo-500" />
+              <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Digest On</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* System Configuration */}
+      <div className="px-4 pt-5 pb-6">
+        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-3">System Configuration</p>
+        <div className="grid grid-cols-2 gap-3">
+          {SHOWCASE_CONFIG_ITEMS.map((item, i) => (
+            <div key={i} className="bg-white rounded-2xl p-4 flex flex-col gap-2">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: item.bg }}>
+                <span style={{ color: item.color }}>{item.icon}</span>
+              </div>
+              <p className="text-sm font-black text-gray-900">{item.label}</p>
+              <p className="text-[11px] text-gray-400 leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS SHOWCASE
+// Left:  SettingsPreviewInline — full height, no scroll, always visible
+// Right: 4 pill tabs — clicking shows ONLY the mock, no text below
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PipelineTabMock() {
+  const stages = [
+    { label: 'New',         color: '#3b82f6', locked: true  },
+    { label: 'Contacted',   color: '#eab308', locked: false },
+    { label: 'Quoted',      color: '#8b5cf6', locked: false },
+    { label: 'In Progress', color: '#f97316', locked: false },
+    { label: 'Completed',   color: '#10b981', locked: true  },
+  ];
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <SlidersHorizontal size={14} style={{ color: '#6366f1' }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 900, color: '#111827', margin: 0 }}>Pipeline stages</p>
+            <p style={{ fontSize: 10, color: '#9ca3af', margin: 0 }}>5 stages configured</p>
+          </div>
+        </div>
+        <div style={{ background: '#6366f1', color: '#fff', fontSize: 10, fontWeight: 800, padding: '6px 12px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Plus size={10} /> Add stage
+        </div>
+      </div>
+      <div>
+        {stages.map((stage, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < stages.length - 1 ? '1px solid #f9fafb' : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: stage.color, flexShrink: 0 }} />
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 800, color: stage.locked ? '#9ca3af' : '#111827', margin: 0 }}>{stage.label}</p>
+                <p style={{ fontSize: 9, fontWeight: 700, color: '#d1d5db', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                  {stage.locked ? '🔒 System required' : 'Custom stage'}
+                </p>
+              </div>
+            </div>
+            {!stage.locked && <ChevronDown size={13} style={{ color: '#d1d5db' }} />}
+          </div>
+        ))}
+      </div>
+      <div style={{ background: '#111827', padding: '12px 16px', textAlign: 'center' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Save Pipeline</span>
+      </div>
+    </div>
+  );
+}
+
+function CategoriesTabMock() {
+  const cats = [
+    { label: 'Other',                 tasks: 2, items: 2  },
+    { label: 'Full Roof Replacement',  tasks: 1, items: 11 },
+    { label: 'Roof Repair',            tasks: 2, items: 2  },
+    { label: 'Emergency Service',      tasks: 1, items: 3  },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', padding: '14px 16px' }}>
+        <p style={{ fontSize: 14, fontWeight: 900, color: '#111827', margin: '0 0 2px' }}>Service Categories</p>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 12px' }}>Auto-load tasks and pricing when a category is selected.</p>
+        <div style={{ background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 800, padding: '7px 14px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Plus size={10} /> Add Category
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {cats.map((cat, i) => (
+          <div key={i} style={{ background: '#0f172a', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LayoutGrid size={14} style={{ color: '#6366f1' }} />
+            </div>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: 0 }}>{cat.label}</p>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, background: '#1e3a5f', color: '#60a5fa', padding: '2px 7px', borderRadius: 6 }}>✓ {cat.tasks} TASKS</span>
+              <span style={{ fontSize: 9, fontWeight: 800, background: '#14532d', color: '#4ade80', padding: '2px 7px', borderRadius: 6 }}>$ {cat.items} ITEMS</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+              <div style={{ background: '#1e293b', borderRadius: 6, padding: '5px', textAlign: 'center', fontSize: 8, fontWeight: 800, color: '#475569' }}>+ TASKS</div>
+              <div style={{ background: '#1e293b', borderRadius: 6, padding: '5px', textAlign: 'center', fontSize: 8, fontWeight: 800, color: '#475569' }}>+ PRICING</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FormTabMock() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 10 }}>
+      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #dc2626)', padding: '14px 12px 12px' }}>
+          <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>Request received!</p>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>A few more details.</p>
+        </div>
+        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {['Address...', 'Zip code', 'Preferred date'].map((ph, i) => (
+            <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '5px 8px', fontSize: 9, color: '#cbd5e1' }}>{ph}</div>
+          ))}
+          <div style={{ background: 'linear-gradient(135deg, #6366f1, #dc2626)', borderRadius: 6, padding: '7px', textAlign: 'center' }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#fff' }}>Submit request</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+            <span style={{ fontSize: 9 }}>🔒</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#374151' }}>Step 1 — always collected</span>
+          </div>
+          <p style={{ fontSize: 9, color: '#94a3b8', margin: 0 }}>Name · Email · Phone · Category</p>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#0f172a' }}>Step 2</span>
+            <span style={{ fontSize: 8, fontWeight: 800, color: '#4f46e5', background: '#eef2ff', padding: '2px 6px', borderRadius: 4 }}>YOU CONTROL</span>
+          </div>
+          {[
+            { label: 'Service address', on: true },
+            { label: 'Preferred date', on: true },
+            { label: 'Photo / video upload', on: true },
+            { label: 'Preferred time', on: false },
+          ].map((row, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: row.on ? '#0f172a' : '#94a3b8' }}>{row.label}</span>
+              <div style={{ width: 26, height: 14, borderRadius: 7, background: row.on ? '#4f46e5' : '#cbd5e1', display: 'flex', alignItems: 'center', padding: '0 2px', justifyContent: row.on ? 'flex-end' : 'flex-start' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailsTabMock() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ background: '#1e293b', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['Quote', 'Schedule', 'Payment'].map((tab, i) => (
+            <div key={i} style={{ padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, background: i === 1 ? '#0f172a' : 'transparent', color: i === 1 ? '#f1f5f9' : '#475569', border: i === 1 ? '1px solid #334155' : '1px solid transparent' }}>{tab}</div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          {['{{company_name}}', '{{customer_name}}', '{{scheduled_date}}', '{{scheduled_time}}'].map((v, i) => (
+            <span key={i} style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 5, padding: '2px 5px', fontSize: 7, fontWeight: 600, color: '#94a3b8', fontFamily: 'monospace' }}>{v}</span>
+          ))}
+        </div>
+        <div>
+          <p style={{ fontSize: 7, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 3px' }}>Subject</p>
+          <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 5, padding: '4px 7px', fontSize: 8, color: '#cbd5e1' }}>Appointment Scheduled - {'{{company_name}}'}</div>
+        </div>
+        <div>
+          <p style={{ fontSize: 7, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 3px' }}>Body</p>
+          <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 5, padding: '5px 7px', fontSize: 7, color: '#94a3b8', fontFamily: 'monospace', lineHeight: 1.6 }}>
+            Hi {'{{customer_name}}'},<br />Your appointment is confirmed!<br /><br />Date: {'{{scheduled_date}}'}<br />Time: {'{{scheduled_time}}'}
+          </div>
+        </div>
+        <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 7, padding: '6px', textAlign: 'center', fontSize: 9, fontWeight: 800, color: '#f1f5f9' }}>
+          Save Templates
+        </div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+        <div style={{ background: 'linear-gradient(135deg, #667eea, #1c0866)', padding: '12px', textAlign: 'center' }}>
+          <div style={{ width: 26, height: 26, background: '#fff', borderRadius: 5, margin: '0 auto 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <ShowcaseLogoInline size={20} />
+          </div>
+          <p style={{ fontSize: 9, fontWeight: 900, color: '#fff', margin: 0 }}>Torres Roofing</p>
+        </div>
+        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <p style={{ fontSize: 9, fontWeight: 800, color: '#111827', margin: 0 }}>Appointment Scheduled</p>
+          <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: 6, fontSize: 8, color: '#374151', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 2px' }}>Hi John Smith,</p>
+            <p style={{ margin: '0 0 2px' }}>Your appointment is confirmed!</p>
+            <p style={{ margin: 0, color: '#94a3b8' }}>Date: Apr 12, 2026<br />Time: 9:00 AM</p>
+          </div>
+          <p style={{ fontSize: 7, color: '#d1d5db', textAlign: 'center', margin: '4px 0 0' }}>Powered by Lead2Project</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main section ──────────────────────────────────────────────────────────────
+
+function SettingsShowcase() {
+  const { ref, visible } = useFadeIn();
+  const [activeTab, setActiveTab] = useState<number | null>(null);
 
   const tabs = [
-    {
-      label: 'Unified Intake',
-      icon: <QrCode size={15} />,
-      eyebrow: 'Stop scribbling on scrap paper',
-      headline: 'One form for customers.\nOne form for you.',
-      desc: 'Whether a customer scans a QR on your truck or you are doing a site-walk, use your branded form to capture everything. Collect high-res photos, short videos, and specific job details that land instantly on your dashboard.',
-      callout: 'Consistency is how you scale',
-      points: [
-        'Branded QR codes for trucks, yard signs, and social bio',
-        'Contractor-mode for rapid site-walk data entry',
-        'Accepts photos, short videos, and PDF documents',
-        'Customizable questions: Address, budget, & preferred dates',
-      ],
-      quote: "I use the form myself during every estimate. It ensures I never forget to take a specific photo or ask about the budget.",
-      author: 'Mike T., Ridge Line Roofing',
-     visual: (
-  <div className="relative w-full h-full">
-    <img 
-      src="/images/qrfeature.png" 
-      alt="Mobile Intake" 
-      className="w-full h-full object-cover object-top" 
-    />
-    {/* Optional: Add a subtle inner shadow to make it look embedded */}
-    <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.1)] pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Schedule',
-      icon: <Calendar size={15} />,
-      eyebrow: 'Eliminate the "When are you coming?" texts',
-      headline: 'Schedule in a click.\nNotify automatically.',
-      desc: 'Move leads from "New" to "Scheduled" instantly. Assign team members and send a professional confirmation email with one tap. No more manual texting or calendar juggling.',
-      callout: 'Automatic confirmations reduce no-shows by 40%',
-      points: [
-        'One-click scheduling directly from the job card',
-        'Automated branded confirmation emails',
-        'Assign jobs to specific crew members or subs',
-        'Every confirmation tracked in your Global Outbox',
-      ],
-      quote: "The one-click confirmation saves me 30 minutes of texting every single evening.",
-      author: 'Tony M., Shoreline Gutters',
-      visual: (
-  <div className="relative w-full h-full bg-[#f8f9fb]">
-    <img 
-      src="/images/schedulefeature.png" // The 4K upscale of your schedule board
-      alt="Interactive Scheduling Dashboard" 
-      className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105" 
-    />
-    {/* Subtle inner shadow and gradient for a "recessed" look */}
-    <div className="absolute inset-0 shadow-[inset_0_2px_12px_rgba(0,0,0,0.03)] pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Quote & Win',
-      icon: <FileText size={15} />,
-      eyebrow: 'Stop losing bids to slow responses',
-      headline: 'Professional quotes.\nSent from the driveway.',
-      desc: 'Use custom templates to build quotes in seconds. Leverage the AI Project Brief to summarize customer videos and notes into a clean bid. Send it instantly—clients accept with one tap from their phone.',
-      callout: 'Speed is the #1 reason customers choose a contractor',
-      points: [
-        'Custom quote templates based on your job categories',
-        'AI-generated project briefs from intake media',
-        'One-tap "Accept/Decline" buttons for customers',
-        'Real-time status tracking: Pending, Accepted, or Declined',
-      ],
-      quote: "I send the quote before I even start my truck to leave the site. My closing rate has doubled.",
-      author: 'Dave R., All-Pro Siding',
-    visual: (
-  <div className="relative w-full h-full bg-white">
-    <img 
-      src="/images/quotefeature.png" 
-      alt="Professional Quote Interface" 
-      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
-    />
-    {/* Subtle gradient overlay to make the transition to the UI feel smoother */}
-    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Get Paid',
-      icon: <DollarSign size={15} />,
-      eyebrow: 'Stop leaving money on the table',
-      headline: 'Track every dollar.\nExport every record.',
-      desc: 'Log deposits and final payments directly on the job card. See exactly who owes you money at a glance. When it’s tax time, export your entire history to CSV in one click. Your data is always yours.',
-      callout: 'Your data is portable. One-click CSV exports anytime.',
-      points: [
-        'Centralized dashboard for all unpaid balances',
-        'Professional payment reminder emails in one click',
-        'Full history of deposits and final payments per job',
-        'One-click CSV export for bookkeeping and taxes',
-      ],
-      quote: "Seeing my outstanding balance in red made me realize I had $11k just sitting out there. I collected it all in two days.",
-      author: 'Carl B., ProClean Services',
-     visual: (
-  <div className="relative w-full h-full bg-white">
-    <img
-      src="/images/payment-tab.png"
-      alt="Payment tracking"
-      className="w-full h-full object-cover object-top"
-    />
-  </div>
-),
-    },
-    {
-      label: 'Stay Sharp',
-      icon: <Bell size={15} />,
-      eyebrow: 'Total transparency',
-      headline: 'The Global Outbox &\nDaily Digest.',
-      desc: "Never wonder if a client got your email. Every quote, confirmation, and reminder is logged in your Global Outbox. Plus, get a 6AM briefing every morning with today's schedule and overdue tasks.",
-      callout: 'Know your business status without opening the app',
-      points: [
-        'Global Outbox: Proof of every communication sent',
-        '6AM Daily Digest: Your schedule & leads via email',
-        'Follow-up reminders on stale leads',
-        'Custom task templates for different job categories',
-      ],
-      quote: "The Outbox is a lifesaver. When a client says 'I never got the quote,' I can see exactly when it was sent.",
-      author: 'James P., Peak Roofing Co.',
-      visual: (
-  <div className="relative w-full h-full bg-white">
-    <img
-      src="/images/outboxfeature.png"
-      alt="Global outbox and daily digest"
-      className="w-full h-full object-cover object-top"
-    />
-  </div>
-),
-    },
+    { label: 'Pipeline',    title: 'Pipeline stages',             mock: <PipelineTabMock />    },
+    { label: 'Categories',  title: 'Service categories',          mock: <CategoriesTabMock />  },
+    { label: 'Intake Form', title: 'Booking form settings',       mock: <FormTabMock />        },
+    { label: 'Emails',      title: 'Email template editor',       mock: <EmailsTabMock />      },
   ];
 
   return (
@@ -1158,514 +1421,94 @@ function LeadCapture() {
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <div ref={ref} className="text-center mb-12"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
-            Built for the field, managed from the desk
-          </p>
-          <h2 className="font-black leading-tight tracking-tight mb-4"
-            style={{ fontSize: 'clamp(32px, 5vw, 60px)', color: '#0F1F3D' }}>
-            Everything to run your<br />
-            <span style={{ color: '#1a6645' }}>business, in one place.</span>
-          </h2>
-          <p className="text-lg font-medium max-w-2xl mx-auto" style={{ color: '#4A5568' }}>
-            No more lost sticky notes or scrolling through endless text threads. From unified intake to your morning briefing, Lead2Project keeps you organized.
-          </p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex justify-center gap-2 flex-wrap mb-12">
-          {tabs.map((tab, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[12px] font-black border transition-all duration-300"
-              style={active === i ? {
-                background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D',
-              } : {
-                background: 'white', color: '#4A5568', borderColor: '#D1C9BD',
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        <div className="relative" style={{ minHeight: 480 }}>
-          {tabs.map((tab, i) => (
-            <div
-              key={i}
-              className="grid lg:grid-cols-2 gap-12 items-center transition-all duration-500"
-              style={{
-                opacity: active === i ? 1 : 0,
-                transform: active === i ? 'translateY(0)' : 'translateY(16px)',
-                position: active === i ? 'relative' : 'absolute',
-                inset: active === i ? 'auto' : 0,
-                pointerEvents: active === i ? 'auto' : 'none',
-                zIndex: active === i ? 10 : 0,
-              }}
-            >
-              {/* LEFT — Visual */}
-              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl border border-white">
-                {tab.visual}
-              </div>
-
-              {/* RIGHT — Copy */}
-              <div className="space-y-5">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: '#1a6645' }}>
-                  {tab.eyebrow}
-                </p>
-                <h3 className="font-black leading-tight tracking-tight whitespace-pre-line"
-                  style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', color: '#0F1F3D' }}>
-                  {tab.headline}
-                </h3>
-                <p className="text-base font-medium leading-relaxed" style={{ color: '#4A5568' }}>
-                  {tab.desc}
-                </p>
-                <div className="px-4 py-3 rounded-xl border-l-4 font-bold text-sm"
-                  style={{ background: '#E8F4EF', borderLeftColor: '#1a6645', color: '#1a6645' }}>
-                  💡 {tab.callout}
-                </div>
-                <div className="space-y-2.5">
-                  {tab.points.map((pt, j) => (
-                    <div key={j} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                        style={{ background: '#E8F4EF' }}>
-                        <Check size={11} strokeWidth={4} style={{ color: '#1a6645' }} />
-                      </div>
-                      <span className="text-sm font-bold" style={{ color: '#374151' }}>{pt}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-5 border-t space-y-2" style={{ borderColor: '#E5E0D8' }}>
-                  <p className="text-sm font-medium italic leading-relaxed" style={{ color: '#6B7280' }}>
-                    "{tab.quote}"
-                  </p>
-                  <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#1a6645' }}>
-                    — {tab.author}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Settings showcase — 4 panels showing the most important settings: branding, intake form, emails, payments. Subtle fade/slide animation on scroll. Use the existing useFadeIn hook for this.
-// ───────────────────────────────────────
-
-function SettingsShowcase() {
-  const { ref, visible } = useFadeIn();
-
-  const screens = [
-   {
-  num: '01',
-  title: 'Your business identity',
-  desc: 'Logo, booking link, QR code, phone, and website — everything customers need to find and trust you.',
-  src: null,
-  alt: 'Company profile settings',
-  visual: (
-  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-    {/* Gradient bar */}
-    <div style={{ height: 5, borderRadius: 3, background: 'linear-gradient(to right, #6366f1, #8b5cf6, #dc2626)' }} />
-
-    {/* Logo + name + edit */}
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 12, background: '#fff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-          <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 44, height: 44, objectFit: 'contain' }} 
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        </div>
-        <div>
-          <p style={{ fontSize: 17, fontWeight: 900, color: '#FFFFFF', margin: '0 0 6px', letterSpacing: '-0.01em' }}>Ridge Line Roofing</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#1E293B', border: '1px solid #334155', borderRadius: 8, padding: '5px 10px' }}>
-            <span style={{ fontSize: 10, color: '#94A3B8' }}>lead2project.com/</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#818CF8' }}>ridge-line-roofing</span>
-          </div>
-          <p style={{ fontSize: 10, color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>Your public booking link</p>
-        </div>
-      </div>
-      <div style={{ background: '#1E293B', borderRadius: 10, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #334155', flexShrink: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: '#E2E8F0' }}>✏ EDIT</span>
-      </div>
-    </div>
-
-    {/* Fields */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-      <div>
-        <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Support Email</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Mail size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>info@ridgelineroofing.com</span>
-        </div>
-      </div>
-      <div>
-        <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Business Phone</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Phone size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>(555) 522-2444</span>
-        </div>
-      </div>
-    </div>
-
-    {/* Website */}
-    <div>
-      <p style={{ fontSize: 9, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Company Website</p>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Globe size={13} style={{ color: '#818CF8', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>ridgelineroofing.com</span>
-        </div>
-        <ArrowRight size={13} style={{ color: '#475569' }} />
-      </div>
-    </div>
-
-    {/* Action buttons */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-      {[
-        { label: 'QR Code', icon: <QrCode size={16} />, bg: '#1E293B', border: '#334155', color: '#94A3B8' },
-        { label: 'Copy Link', icon: <FileText size={16} />, bg: '#4F46E5', border: '#4F46E5', color: '#fff' },
-        { label: 'View Form', icon: <ArrowRight size={16} />, bg: '#1E293B', border: '#334155', color: '#94A3B8' },
-        { label: 'Digest On', icon: <Mail size={16} />, bg: '#1E2D4A', border: '#2D4A7A', color: '#818CF8' },
-      ].map((btn, i) => (
-        <div key={i} style={{ background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 12, padding: '12px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: btn.color }}>{btn.icon}</span>
-          <span style={{ fontSize: 8, fontWeight: 800, color: btn.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{btn.label}</span>
-        </div>
-      ))}
-    </div>
-  </div>
-),
-},
-    {
-      num: '02',
-      title: 'Everything configurable',
-      desc: 'Pipeline, categories, forms, emails, team — all in one place.',
-      src: '/images/system-config.png',
-      alt: 'System configuration overview',
-      visual: (
-  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-    <p style={{ fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>System Configuration</p>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-      {[
-        { label: 'Pipeline', desc: 'Customize your lead stages', icon: <SlidersHorizontal size={16} />, color: '#F59E0B', bg: '#FEF3C7' },
-        { label: 'Categories', desc: 'Add your service types', icon: <LayoutGrid size={16} />, color: '#6366F1', bg: '#EEF2FF' },
-        { label: 'Booking Form', desc: 'Control what customers fill out', icon: <FileText size={16} />, color: '#F97316', bg: '#FFF7ED' },
-        { label: 'Automations', desc: 'Personalize customer emails', icon: <Mail size={16} />, color: '#3B82F6', bg: '#EFF6FF' },
-        { label: 'Team', desc: 'Invite crew and assign leads', icon: <User size={16} />, color: '#06B6D4', bg: '#ECFEFF' },
-        { label: 'Billing', desc: 'Manage your plan', icon: <CreditCard size={16} />, color: '#10B981', bg: '#ECFDF5' },
-      ].map((item, i) => (
-        <div key={i} style={{ background: '#fff', borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: item.color }}>{item.icon}</span>
-          </div>
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', margin: '0 0 3px' }}>{item.label}</p>
-            <p style={{ fontSize: 10, fontWeight: 500, color: '#64748B', margin: 0, lineHeight: 1.4 }}>{item.desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-),
-    },
-    {
-      num: '03',
-      title: 'Your intake form',
-      desc: 'Toggle address, photos, dates, and custom questions on or off.',
-      src: '/images/booking-form.png',
-      alt: 'Booking form settings',
-      visual: (
-  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
-    {/* Header */}
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-      <div>
-        <p style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', margin: '0 0 2px', background: '#fff', display: 'inline-block', padding: '0 4px', borderRadius: 4 }}>Booking Form</p>
-        <p style={{ fontSize: 10, color: '#64748B', margin: '4px 0 0', fontWeight: 500 }}>Control what customers fill out when they request a job.</p>
-      </div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <div style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, padding: '5px 10px', fontSize: 10, fontWeight: 700, color: '#475569' }}>Copy link</div>
-        <div style={{ background: '#4F46E5', borderRadius: 8, padding: '5px 10px', fontSize: 10, fontWeight: 700, color: '#fff' }}>Save</div>
-      </div>
-    </div>
-
-    {/* Two col layout */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12 }}>
-      {/* LEFT — phone preview */}
-      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-        {/* Gradient header */}
-        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #dc2626)', padding: '14px 12px 12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 7, color: '#fff', fontWeight: 900 }}>1</span>
-            </div>
-            <ArrowRight size={8} style={{ color: 'rgba(255,255,255,0.5)' }} />
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 7, color: '#4F46E5', fontWeight: 900 }}>2</span>
-            </div>
-          </div>
-          <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>Request received!</p>
-          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>A few more details — all optional.</p>
-        </div>
-        {/* Form fields */}
-        <div style={{ padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {['Start typing your address...', 'Zip', 'Date'].map((ph, i) => (
-            <div key={i} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '5px 8px', fontSize: 9, color: '#CBD5E1', fontWeight: 500 }}>{ph}</div>
-          ))}
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '5px 8px' }}>
-            <p style={{ fontSize: 9, fontWeight: 700, color: '#374151', margin: '0 0 3px' }}>What is your budget range?</p>
-            <p style={{ fontSize: 9, color: '#CBD5E1', margin: 0 }}>Select one...</p>
-          </div>
-          <div style={{ background: 'linear-gradient(135deg, #6366f1, #dc2626)', borderRadius: 6, padding: '7px', textAlign: 'center' }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#fff' }}>Submit request</span>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT — controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* Step 1 locked */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: '8px 10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 9 }}>🔒</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#374151' }}>Step 1 — always collected</span>
-          </div>
-          <p style={{ fontSize: 9, color: '#94A3B8', margin: 0 }}>Full name · Email · Phone · Service category</p>
-        </div>
-
-        {/* Step 2 toggles */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#0F172A' }}>Step 2 — extra details</span>
-            <span style={{ fontSize: 8, fontWeight: 800, color: '#4F46E5', background: '#EEF2FF', padding: '2px 6px', borderRadius: 4 }}>YOU CONTROL THESE</span>
-          </div>
-          {[
-            { label: 'Service address', on: true },
-            { label: 'Preferred date', on: true },
-            { label: 'Preferred time', on: false },
-            { label: 'How did you hear about us?', on: false },
-            { label: 'Photo / video upload', on: true },
-          ].map((row, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 10, fontWeight: 600, color: row.on ? '#0F172A' : '#94A3B8' }}>{row.label}</span>
-              <div style={{ width: 28, height: 16, borderRadius: 8, background: row.on ? '#4F46E5' : '#CBD5E1', display: 'flex', alignItems: 'center', padding: '0 2px', justifyContent: row.on ? 'flex-end' : 'flex-start' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Custom questions */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#0F172A' }}>Your own questions</span>
-          <div style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, padding: '3px 8px', fontSize: 9, fontWeight: 700, color: '#475569' }}>+ Add</div>
-        </div>
-      </div>
-    </div>
-  </div>
-),
-    },
-   {
-  num: '04',
-  title: 'Your customer emails',
-  desc: 'Customize once — your customers receive branded, professional emails every time.',
-  src: null, // two images side by side
-  alt: 'Email template settings',
-  visual: (
-  <div style={{ background: '#0B0F1A', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-    {/* Header */}
-    <div>
-      <p style={{ fontSize: 15, fontWeight: 900, color: '#F1F5F9', margin: '0 0 2px' }}>Email templates</p>
-      <p style={{ fontSize: 9, color: '#64748B', margin: 0, fontWeight: 500 }}>Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
-    </div>
-
-    {/* Tabs */}
-    <div style={{ display: 'flex', gap: 6 }}>
-      {['Quote', 'Schedule', 'Payment'].map((tab, i) => (
-        <div key={i} style={{
-          padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700,
-          background: i === 1 ? '#1E293B' : 'transparent',
-          color: i === 1 ? '#F1F5F9' : '#475569',
-          border: i === 1 ? '1px solid #334155' : '1px solid transparent'
-        }}>{tab}</div>
-      ))}
-    </div>
-
-    {/* Two col */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-
-      {/* LEFT — editor */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* Variables */}
-        <div style={{ background: '#1E293B', borderRadius: 10, padding: '10px 12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9' }}>✦ Available variables</span>
-            <span style={{ fontSize: 9, color: '#475569' }}>Click to copy</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{scheduled_date}}', '{{scheduled_time}}', '{{customer_address}}'].map((v, i) => (
-              <span key={i} style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '2px 6px', fontSize: 8, fontWeight: 600, color: '#94A3B8', fontFamily: 'monospace' }}>{v}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Edit template */}
-        <div style={{ background: '#1E293B', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9' }}>✉ Edit template</span>
-            <span style={{ fontSize: 9, color: '#475569' }}>↺ Reset</span>
-          </div>
-          <div>
-            <p style={{ fontSize: 8, fontWeight: 800, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Subject line</p>
-            <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '5px 8px', fontSize: 9, color: '#CBD5E1' }}>
-              Appointment Scheduled - {'{{company_name}}'}
-            </div>
-          </div>
-          <div>
-            <p style={{ fontSize: 8, fontWeight: 800, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Email body</p>
-            <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 6, padding: '6px 8px', fontSize: 8, color: '#94A3B8', fontFamily: 'monospace', lineHeight: 1.6 }}>
-              Hi {'{{customer_name}}'},<br />
-              Your appointment has been scheduled!<br /><br />
-              Date: {'{{scheduled_date}}'}<br />
-              Time: {'{{scheduled_time}}'}<br />
-              Address: {'{{customer_address}}'}
-            </div>
-          </div>
-          <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: 8, padding: '7px', textAlign: 'center' }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#F1F5F9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Save Templates</span>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT — live preview */}
-      <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {/* Banner */}
-        <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #dc2626)', padding: '14px 12px', textAlign: 'center' }}>
-          <div style={{ width: 32, height: 32, background: '#fff', borderRadius: 6, margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-  <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 26, height: 26, objectFit: 'contain' }}
-    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-</div>
-          <p style={{ fontSize: 10, fontWeight: 900, color: '#fff', margin: '0 0 1px' }}>Ridge Line Roofing</p>
-          <p style={{ fontSize: 8, color: 'rgba(255,255,255,0.7)', margin: 0 }}>(233) 333-3322</p>
-        </div>
-        {/* Email body */}
-        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <div style={{ display: 'flex', gap: 4, fontSize: 8 }}>
-            <span style={{ color: '#94A3B8' }}>From</span>
-            <span style={{ fontWeight: 700, color: '#0F172A' }}>Ridge Line Roofing</span>
-          </div>
-          <div style={{ display: 'flex', gap: 4, fontSize: 8 }}>
-            <span style={{ color: '#94A3B8' }}>To</span>
-            <span style={{ color: '#475569' }}>john.smith@email.com</span>
-          </div>
-          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 5 }}>
-            <p style={{ fontSize: 8, color: '#94A3B8', margin: '0 0 2px' }}>Subject</p>
-            <p style={{ fontSize: 9, fontWeight: 800, color: '#0F172A', margin: 0 }}>Appointment Scheduled - Ridge Line Roofing</p>
-          </div>
-          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 5, fontSize: 8, color: '#374151', lineHeight: 1.6 }}>
-            <p style={{ margin: '0 0 3px' }}>Hi John Smith,</p>
-            <p style={{ margin: '0 0 3px' }}>Your appointment has been scheduled!</p>
-            <p style={{ margin: 0, color: '#64748B' }}>Date: March 15, 2024<br />Time: 10:00 AM<br />Address: 123 Main St, Anytown</p>
-          </div>
-          <p style={{ fontSize: 7, color: '#CBD5E1', textAlign: 'center', margin: '4px 0 0' }}>Powered by Lead2Project</p>
-        </div>
-      </div>
-    </div>
-  </div>
-),
-},
-  ];
-
-  return (
-    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
-      <div className="max-w-6xl mx-auto">
-
-        {/* Header */}
         <div
           ref={ref}
-          className="text-center mb-16"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+          className="text-center mb-14"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
             Settings that actually matter
           </p>
-          <h2
-            className="font-black tracking-tight mb-5"
-            style={{ fontSize: 'clamp(32px, 5vw, 58px)', color: '#0F1F3D', lineHeight: 1.05 }}
-          >
-            Everything configured.<br />
-            <span style={{ color: '#1a6645' }}>Nothing left to guess.</span>
+          <h2 className="font-black tracking-tight mb-4" style={{ fontSize: 'clamp(32px, 5vw, 58px)', color: '#0F1F3D', lineHeight: 1.05 }}>
+            Set it up once.<br />
+            <span style={{ color: '#1a6645' }}>It works every time.</span>
           </h2>
           <p className="text-lg font-medium max-w-xl mx-auto leading-relaxed" style={{ color: '#4A5568' }}>
-            Set it up once. Your booking form, emails, and payments work exactly how you want — every job, every time.
+            Your booking form, emails, and pipeline configured exactly how your business works.
           </p>
         </div>
 
-        {/* 2x2 Grid */}
+        {/* Split layout */}
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-8"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(24px)',
-            transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s',
-          }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s' }}
         >
-         {screens.map((screen, i) => (
-  <div key={i} className="flex flex-col gap-4">
-    {/* Image */}
-  {'visual' in screen && screen.visual ? (
-  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden' }}>
-    {screen.visual}
-  </div>
-) : screen.src ? (
-  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC' }}>
-    <img src={screen.src} alt={screen.alt} style={{ width: '100%', height: 'auto', display: 'block' }} />
-  </div>
-) : (
-  <div style={{ borderRadius: 16, border: '1px solid #D9D2C8', boxShadow: '0 8px 32px rgba(15,31,61,0.08)', overflow: 'hidden', background: '#EAE5DC', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-    <img src="/images/email-templates.png" alt="Email template editor" style={{ width: '100%', height: 'auto', display: 'block' }} />
-    <img src="/images/email-sent.png" alt="Email received by customer" style={{ width: '100%', height: 'auto', display: 'block' }} />
-  </div>
-)}
-              {/* Caption */}
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{ color: '#1a6645' }}
-                  >
-                    {screen.num}
-                  </span>
-                  <div style={{ height: 1, flex: 1, background: '#D9D2C8' }} />
-                </div>
-                <p className="font-black text-sm mb-1" style={{ color: '#0F1F3D' }}>
-                  {screen.title}
-                </p>
-                <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
-                  {screen.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
 
+          {/* LEFT — full settings preview, no scroll, sticky */}
+          <div className="lg:sticky lg:top-8">
+            <SettingsPreviewInline />
+          </div>
+
+          {/* RIGHT — pills + modal below */}
+          <div className="flex flex-col gap-4">
+
+            {/* Instruction text */}
+            <p className="text-sm font-bold" style={{ color: '#9CA3AF' }}>
+              Tap a setting to see how it works →
+            </p>
+
+            {/* Pill tabs */}
+            <div className="flex gap-2 flex-wrap">
+              {tabs.map((tab, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveTab(activeTab === i ? null : i)}
+                  className="px-5 py-2.5 rounded-full text-[12px] font-black border transition-all duration-200"
+                  style={activeTab === i ? {
+                    background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D',
+                  } : {
+                    background: 'white', color: '#4A5568', borderColor: '#D1C9BD',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mock — only shows when a pill is active, no text below */}
+            {activeTab !== null && (
+              <div
+                className="rounded-2xl border p-5"
+                style={{ background: '#fff', borderColor: '#E5E0D8', boxShadow: '0 4px 20px rgba(15,31,61,0.07)' }}
+              >
+                {/* Just the title, nothing else */}
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: '#1a6645' }}>
+                  {tabs[activeTab].title}
+                </p>
+                {tabs[activeTab].mock}
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="p-6 rounded-2xl border mt-2" style={{ background: '#fff', borderColor: '#D9D2C8' }}>
+              <p className="font-black text-sm mb-1" style={{ color: '#0F1F3D' }}>Ready to set it up?</p>
+              <p className="text-sm font-medium mb-4" style={{ color: '#6B7280' }}>Takes 5 minutes. Free 14-day trial, no credit card needed.</p>
+              <Link
+                href="/signup"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm text-white transition-all hover:opacity-90 active:scale-95"
+                style={{ background: '#1a6645' }}
+              >
+                Get Started Free <ArrowRight size={15} />
+              </Link>
+            </div>
+
+          </div>
+        </div>
       </div>
     </section>
   );
 }
+
 
 // AI Banner with 3 feature cards, appears after the 2x2 grid
 
@@ -2174,13 +2017,14 @@ export default function Home() {
 
 <TheBoard />
 
+<FeatureBento/>
 
-<LeadCapture />
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
 
 
   <SettingsShowcase />
+
 
   <AIBanner />
 
