@@ -37,6 +37,7 @@ const DURATION = 3500;
 const VIEWS = ['cards', 'table', 'calendar'] as const;
 type View = typeof VIEWS[number];
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Cards panel
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ function CardsPanel({ isDark }: { isDark: boolean }) {
   const arrowBg   = isDark ? '#0f172a' : '#f1f5f9';
   const arrowBorder = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
   const arrowColor = isDark ? '#475569' : '#9ca3af';
+  
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -204,7 +206,7 @@ function CalendarPanel({ isDark }: { isDark: boolean }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DashboardCycler() {
-  const [isDark, setIsDark] = useState(true);
+const [isDark, setIsDark] = useState(false);
   const [current, setCurrent] = useState<View>('cards');
   const [progress, setProgress] = useState(0);
   const startRef = useRef<number | null>(null);
@@ -263,7 +265,7 @@ export default function DashboardCycler() {
   };
 
   return (
-    <div style={{ background: shell, borderRadius: 20, overflow: 'hidden', border: `1px solid ${shellBorder}`, boxShadow: isDark ? '0 32px 64px rgba(0,0,0,0.4)' : '0 16px 48px rgba(0,0,0,0.10)' }}>
+    <div style={{ background: shell, border: `1px solid ${shellBorder}` }}>
 
       {/* ── Top bar (mimics real dashboard header) */}
       <div style={{ background: topbarBg, borderBottom: `1px solid ${topbarBorder}`, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -272,8 +274,10 @@ export default function DashboardCycler() {
           <div style={{ width: 32, height: 32, background: menuBg, border: `1px solid ${menuBorder}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Menu size={14} color={pillColor} />
           </div>
-          {/* Logo placeholder */}
-          <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: 'white' }}>R</div>
+          {/* Logo */}
+          <div style={{ width: 36, height: 36, background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+            <img src="/images/ridgelinelogo.png" alt="Ridge Line Roofing" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          </div>
           <div style={{ borderLeft: `1px solid ${topbarBorder}`, paddingLeft: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: titleColor, lineHeight: 1 }}>Ridge Line Roofing</div>
             <div style={{ fontSize: 9, fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: 3 }}>Dashboard</div>

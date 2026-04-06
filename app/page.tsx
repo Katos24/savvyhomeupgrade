@@ -835,10 +835,15 @@ function HowItWorks() {
 
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 3 — THE BOARD
+// Paste DashboardCycler (from DashboardCycler.tsx) into the same file,
+// or import it: import DashboardCycler from '@/components/marketing/DashboardCycler'
+// ─────────────────────────────────────────────────────────────────────────────
 
 function TheBoard() {
   const { ref, visible } = useFadeIn();
- 
+
   const views = [
     {
       icon: <LayoutGrid size={16} />,
@@ -856,11 +861,11 @@ function TheBoard() {
       desc: "See your team's full schedule at a glance. Spot gaps, avoid double bookings, plan the week in seconds.",
     },
   ];
- 
+
   return (
-    <section className="py-24 px-6" style={{ backgroundColor: '#F7F5F0' }}>
+<section className="py-24 px-6" style={{ backgroundColor: '#06080F' }}>
       <div className="max-w-6xl mx-auto">
- 
+
         {/* Header */}
         <div
           ref={ref}
@@ -871,22 +876,21 @@ function TheBoard() {
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
+<p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#6366f1' }}>
             Your command center
           </p>
           <h2
             className="font-black tracking-tight leading-tight mb-4"
-            style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: '#0F1F3D' }}
+style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: '#ffffff' }}
           >
             Every lead. Every job. Every dollar.{' '}
             <span style={{ color: '#1a6645' }}>One screen.</span>
           </h2>
-          <p className="text-lg font-medium leading-relaxed" style={{ color: '#4A5568' }}>
-            See everything at a glance — total leads, active jobs, revenue, and what's still unpaid. Switch between three views depending on what you need.
+<p className="text-lg font-medium leading-relaxed" style={{ color: '#64748b' }}>            See everything at a glance — total leads, active jobs, revenue, and what's still unpaid. Switch between three views depending on what you need.
           </p>
         </div>
- 
-        {/* Dashboard cycler — stats + chrome + auto-cycling views, includes dark/light toggle */}
+
+        {/* Dashboard cycler wrapped in browser chrome */}
         <div
           className="mb-12"
           style={{
@@ -895,9 +899,74 @@ function TheBoard() {
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
           }}
         >
-          <DashboardCycler />
+          {/* Outer browser shell */}
+          <div style={{
+            borderRadius: 16,
+            overflow: 'hidden',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08)',
+            border: '1px solid #1e2a3a',
+          }}>
+
+            {/* Browser chrome bar */}
+            <div style={{
+              background: '#1a2234',
+              padding: '10px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {/* Traffic lights */}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+              </div>
+
+              {/* URL bar */}
+              <div style={{
+                flex: 1,
+                background: '#0d1520',
+                borderRadius: 8,
+                padding: '5px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}>
+                {/* Lock */}
+                <svg width="10" height="12" viewBox="0 0 10 12" fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="1" y="5.5" width="8" height="6" rx="1.5" fill="#4ade80" />
+                  <path d="M3 5.5V3.5a2 2 0 1 1 4 0v2" stroke="#4ade80" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                {/* URL text */}
+                <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  lead2project.com/
+                  <span style={{ color: '#818cf8', fontWeight: 800 }}>ridge-line-roofing</span>
+                  /dashboard
+                </span>
+              </div>
+
+              {/* Right side browser buttons (decorative) */}
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Dashboard content */}
+            <DashboardCycler />
+
+          </div>
+
+          {/* "Your slug goes here" caption */}
+          <p className="text-center text-xs font-bold mt-3" style={{ color: '#9CA3AF' }}>
+            Your company name becomes your link —{' '}
+            <span style={{ color: '#6366f1' }}>lead2project.com/your-company</span>
+          </p>
         </div>
- 
+
         {/* 3 view callouts */}
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
@@ -924,7 +993,7 @@ function TheBoard() {
             </div>
           ))}
         </div>
- 
+
         {/* CSV callout */}
         <div
           className="mt-8 rounded-2xl px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -949,7 +1018,7 @@ function TheBoard() {
             Get Started Free
           </Link>
         </div>
- 
+
       </div>
     </section>
   );
@@ -1407,7 +1476,7 @@ function EmailsTabMock() {
 
 function SettingsShowcase() {
   const { ref, visible } = useFadeIn();
-  const [activeTab, setActiveTab] = useState<number | null>(null);
+const [activeTab, setActiveTab] = useState<number | null>(0);
 
   const tabs = [
     { label: 'Pipeline',    title: 'Pipeline stages',             mock: <PipelineTabMock />    },
