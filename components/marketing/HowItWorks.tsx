@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Check, ChevronRight, MapPin, Truck, Instagram, Calendar, Clock, Mail, Phone, User, LayoutGrid, AlignLeft, Upload, Image as ImageIcon, Home } from 'lucide-react';
+import { Check, ChevronRight, ChevronDown, MapPin, Truck, Instagram, Calendar, Clock, Mail, Phone, User, LayoutGrid, AlignLeft, Upload, Image as ImageIcon, Home } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -331,131 +331,132 @@ function LeadCard({ visible }: { visible: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main section
+// Updated Main section with better Readability & Colors
 // ─────────────────────────────────────────────────────────────────────────────
-
 export default function HowItWorks() {
   const { ref, visible } = useFadeIn();
-const [leadVisible, setLeadVisible] = useState(true);
+  const [leadVisible, setLeadVisible] = useState(true);
 
   return (
     <section
       id="how-it-works"
-      className="py-24 px-6 overflow-hidden"
-      style={{ backgroundColor: '#06080F', borderTop: '1px solid rgba(255,255,255,0.03)' }}
+      className="py-16 md:py-24 px-4 md:px-6 overflow-hidden"
+      style={{ backgroundColor: '#020617', borderTop: '1px solid rgba(255,255,255,0.05)' }}
     >
       <div className="max-w-6xl mx-auto">
 
-        {/* ── Part 1: QR / link section ── */}
+        {/* ── Section 1: The "One Link" Hook ── */}
         <div
           ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-24"
+          className="flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-24 md:mb-32"
           style={{
             opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(24px)',
+            transform: visible ? 'none' : 'translateY(20px)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Left — copy */}
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
-              <span className="text-[11px] font-black uppercase tracking-[0.4em]" style={{ color: '#6366f1' }}>The Workflow</span>
-              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
+          {/* Left Side: Copy */}
+          <div className="text-center lg:text-left order-2 lg:order-1">
+            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
+              <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">The Workflow</span>
             </div>
 
-            <h2 className="font-black tracking-tight leading-none mb-6 text-white" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
+            <h2 className="font-black tracking-tight leading-[1.1] mb-6 text-white text-4xl md:text-5xl lg:text-7xl">
               One link.<br />
-              <span className="font-medium italic" style={{ color: '#374151' }}>Everything else</span><br />
-              takes care of itself.
+              <span className="text-slate-500 italic font-serif">Everything else</span><br />
+              <span className="text-blue-500">is automated.</span>
             </h2>
 
-            <p className="text-base font-medium leading-relaxed mb-10" style={{ color: '#64748b', maxWidth: 480 }}>
-              Share your link anywhere customers can find you. They fill out your form, it lands on your dashboard instantly.
+            <p className="text-base md:text-lg font-medium leading-relaxed mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
+              Your unique QR code goes on trucks, yard signs, and social bios. Customers fill it out; you get the lead.
             </p>
 
-            <div className="flex flex-col gap-3">
-              {[
-                { icon: <Truck size={14} />, label: 'Truck wrap & decals' },
-                { icon: <Instagram size={14} />, label: 'Instagram & Facebook' },
-                { icon: <MapPin size={14} />, label: 'Yard signs & door hangers' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 py-3 px-4 rounded-xl border text-sm font-bold w-fit"
-                  style={{ borderColor: 'rgba(255,255,255,0.06)', color: '#64748b', background: 'rgba(255,255,255,0.02)' }}
-                >
-                  <span style={{ color: '#6366f1' }}>{item.icon}</span>
-                  {item.label}
-                </div>
-              ))}
-            </div>
+            {/* Pills Container */}
+<div className="flex flex-wrap justify-center lg:justify-start gap-3 max-w-xl mx-auto lg:mx-0">
+  {[
+    { icon: <Truck size={14} />, label: 'Truck Wraps', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { icon: <Instagram size={14} />, label: 'Social Media', color: 'text-pink-400', bg: 'bg-pink-500/10' },
+    { icon: <MapPin size={14} />, label: 'Yard Signs', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { icon: <Mail size={14} />, label: 'Email Footers', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    { icon: <LayoutGrid size={14} />, label: 'Door Hangers', color: 'text-purple-400', bg: 'bg-purple-500/10' },
+  ].map((item) => (
+    <div
+      key={item.label}
+      className={`
+        flex items-center gap-2 px-4 py-2 rounded-full 
+        border border-white/10 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)]
+        backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white/20
+        ${item.bg}
+      `}
+    >
+      <span className={`${item.color} shrink-0`}>{item.icon}</span>
+      <span className="text-[11px] md:text-xs font-black uppercase tracking-wider text-white/90">
+        {item.label}
+      </span>
+    </div>
+  ))}
+</div>
           </div>
 
-          {/* Right — QR image */}
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              border: '1px solid rgba(255,255,255,0.06)',
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'none' : 'translateX(24px)',
-              transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.15s',
-            }}
-          >
-            <img src="/images/qrfeature.png" alt="QR code on truck, yard sign, and social media" className="w-full h-auto block" />
+          {/* Right Side: Image/Visual */}
+          <div className="relative order-1 lg:order-2 w-full max-w-[500px] mx-auto">
+            <div className="absolute inset-0 bg-blue-600/20 blur-[80px] rounded-full" />
+            <div className="relative rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
+              <img src="/images/qrfeature.png" alt="QR Feature" className="w-full h-auto block" />
+            </div>
           </div>
         </div>
 
-        {/* ── Part 2: Form → Lead card ── */}
-        <div
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(24px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
-          }}
-        >
-          {/* Label */}
-          <div className="text-center mb-10">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] mb-3" style={{ color: '#64748b' }}>
-              What your customers see
-            </p>
-            <h3 className="font-black text-white tracking-tight" style={{ fontSize: 'clamp(24px, 3vw, 40px)' }}>
-              They fill it out.{' '}
-              <span style={{ color: '#1a6645' }}>You see it instantly.</span>
+        {/* ── Section 2: The Form -> Lead Sync ── */}
+        <div className="relative mt-20">
+          <div className="text-center mb-12 md:mb-16">
+            <h3 className="font-black text-white tracking-tight mb-4 text-3xl md:text-5xl">
+              From Lead <span className="text-slate-600">to</span> Project.
             </h3>
+            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] md:text-[12px]">
+              Watch it happen in real-time
+            </p>
           </div>
 
-          {/* Split: form + arrow + lead card */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 items-center max-w-4xl mx-auto">
-
-            {/* Form */}
-            <div style={{ maxWidth: 340, margin: '0 auto', width: '100%' }}>
-              <FastDemoForm onSubmit={() => setLeadVisible(true)} />
+          {/* THE SYNC INTERFACE */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] gap-8 md:gap-12 items-center max-w-5xl mx-auto">
+            
+            {/* 1. Customer Form */}
+            <div className="w-full max-w-[360px] order-1">
+               <div className="flex items-center justify-between mb-4 px-2">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Customer View</p>
+                 <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">Live Demo</span>
+               </div>
+               <FastDemoForm onSubmit={() => setLeadVisible(true)} />
             </div>
 
-            {/* Arrow */}
-            <div className="hidden lg:flex flex-col items-center gap-2">
-              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.1)' }} />
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="16" r="15" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-                <path d="M10 16h12M18 12l4 4-4 4" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.1)' }} />
+            {/* 2. The Connector (Rotates on Mobile) */}
+            <div className="flex flex-col items-center justify-center py-4 lg:py-0 order-2">
+               {/* Mobile Arrow (Points Down) */}
+               <div className="lg:hidden flex flex-col items-center gap-2">
+                 <div className="h-8 w-px bg-gradient-to-b from-blue-500/50 to-transparent" />
+                 <div className="w-10 h-10 rounded-full border border-blue-500/30 flex items-center justify-center">
+                    <ChevronDown className="text-blue-500 animate-bounce" size={20} />
+                 </div>
+               </div>
+
+               {/* Desktop Arrow (Points Right) */}
+               <div className="hidden lg:flex flex-col items-center gap-4">
+                  <div className="h-24 w-px bg-gradient-to-b from-transparent via-blue-500/40 to-transparent" />
+                  <div className="w-12 h-12 rounded-full bg-blue-500/5 border border-blue-500/20 flex items-center justify-center">
+                     <ChevronRight className="text-blue-500" size={24} />
+                  </div>
+                  <div className="h-24 w-px bg-gradient-to-b from-transparent via-blue-500/40 to-transparent" />
+               </div>
             </div>
 
-            {/* Lead card */}
-            <div style={{ maxWidth: 340, margin: '0 auto', width: '100%' }}>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#475569' }}>
-                Your dashboard
-              </p>
-              <LeadCard visible={leadVisible} />
-              {!leadVisible && (
-                <div className="mt-4 text-center">
-                  <p className="text-[11px] font-medium" style={{ color: '#334155' }}>
-                    Waiting for submission...
-                  </p>
-                </div>
-              )}
+            {/* 3. Business Dashboard Card */}
+            <div className="w-full max-w-[360px] order-3">
+               <div className="flex items-center justify-between mb-4 px-2">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Your Dashboard</p>
+                 <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Instant</span>
+               </div>
+               <LeadCard visible={leadVisible} />
             </div>
 
           </div>
