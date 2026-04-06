@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Data
+// Constants — outside the component
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LEADS = [
@@ -37,25 +37,23 @@ const DURATION = 3500;
 const VIEWS = ['cards', 'table', 'calendar'] as const;
 type View = typeof VIEWS[number];
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Cards panel
+// Panel components — outside the main component
 // ─────────────────────────────────────────────────────────────────────────────
 
 function CardsPanel({ isDark }: { isDark: boolean }) {
-  const cardBg    = isDark ? '#1e293b' : '#ffffff';
-  const cardBorder = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
-  const innerBg   = isDark ? '#0f172a' : '#f8fafc';
+  const cardBg      = isDark ? '#1e293b' : '#ffffff';
+  const cardBorder  = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
+  const innerBg     = isDark ? '#0f172a' : '#f8fafc';
   const innerBorder = isDark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
-  const namColor  = isDark ? '#f1f5f9' : '#0f172a';
-  const metaColor = isDark ? '#475569' : '#9ca3af';
-  const schedColor = isDark ? '#818cf8' : '#6366f1';
-  const timeColor = isDark ? '#94a3b8' : '#6b7280';
-  const amtColor  = isDark ? '#f1f5f9' : '#0f172a';
-  const arrowBg   = isDark ? '#0f172a' : '#f1f5f9';
+  const namColor    = isDark ? '#f1f5f9' : '#0f172a';
+  const metaColor   = isDark ? '#475569' : '#9ca3af';
+  const schedColor  = isDark ? '#818cf8' : '#6366f1';
+  const timeColor   = isDark ? '#94a3b8' : '#6b7280';
+  const amtColor    = isDark ? '#f1f5f9' : '#0f172a';
+  const arrowBg     = isDark ? '#0f172a' : '#f1f5f9';
   const arrowBorder = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
-  const arrowColor = isDark ? '#475569' : '#9ca3af';
-  
+  const arrowColor  = isDark ? '#475569' : '#9ca3af';
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -63,9 +61,7 @@ function CardsPanel({ isDark }: { isDark: boolean }) {
         <div key={lead.name} style={{ background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 14, overflow: 'hidden', display: 'flex' }}>
           <div style={{ width: 4, flexShrink: 0, background: lead.statusColor }} />
           <div style={{ padding: 12, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 5, display: 'inline-block', marginBottom: 8, background: `${lead.statusColor}25`, color: lead.statusColor }}>
-              {lead.status}
-            </div>
+            <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 5, display: 'inline-block', marginBottom: 8, background: `${lead.statusColor}25`, color: lead.statusColor }}>{lead.status}</div>
             <div style={{ fontSize: 13, fontWeight: 900, color: namColor, marginBottom: 4 }}>{lead.name}</div>
             <div style={{ fontSize: 9, color: metaColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{lead.assigned}</div>
             <div style={{ background: innerBg, border: `1px solid ${innerBorder}`, borderRadius: 8, padding: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 10 }}>
@@ -92,35 +88,26 @@ function CardsPanel({ isDark }: { isDark: boolean }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Table panel
-// ─────────────────────────────────────────────────────────────────────────────
-
 function TablePanel({ isDark }: { isDark: boolean }) {
-  const headBg  = isDark ? '#0a1120' : '#f9fafb';
-  const border  = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const rowBorder = isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6';
+  const headBg      = isDark ? '#0a1120' : '#f9fafb';
+  const border      = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const rowBorder   = isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6';
   const textPrimary = isDark ? '#f1f5f9' : '#111827';
   const textMuted   = isDark ? '#475569' : '#9ca3af';
   const textSec     = isDark ? '#cbd5e1' : '#374151';
-
   const th: React.CSSProperties = { fontSize: 9, fontWeight: 800, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '7px 10px', textAlign: 'left', borderBottom: `1px solid ${border}`, background: headBg, whiteSpace: 'nowrap' };
   const td = (extra?: React.CSSProperties): React.CSSProperties => ({ fontSize: 11, padding: '9px 10px', borderBottom: `1px solid ${rowBorder}`, whiteSpace: 'nowrap', color: textSec, ...extra });
 
   return (
     <div>
       <div style={{ background: headBg, border: `1px solid ${border}`, borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: textMuted, fontWeight: 600 }}>5 leads</span>
+        <span style={{ fontSize: 11, color: textMuted, fontWeight: 600 }}>6 leads</span>
         <span style={{ background: '#6366f1', color: 'white', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6 }}>Edit</span>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr>
-              {['Name', 'Category', 'Status', 'Scheduled', 'Quote', 'Payment', 'Assigned'].map(h => (
-                <th key={h} style={th}>{h}</th>
-              ))}
-            </tr>
+            <tr>{['Name','Category','Status','Scheduled','Quote','Payment','Assigned'].map(h => <th key={h} style={th}>{h}</th>)}</tr>
           </thead>
           <tbody>
             {LEADS.map((lead) => (
@@ -128,9 +115,7 @@ function TablePanel({ isDark }: { isDark: boolean }) {
                 <td style={td({ fontWeight: 800, color: textPrimary })}>{lead.name}</td>
                 <td style={td()}><span style={{ fontSize: 9, fontWeight: 800, padding: '2px 7px', background: isDark ? 'rgba(14,165,233,0.2)' : '#e0f2fe', color: isDark ? '#38bdf8' : '#0369a1' }}>{lead.cat}</span></td>
                 <td style={td()}><span style={{ fontSize: 9, fontWeight: 800, padding: '2px 7px', color: 'white', background: lead.statusColor }}>{lead.status}</span></td>
-                <td style={td({ color: lead.date !== '—' ? (isDark ? '#818cf8' : '#6366f1') : (isDark ? '#334155' : '#d1d5db'), fontWeight: lead.date !== '—' ? 700 : 400 })}>
-                  {lead.date !== '—' ? `${lead.date} · ${lead.time}` : '—'}
-                </td>
+                <td style={td({ color: lead.date !== '—' ? (isDark ? '#818cf8' : '#6366f1') : (isDark ? '#334155' : '#d1d5db'), fontWeight: lead.date !== '—' ? 700 : 400 })}>{lead.date !== '—' ? `${lead.date} · ${lead.time}` : '—'}</td>
                 <td style={td({ fontWeight: 800, color: lead.amount !== '—' ? '#10b981' : (isDark ? '#334155' : '#d1d5db') })}>{lead.amount}</td>
                 <td style={td()}><span style={{ fontSize: 10, fontWeight: 800, color: lead.paid ? '#10b981' : '#ef4444' }}>{lead.paid ? 'Paid' : 'Unpaid'}</span></td>
                 <td style={td({ color: lead.assigned !== '—' ? textSec : (isDark ? '#334155' : '#d1d5db') })}>{lead.assigned}</td>
@@ -143,10 +128,6 @@ function TablePanel({ isDark }: { isDark: boolean }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Calendar panel
-// ─────────────────────────────────────────────────────────────────────────────
-
 function CalendarPanel({ isDark }: { isDark: boolean }) {
   const cellBg     = isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb';
   const cellBorder = isDark ? 'rgba(255,255,255,0.04)' : '#e5e7eb';
@@ -156,8 +137,7 @@ function CalendarPanel({ isDark }: { isDark: boolean }) {
   const navBg      = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
   const navBorder  = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const navColor   = isDark ? '#475569' : '#9ca3af';
-
-  const firstDay = 3; // April 2026 starts Wednesday
+  const firstDay = 3;
   const totalDays = 30;
   const today = 6;
   const cells: (number | null)[] = [
@@ -202,11 +182,11 @@ function CalendarPanel({ isDark }: { isDark: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main exported component
+// Main component — single default export
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DashboardCycler() {
-const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const [current, setCurrent] = useState<View>('cards');
   const [progress, setProgress] = useState(0);
   const startRef = useRef<number | null>(null);
@@ -222,7 +202,7 @@ const [isDark, setIsDark] = useState(false);
       setProgress(Math.min((elapsed / DURATION) * 100, 100));
       if (elapsed >= DURATION) {
         elapsed = 0;
-        setCurrent(prev => VIEWS[(VIEWS.indexOf(prev) + 1) % VIEWS.length]);
+        setCurrent((prev: View) => VIEWS[(VIEWS.indexOf(prev) + 1) % VIEWS.length]);
       }
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -236,27 +216,23 @@ const [isDark, setIsDark] = useState(false);
     startRef.current = null;
   }
 
-  // Theme tokens
-  const shell        = isDark ? '#0f172a' : '#ffffff';
-  const shellBorder  = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const topbarBg     = isDark ? '#0a1120' : '#f9fafb';
-  const topbarBorder = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const titleColor   = isDark ? '#f1f5f9' : '#0f172a';
-  const subtitleColor= isDark ? '#475569' : '#9ca3af';
-  const tabActive    = isDark ? { bg: '#1e293b', border: 'rgba(255,255,255,0.1)', color: '#f1f5f9' } : { bg: '#e0e7ff', border: '#c7d2fe', color: '#4338ca' };
-  const tabInactive  = isDark ? { color: '#475569' } : { color: '#9ca3af' };
-  const statBg       = isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb';
-  const statBorder   = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const statLabel    = isDark ? 'rgba(255,255,255,0.3)' : '#9ca3af';
-  const contentBg    = isDark ? '#0f172a' : '#ffffff';
-  const searchBg     = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
-  const searchBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
-  const searchColor  = isDark ? 'rgba(255,255,255,0.2)' : '#9ca3af';
-  const pillBg       = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
-  const pillBorder   = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const pillColor    = isDark ? 'rgba(255,255,255,0.4)' : '#6b7280';
-  const menuBg       = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
-  const menuBorder   = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const shell         = isDark ? '#0f172a' : '#ffffff';
+  const shellBorder   = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const topbarBg      = isDark ? '#0a1120' : '#f9fafb';
+  const topbarBorder  = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const titleColor    = isDark ? '#f1f5f9' : '#0f172a';
+  const statBg        = isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb';
+  const statBorder    = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const statLabel     = isDark ? 'rgba(255,255,255,0.3)' : '#9ca3af';
+  const contentBg     = isDark ? '#0f172a' : '#ffffff';
+  const searchBg      = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
+  const searchBorder  = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const searchColor   = isDark ? 'rgba(255,255,255,0.2)' : '#9ca3af';
+  const pillBg        = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
+  const pillBorder    = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const pillColor     = isDark ? 'rgba(255,255,255,0.4)' : '#6b7280';
+  const menuBg        = isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
+  const menuBorder    = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
   const TAB_ICONS: Record<View, React.ReactNode> = {
     cards:    <LayoutGrid size={12} />,
@@ -267,14 +243,12 @@ const [isDark, setIsDark] = useState(false);
   return (
     <div style={{ background: shell, border: `1px solid ${shellBorder}` }}>
 
-      {/* ── Top bar (mimics real dashboard header) */}
+      {/* Top bar */}
       <div style={{ background: topbarBg, borderBottom: `1px solid ${topbarBorder}`, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Hamburger */}
           <div style={{ width: 32, height: 32, background: menuBg, border: `1px solid ${menuBorder}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Menu size={14} color={pillColor} />
           </div>
-          {/* Logo */}
           <div style={{ width: 36, height: 36, background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
             <img src="/images/ridgelinelogo.png" alt="Ridge Line Roofing" style={{ width: 28, height: 28, objectFit: 'contain' }} />
           </div>
@@ -284,14 +258,9 @@ const [isDark, setIsDark] = useState(false);
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Dark/light toggle */}
-          <button
-            onClick={() => setIsDark(v => !v)}
-            style={{ width: 32, height: 32, background: menuBg, border: `1px solid ${menuBorder}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
+          <button onClick={() => setIsDark(v => !v)} style={{ width: 32, height: 32, background: menuBg, border: `1px solid ${menuBorder}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {isDark ? <Sun size={13} color={pillColor} /> : <Moon size={13} color={pillColor} />}
           </button>
-          {/* Create button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: isDark ? '#ffffff' : '#0f172a', borderRadius: 10, padding: '6px 12px' }}>
             <Plus size={12} color={isDark ? '#0f172a' : '#ffffff'} strokeWidth={3} />
             <span style={{ fontSize: 11, fontWeight: 800, color: isDark ? '#0f172a' : '#ffffff' }}>Create</span>
@@ -299,7 +268,7 @@ const [isDark, setIsDark] = useState(false);
         </div>
       </div>
 
-      {/* ── Stats strip */}
+      {/* Stats strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '12px 16px 0' }}>
         {STATS.map((s) => (
           <div key={s.label} style={{ background: statBg, border: `1px solid ${statBorder}`, borderRadius: 12, padding: '10px 12px' }}>
@@ -309,38 +278,26 @@ const [isDark, setIsDark] = useState(false);
         ))}
       </div>
 
-      {/* ── Search + view switcher row */}
+      {/* Search + view switcher */}
       <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Search */}
         <div style={{ flex: 1, background: searchBg, border: `1px solid ${searchBorder}`, borderRadius: 12, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Search size={13} color={searchColor} />
           <span style={{ fontSize: 11, color: searchColor, fontWeight: 500 }}>Search by name, email or phone...</span>
         </div>
-        {/* Filter pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: pillBg, border: `1px solid ${pillBorder}`, borderRadius: 10, padding: '7px 10px' }}>
           <Filter size={12} color={pillColor} />
           <span style={{ fontSize: 10, fontWeight: 800, color: pillColor }}>Filters</span>
         </div>
-        {/* View switcher */}
         <div style={{ display: 'flex', background: pillBg, border: `1px solid ${pillBorder}`, borderRadius: 10, padding: 3, gap: 2 }}>
-          {VIEWS.map(v => (
-            <button
-              key={v}
-              onClick={() => jumpTo(v)}
-              style={{
-                padding: '6px 8px', borderRadius: 8, cursor: 'pointer', border: 'none',
-                background: current === v ? '#6366f1' : 'transparent',
-                color: current === v ? 'white' : pillColor,
-                display: 'flex', alignItems: 'center', transition: 'all 0.2s',
-              }}
-            >
+          {VIEWS.map((v: View) => (
+            <button key={v} onClick={() => jumpTo(v)} style={{ padding: '6px 8px', borderRadius: 8, cursor: 'pointer', border: 'none', background: current === v ? '#6366f1' : 'transparent', color: current === v ? 'white' : pillColor, display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}>
               {TAB_ICONS[v]}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Smart pills row */}
+      {/* Smart pills */}
       <div style={{ padding: '8px 16px 0', display: 'flex', gap: 6 }}>
         {[
           { icon: <Clock size={10} />, label: 'Scheduled Today' },
@@ -354,12 +311,12 @@ const [isDark, setIsDark] = useState(false);
         ))}
       </div>
 
-      {/* ── Progress bar */}
+      {/* Progress bar */}
       <div style={{ margin: '10px 16px 0', height: 2, background: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', borderRadius: 1, overflow: 'hidden' }}>
         <div style={{ height: '100%', background: '#6366f1', width: `${progress}%`, transition: 'width 0.05s linear' }} />
       </div>
 
-      {/* ── View content — fixed height so switching views doesn't resize the shell */}
+      {/* View content */}
       <div style={{ padding: 16, background: contentBg, height: 340, overflow: 'hidden' }}>
         {current === 'cards'    && <CardsPanel    isDark={isDark} />}
         {current === 'table'    && <TablePanel    isDark={isDark} />}
