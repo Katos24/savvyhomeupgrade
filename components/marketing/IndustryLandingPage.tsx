@@ -6,7 +6,6 @@ import Link from 'next/link';
 import type { IndustryContent } from '@/lib/industry-content';
 
 export default function IndustryLandingPage({ content }: { content: IndustryContent }) {
-  const [annual, setAnnual] = useState(false);
 
   const c = content.color;
 
@@ -233,53 +232,45 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
       </section>
 
       {/* ── PRICING ── */}
-      <section style={{ background: '#fff', padding: '80px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</p>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 8 }}>{content.pricing.headline}</h2>
-            <p style={{ fontSize: 15, color: '#64748b' }}>{content.pricing.sub}</p>
-            {/* Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 24 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: !annual ? '#0f172a' : '#94a3b8' }}>Monthly</span>
-              <button onClick={() => setAnnual(!annual)} style={{ width: 44, height: 24, background: annual ? '#22c55e' : '#e2e8f0', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-                <div style={{ position: 'absolute', top: 3, left: annual ? 22 : 3, width: 18, height: 18, background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-              </button>
-              <span style={{ fontSize: 13, fontWeight: 600, color: annual ? '#0f172a' : '#94a3b8' }}>Annual</span>
-              {annual && <span style={{ fontSize: 11, fontWeight: 800, color: '#22c55e', padding: '2px 8px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>SAVE 20%</span>}
+     {/* ── PRICING ── */}
+<section style={{ background: '#fff', padding: '80px 24px', color: '#0f172a' }}>
+  <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ textAlign: 'center', marginBottom: 48 }}>
+      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</p>
+      <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 8 }}>{content.pricing.headline}</h2>
+      <p style={{ fontSize: 15, color: '#64748b' }}>{content.pricing.sub}</p>
+    </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 700, margin: '0 auto' }}>
+      {[
+        { name: 'Basic', price: 49.99, features: ['1 booking link', 'Unlimited leads', 'Job board', 'Email notifications', 'Basic analytics'] },
+        { name: 'Pro', price: 79.99, features: ['Everything in Basic', 'AI job briefs', 'Photo analysis', 'Quote builder', 'Priority support'], highlight: true },
+      ].map((plan) => (
+        <div key={plan.name} style={{ border: plan.highlight ? `2px solid ${c}` : '1px solid #e2e8f0', padding: '28px 24px', position: 'relative' }}>
+          {plan.highlight && (
+            <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: c, color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 12px', letterSpacing: '0.08em' }}>
+              MOST POPULAR
             </div>
+          )}
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{plan.name}</div>
+          <div style={{ marginBottom: 20 }}>
+            <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-0.03em' }}>${plan.price}</span>
+            <span style={{ fontSize: 13, color: '#94a3b8' }}>/mo</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 700, margin: '0 auto' }}>
-            {[
-              { name: 'Basic', monthly: 49, annual: 39, features: ['1 booking link', 'Unlimited leads', 'Job board', 'Email notifications', 'Basic analytics'] },
-              { name: 'Pro', monthly: 99, annual: 79, features: ['Everything in Basic', 'AI job briefs', 'Photo analysis', 'Quote builder', 'Priority support'], highlight: true },
-            ].map((plan) => (
-              <div key={plan.name} style={{ border: plan.highlight ? `2px solid ${c}` : '1px solid #e2e8f0', padding: '28px 24px', position: 'relative' }}>
-                {plan.highlight && (
-                  <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: c, color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 12px', letterSpacing: '0.08em' }}>
-                    MOST POPULAR
-                  </div>
-                )}
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{plan.name}</div>
-                <div style={{ marginBottom: 20 }}>
-                  <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-0.03em' }}>${annual ? plan.annual : plan.monthly}</span>
-                  <span style={{ fontSize: 13, color: '#94a3b8' }}>/mo</span>
-                  {annual && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 2 }}>billed annually</div>}
-                </div>
-<ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px' }}>                  {plan.features.map((f, i) => (
-                    <li key={i} style={{ fontSize: 13, color: '#475569', padding: '5px 0', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <span style={{ color: '#22c55e', flexShrink: 0 }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '12px', background: plan.highlight ? c : '#0f172a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-                  Get Started Free
-                </Link>
-              </div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px' }}>
+            {plan.features.map((f, i) => (
+              <li key={i} style={{ fontSize: 13, color: '#475569', padding: '5px 0', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <span style={{ color: '#22c55e', flexShrink: 0 }}>✓</span> {f}
+              </li>
             ))}
-          </div>
+          </ul>
+          <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '12px', background: plan.highlight ? c : '#0f172a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+            Get Started Free
+          </Link>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* ── FINAL CTA ── */}
       <section style={{ background: '#0d0d0d', padding: '80px 24px', textAlign: 'center' }}>

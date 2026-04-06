@@ -3,13 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  ArrowRight, Zap, Check, Menu, X, Star, Layout,
+  ArrowRight, Zap, Check, Menu, X,
   QrCode, Bot, Mail, BarChart2, ChevronDown, XCircle,
-  Truck, Instagram, Facebook, AtSign, Globe,
-  User, Phone, FileText, ChevronRight, MailCheck, Send, DollarSign,
-  Search, LayoutGrid, List, Plus, AlignLeft, Sparkles, Target,
-  Calendar, Clock, SlidersHorizontal, Filter, CreditCard, MessageCircle, Download,
-  MapPin, HomeIcon, Image as ImageIcon, Upload, Camera, PhoneOff, Database, CheckCircle2, Bell, CheckSquare
+  Globe, User, Phone, FileText, ChevronRight, DollarSign,
+  Search, LayoutGrid, AlignLeft, Sparkles, LayoutDashboard,
+  Calendar, Clock, SlidersHorizontal, CreditCard, MessageCircle, Download,
+  MapPin, HomeIcon, Image as ImageIcon, Upload, Truck, Instagram, Bell, List
 } from 'lucide-react';
 
 function useFadeIn(threshold = 0.12) {
@@ -38,7 +37,7 @@ function Nav() {
   }, []);
   return (
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm' : 'bg-[#F2EDE4]/80 backdrop-blur-sm'
+      scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm' : 'bg-[#F2EDE4]/80 backdrop-blur-sm'
     }`}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
@@ -46,7 +45,7 @@ scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm
         </Link>
         <div className="hidden md:flex items-center gap-8">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing']].map(([href,label]) => (
-            <a key={href} href={href} className="hidden md:block text-[13px] font-bold text-slate-600 hover:text-slate-900 transition-colors">{label}</a>
+            <a key={href} href={href} className="text-[13px] font-bold text-slate-600 hover:text-slate-900 transition-colors">{label}</a>
           ))}
         </div>
         <div className="flex items-center gap-3">
@@ -60,7 +59,7 @@ scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm
         </div>
       </div>
       {open && (
-<div className="md:hidden bg-[#F2EDE4] border-t border-[#D9D2C8] px-6 py-5 space-y-4">
+        <div className="md:hidden bg-[#F2EDE4] border-t border-[#D9D2C8] px-6 py-5 space-y-4">
           {[['#how-it-works','How it works'],['#features','Features'],['#pricing','Pricing'],['/login','Login']].map(([href,label]) => (
             <a key={href} href={href} onClick={() => setOpen(false)} className="block text-base font-semibold text-slate-700">{label}</a>
           ))}
@@ -69,9 +68,7 @@ scrolled ? 'bg-[#F2EDE4]/95 backdrop-blur-xl border-b border-[#D9D2C8] shadow-sm
     </nav>
   );
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// HERO — Remote estimation angle, Option A
-// ─────────────────────────────────────────────────────────────────────────────
+
 function Hero() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -80,128 +77,133 @@ function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#F2EDE4' }}>
+    <section className="relative flex flex-col overflow-hidden" style={{ backgroundColor: '#F2EDE4' }}>
       <Nav />
 
-      <div className="relative z-10 flex-1 flex items-center">
-        <div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-8 lg:pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-16 items-center">
+      <div className="relative z-10">
+        <div className="max-w-6xl mx-auto px-5 w-full pt-24 pb-16">
 
-            {/* LEFT — copy */}
-            <div
-              className="space-y-6 text-center lg:text-left"
-              style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
-            >
-              {/* Eyebrow */}
-              <div className="flex justify-center lg:justify-start">
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold border"
-                  style={{ background: '#E8F4EF', borderColor: '#A8D5C2', color: '#1a6645' }}>
-                  <Zap className="w-3 h-3" style={{ fill: '#1a6645' }} />
-                  Built for small & mid-size businesses
-            </span>
-              </div>
+          {/* Copy — centered */}
+          <div
+            className="text-center space-y-6 max-w-3xl mx-auto"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? 'none' : 'translateY(20px)',
+              transition: 'all 0.7s ease',
+            }}
+          >
+            {/* Eyebrow */}
+            <div className="flex justify-center">
+              <span
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold border"
+                style={{ background: '#E8F4EF', borderColor: '#A8D5C2', color: '#1a6645' }}
+              >
+                <Zap className="w-3 h-3" style={{ fill: '#1a6645' }} />
+                Built for contractors & service businesses
+              </span>
+            </div>
 
             {/* Headline */}
-              <h1 className="font-black tracking-tight"
-                  style={{ fontSize: 'clamp(40px, 6vw, 68px)', color: '#0F1F3D', lineHeight: 1.0 }}>
-                  Work faster.<br />
-                  Work smarter.<br />
-                  <span style={{ color: '#1a6645' }}>Never lose a job again.</span>
-                </h1>
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(40px, 6vw, 72px)', color: '#0F1F3D', lineHeight: 1.0 }}
+            >
+              Run your entire business<br />
+              <span style={{ color: '#1a6645' }}>from one link.</span>
+            </h1>
 
-              {/* Sub */}
-              <p className="font-medium leading-relaxed mx-auto lg:mx-0 max-w-[460px]"
-                style={{ fontSize: 'clamp(16px, 2vw, 19px)', color: '#4A5568' }}>
-                Sign up and get a custom link and QR code to share anywhere — truck, yard sign, social, email. Customers fill out your intake form, leads land on your dashboard instantly. From there, quote, schedule, track payments, and send branded emails in one click. Everything in one place.
-              </p>
+            {/* Sub */}
+           <p
+  className="font-medium leading-relaxed mx-auto max-w-[560px]"
+  style={{ fontSize: 'clamp(16px, 2vw, 19px)', color: '#4A5568' }}
+>
+  Stop writing quotes from scratch, chasing unpaid jobs, and losing leads to missed calls. Sign up in 2 minutes, get your custom booking link, and manage every lead, quote, schedule, and payment from one dashboard — with one-click emails that do the follow-up for you.
+</p>
 
-              {/* Pills */}
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-              {[
-                  'Your link. Your form. Your workflow.',
-                  'Dashboard for leads, quotes & schedules',
-                  'One-click branded emails & payment tracking',
-                ].map(label => (
-                  <span key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border shadow-sm"
-                    style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
-                    <Check size={11} strokeWidth={3} style={{ color: '#1a6645' }} />
-                    {label}
-                  </span>
-                ))}
-              </div>
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-black text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                style={{ backgroundColor: '#1a6645', boxShadow: '0 8px 24px rgba(26,102,69,0.25)' }}
+              >
+                Get Your Free Booking Link <ArrowRight size={18} />
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold border transition-all"
+                style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}
+              >
+                See How It Works
+              </a>
+            </div>
 
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Link href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-black text-white transition-all active:scale-95 hover:-translate-y-0.5 shadow-lg"
-                  style={{ backgroundColor: '#1a6645', boxShadow: '0 8px 24px rgba(26,102,69,0.2)' }}>
-                  Start Free Trial <ArrowRight size={18} />
-                </Link>
-                <Link href="/demo"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[16px] font-bold border transition-all"
-                  style={{ background: 'white', borderColor: '#D1C9BD', color: '#0F1F3D' }}>
-                  See Live Demo
-                </Link>
-              </div>
-
-              {/* Trust strip */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border"
-                  style={{ borderColor: '#D1C9BD' }}>
-                  <Download size={13} style={{ color: '#1a6645' }} />
-                  <span className="text-[12px] font-bold" style={{ color: '#0F1F3D' }}>Full CSV export</span>
+            {/* Trust line */}
+            <div className="flex flex-wrap items-center gap-4 justify-center">
+              {['Setup in 2 minutes', '14-day free trial', 'Cancel anytime'].map((item) => (
+                <div key={item} className="flex items-center gap-1.5">
+                  <Check size={11} strokeWidth={3} style={{ color: '#1a6645' }} />
+                  <span className="text-[12px] font-bold" style={{ color: '#6B7280' }}>{item}</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border"
-                  style={{ borderColor: '#D1C9BD' }}>
-                  <Mail size={13} style={{ color: '#1a6645' }} />
-                  <span className="text-[12px] font-bold" style={{ color: '#0F1F3D' }}>Daily email digest</span>
-                </div>
-                <p className="text-[12px] font-medium hidden xl:block" style={{ color: '#9CA3AF' }}>
-                  14-day trial · Cancel anytime
+              ))}
+            </div>
+          </div>
+
+          {/* Hero image */}
+          <div
+            className="mt-16"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? 'none' : 'translateY(24px)',
+              transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
+            }}
+          >
+            <img
+              src="/images/heroimagefull.png"
+              alt="Lead2Project dashboard"
+              className="w-full h-auto mx-auto block"
+              style={{
+                borderRadius: 20,
+                maxWidth: 900,
+                filter: 'drop-shadow(0 24px 60px rgba(0,0,0,0.15))',
+              }}
+            />
+          </div>
+
+        </div>
+      </div>
+
+      {/* Pain points strip */}
+      <div style={{ background: '#0F1F3D', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-6xl mx-auto px-5 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+           {[
+  'Writing the same quote email over and over',
+  'No idea which customers still owe you money',
+  'Forgetting to follow up on unscheduled jobs',
+  'Starting the day with no idea whats on the schedule',
+].map((pain) => (
+              <div key={pain} className="flex items-start gap-3">
+                <span className="mt-0.5 flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="6" stroke="#f87171" strokeWidth="1.5" />
+                    <path d="M5 5l4 4M9 5l-4 4" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <p className="text-[12px] font-semibold leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  {pain}
                 </p>
               </div>
-            </div>
-
-            {/* RIGHT — hero image */}
-<div
-  className="relative w-full lg:flex items-center justify-center mt-8 lg:mt-0"           
-  style={{
-                opacity: mounted ? 1 : 0,
-                transform: mounted ? 'none' : 'translateY(24px) scale(0.97)',
-                transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
-              }}
-            >
-              {/* Floating badge — top left */}
-              <div className="absolute top-8 -left-4 z-20 bg-white p-3 rounded-2xl shadow-xl border border-slate-100 hidden md:flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ background: '#E8F4EF' }}>
-                  <Camera size={16} style={{ color: '#1a6645' }} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>New lead received</p>
-                  <p className="text-[13px] font-black" style={{ color: '#0F1F3D' }}>3 photos attached</p>
-                </div>
-              </div>
-
-              <img
-  src="/images/heroimagefull.png"
-  alt="Customer submitting job photos — leads landing on your dashboard"
-className="w-full h-auto px-4 lg:px-0"
-  style={{
-    borderRadius: 24,
-    filter: 'drop-shadow(0 32px 80px rgba(0,0,0,0.18))',
-    maxWidth: '100%',
-    display: 'block',
-  }}
-/>
-
-              {/* Floating badge — bottom right */}
-              <div className="absolute -bottom-3 right-6 bg-[#0F1F3D] text-white px-4 py-2.5 rounded-xl text-[12px] font-bold shadow-2xl flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                Quote sent in 4 minutes
-              </div>
-            </div>
-
+            ))}
+          </div>
+          <div className="text-center mt-5">
+            <p className="text-[14px] font-black text-white">
+  Lead2Project fixes all of this.{' '}
+  <span style={{ color: '#4ade80' }}>With one link.</span>
+</p>
+<p className="text-[11px] font-medium mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+  One-click quote, schedule & payment emails · Daily 6AM digest · Full job tracking
+</p>
           </div>
         </div>
       </div>
@@ -211,253 +213,7 @@ className="w-full h-auto px-4 lg:px-0"
   );
 }
 
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FEATURE TABS — Operational Focus (#F7F5F0 bg)
-// ─────────────────────────────────────────────────────────────────────────────
-function LeadCapture() {
-  const [active, setActive] = useState(0);
-  // Ensure useFadeIn or similar intersection observer hook is defined in your file
-  const { ref, visible } = useFadeIn(); 
-
-  const tabs = [
-    {
-      label: 'Unified Intake',
-      icon: <QrCode size={15} />,
-      eyebrow: 'Stop scribbling on scrap paper',
-      headline: 'One form for customers.\nOne form for you.',
-      desc: 'Whether a customer scans a QR on your truck or you are doing a site-walk, use your branded form to capture everything. Collect high-res photos, short videos, and specific job details that land instantly on your dashboard.',
-      callout: 'Consistency is how you scale',
-      points: [
-        'Branded QR codes for trucks, yard signs, and social bio',
-        'Contractor-mode for rapid site-walk data entry',
-        'Accepts photos, short videos, and PDF documents',
-        'Customizable questions: Address, budget, & preferred dates',
-      ],
-      quote: "I use the form myself during every estimate. It ensures I never forget to take a specific photo or ask about the budget.",
-      author: 'Mike T., Ridge Line Roofing',
-     visual: (
-  <div className="relative w-full h-full">
-    <img 
-      src="/images/qrfeature.png" 
-      alt="Mobile Intake" 
-      className="w-full h-full object-cover object-top" 
-    />
-    {/* Optional: Add a subtle inner shadow to make it look embedded */}
-    <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.1)] pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Schedule',
-      icon: <Calendar size={15} />,
-      eyebrow: 'Eliminate the "When are you coming?" texts',
-      headline: 'Schedule in a click.\nNotify automatically.',
-      desc: 'Move leads from "New" to "Scheduled" instantly. Assign team members and send a professional confirmation email with one tap. No more manual texting or calendar juggling.',
-      callout: 'Automatic confirmations reduce no-shows by 40%',
-      points: [
-        'One-click scheduling directly from the job card',
-        'Automated branded confirmation emails',
-        'Assign jobs to specific crew members or subs',
-        'Every confirmation tracked in your Global Outbox',
-      ],
-      quote: "The one-click confirmation saves me 30 minutes of texting every single evening.",
-      author: 'Tony M., Shoreline Gutters',
-      visual: (
-  <div className="relative w-full h-full bg-[#f8f9fb]">
-    <img 
-      src="/images/schedulefeature.png" // The 4K upscale of your schedule board
-      alt="Interactive Scheduling Dashboard" 
-      className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105" 
-    />
-    {/* Subtle inner shadow and gradient for a "recessed" look */}
-    <div className="absolute inset-0 shadow-[inset_0_2px_12px_rgba(0,0,0,0.03)] pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Quote & Win',
-      icon: <FileText size={15} />,
-      eyebrow: 'Stop losing bids to slow responses',
-      headline: 'Professional quotes.\nSent from the driveway.',
-      desc: 'Use custom templates to build quotes in seconds. Leverage the AI Project Brief to summarize customer videos and notes into a clean bid. Send it instantly—clients accept with one tap from their phone.',
-      callout: 'Speed is the #1 reason customers choose a contractor',
-      points: [
-        'Custom quote templates based on your job categories',
-        'AI-generated project briefs from intake media',
-        'One-tap "Accept/Decline" buttons for customers',
-        'Real-time status tracking: Pending, Accepted, or Declined',
-      ],
-      quote: "I send the quote before I even start my truck to leave the site. My closing rate has doubled.",
-      author: 'Dave R., All-Pro Siding',
-    visual: (
-  <div className="relative w-full h-full bg-white">
-    <img 
-      src="/images/quotefeature.png" 
-      alt="Professional Quote Interface" 
-      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
-    />
-    {/* Subtle gradient overlay to make the transition to the UI feel smoother */}
-    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-  </div>
-),
-    },
-    {
-      label: 'Get Paid',
-      icon: <DollarSign size={15} />,
-      eyebrow: 'Stop leaving money on the table',
-      headline: 'Track every dollar.\nExport every record.',
-      desc: 'Log deposits and final payments directly on the job card. See exactly who owes you money at a glance. When it’s tax time, export your entire history to CSV in one click. Your data is always yours.',
-      callout: 'Your data is portable. One-click CSV exports anytime.',
-      points: [
-        'Centralized dashboard for all unpaid balances',
-        'Professional payment reminder emails in one click',
-        'Full history of deposits and final payments per job',
-        'One-click CSV export for bookkeeping and taxes',
-      ],
-      quote: "Seeing my outstanding balance in red made me realize I had $11k just sitting out there. I collected it all in two days.",
-      author: 'Carl B., ProClean Services',
-     visual: (
-  <div className="relative w-full h-full bg-white">
-    <img
-      src="/images/payment-tab.png"
-      alt="Payment tracking"
-      className="w-full h-full object-cover object-top"
-    />
-  </div>
-),
-    },
-    {
-      label: 'Stay Sharp',
-      icon: <Bell size={15} />,
-      eyebrow: 'Total transparency',
-      headline: 'The Global Outbox &\nDaily Digest.',
-      desc: "Never wonder if a client got your email. Every quote, confirmation, and reminder is logged in your Global Outbox. Plus, get a 6AM briefing every morning with today's schedule and overdue tasks.",
-      callout: 'Know your business status without opening the app',
-      points: [
-        'Global Outbox: Proof of every communication sent',
-        '6AM Daily Digest: Your schedule & leads via email',
-        'Follow-up reminders on stale leads',
-        'Custom task templates for different job categories',
-      ],
-      quote: "The Outbox is a lifesaver. When a client says 'I never got the quote,' I can see exactly when it was sent.",
-      author: 'James P., Peak Roofing Co.',
-      visual: (
-  <div className="relative w-full h-full bg-white">
-    <img
-      src="/images/outboxfeature.png"
-      alt="Global outbox and daily digest"
-      className="w-full h-full object-cover object-top"
-    />
-  </div>
-),
-    },
-  ];
-
-  return (
-    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
-      <div className="max-w-7xl mx-auto">
-
-        {/* Header */}
-        <div ref={ref} className="text-center mb-12"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
-            Built for the field, managed from the desk
-          </p>
-          <h2 className="font-black leading-tight tracking-tight mb-4"
-            style={{ fontSize: 'clamp(32px, 5vw, 60px)', color: '#0F1F3D' }}>
-            Everything to run your<br />
-            <span style={{ color: '#1a6645' }}>business, in one place.</span>
-          </h2>
-          <p className="text-lg font-medium max-w-2xl mx-auto" style={{ color: '#4A5568' }}>
-            No more lost sticky notes or scrolling through endless text threads. From unified intake to your morning briefing, Lead2Project keeps you organized.
-          </p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex justify-center gap-2 flex-wrap mb-12">
-          {tabs.map((tab, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[12px] font-black border transition-all duration-300"
-              style={active === i ? {
-                background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D',
-              } : {
-                background: 'white', color: '#4A5568', borderColor: '#D1C9BD',
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        <div className="relative" style={{ minHeight: 480 }}>
-          {tabs.map((tab, i) => (
-            <div
-              key={i}
-              className="grid lg:grid-cols-2 gap-12 items-center transition-all duration-500"
-              style={{
-                opacity: active === i ? 1 : 0,
-                transform: active === i ? 'translateY(0)' : 'translateY(16px)',
-                position: active === i ? 'relative' : 'absolute',
-                inset: active === i ? 'auto' : 0,
-                pointerEvents: active === i ? 'auto' : 'none',
-                zIndex: active === i ? 10 : 0,
-              }}
-            >
-              {/* LEFT — Visual */}
-              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl border border-white">
-                {tab.visual}
-              </div>
-
-              {/* RIGHT — Copy */}
-              <div className="space-y-5">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: '#1a6645' }}>
-                  {tab.eyebrow}
-                </p>
-                <h3 className="font-black leading-tight tracking-tight whitespace-pre-line"
-                  style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', color: '#0F1F3D' }}>
-                  {tab.headline}
-                </h3>
-                <p className="text-base font-medium leading-relaxed" style={{ color: '#4A5568' }}>
-                  {tab.desc}
-                </p>
-                <div className="px-4 py-3 rounded-xl border-l-4 font-bold text-sm"
-                  style={{ background: '#E8F4EF', borderLeftColor: '#1a6645', color: '#1a6645' }}>
-                  💡 {tab.callout}
-                </div>
-                <div className="space-y-2.5">
-                  {tab.points.map((pt, j) => (
-                    <div key={j} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                        style={{ background: '#E8F4EF' }}>
-                        <Check size={11} strokeWidth={4} style={{ color: '#1a6645' }} />
-                      </div>
-                      <span className="text-sm font-bold" style={{ color: '#374151' }}>{pt}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-5 border-t space-y-2" style={{ borderColor: '#E5E0D8' }}>
-                  <p className="text-sm font-medium italic leading-relaxed" style={{ color: '#6B7280' }}>
-                    "{tab.quote}"
-                  </p>
-                  <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#1a6645' }}>
-                    — {tab.author}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
-  );
-}
+export { useFadeIn, Nav, Hero };
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -811,6 +567,9 @@ function FastDemoForm() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 2 — HOW IT WORKS (combined: QR everywhere + 3 step cards)
+// ─────────────────────────────────────────────────────────────────────────────
 function HowItWorks() {
   const { ref, visible } = useFadeIn();
 
@@ -820,117 +579,239 @@ function HowItWorks() {
       tag: 'Your Link',
       title: 'Share your link everywhere',
       desc: 'Sign up and instantly get a custom link and QR code. Put it on your truck, yard sign, Instagram, Facebook, email signature — anywhere customers can find you. One scan, no app, no login needed.',
+      visual: 'image',
       image: '/images/qr-scan-2.png',
       color: 'from-blue-500/10 to-transparent',
       borderColor: 'group-hover:border-blue-500/40',
+      badge: 'Yard Sign QR',
     },
     {
       number: '02',
       tag: 'Your Form',
       title: 'Customers fill your custom form',
-      desc: 'They submit a request through your branded intake form — you control every field. Name, address, job type, preferred date, custom questions, photos, videos. You get exactly what you need, nothing you don\'t.',
+      desc: 'They submit through your branded intake form — you control every field. Name, address, job type, preferred date, custom questions, photos. You get exactly what you need, nothing you don\'t.',
       visual: 'demo-form',
       color: 'from-indigo-500/10 to-transparent',
       borderColor: 'group-hover:border-indigo-500/40',
+      badge: null,
     },
     {
       number: '03',
       tag: 'Your Dashboard',
       title: 'Manage everything in one place',
-      desc: 'Every lead lands on your dashboard instantly. Quote, schedule, track payments, send one-click branded emails, assign tasks to your team, and export your data anytime. No more sticky notes, missed calls, or lost jobs.',
+      desc: 'Every lead lands on your dashboard instantly. Quote, schedule, track payments, send one-click branded emails, assign tasks to your team, and export your data anytime. No more sticky notes or lost jobs.',
+      visual: 'image',
       image: '/images/dashboard-jobsite.png',
       color: 'from-emerald-500/10 to-transparent',
       borderColor: 'group-hover:border-emerald-500/40',
+      badge: 'Lead Dashboard',
     },
   ];
 
   return (
-    <section id="how-it-works" className="py-32 px-6 bg-[#06080F] overflow-hidden border-t border-white/[0.03]">
+    <section
+      id="how-it-works"
+      className="py-24 px-6 overflow-hidden"
+      style={{ backgroundColor: '#06080F', borderTop: '1px solid rgba(255,255,255,0.03)' }}
+    >
       <div className="max-w-7xl mx-auto">
 
-        {/* --- HEADER --- */}
+        {/* ── PART 1 — Blast it everywhere ── */}
         <div
           ref={ref}
-          className="max-w-4xl mb-24"
-          style={{ 
-            opacity: visible ? 1 : 0, 
-            transform: visible ? 'none' : 'translateY(30px)', 
-            transition: 'all 0.9s cubic-bezier(0.16, 1, 0.3, 1)' 
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(24px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-[1px] bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-500">The Workflow</span>
+          {/* Header */}
+          <div className="text-center mb-10 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
+              <span className="text-[11px] font-black uppercase tracking-[0.4em]" style={{ color: '#6366f1' }}>
+                The Workflow
+              </span>
+              <div className="w-12 h-px" style={{ background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.8)' }} />
+            </div>
+            <h2
+              className="font-black tracking-tight leading-none mb-6 text-white"
+              style={{ fontSize: 'clamp(36px, 6vw, 72px)' }}
+            >
+              One link.<br />
+              <span className="font-medium italic" style={{ color: '#374151' }}>Everything else</span><br />
+              takes care of itself.
+            </h2>
+            <p
+              className="text-base font-medium leading-relaxed mx-auto max-w-xl"
+              style={{ color: '#64748b' }}
+            >
+              Share your link anywhere customers can find you. They fill out your form, it lands on your dashboard, and you manage the whole job from there.
+            </p>
           </div>
-          <h2 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.85]">
-            One link.<br />
-            <span className="text-gray-800 italic font-medium">Everything else</span><br />
-            takes care of itself.
-          </h2>
+
+          {/* QR branded image — full width */}
+          <div
+            className="rounded-2xl overflow-hidden mb-6"
+            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <img
+              src="/images/qrfeature.png"
+              alt="QR code on truck, yard sign, and social media"
+              className="w-full h-auto block"
+            />
+          </div>
+
+          {/* Channel pills */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-20">
+            {[
+              { icon: <Truck size={14} />, label: 'Truck wrap & decals' },
+              { icon: <Instagram size={14} />, label: 'Instagram & Facebook' },
+              { icon: <MapPin size={14} />, label: 'Yard signs & door hangers' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.06)',
+                  color: '#64748b',
+                  background: 'rgba(255,255,255,0.02)',
+                }}
+              >
+                <span style={{ color: '#6366f1' }}>{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* --- STEPS GRID (RESPONSIVE) --- */}
+        {/* ── PART 2 — 3 step cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step, i) => (
             <div
               key={i}
-              className={`group relative flex flex-col rounded-[2.5rem] border border-white/[0.06] bg-[#0B0F1A] overflow-hidden transition-all duration-700 ${step.borderColor} ${
-                i === 1 ? 'lg:scale-[1.05] z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : ''
-              } ${i === 2 ? 'md:col-span-2 lg:col-span-1' : ''}`} // Centers 3rd item on tablet
+              className={`group relative flex flex-col rounded-[2.5rem] overflow-hidden transition-all duration-700 ${step.borderColor} ${
+                i === 1 ? 'lg:scale-[1.05] z-10' : ''
+              } ${i === 2 ? 'md:col-span-2 lg:col-span-1' : ''}`}
               style={{
+                background: '#0B0F1A',
+                border: '1px solid rgba(255,255,255,0.06)',
+                boxShadow: i === 1 ? '0 0 50px rgba(0,0,0,0.5)' : 'none',
                 opacity: visible ? 1 : 0,
                 transform: visible ? 'none' : `translateY(${40 + i * 20}px)`,
-                transition: `all 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.15}s`,
+                transition: `all 0.8s cubic-bezier(0.16,1,0.3,1) ${i * 0.15}s`,
               }}
             >
-              {/* Subtle Hover Glow */}
-              <div className={`absolute inset-0 bg-gradient-to-b ${step.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+              {/* Hover glow */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-b ${step.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}
+              />
 
               <div className="relative p-8 md:p-10 flex flex-col h-full">
+                {/* Step tag */}
                 <div className="flex items-center justify-between mb-8">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400">
+                  <span
+                    className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full"
+                    style={{
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#9ca3af',
+                    }}
+                  >
                     Step {step.number}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600 group-hover:text-white/40 transition-colors">
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest transition-colors group-hover:text-white/40"
+                    style={{ color: '#4b5563' }}
+                  >
                     {step.tag}
                   </span>
                 </div>
-                
-                <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{step.title}</h3>
-                <p className="text-[15px] text-gray-500 font-medium leading-relaxed mb-12">{step.desc}</p>
 
-                {/* --- VISUAL AREA (HEIGHT SYNCED AT 520PX) --- */}
+                <h3 className="text-2xl font-black text-white mb-4 tracking-tight">
+                  {step.title}
+                </h3>
+                <p
+                  className="text-[15px] font-medium leading-relaxed mb-10"
+                  style={{ color: '#6b7280' }}
+                >
+                  {step.desc}
+                </p>
+
+                {/* Visual */}
                 <div className="mt-auto relative">
                   {step.visual === 'demo-form' ? (
                     <div className="relative pt-4 flex justify-center">
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-indigo-500/10 blur-[80px] rounded-full" />
-                      
-                      {/* Fixed height 520px container */}
-                      <div className="relative w-full max-w-[280px] h-[520px] shadow-2xl rounded-[2.5rem] overflow-hidden border border-white/10">
+                      <div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full"
+                        style={{ background: 'rgba(99,102,241,0.1)', filter: 'blur(80px)' }}
+                      />
+                      <div
+                        className="relative w-full shadow-2xl overflow-hidden"
+                        style={{
+                          maxWidth: 280,
+                          height: 520,
+                          borderRadius: '2.5rem',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }}
+                      >
                         <FastDemoForm />
                       </div>
                     </div>
                   ) : (
-                    /* Step 1 & 3: Photos forced into matching 520px Vertical Ratio */
-                    <div className="relative w-full max-w-[280px] h-[520px] mx-auto rounded-[2.5rem] overflow-hidden border border-white/[0.08] bg-gray-950 group-hover:border-white/20 transition-all duration-500 shadow-2xl">
-                      {/* Glass Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-white/[0.05] z-10" />
-                      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-950 to-transparent z-10 opacity-90" />
-                      
+                    <div
+                      className="relative mx-auto overflow-hidden transition-all duration-500 shadow-2xl"
+                      style={{
+                        maxWidth: 280,
+                        height: 520,
+                        borderRadius: '2.5rem',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: '#030712',
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 z-10"
+                        style={{
+                          background: 'linear-gradient(to tr, transparent, rgba(255,255,255,0.02), rgba(255,255,255,0.05))',
+                        }}
+                      />
+                      <div
+                        className="absolute inset-x-0 bottom-0 z-10"
+                        style={{
+                          height: 128,
+                          background: 'linear-gradient(to top, #030712, transparent)',
+                          opacity: 0.9,
+                        }}
+                      />
                       <img
                         src={step.image}
                         alt={step.title}
-                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
+                        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
+                        style={{ opacity: 0.6 }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}
                       />
-                      
-                      {/* Status Badge */}
-                      <div className="absolute bottom-8 inset-x-0 z-20 flex justify-center">
-                        <div className="px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
-                           <span className="text-[10px] font-black text-white/60 uppercase tracking-widest italic">
-                              {step.number === '01' ? 'Yard Sign QR' : 'Lead Dashboard'}
-                           </span>
+                      {step.badge && (
+                        <div
+                          className="absolute bottom-8 inset-x-0 z-20 flex justify-center"
+                        >
+                          <div
+                            className="px-4 py-2 rounded-full"
+                            style={{
+                              background: 'rgba(0,0,0,0.4)',
+                              backdropFilter: 'blur(12px)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                            }}
+                          >
+                            <span
+                              className="text-[10px] font-black uppercase tracking-widest italic"
+                              style={{ color: 'rgba(255,255,255,0.6)' }}
+                            >
+                              {step.badge}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -938,10 +819,446 @@ function HowItWorks() {
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 3 — THE BOARD
+// ─────────────────────────────────────────────────────────────────────────────
+function TheBoard() {
+  const { ref, visible } = useFadeIn();
+
+  const views = [
+    {
+      icon: <LayoutGrid size={16} />,
+      label: 'Card view',
+      desc: 'See every job as a visual card. Check dates, payment status, and photos at a glance. Your daily action list.',
+    },
+    {
+      icon: <List size={16} />,
+      label: 'Table view',
+      desc: 'Need to update 20 jobs at once? Switch to table view for bulk edits and export everything to CSV in one click.',
+    },
+    {
+      icon: <Calendar size={16} />,
+      label: 'Calendar view',
+      desc: "See your team's full schedule at a glance. Spot gaps, avoid double bookings, plan the week in seconds.",
+    },
+  ];
+
+  const stats = [
+    { label: 'Total Leads', value: '166', color: '#e2e8f0' },
+    { label: 'Active Jobs', value: '61', color: '#3b82f6' },
+    { label: 'Total Revenue', value: '$102k', color: '#22c55e' },
+    { label: 'Total Pending', value: '$122k', color: '#f59e0b' },
+  ];
+
+  return (
+    <section className="py-24 px-6" style={{ backgroundColor: '#F7F5F0' }}>
+      <div className="max-w-6xl mx-auto">
+
+        {/* Header */}
+        <div
+          ref={ref}
+          className="text-center mb-16 max-w-3xl mx-auto"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(24px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
+          }}
+        >
+          <p
+            className="text-[11px] font-black uppercase tracking-[0.25em] mb-4"
+            style={{ color: '#1a6645' }}
+          >
+            Your command center
+          </p>
+          <h2
+            className="font-black tracking-tight leading-tight mb-4"
+            style={{ fontSize: 'clamp(28px, 4vw, 52px)', color: '#0F1F3D' }}
+          >
+            Every lead. Every job. Every dollar.{' '}
+            <span style={{ color: '#1a6645' }}>One screen.</span>
+          </h2>
+          <p
+            className="text-lg font-medium leading-relaxed"
+            style={{ color: '#4A5568' }}
+          >
+            See everything at a glance — total leads, active jobs, revenue, and what's still unpaid. Switch between three views depending on what you need. Export it all to CSV in one click.
+          </p>
+        </div>
+
+        {/* Stats strip */}
+        <div
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(16px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
+          }}
+        >
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl p-5 border"
+              style={{ background: '#0F1F3D', borderColor: '#1e2d4a' }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#64748b' }}>
+                {stat.label}
+              </p>
+              <p className="text-2xl font-black" style={{ color: stat.color }}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Board image placeholder */}
+        <div
+          className="rounded-2xl mb-12"
+          style={{
+            background: '#0F1F3D',
+            border: '2px dashed #1e2d4a',
+            aspectRatio: '16/9',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(16px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: '#1e2d4a' }}
+          >
+            <LayoutDashboard size={24} style={{ color: '#3b82f6' }} />
+          </div>
+          <p className="text-sm font-bold" style={{ color: '#475569' }}>
+            Dashboard screenshot — card / table / calendar view
+          </p>
+          <p className="text-xs font-medium" style={{ color: '#334155' }}>
+            Drop image here later
+          </p>
+        </div>
+
+        {/* 3 view callouts */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(16px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
+          }}
+        >
+          {views.map((view, i) => (
+            <div
+              key={i}
+              className="rounded-2xl p-6 border"
+              style={{ background: '#fff', borderColor: '#E5E0D8' }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: '#E8F4EF' }}
+              >
+                <span style={{ color: '#1a6645' }}>{view.icon}</span>
+              </div>
+              <p className="text-sm font-black mb-2" style={{ color: '#0F1F3D' }}>
+                {view.label}
+              </p>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6B7280' }}>
+                {view.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* CSV callout */}
+        <div
+          className="mt-8 rounded-2xl px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4"
+          style={{
+            background: '#E8F4EF',
+            border: '1px solid #A8D5C2',
+            opacity: visible ? 1 : 0,
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <Download size={18} style={{ color: '#1a6645', flexShrink: 0 }} />
+            <p className="text-sm font-bold" style={{ color: '#1a6645' }}>
+              Your data is always yours — export everything to CSV in one click for bookkeeping, taxes, or reporting.
+            </p>
+          </div>
+          <Link
+            href="/signup"
+            className="text-[12px] font-black px-4 py-2 rounded-xl whitespace-nowrap transition-all active:scale-95"
+            style={{ background: '#1a6645', color: '#fff' }}
+          >
+            Get Started Free
+          </Link>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURE TABS — Operational Focus (#F7F5F0 bg)
+// ─────────────────────────────────────────────────────────────────────────────
+function LeadCapture() {
+  const [active, setActive] = useState(0);
+  // Ensure useFadeIn or similar intersection observer hook is defined in your file
+  const { ref, visible } = useFadeIn(); 
+
+  const tabs = [
+    {
+      label: 'Unified Intake',
+      icon: <QrCode size={15} />,
+      eyebrow: 'Stop scribbling on scrap paper',
+      headline: 'One form for customers.\nOne form for you.',
+      desc: 'Whether a customer scans a QR on your truck or you are doing a site-walk, use your branded form to capture everything. Collect high-res photos, short videos, and specific job details that land instantly on your dashboard.',
+      callout: 'Consistency is how you scale',
+      points: [
+        'Branded QR codes for trucks, yard signs, and social bio',
+        'Contractor-mode for rapid site-walk data entry',
+        'Accepts photos, short videos, and PDF documents',
+        'Customizable questions: Address, budget, & preferred dates',
+      ],
+      quote: "I use the form myself during every estimate. It ensures I never forget to take a specific photo or ask about the budget.",
+      author: 'Mike T., Ridge Line Roofing',
+     visual: (
+  <div className="relative w-full h-full">
+    <img 
+      src="/images/qrfeature.png" 
+      alt="Mobile Intake" 
+      className="w-full h-full object-cover object-top" 
+    />
+    {/* Optional: Add a subtle inner shadow to make it look embedded */}
+    <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.1)] pointer-events-none" />
+  </div>
+),
+    },
+    {
+      label: 'Schedule',
+      icon: <Calendar size={15} />,
+      eyebrow: 'Eliminate the "When are you coming?" texts',
+      headline: 'Schedule in a click.\nNotify automatically.',
+      desc: 'Move leads from "New" to "Scheduled" instantly. Assign team members and send a professional confirmation email with one tap. No more manual texting or calendar juggling.',
+      callout: 'Automatic confirmations reduce no-shows by 40%',
+      points: [
+        'One-click scheduling directly from the job card',
+        'Automated branded confirmation emails',
+        'Assign jobs to specific crew members or subs',
+        'Every confirmation tracked in your Global Outbox',
+      ],
+      quote: "The one-click confirmation saves me 30 minutes of texting every single evening.",
+      author: 'Tony M., Shoreline Gutters',
+      visual: (
+  <div className="relative w-full h-full bg-[#f8f9fb]">
+    <img 
+      src="/images/schedulefeature.png" // The 4K upscale of your schedule board
+      alt="Interactive Scheduling Dashboard" 
+      className="w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-105" 
+    />
+    {/* Subtle inner shadow and gradient for a "recessed" look */}
+    <div className="absolute inset-0 shadow-[inset_0_2px_12px_rgba(0,0,0,0.03)] pointer-events-none" />
+  </div>
+),
+    },
+    {
+      label: 'Quote & Win',
+      icon: <FileText size={15} />,
+      eyebrow: 'Stop losing bids to slow responses',
+      headline: 'Professional quotes.\nSent from the driveway.',
+      desc: 'Use custom templates to build quotes in seconds. Leverage the AI Project Brief to summarize customer videos and notes into a clean bid. Send it instantly—clients accept with one tap from their phone.',
+      callout: 'Speed is the #1 reason customers choose a contractor',
+      points: [
+        'Custom quote templates based on your job categories',
+        'AI-generated project briefs from intake media',
+        'One-tap "Accept/Decline" buttons for customers',
+        'Real-time status tracking: Pending, Accepted, or Declined',
+      ],
+      quote: "I send the quote before I even start my truck to leave the site. My closing rate has doubled.",
+      author: 'Dave R., All-Pro Siding',
+    visual: (
+  <div className="relative w-full h-full bg-white">
+    <img 
+      src="/images/quotefeature.png" 
+      alt="Professional Quote Interface" 
+      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
+    />
+    {/* Subtle gradient overlay to make the transition to the UI feel smoother */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+  </div>
+),
+    },
+    {
+      label: 'Get Paid',
+      icon: <DollarSign size={15} />,
+      eyebrow: 'Stop leaving money on the table',
+      headline: 'Track every dollar.\nExport every record.',
+      desc: 'Log deposits and final payments directly on the job card. See exactly who owes you money at a glance. When it’s tax time, export your entire history to CSV in one click. Your data is always yours.',
+      callout: 'Your data is portable. One-click CSV exports anytime.',
+      points: [
+        'Centralized dashboard for all unpaid balances',
+        'Professional payment reminder emails in one click',
+        'Full history of deposits and final payments per job',
+        'One-click CSV export for bookkeeping and taxes',
+      ],
+      quote: "Seeing my outstanding balance in red made me realize I had $11k just sitting out there. I collected it all in two days.",
+      author: 'Carl B., ProClean Services',
+     visual: (
+  <div className="relative w-full h-full bg-white">
+    <img
+      src="/images/payment-tab.png"
+      alt="Payment tracking"
+      className="w-full h-full object-cover object-top"
+    />
+  </div>
+),
+    },
+    {
+      label: 'Stay Sharp',
+      icon: <Bell size={15} />,
+      eyebrow: 'Total transparency',
+      headline: 'The Global Outbox &\nDaily Digest.',
+      desc: "Never wonder if a client got your email. Every quote, confirmation, and reminder is logged in your Global Outbox. Plus, get a 6AM briefing every morning with today's schedule and overdue tasks.",
+      callout: 'Know your business status without opening the app',
+      points: [
+        'Global Outbox: Proof of every communication sent',
+        '6AM Daily Digest: Your schedule & leads via email',
+        'Follow-up reminders on stale leads',
+        'Custom task templates for different job categories',
+      ],
+      quote: "The Outbox is a lifesaver. When a client says 'I never got the quote,' I can see exactly when it was sent.",
+      author: 'James P., Peak Roofing Co.',
+      visual: (
+  <div className="relative w-full h-full bg-white">
+    <img
+      src="/images/outboxfeature.png"
+      alt="Global outbox and daily digest"
+      className="w-full h-full object-cover object-top"
+    />
+  </div>
+),
+    },
+  ];
+
+  return (
+    <section className="py-24 px-6 border-b" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
+      <div className="max-w-7xl mx-auto">
+
+        {/* Header */}
+        <div ref={ref} className="text-center mb-12"
+          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4" style={{ color: '#1a6645' }}>
+            Built for the field, managed from the desk
+          </p>
+          <h2 className="font-black leading-tight tracking-tight mb-4"
+            style={{ fontSize: 'clamp(32px, 5vw, 60px)', color: '#0F1F3D' }}>
+            Everything to run your<br />
+            <span style={{ color: '#1a6645' }}>business, in one place.</span>
+          </h2>
+          <p className="text-lg font-medium max-w-2xl mx-auto" style={{ color: '#4A5568' }}>
+            No more lost sticky notes or scrolling through endless text threads. From unified intake to your morning briefing, Lead2Project keeps you organized.
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex justify-center gap-2 flex-wrap mb-12">
+          {tabs.map((tab, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[12px] font-black border transition-all duration-300"
+              style={active === i ? {
+                background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D',
+              } : {
+                background: 'white', color: '#4A5568', borderColor: '#D1C9BD',
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="relative" style={{ minHeight: 480 }}>
+          {tabs.map((tab, i) => (
+            <div
+              key={i}
+              className="grid lg:grid-cols-2 gap-12 items-center transition-all duration-500"
+              style={{
+                opacity: active === i ? 1 : 0,
+                transform: active === i ? 'translateY(0)' : 'translateY(16px)',
+                position: active === i ? 'relative' : 'absolute',
+                inset: active === i ? 'auto' : 0,
+                pointerEvents: active === i ? 'auto' : 'none',
+                zIndex: active === i ? 10 : 0,
+              }}
+            >
+              {/* LEFT — Visual */}
+              <div className="aspect-[4/3] relative rounded-[2rem] overflow-hidden shadow-2xl border border-white">
+                {tab.visual}
+              </div>
+
+              {/* RIGHT — Copy */}
+              <div className="space-y-5">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: '#1a6645' }}>
+                  {tab.eyebrow}
+                </p>
+                <h3 className="font-black leading-tight tracking-tight whitespace-pre-line"
+                  style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', color: '#0F1F3D' }}>
+                  {tab.headline}
+                </h3>
+                <p className="text-base font-medium leading-relaxed" style={{ color: '#4A5568' }}>
+                  {tab.desc}
+                </p>
+                <div className="px-4 py-3 rounded-xl border-l-4 font-bold text-sm"
+                  style={{ background: '#E8F4EF', borderLeftColor: '#1a6645', color: '#1a6645' }}>
+                  💡 {tab.callout}
+                </div>
+                <div className="space-y-2.5">
+                  {tab.points.map((pt, j) => (
+                    <div key={j} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: '#E8F4EF' }}>
+                        <Check size={11} strokeWidth={4} style={{ color: '#1a6645' }} />
+                      </div>
+                      <span className="text-sm font-bold" style={{ color: '#374151' }}>{pt}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-5 border-t space-y-2" style={{ borderColor: '#E5E0D8' }}>
+                  <p className="text-sm font-medium italic leading-relaxed" style={{ color: '#6B7280' }}>
+                    "{tab.quote}"
+                  </p>
+                  <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#1a6645' }}>
+                    — {tab.author}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings showcase — 4 panels showing the most important settings: branding, intake form, emails, payments. Subtle fade/slide animation on scroll. Use the existing useFadeIn hook for this.
 // ───────────────────────────────────────
@@ -1852,13 +2169,15 @@ export default function Home() {
       {/* 1. HERO — dark, headline + visual */}
       <Hero />
       {/* 2. TRUST BAR — stats strip */}
+            <HowItWorks />
 
+
+<TheBoard />
 
 
 <LeadCapture />
 
       {/* 3. HOW IT WORKS — 3 steps, alternating layout */}
-      <HowItWorks />
 
 
   <SettingsShowcase />
