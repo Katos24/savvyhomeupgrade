@@ -6,7 +6,7 @@ export async function getCompanyEmailTemplates(companyId: number) {
   const companies = await sql`
     SELECT email_templates FROM companies WHERE id = ${companyId} LIMIT 1
   `;
-  
+
   const company = companies[0];
   if (company?.email_templates) return company.email_templates;
 
@@ -22,8 +22,8 @@ Quote Total: {{quote_total}}
 Please review the attached quote and let us know if you have any questions.
 
 Best regards,
-{{company_name}}
-{{company_phone}}`,
+{{company_name}}{{#company_phone}}
+{{company_phone}}{{/company_phone}}`,
     },
     schedule: {
       subject: 'Appointment Scheduled - {{company_name}}',
@@ -32,14 +32,14 @@ Best regards,
 Your appointment has been scheduled!
 
 Date: {{scheduled_date}}
-Time: {{scheduled_time}}
-Address: {{customer_address}}
+Time: {{scheduled_time}}{{#customer_address}}
+Address: {{customer_address}}{{/customer_address}}
 
 We look forward to serving you!
 
 Best regards,
-{{company_name}}
-{{company_phone}}`,
+{{company_name}}{{#company_phone}}
+{{company_phone}}{{/company_phone}}`,
     },
     payment: {
       subject: 'Payment Reminder - {{company_name}}',
@@ -47,14 +47,14 @@ Best regards,
 
 This is a friendly reminder about your upcoming payment.
 
-Amount Due: {{payment_amount}}
-Due Date: {{due_date}}
+Amount Due: {{payment_amount}}{{#due_date}}
+Due Date: {{due_date}}{{/due_date}}
 
 Please contact us if you have any questions.
 
 Best regards,
-{{company_name}}
-{{company_phone}}`,
+{{company_name}}{{#company_phone}}
+{{company_phone}}{{/company_phone}}`,
     },
   };
 }
@@ -66,15 +66,35 @@ export function renderEmailTemplate(
   let subject = template.subject;
   let body = template.body;
 
+  // Handle conditional blocks: {{#key}}content{{/key}}
+  // Renders content only when the variable exists and is non-empty
+  body = body.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key, content) => {
+    const value = variables[key];
+    return value !== undefined && value !== null && value !== '' ? content : '';
+  });
+
+  subject = subject.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key, content) => {
+    const value = variables[key];
+    return value !== undefined && value !== null && value !== '' ? content : '';
+  });
+
+  // Replace remaining {{variable}} placeholders
+  // Skip null/undefined — those were handled (and stripped) by the conditional block pass above
   Object.keys(variables).forEach(key => {
-    let value = variables[key];
+    const raw = variables[key];
+    if (raw === null || raw === undefined) return;
+    let value = raw;
     if (key === 'line_items' && Array.isArray(value)) {
       value = formatLineItems(value);
     }
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    subject = subject.replace(regex, value || '');
-    body = body.replace(regex, value || '');
+    subject = subject.replace(regex, value);
+    body = body.replace(regex, value);
   });
+
+  // Clean up any remaining unreplaced placeholders (variables not provided)
+  subject = subject.replace(/\{\{[\w]+\}\}/g, '');
+  body = body.replace(/\{\{[\w]+\}\}/g, '');
 
   return { subject, body };
 }
@@ -107,6 +127,7 @@ export function textToHtml(
   companyName: string,
   companyLogo?: string,
   companyPhone?: string,
+  companyWebsite?: string,
   brandColor1?: string,
   brandColor2?: string,
   extraHtml?: string
@@ -116,6 +137,7 @@ export function textToHtml(
 
   const bodyHtml = text.split('\n\n').map(paragraph => {
     const trimmed = paragraph.trim();
+    if (!trimmed) return '';
     if (/^[A-Z\s]+:/.test(trimmed)) {
       const [heading, ...content] = trimmed.split('\n');
       return `
@@ -131,6 +153,36 @@ export function textToHtml(
     }
     return `<p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">${trimmed.replace(/\n/g, '<br>')}</p>`;
   }).join('');
+
+  // Build footer contact details conditionally
+  const footerPhone = companyPhone
+    ? `<p style="margin: 0 0 4px 0; color: #64748b; font-size: 14px;">${companyPhone}</p>`
+    : '';
+
+  const footerWebsite = companyWebsite
+    ? `<p style="margin: 0 0 12px 0;"><a href="${companyWebsite}" style="color: ${color1}; font-size: 14px; text-decoration: none;">${companyWebsite.replace(/^https?:\/\//, '')}</a></p>`
+    : '';
+
+  // CTA call button — only if phone is provided
+  const callCta = companyPhone
+    ? `
+      <tr>
+        <td style="padding: 0 40px 40px 40px;">
+          <div style="border-top: 2px solid #e2e8f0; padding-top: 32px; text-align: center;">
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">Have questions? We're here to help.</p>
+            <a href="tel:${companyPhone}"
+              style="display: inline-block; background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
+              Call Us: ${companyPhone}
+            </a>
+          </div>
+        </td>
+      </tr>`
+    : '';
+
+  // Logo — only if provided
+  const logoHtml = companyLogo
+    ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 70px; max-width: 220px; display: block; margin: 0 auto 20px auto;">`
+    : '';
 
   return `
     <!DOCTYPE html>
@@ -149,7 +201,7 @@ export function textToHtml(
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); padding: 40px; text-align: center;">
-                    ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 70px; max-width: 220px; display: block; margin: 0 auto 20px auto;">` : ''}
+                    ${logoHtml}
                     <h1 style="margin: 0; color: #fff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">${companyName}</h1>
                   </td>
                 </tr>
@@ -164,26 +216,12 @@ export function textToHtml(
                   </td>
                 </tr>
 
-                <!-- Call CTA -->
-                ${companyPhone ? `
-                <tr>
-                  <td style="padding: 0 40px 40px 40px;">
-                    <div style="border-top: 2px solid #e2e8f0; padding-top: 32px; text-align: center;">
-                      <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">Have questions? We're here to help.</p>
-                      <a href="tel:${companyPhone}"
-                        style="display: inline-block; background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
-                        Call Us: ${companyPhone}
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-                ` : ''}
+                ${callCta}
 
                 <!-- Footer -->
                 <tr>
                   <td style="background: #f8fafc; padding: 28px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
-                    <p style="margin: 0 0 4px 0; color: #475569; font-size: 15px; font-weight: 600;">${companyName}</p>
-                    ${companyPhone ? `<p style="margin: 0 0 12px 0; color: #64748b; font-size: 14px;">${companyPhone}</p>` : ''}
+                    ${footerWebsite}
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">You received this email because you requested a service from us.</p>
                   </td>
                 </tr>

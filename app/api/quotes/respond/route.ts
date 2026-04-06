@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get('action');
 
   if (!token || !action || !['accept', 'decline'].includes(action)) {
-    return new NextResponse(renderPage('Invalid Link', 'This link is invalid or missing required information.', false), {
+    return new NextResponse(renderPage('Invalid Link', 'This link is invalid or missing required information.', 'neutral'), {
       headers: { 'Content-Type': 'text/html' },
     });
   }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     `;
 
     if (projects.length === 0) {
-      return new NextResponse(renderPage('Link Not Found', 'This quote link is invalid or has expired.', false), {
+      return new NextResponse(renderPage('Link Not Found', 'This quote link is invalid or has expired.', 'neutral'), {
         headers: { 'Content-Type': 'text/html' },
       });
     }
@@ -44,15 +44,19 @@ export async function GET(request: NextRequest) {
     const project = projects[0];
 
     if (project.quote_accepted_at) {
-      return new NextResponse(renderPage('Already Accepted', `You already accepted this quote on ${new Date(project.quote_accepted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${project.company_name} will be in touch to schedule your appointment.`, true), {
-        headers: { 'Content-Type': 'text/html' },
-      });
+      return new NextResponse(renderPage(
+        'Already Accepted',
+        `You already accepted this quote on ${new Date(project.quote_accepted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${project.company_name} will be in touch to schedule your appointment.`,
+        'success'
+      ), { headers: { 'Content-Type': 'text/html' } });
     }
 
     if (project.quote_declined_at) {
-      return new NextResponse(renderPage('Already Declined', `You already declined this quote. If you changed your mind, please contact ${project.company_name} directly.`, false), {
-        headers: { 'Content-Type': 'text/html' },
-      });
+      return new NextResponse(renderPage(
+        'Already Declined',
+        `You already declined this quote. If you changed your mind, please contact ${project.company_name} directly.`,
+        'neutral'
+      ), { headers: { 'Content-Type': 'text/html' } });
     }
 
     if (action === 'accept') {
@@ -79,14 +83,11 @@ export async function GET(request: NextRequest) {
         console.error('Failed to send acceptance notification:', err);
       }
 
-      return new NextResponse(
-        renderPage(
-          '✅ Quote Accepted!',
-          `Thanks ${project.customer_name}! You've accepted your quote with ${project.company_name}. They'll be reaching out shortly to schedule your appointment.`,
-          true
-        ),
-        { headers: { 'Content-Type': 'text/html' } }
-      );
+      return new NextResponse(renderPage(
+        'Quote Accepted',
+        `Thanks ${project.customer_name}! You've accepted your quote with ${project.company_name}. They'll be reaching out shortly to schedule your appointment.`,
+        'success'
+      ), { headers: { 'Content-Type': 'text/html' } });
     }
 
     if (action === 'decline') {
@@ -98,28 +99,34 @@ export async function GET(request: NextRequest) {
         WHERE id = ${project.id}
       `;
 
-      return new NextResponse(
-        renderPage(
-          'Quote Declined',
-          `Thanks for letting us know, ${project.customer_name}. Your response has been recorded. If you change your mind or have questions, please contact ${project.company_name} directly${project.company_phone ? ` at ${project.company_phone}` : ''}.`,
-          false
-        ),
-        { headers: { 'Content-Type': 'text/html' } }
-      );
+      return new NextResponse(renderPage(
+        'Quote Declined',
+        `Thanks for letting us know, ${project.customer_name}. Your response has been recorded. If you change your mind or have questions, please contact ${project.company_name} directly${project.company_phone ? ` at ${project.company_phone}` : ''}.`,
+        'neutral'
+      ), { headers: { 'Content-Type': 'text/html' } });
     }
 
   } catch (error) {
     console.error('Quote respond error:', error);
-    return new NextResponse(renderPage('Something went wrong', 'Please try again or contact the company directly.', false), {
+    return new NextResponse(renderPage('Something Went Wrong', 'Please try again or contact the company directly.', 'neutral'), {
       headers: { 'Content-Type': 'text/html' },
     });
   }
 }
 
-function renderPage(title: string, message: string, success: boolean) {
-  const color = success ? '#6366f1' : '#64748b';
-  const bg = success ? '#eef2ff' : '#f8fafc';
-  const icon = success ? '✅' : '📋';
+function renderPage(title: string, message: string, state: 'success' | 'neutral') {
+  const isSuccess = state === 'success';
+  const accentColor = isSuccess ? '#6366f1' : '#64748b';
+  const accentBg    = isSuccess ? '#eef2ff' : '#f1f5f9';
+  const iconPath    = isSuccess
+    ? `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="24" fill="${accentBg}"/>
+        <path d="M14 25l7 7 13-14" stroke="${accentColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+       </svg>`
+    : `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="24" fill="${accentBg}"/>
+        <path d="M24 16v10M24 32h.01" stroke="${accentColor}" stroke-width="3" stroke-linecap="round"/>
+       </svg>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -131,7 +138,7 @@ function renderPage(title: string, message: string, success: boolean) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: ${bg};
+      background: #f8fafc;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -143,18 +150,18 @@ function renderPage(title: string, message: string, success: boolean) {
       border-radius: 16px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       padding: 48px 40px;
-      max-width: 480px;
+      max-width: 440px;
       width: 100%;
       text-align: center;
     }
-    .icon { font-size: 48px; margin-bottom: 16px; }
-    h1 { color: ${color}; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-    p { color: #64748b; font-size: 15px; line-height: 1.6; }
+    .icon { margin-bottom: 20px; }
+    h1 { color: ${accentColor}; font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+    p { color: #64748b; font-size: 15px; line-height: 1.7; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon">${icon}</div>
+    <div class="icon">${iconPath}</div>
     <h1>${title}</h1>
     <p>${message}</p>
   </div>

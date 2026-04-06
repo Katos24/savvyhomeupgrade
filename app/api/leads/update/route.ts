@@ -483,7 +483,12 @@ await sql`
         const crypto = await import('crypto');
         const quoteToken = crypto.randomBytes(32).toString('hex');
 
-        await sql`UPDATE projects SET quote_token = ${quoteToken} WHERE id = ${lead.project_id}`;
+await sql`UPDATE projects
+  SET quote_token = ${quoteToken},
+      quote_declined_at = NULL,
+      quote_accepted_at = NULL,
+      updated_at = NOW()
+  WHERE id = ${lead.project_id}`;
 
         const emailResult = await sendQuoteToCustomer({
   customerEmail: lead.email,

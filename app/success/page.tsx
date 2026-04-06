@@ -51,7 +51,6 @@ export default async function SuccessPage({ params }: PageProps) {
           </div>
         )}
 
-        <div className="text-6xl mb-4">✅</div>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           Thank You!

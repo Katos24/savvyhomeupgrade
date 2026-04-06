@@ -99,7 +99,7 @@ export default function AcceptInviteForm() {
       const data = await response.json();
 
       if (data.success) {
-        alert('✅ Account created! You can now log in.');
+        alert('Account created! You can now log in.');
         router.push('/login');
       } else {
         setError(data.error || 'Failed to create account');

@@ -8,7 +8,7 @@ const sql = neon(process.env.DATABASE_URL!);
 // Helper function to get company details
 async function getCompanyDetails(companyId: number) {
   const companies = await sql`
-    SELECT name, logo_url, phone, email, email_brand_color_1, email_brand_color_2 
+    SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2 
     FROM companies WHERE id = ${companyId} LIMIT 1
   `;
   return companies[0];
@@ -364,7 +364,7 @@ const acceptDeclineHtml = quoteToken ? `
     <div style="display: inline-flex; gap: 12px;">
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=accept"
         style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin-right:8px;">
-        ✅ Accept Quote
+        Accept Quote
       </a>
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=decline"
         style="display:inline-block;background:#f1f5f9;color:#64748b;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid #e2e8f0;">
@@ -410,7 +410,7 @@ const lineItemsHtml = quoteItems.length > 0 ? `
 
     const variables = {
       company_name: company.name || companyName,
-      company_phone: company.phone || companyPhone || '',
+company_phone: company.phone || companyPhone || null,
       customer_name: customerName,
       quote_total: fmt(quoteTotal),
       project_description: projectDescription || 'Your project',
@@ -422,7 +422,8 @@ const lineItemsHtml = quoteItems.length > 0 ? `
   rendered.body,
   company.name || companyName,
   company.logo_url || undefined,
-  company.phone || companyPhone,
+  company.phone || companyPhone || undefined,
+  company.website || undefined,                              // ← companyWebsite (not used)
   company.email_brand_color_1 || undefined,
   company.email_brand_color_2 || undefined,
   lineItemsHtml + acceptDeclineHtml,
@@ -501,11 +502,11 @@ export async function sendScheduleConfirmation({
     // Prepare variables
     const variables = {
       company_name: company.name || companyName,
-      company_phone: company.phone || companyPhone || '',
+company_phone: company.phone || companyPhone || null,
       customer_name: customerName,
       scheduled_date: formattedDate,
       scheduled_time: formattedTime,
-      customer_address: serviceAddress || '',
+customer_address: serviceAddress || null,
     };
     
     // Render the template
@@ -516,9 +517,10 @@ export async function sendScheduleConfirmation({
   rendered.body,
   company.name || companyName,
   company.logo_url || undefined,
-  company.phone || companyPhone,
+  company.phone || companyPhone || undefined,
+  company.website || undefined,           // ← was undefined before
   company.email_brand_color_1 || undefined,
-  company.email_brand_color_2 || undefined
+  company.email_brand_color_2 || undefined,
 );
 
     const emailResult = await resend.emails.send({
@@ -1163,8 +1165,6 @@ export async function sendFollowUpReminderEmail({
     throw error;
   }
 }
-
-
 export async function sendPaymentReminderEmail({
   customerEmail,
   customerName,
@@ -1181,16 +1181,22 @@ export async function sendPaymentReminderEmail({
   companyPhone?: string;
   companyId?: number;
   amountDue: number;
-  dueDate: string;
+  dueDate: string | null;  // ← fix the type
   isOverdue: boolean;
   contractorEmail?: string;
 }) {
   try {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-   const [year, month, day] = String(dueDate).split('T')[0].split('-').map(Number);
-const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US', {
-  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-});
+
+    // ← format only if dueDate is a real value
+    const formattedDate = dueDate && dueDate !== 'null'
+      ? (() => {
+          const [year, month, day] = String(dueDate).split('T')[0].split('-').map(Number);
+          return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+          });
+        })()
+      : null;
 
     let company: any = {};
     let emailHtml: string;
@@ -1203,25 +1209,26 @@ const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US',
 
       const variables = {
         company_name: company.name || companyName,
-        company_phone: company.phone || companyPhone || '',
+        company_phone: company.phone || companyPhone || null,
         customer_name: customerName,
         payment_amount: fmt(amountDue),
         amount_due: fmt(amountDue),
-        due_date: formattedDate,
+        due_date: formattedDate,  // null if no due date → conditional block strips the line
       };
 
       const rendered = renderEmailTemplate(paymentTemplate, variables);
       subject = rendered.subject;
       emailHtml = textToHtml(
-        rendered.body,
-        company.name || companyName,
-        company.logo_url || undefined,
-        company.phone || companyPhone,
-        company.email_brand_color_1 || undefined,
-        company.email_brand_color_2 || undefined,
-      );
+  rendered.body,
+  company.name || companyName,
+  company.logo_url || undefined,
+  company.phone || companyPhone || undefined,
+  company.website || undefined,           // ← was undefined before
+  company.email_brand_color_1 || undefined,
+  company.email_brand_color_2 || undefined,
+);
+
     } else {
-      // Fallback if no companyId
       const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
       subject = isOverdue
         ? `Payment Overdue - ${companyName}`
@@ -1229,31 +1236,27 @@ const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US',
       emailHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;">
         <h2 style="color:${accentColor};">${isOverdue ? 'Payment Overdue' : 'Payment Reminder'}</h2>
         <p>Hi ${customerName},</p>
-        <p>Amount due: <strong>${fmt(amountDue)}</strong> by ${formattedDate}</p>
+        <p>Amount due: <strong>${fmt(amountDue)}</strong>${formattedDate ? ` by ${formattedDate}` : ''}</p>
         <p>${companyPhone ? `Call us: ${companyPhone}` : ''}</p>
         <p>${companyName}</p>
       </body></html>`;
     }
 
     const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <onboarding@resend.dev>`,
-  to: customerEmail,
- replyTo: company.email || undefined,
-   subject,
-  html: emailHtml,
-});
+      from: `${company.name || companyName} <onboarding@resend.dev>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject,
+      html: emailHtml,
+    });
 
     console.log('✅ Payment reminder sent to:', customerEmail);
     return { subject, html: emailHtml, resendId: emailResult?.data?.id };
-
   } catch (error) {
     console.error('❌ Failed to send payment reminder:', error);
     throw error;
   }
 }
-
-
-
 
 // 📋 Daily digest email to contractor
 // Add this function to /lib/email.ts
