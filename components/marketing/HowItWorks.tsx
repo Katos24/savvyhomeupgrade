@@ -336,7 +336,7 @@ function LeadCard({ visible }: { visible: boolean }) {
 
 export default function HowItWorks() {
   const { ref, visible } = useFadeIn();
-  const [leadVisible, setLeadVisible] = useState(false);
+const [leadVisible, setLeadVisible] = useState(true);
 
   return (
     <section
