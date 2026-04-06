@@ -38,7 +38,7 @@ export default function Hero() {
               className="text-lg font-medium leading-relaxed mb-8"
               style={{ color: '#4b5563', maxWidth: 460 }}
             >
-              Lead2Project gives every contractor a branded booking link, a live dashboard, and the tools to quote, schedule, and get paid — all in one place.
+              Lead2Project gives every contractor a branded booking link, a live dashboard, and the tools to quote, schedule, and track payments — all in one place.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -47,11 +47,11 @@ export default function Hero() {
                 className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-black text-base transition-all hover:opacity-90 active:scale-95"
                 style={{ background: '#1a6645', color: '#fff' }}
               >
-                Start Free — No Card Needed
+                Get Link Today
                 <ArrowRight size={16} />
               </Link>
               <a
-                href="#how-it-works"
+                href="demo"
                 className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-bold text-base border transition-all hover:bg-gray-50"
                 style={{ color: '#374151', borderColor: '#d1d5db' }}
               >
@@ -60,7 +60,7 @@ export default function Hero() {
             </div>
 
             <p className="text-xs font-semibold" style={{ color: '#9ca3af' }}>
-              14-day free trial · No credit card · Cancel anytime
+              14-day free trial · Set up in minutes · Cancel anytime
             </p>
           </div>
 

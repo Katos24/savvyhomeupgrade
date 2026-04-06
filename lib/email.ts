@@ -588,7 +588,6 @@ export async function sendTrialEndingReminderEmail({
               <div class="feature">✓ Unlimited lead tracking</div>
               <div class="feature">✓ Professional quote builder</div>
               <div class="feature">✓ Photo uploads from customers</div>
-              <div class="feature">✓ Get paid in 2 days with Stripe</div>
               <div class="feature">✓ Team management</div>
               <div class="feature">✓ Email notifications</div>
             </div>
