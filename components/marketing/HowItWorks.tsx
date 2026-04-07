@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Check, ChevronRight, ChevronDown, MapPin, Truck, Instagram, Calendar, Clock, Mail, Phone, User, LayoutGrid, AlignLeft, Upload, Image as ImageIcon, Home } from 'lucide-react';
+
+import { Check, ChevronRight, ChevronDown, MapPin, Menu, Plus, Search, List, Filter, Sparkles, Truck, Instagram, Calendar, Clock, Mail, Phone, User, LayoutGrid, AlignLeft, Upload, Image as ImageIcon, Home } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
+import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Animated demo form
@@ -39,8 +42,8 @@ function FastDemoForm({ onSubmit }: { onSubmit?: () => void }) {
     function run() {
       setPhase('idle');
       setShowStep1(true);
-      setName('Marcus Rivera');
-      setEmail('marcus@email.com');
+      setName('Curtis Wilson');
+      setEmail('curtisw@email.com');
       setPhone('(555) 482-9301');
       setDesc('Damaged roof after storm, needs full inspection');
       setAddress('42 Maple Ave, Brooklyn NY');
@@ -265,71 +268,161 @@ function FastDemoForm({ onSubmit }: { onSubmit?: () => void }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lead card that appears after form submit
-// ─────────────────────────────────────────────────────────────────────────────
 
-function LeadCard({ visible }: { visible: boolean }) {
+export function LeadCard({ visible }: { visible: boolean }) {
+  const [activeTab, setActiveTab] = useState('grid');
+
   return (
     <div
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 0.6s cubic-bezier(0.16,1,0.3,1)',
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
+        transition: 'all 0.7s cubic-bezier(0.16,1,0.3,1)',
       }}
-      className="bg-[#0f172a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+      className="flex flex-col items-center w-full"
     >
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">New Lead</span>
-        </div>
-        <span className="text-[10px] text-slate-500 font-medium">just now</span>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="text-base font-black text-white">Marcus Rivera</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">42 Maple Ave, Brooklyn NY · 11201</p>
-          </div>
-          <span className="text-[9px] font-black uppercase px-2 py-1 rounded-lg" style={{ background: '#6366f125', color: '#818cf8' }}>Roofing</span>
+      {/* Phone Frame */}
+      <div className="relative w-[280px] aspect-[9/19] rounded-[3rem] border-[6px] border-[#1e293b] bg-[#0f172a] shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+        {/* Status Bar / Notch */}
+        <div className="absolute top-0 inset-x-0 h-8 flex justify-center items-end pb-1 z-30">
+          <div className="w-24 h-5 bg-black rounded-b-2xl" />
         </div>
 
-        <p className="text-[12px] text-slate-300 leading-relaxed mb-4">
-          Damaged roof after storm, needs full inspection
-        </p>
-
-        {/* Details row */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {[
-            { label: 'Date', value: 'Apr 12' },
-            { label: 'Time', value: 'Morning' },
-            { label: 'Photos', value: '1 file' },
-          ].map(d => (
-            <div key={d.label} className="bg-white/5 rounded-lg px-2 py-1.5 text-center">
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{d.label}</p>
-              <p className="text-[11px] font-bold text-white">{d.value}</p>
+        {/* Dashboard Content */}
+        <div className="flex flex-col h-full pt-10 px-4 pb-6 overflow-y-auto no-scrollbar bg-[#161d2f]">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#1e293b] rounded-xl flex items-center justify-center border border-white/5">
+                <Menu size={18} className="text-slate-300" />
+              </div>
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                 <img src="/images/ridgelinelogo.png" alt="Logo" className="w-7 h-7 object-contain" />
+              </div>
+              <div>
+                <p className="text-[11px] font-black text-white leading-none">Ridge Line Roofing</p>
+                <p className="text-[8px] font-bold text-indigo-400 uppercase tracking-widest mt-1">Dashboard</p>
+              </div>
             </div>
-          ))}
+            <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-900 shadow-xl active:scale-90 transition-transform">
+              <Plus size={20} strokeWidth={3} />
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {[
+              { label: 'Total Leads', val: '167', color: 'text-white' },
+              { label: 'Active Jobs', val: '62', color: 'text-blue-400' },
+              { label: 'Total Revenue', val: '$102,671', color: 'text-emerald-400' },
+              { label: 'Total Pending', val: '$122,880', color: 'text-amber-500' },
+            ].map((stat, i) => (
+              <div key={i} className="p-3 bg-[#1e293b] rounded-2xl border border-white/5">
+                <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className={`text-sm font-black ${stat.color}`}>{stat.val}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Search & Tabs */}
+          <div className="flex gap-2 mb-4">
+            <div className="flex-1 h-10 bg-[#1e293b] rounded-xl border border-white/5 flex items-center px-3 gap-2">
+              <Search size={14} className="text-slate-500" />
+              <div className="h-2 w-16 bg-slate-700 rounded-full" />
+            </div>
+            <div className="flex bg-[#1e293b] p-1 rounded-xl border border-white/5">
+               <button className="p-1.5 bg-indigo-600 rounded-lg text-white shadow-lg"><LayoutGrid size={14} /></button>
+               <button className="p-1.5 text-slate-500"><List size={14} /></button>
+               <button className="p-1.5 text-slate-500"><Calendar size={14} /></button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+            {['Today', 'Unpaid', 'New (17)', 'Filters'].map((f, i) => (
+              <div key={i} className="px-3 py-1.5 bg-[#1e293b] rounded-lg border border-white/5 text-[9px] font-bold text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+                {f === 'Filters' && <Filter size={10} />}
+                {f}
+              </div>
+            ))}
+          </div>
+
+          {/* Lead List Header */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Today</p>
+            <div className="w-5 h-5 bg-[#1e293b] rounded-full flex items-center justify-center text-[9px] font-bold text-slate-500">1</div>
+          </div>
+
+          {/* The Actual Lead Card */}
+          <div className="relative bg-[#1e293b] rounded-[24px] overflow-hidden border border-white/5 shadow-2xl group cursor-pointer transition-all hover:border-white/20">
+            {/* Green Status Bar */}
+            <div className="absolute top-4 bottom-4 left-0 w-1.5 bg-emerald-500 rounded-r-full" />
+            
+            <div className="p-5 pl-7">
+               <div className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md text-[8px] font-black uppercase tracking-widest mb-3">New</div>
+               <h4 className="text-lg font-black text-white mb-1">Curtis Wilson</h4>
+               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
+                 <div className="w-4 h-4 rounded-full bg-slate-800 border border-white/5 flex items-center justify-center">
+                   <Plus size={8} />
+                 </div>
+                 Unassigned
+               </p>
+
+               <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-3 bg-[#161d2f] rounded-xl border border-white/5">
+                    <p className="text-[7px] font-black text-slate-500 uppercase mb-1">Job Date</p>
+                    <div className="flex items-center gap-2 text-indigo-400">
+                      <Calendar size={12} />
+                      <span className="text-[10px] font-black italic">TBD</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-[#161d2f] rounded-xl border border-white/5">
+                    <p className="text-[7px] font-black text-slate-500 uppercase mb-1">Arrival</p>
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock size={12} />
+                      <span className="text-[10px] font-black italic">TBD</span>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6">
+                 <Truck size={14} className="text-slate-500" /> Roofing
+               </div>
+
+               <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div>
+                    <p className="text-xl font-black text-white">$0</p>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-slate-500" /> Unpaid
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-[#161d2f] rounded-xl border border-white/5 flex items-center justify-center text-slate-500 transition-colors group-hover:text-white group-hover:bg-indigo-600 group-hover:border-indigo-500">
+                    <ChevronRight size={18} />
+                  </div>
+               </div>
+            </div>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-2">
-          <button className="py-2 rounded-xl text-[11px] font-black text-white bg-indigo-600">
-            Schedule →
-          </button>
-          <button className="py-2 rounded-xl text-[11px] font-black border border-white/10 text-slate-400">
-            AI Brief ✦
-          </button>
+        {/* Floating Action Button (FAB) */}
+        <div className="absolute bottom-6 right-4 z-40">
+           <div className="w-14 h-14 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl shadow-[0_8px_24px_rgba(99,102,241,0.5)] flex items-center justify-center text-white ring-4 ring-[#161d2f]">
+              <Sparkles size={24} fill="currentColor" className="opacity-90" />
+           </div>
         </div>
+
+        {/* Bottom Home Indicator */}
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 rounded-full bg-white/20 z-40" />
       </div>
+
+      {/* Caption remains underneath */}
+      <p className="mt-6 text-center text-[12px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+        Your New Command Center
+      </p>
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Updated Main section with better Readability & Colors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -456,7 +549,7 @@ export default function HowItWorks() {
                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Your Dashboard</p>
                  <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Instant</span>
                </div>
-               <LeadCard visible={leadVisible} />
+<CyclingPhoneMockup visible={leadVisible} />
             </div>
 
           </div>
