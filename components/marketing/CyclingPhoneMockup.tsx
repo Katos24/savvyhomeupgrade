@@ -62,9 +62,9 @@ function ScreenDashboard() {
       {/* Filter chips */}
       <div style={{ display: 'flex', gap: 5, padding: '0 12px 8px', overflow: 'hidden' }}>
         {[
-          { label: '⊙ Today',    bg: 'transparent', border: '#1f2937', color: '#6b7280' },
-          { label: '$ Unpaid',   bg: '#064e3b',     border: '#065f46', color: '#10b981' },
-          { label: '✦ New (17)', bg: '#1e3a5f',     border: '#1d4ed8', color: '#60a5fa' },
+          { label: 'Today',    bg: 'transparent', border: '#1f2937', color: '#6b7280' },
+          { label: '$ Unpaid', bg: '#064e3b',     border: '#065f46', color: '#10b981' },
+          { label: 'New (17)', bg: '#1e3a5f',     border: '#1d4ed8', color: '#60a5fa' },
         ].map(c => (
           <div key={c.label} style={{ padding: '3px 7px', borderRadius: 20, fontSize: 8, fontWeight: 700, whiteSpace: 'nowrap', background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>{c.label}</div>
         ))}
@@ -151,8 +151,8 @@ function ScreenSchedule() {
         </div>
         <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
           {[
-            { label: 'James', icon: '👤' },
-            { label: '$5,385 due', icon: '💳' },
+            { label: 'James' },
+            { label: '$5,385 due' },
             { label: 'AI Brief', icon: '✦' },
           ].map(b => (
             <div key={b.label} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '3px 7px', fontSize: 8, fontWeight: 700, color: '#d1d5db', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -179,7 +179,6 @@ function ScreenSchedule() {
               </div>
               <div>
                 <div style={{ fontSize: 9, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '.06em' }}>Schedule</div>
-                <div style={{ fontSize: 7.5, color: '#10b981', fontWeight: 700 }}>✓ Confirmed 4/7/2026</div>
               </div>
             </div>
             <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 7, padding: '3px 8px', fontSize: 7.5, fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -254,7 +253,7 @@ function ScreenQuote() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
-          {[{ label: 'James', icon: '👤' }, { label: '$5,385 due', icon: '💳' }, { label: 'AI Brief', icon: '✦' }].map(b => (
+          {[{ label: 'James'}, { label: '$5,385 due'}, { label: 'AI Brief', icon: '✦' }].map(b => (
             <div key={b.label} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '3px 7px', fontSize: 8, fontWeight: 700, color: '#d1d5db', display: 'flex', alignItems: 'center', gap: 3 }}>
               <span style={{ fontSize: 9 }}>{b.icon}</span>{b.label}
             </div>

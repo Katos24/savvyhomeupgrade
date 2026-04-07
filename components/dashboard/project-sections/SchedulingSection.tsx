@@ -203,7 +203,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                 <div className="flex items-center gap-1">
                   <CheckCircle2 size={10} className="text-emerald-500" />
                   <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tight">
-                    Confirmed {new Date(lastEmailSentAt).toLocaleDateString()}
+                    Sent on {new Date(lastEmailSentAt).toLocaleDateString()}
                   </p>
                 </div>
               )}
