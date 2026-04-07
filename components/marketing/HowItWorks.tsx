@@ -42,7 +42,7 @@ export default function HowItWorks() {
                   <div className="min-w-0">
                     <p className="text-[10px] font-black text-[#4ade80] uppercase tracking-widest leading-none mb-1">Bio Link</p>
                     <p className="text-sm font-bold text-white flex items-center gap-1 truncate">
-                      lead2project.com/roofing <ExternalLink size={10} className="opacity-50" />
+                      lead2project.com/ridgeline-roofing <ExternalLink size={10} className="opacity-50" />
                     </p>
                   </div>
                 </div>
