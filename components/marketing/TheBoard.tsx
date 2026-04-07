@@ -1,7 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { LayoutGrid, List, Calendar, Mail, ChevronRight, Search, Plus, Sun, Moon, DollarSign, Bell, Filter } from 'lucide-react';
+import { useRef, useState, useMemo } from 'react';
+import { 
+  LayoutGrid, List, Calendar, Mail, ChevronRight, 
+  Search, Plus, Sun, Moon, DollarSign, Bell, Filter, 
+  XCircle 
+} from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -49,30 +53,56 @@ function CardsPanel({ isDark }: { isDark: boolean }) {
   const sub = isDark ? 'bg-[#0f172a] border-white/5' : 'bg-slate-50 border-slate-100';
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 h-full overflow-y-auto pb-4">
+    /* Added px-4 so cards don't hit the "walls" of the browser shell */
+    <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 h-full overflow-y-auto pb-6 px-4 no-scrollbar">
       {LEADS.map(lead => (
-        <div key={lead.name} className={`flex rounded-xl overflow-hidden border ${bg}`}>
+        <div key={lead.name} className={`flex rounded-xl overflow-hidden border shadow-sm shrink-0 transition-all active:scale-[0.99] ${bg}`}>
+          {/* Slimmer Sidebar Status Strip */}
           <div className="w-1 shrink-0" style={{ background: lead.statusColor }} />
-          <div className="p-2.5 flex-1 min-w-0">
-            <div className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded inline-block mb-1.5"
-              style={{ background: `${lead.statusColor}25`, color: lead.statusColor }}>
-              {lead.status}
-            </div>
-            <div className={`text-[12px] font-black mb-1 truncate ${text}`}>{lead.name}</div>
-            <div className={`text-[9px] font-bold mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{lead.category}</div>
-            <div className={`grid grid-cols-2 gap-1 p-1.5 rounded-lg mb-2 border ${sub}`}>
-              <div>
-                <div className="text-[7px] text-slate-400 font-black uppercase">Date</div>
-                <div className="text-[9px] font-black text-indigo-500">{lead.date}</div>
+          
+          <div className="p-2.5 flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              {/* Header Row: Status & Category */}
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>
+                  {lead.status}
+                </span>
+                <span className="text-[7px] font-bold text-slate-500 uppercase tracking-tighter">
+                  {lead.category}
+                </span>
               </div>
-              <div className="border-l border-slate-200/20 pl-1.5">
-                <div className="text-[7px] text-slate-400 font-black uppercase">Arrival</div>
-                <div className="text-[9px] font-black text-slate-500">{lead.time}</div>
+
+              {/* Project Name - Slimmer text */}
+              <div className={`text-[12px] font-black mb-1.5 truncate tracking-tight ${text}`}>
+                {lead.name}
+              </div>
+              
+              {/* Ultra-Condensed Data Grid */}
+              <div className={`grid grid-cols-2 gap-0.5 p-1.5 rounded-lg mb-1.5 border ${sub}`}>
+                <div className="px-1">
+                  <div className="text-[6px] text-slate-400 font-black uppercase tracking-widest">Date</div>
+                  <div className="text-[9px] font-black text-indigo-500 truncate">{lead.date}</div>
+                </div>
+                <div className="border-l border-slate-200/20 px-2">
+                  <div className="text-[6px] text-slate-400 font-black uppercase tracking-widest">Arrival</div>
+                  <div className="text-[9px] font-black text-slate-500 truncate">{lead.time}</div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] font-black text-emerald-500">{lead.amount}</span>
-              <ChevronRight size={12} className="text-slate-400" />
+
+            {/* Footer Row: Slimmer spacing */}
+            <div className="flex justify-between items-end">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-emerald-500 leading-none">{lead.amount}</span>
+                <span className={`text-[6px] font-black uppercase mt-0.5 ${lead.paid ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                  {lead.paid ? 'Paid' : 'Unpaid'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[7px] font-bold text-slate-400 italic">@{lead.assigned.split(' ')[0]}</span>
+                <ChevronRight size={12} className="text-slate-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -210,6 +240,7 @@ function OutboxPanel({ isDark }: { isDark: boolean }) {
     </div>
   );
 }
+
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
