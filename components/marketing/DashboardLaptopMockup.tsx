@@ -113,13 +113,13 @@ export function DashboardLaptopMockup() {
             {/* Lead cards row */}
             <div className="grid grid-cols-2 gap-2">
 
-              {/* Existing card — Marcus T / Contacted */}
+              {/* Existing card — Curtis W / Contacted */}
               <div className="rounded-xl overflow-hidden" style={{ background: '#161d2f', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderLeft: '3px solid #f59e0b' }}>
                   <div className="px-1.5 py-0.5 rounded" style={{ background: '#78350f33', border: '1px solid #92400e66', fontSize: 6, fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase' }}>Contacted</div>
                 </div>
                 <div className="px-2.5 pb-2.5">
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#f9fafb', marginBottom: 1 }}>Marcus Thornton</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#f9fafb', marginBottom: 1 }}>Curtis Wilson</div>
                   <div style={{ fontSize: 7, color: '#4b5563', marginBottom: 8 }}>ASSIGNED: JAMES</div>
                   <div className="grid grid-cols-2 gap-1 mb-2">
                     {[{ l: 'Job Date', v: 'Apr 11', c: '#60a5fa' }, { l: 'Arrival', v: '9:00 AM', c: '#f9fafb' }].map(m => (
