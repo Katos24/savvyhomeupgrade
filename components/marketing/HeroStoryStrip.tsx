@@ -94,7 +94,7 @@ export function HeroStoryStrip() {
           <StepLabel
             number="1"
             title="Scan or share"
-            caption="Your QR code goes on the truck. Customers scan, land on your form, and submit in minutes."
+            caption="We give you a custom QR & URL. Put it on your business card, truck, or lawn signs. It’s your 24/7 digital storefront."
           />
           <div className="w-full max-w-[260px] lg:max-w-full rounded-2xl overflow-hidden border border-white/8 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
             <img
@@ -120,7 +120,7 @@ export function HeroStoryStrip() {
           <StepLabel
             number="2"
             title="They fill it out"
-            caption="Custom questions, your colors, your logo. Photos, address, budget — collected upfront."
+            caption="Customers answer your specific questions and upload photos. You get high-intent leads with all the data you need to quote immediately."
           />
           <div className="flex justify-center w-full">
             <div className="scale-90 lg:scale-100 origin-top">
@@ -137,7 +137,7 @@ export function HeroStoryStrip() {
           <StepLabel
             number="3"
             title="You close the job"
-            caption="Lead lands on your dashboard. Schedule, quote, collect payment, send emails — one click each."
+            caption="Manage the entire project life-cycle. From the first 'Hello' to the final 'Paid in Full' notification, all in one dashboard."
           />
           <div className="w-full overflow-hidden">
             <div className="scale-75 lg:scale-100 origin-top-left lg:origin-top-left -mb-16 lg:mb-0">
