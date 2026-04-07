@@ -109,12 +109,7 @@ export default function LeadModalSection() {
               ))}
             </div>
 
-            <div className="mt-10 pt-8 border-t border-slate-200">
-              <button className="flex items-center gap-2 font-black text-[#1a6645] hover:gap-3 transition-all">
-                Learn about custom categories
-                <ArrowRight size={18} />
-              </button>
-            </div>
+            
           </div>
 
           {/* RIGHT — SCREENSHOT */}

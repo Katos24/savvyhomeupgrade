@@ -495,7 +495,7 @@ export default function HowItWorks() {
           <div className="relative order-1 lg:order-2 w-full max-w-[500px] mx-auto">
             <div className="absolute inset-0 bg-blue-600/20 blur-[80px] rounded-full" />
             <div className="relative rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
-              <img src="/images/qrfeature.png" alt="QR Feature" className="w-full h-auto block" />
+              <img src="/images/qrbranded2.png" alt="QR Feature" className="w-full h-auto block" />
             </div>
           </div>
         </div>
