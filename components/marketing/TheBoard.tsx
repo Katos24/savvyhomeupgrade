@@ -314,7 +314,7 @@ export default function TheBoard() {
               <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
             </div>
             <div className={`flex-1 rounded-lg py-1 px-3 text-[10px] font-mono truncate ${isDark ? 'bg-[#0d1520] border border-white/8 text-slate-500' : 'bg-white border border-slate-200 text-slate-400'}`}>
-              lead2project.com/<span className={isDark ? 'text-indigo-400 font-bold' : 'text-indigo-600 font-bold'}>ridge-line</span>/dashboard
+              lead2project.com/<span className={isDark ? 'text-indigo-400 font-bold' : 'text-indigo-600 font-bold'}>ridgeline-roofing</span>/dashboard
             </div>
           </div>
 

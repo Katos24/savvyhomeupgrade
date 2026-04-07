@@ -311,7 +311,7 @@ const SLIDES = [
   { label: 'Quote',     caption: 'Build & email the quote',       component: <ScreenQuote />    },
 ];
 
-export function CyclingPhoneMockup({ visible = true }: { visible?: boolean }) {
+export function CyclingPhoneMockup({ visible = true, hideIndicators = false }: { visible?: boolean; hideIndicators?: boolean }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [fading, setFading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -358,14 +358,18 @@ export function CyclingPhoneMockup({ visible = true }: { visible?: boolean }) {
 
           {/* Screen content */}
           <div
-            style={{
-              position: 'absolute', inset: 0,
-              opacity: fading ? 0 : 1,
-              transition: 'opacity 0.3s ease',
-              overflow: 'hidden',
-              paddingTop: 22,
-            }}
-          >
+  style={{
+    position: 'absolute', inset: 0,
+    opacity: fading ? 0 : 1,
+    transition: 'opacity 0.3s ease',
+    overflow: 'hidden',
+    paddingTop: 22,
+    willChange: 'opacity',
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    transform: 'translateZ(0)',
+  }}
+>
             {SLIDES[activeIdx].component}
           </div>
 
@@ -380,26 +384,30 @@ export function CyclingPhoneMockup({ visible = true }: { visible?: boolean }) {
         <div style={{ position: 'absolute', right: -4, top: 100, width: 3, height: 56, background: '#374151', borderRadius: '0 2px 2px 0' }} />
       </div>
 
-      {/* Dot + label indicators */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 20 }}>
-        {SLIDES.map((s, i) => (
-          <button
-            key={s.label}
-            onClick={() => goTo(i)}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            <div style={{ width: i === activeIdx ? 22 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? '#4ade80' : 'rgba(255,255,255,0.15)', transition: 'all 0.3s ease' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: i === activeIdx ? '#4ade80' : 'rgba(255,255,255,0.2)', transition: 'color 0.3s ease' }}>
-              {s.label}
-            </span>
-          </button>
-        ))}
-      </div>
+{/* Dot + label indicators */}
+      {!hideIndicators && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 20 }}>
+          {SLIDES.map((s, i) => (
+            <button
+              key={s.label}
+              onClick={() => goTo(i)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              <div style={{ width: i === activeIdx ? 22 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? '#4ade80' : 'rgba(255,255,255,0.15)', transition: 'all 0.3s ease' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: i === activeIdx ? '#4ade80' : 'rgba(255,255,255,0.2)', transition: 'color 0.3s ease' }}>
+                {s.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Caption */}
-      <p style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: '#64748b', opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease' }}>
-        {SLIDES[activeIdx].caption}
-      </p>
+      {!hideIndicators && (
+        <p style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: '#64748b', opacity: fading ? 0 : 1, transition: 'opacity 0.3s ease' }}>
+          {SLIDES[activeIdx].caption}
+        </p>
+      )}
     </div>
   );
 }

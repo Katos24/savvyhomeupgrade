@@ -103,7 +103,7 @@ export default function LeadModalSection() {
             ))}
           </div>
 
-          {/* RIGHT — modal screenshot + phone overlay */}
+          {/* RIGHT — modal screenshot + bigger phone overlay */}
           <div className="relative order-1 lg:order-2">
 
             {/* Glow */}
@@ -118,18 +118,18 @@ export default function LeadModalSection() {
               />
             </div>
 
-            {/* Floating phone — bottom left */}
+            {/* Floating phone — bigger, bottom left */}
             <div
-              className="absolute -bottom-8 -left-4 lg:-left-16 z-10 hidden sm:block"
+              className="absolute -bottom-10 -left-6 lg:-left-20 z-10 hidden sm:block"
               style={{
-                filter: 'drop-shadow(0 24px 40px rgba(0,0,0,0.25))',
+                filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.35))',
                 opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(16px)',
+                transform: visible ? 'translateY(0)' : 'translateY(20px)',
                 transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
               }}
             >
-              <div style={{ transform: 'scale(0.58)', transformOrigin: 'bottom left' }}>
-                <CyclingPhoneMockup visible={visible} />
+              <div style={{ transform: 'scale(0.75)', transformOrigin: 'bottom left' }}>
+<CyclingPhoneMockup visible={visible} hideIndicators />
               </div>
             </div>
 
