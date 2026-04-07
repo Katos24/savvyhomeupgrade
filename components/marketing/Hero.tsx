@@ -18,71 +18,60 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1a6645]/10 border border-[#1a6645]/20 mb-6">
             <Zap size={12} className="text-[#1a6645] fill-[#1a6645]" />
             <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#1a6645]">
-              Lead-to-payment platform for home service contractors
+              For Residential Contractors
             </p>
           </div>
 
           {/* Headline */}
           <h1
-            className="text-[#0F1F3D] font-[900] tracking-tight leading-[0.95] mb-4 max-w-4xl"
+            className="text-[#0F1F3D] font-[900] tracking-tight leading-[0.95] mb-6 max-w-4xl"
             style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)' }}
           >
             One job pays for <br className="hidden sm:block" />
             <span className="text-[#1a6645]">the whole year.</span>
           </h1>
 
-          {/* Product descriptor — what it actually is */}
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-4">
-            Custom lead form · Job dashboard · Quotes · Payments · Emails
+          {/* Sub-copy — outcome-first */}
+          <p className="text-slate-600 max-w-xl mb-10 text-base sm:text-lg md:text-xl font-medium leading-relaxed px-4">
+            One QR code on your truck. Leads come in automatically. You schedule, quote, and collect — without chasing anyone.
           </p>
 
-          {/* Sub-copy */}
-          <p className="text-slate-600 max-w-xl mb-10 text-base sm:text-lg font-medium leading-relaxed px-2">
-            Sign up and get your own branded form link and QR code. Customers fill it out — every lead lands on your dashboard automatically. Schedule, quote, collect, and send emails in one click.
-          </p>
-
-          <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto sm:max-w-none">
+          <div className="flex flex-col items-center gap-8 w-full">
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto"
+              className="group relative inline-flex items-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto justify-center"
               style={{
-                fontSize: '1.05rem',
-                padding: '1.1rem 2.5rem',
+                fontSize: '1.1rem',
+                padding: '1.2rem 3rem',
                 background: '#0F1F3D',
                 boxShadow: '0 20px 40px -12px rgba(15,31,61,0.35)',
               }}
             >
               Claim Your Branded Link Free
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-              No credit card · Live in 2 minutes
-            </p>
-
-            {/* Two links — clean stack on mobile */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto sm:gap-8">
-              <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                <div className="w-9 h-9 rounded-xl bg-[#1a6645]/10 flex items-center justify-center shrink-0">
-                  <ImageIcon size={16} className="text-[#1a6645]" />
+            {/* Two links */}
+            <div className="grid grid-cols-1 sm:flex sm:flex-row justify-center gap-4 sm:gap-8 mt-4 w-full sm:w-auto">
+              <div className="flex items-center gap-3 bg-white/50 sm:bg-transparent p-3 sm:p-0 rounded-xl border border-slate-200 sm:border-0">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                  <ImageIcon size={18} className="text-[#1a6645]" />
                 </div>
                 <div className="text-left">
-                  <p className="text-[9px] font-black uppercase text-slate-400 leading-none mb-1">You get</p>
-                  <p className="text-sm font-black text-[#0F1F3D]">Your Customer Form Link</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Customers fill it out, leads land instantly</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">Link 01</p>
+                  <p className="text-xs font-bold text-[#0F1F3D] tracking-tight">Your Customer Portal</p>
                 </div>
               </div>
 
-              <div className="hidden sm:block w-px h-10 bg-slate-300" />
+              <div className="w-px h-8 bg-slate-300 hidden sm:block self-center" />
 
-              <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                <div className="w-9 h-9 rounded-xl bg-[#1a6645]/10 flex items-center justify-center shrink-0">
-                  <ListChecks size={16} className="text-[#1a6645]" />
+              <div className="flex items-center gap-3 bg-white/50 sm:bg-transparent p-3 sm:p-0 rounded-xl border border-slate-200 sm:border-0">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                  <ListChecks size={18} className="text-[#1a6645]" />
                 </div>
                 <div className="text-left">
-                  <p className="text-[9px] font-black uppercase text-slate-400 leading-none mb-1">You get</p>
-                  <p className="text-sm font-black text-[#0F1F3D]">Your Management Dashboard</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Schedule, quote, pay, email — one place</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">Link 02</p>
+                  <p className="text-xs font-bold text-[#0F1F3D] tracking-tight">Management Board</p>
                 </div>
               </div>
             </div>
