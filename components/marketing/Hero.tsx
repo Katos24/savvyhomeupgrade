@@ -57,7 +57,7 @@ export default function Hero() {
   return (
     <section className="relative min-h-screen bg-[#020617] flex items-center overflow-hidden pt-20">
       
-      {/* Background */}
+      {/* Backgroundd */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,#1e293b_0%,transparent_70%)] opacity-50" />
       <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full" />
 
