@@ -117,16 +117,8 @@ const inputRef = useRef<HTMLInputElement | null>(null);
   const color2 = brandColor2 || '#3b82f6';
 
   return (
-    <div
-      className="fixed inset-0 z-50 px-4"
-      style={{
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(4px)',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch',
-      }}
-    >
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl mx-auto my-8">
+<div className="w-full max-w-2xl mx-auto px-4 py-6">
+      <div className="w-full bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
 
         {/* Header */}
         <div

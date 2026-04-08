@@ -318,67 +318,67 @@ export default function UploadForm({
         <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
       ))}
 
-      {showHeader && company && (
+       {showHeader && company && (
         <>
           <FormHeader company={company} />
-          <FormHero company={company} ctaHeading={getCtaHeading()} />
+          {step === 1 && <FormHero company={company} ctaHeading={getCtaHeading()} />}
         </>
       )}
 
-      <main className="pb-16">
+     <main className="pb-16">
         {step === 1 && (
-         <UploadFormStepOne
-  formData={step1Data}
-  categories={categories}
-  onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
-  onSubmit={handleStep1Submit}
-  submitting={submittingStep1}
-  error={step1Error}
-  ctaHeading={getCtaHeading()}
-  headerSubtitle={headerSubtitle}
-  logoUrl={company?.logo_url}
-  companyName={company?.name}
-  companyWebsite={company?.website}
-  brandColor1={company?.email_brand_color_1}
-  brandColor2={company?.email_brand_color_2}
-  showHeader={false}
-  hasStep2={hasStep2Content}
-  businessType={businessType}
-/>
-        )}
-
-        {step === 2 && (
-          <UploadFormStepTwo
-            formData={step2Data}
-            customAnswers={customAnswers}
-            customQuestions={customQuestions}
-            files={files}
-            filePreviews={filePreviews}
-            submitting={submittingStep2}
-            compressing={compressing}
-            uploadProgress={uploadProgress}
-            error={step2Error}
-            addressConfig={{ show: fieldConfig.address.enabled, required: fieldConfig.address.required }}
-            fieldConfig={fieldConfig}
-            ctaButtonText={getCtaButtonText()}
+          <UploadFormStepOne
+            formData={step1Data}
+            categories={categories}
+            onChange={(field, value) => setStep1Data(prev => ({ ...prev, [field]: value }))}
+            onSubmit={handleStep1Submit}
+            submitting={submittingStep1}
+            error={step1Error}
+            ctaHeading={getCtaHeading()}
+            headerSubtitle={headerSubtitle}
+            logoUrl={company?.logo_url}
+            companyName={company?.name}
+            companyWebsite={company?.website}
             brandColor1={company?.email_brand_color_1}
             brandColor2={company?.email_brand_color_2}
-            companyWebsite={company?.website}
-            companyName={company?.name}
-            isDragging={isDragging}
-            onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
-            onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
-            onFileChange={handleFileChange}
-            onDrop={handleDrop}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onRemoveFile={removeFile}
-            onSubmit={handleStep2Submit}
-            onSkip={handleSkip}
+            showHeader={false}
+            hasStep2={hasStep2Content}
+            businessType={businessType}
           />
         )}
       </main>
+
+      {step === 2 && (
+        <UploadFormStepTwo
+          formData={step2Data}
+          customAnswers={customAnswers}
+          customQuestions={customQuestions}
+          files={files}
+          filePreviews={filePreviews}
+          submitting={submittingStep2}
+          compressing={compressing}
+          uploadProgress={uploadProgress}
+          error={step2Error}
+          addressConfig={{ show: fieldConfig.address.enabled, required: fieldConfig.address.required }}
+          fieldConfig={fieldConfig}
+          ctaButtonText={getCtaButtonText()}
+          brandColor1={company?.email_brand_color_1}
+          brandColor2={company?.email_brand_color_2}
+          companyWebsite={company?.website}
+          companyName={company?.name}
+          isDragging={isDragging}
+          onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
+          onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
+          onFileChange={handleFileChange}
+          onDrop={handleDrop}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onRemoveFile={removeFile}
+          onSubmit={handleStep2Submit}
+          onSkip={handleSkip}
+        />
+      )}
     </div>
   );
 }
