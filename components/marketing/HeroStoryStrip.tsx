@@ -137,8 +137,8 @@ export function HeroStoryStrip() {
             title="You close the job"
             caption="Manage the entire project life-cycle. From the first 'Hello' to the final 'Paid in Full' notification, all in one dashboard."
           />
-          <div className="w-full overflow-hidden">
-            <div className="scale-75 lg:scale-100 origin-top-left lg:origin-top-left -mb-16 lg:mb-0">
+         <div className="w-full overflow-visible">
+            <div className="scale-75 lg:scale-90 origin-top-left -mb-16 lg:-mb-8">
               <DashboardLaptopMockup />
             </div>
           </div>
