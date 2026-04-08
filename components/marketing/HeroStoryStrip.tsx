@@ -21,128 +21,99 @@ function useFadeUp() {
   return { ref, visible };
 }
 
-// ── Desktop horizontal connector ─────────────────────────────────────────────
 function HConnector({ visible }: { visible: boolean }) {
   return (
-    <div className="hidden lg:flex flex-col items-center justify-center shrink-0 px-2"
+    <div className="hidden lg:flex flex-col items-center justify-center shrink-0 px-4"
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.6s 0.4s' }}>
-      <div style={{ width: 32, height: 1, background: 'repeating-linear-gradient(90deg,#334155 0,#334155 5px,transparent 5px,transparent 10px)' }} />
-      <div className="flex items-center justify-center w-6 h-6 rounded-full my-1" style={{ background: '#1e293b', border: '1px solid #334155' }}>
-        <ArrowRight size={11} className="text-blue-400" />
+      <div style={{ width: 40, height: 1, background: 'repeating-linear-gradient(90deg,#475569 0,#475569 5px,transparent 5px,transparent 10px)' }} />
+      <div className="flex items-center justify-center w-7 h-7 rounded-full my-1.5"
+        style={{ background: '#1e293b', border: '1px solid #475569' }}>
+        <ArrowRight size={12} className="text-blue-400" />
       </div>
-      <div style={{ width: 32, height: 1, background: 'repeating-linear-gradient(90deg,#334155 0,#334155 5px,transparent 5px,transparent 10px)' }} />
+      <div style={{ width: 40, height: 1, background: 'repeating-linear-gradient(90deg,#475569 0,#475569 5px,transparent 5px,transparent 10px)' }} />
     </div>
   );
 }
 
-// ── Mobile vertical connector ─────────────────────────────────────────────────
 function VConnector({ visible }: { visible: boolean }) {
   return (
-    <div className="flex lg:hidden flex-col items-center my-2"
+    <div className="flex lg:hidden flex-col items-center my-6"
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.6s 0.4s' }}>
-      <div style={{ width: 1, height: 20, background: 'repeating-linear-gradient(180deg,#334155 0,#334155 5px,transparent 5px,transparent 10px)' }} />
-      <div className="flex items-center justify-center w-6 h-6 rounded-full my-1" style={{ background: '#1e293b', border: '1px solid #334155' }}>
-        <ChevronDown size={11} className="text-blue-400" />
+      <div style={{ width: 1, height: 24, background: 'repeating-linear-gradient(180deg,#475569 0,#475569 5px,transparent 5px,transparent 10px)' }} />
+      <div className="flex items-center justify-center w-7 h-7 rounded-full my-1.5"
+        style={{ background: '#1e293b', border: '1px solid #475569' }}>
+        <ChevronDown size={12} className="text-blue-400" />
       </div>
-      <div style={{ width: 1, height: 20, background: 'repeating-linear-gradient(180deg,#334155 0,#334155 5px,transparent 5px,transparent 10px)' }} />
+      <div style={{ width: 1, height: 24, background: 'repeating-linear-gradient(180deg,#475569 0,#475569 5px,transparent 5px,transparent 10px)' }} />
     </div>
   );
 }
 
-// ── Step label ────────────────────────────────────────────────────────────────
 function StepLabel({ number, title, caption }: { number: string; title: string; caption: string }) {
   return (
-    <div className="mb-4 text-center lg:text-left">
-      <div className="flex items-center justify-center lg:justify-start gap-2 mb-1.5">
-        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-black"
+    <div className="mb-5 text-center lg:text-left">
+      <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-black"
           style={{ background: 'linear-gradient(135deg,#2563eb,#4f46e5)', color: '#fff' }}>
           {number}
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">{title}</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400">{title}</p>
       </div>
-      <p className="text-slate-500 text-[12px] font-medium leading-snug max-w-[280px] mx-auto lg:mx-0">{caption}</p>
+      <p className="text-slate-300 text-[13px] font-medium leading-relaxed max-w-[280px] mx-auto lg:mx-0">{caption}</p>
     </div>
   );
 }
 
-// ── Panel ─────────────────────────────────────────────────────────────────────
-function Panel({ children, visible, delay }: { children: React.ReactNode; visible: boolean; delay: number }) {
-  return (
-    <div
-      className="flex flex-col items-center lg:items-start flex-1 min-w-fit w-full"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(24px)',
-        transition: `all 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 export function HeroStoryStrip() {
   const { ref, visible } = useFadeUp();
 
+  const panelStyle = (delay: number) => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(24px)',
+    transition: `all 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+  });
+
   return (
     <div ref={ref} className="w-full">
-      <div className="flex flex-col lg:flex-row items-center lg:items-start lg:gap-0 w-full">
+      <div className="flex flex-col lg:flex-row items-center lg:items-start w-full">
 
         {/* Panel 1 — QR */}
-        <Panel visible={visible} delay={0}>
-          <StepLabel
-            number="1"
-            title="Scan or share"
-            caption="We give you a custom QR & URL. Put it on your business card, truck, or lawn signs. It’s your 24/7 digital storefront."
-          />
-          <div className="w-full max-w-[260px] lg:max-w-full rounded-2xl overflow-hidden border border-white/8 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+        <div className="flex flex-col items-center lg:items-start w-full lg:flex-1 min-w-0" style={panelStyle(0)}>
+          <StepLabel number="1" title="Scan or share"
+            caption="A custom QR code and link — yours the moment you sign up. Put it on your truck, yard signs, or social. Your 24/7 lead machine." />
+          <div className="w-full max-w-[280px] lg:max-w-none rounded-2xl overflow-hidden border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
             <img
               src="/images/qr-scan-2.png"
               alt="Customer scanning QR code"
               className="w-full h-auto block"
-              style={{ maxHeight: 300, objectFit: 'cover', objectPosition: 'center' }}
+              style={{ maxHeight: 280, objectFit: 'cover', objectPosition: 'center' }}
             />
-            <div className="absolute bottom-0 inset-x-0 px-3 py-2" style={{ background: 'linear-gradient(to top,rgba(2,6,23,0.9),transparent)' }}>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-white text-[10px] font-black uppercase tracking-widest">Live on your truck</p>
-              </div>
-            </div>
           </div>
-        </Panel>
+        </div>
 
         <HConnector visible={visible} />
         <VConnector visible={visible} />
 
-        {/* Panel 2 — Form */}
-        <Panel visible={visible} delay={0.15}>
-          <StepLabel
-            number="2"
-            title="They fill it out"
-            caption="Customers answer your specific questions and upload photos. You get high-intent leads with all the data you need to quote immediately."
-          />
-          <div className="flex justify-center w-full">
-            <FastDemoForm autoPlay />
-          </div>
-        </Panel>
+        {/* Panel 2 — Form — shrink-0 so phone never gets crushed */}
+        <div className="flex flex-col items-center lg:items-start shrink-0" style={panelStyle(0.15)}>
+          <StepLabel number="2" title="They fill it out"
+            caption="Customers answer your questions and upload photos. You get a complete lead — ready to quote, instantly." />
+          <FastDemoForm autoPlay />
+        </div>
 
         <HConnector visible={visible} />
         <VConnector visible={visible} />
 
         {/* Panel 3 — Dashboard */}
-        <Panel visible={visible} delay={0.3}>
-          <StepLabel
-            number="3"
-            title="You close the job"
-            caption="Manage the entire project life-cycle. From the first 'Hello' to the final 'Paid in Full' notification, all in one dashboard."
-          />
-         <div className="w-full overflow-visible">
-            <div className="scale-75 lg:scale-90 origin-top-left -mb-16 lg:-mb-8">
+        <div className="flex flex-col items-center lg:items-start w-full lg:flex-1 min-w-0" style={panelStyle(0.3)}>
+          <StepLabel number="3" title="You close the job"
+            caption="Every lead lands on your dashboard. Schedule, quote, collect payment, and send branded emails — one click each." />
+          <div className="w-full overflow-visible">
+  <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', marginBottom: '-15%' }}>
               <DashboardLaptopMockup />
             </div>
           </div>
-        </Panel>
+        </div>
 
       </div>
     </div>

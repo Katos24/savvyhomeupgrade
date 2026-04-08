@@ -7,7 +7,8 @@ import HeroDashboardDemo from '@/components/marketing/HeroDashboardDemo';
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-[#F7F5F0]" style={{ paddingTop: 'clamp(6rem, 12vw, 9rem)', paddingBottom: '3rem' }}>
+    <section className="relative overflow-hidden bg-[#F7F5F0]"
+      style={{ paddingTop: 'clamp(6rem, 12vw, 9rem)', paddingBottom: '3rem' }}>
 
       {/* Texture */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -16,12 +17,11 @@ export default function Hero() {
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 z-10">
 
         {/* ── Split grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-16 lg:mb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-12 lg:mb-16">
 
           {/* LEFT — copy */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
 
-            {/* Headline */}
             <h1
               className="font-black tracking-tight text-[#0F1F3D] mb-5 max-w-lg lg:max-w-none"
               style={{ fontSize: 'clamp(2.6rem, 7vw, 5rem)', lineHeight: '1.0', letterSpacing: '-0.03em' }}
@@ -30,7 +30,6 @@ export default function Hero() {
               <span className="text-[#1a6645]">Start closing them.</span>
             </h1>
 
-            {/* Sub-copy */}
             <p
               className="text-slate-500 font-medium leading-relaxed mb-8 max-w-md"
               style={{ fontSize: 'clamp(1rem, 2vw, 1.125rem)' }}
@@ -58,23 +57,29 @@ export default function Hero() {
                 14-day free trial · Cancel anytime
               </p>
             </div>
-
           </div>
 
-          {/* RIGHT — dashboard demo */}
+          {/* RIGHT — two cards demo */}
           <div className="relative w-full flex justify-center lg:justify-end order-first lg:order-last">
             <HeroDashboardDemo />
           </div>
+        </div>
 
+        {/* ── Bridge label ── */}
+        <div className="flex flex-col items-center mb-6">
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
+            See how it works
+          </p>
+          <div className="w-px h-8 bg-gradient-to-b from-slate-300 to-transparent" />
         </div>
 
         {/* ── Dark story strip ── */}
-       <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
-  style={{ padding: 'clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 3rem) clamp(3rem, 6vw, 5rem)' }}>
-  <div className="relative w-full">
-    <HeroStoryStrip />
-  </div>
-</div>
+        <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
+          style={{ padding: 'clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2.5rem) clamp(3rem, 6vw, 5rem)' }}>
+          <div className="w-full overflow-hidden">
+            <HeroStoryStrip />
+          </div>
+        </div>
 
       </div>
     </section>

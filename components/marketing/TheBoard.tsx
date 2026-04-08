@@ -1,108 +1,65 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
-import { 
-  LayoutGrid, List, Calendar, Mail, ChevronRight, 
-  Search, Plus, Sun, Moon, DollarSign, Bell, Filter, 
-  XCircle 
-} from 'lucide-react';
+import { useState } from 'react';
+import { LayoutGrid, List, Calendar, Mail, ChevronRight, Search, Plus, Sun, Moon, DollarSign, Bell, Filter } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
-
-// ── Data ─────────────────────────────────────────────────────────────────────
 
 const LEADS = [
   { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
-  { name: 'Kim Gutters',       status: 'Won',         statusColor: '#10b981', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', paid: true,  assigned: '—',        category: 'Gutters'  },
-  { name: 'Martinez Siding',   status: 'Quote Sent',  statusColor: '#eab308', date: '—',      time: '—',        amount: '$5,200', paid: false, assigned: 'Dave R.',  category: 'Siding'   },
-  { name: 'David Reyes',       status: 'New',         statusColor: '#10b981', date: '—',      time: '—',        amount: '—',      paid: false, assigned: '—',        category: 'Gutters'  },
-  { name: 'ProClean Services', status: 'Won',         statusColor: '#10b981', date: 'Apr 15', time: '2:00 PM',  amount: '$1,800', paid: true,  assigned: 'Mike T.',  category: 'Cleaning' },
-  { name: 'Apex Fencing',      status: 'Contacted',   statusColor: '#f97316', date: 'Apr 18', time: '10:00 AM', amount: '$3,100', paid: false, assigned: 'Dave R.',  category: 'Fencing'  },
+  { name: 'Kim Gutters',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', paid: true,  assigned: '—',        category: 'Gutters'  },
+  { name: 'Martinez Siding',   status: 'Quote Sent', statusColor: '#eab308', date: '—',      time: '—',        amount: '$5,200', paid: false, assigned: 'Dave R.',  category: 'Siding'   },
+  { name: 'David Reyes',       status: 'New',        statusColor: '#10b981', date: '—',      time: '—',        amount: '—',      paid: false, assigned: '—',        category: 'Gutters'  },
+  { name: 'ProClean Services', status: 'Won',        statusColor: '#10b981', date: 'Apr 15', time: '2:00 PM',  amount: '$1,800', paid: true,  assigned: 'Mike T.',  category: 'Cleaning' },
+  { name: 'Apex Fencing',      status: 'Contacted',  statusColor: '#f97316', date: 'Apr 18', time: '10:00 AM', amount: '$3,100', paid: false, assigned: 'Dave R.',  category: 'Fencing'  },
 ];
 
 const STATS = [
-  { label: 'Total Leads',   value: '168', color: '#f9fafb' },
-  { label: 'Active Jobs',   value: '63',  color: '#3b82f6' },
-  { label: 'Revenue',       value: '$102k', color: '#10b981' },
-  { label: 'Pending',       value: '$122k', color: '#f59e0b' },
+  { label: 'Total Leads', value: '168', color: '#f9fafb'  },
+  { label: 'Active Jobs', value: '63',  color: '#3b82f6'  },
+  { label: 'Revenue',     value: '$102k', color: '#10b981' },
+  { label: 'Pending',     value: '$122k', color: '#f59e0b' },
 ];
 
 const CAL_EVENTS: Record<number, { name: string; color: string }[]> = {
-  12: [{ name: 'Torres',    color: '#6366f1' }],
-  13: [{ name: 'Kim G.',    color: '#10b981' }],
-  15: [{ name: 'ProClean',  color: '#10b981' }],
-  21: [{ name: 'D. Reyes',  color: '#10b981' }, { name: 'Martinez', color: '#eab308' }],
+  12: [{ name: 'Torres',   color: '#6366f1' }],
+  13: [{ name: 'Kim G.',   color: '#10b981' }],
+  15: [{ name: 'ProClean', color: '#10b981' }],
+  21: [{ name: 'D. Reyes', color: '#10b981' }, { name: 'Martinez', color: '#eab308' }],
 };
 
 const OUTBOX = [
-  { type: 'quote',            name: 'Torres Roofing',    detail: '$7,950 quote sent',          time: '2h ago',  color: '#f97316', icon: 'dollar'    },
-  { type: 'schedule',         name: 'Kim Gutters',       detail: 'Apr 13 · 11:00 AM confirmed', time: '5h ago',  color: '#60a5fa', icon: 'calendar'  },
-  { type: 'payment_reminder', name: 'Apex Fencing',      detail: '$3,100 payment reminder',    time: '1d ago',  color: '#fb923c', icon: 'bell'      },
-  { type: 'quote',            name: 'Martinez Siding',   detail: '$5,200 quote sent',          time: '2d ago',  color: '#f97316', icon: 'dollar'    },
-  { type: 'schedule',         name: 'ProClean Services', detail: 'Apr 15 · 2:00 PM confirmed', time: '3d ago',  color: '#60a5fa', icon: 'calendar'  },
+  { type: 'quote',            name: 'Torres Roofing',    detail: '$7,950 quote sent',           time: '2h ago', color: '#f97316', icon: 'dollar'   },
+  { type: 'schedule',         name: 'Kim Gutters',       detail: 'Apr 13 · 11:00 AM confirmed', time: '5h ago', color: '#60a5fa', icon: 'calendar' },
+  { type: 'payment_reminder', name: 'Apex Fencing',      detail: '$3,100 payment reminder',     time: '1d ago', color: '#fb923c', icon: 'bell'     },
+  { type: 'quote',            name: 'Martinez Siding',   detail: '$5,200 quote sent',           time: '2d ago', color: '#f97316', icon: 'dollar'   },
+  { type: 'schedule',         name: 'ProClean Services', detail: 'Apr 15 · 2:00 PM confirmed',  time: '3d ago', color: '#60a5fa', icon: 'calendar' },
 ];
 
 const FILTERS = ['Today', 'Unpaid', 'New', 'Scheduled Today'];
-
 type View = 'cards' | 'table' | 'calendar' | 'outbox';
 
-// ── Sub-panels ────────────────────────────────────────────────────────────────
-
 function CardsPanel({ isDark }: { isDark: boolean }) {
-  const bg = isDark ? 'bg-[#1e293b] border-white/8' : 'bg-white border-slate-200';
-  const text = isDark ? 'text-slate-100' : 'text-slate-900';
+  const bg  = isDark ? 'bg-[#1e293b] border-white/8' : 'bg-white border-slate-200';
+  const txt = isDark ? 'text-slate-100' : 'text-slate-900';
   const sub = isDark ? 'bg-[#0f172a] border-white/5' : 'bg-slate-50 border-slate-100';
-
   return (
-    /* Added px-4 so cards don't hit the "walls" of the browser shell */
-    <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 h-full overflow-y-auto pb-6 px-4 no-scrollbar">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 h-full overflow-y-auto pb-6 no-scrollbar">
       {LEADS.map(lead => (
-        <div key={lead.name} className={`flex rounded-xl overflow-hidden border shadow-sm shrink-0 transition-all active:scale-[0.99] ${bg}`}>
-          {/* Slimmer Sidebar Status Strip */}
+        <div key={lead.name} className={`flex rounded-xl overflow-hidden border ${bg}`}>
           <div className="w-1 shrink-0" style={{ background: lead.statusColor }} />
-          
-          <div className="p-2.5 flex-1 min-w-0 flex flex-col justify-between">
-            <div>
-              {/* Header Row: Status & Category */}
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-                  style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>
-                  {lead.status}
-                </span>
-                <span className="text-[7px] font-bold text-slate-500 uppercase tracking-tighter">
-                  {lead.category}
-                </span>
-              </div>
-
-              {/* Project Name - Slimmer text */}
-              <div className={`text-[12px] font-black mb-1.5 truncate tracking-tight ${text}`}>
-                {lead.name}
-              </div>
-              
-              {/* Ultra-Condensed Data Grid */}
-              <div className={`grid grid-cols-2 gap-0.5 p-1.5 rounded-lg mb-1.5 border ${sub}`}>
-                <div className="px-1">
-                  <div className="text-[6px] text-slate-400 font-black uppercase tracking-widest">Date</div>
-                  <div className="text-[9px] font-black text-indigo-500 truncate">{lead.date}</div>
-                </div>
-                <div className="border-l border-slate-200/20 px-2">
-                  <div className="text-[6px] text-slate-400 font-black uppercase tracking-widest">Arrival</div>
-                  <div className="text-[9px] font-black text-slate-500 truncate">{lead.time}</div>
-                </div>
-              </div>
+          <div className="p-2.5 flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>{lead.status}</span>
+              <span className="text-[7px] text-slate-500">{lead.category}</span>
             </div>
-
-            {/* Footer Row: Slimmer spacing */}
-            <div className="flex justify-between items-end">
-              <div className="flex flex-col">
-                <span className="text-[11px] font-black text-emerald-500 leading-none">{lead.amount}</span>
-                <span className={`text-[6px] font-black uppercase mt-0.5 ${lead.paid ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
-                  {lead.paid ? 'Paid' : 'Unpaid'}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[7px] font-bold text-slate-400 italic">@{lead.assigned.split(' ')[0]}</span>
-                <ChevronRight size={12} className="text-slate-400" />
-              </div>
+            <div className={`text-[11px] font-black mb-1.5 truncate ${txt}`}>{lead.name}</div>
+            <div className={`grid grid-cols-2 gap-0.5 p-1.5 rounded-lg border ${sub} mb-1.5`}>
+              <div><div className="text-[6px] text-slate-400 font-black uppercase">Date</div><div className="text-[9px] font-black text-indigo-500">{lead.date}</div></div>
+              <div className="border-l border-slate-200/20 pl-1.5"><div className="text-[6px] text-slate-400 font-black uppercase">Time</div><div className="text-[9px] font-black text-slate-500">{lead.time}</div></div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-emerald-500">{lead.amount}</span>
+              <ChevronRight size={11} className="text-slate-400" />
             </div>
           </div>
         </div>
@@ -112,45 +69,29 @@ function CardsPanel({ isDark }: { isDark: boolean }) {
 }
 
 function TablePanel({ isDark }: { isDark: boolean }) {
-  const headText = isDark ? 'text-slate-500' : 'text-slate-400';
-  const rowText = isDark ? 'text-white' : 'text-slate-900';
-  const borderCol = isDark ? 'border-white/5' : 'border-slate-100';
-
+  const headTxt  = isDark ? 'text-slate-500' : 'text-slate-400';
+  const rowTxt   = isDark ? 'text-white' : 'text-slate-900';
+  const borderCl = isDark ? 'border-white/5' : 'border-slate-100';
   return (
     <div className="overflow-x-auto h-full pb-4">
-      <table className="w-full border-collapse" style={{ minWidth: 560 }}>
+      <table className="border-collapse" style={{ minWidth: 520, width: '100%' }}>
         <thead>
-          <tr className={`text-[9px] font-black uppercase tracking-widest ${headText}`}>
-            {['Name', 'Category', 'Status', 'Scheduled', 'Assigned', 'Amount', 'Payment'].map(h => (
-              <th key={h} className={`p-2.5 text-left border-b ${borderCol} whitespace-nowrap`}>{h}</th>
+          <tr className={`text-[9px] font-black uppercase tracking-widest ${headTxt}`}>
+            {['Name','Category','Status','Scheduled','Assigned','Amount','Payment'].map(h => (
+              <th key={h} className={`p-2 text-left border-b ${borderCl} whitespace-nowrap`}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {LEADS.map(lead => (
-            <tr key={lead.name} className={`text-[11px] border-b ${borderCol} ${isDark ? 'hover:bg-white/3' : 'hover:bg-slate-50'} transition-colors cursor-pointer`}>
-              <td className={`p-2.5 font-black whitespace-nowrap ${rowText}`}>{lead.name}</td>
-              <td className="p-2.5 whitespace-nowrap">
-                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${isDark ? 'bg-sky-500/15 text-sky-300 border border-sky-500/20' : 'bg-sky-100 text-sky-700'}`}>
-                  {lead.category}
-                </span>
-              </td>
-              <td className="p-2.5 whitespace-nowrap">
-                <span className="px-1.5 py-0.5 rounded text-[8px] font-black text-white" style={{ background: lead.statusColor }}>
-                  {lead.status}
-                </span>
-              </td>
-              <td className={`p-2.5 whitespace-nowrap font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{lead.date}</td>
-              <td className="p-2.5 whitespace-nowrap">
-                {lead.assigned !== '—'
-                  ? <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${isDark ? 'bg-violet-500/15 text-violet-300 border border-violet-500/20' : 'bg-violet-100 text-violet-700'}`}>{lead.assigned}</span>
-                  : <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>—</span>
-                }
-              </td>
-              <td className="p-2.5 whitespace-nowrap font-black text-emerald-500">{lead.amount}</td>
-              <td className={`p-2.5 whitespace-nowrap font-black ${lead.paid ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {lead.paid ? 'Paid' : 'Unpaid'}
-              </td>
+            <tr key={lead.name} className={`text-[11px] border-b ${borderCl}`}>
+              <td className={`p-2 font-black whitespace-nowrap ${rowTxt}`}>{lead.name}</td>
+              <td className="p-2 whitespace-nowrap"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${isDark ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-100 text-sky-700'}`}>{lead.category}</span></td>
+              <td className="p-2 whitespace-nowrap"><span className="px-1.5 py-0.5 rounded text-[8px] font-black text-white" style={{ background: lead.statusColor }}>{lead.status}</span></td>
+              <td className={`p-2 whitespace-nowrap font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{lead.date}</td>
+              <td className="p-2 whitespace-nowrap">{lead.assigned !== '—' ? <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${isDark ? 'bg-violet-500/15 text-violet-300' : 'bg-violet-100 text-violet-700'}`}>{lead.assigned}</span> : <span className="text-slate-500">—</span>}</td>
+              <td className="p-2 whitespace-nowrap font-black text-emerald-500">{lead.amount}</td>
+              <td className={`p-2 whitespace-nowrap font-black ${lead.paid ? 'text-emerald-500' : 'text-rose-500'}`}>{lead.paid ? 'Paid' : 'Unpaid'}</td>
             </tr>
           ))}
         </tbody>
@@ -163,23 +104,15 @@ function CalendarPanel({ isDark }: { isDark: boolean }) {
   const cells = [...Array(3).fill(null), ...Array.from({ length: 30 }, (_, i) => i + 1)];
   while (cells.length % 7 !== 0) cells.push(null);
   return (
-    <div className="h-full overflow-y-auto pb-4">
+    <div className="h-full overflow-y-auto pb-4 no-scrollbar">
       <div className="grid grid-cols-7 gap-px">
-        {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-[8px] font-black text-slate-500 uppercase text-center py-1">{d}</div>
-        ))}
+        {['S','M','T','W','T','F','S'].map((d, i) => <div key={i} className="text-[8px] font-black text-slate-500 text-center py-1">{d}</div>)}
         {cells.map((day, i) => {
           const events = day ? (CAL_EVENTS[day] || []) : [];
           return (
-            <div key={i} className={`min-h-[44px] p-1 border text-[9px] ${
-              day ? (isDark ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100') : 'border-transparent'
-            }`}>
-              {day && <span className="font-black text-slate-400">{day}</span>}
-              {events.map((ev, j) => (
-                <div key={j} className="text-[7px] font-black text-white px-1 py-0.5 rounded truncate mt-0.5" style={{ background: ev.color }}>
-                  {ev.name}
-                </div>
-              ))}
+            <div key={i} className={`min-h-[40px] p-1 border ${day ? (isDark ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100') : 'border-transparent'}`}>
+              {day && <span className="text-[9px] font-black text-slate-400">{day}</span>}
+              {events.map((ev, j) => <div key={j} className="text-[7px] font-black text-white px-1 py-0.5 rounded truncate mt-0.5" style={{ background: ev.color }}>{ev.name}</div>)}
             </div>
           );
         })}
@@ -189,60 +122,40 @@ function CalendarPanel({ isDark }: { isDark: boolean }) {
 }
 
 function OutboxPanel({ isDark }: { isDark: boolean }) {
-  const icons: Record<string, React.ReactNode> = {
-    dollar:   <DollarSign size={14} />,
-    calendar: <Mail size={14} />,
-    bell:     <Bell size={14} />,
-  };
-
+  const icons: Record<string, React.ReactNode> = { dollar: <DollarSign size={13} />, calendar: <Mail size={13} />, bell: <Bell size={13} /> };
   return (
-    <div className="h-full overflow-y-auto pb-4 space-y-2">
-      {/* Stats row */}
+    <div className="h-full overflow-y-auto pb-4 space-y-2 no-scrollbar">
       <div className="grid grid-cols-3 gap-2 mb-3">
-        {[
-          { label: 'Sent',     value: '47', color: '#f9fafb' },
-          { label: 'Quotes',   value: '$28k', color: '#f97316' },
-          { label: 'Reminders',value: '8',  color: '#60a5fa' },
-        ].map(s => (
+        {[{ label: 'Sent', value: '47', color: '#f9fafb' }, { label: 'Quotes', value: '$28k', color: '#f97316' }, { label: 'Reminders', value: '8', color: '#60a5fa' }].map(s => (
           <div key={s.label} className={`p-2.5 rounded-xl border ${isDark ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
             <p className="text-[7px] font-black uppercase text-slate-500 tracking-widest mb-1">{s.label}</p>
             <p className="text-[13px] font-black" style={{ color: s.color }}>{s.value}</p>
           </div>
         ))}
       </div>
-
-      {/* Email rows */}
       {OUTBOX.map((email, i) => (
-        <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer ${isDark ? 'bg-[#0d1117] border-white/5 hover:bg-white/3' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: `${email.color}15`, border: `1px solid ${email.color}30`, color: email.color }}>
-            {icons[email.icon]}
-          </div>
+        <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'bg-[#0d1117] border-white/5' : 'bg-white border-slate-100'}`}>
+          <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${email.color}15`, color: email.color }}>{icons[email.icon]}</div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: email.color }}>
-                {email.type === 'payment_reminder' ? 'Reminder' : email.type.charAt(0).toUpperCase() + email.type.slice(1)}
-              </span>
-            </div>
             <p className={`text-[11px] font-black truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{email.name}</p>
-            <p className={`text-[10px] truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{email.detail}</p>
+            <p className={`text-[9px] truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{email.detail}</p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">{email.time}</span>
+            <span className="text-[9px] text-slate-500">{email.time}</span>
           </div>
         </div>
       ))}
-
-      <p className={`text-center text-[10px] font-black uppercase tracking-widest pt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-        All emails tracked · Nothing missed
-      </p>
     </div>
   );
 }
 
-
-// ── Main ──────────────────────────────────────────────────────────────────────
+const FEATURE_CARDS = [
+  { key: 'cards',    icon: <LayoutGrid size={18} />, color: '#4f46e5', bg: '#eef2ff', title: 'Visual Cards',    badges: ['Color-coded status', 'Category filter', 'One-tap open'],         desc: 'See every lead at a glance. Drag, filter, and act fast.'         },
+  { key: 'table',    icon: <List size={18} />,       color: '#0369a1', bg: '#e0f2fe', title: 'Table View',      badges: ['Bulk edits', 'Sort & filter', 'CSV export'],                   desc: 'Full data table for accounting, reporting, and bulk updates.'   },
+  { key: 'calendar', icon: <Calendar size={18} />,   color: '#15803d', bg: '#dcfce7', title: 'Team Calendar',   badges: ['Crew scheduling', 'Overlap detection', 'Job site map'],        desc: 'Every scheduled job and crew member in one unified view.'        },
+  { key: 'outbox',   icon: <Mail size={18} />,       color: '#c2410c', bg: '#fff7ed', title: 'Email Outbox',    badges: ['Quote tracking', 'Payment reminders', 'Delivery status'],      desc: 'Every email sent, tracked, and logged. Nothing falls through.'  },
+];
 
 export default function TheBoard() {
   const [isDark, setIsDark] = useState(false);
@@ -250,54 +163,44 @@ export default function TheBoard() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const { ref, visible } = useFadeIn();
 
-  const VIEWS: { key: View; icon: React.ReactNode; label: string; activeColor: string; activeBg: string; activeBorder: string }[] = [
-    { key: 'cards',    icon: <LayoutGrid size={15} />, label: 'Visual Cards',   activeColor: '#4f46e5', activeBg: '#eef2ff', activeBorder: '#c7d2fe' },
-    { key: 'table',    icon: <List size={15} />,       label: 'Table View',     activeColor: '#0369a1', activeBg: '#e0f2fe', activeBorder: '#bae6fd' },
-    { key: 'calendar', icon: <Calendar size={15} />,   label: 'Team Calendar',  activeColor: '#15803d', activeBg: '#dcfce7', activeBorder: '#bbf7d0' },
-    { key: 'outbox',   icon: <Mail size={15} />,       label: 'Email Outbox',   activeColor: '#c2410c', activeBg: '#fff7ed', activeBorder: '#fed7aa' },
+  const VIEWS = [
+    { key: 'cards' as View,    icon: <LayoutGrid size={15} />, label: 'Visual Cards',  activeColor: '#4f46e5', activeBg: '#eef2ff', activeBorder: '#c7d2fe' },
+    { key: 'table' as View,    icon: <List size={15} />,       label: 'Table View',    activeColor: '#0369a1', activeBg: '#e0f2fe', activeBorder: '#bae6fd' },
+    { key: 'calendar' as View, icon: <Calendar size={15} />,   label: 'Team Calendar', activeColor: '#15803d', activeBg: '#dcfce7', activeBorder: '#bbf7d0' },
+    { key: 'outbox' as View,   icon: <Mail size={15} />,       label: 'Email Outbox',  activeColor: '#c2410c', activeBg: '#fff7ed', activeBorder: '#fed7aa' },
   ];
 
   return (
-    <section className="py-24 px-4 sm:px-6 bg-[#06080F] overflow-hidden">
+    <section className="py-20 px-4 sm:px-6 bg-[#06080F] overflow-hidden">
       <div className="max-w-6xl mx-auto">
 
-        {/* Header */}
+        {/* Header + tabs */}
         <div ref={ref} className="text-center mb-8 max-w-3xl mx-auto"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-4 text-[#6366f1]">The Last Dashboard You'll Need</p>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3 text-[#6366f1]">The Last Dashboard You'll Need</p>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-3">
             Every lead. Every job. <span className="text-[#1a6645]">One screen.</span>
           </h2>
-          <p className="text-slate-400 font-medium mb-8">Switch views. Your data, your way.</p>
-
-          {/* View tabs — centered, Jobber-style light pills */}
+          <p className="text-slate-400 font-medium mb-7">Switch views. Your data, your way.</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {VIEWS.map(v => {
               const isActive = current === v.key;
               return (
                 <button key={v.key} onClick={() => setCurrent(v.key)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-black transition-all border"
-                  style={isActive ? {
-                    background: v.activeBg,
-                    color: v.activeColor,
-                    borderColor: v.activeBorder,
-                  } : {
-                    background: 'rgba(255,255,255,0.05)',
-                    color: '#64748b',
-                    borderColor: 'rgba(255,255,255,0.1)',
-                  }}>
-                  {v.icon}
-                  <span>{v.label}</span>
+                  style={isActive ? { background: v.activeBg, color: v.activeColor, borderColor: v.activeBorder }
+                    : { background: 'rgba(255,255,255,0.05)', color: '#64748b', borderColor: 'rgba(255,255,255,0.1)' }}>
+                  {v.icon}<span>{v.label}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Theme toggle + shell wrapper */}
+        {/* Theme toggle */}
         <div className="flex justify-end mb-3">
           <button onClick={() => setIsDark(!isDark)}
-            className={`p-2 rounded-xl transition-all border text-[11px] font-bold flex items-center gap-1.5 ${isDark ? 'bg-indigo-500/10 text-amber-400 border-indigo-500/20' : 'bg-white/5 text-slate-400 border-white/10'}`}>
+            className={`p-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 ${isDark ? 'bg-indigo-500/10 text-amber-400 border-indigo-500/20' : 'bg-white/5 text-slate-400 border-white/10'}`}>
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
             {isDark ? 'Light' : 'Dark'}
           </button>
@@ -305,7 +208,6 @@ export default function TheBoard() {
 
         {/* Browser shell */}
         <div className={`rounded-2xl overflow-hidden border shadow-2xl transition-colors duration-500 ${isDark ? 'border-white/8 bg-[#0f172a]' : 'border-slate-200 bg-white'}`}>
-
           {/* URL bar */}
           <div className={`flex items-center gap-3 px-4 py-2.5 border-b ${isDark ? 'bg-[#1a2234] border-white/5' : 'bg-slate-50 border-slate-200'}`}>
             <div className="flex gap-1.5">
@@ -318,23 +220,22 @@ export default function TheBoard() {
             </div>
           </div>
 
-          {/* Dashboard nav */}
+          {/* Nav */}
           <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-sm ${isDark ? 'bg-white border-slate-200' : 'bg-white border-slate-200'}`}>
-                <img src="/images/ridgelinelogo.png" alt="Logo" className="w-5 h-5 object-contain" />
+              <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+                <img src="/images/ridgelinelogo.png" alt="" className="w-5 h-5 object-contain" />
               </div>
               <div className="hidden sm:block">
-                <div className={`text-[13px] font-black leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>Ridge Line Roofing</div>
+                <div className={`text-[13px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Ridge Line Roofing</div>
                 <div className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mt-0.5">Dashboard</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* Search */}
               <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] ${isDark ? 'bg-white/5 border-white/8 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                 <Search size={12} /> Search...
               </div>
-              <div className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-white font-black text-[11px] ${isDark ? 'bg-indigo-600' : 'bg-indigo-600'}`}>
+              <div className="px-3 py-1.5 rounded-xl flex items-center gap-1.5 bg-indigo-600 text-white font-black text-[11px]">
                 <Plus size={12} strokeWidth={3} /> Create
               </div>
             </div>
@@ -343,107 +244,67 @@ export default function TheBoard() {
           {/* Stats */}
           <div className={`flex overflow-x-auto gap-3 px-4 py-3 border-b no-scrollbar ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
             {STATS.map(s => (
-              <div key={s.label} className={`min-w-[100px] flex-1 p-2.5 rounded-xl border shrink-0 ${isDark ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+              <div key={s.label} className={`min-w-[90px] flex-1 p-2.5 rounded-xl border shrink-0 ${isDark ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
                 <p className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-1">{s.label}</p>
-                <p className="text-[17px] font-black" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[16px] font-black" style={{ color: s.color }}>{s.value}</p>
               </div>
             ))}
           </div>
 
-        {/* Filter pills */}
+          {/* Filter pills */}
           <div className={`flex items-center gap-2 px-4 py-2.5 border-b overflow-x-auto no-scrollbar ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-            <Filter size={11} className={isDark ? 'text-slate-600 shrink-0' : 'text-slate-400 shrink-0'} />
+            <Filter size={11} className={`shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
             {FILTERS.map(f => (
               <button key={f} onClick={() => setActiveFilter(activeFilter === f ? null : f)}
-                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
-                  activeFilter === f
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : isDark
-                      ? 'bg-white/4 border-white/8 text-slate-400 hover:border-white/20'
-                      : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
+                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider whitespace-nowrap border transition-all ${
+                  activeFilter === f ? 'bg-indigo-600 text-white border-indigo-600'
+                  : isDark ? 'bg-white/4 border-white/8 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
                 }`}>
                 {f}
               </button>
             ))}
           </div>
 
-          {/* Content Area */}
-          <div className="px-4 pt-3 h-[360px] overflow-hidden relative">
+          {/* Content */}
+          <div className="px-4 pt-3 h-[340px] overflow-hidden relative">
             {current === 'cards'    && <CardsPanel    isDark={isDark} />}
             {current === 'table'    && <TablePanel    isDark={isDark} />}
             {current === 'calendar' && <CalendarPanel isDark={isDark} />}
             {current === 'outbox'   && <OutboxPanel   isDark={isDark} />}
-            
-            {/* Fading overlay */}
-            <div className={`absolute bottom-0 left-0 right-0 h-12 pointer-events-none bg-gradient-to-t ${
-              isDark ? 'from-[#0f172a] to-transparent' : 'from-white to-transparent'
-            }`} />
-          </div>
-        </div> {/* End of Browser Shell */}
-
-        {/* Dynamic Contextual Insight Engine */}
-        <div className="mt-10 max-w-5xl mx-auto">
-          <div className={`p-8 rounded-[2.5rem] border transition-all duration-700 flex flex-col md:flex-row items-center gap-8 ${
-            isDark 
-              ? 'bg-[#0f172a] border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]' 
-              : 'bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.08)]'
-          }`}>
-            
-            {/* Animated Icon Logic */}
-            <div className={`w-20 h-20 rounded-3xl shrink-0 flex items-center justify-center transition-all duration-1000 ${
-              current === 'cards' ? 'bg-indigo-500/10 text-indigo-500 rotate-0' :
-              current === 'table' ? 'bg-sky-500/10 text-sky-500 rotate-[90deg]' :
-              current === 'calendar' ? 'bg-emerald-500/10 text-emerald-500 rotate-[180deg]' :
-              'bg-orange-500/10 text-orange-500 rotate-[270deg]'
-            }`}>
-              <div className="scale-[1.8] transition-transform duration-500">
-                {VIEWS.find(v => v.key === current)?.icon}
-              </div>
-            </div>
-
-            {/* Content Engine */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-                <h3 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  {current === 'cards' && "Visual Board Control"}
-                  {current === 'table' && "High-Velocity Data Table"}
-                  {current === 'calendar' && "Logistics & Crew Stacking"}
-                  {current === 'outbox' && "The Communications Outbox"}
-                </h3>
-                <span className="px-2 py-0.5 rounded-md bg-[#1a6645]/10 text-[#1a6645] text-[10px] font-black uppercase tracking-widest border border-[#1a6645]/20">
-                  Core Module
-                </span>
-              </div>
-              
-              <p className={`text-base font-medium leading-relaxed max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {current === 'cards' && "Instantly see where every dollar is sitting. Our visual cards use real-time status strips and category-driven logic to ensure your team never touches a lead twice."}
-                {current === 'table' && "Engineered for speed. Perform bulk edits, execute mass status updates, and export your entire lead history to CSV with one click for accounting or performance audits."}
-                {current === 'calendar' && "Stop the scheduling overlap. A unified team calendar that maps every job site, arrival window, and crew assignment in a single, high-density view."}
-                {current === 'outbox' && "Total transparency for every email sent. Track quotes, schedule confirmations, and payment reminders with detailed delivery status and historical review."}
-              </p>
-            </div>
-
-            {/* Capabilities Badge */}
-            <div className="shrink-0 flex flex-col items-center md:items-end gap-3 pt-6 md:pt-0 md:border-l md:pl-8 border-slate-100/10">
-              <div className="flex flex-col items-center md:items-end">
-                 <p className="text-[10px] font-black text-[#6366f1] uppercase tracking-[0.2em] mb-1">Capabilities</p>
-                 <div className={`text-[13px] font-black text-right transition-all duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    {current === 'cards' && "AI Project Briefs"}
-                    {current === 'table' && "Bulk CSV Export"}
-                    {current === 'calendar' && "Syncs Everywhere"}
-                    {current === 'outbox' && "Open-Rate Tracking"}
-                 </div>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#1a6645] text-white text-[11px] font-black uppercase tracking-widest rounded-full">
-                Active View
-              </div>
-            </div>
+            <div className={`absolute bottom-0 inset-x-0 h-10 pointer-events-none bg-gradient-to-t ${isDark ? 'from-[#0f172a]' : 'from-white'} to-transparent`} />
           </div>
         </div>
-      </div> {/* Closes max-w-6xl container */}
-      
-      {/* Background aesthetic glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+        {/* Feature cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+          {FEATURE_CARDS.map((card, i) => {
+            const isActive = current === card.key;
+            return (
+              <button key={i} onClick={() => setCurrent(card.key as View)}
+                className="text-left p-5 rounded-2xl border transition-all duration-300"
+                style={isActive ? { background: `${card.bg}`, borderColor: `${card.color}30` }
+                  : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: isActive ? `${card.color}20` : 'rgba(255,255,255,0.05)' }}>
+                  <span style={{ color: isActive ? card.color : '#64748b' }}>{card.icon}</span>
+                </div>
+                <p className="font-black text-[13px] mb-1" style={{ color: isActive ? card.color : '#f8fafc' }}>{card.title}</p>
+                <p className="text-[11px] font-medium leading-relaxed mb-3" style={{ color: isActive ? '#475569' : '#64748b' }}>{card.desc}</p>
+                <div className="flex flex-wrap gap-1">
+                  {card.badges.map((b, j) => (
+                    <span key={j} className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                      style={isActive
+                        ? { background: `${card.color}15`, color: card.color }
+                        : { background: 'rgba(255,255,255,0.06)', color: '#475569' }}>
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+      </div>
     </section>
   );
 }

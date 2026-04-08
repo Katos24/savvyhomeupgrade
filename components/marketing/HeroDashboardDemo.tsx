@@ -1,171 +1,175 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Plus, ChevronRight, QrCode, Wifi } from 'lucide-react';
-
-const EXISTING_LEADS = [
-  { name: 'Marcus Thornton', status: 'Contacted', statusColor: '#f59e0b', date: 'Apr 12', category: 'Roofing', amount: '$7,950' },
-  { name: 'David Reyes',     status: 'Scheduled', statusColor: '#6366f1', date: 'Apr 15', category: 'Gutters', amount: '$2,400' },
-  { name: 'Sarah Kim',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', category: 'Siding',  amount: '$5,200' },
-];
-
-const STATS = [
-  { label: 'Total Leads', value: '168' },
-  { label: 'Active Jobs', value: '63'  },
-  { label: 'Revenue',     value: '$102k' },
-];
-
-function LeadRow({ name, status, statusColor, date, category, amount, isNew = false, visible = true }: any) {
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-700"
-      style={{
-        background: isNew ? `${statusColor}08` : '#0d1117',
-        borderColor: isNew ? `${statusColor}30` : '#1f2937',
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        boxShadow: isNew ? `0 0 0 1px ${statusColor}15` : 'none',
-      }}
-    >
-      <div className="w-1 h-8 rounded-full shrink-0" style={{ background: statusColor }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <p className="text-[13px] font-black text-white truncate">{name}</p>
-          {isNew && <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">just now</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-            style={{ background: `${statusColor}20`, color: statusColor }}>{status}</span>
-          <span className="text-[9px] text-slate-600 font-medium">{category}</span>
-          {isNew && (
-            <span className="flex items-center gap-1 text-[8px] font-bold text-slate-500">
-              <QrCode size={9} /> via QR scan
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-[11px] font-black text-emerald-500">{amount}</p>
-        <p className="text-[9px] text-slate-600">{date}</p>
-      </div>
-      <ChevronRight size={12} className="text-slate-700 shrink-0" />
-    </div>
-  );
-}
+import { QrCode, ChevronRight, Check, MapPin, Phone, Mail, User, Wifi } from 'lucide-react';
 
 export default function HeroDashboardDemo() {
   const [newLeadVisible, setNewLeadVisible] = useState(false);
-  const [badgeVisible, setBadgeVisible] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setNewLeadVisible(true), 1200);
-    const t2 = setTimeout(() => setBadgeVisible(true), 1800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t = setTimeout(() => setNewLeadVisible(true), 1200);
+    return () => clearTimeout(t);
   }, []);
 
+  const leads = [
+    { name: 'Marcus Thornton', status: 'Contacted', color: '#f59e0b', amount: '$7,950', date: 'Apr 12' },
+    { name: 'David Reyes',     status: 'Scheduled', color: '#6366f1', amount: '$2,400', date: 'Apr 15' },
+    { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200', date: 'Apr 13' },
+  ];
+
   return (
-    <div className="relative w-full max-w-[560px] mx-auto lg:mx-0">
+    <div className="relative w-full max-w-[580px] mx-auto lg:mx-0">
 
-      {/* Ambient glow */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(26,102,69,0.12) 0%, transparent 70%)' }} />
+      {/* Soft background shape like Calendly */}
+      <div className="absolute -top-8 -right-8 w-64 h-64 rounded-full opacity-30 pointer-events-none blur-3xl"
+        style={{ background: 'linear-gradient(135deg, #1a6645, #0F1F3D)' }} />
 
-      {/* Browser shell */}
-      <div className="relative rounded-[1.75rem] overflow-hidden border border-white/8 shadow-[0_32px_80px_rgba(0,0,0,0.4)]"
-        style={{ background: '#06080F' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-        {/* URL bar */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/5" style={{ background: '#0d1117' }}>
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+        {/* ── Card 1: Your branded form URL ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden"
+          style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.10)' }}>
+
+          {/* Card header */}
+          <div className="px-5 pt-5 pb-4 border-b border-slate-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-6 h-6 rounded-lg bg-[#1a6645]/10 flex items-center justify-center">
+                <QrCode size={13} className="text-[#1a6645]" />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Form Link</span>
+            </div>
+            <p className="text-[13px] font-black text-slate-900">Share it everywhere</p>
           </div>
-          <div className="flex-1 bg-white/5 rounded-lg py-1 px-3 text-[10px] font-mono text-slate-500 border border-white/5">
-            lead2project.com/<span className="text-indigo-400 font-bold">ridge-line</span>/dashboard
+
+          {/* URL pill */}
+          <div className="px-4 py-3 border-b border-slate-50">
+            <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+              <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0 flex items-center justify-center">
+                <Check size={8} className="text-white" strokeWidth={3} />
+              </div>
+              <p className="text-[10px] font-bold text-slate-500 truncate flex-1">
+                lead2project.com/<span className="text-[#1a6645] font-black">ridge-line</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Mini form preview */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer sees</p>
+
+            {/* Form header mini */}
+            <div className="rounded-xl overflow-hidden">
+              <div className="px-3 py-2 flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#f97316,#c2410c)' }}>
+                <img src="/images/ridgelinelogo.png" alt="" className="w-4 h-4 object-contain" />
+                <span className="text-[9px] font-black text-white">Ridge Line Roofing</span>
+              </div>
+              <div className="bg-slate-50 px-3 py-2 space-y-1.5 border border-t-0 border-slate-100 rounded-b-xl">
+                {[
+                  { icon: <User size={9} />, val: 'Curtis Wilson' },
+                  { icon: <Phone size={9} />, val: '(555) 482-9301' },
+                  { icon: <MapPin size={9} />, val: 'Roofing · Brooklyn NY' },
+                ].map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-slate-100">
+                    <span className="text-slate-400 shrink-0">{f.icon}</span>
+                    <span className="text-[9px] font-medium text-slate-700">{f.val}</span>
+                  </div>
+                ))}
+                <div className="w-full py-1.5 rounded-lg text-[9px] font-black text-white text-center"
+                  style={{ background: 'linear-gradient(135deg,#f97316,#c2410c)' }}>
+                  Submit Request
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Placement hints */}
+          <div className="px-4 pb-4">
+            <div className="flex flex-wrap gap-1">
+              {['Truck wrap', 'Yard sign', 'Instagram', 'Email'].map(t => (
+                <span key={t} className="text-[8px] font-black px-2 py-0.5 rounded-full bg-[#1a6645]/8 text-[#1a6645] border border-[#1a6645]/15">{t}</span>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Dashboard header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0">
-              <img src="/images/ridgelinelogo.png" alt="" className="w-5 h-5 object-contain" />
+        {/* ── Card 2: Dashboard with leads ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden"
+          style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.10)' }}>
+
+          {/* Card header */}
+          <div className="px-5 pt-5 pb-4 border-b border-slate-50">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg overflow-hidden bg-white border border-slate-100 flex items-center justify-center">
+                  <img src="/images/ridgelinelogo.png" alt="" className="w-4 h-4 object-contain" />
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dashboard</span>
+              </div>
+              <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-500">
+                <Wifi size={8} /> Live
+              </div>
             </div>
-            <div>
-              <p className="text-[12px] font-black text-white leading-none">Ridge Line Roofing</p>
-              <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">Dashboard</p>
-            </div>
+            <p className="text-[13px] font-black text-slate-900">Your lead board</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-slate-500 text-[10px]">
-              <Search size={11} /> Search...
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-0 border-b border-slate-50">
+            {[{ label: 'Leads', val: '168' }, { label: 'Active', val: '63' }, { label: 'Revenue', val: '$102k' }].map((s, i) => (
+              <div key={i} className={`px-3 py-2.5 text-center ${i < 2 ? 'border-r border-slate-50' : ''}`}>
+                <p className="text-[14px] font-black text-slate-900">{s.val}</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* New lead drops in */}
+          <div className="px-4 pt-3 pb-1">
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border mb-2 transition-all duration-700"
+              style={{
+                background: newLeadVisible ? '#f0fdf4' : '#f8fafc',
+                borderColor: newLeadVisible ? '#86efac' : '#f1f5f9',
+                opacity: newLeadVisible ? 1 : 0,
+                transform: newLeadVisible ? 'translateY(0)' : 'translateY(8px)',
+                boxShadow: newLeadVisible ? '0 0 0 2px #bbf7d040' : 'none',
+              }}
+            >
+              <div className="w-1 h-8 rounded-full shrink-0 bg-emerald-500" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[12px] font-black text-slate-900">Curtis Wilson</p>
+                  <span className="text-[7px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">NEW</span>
+                </div>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <QrCode size={8} className="text-slate-400" />
+                  <span className="text-[8px] text-slate-400 font-medium">via QR scan · just now</span>
+                </div>
+              </div>
+              <ChevronRight size={12} className="text-slate-300 shrink-0" />
             </div>
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-black text-[10px]">
-              <Plus size={11} strokeWidth={3} /> Create
-            </div>
+
+            {/* Existing leads */}
+            {leads.map((lead, i) => (
+              <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-50 mb-1.5 bg-slate-50/50">
+                <div className="w-1 h-6 rounded-full shrink-0" style={{ background: lead.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-black text-slate-800 truncate">{lead.name}</p>
+                  <span className="text-[7px] font-black px-1.5 py-0.5 rounded" style={{ background: `${lead.color}15`, color: lead.color }}>{lead.status}</span>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] font-black text-emerald-600">{lead.amount}</p>
+                  <p className="text-[8px] text-slate-400">{lead.date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="px-4 pb-4">
+            <p className="text-[8px] text-center text-slate-400 font-medium">Schedule · Quote · Collect — one click each</p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex gap-3 px-4 py-3 border-b border-white/5">
-          {STATS.map(s => (
-            <div key={s.label} className="flex-1 px-3 py-2 rounded-xl border border-white/5" style={{ background: '#0d1117' }}>
-              <p className="text-[7px] font-black uppercase text-slate-600 tracking-widest mb-1">{s.label}</p>
-              <p className="text-[16px] font-black text-white">{s.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Lead list */}
-        <div className="px-4 py-3 space-y-2">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest">Recent Leads</p>
-            <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400">
-              <Wifi size={9} /> Live
-            </div>
-          </div>
-
-          {/* New lead — animates in first */}
-          <LeadRow
-            name="Curtis Wilson"
-            status="New"
-            statusColor="#10b981"
-            date="just now"
-            category="Roofing"
-            amount="—"
-            isNew
-            visible={newLeadVisible}
-          />
-
-          {/* Existing leads */}
-          {EXISTING_LEADS.map((lead, i) => (
-            <LeadRow key={i} {...lead} visible />
-          ))}
-        </div>
-
-        <div className="h-3" />
       </div>
-
-      {/* Floating badge */}
-      <div
-        className="absolute -bottom-4 right-2 sm:-right-4 flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/10 shadow-2xl transition-all duration-700"
-        style={{
-          background: '#0F1F3D',
-          opacity: badgeVisible ? 1 : 0,
-          transform: badgeVisible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.95)',
-        }}
-      >
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-          <QrCode size={15} className="text-emerald-400" />
-        </div>
-        <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">New lead</p>
-          <p className="text-[12px] font-black text-white">Curtis Wilson · via QR</p>
-        </div>
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-      </div>
-
     </div>
   );
 }
