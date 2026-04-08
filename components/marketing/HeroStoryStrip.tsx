@@ -69,7 +69,7 @@ function StepLabel({ number, title, caption }: { number: string; title: string; 
 function Panel({ children, visible, delay }: { children: React.ReactNode; visible: boolean; delay: number }) {
   return (
     <div
-      className="flex flex-col items-center lg:items-start flex-1 min-w-0 w-full"
+      className="flex flex-col items-center lg:items-start flex-1 min-w-fit w-full"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(24px)',
@@ -123,9 +123,7 @@ export function HeroStoryStrip() {
             caption="Customers answer your specific questions and upload photos. You get high-intent leads with all the data you need to quote immediately."
           />
           <div className="flex justify-center w-full">
-            <div className="scale-90 lg:scale-100 origin-top">
-              <FastDemoForm autoPlay />
-            </div>
+            <FastDemoForm autoPlay />
           </div>
         </Panel>
 

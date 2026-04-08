@@ -350,7 +350,7 @@ export default function TheBoard() {
             ))}
           </div>
 
-          {/* Filter pills */}
+        {/* Filter pills */}
           <div className={`flex items-center gap-2 px-4 py-2.5 border-b overflow-x-auto no-scrollbar ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
             <Filter size={11} className={isDark ? 'text-slate-600 shrink-0' : 'text-slate-400 shrink-0'} />
             {FILTERS.map(f => (
@@ -367,34 +367,83 @@ export default function TheBoard() {
             ))}
           </div>
 
-          {/* Content */}
-          <div className="px-4 pt-3 h-[360px] overflow-hidden">
+          {/* Content Area */}
+          <div className="px-4 pt-3 h-[360px] overflow-hidden relative">
             {current === 'cards'    && <CardsPanel    isDark={isDark} />}
             {current === 'table'    && <TablePanel    isDark={isDark} />}
             {current === 'calendar' && <CalendarPanel isDark={isDark} />}
             {current === 'outbox'   && <OutboxPanel   isDark={isDark} />}
+            
+            {/* Fading overlay */}
+            <div className={`absolute bottom-0 left-0 right-0 h-12 pointer-events-none bg-gradient-to-t ${
+              isDark ? 'from-[#0f172a] to-transparent' : 'from-white to-transparent'
+            }`} />
+          </div>
+        </div> {/* End of Browser Shell */}
+
+        {/* Dynamic Contextual Insight Engine */}
+        <div className="mt-10 max-w-5xl mx-auto">
+          <div className={`p-8 rounded-[2.5rem] border transition-all duration-700 flex flex-col md:flex-row items-center gap-8 ${
+            isDark 
+              ? 'bg-[#0f172a] border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]' 
+              : 'bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.08)]'
+          }`}>
+            
+            {/* Animated Icon Logic */}
+            <div className={`w-20 h-20 rounded-3xl shrink-0 flex items-center justify-center transition-all duration-1000 ${
+              current === 'cards' ? 'bg-indigo-500/10 text-indigo-500 rotate-0' :
+              current === 'table' ? 'bg-sky-500/10 text-sky-500 rotate-[90deg]' :
+              current === 'calendar' ? 'bg-emerald-500/10 text-emerald-500 rotate-[180deg]' :
+              'bg-orange-500/10 text-orange-500 rotate-[270deg]'
+            }`}>
+              <div className="scale-[1.8] transition-transform duration-500">
+                {VIEWS.find(v => v.key === current)?.icon}
+              </div>
+            </div>
+
+            {/* Content Engine */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                <h3 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {current === 'cards' && "Visual Board Control"}
+                  {current === 'table' && "High-Velocity Data Table"}
+                  {current === 'calendar' && "Logistics & Crew Stacking"}
+                  {current === 'outbox' && "The Communications Outbox"}
+                </h3>
+                <span className="px-2 py-0.5 rounded-md bg-[#1a6645]/10 text-[#1a6645] text-[10px] font-black uppercase tracking-widest border border-[#1a6645]/20">
+                  Core Module
+                </span>
+              </div>
+              
+              <p className={`text-base font-medium leading-relaxed max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {current === 'cards' && "Instantly see where every dollar is sitting. Our visual cards use real-time status strips and category-driven logic to ensure your team never touches a lead twice."}
+                {current === 'table' && "Engineered for speed. Perform bulk edits, execute mass status updates, and export your entire lead history to CSV with one click for accounting or performance audits."}
+                {current === 'calendar' && "Stop the scheduling overlap. A unified team calendar that maps every job site, arrival window, and crew assignment in a single, high-density view."}
+                {current === 'outbox' && "Total transparency for every email sent. Track quotes, schedule confirmations, and payment reminders with detailed delivery status and historical review."}
+              </p>
+            </div>
+
+            {/* Capabilities Badge */}
+            <div className="shrink-0 flex flex-col items-center md:items-end gap-3 pt-6 md:pt-0 md:border-l md:pl-8 border-slate-100/10">
+              <div className="flex flex-col items-center md:items-end">
+                 <p className="text-[10px] font-black text-[#6366f1] uppercase tracking-[0.2em] mb-1">Capabilities</p>
+                 <div className={`text-[13px] font-black text-right transition-all duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {current === 'cards' && "AI Project Briefs"}
+                    {current === 'table' && "Bulk CSV Export"}
+                    {current === 'calendar' && "Syncs Everywhere"}
+                    {current === 'outbox' && "Open-Rate Tracking"}
+                 </div>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#1a6645] text-white text-[11px] font-black uppercase tracking-widest rounded-full">
+                Active View
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Feature cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
-          {[
-            { title: 'Visual Cards',    icon: <LayoutGrid size={18} />, desc: 'See every lead at a glance. Color-coded by status, filterable by crew or category.'  },
-            { title: 'Table & Exports', icon: <List size={18} />,       desc: 'Full data table with bulk edits, sorting, and CSV export for accounting or reporting.' },
-            { title: 'Team Calendar',   icon: <Calendar size={18} />,   desc: 'See all scheduled jobs in one view. Know who\'s where and when at a glance.'           },
-            { title: 'Email Outbox',    icon: <Mail size={18} />,       desc: 'Every quote, schedule, and reminder tracked. Never wonder if something was sent.'       },
-          ].map((item, i) => (
-            <div key={i} className={`p-5 rounded-2xl border ${isDark ? 'bg-white/3 border-white/8' : 'bg-white border-slate-200 shadow-sm'}`}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-emerald-50 text-emerald-700'}`}>
-                {item.icon}
-              </div>
-              <p className={`font-black text-[14px] mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</p>
-              <p className={`text-[12px] font-medium leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
-      </div>
+      </div> {/* Closes max-w-6xl container */}
+      
+      {/* Background aesthetic glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
     </section>
   );
 }

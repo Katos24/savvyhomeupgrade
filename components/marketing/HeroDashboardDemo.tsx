@@ -1,117 +1,171 @@
 'use client';
 
-import { Instagram, DollarSign, Calendar, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Plus, ChevronRight, QrCode, Wifi } from 'lucide-react';
 
-export default function HeroDashboardDemo() {
+const EXISTING_LEADS = [
+  { name: 'Marcus Thornton', status: 'Contacted', statusColor: '#f59e0b', date: 'Apr 12', category: 'Roofing', amount: '$7,950' },
+  { name: 'David Reyes',     status: 'Scheduled', statusColor: '#6366f1', date: 'Apr 15', category: 'Gutters', amount: '$2,400' },
+  { name: 'Sarah Kim',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', category: 'Siding',  amount: '$5,200' },
+];
+
+const STATS = [
+  { label: 'Total Leads', value: '168' },
+  { label: 'Active Jobs', value: '63'  },
+  { label: 'Revenue',     value: '$102k' },
+];
+
+function LeadRow({ name, status, statusColor, date, category, amount, isNew = false, visible = true }: any) {
   return (
-    <div className="relative w-full max-w-[640px] mx-auto lg:mx-0">
-
-      {/* Ambient glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[120%] h-[120%] bg-[#1a6645]/10 blur-[120px] rounded-full" />
-      </div>
-
-      {/* Browser shell */}
-      <div className="relative rounded-[2rem] border border-[#1a6645]/20 bg-[#020617] shadow-2xl overflow-hidden">
-
-        {/* Top bar */}
-        <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
-          <div className="flex gap-1.5">
-            <div className="w-2 h-2 bg-white/10 rounded-full" />
-            <div className="w-2 h-2 bg-white/10 rounded-full" />
-            <div className="w-2 h-2 bg-white/10 rounded-full" />
-          </div>
-          <div className="flex-1 ml-4 bg-white/5 rounded-md py-1 px-3 text-[9px] font-mono text-slate-500">
-            lead2project.com/dashboard
-          </div>
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-700"
+      style={{
+        background: isNew ? `${statusColor}08` : '#0d1117',
+        borderColor: isNew ? `${statusColor}30` : '#1f2937',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        boxShadow: isNew ? `0 0 0 1px ${statusColor}15` : 'none',
+      }}
+    >
+      <div className="w-1 h-8 rounded-full shrink-0" style={{ background: statusColor }} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-[13px] font-black text-white truncate">{name}</p>
+          {isNew && <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">just now</span>}
         </div>
-
-        {/* Static dashboard skeleton */}
-        <div className="p-6 space-y-4 opacity-40">
-          <div className="flex justify-between">
-            <div className="space-y-2">
-              <div className="h-4 w-32 bg-white/10 rounded" />
-              <div className="h-2 w-48 bg-white/5 rounded" />
-            </div>
-            <div className="h-8 w-8 bg-[#1a6645]/20 rounded-full" />
-          </div>
-
-          {[1,2,3].map(i => (
-            <div key={i} className="h-20 bg-white/[0.02] border border-white/5 rounded-2xl" />
-          ))}
-        </div>
-
-        {/* FLOATING CARDS */}
-
-        {/* New Lead */}
-        <div className="absolute top-[15%] -left-10 animate-in-left opacity-0">
-          <Card icon={<Instagram size={16} />} label="New Lead" title="Curtis Wilson" sub="via QR scan" color="#22c55e" />
-        </div>
-
-        {/* Quote Sent */}
-        <div className="absolute bottom-[25%] -right-10 animate-in-up opacity-0">
-          <Card icon={<DollarSign size={16} />} label="Quote Sent" title="$5,385" sub="Roof Repair" light />
-        </div>
-
-        {/* Scheduled */}
-        <div className="absolute -top-6 right-10 animate-in-down opacity-0">
-          <Card icon={<Calendar size={16} />} label="Scheduled" title="Apr 12 · 9AM" sub="Auto-confirmed" dark />
-        </div>
-
-        {/* Paid */}
-        <div className="absolute bottom-6 -left-6 animate-in-scale opacity-0">
-          <div className="bg-emerald-500 text-white text-[11px] font-black px-4 py-2 rounded-full flex items-center gap-2 shadow-xl">
-            <CheckCircle2 size={14} />
-            Paid $4,250
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+            style={{ background: `${statusColor}20`, color: statusColor }}>{status}</span>
+          <span className="text-[9px] text-slate-600 font-medium">{category}</span>
+          {isNew && (
+            <span className="flex items-center gap-1 text-[8px] font-bold text-slate-500">
+              <QrCode size={9} /> via QR scan
+            </span>
+          )}
         </div>
       </div>
-
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes in-left {
-          from { opacity: 0; transform: translateX(-40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes in-up {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes in-down {
-          from { opacity: 0; transform: translateY(-40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes in-scale {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
-
-        .animate-in-left { animation: in-left 0.7s ease forwards 0.3s; }
-        .animate-in-up { animation: in-up 0.7s ease forwards 0.8s; }
-        .animate-in-down { animation: in-down 0.7s ease forwards 1.2s; }
-        .animate-in-scale { animation: in-scale 0.5s ease forwards 1.6s; }
-      `}</style>
+      <div className="text-right shrink-0">
+        <p className="text-[11px] font-black text-emerald-500">{amount}</p>
+        <p className="text-[9px] text-slate-600">{date}</p>
+      </div>
+      <ChevronRight size={12} className="text-slate-700 shrink-0" />
     </div>
   );
 }
 
-/* Reusable Card */
-function Card({ icon, label, title, sub, color, light, dark }: any) {
+export default function HeroDashboardDemo() {
+  const [newLeadVisible, setNewLeadVisible] = useState(false);
+  const [badgeVisible, setBadgeVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setNewLeadVisible(true), 1200);
+    const t2 = setTimeout(() => setBadgeVisible(true), 1800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
   return (
-    <div className={`
-      p-3 rounded-2xl shadow-xl flex gap-3 items-center
-      ${light ? 'bg-white text-black border border-slate-200' : ''}
-      ${dark ? 'bg-[#0F1F3D] text-white border border-white/10' : ''}
-      ${!light && !dark ? 'bg-[#1a6645] text-white border border-green-400/30' : ''}
-    `}>
-      <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/20">
-        {icon}
+    <div className="relative w-full max-w-[560px] mx-auto lg:mx-0">
+
+      {/* Ambient glow */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(26,102,69,0.12) 0%, transparent 70%)' }} />
+
+      {/* Browser shell */}
+      <div className="relative rounded-[1.75rem] overflow-hidden border border-white/8 shadow-[0_32px_80px_rgba(0,0,0,0.4)]"
+        style={{ background: '#06080F' }}>
+
+        {/* URL bar */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/5" style={{ background: '#0d1117' }}>
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+          </div>
+          <div className="flex-1 bg-white/5 rounded-lg py-1 px-3 text-[10px] font-mono text-slate-500 border border-white/5">
+            lead2project.com/<span className="text-indigo-400 font-bold">ridge-line</span>/dashboard
+          </div>
+        </div>
+
+        {/* Dashboard header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0">
+              <img src="/images/ridgelinelogo.png" alt="" className="w-5 h-5 object-contain" />
+            </div>
+            <div>
+              <p className="text-[12px] font-black text-white leading-none">Ridge Line Roofing</p>
+              <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">Dashboard</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/8 text-slate-500 text-[10px]">
+              <Search size={11} /> Search...
+            </div>
+            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-black text-[10px]">
+              <Plus size={11} strokeWidth={3} /> Create
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="flex gap-3 px-4 py-3 border-b border-white/5">
+          {STATS.map(s => (
+            <div key={s.label} className="flex-1 px-3 py-2 rounded-xl border border-white/5" style={{ background: '#0d1117' }}>
+              <p className="text-[7px] font-black uppercase text-slate-600 tracking-widest mb-1">{s.label}</p>
+              <p className="text-[16px] font-black text-white">{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Lead list */}
+        <div className="px-4 py-3 space-y-2">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest">Recent Leads</p>
+            <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400">
+              <Wifi size={9} /> Live
+            </div>
+          </div>
+
+          {/* New lead — animates in first */}
+          <LeadRow
+            name="Curtis Wilson"
+            status="New"
+            statusColor="#10b981"
+            date="just now"
+            category="Roofing"
+            amount="—"
+            isNew
+            visible={newLeadVisible}
+          />
+
+          {/* Existing leads */}
+          {EXISTING_LEADS.map((lead, i) => (
+            <LeadRow key={i} {...lead} visible />
+          ))}
+        </div>
+
+        <div className="h-3" />
       </div>
-      <div>
-        <p className="text-[8px] font-black uppercase opacity-70">{label}</p>
-        <p className="text-xs font-black">{title}</p>
-        <p className="text-[9px] opacity-60">{sub}</p>
+
+      {/* Floating badge */}
+      <div
+        className="absolute -bottom-4 right-2 sm:-right-4 flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/10 shadow-2xl transition-all duration-700"
+        style={{
+          background: '#0F1F3D',
+          opacity: badgeVisible ? 1 : 0,
+          transform: badgeVisible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.95)',
+        }}
+      >
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+          <QrCode size={15} className="text-emerald-400" />
+        </div>
+        <div>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">New lead</p>
+          <p className="text-[12px] font-black text-white">Curtis Wilson · via QR</p>
+        </div>
+        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
       </div>
+
     </div>
   );
 }

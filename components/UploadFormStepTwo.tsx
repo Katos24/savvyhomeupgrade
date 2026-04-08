@@ -430,16 +430,14 @@ const inputRef = useRef<HTMLInputElement | null>(null);
           )}
 
         {/* Submit */}
-<div className="pt-2 relative z-10">
+<div className="pt-2">
   <button
     type="button"
     onClick={onSubmit}
     disabled={disabled}
     className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:opacity-90"
-    style={{
+   style={{
       background: `linear-gradient(to right, ${color1}, ${color2})`,
-      position: 'relative',
-      zIndex: 60,
     }}
   >
               {submitting ? (

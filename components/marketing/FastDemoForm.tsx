@@ -45,13 +45,15 @@ function Field({ active, filled, icon, value, placeholder }: {
   );
 }
 
-function Pill({ label, selected }: { label: string; selected: boolean }) {
+function Pill({ label, selected, tapping }: { label: string; selected: boolean; tapping?: boolean }) {
   return (
     <div
-      className="px-2 py-1 rounded-xl text-[8px] font-bold border transition-all duration-200 cursor-pointer"
+      className="px-2 py-1 rounded-xl text-[8px] font-bold border transition-all duration-200"
       style={selected
-        ? { background: 'linear-gradient(135deg,#f97316,#c2410c,#1c1917)', color: '#fff', borderColor: 'transparent' }
-        : { background: '#fff', color: '#374151', borderColor: '#e5e7eb' }
+        ? { background: 'linear-gradient(135deg,#f97316,#c2410c,#1c1917)', color: '#fff', borderColor: 'transparent', transform: 'scale(1.05)' }
+        : tapping
+          ? { background: '#fff7ed', color: '#f97316', borderColor: '#fed7aa', transform: 'scale(0.95)' }
+          : { background: '#fff', color: '#374151', borderColor: '#e5e7eb' }
       }
     >
       {label}
@@ -61,10 +63,9 @@ function Pill({ label, selected }: { label: string; selected: boolean }) {
 
 function LogoBar() {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 shrink-0 bg-white">
+    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 shrink-0 bg-white mt-2">
       <img src="/images/ridgelinelogo.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
-      <span className="text-[9px] font-black text-slate-800">Ridge Line Roofing</span>
-    </div>
+<span className="text-[9px] font-black text-slate-800">Ridge Line Roofing</span>    </div>
   );
 }
 
@@ -122,22 +123,18 @@ function SuccessScreen() {
 }
 
 export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
-  type Phase = 'idle' | 's1-done' | 's1-exit' | 's2-enter' | 's2-q1' | 's2-q3' | 's2-photo' | 's2-drop' | 's2-done' | 'success';
+  type Phase = 'idle' | 's1-done' | 's1-exit' | 's2-enter' | 's2-q1' | 's2-photo' | 's2-drop' | 's2-done' | 'success';
 
   const [phase, setPhase] = useState<Phase>('idle');
-
-  // Step 1 — all pre-filled, no typing animation
   const name = 'Curtis Wilson';
   const email = 'curtisw@email.com';
   const phone = '(555) 482-9301';
   const desc = 'Damaged roof after storm, full inspection needed';
-
-  // Step 2 — address pre-filled, questions animate in
   const addr = '42 Maple Ave';
   const city = 'Brooklyn';
   const zip = '11201';
-  const [q1, setQ1] = useState('');  // roof age
-  const [q3, setQ3] = useState('');  // budget
+  const [q1, setQ1] = useState('');
+  const [tapping, setTapping] = useState(false);
   const [photoDrop, setPhotoDrop] = useState(false);
   const [step, setStep] = useState<1 | 2 | 'success'>(1);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,24 +144,21 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
     let running = true;
     const go = (fn: () => void, ms: number) => { if (running) timerRef.current = setTimeout(fn, ms); };
 
-    function reset() {
-      setPhase('idle'); setStep(1); setQ1(''); setQ3(''); setPhotoDrop(false);
-    }
+   function reset() {
+  setPhase('idle'); setStep(1); setQ1(''); setTapping(false); setPhotoDrop(false);
+}
 
     function run() {
       reset();
-      // Step 1 already filled — brief pause then continue
-      go(() => { setPhase('s1-done'); }, 800);
-      go(() => { setPhase('s1-exit'); }, 1600);
+      go(() => setPhase('s1-done'), 800);
+      go(() => setPhase('s1-exit'), 1600);
       go(() => { setStep(2); setPhase('s2-enter'); }, 2200);
-      // Step 2: animate pill picks + photo
-      go(() => { setQ1('Under 10 years'); setPhase('s2-q1'); }, 3000);
-      go(() => { setQ3('$5,000–$10,000'); setPhase('s2-q3'); }, 3800);
-      go(() => { setPhase('s2-photo'); }, 4500);
-      go(() => { setPhotoDrop(true); setPhase('s2-drop'); }, 5200);
-      go(() => { setPhase('s2-done'); }, 5900);
-      go(() => { setStep('success'); setPhase('success'); }, 6600);
-      go(run, 10000);
+go(() => { setTapping(true); setPhase('s2-q1'); }, 3000);
+go(() => { setQ1('Under 10 yrs'); setTapping(false); }, 3350);      go(() => setPhase('s2-photo'), 3800);
+      go(() => { setPhotoDrop(true); setPhase('s2-drop'); }, 4500);
+      go(() => setPhase('s2-done'), 5200);
+      go(() => { setStep('success'); setPhase('success'); }, 5900);
+      go(run, 9000);
     }
 
     run();
@@ -172,25 +166,24 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
   }, [autoPlay]);
 
   return (
-    <div className="relative w-[260px] aspect-[9/19.5]">
+    <div className="relative" style={{ width: 260, height: 480 }}>
       <div className="absolute inset-0 blur-2xl bg-orange-500/10 rounded-[3rem]" />
       <div className="relative w-full h-full rounded-[3rem] border-[6px] border-[#1e293b] bg-[#0f172a] shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-7 flex justify-center items-end z-30">
-          <div className="w-24 h-5 bg-black rounded-b-2xl" />
-        </div>
-        <div className="absolute inset-0 pt-6 overflow-hidden">
-
+        <div className="absolute top-0 inset-x-0 h-6 flex justify-center items-end z-30">
+<div className="w-14 h-3 bg-black rounded-b-lg mb-1" />
+</div>
+<div className="absolute inset-0 pt-12 overflow-hidden">
           {/* SUCCESS */}
           <div className={`absolute inset-0 transition-all duration-700 ${step === 'success' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
             <SuccessScreen />
           </div>
 
-          {/* STEP 1 — pre-filled */}
+          {/* STEP 1 */}
           <div className={`absolute inset-0 flex flex-col bg-white transition-all duration-700 ${step === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8 pointer-events-none'}`}>
             <LogoBar />
             <div className="shrink-0 px-3 py-2.5" style={{ background: 'linear-gradient(135deg,#f97316 0%,#c2410c 40%,#1c1917 100%)' }}>
               <p className="text-[12px] font-black text-white">Submit Your Request</p>
-              <p className="text-[8px] text-orange-100/80">Takes less than 2 minutes. No account needed.</p>
+              <p className="text-[8px] text-orange-100/80">Takes less than 2 minutes.</p>
             </div>
             <StepBar step={step} />
             <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5">
@@ -199,8 +192,8 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
               <div><Label>Phone</Label><Field active={false} filled icon={<Phone size={10} />} value={phone} placeholder="" /></div>
               <div><Label>Service Needed</Label><Field active={false} filled icon={<MapPin size={10} className="text-slate-400" />} value="Roofing" placeholder="" /></div>
               <div>
-                <Label right="0/500">Tell us about your project</Label>
-                <div className="flex items-start gap-2 px-2.5 py-2 rounded-2xl border border-slate-200 bg-white min-h-[44px]">
+                <Label right="0/500">Project Description</Label>
+                <div className="flex items-start gap-2 px-2.5 py-2 rounded-2xl border border-slate-200 bg-white min-h-[40px]">
                   <AlignLeft size={10} className="text-slate-400 shrink-0 mt-0.5" />
                   <span className="text-[9px] text-slate-800 flex-1 leading-relaxed">{desc}</span>
                 </div>
@@ -209,12 +202,11 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
                 <OrangeBtn done={phase === 's1-done' || phase === 's1-exit'}>
                   {phase === 's1-exit' ? <><Check size={11} strokeWidth={3} /> Saved!</> : <>Continue <ChevronRight size={11} /></>}
                 </OrangeBtn>
-                <p className="text-[6px] text-slate-400 text-center mt-1 uppercase tracking-widest">Continue to additional details (optional)</p>
               </div>
             </div>
           </div>
 
-          {/* STEP 2 */}
+          {/* STEP 2 — condensed: address + ONE question + photo */}
           <div className={`absolute inset-0 flex flex-col bg-white transition-all duration-700 ${step === 2 ? 'opacity-100 translate-x-0' : step === 'success' ? 'opacity-0 -translate-x-8 pointer-events-none' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
             <LogoBar />
             <div className="shrink-0 px-3 py-2" style={{ background: 'linear-gradient(135deg,#f97316 0%,#c2410c 40%,#1c1917 100%)' }}>
@@ -223,37 +215,32 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
                 <ChevronRight size={8} className="text-white/50" />
                 <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center"><span className="text-[7px] font-black text-orange-600">2</span></div>
               </div>
-              <p className="text-[10px] font-black text-white">Your request is saved!</p>
-              <p className="text-[7px] text-orange-100/80">Add a few more details to help us give you a better quote — all optional.</p>
+              <p className="text-[10px] font-black text-white">Request saved!</p>
+              <p className="text-[7px] text-orange-100/80">A few more details — all optional.</p>
             </div>
             <StepBar step={step} />
             <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5">
-              {/* Address — pre-filled */}
-              <div><Label>Street Address</Label><Field active={false} filled icon={<MapPin size={10} className="text-red-400" />} value={addr} placeholder="" /></div>
+
+              {/* Address row */}
+              <div><Label>Address</Label><Field active={false} filled icon={<MapPin size={10} className="text-red-400" />} value={addr} placeholder="" /></div>
               <div className="grid grid-cols-2 gap-1.5">
                 <div><Label>City</Label><Field active={false} filled icon={<MapPin size={10} className="text-slate-300" />} value={city} placeholder="" /></div>
-                <div><Label>Zip Code</Label><Field active={false} filled icon={<MapPin size={10} className="text-emerald-400" />} value={zip} placeholder="" /></div>
+                <div><Label>Zip</Label><Field active={false} filled icon={<MapPin size={10} className="text-emerald-400" />} value={zip} placeholder="" /></div>
               </div>
-              <div><Label>Unit / Apt</Label><Field active={false} filled={false} icon={<Home size={10} className="text-slate-300" />} value="" placeholder="Apt 4B" /></div>
 
-              <div className="pt-1 border-t border-slate-100">
-                <p className="text-[9px] font-black text-slate-800 mb-1.5">A few quick questions</p>
+              {/* ONE question only */}
+              <div className="pt-1">
                 <Label>How old is your roof?</Label>
-                <div className="flex flex-wrap gap-1 mb-1.5">
-                  {['Under 10 years', '10–20 years', '20+ years', 'Unknown'].map(o => <Pill key={o} label={o} selected={q1 === o} />)}
-                </div>
-                <Label>What's your approximate budget?</Label>
-                <div className="flex flex-wrap gap-1 mb-1.5">
-                  {['Under $5,000', '$5,000–$10,000', '$10,000–$20,000', '20,000+'].map(o => <Pill key={o} label={o} selected={q3 === o} />)}
+                <div className="flex flex-wrap gap-1 mt-1">
+                 {['Under 10 yrs', '10–20 yrs', '20+ yrs', 'Unknown'].map(o => (
+  <Pill key={o} label={o} selected={q1 === o} tapping={tapping && o === 'Under 10 yrs'} />
+))}
                 </div>
               </div>
 
-              {/* Photo */}
+              {/* Photo upload */}
               <div>
-                <div className="flex items-center gap-1 mb-0.5">
-                  <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Photos or Videos</p>
-                  <span className="text-[7px] text-slate-400 ml-1">helps us quote faster</span>
-                </div>
+                <Label>Photos or Videos <span className="text-slate-400 ml-1 normal-case font-normal">optional</span></Label>
                 <div className={`border-2 border-dashed rounded-2xl transition-all duration-400 ${photoDrop ? 'border-orange-400 bg-orange-50' : phase === 's2-photo' ? 'border-blue-300 bg-blue-50/40' : 'border-slate-200 bg-slate-50'}`}>
                   {photoDrop ? (
                     <div className="p-1.5">
@@ -269,17 +256,16 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
                       <p className="text-[8px] font-bold text-blue-500">Drop photo here...</p>
                     </div>
                   ) : (
-                    <div className="py-3 flex flex-col items-center">
-                      <div className="w-7 h-7 bg-blue-50 rounded-full flex items-center justify-center mb-0.5"><ImageIcon size={14} className="text-blue-400" /></div>
-                      <p className="text-[8px] font-semibold text-slate-500">Click or drag photos/videos here</p>
-                      <p className="text-[7px] text-slate-400">Max 50MB per file</p>
+                    <div className="py-2.5 flex flex-col items-center">
+                      <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center mb-0.5"><ImageIcon size={13} className="text-blue-400" /></div>
+                      <p className="text-[8px] font-semibold text-slate-500">Click or drag photos here</p>
                     </div>
                   )}
                 </div>
               </div>
 
               <OrangeBtn done={phase === 's2-done' || phase === 'success'}>
-                {phase === 's2-done' || phase === 'success' ? <><Check size={11} strokeWidth={3} /> Details Submitted!</> : <><Upload size={11} /> Submit Details</>}
+                {phase === 's2-done' || phase === 'success' ? <><Check size={11} strokeWidth={3} /> Submitted!</> : <><Upload size={11} /> Submit Details</>}
               </OrangeBtn>
             </div>
           </div>

@@ -150,7 +150,7 @@ export async function sendLeadConfirmationEmail({
             <h1>Thanks for reaching out!</h1>
             <p>Hi ${customerName},</p>
             <p>We received your request for <strong>${category}</strong> services.</p>
-            <p>We'll review your request and get back to you within 24 hours.</p>
+            <p>We'll review your request and get back shortly.</p>
             <div class="footer">${companyName}</div>
             
           </div>
