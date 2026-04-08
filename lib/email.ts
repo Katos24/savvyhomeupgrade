@@ -107,7 +107,7 @@ ${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="te
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: contractorEmail,
       subject: `New Lead: ${customerName} — ${category}`,
       html: emailHtml,
@@ -159,7 +159,7 @@ export async function sendLeadConfirmationEmail({
     `;
 
     await resend.emails.send({
-from: `${companyName} <onboarding@resend.dev>`,
+from: `${companyName} <hello@lead2project.com>`,
       to: customerEmail,
       subject: `Thanks for reaching out to ${companyName}!`,
       html: emailHtml,
@@ -229,7 +229,7 @@ export async function sendPasswordResetEmail({
     `;
 
     await resend.emails.send({
-      from: `${companyName} <onboarding@resend.dev>`,
+      from: `${companyName} <hello@lead2project.com>`,
       to: userEmail,
       subject: 'Reset Your Password',
       html: emailHtml,
@@ -310,7 +310,7 @@ export async function sendTeamInviteEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: inviteeEmail,
       subject: `You've been invited to join ${companyName}`,
       html: emailHtml,
@@ -430,7 +430,7 @@ company_phone: company.phone || companyPhone || null,
 );
 
     const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <onboarding@resend.dev>`,
+  from: `${company.name || companyName} <hello@lead2project.com>`,
   to: customerEmail,
   replyTo: company.email || undefined,  // ← ADD THIS
   subject: rendered.subject,
@@ -524,7 +524,7 @@ customer_address: serviceAddress || null,
 );
 
     const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <onboarding@resend.dev>`,
+  from: `${company.name || companyName} <hello@lead2project.com>`,
   to: customerEmail,
   replyTo: company.email || undefined,  // ← ADD THIS
   subject: rendered.subject,
@@ -612,7 +612,7 @@ export async function sendTrialEndingReminderEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: companyEmail,
       subject: `Your free trial ends in ${daysRemaining} days`,
       html: emailHtml,
@@ -690,7 +690,7 @@ export async function sendPaymentFailedEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: companyEmail,
       subject: 'Action required: payment failed — Lead2Project',
       html: emailHtml,
@@ -770,7 +770,7 @@ export async function sendSubscriptionActivatedEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: companyEmail,
       subject: 'Your subscription is active — Lead2Project',
       html: emailHtml,
@@ -954,7 +954,7 @@ export async function sendWelcomeEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: userEmail,
       subject: `Welcome to Lead2Project — here's your booking link`,
       html: emailHtml,
@@ -978,7 +978,7 @@ export async function sendSubscriptionCancelledEmail({
 
   try {
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: companyEmail,
       subject: `Your Lead2Project access has ended`,
       html: `
@@ -1152,7 +1152,7 @@ export async function sendFollowUpReminderEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project Reminders <onboarding@resend.dev>',
+      from: 'Lead2Project Reminders <hello@lead2project.com>',
       to: recipientEmail,
       subject: `${leads.length} Lead${leads.length > 1 ? 's' : ''} Need Follow-up - ${companyName}`,
       html: emailHtml,
@@ -1242,7 +1242,7 @@ export async function sendPaymentReminderEmail({
     }
 
     const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <onboarding@resend.dev>`,
+      from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
       subject,
@@ -1449,7 +1449,7 @@ export async function sendDailyDigestEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project <onboarding@resend.dev>',
+      from: 'Lead2Project <hello@lead2project.com>',
       to: companyEmail,
       subject: `${today} — ${totalItems} item${totalItems !== 1 ? 's' : ''} need attention · ${companyName}`,
       html: emailHtml,
@@ -1486,7 +1486,7 @@ export async function sendQuoteAcceptedNotification({
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard`;
 
   await resend.emails.send({
-    from: 'Lead2Project <onboarding@resend.dev>',
+    from: 'Lead2Project <hello@lead2project.com>',
     to: companyEmail,
     subject: `${customerName} accepted your quote — ${fmt(quoteTotal)}`,
     html: `
@@ -1542,7 +1542,7 @@ export async function sendCancellationScheduledEmail({
   const daysLeft = Math.max(0, Math.ceil((accessDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
   await resend.emails.send({
-    from: 'Lead2Project <onboarding@resend.dev>',
+    from: 'Lead2Project <hello@lead2project.com>',
     to: companyEmail,
     subject: `You still have ${daysLeft} day${daysLeft !== 1 ? 's' : ''} of access — Lead2Project`,
     html: `
@@ -1631,7 +1631,7 @@ export async function sendPlanChangedEmail({
   };
 
   await resend.emails.send({
-    from: 'Lead2Project <onboarding@resend.dev>',
+    from: 'Lead2Project <hello@lead2project.com>',
     to:   companyEmail,
     subject,
     html: `<!DOCTYPE html>

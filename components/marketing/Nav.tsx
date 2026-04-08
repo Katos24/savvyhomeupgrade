@@ -14,7 +14,6 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -44,7 +43,7 @@ export default function Nav() {
               alt="Lead2Project"
               className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
             />
-            <span className="text-lg sm:text-xl font-black tracking-tighter text-white">
+            <span className={`text-lg sm:text-xl font-black tracking-tighter transition-colors duration-300 ${scrolled ? 'text-white' : 'text-[#0F1F3D]'}`}>
               Lead2Project
             </span>
           </Link>
@@ -55,7 +54,9 @@ export default function Nav() {
               <a
                 key={item.label}
                 href={item.href}
-                className="text-sm font-semibold text-white/60 hover:text-white transition-colors"
+                className={`text-sm font-semibold transition-colors duration-300 ${
+                  scrolled ? 'text-white/60 hover:text-white' : 'text-[#0F1F3D]/60 hover:text-[#0F1F3D]'
+                }`}
               >
                 {item.label}
               </a>
@@ -66,7 +67,9 @@ export default function Nav() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-semibold px-4 py-2 text-white/60 hover:text-white transition-colors"
+              className={`text-sm font-semibold px-4 py-2 transition-colors duration-300 ${
+                scrolled ? 'text-white/60 hover:text-white' : 'text-[#0F1F3D]/60 hover:text-[#0F1F3D]'
+              }`}
             >
               Log in
             </Link>
@@ -88,7 +91,9 @@ export default function Nav() {
               Start Free
             </Link>
             <button
-              className="p-2 text-white/70 hover:text-white transition-colors"
+              className={`p-2 transition-colors duration-300 ${
+                scrolled ? 'text-white/70 hover:text-white' : 'text-[#0F1F3D]/70 hover:text-[#0F1F3D]'
+              }`}
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
@@ -99,7 +104,7 @@ export default function Nav() {
         </div>
       </nav>
 
-      {/* ── Mobile drawer overlay ── */}
+      {/* Mobile drawer overlay */}
       <div
         className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -107,13 +112,12 @@ export default function Nav() {
         onClick={() => setMobileMenuOpen(false)}
       />
 
-      {/* ── Mobile drawer ── */}
+      {/* Mobile drawer */}
       <div
         className={`fixed top-0 right-0 z-[70] h-full w-[80%] max-w-[320px] bg-[#0d0d1a] border-l border-white/5 transition-transform duration-300 ease-out md:hidden flex flex-col ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Drawer header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
           <div className="flex items-center gap-2">
             <img src="/Lead2ProjectLogo.png" alt="" className="h-6 w-auto" />
@@ -128,7 +132,6 @@ export default function Nav() {
           </button>
         </div>
 
-        {/* Nav links */}
         <div className="flex flex-col px-4 gap-1 flex-1">
           {navLinks.map((item) => (
             <a
@@ -143,7 +146,6 @@ export default function Nav() {
           ))}
         </div>
 
-        {/* Bottom CTAs */}
         <div className="px-4 pb-8 pt-4 flex flex-col gap-3 border-t border-white/5">
           <Link
             href="/signup"

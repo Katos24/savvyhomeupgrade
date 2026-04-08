@@ -35,7 +35,7 @@ const STEPS = [
   },
   {
     step: '03',
-    title: 'Send a quote, get it signed',
+    title: 'Send a quote in seconds',
     desc: 'Build from your templates or use the AI brief. Customer gets a branded email with accept / decline.',
     color: '#10b981',
   },
