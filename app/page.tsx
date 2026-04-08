@@ -16,7 +16,6 @@ export default function Home() {
     <div className="min-h-screen font-sans antialiased overflow-x-hidden">
       <Nav />
       <Hero />
-      <ValueStrip />
       <HowItWorks />
       <LeadModalSection />
       <TheBoard />
