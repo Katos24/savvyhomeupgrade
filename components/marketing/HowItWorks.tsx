@@ -23,11 +23,9 @@ export default function HowItWorks() {
           }}
         >
           {/* TOP ON MOBILE: Image first for context (Order 1 on mobile, 2 on desktop) */}
-          <div className="relative order-1 lg:order-2 w-full max-w-[500px] lg:max-w-none mx-auto lg:translate-x-8">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full pointer-events-none" />
+<div className="relative order-1 lg:order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full pointer-events-none" />
             
-            <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-2 md:p-4 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">
-              <img 
+<div className="relative rounded-[2rem] md:rounded-[2.5rem] p-1.5 md:p-2 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">              <img 
                 src="/images/qrbranded2.png" 
                 alt="Branded QR System" 
                 className="w-full h-auto rounded-[1.5rem] md:rounded-[1.8rem] block shadow-2xl" 
@@ -59,14 +57,15 @@ export default function HowItWorks() {
               </span>
             </div>
 
-            <h2 className="font-bold tracking-tighter leading-[1.1] md:leading-[0.9] mb-8 text-white text-4xl sm:text-5xl md:text-7xl">
-              If your competition <br className="hidden md:block" />
-              is getting leads <br className="hidden md:block" />
-              <span className="text-[#1a6645]">while they sleep,</span><br />
-              <span className="text-slate-500 font-serif italic font-normal tracking-normal">you should be too.</span>
-            </h2>
+            <h2 className="font-black mb-8 text-white"
+  style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}>
+  If your competition<br />
+  is getting leads<br />
+  while they sleep,<br />
+  <span style={{ color: '#1a6645' }}>you should be too.</span>
+</h2>
 
-            <p className="text-base md:text-xl font-medium leading-relaxed mb-10 text-slate-400 max-w-xl mx-auto lg:mx-0">
+            <p className="text-sm font-normal leading-loose mb-10 text-slate-400 max-w-md mx-auto lg:mx-0">
               Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard—even when you're off the clock.
             </p>
 

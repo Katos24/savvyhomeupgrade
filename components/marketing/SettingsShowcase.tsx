@@ -1,6 +1,6 @@
-
 'use client';
 
+import React from 'react';
 import { useFadeIn } from '@/components/marketing/hooks';
 import { SlidersHorizontal, LayoutGrid, FileText, Mail, Check, Plus } from 'lucide-react';
 
@@ -154,7 +154,7 @@ export default function SettingsShowcase() {
           <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-2" style={{ color: '#1a6645' }}>
             Built around your business
           </p>
-          <h2 className="font-black tracking-tight text-slate-900" style={{ fontSize: 'clamp(22px, 4vw, 36px)', lineHeight: 1.1 }}>
+          <h2 className="font-black text-slate-900" style={{ fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 0.95, letterSpacing: '-0.03em' }}>
             Your rules. Your workflow.
           </h2>
         </div>
@@ -164,13 +164,8 @@ export default function SettingsShowcase() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-3"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s' }}
         >
-          {[
-            <PipelineBento />,
-            <CategoriesBento />,
-            <FormBento />,
-            <EmailBento />,
-          ].map((card, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm"
+          {([<PipelineBento />, <CategoriesBento />, <FormBento />, <EmailBento />] as React.ReactNode[]).map((card, i) => (
+            <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100"
               style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               {card}
             </div>

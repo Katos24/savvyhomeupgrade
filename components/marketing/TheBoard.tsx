@@ -170,13 +170,13 @@ export default function TheBoard() {
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             <h2
               className="font-black tracking-tight text-white mb-5"
-              style={{ fontSize: 'clamp(2.4rem, 5vw, 3.8rem)', lineHeight: 1.05, letterSpacing: '-0.03em' }}
+style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing: '-0.04em' }}
             >
               It's free to try.<br />
               <span className="text-[#1a6645]">We think you'll stay.</span>
             </h2>
 
-            <p className="text-slate-400 font-medium leading-relaxed mb-8 max-w-md" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
+            <p className="text-slate-500 font-normal leading-loose mb-8 max-w-sm text-[0.9rem]" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
               Manage every lead, job, quote, and payment from one dashboard. Built for contractors who are tired of juggling spreadsheets, texts, and missed follow-ups.
             </p>
 
@@ -218,20 +218,20 @@ export default function TheBoard() {
           <div className="w-full">
 
             {/* View tabs above laptop */}
-            <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
-              {VIEWS.map(v => {
-                const isActive = current === v.key;
-                return (
-                  <button key={v.key} onClick={() => setCurrent(v.key)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black transition-all border"
-                    style={isActive
-                      ? { background: '#fff', color: '#0f172a', borderColor: '#fff' }
-                      : { background: 'rgba(255,255,255,0.05)', color: '#64748b', borderColor: 'rgba(255,255,255,0.08)' }}>
-                    {v.icon}<span>{v.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+         <div className="flex items-center justify-between gap-4 mb-4 w-full">
+          {VIEWS.map(v => {
+            const isActive = current === v.key;
+            return (
+              <button key={v.key} onClick={() => setCurrent(v.key)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-black transition-all"
+                style={isActive
+                  ? { background: 'transparent', color: '#fff', border: '2px solid #fff' }
+                  : { background: 'transparent', color: 'rgba(255,255,255,0.4)', border: '2px solid transparent' }}>
+                {v.icon}<span>{v.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
             {/* Laptop shell */}
             <div className="relative w-full">

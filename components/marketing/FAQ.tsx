@@ -1,60 +1,89 @@
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 9 — FAQ
-// Status: Ready. Add / remove questions as needed.
-// ─────────────────────────────────────────────────────────────────────────────
 'use client';
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { useFadeIn } from '@/components/marketing/hooks'
+import { Plus, Minus } from 'lucide-react';
+import { useFadeIn } from '@/components/marketing/hooks';
 
-function FAQ() {
+const faqs = [
+  {
+    q: 'Do my customers need to download an app?',
+    a: 'No. They scan your QR code and your form opens directly in their browser. No download, no account, no friction. Works on every phone.',
+  },
+  {
+    q: 'Can I customize what the form asks?',
+    a: 'Yes. Toggle fields on or off — address, preferred date, photos, custom questions. Your form, your rules. Changes go live instantly.',
+  },
+  {
+    q: 'How does the AI quote generator work?',
+    a: 'When a customer uploads photos, our AI analyzes the images and drafts line items based on your templates. You review every number before anything gets sent.',
+  },
+  {
+    q: "What's the difference between Basic and Pro?",
+    a: 'Basic covers your full digital storefront — QR code, lead board, scheduling, and quoting. Pro adds AI tools: quote generation from photos, project briefs for crews, a daily digest email, and the full email outbox.',
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. No contracts, no cancellation fees. One click from your account settings. Your data is yours and exportable anytime.',
+  },
+];
+
+export default function FAQ() {
   const { ref, visible } = useFadeIn();
-  const [open, setOpen] = useState<number | null>(null);
-
-  const faqs = [
-    { q: 'Do my customers need to download an app?', a: 'No. They scan your QR code and your form opens directly in their phone\'s browser. No download, no account, no friction.' },
-    { q: 'Can I customize what the form asks?',       a: 'Yes. You control which fields are shown — service type, address, preferred date, photos, custom questions. Turn them on or off anytime.' },
-    { q: 'How does the AI quote generator work?',     a: 'When a customer uploads photos of their project, our AI analyzes the images and drafts line items with estimated pricing based on your templates. You review every number before sending.' },
-    { q: 'What\'s the difference between Starter and Pro?', a: 'Starter covers customer intake, lead tracking, and basic organization. Pro adds full project management, AI tools (quotes, briefs, assistant), scheduling, and the Daily Digest.' },
-    { q: 'Can I cancel anytime?',                     a: 'Yes. No contracts, no cancellation fees. Cancel from your account settings with one click. Your data is yours and exportable anytime.' },
-  ];
+  const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section className="py-28 px-6 bg-white border-t border-slate-100">
-      <div className="max-w-3xl mx-auto">
+    <section className="py-20 px-4 sm:px-6 bg-[#F7F5F0] border-t border-[#E5E0D8]">
+      <div className="max-w-2xl mx-auto">
         <div
           ref={ref}
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
         >
-          <div className="text-center mb-16">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 mb-4">FAQ</p>
-            <h2 className="text-5xl font-black text-slate-900 tracking-tight">Quick answers.</h2>
+          {/* Header */}
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3" style={{ color: '#1a6645' }}>FAQ</p>
+<h2 className="font-black text-slate-900" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', lineHeight: 0.95, letterSpacing: '-0.03em' }}>Quick answers.</h2>
           </div>
 
+          {/* Questions */}
           <div className="space-y-2">
-            {faqs.map((faq, i) => (
-              <div key={i} className="border border-slate-100 rounded-2xl overflow-hidden">
-                <button
-                  onClick={() => setOpen(open === i ? null : i)}
-                  className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors"
+            {faqs.map((faq, i) => {
+              const isOpen = open === i;
+              return (
+                <div
+                  key={i}
+                  className="rounded-2xl border overflow-hidden transition-all duration-300"
+                  style={{
+                    background: isOpen ? '#fff' : '#fff',
+                    borderColor: isOpen ? '#0F1F3D20' : '#E5E0D8',
+                    boxShadow: isOpen ? '0 4px 20px rgba(15,31,61,0.08)' : 'none',
+                  }}
                 >
-                  <span className="font-bold text-slate-900 text-[15px] pr-4">{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} />
-                </button>
-                {open === i && (
-                  <div className="px-6 pb-5">
-                    <p className="text-slate-500 text-[15px] leading-relaxed">{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  <button
+                    onClick={() => setOpen(isOpen ? null : i)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
+                  >
+                    <span className="font-black text-slate-900 text-[14px] leading-snug">{faq.q}</span>
+                    <div
+                      className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center transition-all duration-300"
+                      style={{ background: isOpen ? '#0F1F3D' : '#f1f5f9' }}
+                    >
+                      {isOpen
+                        ? <Minus size={11} className="text-white" strokeWidth={3} />
+                        : <Plus size={11} className="text-slate-500" strokeWidth={3} />
+                      }
+                    </div>
+                  </button>
+                  <div
+                    className="overflow-hidden transition-all duration-300"
+                    style={{ maxHeight: isOpen ? 200 : 0 }}
+                  >
+<p className="px-5 pb-4 text-slate-400 text-[13px] font-normal leading-loose">{faq.a}</p>                  </div>
+                </div>
+              );
+            })}
           </div>
+
         </div>
       </div>
     </section>
   );
 }
-
-
-export default FAQ;

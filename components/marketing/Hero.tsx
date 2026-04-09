@@ -24,15 +24,14 @@ export default function Hero() {
 
             <h1
               className="font-black tracking-tight text-[#0F1F3D] mb-5 max-w-lg lg:max-w-none"
-              style={{ fontSize: 'clamp(2.6rem, 7vw, 5rem)', lineHeight: '1.0', letterSpacing: '-0.03em' }}
-            >
+style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: '0.95', letterSpacing: '-0.04em' }}            >
               Stop chasing jobs.<br />
               <span className="text-[#1a6645]">Start closing them.</span>
             </h1>
 
             <p
-              className="text-slate-500 font-medium leading-relaxed mb-8 max-w-md"
-              style={{ fontSize: 'clamp(1rem, 2vw, 1.125rem)' }}
+             className="text-slate-400 font-normal leading-loose mb-8 max-w-sm"
+style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1rem)' }}
             >
               Lead2Project gives every home service contractor a custom form, job dashboard, quotes, scheduling, and email outbox — in one place. Sign up and get your evenings back.
             </p>
