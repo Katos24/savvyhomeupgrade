@@ -136,18 +136,18 @@ export function HeroStoryStrip() {
         <div className="flex flex-col items-center lg:items-start w-full lg:flex-1 min-w-0" style={panelStyle(0.3)}>
           <StepLabel number="3" title="You close the job"
             caption="Every lead lands on your dashboard. Schedule, quote, collect payment, and send branded emails — one click each." />
-         <div className="w-full">
+         <div className="w-full overflow-hidden">
   <style>{`
     .laptop-wrapper {
-      transform-origin: top left;
+      transform-origin: top center;
       transform: scale(0.85);
       margin-bottom: -15%;
     }
-    @media (max-width: 400px)  { .laptop-wrapper { transform: scale(0.38); margin-bottom: -62%; } }
-    @media (min-width: 401px) and (max-width: 520px)  { .laptop-wrapper { transform: scale(0.46); margin-bottom: -54%; } }
-    @media (min-width: 521px) and (max-width: 640px)  { .laptop-wrapper { transform: scale(0.55); margin-bottom: -45%; } }
-    @media (min-width: 641px) and (max-width: 768px)  { .laptop-wrapper { transform: scale(0.65); margin-bottom: -35%; } }
-    @media (min-width: 769px) and (max-width: 1024px) { .laptop-wrapper { transform: scale(0.75); margin-bottom: -25%; } }
+    @media (max-width: 400px)  { .laptop-wrapper { transform: scale(0.35); margin-bottom: -67%; } }
+    @media (min-width: 401px) and (max-width: 520px)  { .laptop-wrapper { transform: scale(0.42); margin-bottom: -60%; } }
+    @media (min-width: 521px) and (max-width: 640px)  { .laptop-wrapper { transform: scale(0.52); margin-bottom: -50%; } }
+    @media (min-width: 641px) and (max-width: 768px)  { .laptop-wrapper { transform: scale(0.62); margin-bottom: -40%; } }
+    @media (min-width: 769px) and (max-width: 1024px) { .laptop-wrapper { transform: scale(0.72); margin-bottom: -30%; } }
     @media (min-width: 1025px) { .laptop-wrapper { transform: scale(0.85); margin-bottom: -15%; } }
   `}</style>
   <div className="laptop-wrapper">

@@ -284,8 +284,8 @@ export function DashboardLaptopMockup() {
         <div className="rounded-b-lg mx-auto" style={{ width:'38%', height:7, background:'#0d1117', border:'1px solid rgba(255,255,255,0.05)', borderTop:'none' }} />
       </div>
 
-      {/* ── Phone overlay — bottom-right ── */}
-      <div className="absolute transition-all duration-700 delay-300"
+     {/* ── Phone overlay — hidden on mobile, shows md+ ── */}
+      <div className="hidden md:block absolute transition-all duration-700 delay-300"
         style={{
           bottom: 20, right: -28,
           opacity: cardVisible ? 1 : 0,
