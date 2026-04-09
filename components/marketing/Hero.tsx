@@ -59,7 +59,7 @@ style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1rem)' }}
           </div>
 
           {/* RIGHT — two cards demo */}
-          <div className="relative w-full flex justify-center lg:justify-end order-first lg:order-last">
+<div className="relative w-full flex justify-center lg:justify-end lg:order-last">
             <HeroDashboardDemo />
           </div>
         </div>
