@@ -172,7 +172,7 @@ export default function TheBoard() {
               className="font-black tracking-tight text-white mb-5"
 style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing: '-0.04em' }}
             >
-              It's free to try.<br />
+              Lead2Project is free to try. <br />
               <span className="text-[#1a6645]">We think you'll stay.</span>
             </h2>
 

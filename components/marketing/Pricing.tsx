@@ -62,7 +62,7 @@ export default function Pricing() {
           {/* Header */}
           <div className="text-center mb-12">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3" style={{ color: '#4ade80' }}>
-              Simple Monthly Billing
+              Lead2Project Pricing
             </p>
             <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
               One job pays for<br />

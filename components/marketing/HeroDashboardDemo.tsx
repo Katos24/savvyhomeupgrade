@@ -38,6 +38,8 @@ export default function HeroDashboardDemo() {
     { name: 'Marcus Thornton', status: 'Contacted', color: '#f59e0b', amount: '$7,950', date: 'Apr 12' },
     { name: 'David Reyes',     status: 'Scheduled', color: '#6366f1', amount: '$2,400', date: 'Apr 15' },
     { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200', date: 'Apr 13' },
+    { name: 'Torres Roofing',  status: 'Quote Sent', color: '#8b5cf6', amount: '$11,400', date: 'Apr 18' },
+    { name: 'Apex Fencing',    status: 'New',        color: '#10b981', amount: '—',       date: 'Apr 9'  },
   ];
 
   return (
@@ -59,7 +61,7 @@ export default function HeroDashboardDemo() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 relative">
+<div className="grid grid-cols-2 gap-4 relative lg:items-stretch" style={{ minHeight: 'clamp(0px, 50vw, 560px)' }}>
 
         {/* Arrow connector */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-700"
@@ -71,7 +73,7 @@ export default function HeroDashboardDemo() {
 
         {/* ── LEFT: Customer form ── */}
         <div
-          className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700"
+         className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700 flex flex-col"
           style={{
             boxShadow: formActive ? '0 8px 40px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
             opacity: dashActive ? 0.35 : 1,
@@ -97,12 +99,12 @@ export default function HeroDashboardDemo() {
             </div>
           </div>
 
-          {/* Form fields */}
-          <div className="px-3 py-2.5 space-y-1.5">
+        {/* Form fields */}
+          <div className="px-3 py-2.5 space-y-1.5 flex-1">
             {[
               { icon: <User size={8} />,    val: 'Curtis Wilson',      },
               { icon: <Phone size={8} />,   val: '(555) 482-9301',     },
-              { icon: <MapPin size={8} />,  val: 'Roofing · Brooklyn', },
+              { icon: <MapPin size={8} />,  val: 'Roof Replacement', },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
                 <span className="text-slate-400 shrink-0">{f.icon}</span>
@@ -111,11 +113,23 @@ export default function HeroDashboardDemo() {
               </div>
             ))}
 
+{/* Address */}
+            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+              <span className="text-slate-400 shrink-0"><MapPin size={8} /></span>
+              <span className="text-[9px] font-medium text-slate-700 flex-1">42 Maple Ave, Brooklyn NY</span>
+              <Check size={7} className="text-emerald-400 shrink-0" />
+            </div>
+
+            {/* Description */}
+            <div className="hidden lg:block bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Project Description</p>
+              <p className="text-[8px] text-slate-600 leading-relaxed">Damaged shingles after storm, full inspection needed. Some flashing issues near chimney.</p>
+            </div>
+
             {/* Custom question */}
-            <div className="pt-0.5">
-              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">How old is your roof?</p>
-              <div className="flex gap-1 flex-wrap">
-                {['Under 10 yrs', '10–20 yrs', '20+ yrs'].map((o, i) => (
+            <div>
+<p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">Service Needed</p>              <div className="flex gap-1 flex-wrap">
+               {['Roofing', 'Gutters', 'Siding', 'Windows'].map((o, i) => (
                   <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
                     style={i === 0
                       ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
@@ -124,6 +138,23 @@ export default function HeroDashboardDemo() {
                     {o}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Photo upload */}
+            <div className="hidden lg:block rounded-lg border border-dashed border-slate-200 bg-slate-50 px-2 py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                  <div className="w-full h-full bg-gradient-to-b from-sky-300 via-slate-400 to-slate-600" />
+                </div>
+                <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                  <div className="w-full h-full bg-gradient-to-b from-slate-300 to-slate-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[7px] font-black text-slate-500">2 photos uploaded</p>
+                  <p className="text-[6px] text-slate-400 truncate">roof-damage.jpg · chimney.jpg</p>
+                </div>
+                <Check size={8} className="text-emerald-400 shrink-0" />
               </div>
             </div>
           </div>
@@ -147,7 +178,7 @@ export default function HeroDashboardDemo() {
 
         {/* ── RIGHT: Dashboard ── */}
         <div
-          className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700"
+          className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700 flex flex-col"
           style={{
             boxShadow: dashActive ? '0 8px 40px rgba(99,102,241,0.15)' : '0 2px 8px rgba(0,0,0,0.04)',
             opacity: formActive ? 0.35 : 1,
@@ -181,8 +212,8 @@ export default function HeroDashboardDemo() {
           </div>
 
           {/* Lead list */}
-          <div className="px-3 pt-2.5 pb-1 space-y-1.5">
-            {/* New lead animates in */}
+<div className="px-3 pt-2.5 pb-1 space-y-1.5 flex-1">
+                {/* New lead animates in */}
             <div
               className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all duration-700"
               style={{
@@ -208,8 +239,8 @@ export default function HeroDashboardDemo() {
             </div>
 
             {/* Existing leads */}
-            {existingLeads.slice(0, 2).map((lead, i) => (
-              <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-slate-50 bg-slate-50/50">
+            {existingLeads.slice(0, 5).map((lead, i) => (
+              <div key={i} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-slate-50 bg-slate-50/50 ${i >= 2 ? 'hidden lg:flex' : ''}`}>
                 <div className="w-1 h-5 rounded-full shrink-0" style={{ background: lead.color }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-black text-slate-800 truncate">{lead.name}</p>

@@ -1,5 +1,4 @@
 'use client';
-
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HeroStoryStrip } from '@/components/marketing/HeroStoryStrip';
@@ -21,37 +20,40 @@ export default function Hero() {
 
           {/* LEFT — copy */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-
             <h1
               className="font-black tracking-tight text-[#0F1F3D] mb-5 max-w-lg lg:max-w-none"
-style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: '0.95', letterSpacing: '-0.04em' }}            >
+              style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: '0.95', letterSpacing: '-0.04em' }}
+            >
               Stop chasing jobs.<br />
               <span className="text-[#1a6645]">Start closing them.</span>
             </h1>
 
-            <p
-             className="text-slate-400 font-normal leading-loose mb-8 max-w-sm"
-style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1rem)' }}
+        <p
+              className="text-slate-500 font-normal leading-relaxed mb-8 max-w-sm"
+              style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)' }}
             >
-              Lead2Project gives every home service contractor a custom form, job dashboard, quotes, scheduling, and email outbox — in one place. Sign up and get your evenings back.
+              Get a branded customer form, live lead dashboard, quote builder, scheduling, and email outbox — no website needed. You're live in 2 minutes.
             </p>
 
-            {/* CTA */}
-            <div className="flex flex-col items-center lg:items-start gap-3 w-full sm:w-auto">
-              <Link
-                href="/signup"
-                className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto"
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem 2.25rem',
-                  background: '#0F1F3D',
-                  boxShadow: '0 16px 40px -10px rgba(15,31,61,0.3)',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Start free — live in 2 minutes
-                <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+            {/* CTA — desktop only, shown above demo */}
+            <div className="hidden lg:flex flex-col items-start gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/signup"
+                  className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ fontSize: '1rem', padding: '1rem 2.25rem', background: '#0F1F3D', boxShadow: '0 16px 40px -10px rgba(15,31,61,0.3)', letterSpacing: '-0.01em' }}
+                >
+                  Start free today
+                  <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center gap-2 font-black rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ fontSize: '1rem', padding: '1rem 1.75rem', color: '#0F1F3D', borderColor: '#0F1F3D40', background: 'transparent', letterSpacing: '-0.01em' }}
+                >
+                  Try the demo
+                </Link>
+              </div>
               <p className="text-[11px] font-semibold text-slate-400 tracking-wide">
                 14-day free trial · Cancel anytime
               </p>
@@ -59,16 +61,36 @@ style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1rem)' }}
           </div>
 
           {/* RIGHT — two cards demo */}
-<div className="relative w-full flex justify-center lg:justify-end lg:order-last">
+          <div className="relative w-full flex justify-center lg:justify-end lg:order-last">
             <HeroDashboardDemo />
           </div>
         </div>
 
+        {/* CTA — mobile only, below the demo cards */}
+        <div className="flex lg:hidden flex-col items-center gap-3 mb-12">
+          <Link
+            href="/signup"
+            className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] w-full"
+            style={{ fontSize: '1rem', padding: '1rem 2.25rem', background: '#0F1F3D', boxShadow: '0 16px 40px -10px rgba(15,31,61,0.3)', letterSpacing: '-0.01em' }}
+          >
+            Start free today
+            <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link
+            href="/demo"
+            className="inline-flex items-center justify-center gap-2 font-black rounded-2xl border transition-all w-full"
+            style={{ fontSize: '1rem', padding: '1rem 1.75rem', color: '#0F1F3D', borderColor: '#0F1F3D40', background: 'transparent', letterSpacing: '-0.01em' }}
+          >
+            Try the demo
+          </Link>
+          <p className="text-[11px] font-semibold text-slate-400 tracking-wide">
+            14-day free trial · Cancel anytime
+          </p>
+        </div>
+
         {/* ── Bridge label ── */}
         <div className="flex flex-col items-center mb-6">
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-            See how it works
-          </p>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">See how it works</p>
           <div className="w-px h-8 bg-gradient-to-b from-slate-300 to-transparent" />
         </div>
 

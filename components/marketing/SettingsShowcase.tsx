@@ -152,7 +152,7 @@ export default function SettingsShowcase() {
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)' }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-2" style={{ color: '#1a6645' }}>
-            Built around your business
+            Lead2Project is built around your business
           </p>
           <h2 className="font-black text-slate-900" style={{ fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 0.95, letterSpacing: '-0.03em' }}>
             Your rules. Your workflow.
