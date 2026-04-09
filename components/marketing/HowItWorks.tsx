@@ -8,7 +8,6 @@ export default function HowItWorks() {
 
   return (
     <section
-      id="how-it-works"
       className="py-16 md:py-32 px-5 md:px-6 overflow-hidden"
       style={{ backgroundColor: '#020617' }} // Deep Space Black
     >

@@ -95,7 +95,7 @@ export default function Hero() {
         </div>
 
         {/* ── Dark story strip ── */}
-        <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
+        <div id="how-it-works" className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
           style={{ padding: 'clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2.5rem) clamp(3rem, 6vw, 5rem)' }}>
           <div className="w-full overflow-hidden">
             <HeroStoryStrip />
