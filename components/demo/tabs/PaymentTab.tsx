@@ -7,8 +7,13 @@ import { Lead, fmt } from '@/app/demo/page';
 const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 const METHODS = ['Cash', 'Check', 'Credit Card', 'Venmo', 'Zelle', 'Other'];
 
-export default function PaymentTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u: Partial<Lead>) => void }) {
-  const total = parseFloat(lead.quote_total || '0');
+export default function PaymentTab({ lead, onUpdate, tourStep, onTourAdvance }: {
+  lead: Lead;
+  onUpdate: (u: Partial<Lead>) => void;
+  tourStep?: string;
+  onTourAdvance?: (step: any) => void;
+}) {
+    const total = parseFloat(lead.quote_total || '0');
 
   const [amount, setAmount]       = useState('');
   const [method, setMethod]       = useState('');
@@ -30,6 +35,7 @@ export default function PaymentTab({ lead, onUpdate }: { lead: Lead; onUpdate: (
     setCollected(newCollected);
     const newStatus = newCollected >= total ? 'paid' : newCollected > 0 ? 'partial' : 'unpaid';
     onUpdate({ payment_status: newStatus });
+    if (tourStep === 'mark-paid' && newCollected >= total) onTourAdvance?.('done');
     setAmount('');
     setMarkFull(false);
     setSaved(true);

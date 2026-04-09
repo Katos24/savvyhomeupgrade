@@ -15,7 +15,7 @@ const LEADS = [
 ];
 
 const STATS = [
-  { label: 'Total Leads', value: '168', color: '#f9fafb'  },
+{ label: 'Total Leads', value: '168', color: '#0f172a' },
   { label: 'Active Jobs', value: '63',  color: '#3b82f6'  },
   { label: 'Revenue',     value: '$102k', color: '#10b981' },
   { label: 'Pending',     value: '$122k', color: '#f59e0b' },
@@ -180,23 +180,7 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
               Manage every lead, job, quote, and payment from one dashboard. Built for contractors who are tired of juggling spreadsheets, texts, and missed follow-ups.
             </p>
 
-            {/* Feature bullets */}
-            <div className="flex flex-col gap-3 mb-10 w-full max-w-md">
-              {[
-                { label: 'Visual lead board',      desc: 'Cards, table, calendar — switch views instantly'    },
-                { label: 'One-click quotes',        desc: 'Build from templates, send with accept/decline'     },
-                { label: 'Team scheduling',         desc: 'Assign crew, confirm jobs, no back-and-forth texts' },
-                { label: 'Email outbox',            desc: 'Every quote and reminder tracked in one place'      },
-              ].map((f, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#1a6645] mt-2 shrink-0" />
-                  <div>
-                    <span className="text-[13px] font-black text-white">{f.label} </span>
-                    <span className="text-[13px] text-slate-500 font-medium">— {f.desc}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+      
 
             <Link
               href="/signup"

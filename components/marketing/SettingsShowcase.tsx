@@ -127,7 +127,7 @@ function CategoriesBento() {
   );
 }
 
-function FormBento() {
+function FormBento({ isDark = false }: { isDark?: boolean }) {
   const toggles = [
     { label: 'Service address',    desc: 'Autocomplete',          on: true  },
     { label: 'Preferred date',     desc: 'Suggest a date',        on: true  },
@@ -142,25 +142,25 @@ function FormBento() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-          <FileText size={15} className="text-orange-600" />
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-orange-500/20" : "bg-orange-100"}`}>
+          <FileText size={15} className={isDark ? "text-orange-400" : "text-orange-600"} />
         </div>
-        <p className="text-[13px] font-black text-slate-900">Intake Form</p>
+        <p className={`text-[13px] font-black ${isDark ? "text-white" : "text-slate-900"}`}>Intake Form</p>
       </div>
 
       {/* Standard toggles */}
-      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Standard Fields</p>
+      <p className={`text-[8px] font-black uppercase tracking-widest mb-1.5 ${isDark ? "text-white/40" : "text-slate-400"}`}>Standard Fields</p>
       <div className="flex flex-col gap-1.5 mb-3">
         {toggles.map((f, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className={`text-[9px] sm:text-[9.5px] font-semibold leading-tight ${f.on ? 'text-slate-700' : 'text-slate-300'}`}>{f.label}</p>
-              <p className={`text-[7.5px] leading-tight ${f.on ? 'text-slate-400' : 'text-slate-200'}`}>{f.desc}</p>
+              <p className={`text-[9px] sm:text-[9.5px] font-semibold leading-tight ${f.on ? (isDark ? "text-white/90" : "text-slate-700") : (isDark ? "text-white/20" : "text-slate-300")}`}>{f.label}</p>
+              <p className={`text-[7.5px] leading-tight ${f.on ? (isDark ? "text-white/40" : "text-slate-400") : (isDark ? "text-white/10" : "text-slate-200")}`}>{f.desc}</p>
             </div>
             <div
               className="flex items-center px-0.5 rounded-full transition-all shrink-0"
               style={{
-                background: f.on ? '#4f46e5' : '#e2e8f0',
+                background: f.on ? '#4f46e5' : (isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'),
                 width: 28, height: 16,
                 justifyContent: f.on ? 'flex-end' : 'flex-start',
               }}
@@ -173,23 +173,23 @@ function FormBento() {
 
       {/* Custom questions */}
       <div className="flex items-center justify-between mb-1.5">
-        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Your Own Questions</p>
+        <p className={`text-[8px] font-black uppercase tracking-widest ${isDark ? "text-white/40" : "text-slate-400"}`}>Your Own Questions</p>
         <div className="flex items-center gap-1 text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full border border-indigo-100">
           <Plus size={7} /> Add
         </div>
       </div>
       <div className="flex flex-col gap-1.5 flex-1">
         {customQs.map((q, i) => (
-          <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-2">
+          <div key={i} className="rounded-xl px-2.5 py-2" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f8fafc", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f1f5f9" }}>
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[9px] font-black text-slate-700 truncate flex-1">{q.label}</p>
+              <p className={`text-[9px] font-black truncate flex-1 ${isDark ? "text-white/80" : "text-slate-700"}`}>{q.label}</p>
               <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full ml-2 shrink-0"
                 style={{ background: '#eef2ff', color: '#6366f1' }}>{q.type}</span>
             </div>
             {q.options.length > 0 && (
               <div className="flex gap-1 flex-wrap">
                 {q.options.map((o, j) => (
-                  <span key={j} className="text-[7px] font-semibold px-1.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">{o}</span>
+                  <span key={j} className="text-[7px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.08)" : "#fff", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0", color: isDark ? "rgba(255,255,255,0.5)" : "#64748b" }}>{o}</span>
                 ))}
               </div>
             )}
@@ -197,12 +197,12 @@ function FormBento() {
         ))}
       </div>
 
-      <p className="text-[10px] text-slate-400 font-medium mt-3">Toggle fields · Build custom questions</p>
+      <p className={`text-[10px] font-medium mt-3 ${isDark ? "text-white/30" : "text-slate-400"}`}>Toggle fields · Build custom questions</p>
     </div>
   );
 }
 
-function EmailBento() {
+function EmailBento({ isDark = false }: { isDark?: boolean }) {
   const lineItems = [
     { label: 'Shingle Replacement', price: '$4,200' },
     { label: 'Flashing Repair',     price: '$380'   },
@@ -215,9 +215,9 @@ function EmailBento() {
         <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
           <Mail size={15} className="text-blue-600" />
         </div>
-        <p className="text-[13px] font-black text-slate-900">Branded Emails</p>
+        <p className={`text-[13px] font-black ${isDark ? "text-white" : "text-slate-900"}`}>Branded Emails</p>
       </div>
-      <div className="flex-1 rounded-xl overflow-hidden border border-slate-100 flex flex-col">
+      <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f1f5f9" }}>
         {/* Email header banner */}
         <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
@@ -232,43 +232,43 @@ function EmailBento() {
         </div>
 
         {/* Email body */}
-        <div className="bg-white px-3 pt-2.5 pb-2 flex-1 flex flex-col">
+        <div className="px-3 pt-2.5 pb-2 flex-1 flex flex-col" style={{ background: isDark ? "#1e293b" : "#ffffff" }}>
           {/* Greeting */}
-          <p className="text-[8.5px] text-slate-600 leading-relaxed mb-2">
-            Hi <span className="font-black text-slate-800">Curtis</span>, thanks for choosing Ridge Line Roofing. Here's the quote for your roof replacement at <span className="font-semibold">42 Maple Ave, Brooklyn NY</span>.
+          <p className={`text-[8.5px] leading-relaxed mb-2 ${isDark ? "text-white/50" : "text-slate-600"}`}>
+            Hi <span className={`font-black ${isDark ? "text-white/90" : "text-slate-800"}`}>Curtis</span>, thanks for choosing Ridge Line Roofing. Here's the quote for your roof replacement at <span className={`font-semibold ${isDark ? "text-white/70" : ""}`}>42 Maple Ave, Brooklyn NY</span>.
           </p>
 
           {/* Line items table */}
-          <div className="rounded-lg border border-slate-100 overflow-hidden mb-2">
-            <div className="bg-slate-50 px-2 py-1 grid grid-cols-2">
-              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Item</p>
-              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest text-right">Price</p>
+          <div className="rounded-lg overflow-hidden mb-2" style={{ border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f1f5f9" }}>
+            <div className="px-2 py-1 grid grid-cols-2" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f8fafc" }}>
+              <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? "text-white/30" : "text-slate-400"}`}>Item</p>
+              <p className={`text-[7px] font-black uppercase tracking-widest text-right ${isDark ? "text-white/30" : "text-slate-400"}`}>Price</p>
             </div>
             {lineItems.map((item, i) => (
-              <div key={i} className={`px-2 py-1 grid grid-cols-2 ${i < lineItems.length - 1 ? 'border-b border-slate-50' : ''}`}>
-                <p className="text-[8px] text-slate-600">{item.label}</p>
-                <p className="text-[8px] font-semibold text-slate-700 text-right">{item.price}</p>
+              <div key={i} className={`px-2 py-1 grid grid-cols-2 ${i < lineItems.length - 1 ? (isDark ? "border-b border-white/5" : "border-b border-slate-50") : ""}`}>
+                <p className={`text-[8px] ${isDark ? "text-white/50" : "text-slate-600"}`}>{item.label}</p>
+                <p className={`text-[8px] font-semibold text-right ${isDark ? "text-white/80" : "text-slate-700"}`}>{item.price}</p>
               </div>
             ))}
-            <div className="px-2 py-1.5 grid grid-cols-2 bg-slate-50 border-t border-slate-100">
-              <p className="text-[8px] font-black text-slate-700">Total</p>
+            <div className="px-2 py-1.5 grid grid-cols-2" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#f8fafc", borderTop: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #f1f5f9" }}>
+              <p className={`text-[8px] font-black ${isDark ? "text-white/70" : "text-slate-700"}`}>Total</p>
               <p className="text-[8px] font-black text-emerald-600 text-right">$6,130.00</p>
             </div>
           </div>
 
           {/* Note */}
-          <p className="text-[7.5px] text-slate-400 leading-relaxed mb-2.5">
+          <p className={`text-[7.5px] leading-relaxed mb-2.5 ${isDark ? "text-white/30" : "text-slate-400"}`}>
             Quote valid for 14 days. Questions? Reply to this email or call (718) 555-0192.
           </p>
 
           {/* CTA buttons */}
           <div className="grid grid-cols-2 gap-1.5 mt-auto">
             <div className="py-1.5 rounded-lg text-center text-[9px] font-black text-white" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>Accept Quote</div>
-            <div className="py-1.5 rounded-lg text-center text-[9px] font-black text-slate-400 border border-slate-200">Decline</div>
+            <div className="py-1.5 rounded-lg text-center text-[9px] font-black" style={{ color: isDark ? "rgba(255,255,255,0.3)" : "#94a3b8", border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0" }}>Decline</div>
           </div>
         </div>
       </div>
-      <p className="text-[10px] text-slate-400 font-medium mt-3">Fully branded · One click · Tracked in outbox</p>
+      <p className={`text-[10px] font-medium mt-3 ${isDark ? "text-white/30" : "text-slate-400"}`}>Fully branded · One click · Tracked in outbox</p>
     </div>
   );
 }
@@ -301,15 +301,22 @@ export default function SettingsShowcase() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-7"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s' }}
         >
-          {([<PipelineBento />, <CategoriesBento />, <FormBento />, <EmailBento />] as React.ReactNode[]).map((card, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl p-3.5 sm:p-5 lg:p-6 border border-slate-100 w-full"
-              style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
-            >
-              {card}
-            </div>
-          ))}
+          {([<PipelineBento />, <CategoriesBento />, <FormBento isDark />, <EmailBento isDark />] as React.ReactNode[]).map((card, i) => {
+            const isDark = i >= 2;
+            return (
+              <div
+                key={i}
+                className="rounded-2xl p-3.5 sm:p-5 lg:p-6 w-full border"
+                style={{
+                  background: isDark ? '#0f172a' : '#ffffff',
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9',
+                  boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.3)' : '0 2px 16px rgba(0,0,0,0.06)',
+                }}
+              >
+                {card}
+              </div>
+            );
+          })}
         </div>
 
       </div>

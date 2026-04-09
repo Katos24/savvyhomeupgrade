@@ -1,13 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Check, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Check, DollarSign, ArrowRight } from 'lucide-react';
 import { Lead, QuoteItem, fmt } from '@/components/demo/types'
 
 const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
-export default function QuoteTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u: Partial<Lead>) => void }) {
-  const [items, setItems]   = useState<QuoteItem[]>(lead.quote_items || []);
+export default function QuoteTab({ lead, onUpdate, tourStep, onTourAdvance }: {
+  lead: Lead;
+  onUpdate: (u: Partial<Lead>) => void;
+  tourStep?: string;
+  onTourAdvance?: (step: any) => void;
+}) {
+    const [items, setItems]   = useState<QuoteItem[]>(lead.quote_items || []);
   const [desc, setDesc]     = useState('');
   const [qty, setQty]       = useState('1');
   const [price, setPrice]   = useState('');
@@ -31,6 +36,7 @@ export default function QuoteTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u:
     onUpdate({ quote_items: items, quote_total: total > 0 ? total.toFixed(2) : null });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    if (tourStep === 'save-quote') onTourAdvance?.('send-quote');
   };
 
   return (
@@ -116,15 +122,29 @@ export default function QuoteTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u:
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Quote total</p>
           <p className="text-2xl font-black text-white">{fmt(total)}</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={items.length === 0}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed ${
-            saved ? 'bg-emerald-500 text-white' : 'bg-indigo-500 hover:bg-indigo-400 text-white'
-          }`}
-        >
-          {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save quote'}
-        </button>
+      <div className="flex gap-2">
+          <button
+            onClick={handleSave}
+            disabled={items.length === 0}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed ${
+              saved ? 'bg-emerald-500 text-white' : 'bg-indigo-500 hover:bg-indigo-400 text-white'
+            }`}
+          >
+            {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save quote'}
+          </button>
+          {(saved || tourStep === 'send-quote') && (
+            <button
+              onClick={() => {
+                onUpdate({ status: 'quoted' });
+                onTourAdvance?.('accepted');
+                setTimeout(() => onTourAdvance?.('mark-paid'), 2200);
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest bg-emerald-500 hover:bg-emerald-400 text-white transition"
+            >
+              Send quote <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="text-center text-xs text-gray-400">

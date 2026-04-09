@@ -4,7 +4,7 @@ import { Calendar, Clock, Camera, ChevronRight, Sparkles, Zap } from 'lucide-rea
 import { Lead, STATUS_OPTIONS, fmt } from '@/components/demo/types';
 import { motion } from 'framer-motion';
 
-type Props = { lead: Lead & { isNew?: boolean }; darkMode: boolean; onClick: () => void };
+type Props = { lead: Lead & { isNew?: boolean }; darkMode: boolean; onClick: () => void; tourActive?: boolean };
 
 function formatTime(time?: string) {
   if (!time) return 'Not set';
@@ -20,13 +20,14 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function LeadCard({ lead, darkMode, onClick }: Props) {
-  const s = STATUS_OPTIONS.find(o => o.value === lead.status) || STATUS_OPTIONS[0];
+export default function LeadCard({ lead, darkMode, onClick, tourActive }: Props) {
+    const s = STATUS_OPTIONS.find(o => o.value === lead.status) || STATUS_OPTIONS[0];
   const isCompleted = lead.status === 'completed';
   const isNew = (lead as any).isNew;
 
   if (darkMode) {
-    return (
+return (
+      <>
       <motion.div
         initial={isNew ? { opacity: 0, y: -16, scale: 0.97 } : false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -107,12 +108,24 @@ export default function LeadCard({ lead, darkMode, onClick }: Props) {
               <ChevronRight className="w-5 h-5" />
             </div>
           </div>
-        </div>
+  </div>
       </motion.div>
+      {tourActive && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex items-center justify-center gap-2 mt-2"
+        >
+ <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: '#818cf8' }} />          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>Open this lead to start</p>
+ <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: '#818cf8' }} />        </motion.div>
+      )}
+    </>
     );
   }
 
   return (
+    <>
     <motion.div
       initial={isNew ? { opacity: 0, y: -16, scale: 0.97 } : false}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -181,6 +194,19 @@ export default function LeadCard({ lead, darkMode, onClick }: Props) {
           <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors" />
         </div>
       </div>
-    </motion.div>
+  </motion.div>
+    {tourActive && (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="flex items-center justify-center gap-2 mt-2"
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0" />
+        <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>Open this lead to start</p>
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0" />
+      </motion.div>
+    )}
+  </>
   );
 }

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Search, X, LayoutGrid, List, Inbox, ArrowRight,
   Plus, Calendar, ChevronLeft, ChevronRight,
-  MousePointer2, Sparkles, Zap, CheckCircle2, Download, Bell, Mail, Users, CreditCard, Settings
+  MousePointer2, Sparkles, Zap, CheckCircle2, Download, Bell, Mail, Users, CreditCard, Settings,
+  FolderOpen
 } from 'lucide-react';
 import DemoBanner from '@/components/demo/DemoBanner';
 import DemoHeader from '@/components/demo/DemoHeader';
@@ -14,6 +15,14 @@ import LeadCard from '@/components/demo/LeadCard';
 import LeadModal from '@/components/demo/LeadModal';
 import SettingsPreviewCard from '@/components/demo/SettingsPreviewCard';
 import DemoAIButton from '@/components/demo/DemoAIButton';
+import {
+  DemoTourBanner,
+  TourTooltip,
+  TourCompletionCard,
+  useDemoTour,
+  type TourStep,
+} from '@/components/demo/DemoTour';
+
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -222,66 +231,7 @@ const formatTime12h = (timeStr: string) => {
 };
 
 
-// ADD before BrowserChrome component
-const TOUR_STEPS = [
-  {
-    icon: <LayoutGrid className="w-5 h-5 text-indigo-400" />,
-    title: 'This is your live dashboard',
-    body: 'Every lead your customers submit lands here automatically. Tap any card to manage it.',
-  },
-  {
-    icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-    title: 'Quotes, tasks, scheduling — all inside',
-    body: 'Open a lead to send a quote, assign tasks, schedule a job, and track payment.',
-  },
-];
 
-function DemoTour({ darkMode, onDone }: { darkMode: boolean; onDone: () => void }) {
-  const [step, setStep] = useState(0);
-  const current = TOUR_STEPS[step];
-  const isLast = step === TOUR_STEPS.length - 1;
-
-  return (
-<div className="fixed top-20 sm:bottom-24 sm:top-auto left-1/2 -translate-x-1/2 z-[500] w-[calc(100vw-32px)] max-w-sm pointer-events-none">      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, y: 12, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.97 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        className="pointer-events-auto rounded-2xl shadow-2xl border p-6 bg-white border-gray-200"
-        >
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-gray-50">
-              {current.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-  <p className="text-sm font-black mb-1.5 text-gray-900">{current.title}</p>
-              <p className="text-xs leading-relaxed text-gray-500">{current.body}</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1.5">
-              {TOUR_STEPS.map((_, i) => (
-                <div key={i} className={`h-1.5 rounded-full transition-all ${
-                  i === step
-                    ? 'w-5 bg-indigo-500'
-                    : 'w-1.5 bg-gray-200'
-                }`} />
-              ))}
-            </div>
-            <button
-              onClick={() => isLast ? onDone() : setStep(s => s + 1)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition active:scale-95"
-            >
-              {isLast ? 'Got it' : 'Next'}
-            </button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ─── BROWSER CHROME ───────────────────────────────────────────────────────────
 
@@ -510,8 +460,9 @@ export default function DemoPage() {
   const [showAiNudge, setShowAiNudge] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hasOpenedLead, setHasOpenedLead] = useState(false);
-  const [showTour, setShowTour] = useState(true);
-const [dynamicCta, setDynamicCta] = useState<string | null>(null);
+const [showTourBanner, setShowTourBanner] = useState(true);
+const { tourStep, startTour, advanceTo, dismissTour } = useDemoTour();
+  const [dynamicCta, setDynamicCta] = useState<string | null>(null);
 
   const updateLead = (id: number, updates: Partial<Lead>) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
@@ -520,10 +471,51 @@ const [dynamicCta, setDynamicCta] = useState<string | null>(null);
 
  
 const handleSelectLead = (lead: Lead) => {
-  setSelectedLead(lead);
-  setHasOpenedLead(true);
-  setShowTour(false);
+    setSelectedLead(lead);
+    setHasOpenedLead(true);
+    setShowTourBanner(false);
+    if (tourStep === 'idle' && lead.id === 1) advanceTo('save-quote');
+    else if (tourStep === 'open-lead') advanceTo('save-quote');
+  };
+
+  const handleTourStep1 = useCallback(() => {
+    const michael = leads.find(l => l.id === 1);
+    if (michael) handleSelectLead(michael);
+  }, [leads]);
+
+  const handleTourStart = () => {
+  setShowTourBanner(false);
+  startTour();
+  // Auto-open Michael Johnson (id: 1)
+  const michael = leads.find(l => l.id === 1);
+  if (michael) {
+    setSelectedLead(michael);
+    setHasOpenedLead(true);
+  }
 };
+
+  const handleTourStep2 = useCallback(() => {
+    updateLead(1, { status: 'quoted', quote_total: '4200.00' });
+  }, []);
+
+  const handleTourStep3 = useCallback(() => {
+    updateLead(1, {
+      status: 'scheduled',
+      quote_total: '4200.00',
+      payment_status: 'unpaid',
+    });
+  }, []);
+
+  const handleTourStep4 = useCallback(() => {
+    updateLead(1, {
+      status: 'completed',
+      payment_status: 'paid',
+      quote_total: '4200.00',
+    });
+    setSelectedLead(null);
+  }, []);
+
+
   const filtered = useMemo(() =>
     leads.filter(l => {
       if (filterStatus !== 'all' && l.status !== filterStatus) return false;
@@ -588,6 +580,22 @@ useEffect(() => {
               onShowSettings={() => setShowSettings(true)}
               onCreateLead={() => setShowCreateModal(true)}
             />
+
+    
+         
+
+          {/* Tour banner */}
+            <AnimatePresence>
+              {showTourBanner && tourStep === 'idle' && (
+                <DemoTourBanner
+                  darkMode={darkMode}
+                  onStart={handleTourStart}
+                  onDismiss={() => setShowTourBanner(false)}
+                />
+              )}
+            </AnimatePresence>
+
+
 
             {/* Search + filters */}
             <div className="flex flex-col gap-3 mb-6">
@@ -662,11 +670,16 @@ useEffect(() => {
     </div>
   )}
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-    {filtered.map((lead, i) => (
-      <ClickHint key={lead.id} show={!hasOpenedLead && i === 0}>
-        <LeadCard lead={lead} darkMode={darkMode} onClick={() => handleSelectLead(lead)} />
-      </ClickHint>
-    ))}
+   {filtered.map((lead, i) => (
+  <ClickHint key={lead.id} show={!hasOpenedLead && i === 0}>
+    <LeadCard
+      lead={lead}
+      darkMode={darkMode}
+      onClick={() => handleSelectLead(lead)}
+      tourActive={lead.id === 1 && tourStep === 'idle'}
+    />
+  </ClickHint>
+))}
   </div>
 </>
 ) : (
@@ -773,14 +786,17 @@ useEffect(() => {
       </div>
 
       {/* Modals */}
-     {selectedLead && (
-  <LeadModal
-    lead={leads.find(l => l.id === selectedLead.id) || selectedLead}
-    darkMode={darkMode}
-    onClose={() => setSelectedLead(null)}
-    onUpdate={(updates) => updateLead(selectedLead.id, updates)}
-  />
-)}
+   {selectedLead && (
+        <LeadModal
+          lead={leads.find(l => l.id === selectedLead.id) || selectedLead}
+          darkMode={darkMode}
+          onClose={() => setSelectedLead(null)}
+          onUpdate={(updates) => updateLead(selectedLead.id, updates)}
+          tourStep={tourStep}
+          onTourAdvance={advanceTo}
+          onTourDismiss={dismissTour}
+        />
+      )}
 
       {showCreateModal && (
         <DemoCreateModal darkMode={darkMode} onClose={() => setShowCreateModal(false)} />
@@ -790,10 +806,7 @@ useEffect(() => {
 
       <DemoAIButton showNudge={showAiNudge} onToggle={() => setShowAiNudge(v => !v)} />
 
-        {/* Tour */}
-{showTour && (
-  <DemoTour darkMode={darkMode} onDone={() => setShowTour(false)} />
-)}
+        {/* removed — tour is now inline above search */}
 
 
     </div>

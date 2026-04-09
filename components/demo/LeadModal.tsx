@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -9,6 +9,13 @@ import {
   Download, ChevronLeft, ChevronRight, Image, CheckCircle2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { Lead, STATUS_OPTIONS, fmt } from '@/components/demo/types';
+import {
+  TourTooltip,
+  QuoteAcceptedNotification,
+  TourCompletionCard,
+  type TourStep,
+} from '@/components/demo/DemoTour';
+import { FolderOpen, CreditCard } from 'lucide-react';
 import OverviewTab from '@/components/demo/tabs/OverviewTab';
 import ScheduleTab from '@/components/demo/tabs/ScheduleTab';
 import QuoteTab from '@/components/demo/tabs/QuoteTab';
@@ -255,12 +262,28 @@ type Props = {
   darkMode: boolean;
   onClose: () => void;
   onUpdate: (updates: Partial<Lead>) => void;
+  tourStep?: TourStep;
+  onTourAdvance?: (step: TourStep) => void;
+  onTourDismiss?: () => void;
 };
 
 // ─── MAIN MODAL ───────────────────────────────────────────────────────────────
 
-export default function LeadModal({ lead, darkMode, onClose, onUpdate }: Props) {
-const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'media' | 'ai'>('overview');
+export default function LeadModal({
+  lead, darkMode, onClose, onUpdate,
+  tourStep, onTourAdvance, onTourDismiss,
+}: Props) {
+const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'media' | 'ai'>(
+  tourStep === 'save-quote' || tourStep === 'send-quote' || tourStep === 'accepted' ? 'quote' :
+  tourStep === 'mark-paid' ? 'payment' : 'overview'
+);
+useEffect(() => {
+  if (tourStep === 'save-quote' || tourStep === 'send-quote' || tourStep === 'accepted') {
+    setActiveTab('quote');
+  } else if (tourStep === 'mark-paid') {
+    setActiveTab('payment');
+  }
+}, [tourStep]);
 const [showStatusMenu, setShowStatusMenu] = useState(false);
 const [showCompletedPrompt, setShowCompletedPrompt] = useState(false);
 
@@ -429,11 +452,77 @@ const handleStatusChange = (newStatus: string) => {
       )}
     </AnimatePresence>
 
+ {/* Tour inline callouts */}
+    <AnimatePresence>
+      {(tourStep === 'save-quote' || tourStep === 'send-quote') && onTourAdvance && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 flex items-center gap-3"
+        >
+          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse shrink-0" />
+          <p className="text-xs font-black text-indigo-300 flex-1">
+            {tourStep === 'save-quote'
+              ? 'Your roofing template is pre-loaded — $4,200 total. Hit Save Quote below.'
+              : 'Quote saved. Now send it to Michael — he\'ll get an email with Accept / Decline.'}
+          </p>
+          <button onClick={() => onTourDismiss?.()} className="text-white/20 hover:text-white/50 transition shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
+      )}
+
+      {tourStep === 'accepted' && onTourAdvance && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-3"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs font-black text-emerald-300">Michael just accepted the quote</p>
+            <p className="text-[10px] text-emerald-400/70">$4,200 confirmed — switching to Payment tab</p>
+          </div>
+        </motion.div>
+      )}
+
+      {tourStep === 'mark-paid' && onTourAdvance && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-3"
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <p className="text-xs font-black text-emerald-300 flex-1">
+            Got paid? Check "Mark as Paid in Full" below and hit Save — your revenue updates live.
+          </p>
+          <button onClick={() => onTourDismiss?.()} className="text-white/20 hover:text-white/50 transition shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
+      )}
+
+      {tourStep === 'done' && (
+        <TourCompletionCard onDismiss={() => { onTourDismiss?.(); onClose(); }} />
+      )}
+    </AnimatePresence>
+ 
     {/* Existing tabs */}
     {activeTab === 'overview' && <OverviewTab lead={lead} />}
     {activeTab === 'schedule' && <ScheduleTab lead={lead} onUpdate={onUpdate} />}
-    {activeTab === 'quote'    && <QuoteTab    lead={lead} onUpdate={onUpdate} />}
-    {activeTab === 'payment'  && <PaymentTab  lead={lead} onUpdate={onUpdate} />}
+{activeTab === 'quote' && (
+  <QuoteTab
+    lead={lead}
+    onUpdate={onUpdate}
+    tourStep={tourStep}
+    onTourAdvance={onTourAdvance}
+  />
+)}
+{activeTab === 'payment' && (
+  <PaymentTab
+    lead={lead}
+    onUpdate={onUpdate}
+    tourStep={tourStep}
+    onTourAdvance={onTourAdvance}
+  />
+)}
     {activeTab === 'tasks'    && <TasksTab    lead={lead} onUpdate={onUpdate} />}
     {activeTab === 'media'    && <MediaTab    lead={lead} />}
     {activeTab === 'ai'       && <AIBriefTab  lead={lead} />}

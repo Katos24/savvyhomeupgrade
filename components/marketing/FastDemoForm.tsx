@@ -18,6 +18,7 @@ function OrangeBtn({ children, done }: { children: React.ReactNode; done?: boole
   );
 }
 
+
 function Label({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between mb-0.5">
@@ -122,12 +123,12 @@ function SuccessScreen() {
   );
 }
 
-export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
+export function FastDemoForm({ autoPlay = false, showSuccess = true }: { autoPlay?: boolean; showSuccess?: boolean }) {
   type Phase = 'idle' | 's1-done' | 's1-exit' | 's2-enter' | 's2-q1' | 's2-photo' | 's2-drop' | 's2-done' | 'success';
 
   const [phase, setPhase] = useState<Phase>('idle');
-  const name = 'Curtis Wilson';
-  const email = 'curtisw@email.com';
+  const name = 'Jason Merritt';
+  const email = 'jasonm@email.com';
   const phone = '(555) 482-9301';
   const desc = 'Damaged roof after storm, full inspection needed';
   const addr = '42 Maple Ave';
@@ -150,15 +151,20 @@ export function FastDemoForm({ autoPlay = false }: { autoPlay?: boolean }) {
 
     function run() {
       reset();
-      go(() => setPhase('s1-done'), 800);
-      go(() => setPhase('s1-exit'), 1600);
-      go(() => { setStep(2); setPhase('s2-enter'); }, 2200);
-go(() => { setTapping(true); setPhase('s2-q1'); }, 3000);
-go(() => { setQ1('Under 10 yrs'); setTapping(false); }, 3350);      go(() => setPhase('s2-photo'), 3800);
-      go(() => { setPhotoDrop(true); setPhase('s2-drop'); }, 4500);
-      go(() => setPhase('s2-done'), 5200);
-      go(() => { setStep('success'); setPhase('success'); }, 5900);
-      go(run, 9000);
+      go(() => setPhase('s1-done'), 400);
+go(() => setPhase('s1-exit'), 800);
+go(() => { setStep(2); setPhase('s2-enter'); }, 1200);
+go(() => { setTapping(true); setPhase('s2-q1'); }, 1800);
+go(() => { setQ1('Under 10 yrs'); setTapping(false); }, 2150);
+go(() => setPhase('s2-photo'), 2600);
+go(() => { setPhotoDrop(true); setPhase('s2-drop'); }, 3200);
+go(() => setPhase('s2-done'), 3800);
+if (showSuccess) {
+  go(() => { setStep('success'); setPhase('success'); }, 5900);
+  go(run, 9000);
+} else {
+  go(run, 6200);
+}
     }
 
     run();
