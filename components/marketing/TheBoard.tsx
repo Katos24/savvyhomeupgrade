@@ -217,21 +217,28 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
           {/* RIGHT — laptop */}
           <div className="w-full">
 
-            {/* View tabs above laptop */}
-         <div className="flex items-center justify-between gap-4 mb-4 w-full">
-          {VIEWS.map(v => {
-            const isActive = current === v.key;
-            return (
-              <button key={v.key} onClick={() => setCurrent(v.key)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-black transition-all"
-                style={isActive
-                  ? { background: 'transparent', color: '#fff', border: '2px solid #fff' }
-                  : { background: 'transparent', color: 'rgba(255,255,255,0.4)', border: '2px solid transparent' }}>
-                {v.icon}<span>{v.label}</span>
-              </button>
-            );
-          })}
-        </div>
+           {/* View tabs above laptop */}
+          <div className="mb-4 w-full">
+            <div className="flex items-center gap-3 w-full">
+              {VIEWS.map(v => {
+                const isActive = current === v.key;
+                return (
+                  <button
+                    key={v.key}
+                    onClick={() => setCurrent(v.key)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full text-[11px] sm:text-[12px] font-black transition-all whitespace-nowrap"
+                    style={isActive
+                      ? { background: '#1a6645', color: '#fff', border: '2px solid #1a6645', boxShadow: '0 0 0 3px rgba(255,255,255,0.12)' }
+                      : { background: '#fff', color: '#0f172a', border: '2px solid #0f172a', boxShadow: '0 0 0 3px rgba(255,255,255,0.12)' }
+                    }
+                  >
+                    <span className="hidden sm:inline-flex">{v.icon}</span>
+                    <span>{v.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
             {/* Laptop shell */}
             <div className="relative w-full">
