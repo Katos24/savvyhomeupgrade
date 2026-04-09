@@ -86,7 +86,7 @@ function ScreenDashboard() {
           <span style={{ fontSize: 7.5, color: '#374151', fontWeight: 600 }}>just now</span>
         </div>
         <div style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#f9fafb', marginBottom: 1 }}>Curtis Wilson</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#f9fafb', marginBottom: 1 }}>Kevin White</div>
           <div style={{ fontSize: 8.5, color: '#6b7280', fontWeight: 500, marginBottom: 8 }}>Unassigned · via QR scan</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 8 }}>
             {[
@@ -103,8 +103,8 @@ function ScreenDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid #1a2535' }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#6b7280' }}>$0</div>
-              <div style={{ fontSize: 7.5, color: '#374151', fontWeight: 600 }}>+ UNPAID</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#6b7280' }}>$900</div>
+              <div style={{ fontSize: 7.5, color: '#374151', fontWeight: 600 }}>PARTIAL</div>
             </div>
             <div style={{ width: 28, height: 28, background: '#312e81', borderRadius: 9, border: '1px solid #3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#818cf8"/></svg>
@@ -128,7 +128,7 @@ function ScreenSchedule() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
             <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>#147</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Curtis Wilson</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Kevin White</div>
             <div style={{ fontSize: 8.5, color: '#a5b4fc', fontWeight: 500 }}>Submitted Mar 31, 2026</div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
@@ -233,7 +233,7 @@ function ScreenQuote() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
             <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>#147</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Curtis Wilson</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Kevin White</div>
             <div style={{ fontSize: 8.5, color: '#a5b4fc', fontWeight: 500 }}>Submitted Mar 31, 2026</div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
