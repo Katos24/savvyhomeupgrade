@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { QrCode, ChevronRight, Check, MapPin, Phone, User, Wifi, ArrowRight } from 'lucide-react';
+import { QrCode, ChevronRight, Check, MapPin, Phone, User, Wifi, ArrowRight, Mail } from 'lucide-react';
 
 // ── Phase timing ──────────────────────────────────────────────────────────────
 // 0    — form idle, fields pre-filled
-// 1500 — submit button pulses / "Submitting..."
-// 2800 — transition: left fades, right activates
-// 3500 — Curtis Wilson slides in on dashboard
-// 7000 — reset and loop
+// 1800 — submit button pulses / "Submitted!"
+// 3000 — transition: left fades, right activates
+// 3600 — Curtis Wilson slides in on dashboard
+// 8000 — reset and loop
 
 export default function HeroDashboardDemo() {
   const [phase, setPhase] = useState<'form' | 'submitting' | 'dashboard' | 'reset'>('form');
@@ -35,15 +35,16 @@ export default function HeroDashboardDemo() {
   const dashActive = phase === 'dashboard';
 
   const existingLeads = [
-    { name: 'Marcus Thornton', status: 'Contacted', color: '#f59e0b', amount: '$7,950', date: 'Apr 12' },
-    { name: 'David Reyes',     status: 'Scheduled', color: '#6366f1', amount: '$2,400', date: 'Apr 15' },
-    { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200', date: 'Apr 13' },
-    { name: 'Torres Roofing',  status: 'Quote Sent', color: '#8b5cf6', amount: '$11,400', date: 'Apr 18' },
-    { name: 'Apex Fencing',    status: 'New',        color: '#10b981', amount: '—',       date: 'Apr 9'  },
+    { name: 'Marcus Thornton', status: 'Contacted',  color: '#f59e0b', amount: '$7,950',  date: 'Apr 12' },
+    { name: 'David Reyes',     status: 'Scheduled',  color: '#6366f1', amount: '$2,400',  date: 'Apr 15' },
+    { name: 'Sarah Kim',       status: 'Won',         color: '#10b981', amount: '$5,200',  date: 'Apr 13' },
+    { name: 'James Patel',     status: 'Quote Sent', color: '#8b5cf6', amount: '$11,400', date: 'Apr 18' },
+    { name: 'Linda Ortega',    status: 'New',         color: '#10b981', amount: '—',       date: 'Apr 9'  },
+    { name: 'Ray Nguyen',      status: 'Contacted',  color: '#f59e0b', amount: '$3,200',  date: 'Apr 10' },
   ];
 
   return (
-    <div className="relative w-full max-w-[580px] mx-auto lg:mx-0">
+    <div className="relative w-full max-w-[600px] mx-auto lg:mx-0">
 
       {/* Ambient glow */}
       <div className="absolute -top-8 -right-8 w-64 h-64 rounded-full opacity-20 pointer-events-none blur-3xl"
@@ -61,11 +62,14 @@ export default function HeroDashboardDemo() {
         </p>
       </div>
 
-<div className="grid grid-cols-2 gap-4 relative lg:items-stretch" style={{ minHeight: 'clamp(0px, 50vw, 560px)' }}>
+      <div className="grid grid-cols-2 gap-4 relative lg:items-stretch" style={{ minHeight: 'clamp(0px, 50vw, 600px)' }}>
 
         {/* Arrow connector */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-700"
-          style={{ opacity: phase === 'submitting' ? 1 : 0, transform: `translateX(-50%) translateY(-50%) scale(${phase === 'submitting' ? 1 : 0.8})` }}>
+          style={{
+            opacity: phase === 'submitting' ? 1 : 0,
+            transform: `translateX(-50%) translateY(-50%) scale(${phase === 'submitting' ? 1 : 0.8})`
+          }}>
           <div className="w-8 h-8 rounded-full bg-[#1a6645] flex items-center justify-center shadow-lg shadow-emerald-900/30">
             <ArrowRight size={14} className="text-white" />
           </div>
@@ -73,7 +77,7 @@ export default function HeroDashboardDemo() {
 
         {/* ── LEFT: Customer form ── */}
         <div
-         className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700 flex flex-col"
+          className="bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-700 flex flex-col"
           style={{
             boxShadow: formActive ? '0 8px 40px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
             opacity: dashActive ? 0.35 : 1,
@@ -89,7 +93,7 @@ export default function HeroDashboardDemo() {
             </div>
           </div>
 
-          {/* URL */}
+          {/* URL bar */}
           <div className="px-3 py-2 border-b border-slate-50">
             <div className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
               <QrCode size={8} className="text-[#1a6645] shrink-0" />
@@ -99,23 +103,33 @@ export default function HeroDashboardDemo() {
             </div>
           </div>
 
-        {/* Form fields */}
+          {/* Form fields */}
           <div className="px-3 py-2.5 space-y-1.5 flex-1">
-            {[
-              { icon: <User size={8} />,    val: 'Curtis Wilson',      },
-              { icon: <Phone size={8} />,   val: '(555) 482-9301',     },
-              { icon: <MapPin size={8} />,  val: 'Roof Replacement', },
-            ].map((f, i) => (
-              <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-                <span className="text-slate-400 shrink-0">{f.icon}</span>
-                <span className="text-[9px] font-medium text-slate-700 flex-1">{f.val}</span>
-                <Check size={7} className="text-emerald-400 shrink-0" />
-              </div>
-            ))}
 
-{/* Address */}
+            {/* Name */}
             <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-              <span className="text-slate-400 shrink-0"><MapPin size={8} /></span>
+              <User size={8} className="text-slate-400 shrink-0" />
+              <span className="text-[9px] font-medium text-slate-700 flex-1">Curtis Wilson</span>
+              <Check size={7} className="text-emerald-400 shrink-0" />
+            </div>
+
+            {/* Phone */}
+            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+              <Phone size={8} className="text-slate-400 shrink-0" />
+              <span className="text-[9px] font-medium text-slate-700 flex-1">(555) 482-9301</span>
+              <Check size={7} className="text-emerald-400 shrink-0" />
+            </div>
+
+            {/* Email */}
+            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+              <Mail size={8} className="text-slate-400 shrink-0" />
+              <span className="text-[9px] font-medium text-slate-700 flex-1">jmerritt@email.com</span>
+              <Check size={7} className="text-emerald-400 shrink-0" />
+            </div>
+
+            {/* Address */}
+            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+              <MapPin size={8} className="text-slate-400 shrink-0" />
               <span className="text-[9px] font-medium text-slate-700 flex-1">42 Maple Ave, Brooklyn NY</span>
               <Check size={7} className="text-emerald-400 shrink-0" />
             </div>
@@ -126,12 +140,45 @@ export default function HeroDashboardDemo() {
               <p className="text-[8px] text-slate-600 leading-relaxed">Damaged shingles after storm, full inspection needed. Some flashing issues near chimney.</p>
             </div>
 
-            {/* Custom question */}
+            {/* Service category chips */}
             <div>
-<p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">Service Needed</p>              <div className="flex gap-1 flex-wrap">
-               {['Roofing', 'Gutters', 'Siding', 'Windows'].map((o, i) => (
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">Service Needed</p>
+              <div className="flex gap-1 flex-wrap">
+                {['Storm Damage', 'Full Replacement', 'Roof Repair', 'Gutters', 'Inspection', 'Skylights'].map((o, i) => (
                   <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
                     style={i === 0
+                      ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
+                      : { background: '#f8fafc', color: '#94a3b8', borderColor: '#e2e8f0' }
+                    }>
+                    {o}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Budget range chips */}
+            <div className="hidden lg:block">
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">Budget Range</p>
+              <div className="flex gap-1 flex-wrap">
+                {['Under $2k', '$2k–$5k', '$5k–$15k', '$15k+'].map((o, i) => (
+                  <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
+                    style={i === 2
+                      ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
+                      : { background: '#f8fafc', color: '#94a3b8', borderColor: '#e2e8f0' }
+                    }>
+                    {o}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Urgency chips */}
+            <div className="hidden lg:block">
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">How Urgent?</p>
+              <div className="flex gap-1 flex-wrap">
+                {['Urgent', 'Within 2 weeks', 'Within a month'].map((o, i) => (
+                  <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
+                    style={i === 1
                       ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
                       : { background: '#f8fafc', color: '#94a3b8', borderColor: '#e2e8f0' }
                     }>
@@ -157,6 +204,7 @@ export default function HeroDashboardDemo() {
                 <Check size={8} className="text-emerald-400 shrink-0" />
               </div>
             </div>
+
           </div>
 
           {/* Submit button */}
@@ -203,7 +251,11 @@ export default function HeroDashboardDemo() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 border-b border-slate-50">
-            {[{ label: 'Leads', val: leadVisible ? '169' : '168' }, { label: 'Active', val: '63' }, { label: 'Revenue', val: '$102k' }].map((s, i) => (
+            {[
+              { label: 'Leads',   val: leadVisible ? '169' : '168' },
+              { label: 'Active',  val: '63' },
+              { label: 'Revenue', val: '$102k' },
+            ].map((s, i) => (
               <div key={i} className={`px-2 py-2 text-center ${i < 2 ? 'border-r border-slate-50' : ''} transition-all duration-500`}>
                 <p className={`text-[13px] font-black transition-all duration-300 ${i === 0 && leadVisible ? 'text-emerald-600' : 'text-slate-900'}`}>{s.val}</p>
                 <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
@@ -212,8 +264,9 @@ export default function HeroDashboardDemo() {
           </div>
 
           {/* Lead list */}
-<div className="px-3 pt-2.5 pb-1 space-y-1.5 flex-1">
-                {/* New lead animates in */}
+          <div className="px-3 pt-2.5 pb-1 space-y-1.5 flex-1 overflow-hidden">
+
+            {/* New lead animates in */}
             <div
               className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all duration-700"
               style={{
@@ -227,7 +280,7 @@ export default function HeroDashboardDemo() {
               <div className="w-1 h-6 rounded-full shrink-0 bg-emerald-500" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-[10px] font-black text-slate-900">Curtis Wilson</p>
+                  <p className="text-[10px] font-black text-slate-900">Jason Merritt</p>
                   <span className="text-[6px] font-black text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded-full">NEW</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -235,20 +288,38 @@ export default function HeroDashboardDemo() {
                   <span className="text-[7px] text-slate-400">via QR · just now</span>
                 </div>
               </div>
+              <div className="text-right shrink-0">
+                <p className="text-[8px] font-black text-emerald-600">Roofing</p>
+                <p className="text-[6px] text-slate-400">Brooklyn NY</p>
+              </div>
               <ChevronRight size={10} className="text-slate-300 shrink-0" />
             </div>
 
-            {/* Existing leads */}
-            {existingLeads.slice(0, 5).map((lead, i) => (
-              <div key={i} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-slate-50 bg-slate-50/50 ${i >= 2 ? 'hidden lg:flex' : ''}`}>
+            {/* Existing leads — first 2 always visible, rest lg only */}
+            {existingLeads.map((lead, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-slate-50 bg-slate-50/50 transition-all duration-300 ${i >= 2 ? 'hidden lg:flex' : 'flex'}`}
+              >
                 <div className="w-1 h-5 rounded-full shrink-0" style={{ background: lead.color }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-black text-slate-800 truncate">{lead.name}</p>
                   <span className="text-[6px] font-black px-1 py-0.5 rounded" style={{ background: `${lead.color}15`, color: lead.color }}>{lead.status}</span>
                 </div>
-                <p className="text-[9px] font-black text-emerald-600 shrink-0">{lead.amount}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-[9px] font-black text-emerald-600">{lead.amount}</p>
+                  <p className="text-[6px] text-slate-400">{lead.date}</p>
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Unpaid banner */}
+          <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-xl hidden lg:flex items-center gap-2"
+            style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+            <p className="text-[7px] font-black text-orange-600 flex-1">15 Overdue · 1 Due Soon</p>
+            <p className="text-[7px] font-bold text-orange-400">$34,200 pending</p>
           </div>
 
           <div className="px-3 pb-3">
