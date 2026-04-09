@@ -98,12 +98,12 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
             <div className="w-1.5 shrink-0" style={{ backgroundColor: statusHex }} />
 
             {/* ── MOBILE ROW LAYOUT (hidden sm:) ── */}
-            <div className="flex sm:hidden flex-1 items-center px-3 py-3 min-w-0 gap-3">
+            <div className="flex sm:hidden flex-1 items-center px-4 py-4 min-w-0 gap-3">
               
               {/* Name + status */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className={`${t.textHeading} text-[14px] font-black tracking-tight truncate`}>
+                  <h3 className={`${t.textHeading} text-[16px] font-black tracking-tight truncate`}>
                     {lead.name}
                   </h3>
                   {lead.follow_up_date && (
@@ -112,7 +112,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                 </div>
                 <div className="flex items-center gap-2">
                   <span 
-                    className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0"
+                    className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md border shrink-0"
                     style={{ 
                       backgroundColor: `${statusHex}15`, 
                       color: statusHex, 
@@ -138,12 +138,12 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
               {/* Date + amount — right side */}
               <div className="flex flex-col items-end shrink-0 gap-0.5">
                 {!isStarter && lead.quote_total ? (
-                  <span className={`text-[13px] font-black ${t.textHeading}`}>
+                  <span className={`text-[15px] font-black ${t.textHeading}`}>
                     ${parseFloat(lead.quote_total).toLocaleString()}
                   </span>
                 ) : null}
                 {schedDate ? (
-                  <div className={`flex items-center gap-1 text-[10px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                  <div className={`flex items-center gap-1 text-[12px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                     <Calendar className="w-3 h-3" />
                     {schedDate}
                   </div>
