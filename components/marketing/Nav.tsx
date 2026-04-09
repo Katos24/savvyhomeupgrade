@@ -152,7 +152,7 @@ export default function Nav() {
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-[#1a6645] text-white font-black text-base"
           >
-            Start Free — No Card Needed
+            Sign Up Today
             <ArrowRight size={18} />
           </Link>
           <Link

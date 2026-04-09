@@ -160,7 +160,7 @@ export default function HeroDashboardDemo() {
             <div className="hidden lg:block">
               <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">Budget Range</p>
               <div className="flex gap-1 flex-wrap">
-                {['Under $2k', '$2k–$5k', '$5k–$15k', '$15k+'].map((o, i) => (
+                {['Under $2k', '$2k–$5k', '$5k–$15k', '$15k–$30k', '$30k+'].map((o, i) => (
                   <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
                     style={i === 2
                       ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
@@ -176,7 +176,7 @@ export default function HeroDashboardDemo() {
             <div className="hidden lg:block">
               <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1 px-0.5">How Urgent?</p>
               <div className="flex gap-1 flex-wrap">
-                {['Urgent', 'Within 2 weeks', 'Within a month'].map((o, i) => (
+                {['Active leak', 'Within 2 weeks', 'Within a month', 'Just quoting'].map((o, i) => (
                   <div key={o} className="px-2 py-0.5 rounded-full text-[7px] font-black border transition-all"
                     style={i === 1
                       ? { background: '#0F1F3D', color: '#fff', borderColor: '#0F1F3D' }
@@ -279,18 +279,14 @@ export default function HeroDashboardDemo() {
             >
               <div className="w-1 h-6 rounded-full shrink-0 bg-emerald-500" />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[10px] font-black text-slate-900">Jason Merritt</p>
-                  <span className="text-[6px] font-black text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded-full">NEW</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-[10px] font-black text-slate-900 truncate">Jason Merritt</p>
+                  <span className="text-[6px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">NEW</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <QrCode size={7} className="text-slate-400" />
-                  <span className="text-[7px] text-slate-400">via QR · just now</span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <QrCode size={7} className="text-slate-400 shrink-0" />
+                  <span className="text-[7px] text-slate-400">via QR · just now · Roofing</span>
                 </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-[8px] font-black text-emerald-600">Roofing</p>
-                <p className="text-[6px] text-slate-400">Brooklyn NY</p>
               </div>
               <ChevronRight size={10} className="text-slate-300 shrink-0" />
             </div>

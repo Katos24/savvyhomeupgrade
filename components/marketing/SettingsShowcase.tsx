@@ -2,33 +2,41 @@
 
 import React from 'react';
 import { useFadeIn } from '@/components/marketing/hooks';
-import { SlidersHorizontal, LayoutGrid, FileText, Mail, Check, Plus } from 'lucide-react';
+import { SlidersHorizontal, LayoutGrid, FileText, Mail, Check, Plus, MessageSquare, Pencil } from 'lucide-react';
 
 // ── Bento cards ───────────────────────────────────────────────────────────────
 
 function PipelineBento() {
   const stages = [
-    { label: 'New',       color: '#10b981' },
-    { label: 'Contacted', color: '#f59e0b' },
-    { label: 'Quoted',    color: '#8b5cf6' },
-    { label: 'Won',       color: '#3b82f6' },
+    { label: 'New',         color: '#10b981', required: true,  bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
+    { label: 'Contacted',   color: '#f59e0b', required: false, bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
+    { label: 'In Progress', color: '#3b82f6', required: false, bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-700'    },
+    { label: 'Quoted',      color: '#8b5cf6', required: false, bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
+    { label: 'Completed',   color: '#10b981', required: true,  bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700' },
   ];
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-          <SlidersHorizontal size={15} className="text-amber-600" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <SlidersHorizontal size={15} className="text-amber-600" />
+          </div>
+          <p className="text-[13px] font-black text-slate-900">Pipeline Stages</p>
         </div>
-        <p className="text-[13px] font-black text-slate-900">Pipeline Stages</p>
+        <div className="flex items-center gap-1 text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 cursor-pointer">
+          <Plus size={8} /> Add Stage
+        </div>
       </div>
       <div className="flex flex-col gap-2 flex-1">
         {stages.map((s, i) => (
-          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
+          <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${s.bg} ${s.border}`}>
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
-            <p className="text-[11px] font-semibold text-slate-700 flex-1">{s.label}</p>
-            {(i === 0 || i === stages.length - 1)
-              ? <span className="text-[9px] text-slate-400 font-bold">Required</span>
-              : <div className="w-4 h-4 rounded border border-slate-200 flex items-center justify-center"><Check size={8} className="text-indigo-500" /></div>
+            <p className={`text-[10px] sm:text-[11px] font-semibold flex-1 ${s.text}`}>{s.label}</p>
+            {s.required
+              ? <span className="text-[8px] font-bold text-slate-300">Required</span>
+              : <div className="w-5 h-5 rounded-lg border border-slate-200 bg-white flex items-center justify-center cursor-pointer hover:border-indigo-300">
+                  <Pencil size={8} className="text-slate-400" />
+                </div>
             }
           </div>
         ))}
@@ -41,8 +49,8 @@ function PipelineBento() {
 function CategoriesBento() {
   const cats = [
     { label: 'Full Roof Replacement', tasks: 4, items: 4, color: '#6366f1' },
-    { label: 'Roof Repair',           tasks: 2, items: 4,  color: '#10b981' },
-    { label: 'Gutter Installation',   tasks: 1, items: 6,  color: '#f59e0b' },
+    { label: 'Roof Repair',           tasks: 2, items: 4, color: '#10b981' },
+    { label: 'Gutter Installation',   tasks: 1, items: 6, color: '#f59e0b' },
   ];
   const expandedTasks = ['Inspect shingles & underlayment', 'Check flashing & seals', 'Photo documentation', 'Measure sq footage'];
   const expandedItems = [
@@ -70,15 +78,15 @@ function CategoriesBento() {
         {cats.map((cat, i) => (
           <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${i === 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />
-            <p className={`text-[10px] font-semibold flex-1 truncate ${i === 0 ? 'text-indigo-700' : 'text-slate-700'}`}>{cat.label}</p>
-            <span className="text-[8px] font-black text-blue-400">{cat.tasks} tasks</span>
+            <p className={`text-[9px] sm:text-[10px] font-semibold flex-1 truncate ${i === 0 ? 'text-indigo-700' : 'text-slate-700'}`}>{cat.label}</p>
+            <span className="hidden sm:inline text-[8px] font-black text-blue-400">{cat.tasks} tasks</span>
             <span className="text-[8px] font-black text-emerald-500">{cat.items} items</span>
           </div>
         ))}
       </div>
 
       {/* Expanded view of first category */}
-      <div className="rounded-xl border border-indigo-100 overflow-hidden flex-1">
+      <div className="hidden sm:block rounded-xl border border-indigo-100 overflow-hidden flex-1">
         <div className="px-2.5 py-1.5 border-b border-indigo-100" style={{ background: '#eef2ff' }}>
           <p className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">Auto-loads on select</p>
         </div>
@@ -120,12 +128,16 @@ function CategoriesBento() {
 }
 
 function FormBento() {
-  const fields = [
-    { label: 'Service address',  on: true  },
-    { label: 'Photo upload',     on: true  },
-    { label: 'Budget range',     on: true  },
-    { label: 'How urgent?',      on: true  },
-    { label: 'Square footage',   on: false },
+  const toggles = [
+    { label: 'Service address',    desc: 'Autocomplete',          on: true  },
+    { label: 'Preferred date',     desc: 'Suggest a date',        on: true  },
+    { label: 'Preferred time',     desc: 'Morning / afternoon',   on: false },
+    { label: 'How did you hear?',  desc: 'Google, referral, etc', on: false },
+    { label: 'Photo / video',      desc: 'Job site photos',       on: true  },
+  ];
+  const customQs = [
+    { label: 'How old is your roof?',  type: 'Dropdown', options: ['Under 10 yrs', '10–20 yrs', '20+ yrs'] },
+    { label: 'Filing insurance claim?', type: 'Yes / No',  options: [] },
   ];
   return (
     <div className="flex flex-col h-full">
@@ -135,16 +147,21 @@ function FormBento() {
         </div>
         <p className="text-[13px] font-black text-slate-900">Intake Form</p>
       </div>
-      <div className="flex flex-col gap-2.5 flex-1">
-        {fields.map((f, i) => (
-          <div key={i} className="flex items-center justify-between">
-            <p className={`text-[11px] font-medium ${f.on ? 'text-slate-700' : 'text-slate-300'}`}>{f.label}</p>
+
+      {/* Standard toggles */}
+      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Standard Fields</p>
+      <div className="flex flex-col gap-1.5 mb-3">
+        {toggles.map((f, i) => (
+          <div key={i} className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className={`text-[9px] sm:text-[9.5px] font-semibold leading-tight ${f.on ? 'text-slate-700' : 'text-slate-300'}`}>{f.label}</p>
+              <p className={`text-[7.5px] leading-tight ${f.on ? 'text-slate-400' : 'text-slate-200'}`}>{f.desc}</p>
+            </div>
             <div
-              className="flex items-center px-0.5 rounded-full transition-all"
+              className="flex items-center px-0.5 rounded-full transition-all shrink-0"
               style={{
                 background: f.on ? '#4f46e5' : '#e2e8f0',
-                width: 28,
-                height: 16,
+                width: 28, height: 16,
                 justifyContent: f.on ? 'flex-end' : 'flex-start',
               }}
             >
@@ -153,7 +170,34 @@ function FormBento() {
           </div>
         ))}
       </div>
-      <p className="text-[10px] text-slate-400 font-medium mt-3">Toggle fields · Add custom questions</p>
+
+      {/* Custom questions */}
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Your Own Questions</p>
+        <div className="flex items-center gap-1 text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full border border-indigo-100">
+          <Plus size={7} /> Add
+        </div>
+      </div>
+      <div className="flex flex-col gap-1.5 flex-1">
+        {customQs.map((q, i) => (
+          <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-2">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] font-black text-slate-700 truncate flex-1">{q.label}</p>
+              <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full ml-2 shrink-0"
+                style={{ background: '#eef2ff', color: '#6366f1' }}>{q.type}</span>
+            </div>
+            {q.options.length > 0 && (
+              <div className="flex gap-1 flex-wrap">
+                {q.options.map((o, j) => (
+                  <span key={j} className="text-[7px] font-semibold px-1.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">{o}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[10px] text-slate-400 font-medium mt-3">Toggle fields · Build custom questions</p>
     </div>
   );
 }
@@ -174,38 +218,57 @@ function EmailBento() {
         <p className="text-[13px] font-black text-slate-900">Branded Emails</p>
       </div>
       <div className="flex-1 rounded-xl overflow-hidden border border-slate-100 flex flex-col">
-        {/* Email header */}
+        {/* Email header banner */}
         <div className="px-3 py-2.5" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>
           <div className="flex items-center gap-1.5 mb-1.5">
             <div className="w-4 h-4 rounded bg-white/20 overflow-hidden flex items-center justify-center">
               <img src="/images/ridgelinelogo.png" alt="" className="w-3 h-3 object-contain" />
             </div>
             <p className="text-[9px] font-black text-white">Ridge Line Roofing</p>
+            <span className="ml-auto text-[7px] text-white/50">hello@ridgeline.com</span>
           </div>
-          <p className="text-[11px] font-black text-white">Your quote is ready</p>
-          <p className="text-[8px] text-white/60 mt-0.5">Hi Curtis, review your quote below</p>
+          <p className="text-[12px] font-black text-white leading-tight">Your quote is ready</p>
+          <p className="text-[8px] text-white/60 mt-0.5">Quote #1042 · Sent Apr 9, 2026</p>
         </div>
-        {/* Line items */}
-        <div className="bg-white px-3 py-2.5 flex-1">
-          <div className="flex flex-col gap-1 mb-2">
+
+        {/* Email body */}
+        <div className="bg-white px-3 pt-2.5 pb-2 flex-1 flex flex-col">
+          {/* Greeting */}
+          <p className="text-[8.5px] text-slate-600 leading-relaxed mb-2">
+            Hi <span className="font-black text-slate-800">Curtis</span>, thanks for choosing Ridge Line Roofing. Here's the quote for your roof replacement at <span className="font-semibold">42 Maple Ave, Brooklyn NY</span>.
+          </p>
+
+          {/* Line items table */}
+          <div className="rounded-lg border border-slate-100 overflow-hidden mb-2">
+            <div className="bg-slate-50 px-2 py-1 grid grid-cols-2">
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Item</p>
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest text-right">Price</p>
+            </div>
             {lineItems.map((item, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <p className="text-[8px] text-slate-500">{item.label}</p>
-                <p className="text-[8px] font-black text-slate-700">{item.price}</p>
+              <div key={i} className={`px-2 py-1 grid grid-cols-2 ${i < lineItems.length - 1 ? 'border-b border-slate-50' : ''}`}>
+                <p className="text-[8px] text-slate-600">{item.label}</p>
+                <p className="text-[8px] font-semibold text-slate-700 text-right">{item.price}</p>
               </div>
             ))}
-            <div className="border-t border-slate-100 pt-1.5 mt-0.5 flex items-center justify-between">
-              <p className="text-[9px] font-black text-slate-700">Total</p>
-              <p className="text-[9px] font-black text-emerald-600">$6,130.00</p>
+            <div className="px-2 py-1.5 grid grid-cols-2 bg-slate-50 border-t border-slate-100">
+              <p className="text-[8px] font-black text-slate-700">Total</p>
+              <p className="text-[8px] font-black text-emerald-600 text-right">$6,130.00</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="py-1.5 rounded-lg text-center text-[9px] font-black text-white" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>Accept</div>
+
+          {/* Note */}
+          <p className="text-[7.5px] text-slate-400 leading-relaxed mb-2.5">
+            Quote valid for 14 days. Questions? Reply to this email or call (718) 555-0192.
+          </p>
+
+          {/* CTA buttons */}
+          <div className="grid grid-cols-2 gap-1.5 mt-auto">
+            <div className="py-1.5 rounded-lg text-center text-[9px] font-black text-white" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>Accept Quote</div>
             <div className="py-1.5 rounded-lg text-center text-[9px] font-black text-slate-400 border border-slate-200">Decline</div>
           </div>
         </div>
       </div>
-      <p className="text-[10px] text-slate-400 font-medium mt-3">Fully branded · One click · Tracked</p>
+      <p className="text-[10px] text-slate-400 font-medium mt-3">Fully branded · One click · Tracked in outbox</p>
     </div>
   );
 }
@@ -217,7 +280,7 @@ export default function SettingsShowcase() {
 
   return (
     <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 border-b overflow-hidden" style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div
@@ -235,13 +298,13 @@ export default function SettingsShowcase() {
 
         {/* Bento grid — 1 col mobile, 2 col sm, 4 col lg */}
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-7"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s' }}
         >
           {([<PipelineBento />, <CategoriesBento />, <FormBento />, <EmailBento />] as React.ReactNode[]).map((card, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-100 w-full"
+              className="bg-white rounded-2xl p-3.5 sm:p-5 lg:p-6 border border-slate-100 w-full"
               style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}
             >
               {card}
