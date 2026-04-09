@@ -1,6 +1,6 @@
 'use client';
 
-import { Truck, Instagram, MapPin, Mail, ExternalLink, Zap } from 'lucide-react';
+import { Truck, Instagram, MapPin, Mail, ExternalLink, Zap, Sunrise } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
 
 export default function HowItWorks() {
@@ -9,7 +9,7 @@ export default function HowItWorks() {
   return (
     <section
       className="py-16 md:py-32 px-5 md:px-6 overflow-hidden"
-      style={{ backgroundColor: '#020617' }} // Deep Space Black
+      style={{ backgroundColor: '#020617' }}
     >
       <div className="max-w-7xl mx-auto">
         <div
@@ -21,16 +21,17 @@ export default function HowItWorks() {
             transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* TOP ON MOBILE: Image first for context (Order 1 on mobile, 2 on desktop) */}
-<div className="relative order-1 lg:order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full pointer-events-none" />
-            
-<div className="relative rounded-[2rem] md:rounded-[2.5rem] p-1.5 md:p-2 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">              <img 
-                src="/images/qrbranded2.png" 
-                alt="Branded QR System" 
-                className="w-full h-auto rounded-[1.5rem] md:rounded-[1.8rem] block shadow-2xl" 
+          {/* TOP ON MOBILE: Image first */}
+          <div className="relative order-1 lg:order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full pointer-events-none" />
+
+            <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-1.5 md:p-2 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">
+              <img
+                src="/images/qrbranded2.png"
+                alt="Branded QR System"
+                className="w-full h-auto rounded-[1.5rem] md:rounded-[1.8rem] block shadow-2xl"
               />
-              
-              {/* HIDDEN ON MOBILE (removed `absolute -top-4 -right-2` to avoid any overflow) */}
+
               <div className="hidden md:block absolute -top-6 -right-6 bg-[#1a6645] border border-[#4ade80]/30 p-5 rounded-2xl shadow-2xl rotate-3 transition-transform hover:rotate-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
@@ -45,9 +46,74 @@ export default function HowItWorks() {
                 </div>
               </div>
             </div>
+
+            {/* DAILY DIGEST — text left, flat email card right */}
+            <div
+              className="mt-4 rounded-2xl overflow-hidden grid grid-cols-1 sm:grid-cols-2"
+              style={{ background: 'rgba(26,102,69,0.06)', border: '1px solid rgba(26,102,69,0.2)' }}
+            >
+              {/* Left — copy */}
+              <div className="px-5 py-5 flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(26,102,69,0.25)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                    <Sunrise size={14} className="text-[#4ade80]" />
+                  </div>
+                  <p className="text-[9px] font-black text-[#4ade80] uppercase tracking-widest">6AM Daily Digest</p>
+                </div>
+                <p className="text-sm font-black text-white mb-2 leading-snug">
+                  Know your day before you start your truck
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Every morning — jobs today, unpaid balances, new leads overnight. No logging in, no digging around.
+                </p>
+              </div>
+
+              {/* Right — flat email preview */}
+              <div className="px-4 py-4 border-t sm:border-t-0 sm:border-l"
+                style={{ borderColor: 'rgba(26,102,69,0.2)' }}>
+                <div className="rounded-xl overflow-hidden"
+                  style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)' }}>
+
+                  {/* Email header */}
+                  <div className="px-3 py-2" style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-[8px] text-slate-500 mb-0.5">digest@lead2project.com</p>
+                    <p className="text-[10px] font-black text-white">Ridge Line Roofing · Morning Brief</p>
+                    <p className="text-[8px] text-slate-500">Today, 6:00 AM</p>
+                  </div>
+
+                  {/* Rows */}
+                  <div className="px-3 py-2.5 space-y-2">
+                    {[
+                      { dot: '#6366f1', label: 'Scheduled today',    value: '2 jobs',          sub: 'Torres · Kim Gutters' },
+                      { dot: '#f59e0b', label: 'Unpaid balances',    value: '$3,200',           sub: '2 invoices overdue'   },
+                      { dot: '#10b981', label: 'New leads overnight', value: '1 new',            sub: 'Michael Johnson'      },
+                      { dot: '#ef4444', label: 'Follow-ups needed',  value: '3 contacts',       sub: 'Last contact 4d ago'  },
+                    ].map((row, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: row.dot }} />
+                          <div className="min-w-0">
+                            <p className="text-[8px] font-black text-white/70 truncate">{row.label}</p>
+                            <p className="text-[7px] text-slate-500 truncate">{row.sub}</p>
+                          </div>
+                        </div>
+                        <p className="text-[9px] font-black shrink-0" style={{ color: row.dot }}>{row.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-3 py-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <p className="text-[7px] text-slate-600 text-center uppercase tracking-widest">Powered by Lead2Project · Pro plan</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* BOTTOM ON MOBILE: Text follows (Order 2 on mobile, 1 on desktop) */}
+          {/* BOTTOM ON MOBILE: Text */}
           <div className="text-center lg:text-left order-2 lg:order-1">
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-[#1a6645]/15 border border-[#1a6645]/30">
               <Zap size={12} className="text-[#1a6645] fill-[#1a6645]" />
@@ -56,20 +122,22 @@ export default function HowItWorks() {
               </span>
             </div>
 
-            <h2 className="font-black mb-8 text-white"
-  style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}>
-  If your competition<br />
-  is getting leads<br />
-  while they sleep,<br />
-  <span style={{ color: '#1a6645' }}>you should be too.</span>
-</h2>
+            <h2
+              className="font-black mb-8 text-white"
+              style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}
+            >
+              If your competition<br />
+              is getting leads<br />
+              while they sleep,<br />
+              <span style={{ color: '#1a6645' }}>you should be too.</span>
+            </h2>
 
-            <p className="text-sm font-normal leading-loose mb-10 text-slate-400 max-w-md mx-auto lg:mx-0">
-              Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard—even when you're off the clock.
+            <p className="text-sm font-normal leading-loose mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
+              Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard — even when you're off the clock.
             </p>
 
             {/* PLACEMENT PILLS */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center lg:justify-start gap-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center lg:justify-start gap-3 mb-8">
               {[
                 { icon: <Truck size={14} />,      label: 'Truck Wraps' },
                 { icon: <Instagram size={14} />,  label: 'Social Bio' },
@@ -85,6 +153,7 @@ export default function HowItWorks() {
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       </div>

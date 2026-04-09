@@ -1,8 +1,7 @@
 'use client';
-
 // components/marketing/ValueStrip.tsx
-
 import { useRef, useState, useEffect } from 'react';
+import { Link2, LayoutDashboard, MousePointerClick, Sunrise } from 'lucide-react';
 
 function useFadeIn(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,24 +21,28 @@ function useFadeIn(threshold = 0.15) {
 
 const STATS = [
   {
-    value: '8 hrs',
-    label: 'saved every week',
-    desc: 'No more back-and-forth texts to schedule jobs. One click confirms the appointment and sends the customer a branded email.',
+    Icon: Link2,
+    value: 'A booking page',
+    label: 'No website needed',
+    desc: 'Share it on your truck, yard signs, or Instagram bio. Customers submit jobs with photos any time.',
   },
   {
-    value: '$11k',
-    label: 'avg collected in week one',
-    desc: 'Seeing every unpaid balance in one place makes it easy to send reminders and collect money sitting on the table.',
+    Icon: LayoutDashboard,
+    value: 'Every lead',
+    label: 'Quote and job in one place',
+    desc: 'No more spreadsheets or missed texts. Everything about every customer lives in one dashboard.',
   },
   {
-    value: '3 min',
-    label: 'to send a quote',
-    desc: 'Templates plus AI project brief. Build and send a professional quote before you even start your truck.',
+    Icon: MousePointerClick,
+    value: 'Schedule, quote',
+    label: 'Or follow up in a click',
+    desc: 'Confirm a job, send a branded quote, or fire off a payment reminder without typing from scratch.',
   },
   {
-    value: '0',
-    label: 'missed leads',
-    desc: 'Every QR scan, every form submission, every call lands on your dashboard instantly. Nothing falls through the cracks.',
+    Icon: Sunrise,
+    value: '6AM digest',
+    label: 'Know your day before it starts',
+    desc: "Every morning — who's scheduled, what's unpaid, what needs follow-up. Your admin work is already done.",
   },
 ];
 
@@ -47,13 +50,16 @@ export default function ValueStrip() {
   const { ref, visible } = useFadeIn();
 
   return (
-    <section className="py-20 px-6" style={{ background: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>
+    <section className="py-16 sm:py-20 px-5 sm:px-6" style={{ background: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>
       <div className="max-w-6xl mx-auto">
-
         <div
           ref={ref}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s cubic-bezier(0.16,1,0.3,1)' }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(20px)',
+            transition: 'all 0.7s cubic-bezier(0.16,1,0.3,1)',
+          }}
         >
           {STATS.map((stat, i) => (
             <div
@@ -64,22 +70,29 @@ export default function ValueStrip() {
                 transition: `all 0.7s cubic-bezier(0.16,1,0.3,1) ${i * 0.08}s`,
               }}
             >
-              <p
-                className="font-black mb-1 leading-none"
-                style={{ fontSize: 'clamp(36px, 5vw, 52px)', color: '#1a6645' }}
-              >
-                {stat.value}
-              </p>
-              <p className="text-sm font-black uppercase tracking-widest mb-3" style={{ color: '#0f172a' }}>
+              {/* Value + icon inline */}
+              <div className="flex items-center gap-2 mb-1">
+                <stat.Icon size={16} style={{ color: '#1a6645' }} className="shrink-0" />
+                <p
+                  className="font-black leading-tight"
+                  style={{ fontSize: 'clamp(16px, 2.5vw, 24px)', color: '#1a6645', letterSpacing: '-0.02em' }}
+                >
+                  {stat.value}
+                </p>
+              </div>
+
+              {/* Label */}
+              <p className="text-[11px] sm:text-xs font-black uppercase tracking-widest mb-2 sm:mb-3" style={{ color: '#0f172a' }}>
                 {stat.label}
               </p>
-              <p className="text-sm font-medium leading-relaxed" style={{ color: '#6b7280' }}>
+
+              {/* Description — hidden on mobile */}
+              <p className="hidden sm:block text-sm font-medium leading-relaxed" style={{ color: '#6b7280' }}>
                 {stat.desc}
               </p>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );
