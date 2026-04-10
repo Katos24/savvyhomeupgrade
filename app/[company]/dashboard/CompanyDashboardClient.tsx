@@ -667,118 +667,124 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
   </div>
 )}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Main content                                                         */}
-      {/* ------------------------------------------------------------------ */}
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 relative z-10">
 
-        {/* Top bar */}
-        <header className={`backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] px-4 py-3 sm:p-5 mb-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] ${isDark ? 'bg-white/[0.03] border border-white/10' : 'bg-white border border-gray-200'}`}>
-          <div className="flex items-center justify-between gap-3">
+  {/* --- MAIN --- */}
 
-            {/* Left: hamburger + brand */}
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-  onClick={() => setSidebarOpen(true)}
-  aria-label="Open navigation"
-  className={`p-2.5 rounded-xl transition border shrink-0 ${
-    isDark
-      ? 'bg-white/5 hover:bg-indigo-600/20 border-white/10'
-      : 'bg-gray-100 hover:bg-indigo-50 border-gray-200'
-  }`}
->
-  <Menu className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-700'}`} aria-hidden />
-</button>
+<main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10 relative z-10">
 
-              {company.logo_url ? (
-                <div className="p-1.5 bg-white rounded-xl shadow-sm shrink-0">
-                  <img
-                    src={company.logo_url}
-                    alt={`${company.name} logo`}
-className="h-9 w-auto max-w-[120px] sm:max-w-[160px] object-contain"
-                    width={130}
-                    height={28}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-500/20 shrink-0"
-                  aria-hidden
-                >
-                  {company.name.charAt(0)}
-                </div>
-              )}
+  {/* --- TOP NAVIGATION BAR --- */}
+  <header className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 mb-8 transition-all ${
+    isDark 
+      ? 'bg-[#0A0C14] border border-white/10 shadow-2xl' 
+      : 'bg-white border border-slate-200 shadow-sm'
+  }`}>
+    <div className="flex items-center justify-between gap-4">
+      {/* Brand & Menu */}
+      <div className="flex items-center gap-4 min-w-0">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className={`p-2.5 rounded-xl transition-colors ${
+            isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+          }`}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-              <div className="min-w-0 border-l border-white/10 pl-3">
-                <h1 className={`text-sm sm:text-base font-black tracking-tight truncate leading-none ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {company.name}
-                </h1>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold block mt-1">
-                  Dashboard
-                </span>
-              </div>
+        <div className="flex items-center gap-3 min-w-0 border-l border-slate-200/20 pl-4">
+          {company.logo_url ? (
+            <img src={company.logo_url} alt="Logo" className="h-8 w-auto object-contain shrink-0" />
+          ) : (
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-indigo-500/20">
+              {company.name.charAt(0)}
             </div>
-
-            {/* Right: create button + subtle refresh indicator */}
-            <div className="flex items-center gap-2 shrink-0">
-              {isRefreshing && (
-                <span aria-live="polite" aria-label="Refreshing data" className="text-indigo-400">
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
-                </span>
-              )}
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                aria-label="Create new lead"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:px-5 sm:py-3 bg-white text-slate-950 hover:bg-indigo-50 rounded-xl font-bold text-sm transition shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <Plus className="w-4 h-4 stroke-[3px]" aria-hidden />
-                <span className="hidden xs:inline">Create</span>
-              </button>
-            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className={`text-sm sm:text-lg font-black tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {company.name}
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-500">Dashboard</p>
           </div>
-        </header>
-
-{/* Stats bar — desktop full, mobile slim */}
-<div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-6">
-  {(() => {
-    const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
-    const gs = globalStats;
-   return [
-  { label: 'Total Leads',      value: gs?.total_leads ?? allLeads.length,        color: isDark ? 'text-white' : 'text-gray-900' },
-  { label: 'Active Jobs',      value: gs?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, color: 'text-blue-500' },
-  { label: 'Total Revenue',    value: fmt(gs?.revenue ?? 0),                     color: 'text-emerald-500' },
-  { label: 'Total Pending',    value: fmt(gs?.pending ?? 0),                     color: 'text-amber-500'   },
-].map((s, i) => (
-      <div key={i} className={`border rounded-xl md:rounded-2xl px-3 md:px-4 py-2.5 md:py-4 ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200'}`}>
-  <p className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-0.5 md:mb-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>{s.label}</p>
-<p className={`text-lg md:text-2xl font-black ${s.color}`}>{s.value}</p>
+        </div>
       </div>
-    ));
-  })()}
-</div>
-      
 
-        {/* Error state */}
-        {loadError && (
-          <div role="alert" className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-300 text-sm font-semibold flex items-center justify-between gap-3">
-            <span>{loadError}</span>
-            <button onClick={() => fetchLeads(1)} className="text-xs font-black text-red-300 hover:text-white underline">Retry</button>
+      {/* Action Area */}
+      <div className="flex items-center gap-3 shrink-0">
+        {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />}
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+        >
+          <Plus className="w-4 h-4 stroke-[3px]" />
+          <span className="hidden sm:inline">New Lead</span>
+          <span className="sm:hidden">Add</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  {/* --- CRISP STATS ENGINE --- */}
+  <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+    {[
+      { label: 'Total Leads', value: globalStats?.total_leads ?? allLeads.length, accent: 'bg-indigo-500' },
+      { label: 'Active Jobs', value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, accent: 'bg-blue-500' },
+      { label: 'Revenue',    value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.revenue ?? 0), accent: 'bg-emerald-500' },
+      { label: 'Pending',    value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.pending ?? 0), accent: 'bg-amber-500' },
+    ].map((s, i) => (
+      <div 
+        key={i} 
+        className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 transition-all duration-300 ${
+          isDark 
+            ? 'bg-[#0A0C14] border-white/5 hover:border-white/20' 
+            : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+        }`}
+      >
+        <div className="relative z-10">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className={`w-2 h-2 rounded-full ${s.accent}`} />
+            <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+              {s.label}
+            </p>
           </div>
-        )}
+          <p className={`text-2xl sm:text-4xl font-black tracking-tighter tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            {s.value}
+          </p>
+        </div>
+        {/* Modern Corner Glow */}
+        <div className={`absolute -right-4 -top-4 w-20 h-20 blur-3xl rounded-full opacity-10 ${s.accent}`} />
+      </div>
+    ))}
+  </section>
 
-   {/* Search + filters */}
-<section aria-label="Search and filter leads" className="flex flex-col gap-3 mb-6">
+  {/* --- ERROR FEEDBACK --- */}
+  {loadError && (
+    <div className="mb-8 p-4 bg-red-500/5 border border-red-500/20 rounded-xl text-red-400 text-sm font-bold flex items-center justify-between">
+      <span>{loadError}</span>
+      <button onClick={() => fetchLeads(1)} className="uppercase tracking-widest text-[10px] hover:underline">Retry System</button>
+    </div>
+  )}
 
-  {/* Row 1 — Search + Views */}
-  <div className="flex items-center gap-2">
+
+
+{/* ------------------------------------------------------------------ */}
+{/* Search & Filter Command Center                                      */}
+{/* ------------------------------------------------------------------ */}
+<section aria-label="Search and filter leads" className="flex flex-col gap-4 mb-8">
+  
+  {/* Row 1: Search + View Toggles + Theme */}
+  <div className="flex items-center gap-2 md:gap-3">
     <div className="relative flex-1 group">
-      {isSearching
-        ? <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
-        : <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" aria-hidden />
-      }
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+        {isSearching ? (
+          <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+        ) : (
+          <Search className={`w-4 h-4 transition-colors ${
+            isDark ? 'text-white/20' : 'text-slate-400'
+          } group-focus-within:text-indigo-500`} />
+        )}
+      </div>
       <input
         type="search"
-        placeholder="Search by name, email or phone..."
+        placeholder="Search name, email, phone..."
         value={searchQuery}
         onChange={e => {
           const val = e.target.value;
@@ -794,395 +800,395 @@ className="h-9 w-auto max-w-[120px] sm:max-w-[160px] object-contain"
             fetchLeads(1, true, { search: '' });
           }
         }}
-        aria-label="Search leads"
-        className={`w-full pl-11 pr-10 py-3.5 rounded-xl focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder-white/30' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-400'}`}
+        className={`w-full pl-11 pr-10 py-3.5 rounded-2xl text-sm font-bold transition-all outline-none border ${
+          isDark 
+            ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-indigo-500/50' 
+            : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-sm'
+        }`}
       />
       {searchQuery && (
         <button
           onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
-          aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full text-white/40 transition"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors"
         >
-          <X className="w-3.5 h-3.5" aria-hidden />
+          <X className="w-4 h-4" />
         </button>
       )}
     </div>
 
+    {/* View Switcher (Desktop Only) */}
+    <div className={`hidden sm:flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+      {[
+        { id: 'cards', icon: LayoutGrid },
+        { id: 'table', icon: List },
+        { id: 'calendar', icon: Calendar }
+      ].map((v) => (
+        <button
+          key={v.id}
+          onClick={() => setCurrentView(v.id as any)}
+          className={`p-2 rounded-lg transition-all ${
+            currentView === v.id 
+              ? 'bg-indigo-600 text-white shadow-lg' 
+              : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
+          }`}
+        >
+          <v.icon className="w-4 h-4" />
+        </button>
+      ))}
+    </div>
+
+    {/* Theme Toggle */}
     <button
       onClick={() => setIsDark(v => !v)}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className={`p-2.5 rounded-xl border transition ${isDark ? 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+      className={`p-3.5 rounded-2xl border transition-all active:scale-95 ${
+        isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+      }`}
     >
       {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
-
-    <div className={`flex rounded-xl p-1 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`} role="group" aria-label="View mode">
-      <button onClick={() => setCurrentView('cards')} className={`p-2.5 rounded-lg transition ${currentView === 'cards' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-        <LayoutGrid className="w-4 h-4" aria-hidden />
-      </button>
-      <button onClick={() => setCurrentView('table')} className={`p-2.5 rounded-lg transition ${currentView === 'table' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-        <List className="w-4 h-4" aria-hidden />
-      </button>
-      <button onClick={() => setCurrentView('calendar')} className={`p-2.5 rounded-lg transition ${currentView === 'calendar' ? 'bg-indigo-600 text-white' : isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-        <Calendar className="w-4 h-4" aria-hidden />
-      </button>
-    </div>
   </div>
 
-  {/* Row 2 — Smart pills + Filters dropdown */}
-<div className="relative">
-<div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-    {/* Scheduled Today */}
-    <button
-      onClick={() => {
-        const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
-        setTimeFilter(isActive ? 'all' : 'today');
-        setFilterStatus(isActive ? 'all' : 'scheduled');
-      }}
-      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
-        timeFilter === 'today' && filterStatus === 'scheduled'
-          ? 'bg-indigo-600 text-white border-indigo-500'
-          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <Clock className="w-3 h-3" />
-      <span className="hidden sm:inline">Scheduled Today</span>
-      <span className="sm:hidden">Today</span>
-    </button>
-
-    {/* Unpaid */}
-    <button
-      onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
-      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
-        filterPayment === 'unpaid'
-          ? 'bg-indigo-600 text-white border-indigo-500'
-          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <DollarSign className="w-3 h-3" />
-      Unpaid
-    </button>
-
-    {/* New */}
-    <button
-      onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
-      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
-        filterStatus === 'new'
-          ? 'bg-indigo-600 text-white border-indigo-500'
-          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <Sparkles className="w-3 h-3" />
-      New {(serverStatusCounts['new'] || 0) > 0 && `(${serverStatusCounts['new']})`}
-    </button>
-
-    {/* Filters button */}
-    <button
-      onClick={() => setShowAdvancedFilters(v => !v)}
-      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
-        showAdvancedFilters || filterCategory !== 'all' || filterAssignee !== 'all' || startDate || endDate || (timeFilter !== 'all' && !(timeFilter === 'today' && filterStatus === 'scheduled')) || (filterStatus !== 'all' && filterStatus !== 'new') || filterPayment === 'paid'
-          ? 'bg-indigo-600 text-white border-indigo-500'
-          : isDark ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <Filter className="w-3 h-3" />
-      Filters
-      <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-    </button>
-
-    {/* Clear — only when active */}
-    {hasActiveFilters && (
+  {/* Row 2: Smart Filter Pills & Advanced Trigger */}
+  <div className="relative">
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* Advanced Filter Launcher */}
       <button
-        onClick={clearFilters}
-        className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
+        onClick={() => setShowAdvancedFilters(v => !v)}
+        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+          showAdvancedFilters || hasActiveFilters
+            ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/20'
+            : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+        }`}
       >
-        <X className="w-3 h-3" />
-        Clear
+        <Filter className="w-3.5 h-3.5 stroke-[3px]" />
+        Filters
+        <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
       </button>
-      
-    )}
 
-</div>
-    {/* Filters dropdown — desktop */}
-    {showAdvancedFilters && (
-      <>
-        {/* Click outside */}
-        <div className="fixed inset-0 z-40" onClick={() => setShowAdvancedFilters(false)} />
+      <div className={`w-px h-4 mx-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 
-        {/* Desktop dropdown */}
-        <div className={`hidden sm:block absolute top-full left-0 mt-2 z-50 rounded-2xl border shadow-2xl p-4 w-80 animate-in fade-in slide-in-from-top-2 duration-150 ${
-          isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
-        }`}>
+      {/* Quick Pill: Scheduled Today */}
+      <button
+        onClick={() => {
+          const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
+          setTimeFilter(isActive ? 'all' : 'today');
+          setFilterStatus(isActive ? 'all' : 'scheduled');
+        }}
+        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+         timeFilter === 'today' && filterStatus === 'scheduled'
+  ? 'bg-emerald-600 text-white border-emerald-600'
+            : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+        }`}
+      >
+        <Clock className="w-3.5 h-3.5" />
+        Today
+      </button>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Assignee</label>
-              <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
-                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
+      {/* Quick Pill: Unpaid */}
+      <button
+  onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
+  className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+    filterPayment === 'unpaid'
+      ? 'bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20'
+      : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+  }`}
+>
+  <DollarSign className="w-3.5 h-3.5" />
+  Unpaid
+</button>
+
+      {/* Quick Pill: New */}
+      <button
+        onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
+        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+          filterStatus === 'new'
+            ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+            : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+        }`}
+      >
+        <Sparkles className="w-3.5 h-3.5" />
+        New {(serverStatusCounts['new'] || 0) > 0 && <span className="opacity-70">({serverStatusCounts['new']})</span>}
+      </button>
+
+      {hasActiveFilters && (
+        <button
+          onClick={clearFilters}
+          className="shrink-0 p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+        >
+          <X className="w-4 h-4 stroke-[3px]" />
+        </button>
+      )}
+    </div>
+
+    {/* --- ADVANCED OVERLAYS --- */}
+{showAdvancedFilters && (
+ <div>
+  {/* 1. Backdrop — desktop too, not just mobile */}
+ <div 
+    className="fixed inset-0 z-40"
+    onClick={() => setShowAdvancedFilters(false)} 
+  />
+
+    {/* 2. Desktop Dropdown */}
+    <div
+      className="hidden sm:block absolute top-full left-0 mt-2 z-[200] w-[380px] rounded-2xl border shadow-2xl p-5"
+      style={{
+        background: isDark ? '#0D0F17' : '#ffffff',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+      }}
+    >
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Assignee</label>
+          <select 
+            value={filterAssignee} 
+            onChange={e => setFilterAssignee(e.target.value)}
+            className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
+              isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+            }`}
+          >
+            <option value="all">Everyone</option>
+            <option value="unassigned">Unassigned</option>
+            {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Category</label>
+          <select 
+            value={filterCategory} 
+            onChange={e => setFilterCategory(e.target.value)}
+            className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
+              isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+            }`}
+          >
+            <option value="all">All Sectors</option>
+            {categories.map(c => (
+              <option key={c} value={c}>{String(c).replace(/_/g, ' ').toUpperCase()}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Start Date</label>
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={e => setStartDate(e.target.value)}
+            className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all ${
+              isDark ? 'bg-white/5 border-white/10 text-white invert-calendar' : 'bg-slate-50 border-slate-200'
+            }`} 
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">End Date</label>
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={e => setEndDate(e.target.value)}
+            className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all ${
+              isDark ? 'bg-white/5 border-white/10 text-white invert-calendar' : 'bg-slate-50 border-slate-200'
+            }`} 
+          />
+        </div>
+      </div>
+
+      <div className="mb-8 space-y-3">
+        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Lifecycle Status</label>
+        <div className="flex flex-wrap gap-2">
+          {statusOptions.map(s => (
+            <button 
+              key={s.value} 
+              onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                filterStatus === s.value 
+                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/30'
+                  : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+        <button 
+          onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
+          className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all"
+        >
+          Reset Engine
+        </button>
+        <button 
+          onClick={() => setShowAdvancedFilters(false)}
+          className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 transition-all"
+        >
+          Apply Changes
+        </button>
+      </div>
+    </div>
+
+    {/* 3. Mobile Drawer - Redesigned to be Rock Solid */}
+<div className="sm:hidden fixed inset-0 z-[300] flex flex-col justify-end">
+  <div 
+    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+    onClick={() => setShowAdvancedFilters(false)}
+  />
+        <div className={`relative rounded-t-[3rem] p-8 pb-12 max-h-[90vh] overflow-y-auto shadow-[0_-24px_48px_rgba(0,0,0,0.6)] ${
+        isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
+      }`}>
+        <div className="w-16 h-1.5 bg-indigo-500/20 rounded-full mx-auto mb-10" />
+        
+        <div className="space-y-10">
+          <div className="space-y-4">
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Target Segment</label>
+            <div className="grid grid-cols-1 gap-3">
+              <select 
+                value={filterAssignee} 
+                onChange={e => setFilterAssignee(e.target.value)}
+                className={`w-full rounded-2xl px-5 py-4 text-base font-bold border outline-none appearance-none ${
+                  isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                }`}
+              >
                 <option value="all">Everyone</option>
-                <option value="unassigned">Unassigned</option>
                 {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
               </select>
             </div>
-            <div>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Category</label>
-              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
-                <option value="all">All</option>
-{categories.map(c => (
-  <option key={c} value={c}>
-    {String(c).replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-  </option>
-))}
-              </select>
-            </div>
-            <div>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Start date</label>
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Timeline</label>
+            <div className="grid grid-cols-2 gap-4">
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
-            </div>
-            <div>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>End date</label>
+                className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                className={`w-full rounded-xl px-3 py-2 text-xs font-bold outline-none transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
-            </div>
-          </div>
-
-          {/* Time */}
-          <div className="mb-3">
-            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Time period</label>
-            <div className="flex gap-1.5">
-              {(['all', 'today', 'week', 'month'] as const).map(t => (
-                <button key={t} onClick={() => setTimeFilter(t)}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition ${
-                    timeFilter === t ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                  }`}>
-                  {t === 'all' ? 'All' : t === 'today' ? 'Today' : t === 'week' ? 'Week' : 'Month'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Status */}
-          <div className="mb-3">
-            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Status</label>
-            <div className="flex flex-wrap gap-1.5">
-              {statusOptions.map(s => (
-                <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
-                    filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                  }`}>
-                  {s.label} {(serverStatusCounts[s.value] || 0) > 0 && `(${serverStatusCounts[s.value]})`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment */}
-          <div className="mb-4">
-            <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Payment</label>
-            <div className="flex gap-1.5">
-              {['all', 'paid', 'unpaid'].map(p => (
-                <button key={p} onClick={() => setFilterPayment(p)}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition capitalize ${
-                    filterPayment === p ? 'bg-indigo-600 text-white border-indigo-500'
-                    : isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                  }`}>
-                  {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={`flex gap-2 pt-3 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
-            <button onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-              className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition">
-              Clear all
-            </button>
-            <button onClick={() => setShowAdvancedFilters(false)}
-              className="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition">
-              Done
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile bottom sheet */}
-        <div className="sm:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAdvancedFilters(false)} />
-          <div className={`relative rounded-t-3xl p-5 pb-8 max-h-[80vh] overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
-            <div className="flex justify-center mb-4">
-              <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-white/20' : 'bg-gray-200'}`} />
-            </div>
-            <p className={`text-sm font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Filters</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Assignee</label>
-                <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
-                  className={`w-full rounded-xl px-3 py-3 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
-                  <option value="all">Everyone</option>
-                  <option value="unassigned">Unassigned</option>
-                  {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Category</label>
-                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-                  className={`w-full rounded-xl px-3 py-3 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`}>
-                  <option value="all">All Categories</option>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Time period</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {(['all', 'today', 'week', 'month'] as const).map(t => (
-                    <button key={t} onClick={() => setTimeFilter(t)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition ${
-                        timeFilter === t ? 'bg-indigo-600 text-white border-indigo-500'
-                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
-                      }`}>
-                      {t === 'all' ? 'All' : t === 'today' ? 'Today' : t === 'week' ? 'Week' : 'Month'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Status</label>
-                <div className="flex flex-wrap gap-2">
-                  {statusOptions.map(s => (
-                    <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                        filterStatus === s.value ? 'bg-indigo-600 text-white border-indigo-500'
-                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
-                      }`}>
-                      {s.label} {(serverStatusCounts[s.value] || 0) > 0 && `(${serverStatusCounts[s.value]})`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Payment</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {['all', 'paid', 'unpaid'].map(p => (
-                    <button key={p} onClick={() => setFilterPayment(p)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition capitalize ${
-                        filterPayment === p ? 'bg-indigo-600 text-white border-indigo-500'
-                        : isDark ? 'bg-white/5 border-white/10 text-white/50' : 'bg-gray-50 border-gray-200 text-gray-500'
-                      }`}>
-                      {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>Start date</label>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
-                </div>
-                <div>
-                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>End date</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-gray-50 border border-gray-200 text-gray-900'}`} />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-                className="flex-1 py-3.5 rounded-xl text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                Clear all
-              </button>
-              <button onClick={() => setShowAdvancedFilters(false)}
-                className="flex-1 py-3.5 rounded-xl text-sm font-bold bg-indigo-600 text-white">
-                Done
-              </button>
+                className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
             </div>
           </div>
         </div>
-      </>
-    )}
+
+        <div className="grid grid-cols-1 gap-3 mt-12">
+          <button 
+            onClick={() => setShowAdvancedFilters(false)} 
+            className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40"
+          >
+            Apply Filters
+          </button>
+          <button 
+            onClick={() => { clearFilters(); setShowAdvancedFilters(false); }} 
+            className="w-full py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-500"
+          >
+            Reset All
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
-
+)}
+  </div>
 </section>
 
+{/* ---------------------------------------------------------------- */}
+        {/* Leads Display Engine                                             */}
         {/* ---------------------------------------------------------------- */}
-        {/* Leads display                                                      */}
-        {/* ---------------------------------------------------------------- */}
-        <section aria-label="Leads" aria-live="polite" aria-atomic="false">
+        <section aria-label="Leads" aria-live="polite" className="relative">
           {filteredLeads.length === 0 ? (
-            <div className="bg-white/[0.02] rounded-3xl p-16 sm:p-24 text-center border border-dashed border-white/10">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 mb-5" aria-hidden>
-                <Inbox className="w-8 h-8 text-white/20" />
+            <div className={`rounded-[3rem] p-16 sm:p-32 text-center border-2 border-dashed transition-all ${
+              isDark ? 'bg-white/[0.01] border-white/5' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-500/10 mb-6" aria-hidden>
+                <Inbox className="w-10 h-10 text-indigo-500/40" />
               </div>
-              <h2 className="text-xl font-black text-white mb-2">No leads found</h2>
-              <p className="text-white/40 text-sm">
-                {hasActiveFilters ? 'Try adjusting your filters or search query.' : 'Create your first lead to get started.'}
+              <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No leads found</h2>
+              <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">
+                {hasActiveFilters ? 'No leads match your filters.' : 'Create your first lead to get started.'}
               </p>
               {hasActiveFilters && (
-                <button onClick={clearFilters} className="mt-4 text-xs text-indigo-400 font-bold hover:text-indigo-300 underline">
+                <button 
+                  onClick={clearFilters} 
+                  className="mt-8 px-6 py-3 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                >
                   Clear filters
                 </button>
               )}
             </div>
           ) : currentView === 'calendar' ? (
-  <CalendarView
-    leads={allLeads}
-    onSelectLead={setSelectedLead}
-    statusOptions={statusOptions}
-    isDark={isDark}
-  />
-) : currentView === 'cards' ? (
-            <div className="space-y-10">
+            <div className="animate-in fade-in zoom-in-95 duration-300">
+              <CalendarView
+                leads={allLeads}
+                onSelectLead={setSelectedLead}
+                statusOptions={statusOptions}
+                isDark={isDark}
+              />
+            </div>
+          ) : currentView === 'cards' ? (
+            <div className="space-y-16">
               {groups.map(({ title, leads }) => leads.length > 0 && (
-                <section key={title} aria-label={`${title} leads`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500">{title}</h2>
-<div className={`h-px flex-1 ${isDark ? 'bg-white/5' : 'bg-gray-200'}`} aria-hidden />
-<span className={`text-[10px] font-black px-2 py-1 rounded-md ${isDark ? 'bg-white/5 text-slate-500' : 'bg-gray-100 text-gray-400'}`}>{leads.length}</span>
+                <section key={title} aria-label={`${title} leads`} className="relative">
+                  <div className="flex items-center gap-4 mb-8 sticky top-0 z-10 py-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                      <h2 className={`text-[11px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {title}
+                      </h2>
+                    </div>
+                    <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} aria-hidden />
+                    {title !== 'Older' && (
+                      <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                        isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
+                      }`}>
+                        {leads.length}
+                      </span>
+                    )}
                   </div>
+                  
                   <CardsView
-  leads={leads}
-  onSelectLead={setSelectedLead}
-  statusOptions={statusOptions}
-  isDark={isDark}
-  planTier={company.plan_tier || 'starter'}
-/>
+                    leads={leads}
+                    onSelectLead={setSelectedLead}
+                    statusOptions={statusOptions}
+                    isDark={isDark}
+                    planTier={company.plan_tier || 'starter'}
+                  />
                 </section>
               ))}
             </div>
           ) : (
-            <div key={`table-${refreshKey}`} className="animate-in fade-in duration-300">
-              <div className="mb-4 flex items-center justify-between px-1">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">
-                  Database View <span className="text-slate-500 ml-2">{filteredLeads.length} records</span>
-                </h2>
-{can((company.plan_tier || 'basic') as PlanTier, 'csv_export') ? (
-  <a
-href={`/api/company/${company.slug}/export-csv`}
-    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700"
-  >
-    Export CSV
-  </a>
-) : (
-  <button
-    onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
-    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl border border-slate-700"
-  >
-    <Lock className="w-3.5 h-3.5" />
-    Export CSV
-  </button>
-)}
+            <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+                <div>
+                 <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                    All Leads
+                  </h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                    {filteredLeads.length} records
+                  </p>
+                </div>
+
+                {can((company.plan_tier || 'basic') as PlanTier, 'csv_export') ? (
+                  <a
+                    href={`/api/company/${company.slug}/export-csv`}
+                    className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all border ${
+                      isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    Export CSV
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 cursor-not-allowed"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    Export (PRO)
+                  </button>
+                )}
               </div>
-              <div className="bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+
+              <div className={`rounded-[2rem] overflow-hidden border shadow-2xl transition-all ${
+                isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200'
+              }`}>
                 <TableView
                   leads={filteredLeads}
                   onSelectLead={setSelectedLead}
@@ -1199,14 +1205,23 @@ href={`/api/company/${company.slug}/export-csv`}
           )}
         </section>
 
-        {/* Load more */}
+        {/* Load More Controller */}
         {pagination.page < pagination.pages && (
-          <div className="flex justify-center pt-8">
+          <div className="flex justify-center pt-16 pb-12">
             <button
-  onClick={() => fetchLeads(pagination.page + 1, false)}
-              className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-2xl transition"
+              onClick={() => fetchLeads(pagination.page + 1, false)}
+              className={`group flex flex-col items-center gap-3 transition-all active:scale-95`}
             >
-              Load More ({pagination.total - allLeads.length} remaining)
+              <div className={`px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] border-2 transition-all ${
+                isDark 
+                ? 'bg-transparent border-white/10 text-white hover:bg-white hover:text-black hover:border-white' 
+                : 'bg-white border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'
+              }`}>
+                Load Next Batch
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                {pagination.total - allLeads.length} records remaining
+              </span>
             </button>
           </div>
         )}
@@ -1246,15 +1261,16 @@ href={`/api/company/${company.slug}/export-csv`}
       {/* ------------------------------------------------------------------ */}
       {/* AI Chat                                                              */}
       {/* ------------------------------------------------------------------ */}
-      {!selectedLead && !isCreateModalOpen && (
-  can((company.plan_tier || 'basic') as PlanTier, 'ai_chat') ? (
+     {!selectedLead && !isCreateModalOpen && (
+        can((company.plan_tier || 'basic') as PlanTier, 'ai_chat') ? (
           <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-3">
 
             {showAiChat && (
               <div
-                className="border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 duration-200"
+                className="overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 duration-200"
                 style={{
-                  background: '#0f172a',
+                  background: '#0f1a0f',
+                  border: '1px solid #1a3a1a',
                   borderRadius: '20px',
                   maxHeight: '72vh',
                   width: 'min(calc(100vw - 32px), 400px)',
@@ -1264,10 +1280,13 @@ href={`/api/company/${company.slug}/export-csv`}
                 aria-modal="true"
               >
                 {/* Chat header */}
-                <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-700 shrink-0" style={{ background: '#312e81' }}>
+                <div
+                  className="flex items-center justify-between px-4 py-3.5 shrink-0"
+                  style={{ background: '#14532d', borderBottom: '1px solid #1a3a1a' }}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center" aria-hidden>
-                      <Sparkles className="w-3.5 h-3.5 text-white" />
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.15)' }}>
+                      <Sparkles className="w-3.5 h-3.5" style={{ color: '#4ade80' }} />
                     </div>
                     <span className="text-white font-bold text-sm">AI Assistant</span>
                   </div>
@@ -1294,12 +1313,21 @@ href={`/api/company/${company.slug}/export-csv`}
                 >
                   {aiMessages.length === 0 && (
                     <div className="space-y-2">
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center mb-3">Quick Insights</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-center mb-3" style={{ color: '#4ade80' }}>Quick Insights</p>
                       {aiStarterQuestions.map(q => (
                         <button
                           key={q}
                           onClick={() => sendAiMessage(q)}
-                          className="w-full text-left px-3.5 py-2.5 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition"
+                          className="w-full text-left px-3.5 py-2.5 text-xs text-slate-300 rounded-xl transition"
+                          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(74,222,128,0.3)';
+                            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(74,222,128,0.05)';
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+                          }}
                         >
                           {q}
                         </button>
@@ -1312,8 +1340,8 @@ href={`/api/company/${company.slug}/export-csv`}
                       <div
                         className="max-w-[82%] px-3 py-2.5 text-sm leading-relaxed"
                         style={msg.role === 'user'
-                          ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '12px 12px 3px 12px' }
-                          : { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '12px 12px 12px 3px' }
+                          ? { background: '#16a34a', color: 'white', borderRadius: '12px 12px 3px 12px' }
+                          : { background: '#1a2a1a', color: '#e2e8f0', border: '1px solid #1a3a1a', borderRadius: '12px 12px 12px 3px' }
                         }
                       >
                         {msg.role === 'assistant' ? <AiMessageBody content={msg.content} /> : msg.content}
@@ -1323,8 +1351,8 @@ href={`/api/company/${company.slug}/export-csv`}
 
                   {aiLoading && (
                     <div className="flex justify-start">
-                      <div className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl">
-                        <Loader2 className="w-4 h-4 animate-spin text-indigo-400" aria-label="AI is thinking" />
+                      <div className="px-3 py-2.5 rounded-xl" style={{ background: '#1a2a1a', border: '1px solid #1a3a1a' }}>
+                        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#4ade80' }} aria-label="AI is thinking" />
                       </div>
                     </div>
                   )}
@@ -1337,7 +1365,8 @@ href={`/api/company/${company.slug}/export-csv`}
                     <button
                       onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
                       aria-label="Scroll to latest message"
-                      className="p-1.5 bg-indigo-600/80 rounded-full text-white hover:bg-indigo-600 transition"
+                      className="p-1.5 rounded-full text-white transition"
+                      style={{ background: '#16a34a' }}
                     >
                       <ArrowUp className="w-3.5 h-3.5 rotate-180" aria-hidden />
                     </button>
@@ -1345,7 +1374,7 @@ href={`/api/company/${company.slug}/export-csv`}
                 )}
 
                 {/* Input */}
-                <div className="p-3 border-t border-slate-700 flex gap-2 shrink-0">
+                <div className="p-3 flex gap-2 shrink-0" style={{ borderTop: '1px solid #1a3a1a' }}>
                   <input
                     type="text"
                     value={aiInput}
@@ -1353,13 +1382,15 @@ href={`/api/company/${company.slug}/export-csv`}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
                     placeholder="Ask about your leads..."
                     aria-label="Message to AI assistant"
-                    className="flex-1 px-3.5 py-2.5 text-sm bg-slate-900 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-indigo-500 outline-none"
+                    className="flex-1 px-3.5 py-2.5 text-sm rounded-xl text-white placeholder-white/30 outline-none"
+                    style={{ background: '#0f1a0f', border: '1px solid #1a3a1a' }}
                   />
                   <button
                     onClick={() => sendAiMessage(aiInput)}
                     disabled={!aiInput.trim() || aiLoading}
                     aria-label="Send message"
-                    className="p-2.5 rounded-xl bg-indigo-600 disabled:opacity-40 text-white transition hover:bg-indigo-500 active:scale-95"
+                    className="p-2.5 rounded-xl disabled:opacity-40 text-white transition active:scale-95"
+                    style={{ background: '#16a34a' }}
                   >
                     <Send className="w-4 h-4" aria-hidden />
                   </button>
@@ -1373,8 +1404,8 @@ href={`/api/company/${company.slug}/export-csv`}
               aria-expanded={showAiChat}
               className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
               style={{
-                background: showAiChat ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
+                background: showAiChat ? '#15803d' : '#16a34a',
+                boxShadow: '0 8px 32px rgba(22, 163, 74, 0.35)',
               }}
             >
               {showAiChat
@@ -1388,10 +1419,11 @@ href={`/api/company/${company.slug}/export-csv`}
             <button
               onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
               aria-label="Upgrade to Pro for AI features"
-              className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center bg-slate-900 border-2 border-slate-800 shadow-2xl transition-all hover:scale-110 active:scale-95"
+              className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+              style={{ background: '#0f1a0f', border: '2px solid #1a3a1a' }}
             >
-              <Sparkles className="w-5 h-5 text-slate-600" aria-hidden />
-              <span className="text-[9px] font-black text-amber-500 mt-0.5 uppercase">Pro</span>
+              <Sparkles className="w-5 h-5" style={{ color: '#2a4a2a' }} aria-hidden />
+              <span className="text-[9px] font-black mt-0.5 uppercase" style={{ color: '#4ade80' }}>Pro</span>
             </button>
           </div>
         )

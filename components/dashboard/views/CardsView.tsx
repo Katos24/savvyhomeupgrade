@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { 
-  Calendar, Bell, User, CheckCircle2, 
-  DollarSign, Mail, Phone, ChevronRight, 
-  Clock, Briefcase, Camera
+  Calendar, Bell, ChevronRight, 
+  User, DollarSign, Camera
 } from 'lucide-react';
 import { getTheme } from '@/lib/theme';
 
@@ -17,28 +15,23 @@ interface CardsViewProps {
   planTier?: string;
 }
 
-// ── ANIMATION VARIANTS ────────────────────────────────────────────────────────
-
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.04, delayChildren: 0.1 }
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
   }
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 20, scale: 0.96 },
+  hidden: { opacity: 0, scale: 0.95, y: 15 },
   show: { 
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: 'spring', stiffness: 260, damping: 24 }
+    opacity: 1, scale: 1, y: 0,
+    transition: { type: 'spring', stiffness: 220, damping: 22 }
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true, planTier = 'starter' }: CardsViewProps) {
-  const isStarter = planTier === 'starter';
   const t = getTheme(isDark);  
 
   const getStatusConfig = (statusValue: string) =>
@@ -52,232 +45,110 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
     return map[colorName] || '#3b82f6';
   };
 
-  const formatScheduledDate = (date: string) => {
-    if (!date) return null;
-    const [y, m, d] = date.split('T')[0].split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const formatScheduledTime = (time: string) => {
-    if (!time || time === 'TBD') return 'TBD';
-    const [h, m] = time.split(':');
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    return `${hour % 12 || 12}:${m} ${ampm}`;
-  };
-
   return (
     <motion.div 
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 px-1 sm:px-0"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-1 sm:px-0"
     >
       {leads.map((lead) => {
         const statusConfig = getStatusConfig(lead.status);
         const statusHex = getStatusColorHex(statusConfig.color);
         const isCompleted = lead.status === 'completed';
-        const schedDate = formatScheduledDate(lead.scheduled_date);
+
+        const rawDate = lead.scheduled_date ? lead.scheduled_date.split('T')[0] : null;
+        const displayDate = rawDate 
+          ? new Date(rawDate.replace(/-/g, '/')).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) 
+          : 'TBD';
 
         return (
           <motion.div
             key={lead.id}
             variants={cardVariants}
-            whileHover={{ 
-              y: -3,
-              scale: 1.01,
-              transition: { duration: 0.2 } 
-            }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ y: -5, transition: { duration: 0.2 } }}
             onClick={() => onSelectLead(lead)}
-            className={`w-full group cursor-pointer relative flex ${t.cardBg} border ${t.cardBorder} rounded-2xl overflow-hidden transition-colors ${t.cardBorderHover} shadow-sm hover:shadow-2xl hover:shadow-black/10 ${
-              isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'
-            }`}
+            className={`w-full group cursor-pointer relative flex flex-col ${t.cardBg} border-2 rounded-[2rem] overflow-hidden transition-all duration-300 shadow-xl ${
+              isDark 
+                ? 'border-white shadow-black/40' 
+                : 'border-slate-900 shadow-slate-200' 
+            } ${isCompleted ? 'opacity-60 grayscale-[0.5]' : 'opacity-100'}`}
           >
-            {/* Left Status Accent */}
-            <div className="w-1.5 shrink-0" style={{ backgroundColor: statusHex }} />
-
-            {/* ── MOBILE ROW LAYOUT (hidden sm:) ── */}
-            <div className="flex sm:hidden flex-1 items-center px-4 py-4 min-w-0 gap-3">
-              
-              {/* Name + status */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className={`${t.textHeading} text-[16px] font-black tracking-tight truncate`}>
-                    {lead.name}
-                  </h3>
-                  {lead.follow_up_date && (
-                    <Bell className="w-3 h-3 text-red-500 shrink-0 animate-pulse" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md border shrink-0"
-                    style={{ 
-                      backgroundColor: `${statusHex}15`, 
-                      color: statusHex, 
-                      borderColor: `${statusHex}25` 
-                    }}
-                  >
-                    {statusConfig.label}
-                  </span>
-                  {lead.category && (
-                    <span className={`text-[9px] font-semibold truncate ${t.textMuted}`}>
-                      {lead.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                    </span>
-                  )}
-                  {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
-                    <span className="text-[9px] font-black text-pink-500 shrink-0 flex items-center gap-0.5">
-                      <Camera className="w-2.5 h-2.5" />
-                      {lead.file_urls.length}
-                    </span>
-                  )}
-                </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5">
+              <div 
+                className="flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest"
+                style={{ backgroundColor: `${statusHex}12`, color: statusHex, borderColor: `${statusHex}25` }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: statusHex }} />
+                {statusConfig.label}
               </div>
-
-              {/* Date + amount — right side */}
-              <div className="flex flex-col items-end shrink-0 gap-0.5">
-                {!isStarter && lead.quote_total ? (
-                  <span className={`text-[15px] font-black ${t.textHeading}`}>
-                    ${parseFloat(lead.quote_total).toLocaleString()}
-                  </span>
-                ) : null}
-                {schedDate ? (
-                  <div className={`flex items-center gap-1 text-[12px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
-                    <Calendar className="w-3 h-3" />
-                    {schedDate}
-                  </div>
-                ) : (
-                  !isStarter && !lead.quote_total && (
-                    <span className={`text-[9px] font-bold uppercase tracking-wider ${t.textMuted} opacity-50`}>No date</span>
-                  )
-                )}
-                {!isStarter && (
-                  <span className={`text-[9px] font-black uppercase ${
-                    lead.payment_status === 'paid' ? 'text-emerald-500' : `${t.textMuted} opacity-50`
-                  }`}>
-                    {lead.payment_status === 'paid' ? '✓ Paid' : 'Unpaid'}
-                  </span>
-                )}
-              </div>
-
-              {/* Chevron */}
-              <ChevronRight className={`w-4 h-4 shrink-0 ${t.textMuted} opacity-30`} />
-            </div>
-
-            {/* ── DESKTOP FULL CARD LAYOUT (sm:flex, hidden on mobile) ── */}
-            <div className="hidden sm:flex flex-1 p-6 flex-col justify-between min-w-0">
-              
-              {/* Header */}
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span 
-                    className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border"
-                    style={{ 
-                      backgroundColor: `${statusHex}12`, 
-                      color: statusHex, 
-                      borderColor: `${statusHex}20` 
-                    }}
-                  >
-                    {statusConfig.label}
-                  </span>
-                  {lead.follow_up_date && (
-                    <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-1 rounded-full">
-                      <Bell className="w-3 h-3 text-red-500 animate-pulse" />
-                      <span className="text-[9px] font-black text-red-500 uppercase">Follow up</span>
-                    </div>
-                  )}
-                </div>
-
-                <h3 className={`${t.textHeading} text-xl font-black tracking-tight truncate group-hover:text-blue-400 transition-colors`}>
-                  {lead.name}
-                </h3>
-                
-                <div className={`flex items-center gap-3 mt-2 text-[10px] font-bold uppercase tracking-wider ${t.textSecondary}`}>
-                  <div className="flex items-center gap-1.5">
-                    <User className={`w-3.5 h-3.5 ${t.textMuted}`} />
-                    <span className="truncate">{lead.assigned_to || 'Unassigned'}</span>
-                  </div>
-                  {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
-                    <div className="flex items-center gap-1 text-pink-500 bg-pink-500/10 px-1.5 py-0.5 rounded-md">
-                      <Camera className="w-3 h-3" />
-                      <span className="font-black text-[9px]">{lead.file_urls.length}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Schedule Box */}
-              {!isStarter && (
-                <div className="mb-4">
-                  <div className={`grid grid-cols-2 gap-2 ${t.innerBg} p-4 rounded-2xl border ${t.innerBorder}`}>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
-                      <div className={`flex items-center gap-2 font-black text-[12px] italic ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
-                        <Calendar className="w-4 h-4" />
-                        {lead.scheduled_date 
-                          ? (() => {
-                              const [y, m, d] = lead.scheduled_date.split('T')[0].split('-').map(Number);
-                              return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                            })()
-                          : 'TBD'}
-                      </div>
-                    </div>
-                    <div className={`flex flex-col gap-1.5 border-l ${t.innerBorder} pl-4`}>
-                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Arrival</span>
-                      <div className={`flex items-center gap-2 font-black text-[12px] italic ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
-                        <Clock className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
-                        {formatScheduledTime(lead.scheduled_time)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-1.5 mt-2 px-1 text-[9px] font-black uppercase tracking-widest ${t.textMuted}`}>
-                    <Briefcase className="w-3 h-3" />
-                    {lead.category ? lead.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General'}
-                  </div>
+              {lead.follow_up_date && (
+                <div className="flex items-center gap-1.5 bg-red-500 text-white px-2.5 py-1 rounded-lg shadow-lg shadow-red-500/20">
+                  <Bell className="w-3.5 h-3.5" />
+                  <span className="text-[8px] font-black uppercase">Action Req</span>
                 </div>
               )}
+            </div>
 
-              {/* Footer */}
-              <div className={`flex items-center justify-between pt-4 border-t ${t.cardBorder}`}>
-                {!isStarter ? (
-                  <div className="flex flex-col gap-1">
-                    <div className={`${t.textHeading} font-black text-lg tracking-tight`}>
-                      {lead.quote_total 
-                        ? `$${parseFloat(lead.quote_total).toLocaleString()}` 
-                        : <span className={`${t.textEmpty} text-[10px] uppercase tracking-[0.2em] opacity-40`}>Pending Quote</span>}
+            {/* Body */}
+            <div className="px-6 pb-6 flex-1 flex flex-col justify-between">
+              <div className="mb-6 min-w-0">
+                <h3 className={`${t.textHeading} text-2xl font-black tracking-tight mb-1.5 truncate group-hover:text-blue-500 transition-colors`}>
+                  {lead.name}
+                </h3>
+                <div className="flex items-center gap-2.5">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate">
+                    {lead.category?.replace(/_/g, ' ') || 'General Enquiry'}
+                  </p>
+                  {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-pink-500 text-[11px] font-black">
+                      <Camera className="w-3.5 h-3.5" /> {lead.file_urls.length}
                     </div>
-                    <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
-                      lead.payment_status === 'paid' ? 'text-emerald-500' : 'text-slate-500'
-                    }`}>
-                      <div className={`w-1 h-1 rounded-full ${lead.payment_status === 'paid' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-                      {lead.payment_status || 'Unpaid'}
-                    </div>
-                    {(lead.quote_accepted_at || lead.quote_declined_at) && (
-                      <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
-                        lead.quote_accepted_at ? 'text-emerald-500' : 'text-red-500'
-                      }`}>
-                        <div className={`w-1 h-1 rounded-full ${
-                          lead.quote_accepted_at ? 'bg-emerald-500' : 'bg-red-500'
-                        }`} />
-                        Quote {lead.quote_accepted_at ? 'Accepted' : 'Declined'}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    <div className={`text-[10px] font-bold uppercase tracking-widest ${t.textMuted}`}>
-                      {lead.category ? lead.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : 'General'}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
 
-                <div className={`h-10 w-10 rounded-2xl ${t.innerBg} border ${t.innerBorder} flex items-center justify-center ${t.textSecondary} group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shadow-lg active:scale-90`}>
-                  <ChevronRight className="w-5 h-5" />
+              <div className={`grid grid-cols-2 gap-3 p-4 rounded-[1.5rem] border mb-6 ${
+                isDark ? 'bg-black/40 border-white/5' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="space-y-1">
+                  <span className="block text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
+                  <div className={`flex items-center gap-2 font-black italic text-xs ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                    <Calendar className="w-3.5 h-3.5" />
+                    {displayDate}
+                  </div>
+                </div>
+                <div className={`space-y-1 border-l pl-4 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
+                  <span className="block text-[8px] font-black text-slate-500 uppercase tracking-widest">Revenue</span>
+                  <div className={`flex items-center gap-2 font-black text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                    {lead.quote_total ? parseFloat(lead.quote_total).toLocaleString() : '0.00'}
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Footer */}
+            <div className={`flex items-center justify-between px-6 py-4 border-t ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[8px] font-black text-white uppercase">
+                  {lead.assigned_to?.charAt(0) || <User className="w-3.5 h-3.5" />}
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 truncate max-w-[120px]">
+                  {lead.assigned_to || 'Unassigned'}
+                </span>
+              </div>
+              
+              <div className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                isDark 
+                  ? 'bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white' 
+                  : 'bg-slate-900 text-white hover:bg-black'
+              }`}>
+                <span className="text-[10px] font-black uppercase tracking-widest">Open</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
           </motion.div>
         );
       })}
