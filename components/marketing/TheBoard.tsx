@@ -177,7 +177,9 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
             </h2>
 
             <p className="text-slate-500 font-normal leading-loose mb-8 max-w-sm text-[0.9rem]" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
-              Manage every lead, job, quote, and payment from one dashboard. Built for contractors who are tired of juggling spreadsheets, texts, and missed follow-ups.
+                Most contractors run their business out of their phone's text thread, Excel 
+                and a notes app. This replaces all of it — every lead, quote, 
+                scheduled job, and unpaid balance in one place.
             </p>
 
       

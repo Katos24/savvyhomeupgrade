@@ -17,7 +17,8 @@ export default function FinalCTA() {
           <span style={{ color: '#4ade80' }}>the whole year.</span>
         </h2>
         <p className="text-slate-400 text-lg font-medium mb-10 leading-relaxed max-w-md mx-auto">
-          Stop losing leads to disorganization. Get your QR code and dashboard live in 2 minutes.
+          Your competitor down the street is still texting quotes from his 
+          personal number. You don't have to be.
         </p>
         <Link
           href="/signup"

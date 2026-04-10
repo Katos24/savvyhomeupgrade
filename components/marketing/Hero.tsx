@@ -4,6 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import { HeroStoryStrip } from '@/components/marketing/HeroStoryStrip';
 import HeroDashboardDemo from '@/components/marketing/HeroDashboardDemo';
 
+
+
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#F7F5F0]"
@@ -32,7 +34,9 @@ export default function Hero() {
               className="text-slate-500 font-normal leading-relaxed mb-8 max-w-sm"
               style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)' }}
             >
-              Get a branded customer form, live lead dashboard, quote builder, scheduling, and email outbox — no website needed. You're live in 2 minutes.
+              Get a branded booking link, lead dashboard, quote builder, and 
+              scheduling — built for contractors who run their own crew. 
+              No website needed. Live in 2 minutes.
             </p>
 
             {/* CTA — desktop only, shown above demo */}

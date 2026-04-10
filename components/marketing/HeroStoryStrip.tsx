@@ -79,8 +79,8 @@ export function HeroStoryStrip() {
 
         {/* Panel 1 — QR */}
         <div className="flex flex-col items-center lg:items-start w-full lg:flex-1 min-w-0" style={panelStyle(0)}>
-          <StepLabel number="1" title="Scan or share"
-            caption="A custom QR code and link — yours the moment you sign up. Put it on your truck, yard signs, or social. Your 24/7 lead machine." />
+          <StepLabel number="1" title="Your link. Everywhere."
+  caption="Sign up and get a branded QR code instantly. Stick it on your truck, yard signs, or Instagram bio. When a customer scans it, your booking form opens on their phone — no app, no friction." />
           <div className="w-full max-w-[280px] lg:max-w-none rounded-2xl overflow-hidden border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
             <img
               src="/images/qr-scan-2.png"

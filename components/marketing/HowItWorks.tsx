@@ -42,7 +42,10 @@ export default function HowItWorks() {
             </h2>
 
             <p className="text-sm font-normal leading-loose mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
-              Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard — even when you're off the clock.
+              While you're on a roof or under a sink, customers are scanning your 
+              truck and submitting jobs with photos. You pull up your dashboard 
+              at lunch and three leads are waiting — name, number, photos, budget. 
+              No missed calls. No texts lost in your phone.
             </p>
 
             {/* PLACEMENT PILLS */}
