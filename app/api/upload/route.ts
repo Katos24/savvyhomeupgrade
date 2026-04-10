@@ -112,11 +112,13 @@ created_by = body.created_by || 'customer';
           console.error('Failed to send contractor email alert:', err);
         });
 
-        if (notify_customer && email) sendLeadConfirmationEmail({
+       if (notify_customer && email) sendLeadConfirmationEmail({
           customerEmail: email,
           customerName: name,
           category: formatCategory(category),
           companyName,
+          companyId,
+          description: description || undefined,
         }).catch(err => {
           console.error('Failed to send customer confirmation:', err);
         });

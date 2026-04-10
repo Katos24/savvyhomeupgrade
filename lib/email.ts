@@ -68,8 +68,7 @@ export async function sendNewLeadAlertEmail({
               <div class="label">Email:</div>
               <div class="value"><a href="mailto:${customerEmail}">${customerEmail}</a></div>
               
-              <div class="label">Phone:</div>
-${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="tel:${customerPhone}">${customerPhone}</a></div>` : ''}
+             ${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="tel:${customerPhone}">${customerPhone}</a></div>` : ''}
               
               ${address ? `
                 <div class="label">Service Address:</div>
@@ -125,47 +124,55 @@ export async function sendLeadConfirmationEmail({
   customerName,
   category,
   companyName,
+  companyId,
+  description,
 }: {
   customerEmail: string;
   customerName: string;
   category: string;
   companyName: string;
+  companyId: number;
+  description?: string;
 }) {
   try {
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
-            p { color: #333; font-size: 16px; line-height: 26px; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; border-top: 1px solid #e6ebf1; padding-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Thanks for reaching out!</h1>
-            <p>Hi ${customerName},</p>
-            <p>We received your request for <strong>${category}</strong> services.</p>
-            <p>We'll review your request and get back shortly.</p>
-            <div class="footer">${companyName}</div>
-            
-          </div>
-        </body>
-      </html>
-    `;
+    console.log('🔥 sendLeadConfirmationEmail called');
+
+    const company = await getCompanyDetails(companyId);
+
+    const body = `Hi ${customerName},
+
+Thanks for reaching out to ${company.name || companyName}! We've received your request and someone will be in touch with you shortly.
+
+Here's a summary of what you submitted:
+
+Service: ${category}
+${description ? `Details: ${description}` : ''}
+
+If you have any questions in the meantime, feel free to reply to this email.
+
+We look forward to working with you.
+
+${company.name || companyName}`;
+
+    const emailHtml = textToHtml(
+      body,
+      company.name || companyName,
+      company.logo_url || undefined,
+      company.phone || undefined,
+      company.website || undefined,
+      company.email_brand_color_1 || undefined,
+      company.email_brand_color_2 || undefined,
+    );
 
     await resend.emails.send({
-from: `${companyName} <hello@lead2project.com>`,
+      from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
-      subject: `Thanks for reaching out to ${companyName}!`,
+      replyTo: company.email || undefined,
+      subject: `We received your request — ${company.name || companyName}`,
       html: emailHtml,
     });
 
-    console.log('✅ Confirmation email sent to customer');
+    console.log('✅ Confirmation email sent to customer:', customerEmail);
   } catch (error) {
     console.error('❌ Failed to send confirmation email:', error);
   }
@@ -746,8 +753,7 @@ export async function sendSubscriptionActivatedEmail({
             
             <ul style="color: #555; line-height: 28px;">
               <li>✓ Unlimited lead tracking</li>
-              <li>✓ Professional quotes & invoices</li>
-              <li>✓ Fast payments (2 days with Stripe)</li>
+              <li>✓ Professional quote builder</li>
               <li>✓ Photo uploads from customers</li>
               <li>✓ Team collaboration</li>
             </ul>
@@ -1152,7 +1158,7 @@ export async function sendFollowUpReminderEmail({
     `;
 
     await resend.emails.send({
-      from: 'Lead2Project Reminders <hello@lead2project.com>',
+from: 'Lead2Project <hello@lead2project.com>',
       to: recipientEmail,
       subject: `${leads.length} Lead${leads.length > 1 ? 's' : ''} Need Follow-up - ${companyName}`,
       html: emailHtml,
@@ -1309,18 +1315,22 @@ export async function sendDailyDigestEmail({
 
     // ── section builder ──
     const section = (
-      emoji: string,
       title: string,
       color: string,
       rows: string[]
     ) => rows.length === 0 ? '' : `
       <div style="margin-bottom: 28px;">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid ${color}20;">
-          <span style="font-size: 18px;">${emoji}</span>
-          <h3 style="margin: 0; color: ${color}; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
-            ${title} <span style="font-weight: 400; color: #94a3b8;">(${rows.length})</span>
-          </h3>
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px; border-bottom: 2px solid ${color}20;">
+          <tr>
+            <td style="padding-bottom: 8px;">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:8px;vertical-align:middle;"></span>
+              <span style="color: ${color}; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+                ${title}
+              </span>
+              <span style="font-weight: 400; color: #94a3b8; font-size: 13px;"> (${rows.length})</span>
+            </td>
+          </tr>
+        </table>
         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
           ${rows.join('')}
         </table>
@@ -1412,13 +1422,13 @@ export async function sendDailyDigestEmail({
                 <tr>
                   <td style="padding:32px;">
 
-                    ${section('📅', "Today's Jobs", '#3b82f6', todayRows)}
-                    ${section('🔔', 'Follow-up Reminders', '#8b5cf6', followUpRows)}
-                    ${section('🔴', 'Overdue Payments', '#ef4444', overdueRows)}
-                    ${section('💳', 'Collect Payment', '#f97316', unpaidRows)}
-                    ${section('⏰', 'Due This Week', '#f59e0b', dueSoonRows)}
-                    ${section('📬', 'Quote Follow-up', '#eab308', quoteRows)}
-                    ${section('⚡', 'Stale Leads', '#6366f1', staleLeadRows)}
+                    ${section("Today's Jobs", '#3b82f6', todayRows)}
+    ${section('Follow-up Reminders', '#8b5cf6', followUpRows)}
+    ${section('Overdue Payments', '#ef4444', overdueRows)}
+    ${section('Collect Payment', '#f97316', unpaidRows)}
+    ${section('Due This Week', '#f59e0b', dueSoonRows)}
+    ${section('Quote Follow-up', '#eab308', quoteRows)}
+    ${section('Stale Leads', '#6366f1', staleLeadRows)}
 
                     <!-- CTA -->
                     <div style="text-align:center;margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0;">
@@ -1529,17 +1539,16 @@ export async function sendCancellationScheduledEmail({
 }: {
   companyEmail: string;
   companyName: string;
-  accessUntil: string;   // formatted date string e.g. "April 15, 2025"
+  accessUntil: string; // always pass ISO format: "2025-04-15"
   isTrialing: boolean;
 }) {
-  // Calculate days remaining from the formatted string isn't reliable,
-  // so also accept a raw date. We'll parse accessUntil for display.
   const resubUrl = `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`;
-
-  // Calculate days left
-  const accessDate = new Date(accessUntil);
+  const accessDate = new Date(accessUntil + 'T00:00:00'); // force local midnight, avoids timezone shift
   const now = new Date();
   const daysLeft = Math.max(0, Math.ceil((accessDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const accessUntilFormatted = accessDate.toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
 
   await resend.emails.send({
     from: 'Lead2Project <hello@lead2project.com>',
