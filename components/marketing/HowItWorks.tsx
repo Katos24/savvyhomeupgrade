@@ -14,24 +14,67 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto">
         <div
           ref={ref}
-          className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-center"
+          className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-16 items-center"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? 'none' : 'translateY(20px)',
             transition: 'all 0.9s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* TOP ON MOBILE: Image first */}
-          <div className="relative order-1 lg:order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">
+
+          {/* ── TEXT — order 1 on mobile AND desktop (left col) ── */}
+          <div className="text-center lg:text-left order-1">
+            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-[#1a6645]/15 border border-[#1a6645]/30">
+              <Zap size={12} className="text-[#1a6645] fill-[#1a6645]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#1a6645]">
+                Built for Growth
+              </span>
+            </div>
+
+            <h2
+              className="font-black mb-6 text-white"
+              style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}
+            >
+              If your competition<br />
+              is getting leads<br />
+              while they sleep,<br />
+              <span style={{ color: '#1a6645' }}>you should be too.</span>
+            </h2>
+
+            <p className="text-sm font-normal leading-loose mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
+              Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard — even when you're off the clock.
+            </p>
+
+            {/* PLACEMENT PILLS */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center lg:justify-start gap-3">
+              {[
+                { icon: <Truck size={14} />,     label: 'Truck Wraps' },
+                { icon: <Instagram size={14} />, label: 'Social Bio'  },
+                { icon: <MapPin size={14} />,    label: 'Yard Signs'  },
+                { icon: <Mail size={14} />,      label: 'Email Footer'},
+              ].map(item => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-center lg:justify-start gap-2.5 px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#1a6645] transition-all group"
+                >
+                  <span className="text-[#1a6645] group-hover:scale-110 transition-transform">{item.icon}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-slate-300 uppercase">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── IMAGE + DIGEST — order 2 on mobile AND desktop (right col) ── */}
+          <div className="relative order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full pointer-events-none" />
 
+            {/* QR image */}
             <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-1.5 md:p-2 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">
               <img
                 src="/images/qrbranded2.png"
                 alt="Branded QR System"
                 className="w-full h-auto rounded-[1.5rem] md:rounded-[1.8rem] block shadow-2xl"
               />
-
               <div className="hidden md:block absolute -top-6 -right-6 bg-[#1a6645] border border-[#4ade80]/30 p-5 rounded-2xl shadow-2xl rotate-3 transition-transform hover:rotate-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
@@ -47,7 +90,7 @@ export default function HowItWorks() {
               </div>
             </div>
 
-            {/* DAILY DIGEST — text left, flat email card right */}
+            {/* DAILY DIGEST — below image */}
             <div
               className="mt-4 rounded-2xl overflow-hidden grid grid-cols-1 sm:grid-cols-2"
               style={{ background: 'rgba(26,102,69,0.06)', border: '1px solid rgba(26,102,69,0.2)' }}
@@ -74,21 +117,17 @@ export default function HowItWorks() {
                 style={{ borderColor: 'rgba(26,102,69,0.2)' }}>
                 <div className="rounded-xl overflow-hidden"
                   style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)' }}>
-
-                  {/* Email header */}
                   <div className="px-3 py-2" style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                     <p className="text-[8px] text-slate-500 mb-0.5">digest@lead2project.com</p>
                     <p className="text-[10px] font-black text-white">Ridge Line Roofing · Morning Brief</p>
                     <p className="text-[8px] text-slate-500">Today, 6:00 AM</p>
                   </div>
-
-                  {/* Rows */}
                   <div className="px-3 py-2.5 space-y-2">
                     {[
-                      { dot: '#6366f1', label: 'Scheduled today',    value: '2 jobs',          sub: 'Torres · Kim Gutters' },
-                      { dot: '#f59e0b', label: 'Unpaid balances',    value: '$3,200',           sub: '2 invoices overdue'   },
-                      { dot: '#10b981', label: 'New leads overnight', value: '1 new',            sub: 'Michael Johnson'      },
-                      { dot: '#ef4444', label: 'Follow-ups needed',  value: '3 contacts',       sub: 'Last contact 4d ago'  },
+                      { dot: '#6366f1', label: 'Scheduled today',    value: '2 jobs',     sub: 'Torres · Kim Gutters' },
+                      { dot: '#f59e0b', label: 'Unpaid balances',    value: '$3,200',     sub: '2 invoices overdue'   },
+                      { dot: '#10b981', label: 'New leads overnight', value: '1 new',      sub: 'Michael Johnson'      },
+                      { dot: '#ef4444', label: 'Follow-ups needed',  value: '3 contacts', sub: 'Last contact 4d ago'  },
                     ].map((row, i) => (
                       <div key={i} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -102,8 +141,6 @@ export default function HowItWorks() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Footer */}
                   <div className="px-3 py-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <p className="text-[7px] text-slate-600 text-center uppercase tracking-widest">Powered by Lead2Project · Pro plan</p>
                   </div>
@@ -113,48 +150,6 @@ export default function HowItWorks() {
 
           </div>
 
-          {/* BOTTOM ON MOBILE: Text */}
-          <div className="text-center lg:text-left order-2 lg:order-1">
-            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-[#1a6645]/15 border border-[#1a6645]/30">
-              <Zap size={12} className="text-[#1a6645] fill-[#1a6645]" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#1a6645]">
-                Built for Growth
-              </span>
-            </div>
-
-            <h2
-              className="font-black mb-8 text-white"
-              style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}
-            >
-              If your competition<br />
-              is getting leads<br />
-              while they sleep,<br />
-              <span style={{ color: '#1a6645' }}>you should be too.</span>
-            </h2>
-
-            <p className="text-sm font-normal leading-loose mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
-              Don't leave money on the table. Every scan from a truck and every click from your social bio lands directly in your dashboard — even when you're off the clock.
-            </p>
-
-            {/* PLACEMENT PILLS */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center lg:justify-start gap-3 mb-8">
-              {[
-                { icon: <Truck size={14} />,      label: 'Truck Wraps' },
-                { icon: <Instagram size={14} />,  label: 'Social Bio' },
-                { icon: <MapPin size={14} />,     label: 'Yard Signs' },
-                { icon: <Mail size={14} />,       label: 'Email Footer' },
-              ].map(item => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-2.5 px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#1a6645] transition-all group"
-                >
-                  <span className="text-[#1a6645] group-hover:scale-110 transition-transform">{item.icon}</span>
-                  <span className="text-[11px] font-bold tracking-wide text-slate-300 uppercase">{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-          </div>
         </div>
       </div>
     </section>
