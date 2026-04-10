@@ -143,9 +143,9 @@ export function HeroStoryStrip() {
       transform: scale(0.85);
       margin-bottom: -15%;
     }
-    @media (max-width: 400px)  { .laptop-wrapper { transform: scale(0.68); margin-bottom: -32%; } }
-    @media (min-width: 401px) and (max-width: 520px)  { .laptop-wrapper { transform: scale(0.74); margin-bottom: -26%; } }
-    @media (min-width: 521px) and (max-width: 640px)  { .laptop-wrapper { transform: scale(0.80); margin-bottom: -20%; } }
+    @media (max-width: 400px)  { .laptop-wrapper { transform: scale(0.82); margin-bottom: -18%; } }
+    @media (min-width: 401px) and (max-width: 520px)  { .laptop-wrapper { transform: scale(0.88); margin-bottom: -12%; } }
+    @media (min-width: 521px) and (max-width: 640px)  { .laptop-wrapper { transform: scale(0.92); margin-bottom: -8%; } }
     @media (min-width: 641px) and (max-width: 768px)  { .laptop-wrapper { transform: scale(0.72); margin-bottom: -28%; } }
     @media (min-width: 769px) and (max-width: 1024px) { .laptop-wrapper { transform: scale(0.80); margin-bottom: -20%; } }
     @media (min-width: 1025px) { .laptop-wrapper { transform: scale(0.85); margin-bottom: -15%; } }
