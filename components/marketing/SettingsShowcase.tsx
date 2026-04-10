@@ -298,7 +298,7 @@ export default function SettingsShowcase() {
 
         {/* Bento grid — 1 col mobile, 2 col sm, 4 col lg */}
         <div
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-7"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-7 [&>*:nth-child(n+3)]:col-span-2 [&>*:nth-child(n+3)]:lg:col-span-1"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s' }}
         >
           {([<PipelineBento />, <CategoriesBento />, <FormBento isDark />, <EmailBento isDark />] as React.ReactNode[]).map((card, i) => {
