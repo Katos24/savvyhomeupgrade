@@ -187,11 +187,14 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
                   <X className="w-4 h-4 text-slate-500" />
                 </motion.button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div style={{ background: '#fff', borderRadius: '8px', pointerEvents: 'none', color: '#111' }}>
-                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                </div>
-              </div>
+             <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
+  <iframe
+    title="Email Preview"
+    srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}*{user-select:none!important;}</style>`}
+    className="w-full h-full border-0 rounded-xl bg-white"
+    sandbox="allow-same-origin"
+  />
+</div>
             </motion.div>
           </motion.div>
         )}

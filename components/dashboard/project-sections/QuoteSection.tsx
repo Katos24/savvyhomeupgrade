@@ -220,11 +220,11 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
       </AnimatePresence>
 
       {/* ── MAIN CARD ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
-      >
+     <motion.div
+  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.3 }}
+  className="bg-white rounded-xl border border-gray-200 shadow-sm"
+>
 
         {/* HEADER */}
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
