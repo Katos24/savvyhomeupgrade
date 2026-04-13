@@ -269,8 +269,8 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
 
         {/* FORM */}
         <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="min-w-0">
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="min-w-0">
               <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">Amount</label>
               <input
   type="text"

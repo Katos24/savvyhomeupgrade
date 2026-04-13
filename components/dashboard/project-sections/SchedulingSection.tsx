@@ -263,10 +263,11 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
            <div className="min-w-0">
   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Date</label>
   <input
-    type="date" value={scheduledDate}
-    onChange={(e) => setScheduledDate(e.target.value)}
-    className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none focus:border-blue-500 focus:bg-white transition-all"
-  />
+  type="date" value={scheduledDate}
+  onChange={(e) => setScheduledDate(e.target.value)}
+  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none focus:border-blue-500 focus:bg-white transition-all overflow-hidden"
+  style={{ maxWidth: '100%' }}
+/>
 </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Time</label>
