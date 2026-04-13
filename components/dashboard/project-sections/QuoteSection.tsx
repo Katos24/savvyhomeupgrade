@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
-  Plus, Trash2, Save, X, Edit2, Mail,
-  Loader2, Sparkles, Eye, Receipt,
-  ArrowRightLeft, FileText, CheckCircle2, Send,
+  Plus, Trash2, X, Edit2, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, FileText, CheckCircle2, ChevronUp, ChevronDown,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -37,7 +35,8 @@ export default function QuoteSection({
   const [saving, setSaving] = useState(false);
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [isEditing, setIsEditing] = useState(false);
-  const [showAI, setShowAI] = useState(false);
+const [showAI, setShowAI] = useState(false);
+const [showHistory, setShowHistory] = useState(false);
 const [outboxLog, setOutboxLog] = useState<any[]>([]);
 const [showEmailModal, setShowEmailModal] = useState(false);
 const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
@@ -691,75 +690,66 @@ className={`border-b transition-colors group ${
   </div>
 </div>
 
-{/* LAST SENT BADGE */}
-{outboxLog[0] && !isEditing && (
-  <div className="mx-4 mb-4 mt-2 flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl">
-    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${outboxLog[0].status === 'failed' ? 'bg-red-400' : 'bg-emerald-400'}`} />
-    <p className="text-xs text-gray-500 flex-1">
-      {outboxLog[0].status === 'failed' ? 'Last send failed' : 'Last sent'}{' '}
-      <span className="font-semibold text-gray-700">
-        {new Date(outboxLog[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+{/* SENT HISTORY — collapsible */}
+{outboxLog.length > 0 && !isEditing && (
+  <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+    <button
+      onClick={() => setShowHistory(v => !v)}
+      className="flex items-center justify-between w-full py-1"
+    >
+      <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+        <Mail className="w-3 h-3 text-slate-400" /> Sent History ({outboxLog.length})
       </span>
-      {outboxLog[0].sent_by_email && (
-        <span className="text-gray-400"> · {outboxLog[0].sent_by_email}</span>
+      {showHistory ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+    </button>
+    <AnimatePresence>
+      {showHistory && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+          className="overflow-hidden"
+        >
+          <div className="mt-2 space-y-2">
+            {outboxLog.map((entry: any, i: number) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-indigo-100 transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black text-slate-800">
+                        {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {entry.sent_by_email && <p className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</p>}
+                    {entry.status === 'failed' && entry.error_message && (
+                      <p className="text-[10px] text-rose-500 font-bold truncate">{entry.error_message}</p>
+                    )}
+                  </div>
+                </div>
+                {entry.html_body && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setPreviewHtml(entry.html_body)}
+                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition opacity-0 group-hover:opacity-100"
+                  >
+                    <Eye className="w-3 h-3" /> View
+                  </motion.button>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       )}
-    </p>
-    {outboxLog[0].html_body && (
-      <button
-        onClick={() => setPreviewHtml(outboxLog[0].html_body)}
-        className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-indigo-500 transition-colors shrink-0"
-      >
-        <Eye className="w-3 h-3" /> View
-      </button>
-    )}
+    </AnimatePresence>
   </div>
 )}
-
-        {/* EMAIL HISTORY */}
-{outboxLog.length > 1 && (
-          <div className="px-4 pb-4 pt-1">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-              <Mail className="w-3 h-3" /> Proposal History
-            </p>
-            <div className="space-y-2">
-              {outboxLog.map((entry: any, i: number) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-indigo-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black text-slate-800">
-                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      {entry.sent_by_email && <p className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</p>}
-                      {entry.status === 'failed' && entry.error_message && (
-                        <p className="text-[10px] text-rose-500 font-bold truncate">{entry.error_message}</p>
-                      )}
-                    </div>
-                  </div>
-                  {entry.html_body && (
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setPreviewHtml(entry.html_body)}
-                      className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition"
-                    >
-                      <Eye className="w-3 h-3" /> View
-                    </motion.button>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
       </motion.div>
 
       {/* ── AI MODAL ── */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Check, DollarSign, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Check, DollarSign, Send, ArrowRight, Mail, ChevronUp, ChevronDown } from 'lucide-react';
 import { Lead, QuoteItem, fmt } from '@/components/demo/types';
 
 const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
@@ -16,8 +16,10 @@ export default function QuoteTab({ lead, onUpdate, tourStep, onTourAdvance }: {
   const [desc, setDesc]   = useState('');
   const [qty, setQty]     = useState('1');
   const [price, setPrice] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+const [saved, setSaved] = useState(false);
+const [error, setError] = useState('');
+const [showHistory, setShowHistory] = useState(false);
+const [sentHistory, setSentHistory] = useState<{date: string}[]>([]);
 
   const total = items.reduce((s, i) => s + i.amount, 0);
 
@@ -61,131 +63,258 @@ export default function QuoteTab({ lead, onUpdate, tourStep, onTourAdvance }: {
           <ArrowBounce />
         </div>
       )}
-
-      {/* ── LINE ITEMS ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-bold text-gray-800">Line items</span>
-          </div>
-          {items.length > 0 && (
-            <span className="text-xs font-bold text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
-          )}
-        </div>
-
-        {items.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-sm text-gray-300 font-medium">No items yet</p>
-            <p className="text-xs text-gray-200 mt-1">Add your first line item below</p>
-          </div>
-        )}
-
-        {items.length > 0 && (
-          <div className="divide-y divide-gray-50">
-            {items.map(item => (
-              <div key={item.id} className="group flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{item.description}</p>
-                  <p className="text-[10px] text-gray-400">${item.unitPrice.toLocaleString()} × {item.quantity}</p>
-                </div>
-                <p className="text-sm font-black text-gray-900 shrink-0">{fmt(item.amount)}</p>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add row */}
-        <div className={`px-4 py-3 border-t-2 border-dashed ${error ? 'border-red-200 bg-red-50/30' : 'border-gray-100 bg-gray-50/40'}`}>
-          <div className="flex gap-2 mb-2">
-            <input
-              value={desc}
-              onChange={e => { setDesc(e.target.value); setError(''); }}
-              onKeyDown={e => e.key === 'Enter' && addItem()}
-              placeholder="Item description..."
-              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition placeholder-gray-300"
-            />
-          </div>
-          <div className="flex gap-2 items-center">
-            <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden flex-1 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition">
-              <span className="pl-3 text-gray-400 text-sm font-bold">$</span>
-              <input
-                type="number"
-                value={price}
-                onChange={e => { setPrice(e.target.value); setError(''); }}
-                onKeyDown={e => e.key === 'Enter' && addItem()}
-                placeholder="0.00"
-                className={`flex-1 px-2 py-2 bg-transparent text-sm font-bold text-gray-900 outline-none border-none ${noSpinners}`}
-              />
-            </div>
-            <input
-              type="number"
-              value={qty}
-              onChange={e => setQty(e.target.value)}
-              className={`w-14 px-2 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center text-gray-900 outline-none focus:border-indigo-400 transition ${noSpinners}`}
-            />
-            <button
-              onClick={addItem}
-              className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center transition active:scale-90 shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          {error && <p className="text-xs text-red-500 font-bold mt-1.5">{error}</p>}
-        </div>
-      </div>
-
-      {/* ── TOTAL + ACTION BAR ── */}
-      <div className="bg-gray-900 rounded-2xl px-5 py-4">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Quote total</p>
-            <p className="text-2xl font-black text-white">{fmt(total)}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            {/* Step 1: Save — white on dark so it pops */}
-            {tourStep !== 'send-quote' && (
-              <button
-                onClick={handleSave}
-                disabled={items.length === 0}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 ${
-                  saved ? 'bg-emerald-500 text-white' : 'bg-white hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save Quote →'}
-              </button>
-            )}
-            {/* Step 2: Send — only shows after save, clearly different */}
-            {(saved || tourStep === 'send-quote') && (
+{/* ── LINE ITEMS — matches real QuoteSection ── */}
+<div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+  {/* Desktop table */}
+  <div className="hidden sm:block overflow-x-auto">
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr className="border-b border-gray-100">
+          <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Line item</th>
+          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Unit price</th>
+          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-16">Qty</th>
+          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Amount</th>
+          <th className="w-9" />
+        </tr>
+      </thead>
+      <tbody>
+        {items.length === 0 ? (
+          <tr>
+            <td colSpan={5}>
               <button
                 onClick={() => {
-                  onUpdate({ status: 'quoted' });
-                  onTourAdvance?.('accepted');
-                  setTimeout(() => onTourAdvance?.('mark-paid'), 2200);
+                  setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }]);
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest bg-emerald-500 hover:bg-emerald-400 text-white transition animate-in fade-in duration-300 shadow-lg shadow-emerald-900/40 active:scale-95"
+                className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
               >
-                <ArrowRight className="w-3.5 h-3.5" /> Send to Michael
+                <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+                  <Plus className="w-5 h-5 text-white stroke-[3px]" />
+                </div>
+                <span className="text-xs font-bold text-indigo-500 group-hover:text-indigo-600 transition-colors">Add line item</span>
               </button>
-            )}
-          </div>
-        </div>
-        {tourStep === 'send-quote' && (
-          <p className="text-[10px] font-bold text-indigo-400 mt-3 text-right animate-pulse">
-            ↑ Send it — Michael gets an email to Accept / Decline
-          </p>
+            </td>
+          </tr>
+        ) : (
+          <>
+            {items.map(item => (
+<tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/60 group">                <td className="px-5 py-2.5">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={e => setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
+                    placeholder="Item description…"
+className="w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 rounded-lg bg-transparent px-1 py-1 focus:bg-white focus:border focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:px-3 transition-all"
+                  />
+                </td>
+                <td className="px-5 py-2.5">
+                  <input
+                    type="number"
+                    value={item.unitPrice || ''}
+                    onChange={e => {
+                      const unitPrice = parseFloat(e.target.value) || 0;
+                      setItems(prev => prev.map(i => i.id === item.id ? { ...i, unitPrice, amount: unitPrice * i.quantity } : i));
+                    }}
+className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-transparent px-1 py-1 focus:bg-white focus:border focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all ${noSpinners}`}                  />
+                </td>
+                <td className="px-5 py-2.5">
+                  <input
+                    type="number"
+                    value={item.quantity || ''}
+                    onChange={e => {
+                      const quantity = parseFloat(e.target.value) || 1;
+                      setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity, amount: i.unitPrice * quantity } : i));
+                    }}
+className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-transparent px-1 py-1 focus:bg-white focus:border focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all ${noSpinners}`}                  />
+                </td>
+                <td className="px-5 py-2.5 text-right text-sm font-medium text-gray-900">
+                  ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td className="pr-3 py-2.5">
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={5} className="px-5 py-3 border-t border-dashed border-gray-200">
+                <button
+                  onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+                  className="flex items-center gap-2 text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                >
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <Plus className="w-3 h-3" />
+                  </div>
+                  Add line item
+                </button>
+              </td>
+            </tr>
+          </>
         )}
-      </div>
+      </tbody>
+    </table>
+  </div>
 
-      <p className="text-center text-xs text-gray-400">
-        In your real account, you can email this quote to the customer with one click.
-      </p>
+  {/* Mobile cards */}
+  <div className="sm:hidden">
+    {items.length === 0 ? (
+      <button
+        onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+        className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
+      >
+        <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+          <Plus className="w-5 h-5 text-white stroke-[3px]" />
+        </div>
+        <span className="text-xs font-bold text-indigo-500">Add line item</span>
+      </button>
+    ) : (
+      <div className="p-3 flex flex-col gap-2">
+        {items.map(item => (
+          <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-4">
+            <input
+              type="text"
+              value={item.description}
+              onChange={e => setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
+              placeholder="Item description…"
+              className="w-full text-sm font-semibold text-gray-900 outline-none border border-slate-200 rounded-xl px-3 py-2 mb-3 focus:border-indigo-400 transition"
+            />
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Amount</p>
+                <p className="text-lg font-bold text-gray-900">${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="w-px h-8 bg-gray-100" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Price</p>
+                <input
+                  type="number"
+                  value={item.unitPrice || ''}
+                  onChange={e => {
+                    const unitPrice = parseFloat(e.target.value) || 0;
+                    setItems(prev => prev.map(i => i.id === item.id ? { ...i, unitPrice, amount: unitPrice * i.quantity } : i));
+                  }}
+                  className={`w-20 text-sm font-semibold text-gray-700 outline-none border border-slate-200 rounded-lg px-2 py-1 focus:border-indigo-400 transition ${noSpinners}`}
+                />
+              </div>
+              <div className="w-px h-8 bg-gray-100" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Qty</p>
+                <input
+                  type="number"
+                  value={item.quantity || ''}
+                  onChange={e => {
+                    const quantity = parseFloat(e.target.value) || 1;
+                    setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity, amount: i.unitPrice * quantity } : i));
+                  }}
+                  className={`w-14 text-sm font-semibold text-gray-700 outline-none border border-slate-200 rounded-lg px-2 py-1 text-center focus:border-indigo-400 transition ${noSpinners}`}
+                />
+              </div>
+              <button
+                onClick={() => removeItem(item.id)}
+                className="ml-auto p-2 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+        <button
+          onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+          className="w-full border-2 border-dashed border-indigo-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all group"
+        >
+          <Plus className="w-4 h-4 text-indigo-400" />
+          <span className="text-xs font-semibold text-indigo-400">Add line item</span>
+        </button>
+      </div>
+    )}
+  </div>
+</div>
+
+      {/* ── TOTAL + ACTION BAR ── */}
+  {/* ── STICKY TOTAL BAR — matches real dashboard ── */}
+<div className="sticky bottom-0 z-10 bg-white border-t border-slate-100">
+  <div className="px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total</p>
+      <p className="text-xl font-black text-slate-900">{fmt(total)}</p>
+    </div>
+    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+      {tourStep !== 'send-quote' && (
+        <>
+          <button
+            onClick={handleSave}
+            disabled={items.length === 0}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 ${
+              saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 hover:bg-slate-700 text-white'
+            }`}
+          >
+            {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save Quote'}
+          </button>
+        </>
+      )}
+      {(saved || tourStep === 'send-quote') && (
+        <button
+          onClick={() => {
+            onUpdate({ status: 'quoted' });
+            setSentHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
+            onTourAdvance?.('accepted');
+            setTimeout(() => onTourAdvance?.('mark-paid'), 2200);
+          }}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-black text-[11px] uppercase tracking-widest transition hover:border-indigo-300 hover:text-indigo-600 animate-in fade-in duration-300 active:scale-95"
+        >
+          <Send className="w-3.5 h-3.5" />
+          Send Quote
+        </button>
+      )}
+    </div>
+  </div>
+  {tourStep === 'send-quote' && (
+    <p className="text-[10px] font-bold text-indigo-400 pb-2 text-right pr-4 animate-pulse">
+      ↑ Send it — Michael gets an email to Accept / Decline
+    </p>
+  )}
+</div>
+
+     {sentHistory.length > 0 && (
+  <div className="border-t border-slate-100 pt-2">
+    <button
+      onClick={() => setShowHistory(v => !v)}
+      className="flex items-center justify-between w-full py-1"
+    >
+      <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+        <Mail className="w-3 h-3" /> Sent History ({sentHistory.length})
+      </span>
+      {showHistory
+        ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+        : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+    </button>
+    {showHistory && (
+      <div className="mt-2 space-y-2">
+        {sentHistory.map((entry, i) => (
+          <div key={i} className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-xs font-black text-slate-800">{entry.date}</span>
+                <p className="text-[10px] text-slate-400 truncate">Sent to Michael Johnson</p>
+              </div>
+            </div>
+            <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 shrink-0 ml-2">
+              sent
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+<p className="text-center text-xs text-gray-400">
+  In your real account, you can email this quote to the customer with one click.
+</p>
     </div>
   );
 }

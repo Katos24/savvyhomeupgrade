@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Clock, Send, ChevronDown, ArrowRight } from 'lucide-react';
+import { Check, Clock, Send, ChevronDown, ChevronUp, ArrowRight, Mail } from 'lucide-react';
 import { Lead, fmt } from '@/app/demo/page';
 import NextLink from 'next/link';
 
@@ -25,8 +25,10 @@ export default function PaymentTab({ lead, onUpdate, tourStep, onTourAdvance }: 
     lead.payment_status === 'paid' ? total : lead.payment_status === 'partial' ? total * 0.5 : 0
   );
   const [saved, setSaved]         = useState(false);
-  const [reminded, setReminded]   = useState(false);
-  const [justPaid, setJustPaid]   = useState(false);
+  const [reminded, setReminded]       = useState(false);
+const [justPaid, setJustPaid]       = useState(false);
+const [showHistory, setShowHistory] = useState(false);
+const [reminderHistory, setReminderHistory] = useState<{date: string}[]>([]);
 
   const remaining  = Math.max(0, total - collected);
   const pct        = total > 0 ? Math.min(100, Math.round((collected / total) * 100)) : 0;
@@ -53,9 +55,10 @@ export default function PaymentTab({ lead, onUpdate, tourStep, onTourAdvance }: 
   };
 
   const handleRemind = () => {
-    setReminded(true);
-    setTimeout(() => setReminded(false), 2500);
-  };
+  setReminded(true);
+  setReminderHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
+  setTimeout(() => setReminded(false), 2500);
+};
 
   const inputCls = 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
 
@@ -246,7 +249,41 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400">
+          {reminderHistory.length > 0 && (
+  <div className="border-t border-slate-100 pt-2">
+    <button
+      onClick={() => setShowHistory(v => !v)}
+      className="flex items-center justify-between w-full py-1"
+    >
+      <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+        <Mail className="w-3 h-3" /> Sent History ({reminderHistory.length})
+      </span>
+      {showHistory
+        ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+        : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+    </button>
+    {showHistory && (
+      <div className="mt-2 space-y-2">
+        {reminderHistory.map((entry, i) => (
+          <div key={i} className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-xs font-black text-slate-800">{entry.date}</span>
+                <p className="text-[10px] text-slate-400 truncate">Reminder sent to customer</p>
+              </div>
+            </div>
+            <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 shrink-0 ml-2">
+              sent
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+<p className="text-center text-xs text-gray-400">
   Log cash, check, Venmo — whatever you collected. Reminders send a branded email to the customer.
 </p>
         </>

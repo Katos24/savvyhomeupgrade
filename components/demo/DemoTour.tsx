@@ -62,37 +62,40 @@ export function WelcomeModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.97 }}
         transition={{ type: 'spring', damping: 28, stiffness: 300, delay: 0.05 }}
-        className="w-full max-w-sm rounded-2xl overflow-hidden"
-        style={{
-          background: '#0f0f1a',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-        }}
+       className="w-full max-w-sm rounded-2xl overflow-hidden"
+style={{
+  background: '#ffffff',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+}}
       >
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-1">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
-              Live Demo
-            </span>
-          </div>
-          <button
-            onClick={onSkip}
-            className="text-[11px] font-semibold text-white/20 hover:text-white/50 transition"
-          >
-            Skip
-          </button>
-        </div>
+      {/* Top bar */}
+<div className="flex items-center justify-between px-5 pt-5 pb-1">
+  <div className="flex items-center gap-2">
+    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+      Live Demo
+    </span>
+  </div>
+
+  <button
+    onClick={onSkip}
+    className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition"
+  >
+    Skip
+  </button>
+</div>  {/* ✅ THIS WAS MISSING */}
+
+
 
         {/* Content */}
         <div className="px-5 pt-4 pb-5">
-          <h2 className="text-xl font-black text-white leading-snug mb-2">
-            See how a job goes from lead to paid.
-          </h2>
-          <p className="text-sm text-white/45 leading-relaxed mb-5">
-            This is a real working dashboard. We'll walk you through one job — start to finish — in under 60 seconds.
-          </p>
+          <h2 className="text-xl font-black text-slate-900 leading-snug mb-2">
+  See how a job goes from lead to paid.
+</h2>
+<p className="text-sm text-slate-500 leading-relaxed mb-5">
+  This is a real working dashboard. We'll walk you through one job — start to finish — in under 60 seconds.
+</p>
 
           {/* Steps preview */}
           <div className="space-y-2 mb-6">
@@ -101,15 +104,15 @@ export function WelcomeModal({
               { n: '2', label: 'You send a quote — they accept'   },
               { n: '3', label: 'You record the payment'           },
             ].map(({ n, label }) => (
-              <div key={n} className="flex items-center gap-3">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}
-                >
-                  <span className="text-[9px] font-black text-indigo-400">{n}</span>
-                </div>
-                <span className="text-xs font-medium text-white/50">{label}</span>
-              </div>
+             <div key={n} className="flex items-center gap-3">
+  <div
+    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+    style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}
+  >
+    <span className="text-[9px] font-black text-indigo-500">{n}</span>
+  </div>
+  <span className="text-xs font-medium text-slate-500">{label}</span>
+</div>
             ))}
           </div>
 
@@ -125,9 +128,9 @@ export function WelcomeModal({
             Start walkthrough
           </button>
 
-          <p className="text-center text-[10px] text-white/20 mt-3">
-            Takes under 60 seconds
-          </p>
+         <p className="text-center text-[10px] text-slate-400 mt-3">
+  Takes under 60 seconds
+</p>
         </div>
       </motion.div>
     </motion.div>

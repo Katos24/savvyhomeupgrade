@@ -472,6 +472,8 @@ export default function DemoPage() {
   const [showAiNudge, setShowAiNudge] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hasOpenedLead, setHasOpenedLead] = useState(false);
+const [hasClickedView, setHasClickedView] = useState(false);
+const [hasClickedTheme, setHasClickedTheme] = useState(false);
   const [showTourBanner, setShowTourBanner] = useState(true);
   const [dynamicCta, setDynamicCta] = useState<string | null>(null);
 
@@ -694,15 +696,17 @@ const handleTourStart = (flow: TourFlow) => {
                   </div>
 
                   {/* View Switcher */}
-                  <div className={`flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
-                    {[
-                      { id: 'cards',    Icon: LayoutGrid },
-                      { id: 'table',    Icon: List },
-                      { id: 'calendar', Icon: Calendar },
-                    ].map(({ id, Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => setViewMode(id as any)}
+                  <div className={`flex p-1 rounded-xl border transition-all ${
+  isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'
+} ${!hasClickedView ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-transparent animate-pulse' : ''}`}>
+  {[
+    { id: 'cards',    Icon: LayoutGrid },
+    { id: 'table',    Icon: List },
+    { id: 'calendar', Icon: Calendar },
+  ].map(({ id, Icon }) => (
+    <button
+      key={id}
+      onClick={() => { setViewMode(id as any); setHasClickedView(true); }}
                         className={`p-2 rounded-lg transition-all ${
                           viewMode === id
                             ? 'bg-indigo-600 text-white shadow-lg'
@@ -716,11 +720,11 @@ const handleTourStart = (flow: TourFlow) => {
 
                   {/* Theme Toggle */}
                   <button
-                    onClick={() => setIsDark(v => !v)}
-                    className={`p-3.5 rounded-2xl border transition-all active:scale-95 ${
-                      isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
-                    }`}
-                  >
+  onClick={() => { setIsDark(v => !v); setHasClickedTheme(true); }}
+  className={`p-3.5 rounded-2xl border transition-all active:scale-95 ${
+    isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+  } ${!hasClickedTheme ? 'ring-2 ring-amber-400 ring-offset-1 animate-pulse' : ''}`}
+>
                     {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                   </button>
                 </div>
