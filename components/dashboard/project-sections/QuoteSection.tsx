@@ -5,11 +5,12 @@ import { toast } from 'sonner';
 import {
   Plus, Trash2, Save, X, Edit2, Mail,
   Loader2, Sparkles, Eye, Receipt,
-  ArrowRightLeft, FileText, CheckCircle2,
+  ArrowRightLeft, FileText, CheckCircle2, Send,
 } from 'lucide-react';
-import SendCustomerEmailButtons from '../SendCustomerEmailButtons';
+import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
+import StickyActionBar from '@/components/dashboard/StickyActionBar';
 
 
 type QuoteSectionProps = {
@@ -37,7 +38,9 @@ export default function QuoteSection({
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [isEditing, setIsEditing] = useState(false);
   const [showAI, setShowAI] = useState(false);
-  const [outboxLog, setOutboxLog] = useState<any[]>([]);
+const [outboxLog, setOutboxLog] = useState<any[]>([]);
+const [showEmailModal, setShowEmailModal] = useState(false);
+const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [pendingAiItems, setPendingAiItems] = useState<any[] | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
@@ -66,13 +69,17 @@ export default function QuoteSection({
   }, [lead?.quote_data]);
 
   const fetchOutbox = async () => {
-    if (!lead?.id || !companySlug) return;
-    try {
-      const res = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=quote`);
-      const data = await res.json();
-      if (data.entries) setOutboxLog(data.entries);
-    } catch {}
-  };
+  if (!lead?.id || !companySlug) return;
+  try {
+    const res = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=quote`);
+    const data = await res.json();
+    if (data.entries) {
+      setOutboxLog(data.entries);
+      const latest = data.entries.find((e: any) => e.html_body);
+      if (latest) setLastHtmlBody(latest.html_body);
+    }
+  } catch {}
+};
 
   useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
 
@@ -258,42 +265,16 @@ export default function QuoteSection({
               )}
             </motion.button>
 
-            <AnimatePresence mode="wait">
-              {isEditing ? (
-                <motion.div
-                  key="editing"
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-xl shadow-sm"
-                >
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-1.5 px-3 h-7 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black rounded-lg transition uppercase tracking-widest"
-                  >
-                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                    Save
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
-                    className="w-7 h-7 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </motion.button>
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="view"
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsEditing(true)}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </motion.button>
-              )}
-            </AnimatePresence>
+        {/* edit pencil only — save/cancel live in sticky bar */}
+{!isEditing && (
+  <motion.button
+    whileTap={{ scale: 0.95 }}
+    onClick={() => setIsEditing(true)}
+    className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors"
+  >
+    <Edit2 className="w-4 h-4" />
+  </motion.button>
+)}
           </div>
         </div>
 
@@ -661,60 +642,53 @@ className={`border-b transition-colors group ${
 
 
 
-{/* Total bar */}
-<div className="mx-4 mt-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
-  <div className="min-w-0">
-    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Quote Total</p>
-    <motion.p
-      key={total}
-      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-      className="text-2xl font-black text-white"
-    >
-      {fmt(total)}
-    </motion.p>
+{/* Replace the entire total bar + save section with: */}
+<div className="sticky bottom-0 z-10 bg-white border-t border-slate-100">
+  <div className="px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total</p>
+      <motion.p key={total} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+        className="text-xl font-black text-slate-900">
+        {fmt(total)}
+      </motion.p>
+    </div>
+<div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+      {isEditing ? (
+        <>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
+            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-500 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300"
+          >
+            Cancel
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={handleSave} disabled={saving || quoteData.length === 0}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest transition disabled:opacity-40 shadow-lg shadow-slate-200"
+          >
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            Save Quote
+          </motion.button>
+        </>
+      ) : (
+        <>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300"
+          >
+            Edit
+          </motion.button>
+         <motion.button whileTap={{ scale: 0.97 }}
+  onClick={() => setShowEmailModal(true)}
+  disabled={!hasProject || quoteData.length === 0}
+  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+>
+  <Send className="w-3.5 h-3.5" />
+  Send Quote
+</motion.button>
+        </>
+      )}
+    </div>
   </div>
-  <AnimatePresence mode="wait">
-    {isEditing ? (
-      <motion.div
-        key="save-group"
-        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-        className="flex items-center gap-2 shrink-0"
-      >
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
-          className="px-4 py-2.5 rounded-xl text-xs font-black text-white/40 hover:text-white/70 border border-white/10 hover:bg-white/5 transition uppercase tracking-widest"
-        >
-          Cancel
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black rounded-xl transition uppercase tracking-widest shadow-lg shadow-indigo-900/40"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Save Quote
-        </motion.button>
-      </motion.div>
-    ) : (
-      <motion.div
-        key="send"
-        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-        className="shrink-0"
-      >
-        <SendCustomerEmailButtons
-          leadId={lead.id}
-          type="quote"
-          currentUser={currentUser}
-          onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
-          hasQuote={quoteData.length > 0}
-          quoteSentAt={null}
-          disabled={!hasProject}
-        />
-      </motion.div>
-    )}
-  </AnimatePresence>
 </div>
 
 {/* LAST SENT BADGE */}
@@ -894,6 +868,20 @@ className={`border-b transition-colors group ${
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SendEmailModal
+  open={showEmailModal}
+  onClose={() => setShowEmailModal(false)}
+  onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
+  type="quote"
+  leadId={lead.id}
+  currentUser={currentUser}
+  customerName={lead.name}
+  customerEmail={lead.email}
+  contextLine={quoteData.length > 0 ? fmt(total) : null}
+  lastSentAt={outboxLog[0]?.created_at || null}
+  lastHtmlBody={lastHtmlBody}
+/>
 
       <style jsx>{`
         input[type='number']::-webkit-inner-spin-button,

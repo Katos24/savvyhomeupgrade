@@ -8,6 +8,8 @@ import {
   CreditCard, Calendar, MessageSquare,
   ChevronDown, ChevronUp, DollarSign, Send, X, Mail, Eye,
 } from 'lucide-react';
+import StickyActionBar from '@/components/dashboard/StickyActionBar';
+
 
 type PaymentUpdateProps = {
   lead: any;
@@ -374,38 +376,19 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
           </AnimatePresence>
 
           {/* ACTION BUTTONS */}
-       <div className="flex items-center gap-2 pt-1">
-  <motion.button
-    whileTap={{ scale: 0.97 }}
-    onClick={handleSave}
-    disabled={saving}
-    className="flex-1 bg-[#0F172A] text-white font-black py-3 rounded-xl text-[11px] uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-  >
-    {saving ? (
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
-        <Clock className="w-3.5 h-3.5" />
-      </motion.div>
-    ) : null}
-    {saving ? 'Processing...' : 'Save Payment'}
-  </motion.button>
-
-  <AnimatePresence>
-    {!isPaid && total > 0 && (
-      <motion.button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => setShowReminderConfirm(true)}
-        disabled={saving || !lead.project_id}
-        title="Send payment reminder"
-        className="shrink-0 w-11 h-11 flex items-center justify-center border-2 border-slate-100 text-slate-400 rounded-xl disabled:opacity-40 transition-all hover:border-indigo-200 hover:text-indigo-600"
-      >
-        <Send className="w-4 h-4" />
-      </motion.button>
-    )}
-  </AnimatePresence>
-</div>
+      <StickyActionBar
+  summary={
+    total > 0
+      ? isPaid ? `Paid in full — ${fmt(total)}` : isPartial ? `${fmt(paid)} of ${fmt(total)}` : `${fmt(total)} due`
+      : 'No quote yet'
+  }
+  primaryLabel="Save Payment"
+  primaryLoading={saving}
+  onPrimary={handleSave}
+  secondaryLabel={!isPaid && total > 0 ? 'Send Reminder' : undefined}
+  secondaryDisabled={isPaid || !lead.project_id}
+  onSecondary={!isPaid && total > 0 ? () => setShowReminderConfirm(true) : undefined}
+/>
 
           {/* SENT HISTORY */}
           {outboxLog.length > 0 && (

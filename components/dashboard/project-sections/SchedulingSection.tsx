@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
+import StickyActionBar from '@/components/dashboard/StickyActionBar';
 
 type SchedulingSectionProps = {
   lead: any;
@@ -288,27 +289,19 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
           </div>
 
           {/* ACTION BUTTONS — side by side */}
-        <div className="flex items-center gap-2 pt-1">
-  <motion.button
-    whileTap={{ scale: 0.98 }}
-    onClick={() => handleSave()}
-    disabled={saving}
-    className="flex-1 py-3 bg-[#0F1F3D] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-[#1a6645] disabled:opacity-50"
-  >
-    {saving ? <Loader2 className="animate-spin w-3.5 h-3.5" /> : <Sparkles size={13} className="text-blue-400" />}
-    {saving ? 'Saving…' : 'Save Schedule'}
-  </motion.button>
-
-  <motion.button
-    whileTap={{ scale: 0.98 }}
-    onClick={() => setShowEmailModal(true)}
-    disabled={!hasProject || !scheduledDate || saving}
-    title="Send schedule confirmation email"
-    className="shrink-0 w-11 h-11 flex items-center justify-center bg-white border-2 border-slate-100 text-slate-400 rounded-xl transition-all hover:border-blue-500 hover:text-blue-600 disabled:opacity-30 shadow-sm"
-  >
-    <Send size={14} />
-  </motion.button>
-</div>
+     <StickyActionBar
+  summary={
+    scheduledDate
+      ? `${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${assignedTo ? ` · ${assignedTo}` : ''}`
+      : 'Not scheduled'
+  }
+  primaryLabel="Save Schedule"
+  primaryLoading={saving}
+  onPrimary={() => handleSave()}
+  secondaryLabel="Send Confirmation"
+  secondaryDisabled={!hasProject || !scheduledDate || saving}
+  onSecondary={() => setShowEmailModal(true)}
+/>
 
           {/* JOB HOURS — collapsible */}
           <div className="pt-2 border-t border-slate-100">
