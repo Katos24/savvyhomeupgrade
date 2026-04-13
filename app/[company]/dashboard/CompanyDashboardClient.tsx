@@ -723,37 +723,33 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
   </header>
 
   {/* --- CRISP STATS ENGINE --- */}
-  <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
-    {[
-      { label: 'Total Leads', value: globalStats?.total_leads ?? allLeads.length, accent: 'bg-indigo-500' },
-      { label: 'Active Jobs', value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, accent: 'bg-blue-500' },
-      { label: 'Revenue',    value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.revenue ?? 0), accent: 'bg-emerald-500' },
-      { label: 'Pending',    value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.pending ?? 0), accent: 'bg-amber-500' },
-    ].map((s, i) => (
-      <div 
-        key={i} 
-        className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 transition-all duration-300 ${
-          isDark 
-            ? 'bg-[#0A0C14] border-white/5 hover:border-white/20' 
-            : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
-        }`}
-      >
-        <div className="relative z-10">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className={`w-2 h-2 rounded-full ${s.accent}`} />
-            <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-              {s.label}
-            </p>
-          </div>
-          <p className={`text-2xl sm:text-4xl font-black tracking-tighter tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {s.value}
-          </p>
-        </div>
-        {/* Modern Corner Glow */}
-        <div className={`absolute -right-4 -top-4 w-20 h-20 blur-3xl rounded-full opacity-10 ${s.accent}`} />
+<section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8">
+  {[
+    { label: 'Leads',   value: globalStats?.total_leads ?? allLeads.length, accent: 'bg-indigo-500' },
+    { label: 'Active',  value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, accent: 'bg-blue-500' },
+    { label: 'Revenue', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.revenue ?? 0), accent: 'bg-emerald-500' },
+    { label: 'Pending', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.pending ?? 0), accent: 'bg-amber-500' },
+  ].map((s, i) => (
+    <div
+      key={i}
+      className={`rounded-xl border px-3 py-2.5 transition-all ${
+        isDark
+          ? 'bg-[#0A0C14] border-white/5'
+          : 'bg-white border-slate-200 shadow-sm'
+      }`}
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.accent}`} />
+        <p className={`text-[9px] font-bold uppercase tracking-widest truncate ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+          {s.label}
+        </p>
       </div>
-    ))}
-  </section>
+      <p className={`text-base sm:text-xl font-black tracking-tight tabular-nums truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        {s.value}
+      </p>
+    </div>
+  ))}
+</section>
 
   {/* --- ERROR FEEDBACK --- */}
   {loadError && (
