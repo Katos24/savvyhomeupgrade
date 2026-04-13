@@ -17,6 +17,7 @@ import QuoteTab from '@/components/demo/tabs/QuoteTab';
 import PaymentTab from '@/components/demo/tabs/PaymentTab';
 import TasksTab from '@/components/demo/tabs/TasksTab';
 import AIBriefTab from '@/components/demo/tabs/AIBriefTab';
+import { TourProgressBar } from '@/components/demo/DemoTour';
 
 // ─── MOCK MEDIA DATA ──────────────────────────────────────────────────────────
 
@@ -376,8 +377,13 @@ const handleStatusChange = (newStatus: string) => {
               )}
             </div>
 
-            {/* Tab bar */}
-            <div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
+            {/* Tour progress bar */}
+{tourStep && !['idle','welcome','pick-card','done','schedule-assign','schedule-done','tasks-check','tasks-done'].includes(tourStep) && (
+  <TourProgressBar step={tourStep} />
+)}
+
+{/* Tab bar */}
+<div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
               {tabs.map(tab => (
                 <button
                   key={tab.id}

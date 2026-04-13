@@ -17,7 +17,10 @@ import LeadModal from '@/components/demo/LeadModal';
 import SettingsPreviewCard from '@/components/demo/SettingsPreviewCard';
 import DemoAIButton from '@/components/demo/DemoAIButton';
 import {
+  WelcomeModal,
+  CardSpotlightOverlay,
   DemoTourBanner,
+  TourProgressBar,
   useDemoTour,
   type TourStep,
   type TourFlow,
@@ -483,25 +486,18 @@ const { tourStep, tourFlow, startFlow, advanceTo, dismissTour } = useDemoTour();
     if (selectedLead?.id === id) setSelectedLead(prev => prev ? { ...prev, ...updates } : prev);
   };
 
- const handleSelectLead = (lead: Lead) => {
+const handleSelectLead = (lead: Lead) => {
   setSelectedLead(lead);
   setHasOpenedLead(true);
+  // if user clicks Michael during pick-card step, advance tour
+  if (tourStep === 'pick-card' && lead.id === 1) {
+    advanceTo('save-quote');
+  }
 };
 
 const handleTourStart = (flow: TourFlow) => {
-  setShowTourBanner(false); // hide while tour is active
+  setShowTourBanner(false);
   startFlow(flow);
-  setHasOpenedLead(true);
-  if (flow === 'schedule') {
-    const james = leads.find(l => l.id === 3);
-    if (james) setSelectedLead(james);
-  } else if (flow === 'tasks') {
-    const lisa = leads.find(l => l.id === 4);
-    if (lisa) setSelectedLead(lisa);
-  } else if (flow === 'close-job') {
-    const michael = leads.find(l => l.id === 1);
-    if (michael) setSelectedLead(michael);
-  }
 };
 
   const categories = useMemo(() => [...new Set(leads.map(l => l.category).filter(Boolean))], [leads]);
@@ -653,14 +649,21 @@ const handleTourStart = (flow: TourFlow) => {
 
               {/* ── TOUR BANNER ───────────────────────────────────────────── */}
               <AnimatePresence>
-                {showTourBanner && tourStep === 'idle' && (
-                 <DemoTourBanner
-  darkMode={isDark}
-  onStart={(flow) => handleTourStart(flow)}
-  onDismiss={() => setShowTourBanner(false)}
-/>
-                )}
-              </AnimatePresence>
+  {showTourBanner && tourStep === 'idle' && (
+    <DemoTourBanner
+      darkMode={isDark}
+      onStart={(flow) => handleTourStart(flow)}
+      onDismiss={() => setShowTourBanner(false)}
+    />
+  )}
+</AnimatePresence>
+
+{/* Card spotlight overlay — dims everything except Michael */}
+<AnimatePresence>
+  {tourStep === 'pick-card' && (
+    <CardSpotlightOverlay onSkip={dismissTour} />
+  )}
+</AnimatePresence>
 
               {/* ── SEARCH & FILTER COMMAND CENTER ────────────────────────── */}
               <section aria-label="Search and filter leads" className="flex flex-col gap-4 mb-8">
@@ -1080,14 +1083,27 @@ const handleTourStart = (flow: TourFlow) => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {groupLeads.map(lead => (
-                            <LeadCard
-                              key={lead.id}
-                              lead={lead}
-                              darkMode={isDark}
-                              onClick={() => handleSelectLead(lead)}
-                              tourActive={false}
-                            />
-                          ))}
+  <div
+    key={lead.id}
+    className="relative"
+    style={tourStep === 'pick-card' ? {
+      zIndex: lead.id === 1 ? 450 : 1,
+      position: 'relative',
+    } : {}}
+  >
+    <LeadCard
+      lead={lead}
+      darkMode={lead.id === 1 && tourStep === 'pick-card' ? false : isDark}
+      onClick={() => handleSelectLead(lead)}
+      tourActive={lead.id === 1 && tourStep === 'pick-card'}
+    />
+    {lead.id === 1 && tourStep === 'pick-card' && (
+      <div className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ boxShadow: '0 0 0 3px #6366f1, 0 8px 32px rgba(99,102,241,0.5)' }}
+      />
+    )}
+  </div>
+))}
                         </div>
                       </section>
                     ))}
@@ -1137,8 +1153,17 @@ const handleTourStart = (flow: TourFlow) => {
       </div>
 
       {/* ── MODALS ────────────────────────────────────────────────────────── */}
-      {selectedLead && (
-        <LeadModal
+     <AnimatePresence>
+  {tourStep === 'welcome' && (
+    <WelcomeModal
+      onStart={() => advanceTo('pick-card')}
+      onSkip={dismissTour}
+    />
+  )}
+</AnimatePresence>
+
+{selectedLead && (
+  <LeadModal
           lead={leads.find(l => l.id === selectedLead.id) || selectedLead}
           darkMode={isDark}
           onClose={() => setSelectedLead(null)}
@@ -1149,9 +1174,11 @@ const handleTourStart = (flow: TourFlow) => {
         />
       )}
 
-      {showCreateModal && (
-        <DemoCreateModal isDark={isDark} onClose={() => setShowCreateModal(false)} />
-      )}
+ 
+
+{showCreateModal && (
+  <DemoCreateModal isDark={isDark} onClose={() => setShowCreateModal(false)} />
+)}
 
       {showSettings && <SettingsPreviewCard onClose={() => setShowSettings(false)} />}
 

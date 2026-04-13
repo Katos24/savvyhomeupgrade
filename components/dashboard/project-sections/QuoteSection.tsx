@@ -346,54 +346,52 @@ export default function QuoteSection({
       </tr>
     </thead>
     <tbody>
-      {quoteData.length === 0 ? (
-        <tr>
-          <td colSpan={isEditing ? 5 : 4}>
-            {isEditing ? (
-              <button
-                onClick={() => setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-                className="w-full py-16 flex flex-col items-center justify-center gap-2 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50/40 transition-colors group"
-              >
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-                  <Plus className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-medium">Add first line item</span>
-              </button>
-            ) : (
-              <div className="py-12 text-center">
-                <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-3">
-                  <FileText className="w-4 h-4 text-gray-200" />
-                </div>
-                <p className="text-sm text-gray-300">No line items yet</p>
-              </div>
-            )}
-          </td>
-        </tr>
+     {quoteData.length === 0 ? (
+  <tr>
+    <td colSpan={isEditing ? 5 : 4}>
+      <button
+        onClick={() => { setIsEditing(true); setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]); }}
+        className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
+      >
+        <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+          <Plus className="w-5 h-5 text-white stroke-[3px]" />
+        </div>
+        <span className="text-xs font-bold text-indigo-500 group-hover:text-indigo-600 transition-colors">Add line item</span>
+      </button>
+    </td>
+  </tr>
       ) : (
         <>
           {quoteData.map((item: any) => (
             <tr
               key={item.id}
-              className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors group"
-            >
+className={`border-b transition-colors group ${
+  isEditing
+    ? 'border-gray-100 bg-slate-50/40 hover:bg-slate-50'
+    : 'border-gray-50 hover:bg-gray-50/60'
+}`}            >
               <td className="px-5 py-2.5">
-                <input
-                  type="text"
-                  disabled={!isEditing}
-                  value={item.description}
-                  onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                  placeholder="Item description…"
-                  className="w-full bg-transparent outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all"
-                />
+               <input
+  type="text"
+  disabled={!isEditing}
+  value={item.description}
+  onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+  placeholder="Item description…"
+  className={`w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default rounded-lg transition-all ${
+    isEditing
+      ? 'bg-white border border-slate-200 px-3 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100'
+      : 'bg-transparent'
+  }`}
+/>
               </td>
              <td className="px-5 py-2.5">
   {isEditing ? (
     <input
-      type="number"
-      value={item.unitPrice || ''}
-      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-      className={`w-full bg-transparent outline-none text-sm text-right text-gray-600 focus:bg-gray-100 focus:px-2 rounded transition-all ${noSpinners}`}
-    />
+  type="number"
+  value={item.unitPrice || ''}
+  onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+  className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg transition-all border border-slate-200 bg-white px-2 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 ${noSpinners}`}
+/>
   ) : (
     <div className="flex items-center justify-end gap-0.5">
       <span className="text-xs text-gray-400">$</span>
@@ -404,13 +402,17 @@ export default function QuoteSection({
   )}
 </td>
               <td className="px-5 py-2.5">
-                <input
-                  type="number"
-                  disabled={!isEditing}
-                  value={item.quantity || ''}
-                  onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                  className={`w-full bg-transparent outline-none text-sm text-right text-gray-600 disabled:cursor-default focus:bg-gray-100 focus:px-2 rounded transition-all ${noSpinners}`}
-                />
+               <input
+  type="number"
+  disabled={!isEditing}
+  value={item.quantity || ''}
+  onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+  className={`w-full outline-none text-sm text-right text-gray-900 disabled:cursor-default rounded-lg transition-all ${noSpinners} ${
+    isEditing
+      ? 'bg-white border border-slate-200 px-2 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100'
+      : 'bg-transparent'
+  }`}
+/>
               </td>
               <td className="px-5 py-2.5 text-right text-sm font-medium text-gray-900">
                 ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -450,25 +452,16 @@ export default function QuoteSection({
 
 {/* ── MOBILE CARDS ── */}
 <div className="md:hidden">
-  {quoteData.length === 0 ? (
-    isEditing ? (
-      <button
-        onClick={() => setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-        className="w-full py-16 flex flex-col items-center justify-center gap-2 group"
-      >
-        <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 group-hover:border-indigo-300 flex items-center justify-center transition-colors">
-          <Plus className="w-4 h-4 text-gray-300 group-hover:text-indigo-400" />
-        </div>
-        <span className="text-xs font-medium text-gray-400 group-hover:text-indigo-500 transition-colors">Add first line item</span>
-      </button>
-    ) : (
-      <div className="py-12 text-center">
-        <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-3">
-          <FileText className="w-4 h-4 text-gray-200" />
-        </div>
-        <p className="text-sm text-gray-400">No line items yet</p>
-      </div>
-    )
+ {quoteData.length === 0 ? (
+  <button
+    onClick={() => { setIsEditing(true); setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]); }}
+    className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
+  >
+    <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+      <Plus className="w-5 h-5 text-white stroke-[3px]" />
+    </div>
+    <span className="text-xs font-bold text-indigo-500 group-hover:text-indigo-600 transition-colors">Add line item</span>
+  </button>
   ) : (
     <div className="p-3 flex flex-col gap-2">
       {quoteData.map((item: any) => (
@@ -530,13 +523,14 @@ export default function QuoteSection({
       {/* Add card */}
       {isEditing && (
         <button
-          onClick={() => {
-            const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
-            setQuoteData([...quoteData, newItem]);
-            setEditingItem(newItem);
-          }}
-          className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all group"
-        >
+  onClick={() => {
+    setIsEditing(true);
+    const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
+    setQuoteData([...quoteData, newItem]);
+    setEditingItem(newItem);
+  }}
+  className="w-full border-2 border-dashed border-indigo-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all group"
+>
           <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-indigo-400 flex items-center justify-center transition-colors">
             <Plus className="w-3 h-3 text-gray-400 group-hover:text-indigo-500" />
           </div>
@@ -664,8 +658,11 @@ export default function QuoteSection({
     </>
   )}
 </AnimatePresence>
-{/* TOTAL BAR */}
-<div className="mx-4 mt-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl shadow-slate-200 gap-3">
+
+
+
+{/* Total bar */}
+<div className="mx-4 mt-4 bg-slate-900 rounded-2xl px-5 py-4 flex items-center justify-between gap-3">
   <div className="min-w-0">
     <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Quote Total</p>
     <motion.p
@@ -676,38 +673,48 @@ export default function QuoteSection({
       {fmt(total)}
     </motion.p>
   </div>
-  <div className="shrink-0">
-    <AnimatePresence mode="wait">
-      {isEditing ? (
+  <AnimatePresence mode="wait">
+    {isEditing ? (
+      <motion.div
+        key="save-group"
+        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+        className="flex items-center gap-2 shrink-0"
+      >
         <motion.button
-          key="save"
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
+          className="px-4 py-2.5 rounded-xl text-xs font-black text-white/40 hover:text-white/70 border border-white/10 hover:bg-white/5 transition uppercase tracking-widest"
+        >
+          Cancel
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest shadow-lg"
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white text-xs font-black rounded-xl transition uppercase tracking-widest shadow-lg shadow-indigo-900/40"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           Save Quote
         </motion.button>
-      ) : (
-        <motion.div
-          key="send"
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-        >
-          <SendCustomerEmailButtons
-            leadId={lead.id}
-            type="quote"
-            currentUser={currentUser}
-            onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
-            hasQuote={quoteData.length > 0}
-quoteSentAt={null}
-            disabled={!hasProject}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
+      </motion.div>
+    ) : (
+      <motion.div
+        key="send"
+        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+        className="shrink-0"
+      >
+        <SendCustomerEmailButtons
+          leadId={lead.id}
+          type="quote"
+          currentUser={currentUser}
+          onRefresh={async () => { await onRefresh(); await fetchOutbox(); }}
+          hasQuote={quoteData.length > 0}
+          quoteSentAt={null}
+          disabled={!hasProject}
+        />
+      </motion.div>
+    )}
+  </AnimatePresence>
 </div>
 
 {/* LAST SENT BADGE */}
