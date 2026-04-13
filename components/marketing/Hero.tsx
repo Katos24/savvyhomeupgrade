@@ -9,7 +9,8 @@ export default function Hero() {
   return (
     <section
       className="relative overflow-hidden bg-[#F7F5F0]"
-      style={{ paddingTop: 'clamp(6rem, 12vw, 9rem)', paddingBottom: '3rem' }}
+      style={{ paddingTop: 'clamp(4rem, 8vw, 6rem)',
+paddingBottom: '2rem' }}
     >
       {/* Texture */}
       <div
@@ -22,7 +23,7 @@ export default function Hero() {
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 z-10">
 
         {/* ── Split grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-12 lg:mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-8 lg:mb-12">
 
           {/* LEFT — copy */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
@@ -146,7 +147,7 @@ export default function Hero() {
           className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
           style={{
             padding:
-              'clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2.5rem) clamp(3rem, 6vw, 5rem)',
+              'clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 3.5rem)',
           }}
         >
           <div className="w-full overflow-hidden">
