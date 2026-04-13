@@ -1,23 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Check, Trash2, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lead, Task } from '@/components/demo/types'
-
+import { Lead, Task } from '@/components/demo/types';
+import { TourTipBanner, FlowDoneCard } from '@/components/demo/DemoTour';
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
 
-export default function TasksTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u: Partial<Lead>) => void }) {
-  const [tasks, setTasks] = useState<Task[]>(lead.tasks || []);
+export default function TasksTab({
+  lead, onUpdate, tourStep, onTourAdvance,
+}: {
+  lead: Lead;
+  onUpdate: (u: Partial<Lead>) => void;
+  tourStep?: string;
+  onTourAdvance?: (step: any) => void;
+}) {
+  const [tasks, setTasks]   = useState<Task[]>(lead.tasks || []);
   const [newLabel, setNewLabel] = useState('');
+  const [flowDone, setFlowDone] = useState(false);
 
   const persist = (updated: Task[]) => {
     setTasks(updated);
     onUpdate({ tasks: updated });
   };
 
-  const toggle = (id: string) => persist(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const toggle = (id: string) => {
+    const updated = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+    persist(updated);
+  };
+
   const remove = (id: string) => persist(tasks.filter(t => t.id !== id));
 
   const addTask = () => {
@@ -30,8 +42,36 @@ export default function TasksTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u:
   const total = tasks.length;
   const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  // Advance tour when all tasks checked
+  useEffect(() => {
+    if (tourStep === 'tasks-check' && total > 0 && done === total && !flowDone) {
+      setFlowDone(true);
+      setTimeout(() => onTourAdvance?.('tasks-done'), 600);
+    }
+  }, [done, total, tourStep, flowDone]);
+
   return (
     <div className="space-y-4">
+
+      {/* ── TOUR TIP ── */}
+      {tourStep === 'tasks-check' && !flowDone && onTourAdvance && (
+        <TourTipBanner
+          color="violet"
+          message="Check off the tasks below as you work through the job."
+        />
+      )}
+
+      {/* ── DONE STATE ── */}
+      {flowDone && tourStep === 'tasks-done' && (
+        <FlowDoneCard
+          title="All tasks complete!"
+          subtitle="Job progress tracked in real time"
+          body="In your real account, task templates auto-load for each job category so you never miss a step. Your whole crew sees the same checklist."
+          accentColor="#a78bfa"
+          onDismiss={() => onTourAdvance?.('idle')}
+        />
+      )}
+
       {/* Progress */}
       {total > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -55,6 +95,11 @@ export default function TasksTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u:
         <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2">
           <CheckSquare className="w-4 h-4 text-indigo-500" />
           <span className="text-sm font-bold text-gray-800">Checklist</span>
+          {tourStep === 'tasks-check' && !flowDone && (
+            <span className="ml-auto text-[10px] font-black text-violet-500 animate-pulse uppercase tracking-widest">
+              ← check these off
+            </span>
+          )}
         </div>
 
         {tasks.length === 0 && (

@@ -3,10 +3,18 @@
 import { useState } from 'react';
 import { Calendar, Clock, User, Check, Sparkles, Send, ChevronDown, ChevronUp, Hash } from 'lucide-react';
 import { Lead } from '@/app/demo/page';
+import { TourTipBanner, FlowDoneCard } from '@/components/demo/DemoTour';
 
 const CREW = ['Mike T.', 'Carlos R.', 'Jay B.', 'Jack', 'Unassigned'];
 
-export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: (u: Partial<Lead>) => void }) {
+export default function ScheduleTab({
+  lead, onUpdate, tourStep, onTourAdvance,
+}: {
+  lead: Lead;
+  onUpdate: (u: Partial<Lead>) => void;
+  tourStep?: string;
+  onTourAdvance?: (step: any) => void;
+}) {
   const parseTime = (time24: string) => {
     if (!time24) return { hour: '', minute: '', ampm: 'AM' };
     const [h, m] = time24.split(':');
@@ -19,16 +27,17 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
   };
 
   const parsed = parseTime(lead.scheduled_time || '');
-  const [crew, setCrew]         = useState(lead.assigned_to || '');
-  const [date, setDate]         = useState(lead.scheduled_date || '');
-  const [timeHour, setTimeHour] = useState(parsed.hour);
-  const [timeMin, setTimeMin]   = useState(parsed.minute);
-  const [timeAmPm, setTimeAmPm] = useState(parsed.ampm);
+  const [crew, setCrew]           = useState(lead.assigned_to || '');
+  const [date, setDate]           = useState(lead.scheduled_date || '');
+  const [timeHour, setTimeHour]   = useState(parsed.hour);
+  const [timeMin, setTimeMin]     = useState(parsed.minute);
+  const [timeAmPm, setTimeAmPm]   = useState(parsed.ampm);
   const [showHours, setShowHours] = useState(false);
-  const [estHours, setEstHours] = useState('');
-  const [actHours, setActHours] = useState('');
-  const [saved, setSaved]       = useState(false);
-  const [sent, setSent]         = useState(false);
+  const [estHours, setEstHours]   = useState('');
+  const [actHours, setActHours]   = useState('');
+  const [saved, setSaved]         = useState(false);
+  const [sent, setSent]           = useState(false);
+  const [done, setDone]           = useState(false);
 
   const buildTime = () => {
     if (!timeHour || !timeMin) return '';
@@ -47,6 +56,13 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    // Advance tour
+    if (tourStep === 'schedule-assign') {
+      setTimeout(() => {
+        setDone(true);
+        onTourAdvance?.('schedule-done');
+      }, 800);
+    }
   };
 
   const handleSend = () => {
@@ -59,6 +75,25 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
   return (
     <div className="space-y-4">
 
+      {/* ── TOUR TIP ── */}
+      {tourStep === 'schedule-assign' && !done && onTourAdvance && (
+        <TourTipBanner
+          color="sky"
+          message="Assign a crew member and pick a date — then hit Save to schedule the job."
+        />
+      )}
+
+      {/* ── DONE STATE ── */}
+      {done && tourStep === 'schedule-done' && (
+        <FlowDoneCard
+          title="Job scheduled!"
+          subtitle="Shows on your calendar instantly"
+          body="In your real account every team member gets a notification, the customer gets a confirmation email, and the job appears on your calendar view."
+          accentColor="#38bdf8"
+          onDismiss={() => onTourAdvance?.('idle')}
+        />
+      )}
+
       {/* Assigned To */}
       <div>
         <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
@@ -68,7 +103,9 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
           <select
             value={crew}
             onChange={e => setCrew(e.target.value)}
-            className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer focus:border-blue-500 focus:bg-white transition-all"
+            className={`w-full pl-4 pr-10 py-3 bg-slate-50 border rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer focus:border-blue-500 focus:bg-white transition-all ${
+              tourStep === 'schedule-assign' && !crew ? 'border-sky-400 ring-2 ring-sky-100' : 'border-slate-200'
+            }`}
           >
             <option value="">Choose team member...</option>
             {CREW.map(m => <option key={m} value={m}>{m}</option>)}
@@ -85,7 +122,7 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className={inputCls}
+            className={`${inputCls} ${tourStep === 'schedule-assign' && !date ? 'border-sky-400 ring-2 ring-sky-100' : ''}`}
           />
         </div>
         <div>
@@ -118,7 +155,7 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
           }`}
         >
           {saved ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-blue-400" />}
-          {saved ? 'Saved!' : 'Save'}
+          {saved ? 'Saved!' : 'Save Schedule'}
         </button>
         <button
           onClick={handleSend}
@@ -128,7 +165,7 @@ export default function ScheduleTab({ lead, onUpdate }: { lead: Lead; onUpdate: 
           }`}
         >
           {sent ? <Check className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
-          {sent ? 'Sent!' : 'Send'}
+          {sent ? 'Sent!' : 'Send Confirmation'}
         </button>
       </div>
 

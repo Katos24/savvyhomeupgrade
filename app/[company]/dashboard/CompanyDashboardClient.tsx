@@ -816,8 +816,8 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       )}
     </div>
 
-    {/* View Switcher (Desktop Only) */}
-    <div className={`hidden sm:flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+    {/* View Switcher */}
+<div className={`flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
       {[
         { id: 'cards', icon: LayoutGrid },
         { id: 'table', icon: List },
