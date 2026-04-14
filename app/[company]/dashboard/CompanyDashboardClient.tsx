@@ -732,8 +732,8 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
   ].map((s, i) => (
     <div
       key={i}
-      className={`rounded-xl border px-3 py-2.5 transition-all ${
-        isDark
+className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
+          isDark
           ? 'bg-[#0A0C14] border-white/5'
           : 'bg-white border-slate-200 shadow-sm'
       }`}
@@ -744,7 +744,9 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           {s.label}
         </p>
       </div>
-      <p className={`text-sm sm:text-xl font-black tracking-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+      <p className={`font-black tracking-tight tabular-nums leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}
+  style={{ fontSize: String(s.value).length > 7 ? '10px' : String(s.value).length > 5 ? '12px' : '15px' }}
+>
   {s.value}
 </p>
     </div>
