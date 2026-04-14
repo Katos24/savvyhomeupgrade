@@ -161,16 +161,16 @@ return (
             title="Capture everywhere"
             caption="Customers scan your QR code on trucks or yard signs. They submit photos, you get a lead instantly."
           />
-          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl" style={{ minHeight: 280 }}>
+          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl" style={{ minHeight: 320 }}>
             <img 
               src="/images/qr-scan-2.png" 
               className="absolute inset-0 w-full h-full object-cover opacity-70" 
               alt="Customer scanning" 
             />
-            {/* Dark gradient so modal is readable */}
-            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/20" />
-            {/* Success Modal — top right */}
-            <div className="absolute top-3 right-3 z-10 scale-[0.82] origin-top-right">
+           {/* Dark gradient so modal is readable */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/40" />
+            {/* Success Modal — bottom right on mobile, top right on desktop */}
+            <div className="absolute bottom-3 right-3 sm:top-3 sm:bottom-auto z-10 scale-[0.65] origin-bottom-right sm:scale-[0.82] sm:origin-top-right">
               <SuccessModal />
             </div>
           </div>
@@ -183,8 +183,8 @@ return (
             title="Close the job"
             caption="Leads land on your dashboard. Send quotes, schedule, and mark 'Paid'—all from your phone."
           />
-          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-4 px-3" style={{ height: 280 }}>
-            <div style={{ transform: 'scale(0.68)', transformOrigin: 'top center' }}>
+          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-4 px-3" style={{ height: 380 }}>
+            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
                 <DashboardLaptopMockup />
             </div>
           </div>

@@ -14,17 +14,17 @@ import Footer            from '@/components/marketing/Footer';
 export default function Home() {
   return (
     <div className="min-h-screen font-sans antialiased overflow-x-hidden">
-      <Nav />
-      <Hero />
-      <HowItWorks />
-      <LeadModalSection />
-      <TheBoard />
-      <ValueStrip />
-      <SettingsShowcase />
-      <Pricing />
-      <FAQ />
-      <FinalCTA />
-      <Footer />
+     <Nav />
+<Hero />
+<HowItWorks />
+<ValueStrip />
+<LeadModalSection />
+<TheBoard />
+<SettingsShowcase />
+<Pricing />
+<FAQ />
+<FinalCTA />
+<Footer />
     </div>
   );
 }
