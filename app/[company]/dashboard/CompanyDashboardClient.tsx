@@ -708,17 +708,63 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       </div>
 
       {/* Action Area */}
-      <div className="flex items-center gap-3 shrink-0">
-        {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />}
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
-        >
-          <Plus className="w-4 h-4 stroke-[3px]" />
-          <span className="hidden sm:inline">New Lead</span>
-          <span className="sm:hidden">Add</span>
+<div className="flex items-center gap-2 shrink-0">
+  {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />}
+
+  {/* Search icon — expands inline */}
+  <div className="relative flex items-center">
+    {searchQuery ? (
+      <div className="relative">
+        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
+        <input
+          autoFocus
+          type="search"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={e => {
+            const val = e.target.value;
+            setSearchQuery(val);
+            if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+            if (val.trim().length >= 2) {
+              setIsSearching(true);
+              searchTimeoutRef.current = setTimeout(async () => {
+                await fetchLeads(1, true, { search: val.trim() });
+                setIsSearching(false);
+              }, 400);
+            } else if (val.trim() === '') {
+              fetchLeads(1, true, { search: '' });
+            }
+          }}
+          className={`pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold w-48 outline-none border transition-all ${
+            isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/20' : 'bg-slate-50 border-slate-200 text-slate-900'
+          }`}
+        />
+        <button onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-400">
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
+    ) : (
+      <button
+        onClick={() => setSearchQuery(' ')}
+        className={`p-2.5 rounded-xl border transition-all ${
+          isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900'
+        }`}
+      >
+        <Search className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+
+  <button
+    onClick={() => setIsCreateModalOpen(true)}
+    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+  >
+    <Plus className="w-4 h-4 stroke-[3px]" />
+    <span className="hidden sm:inline">New Lead</span>
+    <span className="sm:hidden">Add</span>
+  </button>
+</div>
     </div>
   </header>
 
@@ -762,60 +808,85 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
   )}
 
 
-
 {/* ------------------------------------------------------------------ */}
 {/* Search & Filter Command Center                                      */}
 {/* ------------------------------------------------------------------ */}
-<section aria-label="Search and filter leads" className="flex flex-col gap-4 mb-8">
-  
-  {/* Row 1: Search + View Toggles + Theme */}
-  <div className="flex items-center gap-2 md:gap-3">
-    <div className="relative flex-1 group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-        {isSearching ? (
-          <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-        ) : (
-          <Search className={`w-4 h-4 transition-colors ${
-            isDark ? 'text-white/20' : 'text-slate-400'
-          } group-focus-within:text-indigo-500`} />
-        )}
-      </div>
-      <input
-        type="search"
-        placeholder="Search name, email, phone..."
-        value={searchQuery}
-        onChange={e => {
-          const val = e.target.value;
-          setSearchQuery(val);
-          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-          if (val.trim().length >= 2) {
-            setIsSearching(true);
-            searchTimeoutRef.current = setTimeout(async () => {
-              await fetchLeads(1, true, { search: val.trim() });
-              setIsSearching(false);
-            }, 400);
-          } else if (val.trim() === '') {
-            fetchLeads(1, true, { search: '' });
-          }
-        }}
-        className={`w-full pl-11 pr-10 py-3.5 rounded-2xl text-sm font-bold transition-all outline-none border ${
-          isDark 
-            ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-indigo-500/50' 
-            : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-sm'
-        }`}
-      />
-      {searchQuery && (
-        <button
-          onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
-    </div>
+<section aria-label="Search and filter leads" className="mb-8 flex flex-col gap-2">
+  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+    
+    {/* Advanced Filter Launcher */}
+    <button
+      onClick={() => setShowAdvancedFilters(v => !v)}
+      className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+        showAdvancedFilters || hasActiveFilters
+          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/20'
+          : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+      }`}
+    >
+      <Filter className="w-3.5 h-3.5 stroke-[3px]" />
+      Filters
+      <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+    </button>
+
+    <div className={`w-px h-4 mx-1 shrink-0 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+
+    {/* Today */}
+    <button
+      onClick={() => {
+        const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
+        setTimeFilter(isActive ? 'all' : 'today');
+        setFilterStatus(isActive ? 'all' : 'scheduled');
+      }}
+      className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+        timeFilter === 'today' && filterStatus === 'scheduled'
+          ? 'bg-emerald-600 text-white border-emerald-600'
+          : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+      }`}
+    >
+      <Clock className="w-3.5 h-3.5" />
+      Today
+    </button>
+
+    {/* Unpaid */}
+    <button
+      onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
+      className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+        filterPayment === 'unpaid'
+          ? 'bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20'
+          : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+      }`}
+    >
+      <DollarSign className="w-3.5 h-3.5" />
+      Unpaid
+    </button>
+
+    {/* New */}
+    <button
+      onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
+      className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+        filterStatus === 'new'
+          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+          : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+      }`}
+    >
+      <Sparkles className="w-3.5 h-3.5" />
+      New {(serverStatusCounts['new'] || 0) > 0 && <span className="opacity-70">({serverStatusCounts['new']})</span>}
+    </button>
+
+    {hasActiveFilters && (
+      <button
+        onClick={clearFilters}
+        className="shrink-0 p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+      >
+        <X className="w-4 h-4 stroke-[3px]" />
+      </button>
+    )}
+
+    {/* Spacer */}
+    <div className="flex-1" />
 
     {/* View Switcher */}
-<div className={`flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+    <div className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
       {[
         { id: 'cards', icon: LayoutGrid },
         { id: 'table', icon: List },
@@ -825,8 +896,8 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
           key={v.id}
           onClick={() => setCurrentView(v.id as any)}
           className={`p-2 rounded-lg transition-all ${
-            currentView === v.id 
-              ? 'bg-indigo-600 text-white shadow-lg' 
+            currentView === v.id
+              ? 'bg-indigo-600 text-white shadow-lg'
               : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -838,88 +909,18 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
     {/* Theme Toggle */}
     <button
       onClick={() => setIsDark(v => !v)}
-      className={`p-3.5 rounded-2xl border transition-all active:scale-95 ${
+      className={`p-3.5 rounded-2xl border transition-all active:scale-95 shrink-0 ${
         isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
       }`}
     >
       {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
+
   </div>
 
-  {/* Row 2: Smart Filter Pills & Advanced Trigger */}
+  {/* Advanced Filter Dropdown */}
   <div className="relative">
-    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-      {/* Advanced Filter Launcher */}
-      <button
-        onClick={() => setShowAdvancedFilters(v => !v)}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-          showAdvancedFilters || hasActiveFilters
-            ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/20'
-            : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
-        }`}
-      >
-        <Filter className="w-3.5 h-3.5 stroke-[3px]" />
-        Filters
-        <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-      </button>
-
-      <div className={`w-px h-4 mx-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-
-      {/* Quick Pill: Scheduled Today */}
-      <button
-        onClick={() => {
-          const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
-          setTimeFilter(isActive ? 'all' : 'today');
-          setFilterStatus(isActive ? 'all' : 'scheduled');
-        }}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-         timeFilter === 'today' && filterStatus === 'scheduled'
-  ? 'bg-emerald-600 text-white border-emerald-600'
-            : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
-        }`}
-      >
-        <Clock className="w-3.5 h-3.5" />
-        Today
-      </button>
-
-      {/* Quick Pill: Unpaid */}
-      <button
-  onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
-  className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
-    filterPayment === 'unpaid'
-      ? 'bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20'
-      : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
-  }`}
->
-  <DollarSign className="w-3.5 h-3.5" />
-  Unpaid
-</button>
-
-      {/* Quick Pill: New */}
-      <button
-        onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-          filterStatus === 'new'
-            ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-            : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
-        }`}
-      >
-        <Sparkles className="w-3.5 h-3.5" />
-        New {(serverStatusCounts['new'] || 0) > 0 && <span className="opacity-70">({serverStatusCounts['new']})</span>}
-      </button>
-
-      {hasActiveFilters && (
-        <button
-          onClick={clearFilters}
-          className="shrink-0 p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
-        >
-          <X className="w-4 h-4 stroke-[3px]" />
-        </button>
-      )}
-    </div>
-
-    {/* --- ADVANCED OVERLAYS --- */}
-{showAdvancedFilters && (
+    {showAdvancedFilters && (
  <div>
   {/* 1. Backdrop — desktop too, not just mobile */}
  <div 
