@@ -744,9 +744,9 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           {s.label}
         </p>
       </div>
-      <p className={`text-base sm:text-xl font-black tracking-tight tabular-nums truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-        {s.value}
-      </p>
+      <p className={`text-sm sm:text-xl font-black tracking-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+  {s.value}
+</p>
     </div>
   ))}
 </section>

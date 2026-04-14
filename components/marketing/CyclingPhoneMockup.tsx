@@ -7,107 +7,111 @@ import { useState, useEffect, useRef } from 'react';
 // ─────────────────────────────────────────────────────────────────────────────
 function ScreenDashboard() {
   return (
-    <div style={{ background: '#0d0d1a', height: '100%', overflowY: 'hidden', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ background: '#f1f5f9', height: '100%', overflowY: 'hidden', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-            {[0,1,2].map(i => <div key={i} style={{ width: 16, height: 1.5, background: '#6b7280', borderRadius: 2 }} />)}
-          </div>
-          <div style={{ width: 30, height: 30, background: '#111827', borderRadius: 9, border: '1px solid #1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+          <div style={{ width: 28, height: 28, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#f9fafb', letterSpacing: '-0.3px', lineHeight: 1.15 }}>Ridge Line Roofing</div>
-            <div style={{ fontSize: 7.5, fontWeight: 700, color: '#4b5563', letterSpacing: '.1em', textTransform: 'uppercase' }}>Dashboard</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.15 }}>Ridge Line Roofing</div>
+            <div style={{ fontSize: 7, fontWeight: 700, color: '#6366f1', letterSpacing: '.1em', textTransform: 'uppercase' }}>Dashboard</div>
           </div>
         </div>
-        <div style={{ width: 26, height: 26, background: '#1d4ed8', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 26, height: 26, background: '#4f46e5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/></svg>
         </div>
       </div>
 
-      {/* Stats 2×2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, padding: '0 12px 8px' }}>
+      {/* Stats — compact 4-col */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 5, padding: '8px 10px 6px' }}>
         {[
-          { label: 'Total Leads',   value: '167',      color: '#f9fafb', small: false },
-          { label: 'Active Jobs',   value: '62',       color: '#10b981', small: false },
-          { label: 'Total Revenue', value: '$102,671', color: '#10b981', small: true  },
-          { label: 'Total Pending', value: '$122,880', color: '#f59e0b', small: true  },
+          { label: 'Leads',   value: '168',   accent: '#6366f1' },
+          { label: 'Active',  value: '63',    accent: '#3b82f6' },
+          { label: 'Revenue', value: '$102k', accent: '#10b981' },
+          { label: 'Pending', value: '$122k', accent: '#f59e0b' },
         ].map(s => (
-          <div key={s.label} style={{ background: '#111827', borderRadius: 10, padding: '8px 10px', border: '1px solid #1f2937' }}>
-            <div style={{ fontSize: 7.5, fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: s.small ? 12 : 16, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+          <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '6px 8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 3 }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: s.accent, flexShrink: 0 }} />
+              <div style={{ fontSize: 6, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.label}</div>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Search bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px 6px' }}>
-        <div style={{ flex: 1, background: '#111827', border: '1px solid #1f2937', borderRadius: 8, padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#374151" strokeWidth="1.5"/><path d="M11 11l2.5 2.5" stroke="#374151" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          <span style={{ fontSize: 9, color: '#374151' }}>Search by name...</span>
+      {/* Search + view switcher */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px 6px' }}>
+        <div style={{ flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#94a3b8" strokeWidth="1.5"/><path d="M11 11l2.5 2.5" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <span style={{ fontSize: 8, color: '#94a3b8' }}>Search name, email...</span>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[false, true, false].map((active, i) => (
-            <div key={i} style={{ width: 24, height: 24, background: active ? '#1d4ed8' : '#111827', border: `1px solid ${active ? '#1d4ed8' : '#1f2937'}`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {i === 1 && <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="#fff"/><rect x="9" y="2" width="5" height="5" rx="1" fill="#fff"/><rect x="2" y="9" width="5" height="5" rx="1" fill="#fff"/><rect x="9" y="9" width="5" height="5" rx="1" fill="#fff"/></svg>}
-              {i !== 1 && <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+        <div style={{ display: 'flex', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+          {[true, false, false].map((active, i) => (
+            <div key={i} style={{ width: 22, height: 26, background: active ? '#4f46e5' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {i === 0 && <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill={active ? '#fff' : '#94a3b8'}/><rect x="9" y="2" width="5" height="5" rx="1" fill={active ? '#fff' : '#94a3b8'}/><rect x="2" y="9" width="5" height="5" rx="1" fill={active ? '#fff' : '#94a3b8'}/><rect x="9" y="9" width="5" height="5" rx="1" fill={active ? '#fff' : '#94a3b8'}/></svg>}
+              {i === 1 && <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+              {i === 2 && <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#94a3b8" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/></svg>}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Filter chips */}
-      <div style={{ display: 'flex', gap: 5, padding: '0 12px 8px', overflow: 'hidden' }}>
+      {/* Filter pills */}
+      <div style={{ display: 'flex', gap: 5, padding: '0 10px 6px', overflow: 'hidden' }}>
         {[
-          { label: 'Today',    bg: 'transparent', border: '#1f2937', color: '#6b7280' },
-          { label: '$ Unpaid', bg: '#064e3b',     border: '#065f46', color: '#10b981' },
-          { label: 'New (17)', bg: '#1e3a5f',     border: '#1d4ed8', color: '#60a5fa' },
+          { label: 'Filters', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
+          { label: 'Today',   color: '#475569', bg: '#fff',    border: '#e2e8f0' },
+          { label: 'Unpaid',  color: '#475569', bg: '#fff',    border: '#e2e8f0' },
+          { label: 'New (23)',color: '#475569', bg: '#fff',    border: '#e2e8f0' },
         ].map(c => (
-          <div key={c.label} style={{ padding: '3px 7px', borderRadius: 20, fontSize: 8, fontWeight: 700, whiteSpace: 'nowrap', background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>{c.label}</div>
+          <div key={c.label} style={{ padding: '3px 7px', borderRadius: 20, fontSize: 7.5, fontWeight: 700, whiteSpace: 'nowrap', background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>{c.label}</div>
         ))}
       </div>
 
       {/* Section label */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 12px 4px' }}>
-        <span style={{ fontSize: 8, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '.1em' }}>Today</span>
-        <span style={{ fontSize: 7.5, fontWeight: 700, color: '#1d4ed8' }}>1 job</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 10px 5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />
+          <span style={{ fontSize: 8, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '.1em' }}>Today</span>
+        </div>
+        <span style={{ fontSize: 7.5, fontWeight: 700, color: '#94a3b8' }}>1 job</span>
       </div>
 
-      {/* Lead card */}
-      <div style={{ margin: '0 10px', background: '#111827', borderRadius: 12, border: '1px solid #1f2937', overflow: 'hidden' }}>
-        <div style={{ background: '#0d1526', padding: '7px 10px 6px', borderBottom: '1px solid #1a2535', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#064e3b', padding: '2px 7px', borderRadius: 5, border: '1px solid #065f46' }}>
+      {/* Lead card — light */}
+      <div style={{ margin: '0 10px', background: '#fff', borderRadius: 14, border: '2px solid #0f172a', overflow: 'hidden' }}>
+        <div style={{ padding: '7px 10px 5px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#dcfce7', padding: '2px 7px', borderRadius: 20, border: '1px solid #bbf7d0' }}>
             <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981' }} />
-            <span style={{ fontSize: 7, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '.06em' }}>New</span>
+            <span style={{ fontSize: 7, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '.06em' }}>New</span>
           </div>
-          <span style={{ fontSize: 7.5, color: '#374151', fontWeight: 600 }}>just now</span>
+          <span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 600 }}>just now</span>
         </div>
-        <div style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#f9fafb', marginBottom: 1 }}>Kevin White</div>
-          <div style={{ fontSize: 8.5, color: '#6b7280', fontWeight: 500, marginBottom: 8 }}>Unassigned · via QR scan</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 8 }}>
+        <div style={{ padding: '4px 10px 10px' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', marginBottom: 1 }}>Kevin White</div>
+          <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 500, marginBottom: 8 }}>Unassigned · via QR scan</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 8, background: '#f8fafc', borderRadius: 10, padding: '7px 8px', border: '1px solid #e2e8f0' }}>
             {[
-              { label: 'Category', val: 'Roofing', color: '#6366f1' },
-              { label: 'Photos',   val: '2 files', color: '#10b981' },
-              { label: 'Job Date', val: 'TBD',     color: '#374151' },
-              { label: 'Arrival',  val: 'TBD',     color: '#374151' },
-            ].map(m => (
-              <div key={m.label} style={{ background: '#0d0d1a', borderRadius: 6, padding: '4px 6px' }}>
-                <div style={{ fontSize: 7, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>{m.label}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: m.color }}>{m.val}</div>
+              { label: 'Job Date', val: 'TBD',     color: '#94a3b8' },
+              { label: 'Revenue',  val: '$0',       color: '#0f172a' },
+            ].map((m, i) => (
+              <div key={m.label} style={{ borderLeft: i > 0 ? '1px solid #e2e8f0' : 'none', paddingLeft: i > 0 ? 8 : 0 }}>
+                <div style={{ fontSize: 6.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>{m.label}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: m.color }}>{m.val}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid #1a2535' }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#6b7280' }}>$900</div>
-              <div style={{ fontSize: 7.5, color: '#374151', fontWeight: 600 }}>PARTIAL</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 7, borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff' }}>?</div>
+              <span style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600 }}>Unassigned</span>
             </div>
-            <div style={{ width: 28, height: 28, background: '#312e81', borderRadius: 9, border: '1px solid #3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#818cf8"/></svg>
+            <div style={{ background: '#0f172a', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 7, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '.06em' }}>Open</span>
+              <svg width="7" height="7" viewBox="0 0 16 16" fill="none"><path d="M5 8h6M8 5l3 3-3 3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
             </div>
           </div>
         </div>
@@ -115,7 +119,6 @@ function ScreenDashboard() {
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen 2: Schedule tab — job modal
 // ─────────────────────────────────────────────────────────────────────────────

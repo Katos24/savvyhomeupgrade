@@ -98,7 +98,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
   const [urlCopied, setUrlCopied] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
+const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/${company.slug}`
@@ -181,67 +181,61 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   return (
     <div className="max-w-7xl mx-auto pb-20">
 
-      {/* ── TOP BAR ── */}
-     <div className="flex items-start justify-between gap-4 mb-8">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Booking Form</h1>
-          <p className="text-sm text-gray-400 mt-0.5 leading-snug">This is the form your customers see when they visit your public link.</p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-     
+     {/* ── TOP BAR ── */}
+<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
+  <div className="min-w-0">
+    <h1 className="text-xl font-bold text-gray-900 tracking-tight">Booking Form</h1>
+    <p className="text-sm text-gray-400 mt-0.5 leading-snug">Customize what your customers see when they visit your booking link.</p>
+  </div>
+  <motion.button
+    whileTap={{ scale: 0.97 }}
+    onClick={handleSaveAll}
+    disabled={loading}
+    className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shrink-0"
+  >
+    {loading
+      ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      : <Save className="w-3.5 h-3.5" />
+    }
+    Save Changes
+  </motion.button>
+</div>
 
-          {/* Save */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSaveAll}
-            disabled={loading}
-          className="flex items-center gap-2 px-5 py-2 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all"
-          >
-            {loading
-              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <Save className="w-3.5 h-3.5" />
-            }
-            Save
-          </motion.button>
-        </div>
-      </div>
-
-      {/* ── STATUS TOAST ── */}
-      <AnimatePresence>
-        {status.type && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-6 text-sm font-medium ${
-              status.type === 'success'
-                ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                : 'bg-red-50 border-red-100 text-red-700'
-            }`}
-          >
-            {status.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            {status.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
+{/* ── STATUS TOAST ── */}
+<AnimatePresence>
+  {status.type && (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+      className={`flex items-center gap-2 px-4 py-3 rounded-xl border mb-4 text-sm font-semibold ${
+        status.type === 'success'
+          ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+          : 'bg-red-50 border-red-100 text-red-700'
+      }`}
+    >
+      {status.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+      {status.message}
+    </motion.div>
+  )}
+</AnimatePresence>
 
 {/* ── PUBLIC URL BANNER ── */}
-  <div className="flex flex-col gap-2 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <p className="text-xs font-semibold text-slate-500">Your customer form</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0 px-3 py-2 bg-white border border-slate-200 rounded-xl">
-            <span className="text-xs font-medium text-slate-700 break-all block">{publicUrl}</span>
-          </div>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-            className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-          >
-            {urlCopied ? 'Copied!' : 'Copy'}
-          </motion.button>
-        </div>
-      </div>
+ <div className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-2xl mb-6 shadow-sm">
+  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+  <div className="flex-1 min-w-0">
+    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Your booking link</p>
+<span className="text-xs sm:text-sm font-semibold text-slate-700 break-all block">{publicUrl}</span>  </div>
+  <motion.button
+    whileTap={{ scale: 0.97 }}
+    onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
+    className={`shrink-0 px-4 py-2 text-xs font-black rounded-xl transition-all uppercase tracking-widest ${
+      urlCopied
+        ? 'bg-emerald-500 text-white'
+        : 'bg-slate-900 hover:bg-slate-700 text-white'
+    }`}
+  >
+    {urlCopied ? 'Copied!' : 'Copy'}
+  </motion.button>
+</div>
 
       {/* ── MOBILE TAB BAR ── */}
       <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
@@ -381,7 +375,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             badge="You control these"
             badgeColor="indigo"
           >
-<div className="space-y-0.5 pt-1">
+<div className="pt-1">
               <FieldToggle
                 icon={MapPin} iconColor="text-rose-500"
                 label="Service address"
@@ -473,44 +467,46 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                       <div className="space-y-2 pt-1">
                         {customQuestions.map((q, i) => (
                           <motion.div
-                            key={q.id}
-                            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.04 }}
-                            className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-indigo-100 flex items-center justify-center transition-colors shrink-0">
-                                <HelpCircle className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-gray-800 truncate">{q.label}</p>
-                                <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">
-                                  {q.type}{q.type === 'select' && q.options?.length ? ` · ${q.options.length} options` : ''}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                              <button
-                                onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
-                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </motion.div>
+  key={q.id}
+  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: i * 0.04 }}
+  className="group flex items-center justify-between py-3 border-b border-gray-50 last:border-0 gap-3"
+>
+  <div className="flex-1 min-w-0">
+    <p className="text-sm font-semibold text-gray-800 truncate">{q.label}</p>
+    <div className="flex items-center gap-2 mt-0.5">
+      <span className="text-[10px] font-black px-2 py-0.5 rounded-lg"
+        style={{ background: '#eef2ff', color: '#6366f1' }}>
+        {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
+      </span>
+      {q.type === 'select' && q.options?.length ? (
+        <span className="text-[10px] text-gray-400 font-medium">{q.options.length} options</span>
+      ) : null}
+    </div>
+  </div>
+  {/* Always visible on mobile, hover on desktop */}
+  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
+    <button
+      onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
+      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+    >
+      <Edit2 className="w-3.5 h-3.5" />
+    </button>
+    <button
+      onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
+      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  </div>
+</motion.div>
                         ))}
                       </div>
                     ) : (
                       <div className="py-8 text-center">
-                        <p className="text-sm text-gray-300 font-medium">No custom questions yet</p>
-                        <p className="text-xs text-gray-200 mt-1">e.g. "Budget range?", "Do you have a gate code?", "Pet on site?"</p>
-                      </div>
+  <p className="text-sm text-gray-400 font-semibold">No custom questions yet</p>
+  <p className="text-xs text-gray-300 mt-1 leading-relaxed">e.g. "Budget range?", "Gate code?", "Pet on site?"</p>
+</div>
                     )}
                   </motion.div>
                 )}
@@ -606,19 +602,12 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
   return (
     <motion.div
       layout
-className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
-        enabled ? 'bg-indigo-50/60' : 'hover:bg-gray-50'
-      }`}
+      className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 cursor-pointer group"
       onClick={onToggle}
     >
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-        enabled ? 'bg-white shadow-sm' : 'bg-gray-100'
-      }`}>
-        <Icon className={`w-3.5 h-3.5 transition-colors ${enabled ? iconColor : 'text-gray-300'}`} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium transition-colors ${enabled ? 'text-gray-800' : 'text-gray-400'}`}>{label}</p>
-        <p className="text-[11px] text-gray-400 truncate">{description}</p>
+      <div className="flex-1 min-w-0 pr-4">
+        <p className={`text-sm font-semibold transition-colors ${enabled ? 'text-gray-900' : 'text-gray-400'}`}>{label}</p>
+        <p className={`text-[11px] transition-colors ${enabled ? 'text-gray-400' : 'text-gray-300'}`}>{description}</p>
       </div>
       <div className="shrink-0" onClick={e => { e.stopPropagation(); onToggle(); }}>
         <motion.div

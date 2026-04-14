@@ -250,9 +250,9 @@ function getDateBoundaries() {
 
 function BrowserChrome({ isDark, children }: { isDark: boolean; children: React.ReactNode }) {
   return (
-    <div className={`rounded-2xl overflow-hidden border shadow-2xl ${
-      isDark ? 'border-white/10 shadow-black/50' : 'border-gray-300 shadow-gray-300/60'
-    }`}>
+    <div className={`sm:rounded-2xl sm:overflow-hidden sm:border sm:shadow-2xl ${
+  isDark ? 'sm:border-white/10 sm:shadow-black/50' : 'sm:border-gray-300 sm:shadow-gray-300/60'
+}`}>
       <div className={`hidden sm:flex items-center gap-3 px-4 py-3 border-b ${
         isDark ? 'bg-[#0b1120] border-white/10' : 'bg-gray-200 border-gray-300'
       }`}>
@@ -639,9 +639,9 @@ const handleTourStart = (flow: TourFlow) => {
           {s.label}
         </p>
       </div>
-      <p className={`text-base sm:text-xl font-black tracking-tight tabular-nums truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-        {s.value}
-      </p>
+      <p className={`text-sm sm:text-xl font-black tracking-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+  {s.value}
+</p>
     </div>
   ))}
 </section>

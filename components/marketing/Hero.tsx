@@ -9,8 +9,7 @@ export default function Hero() {
   return (
     <section
       className="relative overflow-hidden bg-[#F7F5F0]"
-      style={{ paddingTop: 'clamp(4rem, 8vw, 6rem)',
-paddingBottom: '2rem' }}
+      style={{ paddingTop: 'clamp(4rem, 8vw, 7rem)', paddingBottom: '2rem' }}
     >
       {/* Texture */}
       <div
@@ -23,70 +22,59 @@ paddingBottom: '2rem' }}
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 z-10">
 
         {/* ── Split grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-8 lg:mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center mb-8 lg:mb-14">
 
           {/* LEFT — copy */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
 
+            {/* Eyebrow */}
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1a6645] mb-5">
+              For home service contractors
+            </p>
+
+            {/* H1 */}
             <h1
-              className="font-black tracking-tight text-[#0F1F3D] mb-5 max-w-lg lg:max-w-none"
+              className="font-black text-[#0F1F3D] mb-6"
               style={{
-                fontSize: 'clamp(2.6rem, 8vw, 6rem)',
-                lineHeight: '0.95',
-                letterSpacing: '-0.04em',
+                fontSize: 'clamp(2.8rem, 9vw, 6.5rem)',
+                lineHeight: '0.92',
+                letterSpacing: '-0.05em',
               }}
             >
-              Stop losing jobs in messages.<br />
-              <span className="text-[#1a6645]">Start booking them in seconds.</span>
+              Stop losing<br />
+              jobs in your<br />
+              <span style={{ color: '#1a6645' }}>text thread.</span>
             </h1>
 
-            <p
-              className="text-slate-500 font-normal leading-relaxed mb-8 max-w-sm"
-              style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.05rem)' }}
-            >
-              Lead2Project gives home service contractors a simple booking system to capture leads,
-              send quotes, schedule jobs, and manage every customer in one place.
-              <br /><br />
-              No spreadsheets. No scattered texts. No missed calls.
+            {/* One strong statement */}
+            <p className="text-base font-semibold text-slate-700 leading-relaxed mb-8 max-w-sm text-center lg:text-left">
+              One QR code. Customers scan, submit their job with photos,
+              and land on your dashboard — ready to quote, schedule,
+              and collect payment. No spreadsheets. No missed calls.
             </p>
 
             {/* CTA — desktop */}
-            <div className="hidden lg:flex flex-col items-start gap-3 w-full sm:w-auto">
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/signup"
-                  className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    fontSize: '1rem',
-                    padding: '1rem 2.25rem',
-                    background: '#0F1F3D',
-                    boxShadow: '0 16px 40px -10px rgba(15,31,61,0.3)',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  Start free today
-                  <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center justify-center gap-2 font-black rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    fontSize: '1rem',
-                    padding: '1rem 1.75rem',
-                    color: '#0F1F3D',
-                    borderColor: '#0F1F3D40',
-                    background: 'transparent',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  Try the demo
-                </Link>
-              </div>
-
-              <p className="text-[11px] font-semibold text-slate-400 tracking-wide">
-                Built for contractors who want more booked work, less chaos
-              </p>
+            <div className="hidden lg:flex flex-col items-start gap-3">
+              <Link
+                href="/signup"
+                className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem 2.25rem',
+                  background: '#0F1F3D',
+                  boxShadow: '0 16px 40px -10px rgba(15,31,61,0.3)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Get your booking link
+                <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="/demo"
+                className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors underline underline-offset-4"
+              >
+                See a live demo first
+              </Link>
             </div>
           </div>
 
@@ -97,10 +85,10 @@ paddingBottom: '2rem' }}
         </div>
 
         {/* CTA — mobile */}
-        <div className="flex lg:hidden flex-col items-center gap-3 mb-12">
+        <div className="flex lg:hidden flex-col items-center gap-4 mb-12">
           <Link
             href="/signup"
-            className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] w-full"
+            className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all active:scale-[0.98] w-full"
             style={{
               fontSize: '1rem',
               padding: '1rem 2.25rem',
@@ -109,36 +97,23 @@ paddingBottom: '2rem' }}
               letterSpacing: '-0.01em',
             }}
           >
-            Start free today
+            Get your booking link
             <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
           </Link>
-
           <Link
             href="/demo"
-            className="inline-flex items-center justify-center gap-2 font-black rounded-2xl border transition-all w-full"
-            style={{
-              fontSize: '1rem',
-              padding: '1rem 1.75rem',
-              color: '#0F1F3D',
-              borderColor: '#0F1F3D40',
-              background: 'transparent',
-              letterSpacing: '-0.01em',
-            }}
+            className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors underline underline-offset-4 text-center"
           >
-            Try the demo
+            See a live demo first
           </Link>
-
-          <p className="text-[11px] font-semibold text-slate-400 tracking-wide text-center">
-            Built for contractors who want more booked work, less chaos
-          </p>
         </div>
 
         {/* ── Bridge label ── */}
         <div className="flex flex-col items-center mb-6">
-          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-            See how it works
+          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-3">
+            How it works
           </p>
-          <div className="w-px h-8 bg-gradient-to-b from-slate-300 to-transparent" />
+          <div className="w-px h-10 bg-gradient-to-b from-slate-400 to-transparent" />
         </div>
 
         {/* ── Dark story strip ── */}
@@ -146,8 +121,7 @@ paddingBottom: '2rem' }}
           id="how-it-works"
           className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-[#020617]"
           style={{
-            padding:
-              'clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 3.5rem)',
+            padding: 'clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 3.5rem)',
           }}
         >
           <div className="w-full overflow-hidden">

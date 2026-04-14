@@ -15,10 +15,10 @@ const LEADS = [
 ];
 
 const STATS = [
-{ label: 'Total Leads', value: '168', color: '#0f172a' },
-  { label: 'Active Jobs', value: '63',  color: '#3b82f6'  },
-  { label: 'Revenue',     value: '$102k', color: '#10b981' },
-  { label: 'Pending',     value: '$122k', color: '#f59e0b' },
+  { label: 'Leads',   value: '168',   accent: 'bg-indigo-500' },
+  { label: 'Active',  value: '63',    accent: 'bg-blue-500'   },
+  { label: 'Revenue', value: '$102k', accent: 'bg-emerald-500' },
+  { label: 'Pending', value: '$122k', accent: 'bg-amber-500'  },
 ];
 
 const CAL_EVENTS: Record<number, { name: string; color: string }[]> = {
@@ -41,23 +41,65 @@ type View = 'cards' | 'table' | 'calendar' | 'outbox';
 
 function CardsPanel() {
   return (
-    <div className="grid grid-cols-3 gap-2 h-full overflow-y-auto pb-4 no-scrollbar">
+    <div className="grid grid-cols-2 gap-2 h-full overflow-y-auto pb-4 no-scrollbar">
       {LEADS.map(lead => (
-        <div key={lead.name} className="flex rounded-xl overflow-hidden border bg-white border-slate-100 shadow-sm">
-          <div className="w-1 shrink-0" style={{ background: lead.statusColor }} />
-          <div className="p-2.5 flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>{lead.status}</span>
-              <span className="text-[7px] text-slate-400">{lead.category}</span>
+        <div
+          key={lead.name}
+          className="flex flex-col bg-white border-2 rounded-2xl overflow-hidden shadow-sm cursor-pointer group"
+          style={{ borderColor: '#0f172a' }}
+        >
+          {/* Status pill */}
+          <div className="px-2.5 pt-2.5 pb-1.5">
+            <span
+              className="inline-flex items-center gap-1 text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: lead.statusColor }} />
+              {lead.status}
+            </span>
+          </div>
+
+          {/* Name + category */}
+          <div className="px-2.5 pb-2">
+            <p className="text-[12px] font-black text-slate-900 leading-tight mb-0.5 truncate group-hover:text-blue-500 transition-colors">
+              {lead.name}
+            </p>
+            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest truncate">{lead.category}</p>
+          </div>
+
+          {/* Stats box */}
+          <div className="mx-2.5 mb-2 grid grid-cols-2 p-1.5 rounded-xl bg-slate-50 border border-slate-100">
+            <div className="space-y-0.5">
+              <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Job Date</p>
+              <div className="flex items-center gap-1">
+                <Calendar size={8} className="text-indigo-500 shrink-0" />
+                <span className="text-[9px] font-black text-indigo-500 italic">{lead.date}</span>
+              </div>
             </div>
-            <div className="text-[11px] font-black mb-1.5 truncate text-slate-900">{lead.name}</div>
-            <div className="grid grid-cols-2 gap-0.5 p-1.5 rounded-lg border bg-slate-50 border-slate-100 mb-1.5">
-              <div><div className="text-[6px] text-slate-400 font-black uppercase">Date</div><div className="text-[9px] font-black text-indigo-500">{lead.date}</div></div>
-              <div className="border-l border-slate-200 pl-1.5"><div className="text-[6px] text-slate-400 font-black uppercase">Time</div><div className="text-[9px] font-black text-slate-500">{lead.time}</div></div>
+            <div className="border-l border-slate-200 pl-2 space-y-0.5">
+              <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Revenue</p>
+              <div className="flex items-center gap-0.5">
+                <DollarSign size={8} className="text-slate-400 shrink-0" />
+                <span className="text-[9px] font-black text-slate-700">
+                  {lead.amount === '—' ? '—' : lead.amount.replace('$', '')}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-emerald-500">{lead.amount}</span>
-              <ChevronRight size={11} className="text-slate-300" />
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-2.5 py-2 border-t border-slate-100 mt-auto">
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[7px] font-black text-white shrink-0">
+                {lead.assigned !== '—' ? lead.assigned.charAt(0) : '?'}
+              </div>
+              <span className="text-[8px] font-bold text-slate-400 truncate max-w-[45px]">
+                {lead.assigned === '—' ? 'Unassigned' : lead.assigned}
+              </span>
+            </div>
+            <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-slate-900 text-white">
+              <span className="text-[7px] font-black uppercase tracking-widest">Open</span>
+              <ChevronRight size={8} />
             </div>
           </div>
         </div>
@@ -265,14 +307,17 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
                   </div>
 
                   {/* Stats */}
-                  <div className="flex gap-2 px-4 py-2.5 border-b border-slate-100">
-                    {STATS.map(s => (
-                      <div key={s.label} className="flex-1 p-2 rounded-lg border bg-slate-50 border-slate-100">
-                        <p className="text-[6px] font-black uppercase text-slate-400 tracking-widest mb-1">{s.label}</p>
-                        <p className="text-[15px] font-black" style={{ color: s.color }}>{s.value}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 px-4 py-2.5 border-b border-slate-100">
+  {STATS.map(s => (
+    <div key={s.label} className="rounded-lg border bg-slate-50 border-slate-100 px-2 py-1.5">
+      <div className="flex items-center gap-1 mb-0.5">
+        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.accent}`} />
+        <p className="text-[7px] font-bold uppercase text-slate-400 tracking-widest truncate">{s.label}</p>
+      </div>
+      <p className="text-[13px] font-black text-slate-900 truncate">{s.value}</p>
+    </div>
+  ))}
+</div>
 
                   {/* Filter pills */}
                   <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-100 overflow-x-auto no-scrollbar">
