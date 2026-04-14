@@ -344,8 +344,8 @@ export function DashboardLaptopMockup() {
             </div>
 
             {/* Content area with crossfade */}
-            <div className="relative" style={{ height: 220, overflow: 'hidden' }}>
-              <AnimatePresence mode="wait">
+<div className="relative" style={{ height: 180, overflow: 'hidden' }}>
+                <AnimatePresence mode="wait">
                 <motion.div
                   key={`${cycleIdx}`}
                   initial={{ opacity: 0, y: 6 }}

@@ -812,6 +812,86 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
 {/* Search & Filter Command Center                                      */}
 {/* ------------------------------------------------------------------ */}
 <section aria-label="Search and filter leads" className="mb-8 flex flex-col gap-2">
+  {/* Row 1: Search + View Switcher + Theme */}
+  <div className="flex items-center gap-2">
+    {/* Expandable Search */}
+    <div className="flex items-center flex-1 min-w-0">
+      {searchQuery ? (
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
+          <input
+            autoFocus
+            type="search"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={e => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+              if (val.trim().length >= 2) {
+                setIsSearching(true);
+                searchTimeoutRef.current = setTimeout(async () => {
+                  await fetchLeads(1, true, { search: val.trim() });
+                  setIsSearching(false);
+                }, 400);
+              } else if (val.trim() === '') {
+                fetchLeads(1, true, { search: '' });
+              }
+            }}
+            className={`w-full pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold outline-none border transition-all ${
+              isDark ? 'bg-[#0A0C14] border-white/10 text-white placeholder-white/20' : 'bg-white border-slate-200 text-slate-900 shadow-sm'
+            }`}
+          />
+          <button onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-400">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setSearchQuery(' ')}
+          className={`p-2.5 rounded-xl border transition-all shrink-0 ${
+            isDark ? 'bg-[#0A0C14] border-white/5 text-white/40 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'
+          }`}
+        >
+          {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> : <Search className="w-4 h-4" />}
+        </button>
+      )}
+    </div>
+
+    {/* View Switcher */}
+    <div className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+      {[
+        { id: 'cards', icon: LayoutGrid },
+        { id: 'table', icon: List },
+        { id: 'calendar', icon: Calendar }
+      ].map((v) => (
+        <button
+          key={v.id}
+          onClick={() => setCurrentView(v.id as any)}
+          className={`p-2 rounded-lg transition-all ${
+            currentView === v.id
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
+          }`}
+        >
+          <v.icon className="w-4 h-4" />
+        </button>
+      ))}
+    </div>
+
+    {/* Theme Toggle */}
+    <button
+      onClick={() => setIsDark(v => !v)}
+      className={`p-2.5 rounded-xl border transition-all active:scale-95 shrink-0 ${
+        isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+      }`}
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
+  </div>
+
+  {/* Row 2: Filter Pills */}
   <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
     
     {/* Advanced Filter Launcher */}
@@ -882,42 +962,7 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
       </button>
     )}
 
-    {/* Spacer */}
-    <div className="flex-1" />
-
-    {/* View Switcher */}
-    <div className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
-      {[
-        { id: 'cards', icon: LayoutGrid },
-        { id: 'table', icon: List },
-        { id: 'calendar', icon: Calendar }
-      ].map((v) => (
-        <button
-          key={v.id}
-          onClick={() => setCurrentView(v.id as any)}
-          className={`p-2 rounded-lg transition-all ${
-            currentView === v.id
-              ? 'bg-indigo-600 text-white shadow-lg'
-              : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
-          }`}
-        >
-          <v.icon className="w-4 h-4" />
-        </button>
-      ))}
-    </div>
-
-    {/* Theme Toggle */}
-    <button
-      onClick={() => setIsDark(v => !v)}
-      className={`p-3.5 rounded-2xl border transition-all active:scale-95 shrink-0 ${
-        isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
-      }`}
-    >
-      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-    </button>
-
   </div>
-
   {/* Advanced Filter Dropdown */}
   <div className="relative">
     {showAdvancedFilters && (

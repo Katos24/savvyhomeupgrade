@@ -135,13 +135,12 @@ return (
             caption="Claim your unique blast link. Download your high-res QR code for trucks or copy the link for your Instagram bio and website."
           />
           {/* YOUR IMAGE ADDS HERE */}
-          <div className="relative aspect-[16/10] rounded-2xl border border-dashed border-white/10 bg-[#0F172A] flex items-center justify-center text-slate-700 shadow-xl overflow-hidden">
-             <img
-                src="/images/qr-screenshot.png"
-                alt="QR Code Placeholder"
-                className="w-full h-full object-contain opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700"
-             />
-            
+        <div className="relative rounded-2xl overflow-hidden shadow-xl border border-white/5 bg-[#0F172A]">
+            <img
+              src="/images/qr-screenshot.png"
+              alt="QR Code"
+              className="w-full h-auto block max-h-[280px] object-contain object-center p-4"
+            />
           </div>
         </div>
 
@@ -155,40 +154,38 @@ return (
           <FormBento />
         </div>
 
-        {/* STEP 3: THE CAPTURE */}
+       {/* STEP 3: THE CAPTURE */}
         <div className="flex flex-col" style={panelStyle(0.2)}>
           <StepLabel
             number="3"
             title="Capture everywhere"
             caption="Customers scan your QR code on trucks or yard signs. They submit photos, you get a lead instantly."
           />
-          <div className="relative w-full aspect-[16/10] rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl">
-            {/* Background Image: The Scan */}
+          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl" style={{ minHeight: 280 }}>
             <img 
               src="/images/qr-scan-2.png" 
-              className="w-full h-full object-cover opacity-60 grayscale-[0.3]" 
+              className="absolute inset-0 w-full h-full object-cover opacity-70" 
               alt="Customer scanning" 
             />
-            {/* Success Modal Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center p-4 scale-90 md:scale-100">
+            {/* Dark gradient so modal is readable */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/20" />
+            {/* Success Modal — top right */}
+            <div className="absolute top-3 right-3 z-10 scale-[0.82] origin-top-right">
               <SuccessModal />
             </div>
           </div>
         </div>
 
-        {/* STEP 4: THE RESULT */}
+       {/* STEP 4: THE RESULT */}
         <div className="flex flex-col" style={panelStyle(0.3)}>
           <StepLabel
             number="4"
             title="Close the job"
             caption="Leads land on your dashboard. Send quotes, schedule, and mark 'Paid'—all from your phone."
           />
-          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-6 px-4">
-            <style>{`
-              .laptop-wrap { transform-origin: top center; transform: scale(1.1); }
-            `}</style>
-            <div className="laptop-wrap">
-              <DashboardLaptopMockup />
+          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-4 px-3" style={{ height: 280 }}>
+            <div style={{ transform: 'scale(0.68)', transformOrigin: 'top center' }}>
+                <DashboardLaptopMockup />
             </div>
           </div>
         </div>
