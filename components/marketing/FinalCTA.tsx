@@ -13,8 +13,8 @@ export default function FinalCTA() {
         style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease' }}
       >
         <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight leading-[0.95] mb-5">
-          One job pays for<br />
-          <span style={{ color: '#4ade80' }}>the whole year.</span>
+         Stop bleeding leads.<br />
+          <span style={{ color: '#4ade80' }}>One win pays for the year.</span>
         </h2>
         <p className="text-slate-400 text-lg font-medium mb-10 leading-relaxed max-w-md mx-auto">
           Your competitor down the street is still texting quotes from his 

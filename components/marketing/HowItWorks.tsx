@@ -67,9 +67,9 @@ export default function HowItWorks() {
             </div>
           </div>
 
-          {/* ── IMAGE + DIGEST ── */}
+          {/* ── IMAGE ── */}
           <div className="relative order-2 w-full max-w-[560px] lg:max-w-none mx-auto lg:translate-x-12">
-<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/15 blur-[80px] rounded-full pointer-events-none" style={{ zIndex: -1 }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/15 blur-[80px] rounded-full pointer-events-none" style={{ zIndex: -1 }} />
 
             {/* QR image */}
             <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-1.5 md:p-2 border border-[#1a6645]/30 bg-white/5 backdrop-blur-sm shadow-2xl">
@@ -92,79 +92,6 @@ export default function HowItWorks() {
                 </div>
               </div>
             </div>
-
-            {/* DAILY DIGEST — fully light, readable on mobile */}
-            <div className="mt-4 rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-xl">
-
-            {/* Header */}
-<div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-  <div className="w-9 h-9 rounded-xl bg-[#1a6645]/10 flex items-center justify-center shrink-0">
-    <Sunrise size={16} className="text-[#1a6645]" />
-  </div>
-  <div>
-    <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">
-      Daily Email · Sent at 6AM
-    </p>
-    <p className="text-base font-black text-slate-900 leading-snug mt-0.5">
-      Know your day before you start your truck
-    </p>
-  </div>
-</div>
-              {/* Email preview */}
-              <div className="p-4">
-                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-
-                  {/* Email header */}
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] text-slate-400">digest@lead2project.com</p>
-                        <p className="text-sm font-black text-slate-900 mt-0.5">Ridge Line Roofing · Morning Brief</p>
-                      </div>
-                      <p className="text-[10px] text-slate-400 shrink-0 ml-3">6:00 AM</p>
-                    </div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="px-4 py-3 space-y-3 bg-white">
-                    {[
-                      { dot: '#6366f1', label: 'Scheduled today',     value: '2 jobs',     sub: 'Torres · Kim Gutters'  },
-                      { dot: '#f59e0b', label: 'Unpaid balances',     value: '$3,200',     sub: '2 invoices overdue'    },
-                      { dot: '#10b981', label: 'New leads overnight', value: '1 new',      sub: 'Michael Johnson'       },
-                      { dot: '#ef4444', label: 'Follow-ups needed',   value: '3 contacts', sub: 'Last contact 4d ago'   },
-                    ].map((row, i) => (
-                      <div key={i} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: row.dot }} />
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-800 truncate">{row.label}</p>
-                            <p className="text-[11px] text-slate-400 truncate">{row.sub}</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-black shrink-0" style={{ color: row.dot }}>{row.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
-                    <p className="text-[9px] text-slate-400 text-center uppercase tracking-widest">
-                      Powered by Lead2Project · Pro plan
-                    </p>
-                  </div>
-
-                </div>
-              </div>
-
-             {/* Caption */}
-<div className="px-5 pb-4">
-  <p className="text-sm text-slate-600 font-medium leading-relaxed">
-    Every morning we email you a summary — jobs scheduled today, unpaid balances, and any new leads that came in overnight. Open it on your phone before you leave the driveway.
-  </p>
-</div>
-
-            </div>
-
           </div>
 
         </div>
