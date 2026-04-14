@@ -45,7 +45,7 @@ export default function Hero() {
                 while you watch the game.
               </p>
               <p className="text-base font-medium text-slate-500 max-w-md italic leading-relaxed">
-                One QR code. Customers scan, send photos, and land on your dashboard. No spreadsheets. No missed calls.
+                One QR code. Customers scan, send photos, and land on your dashboard. No spreadsheets. No missed calls. Send quotes in seconds with one click email.
               </p>
             </div>
 
