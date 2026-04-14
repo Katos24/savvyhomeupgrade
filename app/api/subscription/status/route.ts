@@ -31,16 +31,17 @@ export async function GET() {
 
     const sql = neon(process.env.DATABASE_URL!);
     const [company] = await sql`
-      SELECT id, slug, name, subscription_status, onboarding_completed
-      FROM companies
-      WHERE id = ${companyId}
+      SELECT id, slug, name, subscription_status, onboarding_completed, stripe_customer_id
+FROM companies
+WHERE id = ${companyId}
     `;
 
     if (!company) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    const isActive = ['trialing', 'active'].includes(company.subscription_status);
+const isActive = ['trialing', 'active'].includes(company.subscription_status)
+  || !!company.stripe_customer_id;
 
     return NextResponse.json({
       success: true,
