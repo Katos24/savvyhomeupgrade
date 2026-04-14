@@ -770,64 +770,49 @@ className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
   
   {/* Row 1: Search + View Toggles + Theme */}
   <div className="flex items-center gap-2 md:gap-3">
-  {/* SEARCH (Desktop full / Mobile icon) */}
-<div className="flex-1">
-
-  {/* DESKTOP SEARCH */}
-  <div className="relative hidden md:block group">
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-      {isSearching ? (
-        <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-      ) : (
-        <Search className={`w-4 h-4 transition-colors ${
-          isDark ? 'text-white/20' : 'text-slate-400'
-        } group-focus-within:text-indigo-500`} />
+    <div className="relative flex-1 group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+        {isSearching ? (
+          <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+        ) : (
+          <Search className={`w-4 h-4 transition-colors ${
+            isDark ? 'text-white/20' : 'text-slate-400'
+          } group-focus-within:text-indigo-500`} />
+        )}
+      </div>
+      <input
+        type="search"
+        placeholder="Search name, email, phone..."
+        value={searchQuery}
+        onChange={e => {
+          const val = e.target.value;
+          setSearchQuery(val);
+          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+          if (val.trim().length >= 2) {
+            setIsSearching(true);
+            searchTimeoutRef.current = setTimeout(async () => {
+              await fetchLeads(1, true, { search: val.trim() });
+              setIsSearching(false);
+            }, 400);
+          } else if (val.trim() === '') {
+            fetchLeads(1, true, { search: '' });
+          }
+        }}
+        className={`w-full pl-11 pr-10 py-3.5 rounded-2xl text-sm font-bold transition-all outline-none border ${
+          isDark 
+            ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-indigo-500/50' 
+            : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-sm'
+        }`}
+      />
+      {searchQuery && (
+        <button
+          onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
       )}
     </div>
-
-    <input
-      type="search"
-      placeholder="Search name, email, phone..."
-      value={searchQuery}
-      onChange={e => {
-        const val = e.target.value;
-        setSearchQuery(val);
-
-        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-
-        if (val.trim().length >= 2) {
-          setIsSearching(true);
-          searchTimeoutRef.current = setTimeout(async () => {
-            await fetchLeads(1, true, { search: val.trim() });
-            setIsSearching(false);
-          }, 400);
-        } else if (val.trim() === '') {
-          fetchLeads(1, true, { search: '' });
-        }
-      }}
-      className={`w-full pl-11 pr-10 py-3.5 rounded-2xl text-sm font-bold transition-all outline-none border ${
-        isDark 
-          ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-indigo-500/50' 
-          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-sm'
-      }`}
-    />
-  </div>
-
-  {/* MOBILE SEARCH ICON */}
-  <div className="md:hidden flex items-center justify-end">
-    <button
-      onClick={() => setShowAdvancedFilters(true)}
-      className={`p-3 rounded-2xl border transition-all active:scale-95 ${
-        isDark 
-          ? 'bg-[#0A0C14] border-white/5 text-white' 
-          : 'bg-white border-slate-200 text-slate-700 shadow-sm'
-      }`}
-    >
-      <Search className="w-4 h-4" />
-    </button>
-  </div>
-
-</div>
 
     {/* View Switcher */}
 <div className={`flex p-1 rounded-xl border ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
