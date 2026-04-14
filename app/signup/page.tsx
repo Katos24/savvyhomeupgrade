@@ -231,7 +231,7 @@ function SignupForm() {
           <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center shrink-0">
             <Globe className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Customer</span>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Customer Form</span>
           <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Public</span>
         </div>
         <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -272,18 +272,37 @@ function SignupForm() {
   </motion.div>
 )}
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">Business Type</label>
-                <select
-                  value={formData.businessType}
-                  onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer text-base"
-                >
-                  {BUSINESS_TYPES.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="space-y-2">
+  <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">
+    Business Type
+  </label>
+
+  <div className="flex flex-wrap gap-2">
+    {BUSINESS_TYPES.map((type) => {
+      const active = formData.businessType === type.value;
+
+      return (
+        <button
+          key={type.value}
+          type="button"
+          onClick={() =>
+            setFormData({ ...formData, businessType: type.value })
+          }
+          className={`
+            px-3 py-1.5 rounded-full text-xs font-bold border transition-all
+            ${
+              active
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+            }
+          `}
+        >
+          {type.label}
+        </button>
+      );
+    })}
+  </div>
+</div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <CustomInput
