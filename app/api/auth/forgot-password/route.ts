@@ -11,9 +11,10 @@ const { email } = await request.json();
     }
     const normalizedEmail = email.toLowerCase().trim();
     const users = await sql`
-      SELECT id, email, name
-      FROM users
-      WHERE LOWER(email) = ${normalizedEmail} AND is_active = true
+      SELECT u.id, u.email, u.name, c.name as company_name
+      FROM users u
+      LEFT JOIN companies c ON u.company_id = c.id
+      WHERE LOWER(u.email) = ${normalizedEmail} AND u.is_active = true
     `;
 
     if (users.length === 0) {

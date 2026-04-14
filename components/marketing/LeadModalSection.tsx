@@ -52,7 +52,7 @@ export default function LeadModalSection() {
             <span style={{ color: '#1a6645' }}>you'll ever need.</span>
           </h2>
           <p className="text-sm font-normal leading-loose text-slate-400 max-w-md mx-auto">
-            Every submission hits your dashboard instantly. Tap a lead and get a full command center — schedule, quote, collect, email. One click each.
+            Lead2Project turns every scan into a managed job.
           </p>
         </div>
 

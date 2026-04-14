@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s | Lead2Project",
   },
   description:
-    "Stop losing leads. Get a custom booking link — customers submit requests, everything lands on your dashboard organized and ready to act on. Quote, schedule, and track every job in one place. Built for service businesses of all kinds.",
+    "Stop losing leads. Get a custom booking link — customers submit requests, everything lands on your dashboard organized and ready to act on. Quote, schedule, and track every job in one place. Built for small and mid-size businesses.",
   keywords: [
       "small business lead management",
     "service business job tracking",
