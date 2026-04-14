@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section
       className="relative overflow-hidden bg-[#F7F5F0]"
-      style={{ paddingTop: 'clamp(4rem, 8vw, 7rem)', paddingBottom: '2rem' }}
+style={{ paddingTop: 'clamp(6rem, 12vw, 9rem)', paddingBottom: '2rem' }}
     >
       {/* Texture */}
       <div

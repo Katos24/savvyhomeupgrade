@@ -105,11 +105,11 @@ function SuccessScreen() {
 
         {/* Photo thumbnail in success */}
         <div className="w-full mb-2 rounded-xl overflow-hidden border border-slate-100" style={{ height: 44 }}>
-          <img src="/images/roof-damage.jpg" alt="roof damage" className="w-full h-full object-cover" />
+          <img src="/images/roof-damage.png" alt="roof damage" className="w-full h-full object-cover" />
         </div>
         <p className="text-[7px] text-slate-400 mb-2 self-start flex items-center gap-1">
           <Check size={8} className="text-emerald-500" strokeWidth={3} />
-          1 photo received · roof-damage.jpg
+          1 photo received · roof-damage.png
         </p>
 
         {[
