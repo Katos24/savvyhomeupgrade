@@ -35,6 +35,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
             </span>
             <div className="w-3 h-3 rounded bg-white/10 shrink-0" />
           </div>
+
           {/* Header */}
           <div className="px-4 pt-2.5 pb-2.5 border-b border-white/10">
             <div className="flex items-center justify-between mb-0.5">
@@ -45,7 +46,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
                 <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Dashboard</span>
               </div>
               <div className="flex items-center gap-1 text-[7px] font-bold text-emerald-500">
-                <Wifi size={7} /> 
+                <Wifi size={7} />
               </div>
             </div>
             <p className="text-[13px] font-black text-white">Your lead board</p>
@@ -67,29 +68,51 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
 
           {/* Lead list */}
           <div className="px-3 pt-2.5 pb-1 space-y-1.5 flex-1 overflow-hidden">
-            {/* New lead animates in */}
+
+            {/* New lead animates in — with photo thumbnail */}
             <div
-              className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all duration-700"
+              className="rounded-xl border overflow-hidden transition-all duration-700"
               style={{
-                background: leadVisible ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
+                background: leadVisible ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
                 borderColor: leadVisible ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.06)',
                 opacity: leadVisible ? 1 : 0,
                 transform: leadVisible ? 'translateY(0)' : 'translateY(8px)',
                 boxShadow: leadVisible ? '0 0 0 2px #bbf7d040' : 'none',
               }}
             >
-              <div className="w-1 h-6 rounded-full shrink-0 bg-emerald-500" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[10px] font-black text-white truncate">Jason Merritt</p>
-                  <span className="text-[6px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">NEW</span>
+              {/* Photo strip */}
+              {leadVisible && (
+                <div className="relative w-full overflow-hidden" style={{ height: 36 }}>
+                  <img
+                    src="/images/roof-damage.png"
+                    alt="fence damage"
+                    className="w-full h-full object-cover"
+                    style={{ filter: 'brightness(0.7)' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-1 left-2 flex items-center gap-1">
+                    <span className="text-[7px] font-black text-white/80">1 photo attached</span>
+                  </div>
+                  <div className="absolute top-1 right-2 flex items-center gap-1 bg-emerald-500/90 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[6px] font-black text-white">NEW</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <QrCode size={7} className="text-slate-400 shrink-0" />
-                  <span className="text-[7px] text-white/40">via QR · just now · Roofing</span>
+              )}
+
+              <div className="flex items-center gap-2 px-2.5 py-2">
+                <div className="w-1 h-6 rounded-full shrink-0 bg-emerald-500" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[10px] font-black text-white truncate">Jason Merritt</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <QrCode size={7} className="text-slate-400 shrink-0" />
+<span className="text-[7px] text-white/40">via QR · just now · Roofing</span>
+<span className="text-[6px] font-black text-pink-400 bg-pink-500/10 px-1 py-0.5 rounded-full">1 photo</span>
+                  </div>
                 </div>
+                <ChevronRight size={10} className="text-slate-300 shrink-0" />
               </div>
-              <ChevronRight size={10} className="text-slate-300 shrink-0" />
             </div>
 
             {existingLeads.map((lead, i) => (
@@ -133,16 +156,15 @@ export default function HeroDashboardDemo() {
   const [leadVisible, setLeadVisible] = useState(false);
   const [arrowPulse, setArrowPulse] = useState(false);
 
-  // FastDemoForm: submit fires ~5.2s, success at ~5.9s, resets at 9s
   useEffect(() => {
     let timers: ReturnType<typeof setTimeout>[] = [];
 
     function run() {
       setLeadVisible(false);
       setArrowPulse(false);
-      timers.push(setTimeout(() => setArrowPulse(true), 3800));  // was 5200
-timers.push(setTimeout(() => { setLeadVisible(true); setArrowPulse(false); }, 4600)); // was 6000
-timers.push(setTimeout(run, 7000)); // was 9000
+      timers.push(setTimeout(() => setArrowPulse(true), 3800));
+      timers.push(setTimeout(() => { setLeadVisible(true); setArrowPulse(false); }, 4600));
+      timers.push(setTimeout(run, 9200));
     }
 
     run();
@@ -163,7 +185,6 @@ timers.push(setTimeout(run, 7000)); // was 9000
         </p>
       </div>
 
-      {/* Two phones — shrink via transform on the inner wrapper, no overflow-hidden */}
       <style>{`
         .phones-wrapper {
           transform-origin: top center;
@@ -175,6 +196,7 @@ timers.push(setTimeout(run, 7000)); // was 9000
         @media (min-width: 441px) and (max-width: 520px) { .phones-wrapper { transform: scale(0.85); margin-bottom: -72px; } }
         @media (min-width: 521px) and (max-width: 580px) { .phones-wrapper { transform: scale(0.93); margin-bottom: -34px; } }
       `}</style>
+
       <div className="w-full flex justify-center">
         <div className="phones-wrapper flex items-center justify-center relative">
 
