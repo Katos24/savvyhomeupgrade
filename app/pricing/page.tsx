@@ -62,7 +62,7 @@ export default function PricingPage() {
           Stop losing leads to disorganization. Start running your business like a pro.
         </p>
         <p className="text-sm text-slate-500">
-          14-day free trial · No credit card required · Cancel anytime
+          14-day free trial · 2 Min Set Up· Cancel anytime
         </p>
       </section>
 
@@ -309,7 +309,7 @@ export default function PricingPage() {
           </h2>
 
           <p className="text-slate-400 mb-8">
-            Start your free trial today. No credit card needed.
+            Start your free trial today. 2 Min Set Up · Cancel anytime.
           </p>
 
           <div className="flex gap-3 justify-center">

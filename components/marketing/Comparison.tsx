@@ -152,7 +152,7 @@ export default function Comparison() {
             className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             style={{ background: '#1a6645', boxShadow: '0 8px 32px rgba(26,102,69,0.25)' }}
           >
-            Start free — no credit card needed
+            Start free today
             <ArrowRight size={16} />
           </Link>
           <p className="text-[11px] text-slate-400 font-medium mt-3">14-day free trial · Cancel anytime</p>

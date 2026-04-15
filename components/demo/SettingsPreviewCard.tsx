@@ -185,7 +185,7 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
             >
               Set up your account <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-center text-[10px] text-white/20 mt-2">14-day free trial · No credit card needed</p>
+            <p className="text-center text-[10px] text-white/20 mt-2">14-day free trial · Cancel Anytime</p>
           </div>
         </div>
       </motion.div>
