@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, Clock, Send, ChevronDown, ChevronUp, ArrowRight, Mail } from 'lucide-react';
 import { Lead, fmt } from '@/app/demo/page';
 import NextLink from 'next/link';
+import SentEmailPreview from '@/components/demo/SentEmailPreview';
 
 const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 const METHODS = ['Cash', 'Check', 'Credit Card', 'Venmo', 'Zelle', 'Other'];
@@ -29,6 +30,7 @@ export default function PaymentTab({ lead, onUpdate, tourStep, onTourAdvance }: 
 const [justPaid, setJustPaid]       = useState(false);
 const [showHistory, setShowHistory] = useState(false);
 const [reminderHistory, setReminderHistory] = useState<{date: string}[]>([]);
+const [showPreview, setShowPreview] = useState(false);
 
   const remaining  = Math.max(0, total - collected);
   const pct        = total > 0 ? Math.min(100, Math.round((collected / total) * 100)) : 0;
@@ -54,11 +56,12 @@ const [reminderHistory, setReminderHistory] = useState<{date: string}[]>([]);
     }, 2500);
   };
 
-  const handleRemind = () => {
-  setReminded(true);
-  setReminderHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
-  setTimeout(() => setReminded(false), 2500);
-};
+ const handleRemind = () => {
+    setReminded(true);
+    setShowPreview(true);
+    setReminderHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
+    setTimeout(() => setReminded(false), 2500);
+  };
 
   const inputCls = 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
 
@@ -189,11 +192,11 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
           <div className="flex flex-col gap-3">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Paid Date</label>
-<input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />            </div>
+<input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />
+           </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Due Date</label>
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />
-            </div>
+<input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />            </div>
           </div>
 
           {/* Mark Paid in Full */}
@@ -224,11 +227,11 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
             </button>
           )}
 
-         <div className="flex flex-col gap-2">
+         <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               disabled={saveAmount <= 0}
-              className={`py-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] ${
+              className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] ${
                 saved
                   ? 'bg-emerald-500 text-white'
                   : markFull
@@ -236,15 +239,15 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
                     : 'bg-slate-900 hover:bg-slate-800 text-white'
               }`}
             >
-{saved ? <><Check className="w-3.5 h-3.5" /> Recorded!</> : markFull ? <><Check className="w-3.5 h-3.5" /> Record Payment</> : 'Record Payment'}
+              {saved ? <><Check className="w-3.5 h-3.5" /> Recorded!</> : markFull ? <><Check className="w-3.5 h-3.5" /> Record Payment</> : 'Record Payment'}
             </button>
             <button
               onClick={handleRemind}
-              className={`py-4 bg-white border-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition active:scale-[0.98] ${
+              className={`flex-1 py-4 bg-white border-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition active:scale-[0.98] ${
                 reminded ? 'border-blue-300 text-blue-600' : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
               }`}
             >
-{reminded ? <><Check className="w-3.5 h-3.5" /> Sent!</> : <><Send className="w-3.5 h-3.5" /> Send Reminder</>}
+              {reminded ? <><Check className="w-3.5 h-3.5" /> Sent!</> : <><Send className="w-3.5 h-3.5" /> Send Reminder</>}
             </button>
           </div>
 
@@ -279,6 +282,16 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
         ))}
       </div>
     )}
+
+    {showPreview && (
+  <SentEmailPreview
+    type="payment"
+    customerName={lead.name}
+    customerEmail={lead.email}
+    amount={lead.quote_total ? `$${parseFloat(lead.quote_total).toLocaleString()}` : undefined}
+    onDismiss={() => setShowPreview(false)}
+  />
+)}
   </div>
 )}
 

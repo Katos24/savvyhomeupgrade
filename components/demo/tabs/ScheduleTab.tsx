@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Calendar, Clock, User, Check, Send, ChevronDown, ChevronUp, Hash, Mail } from 'lucide-react';
 import { Lead } from '@/app/demo/page';
+import SentEmailPreview from '@/components/demo/SentEmailPreview';
+
 
 const CREW = ['Mike T.', 'Carlos R.', 'Jay B.', 'Jack', 'Unassigned'];
 
@@ -36,6 +38,8 @@ export default function ScheduleTab({
   const [sent, setSent]           = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [sentHistory, setSentHistory] = useState<{date: string}[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
+
 
   const buildTime = () => {
     if (!timeHour || !timeMin) return '';
@@ -57,10 +61,11 @@ export default function ScheduleTab({
   };
 
   const handleSend = () => {
-    setSent(true);
-    setSentHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
-    setTimeout(() => setSent(false), 2000);
-  };
+  setSent(true);
+  setShowPreview(true);
+  setSentHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
+  setTimeout(() => setSent(false), 2000);
+};
 
   const inputCls = 'w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
 
@@ -121,33 +126,43 @@ export default function ScheduleTab({
         </div>
       </div>
 
-      {/* Save + Send */}
-      <div className="flex flex-col gap-2 pt-1">
+     {/* Save + Send */}
+      <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleSave}
           disabled={!date}
-          className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition disabled:opacity-40 ${
+          className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition disabled:opacity-40 ${
             saved ? 'bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'
           }`}
         >
           {saved ? <Check className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
-          {saved ? 'Saved!' : 'Save Schedule'}
+          {saved ? 'Saved!' : 'Save'}
         </button>
         <button
           onClick={handleSend}
           disabled={!date}
-          className={`w-full py-4 bg-white border-2 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition disabled:opacity-30 ${
+          className={`flex-1 py-4 bg-white border-2 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition disabled:opacity-30 ${
             sent ? 'border-emerald-300 text-emerald-600' : 'border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600'
           }`}
         >
           {sent ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          {sent ? 'Sent!' : 'Send Confirmation Email'}
+          {sent ? 'Sent!' : 'Send Confirmation'}
         </button>
       </div>
 
       <p className="text-center text-xs text-slate-400">
         Sends a branded confirmation email to the customer automatically.
       </p>
+
+      {showPreview && (
+  <SentEmailPreview
+    type="schedule"
+    customerName={lead.name}
+    customerEmail={lead.email}
+    date={date}
+    onDismiss={() => setShowPreview(false)}
+  />
+)}
 
       {/* Job Hours collapsible */}
       <div className="border-t border-slate-100 pt-3">

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, Check, DollarSign, Send, ArrowRight, Mail, ChevronUp, ChevronDown } from 'lucide-react';
 import { Lead, QuoteItem, fmt } from '@/components/demo/types';
+import SentEmailPreview from '@/components/demo/SentEmailPreview';
 
 const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
@@ -20,6 +21,8 @@ const [saved, setSaved] = useState(false);
 const [error, setError] = useState('');
 const [showHistory, setShowHistory] = useState(false);
 const [sentHistory, setSentHistory] = useState<{date: string}[]>([]);
+const [showPreview, setShowPreview] = useState(false);
+
 
   const total = items.reduce((s, i) => s + i.amount, 0);
 
@@ -71,9 +74,9 @@ const [sentHistory, setSentHistory] = useState<{date: string}[]>([]);
       <thead>
         <tr className="border-b border-gray-100">
           <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Line item</th>
-          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Unit price</th>
-          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-16">Qty</th>
-          <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Amount</th>
+        <th className="text-right px-3 py-3 text-xs font-medium text-gray-400 w-24">Unit price</th>
+          <th className="text-right px-3 py-3 text-xs font-medium text-gray-400 w-20">Qty</th>
+          <th className="text-right px-3 py-3 text-xs font-medium text-gray-400 w-24">Amount</th>
           <th className="w-9" />
         </tr>
       </thead>
@@ -116,7 +119,7 @@ className="w-full outline-none text-sm font-medium text-gray-900 placeholder-gra
                     }}
 className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-transparent px-1 py-1 focus:bg-white focus:border focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all ${noSpinners}`}                  />
                 </td>
-                <td className="px-5 py-2.5">
+               <td className="px-3 py-2.5">
                   <input
                     type="number"
                     value={item.quantity || ''}
@@ -158,76 +161,48 @@ className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-t
     </table>
   </div>
 
-  {/* Mobile cards */}
+{/* Mobile cards */}
   <div className="sm:hidden">
     {items.length === 0 ? (
       <button
         onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-        className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
+        className="w-full py-12 flex flex-col items-center justify-center gap-3"
       >
-        <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+        <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
           <Plus className="w-5 h-5 text-white stroke-[3px]" />
         </div>
-        <span className="text-xs font-bold text-indigo-500">Add line item</span>
+        <span className="text-xs font-bold text-indigo-500">Add first line item</span>
       </button>
     ) : (
-      <div className="p-3 flex flex-col gap-2">
-        {items.map(item => (
-          <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-4">
-            <input
-              type="text"
-              value={item.description}
-              onChange={e => setItems(prev => prev.map(i => i.id === item.id ? { ...i, description: e.target.value } : i))}
-              placeholder="Item description…"
-              className="w-full text-sm font-semibold text-gray-900 outline-none border border-slate-200 rounded-xl px-3 py-2 mb-3 focus:border-indigo-400 transition"
-            />
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Amount</p>
-                <p className="text-lg font-bold text-gray-900">${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-              </div>
-              <div className="w-px h-8 bg-gray-100" />
-              <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Price</p>
-                <input
-                  type="number"
-                  value={item.unitPrice || ''}
-                  onChange={e => {
-                    const unitPrice = parseFloat(e.target.value) || 0;
-                    setItems(prev => prev.map(i => i.id === item.id ? { ...i, unitPrice, amount: unitPrice * i.quantity } : i));
-                  }}
-                  className={`w-20 text-sm font-semibold text-gray-700 outline-none border border-slate-200 rounded-lg px-2 py-1 focus:border-indigo-400 transition ${noSpinners}`}
-                />
-              </div>
-              <div className="w-px h-8 bg-gray-100" />
-              <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Qty</p>
-                <input
-                  type="number"
-                  value={item.quantity || ''}
-                  onChange={e => {
-                    const quantity = parseFloat(e.target.value) || 1;
-                    setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity, amount: i.unitPrice * quantity } : i));
-                  }}
-                  className={`w-14 text-sm font-semibold text-gray-700 outline-none border border-slate-200 rounded-lg px-2 py-1 text-center focus:border-indigo-400 transition ${noSpinners}`}
-                />
-              </div>
+      <div className="divide-y divide-slate-100">
+        {items.map((item, idx) => (
+          <div key={item.id} className="flex items-center justify-between px-4 py-3 gap-3">
+           <div className="min-w-0" style={{ maxWidth: '55%' }}>
+              <p className="text-sm font-bold text-slate-900 truncate">{item.description || 'Untitled item'}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                {`${item.quantity} × $${item.unitPrice.toLocaleString()}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <p className="text-sm font-black text-slate-900">${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
               <button
                 onClick={() => removeItem(item.id)}
-                className="ml-auto p-2 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 transition-colors"
+                className="p-1.5 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         ))}
-        <button
-          onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-          className="w-full border-2 border-dashed border-indigo-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all group"
-        >
-          <Plus className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-semibold text-indigo-400">Add line item</span>
-        </button>
+        <div className="px-4 py-3">
+          <button
+            onClick={() => setItems(prev => [...prev, { id: `item_${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
+            className="w-full border-2 border-dashed border-indigo-200 rounded-xl py-3 flex items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all"
+          >
+            <Plus className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs font-semibold text-indigo-400">Add line item</span>
+          </button>
+        </div>
       </div>
     )}
   </div>
@@ -241,41 +216,38 @@ className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-t
       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total</p>
       <p className="text-xl font-black text-slate-900">{fmt(total)}</p>
     </div>
-    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-      {tourStep !== 'send-quote' && (
-        <>
-          <button
-            onClick={handleSave}
-            disabled={items.length === 0}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 ${
-              saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 hover:bg-slate-700 text-white'
-            }`}
-          >
-            {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save Quote'}
-          </button>
-        </>
-      )}
-      {(saved || tourStep === 'send-quote') && (
-        <button
-          onClick={() => {
-            onUpdate({ status: 'quoted' });
-            setSentHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
-            onTourAdvance?.('accepted');
-            setTimeout(() => onTourAdvance?.('mark-paid'), 2200);
-          }}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-black text-[11px] uppercase tracking-widest transition hover:border-indigo-300 hover:text-indigo-600 animate-in fade-in duration-300 active:scale-95"
-        >
-          <Send className="w-3.5 h-3.5" />
-          Send Quote
-        </button>
-      )}
+   <div className="flex items-center gap-2 shrink-0">
+      <button
+        onClick={handleSave}
+        disabled={items.length === 0}
+        className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 ${
+          saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 hover:bg-slate-700 text-white'
+        }`}
+      >
+        {saved ? <><Check className="w-3.5 h-3.5" /> Saved!</> : 'Save Quote'}
+      </button>
+      <button
+        onClick={() => {
+          onUpdate({ status: 'quoted' });
+          setSentHistory(prev => [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }, ...prev]);
+          setShowPreview(true);
+        }}
+        disabled={items.length === 0}
+        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-black text-[11px] uppercase tracking-widest transition hover:border-indigo-300 hover:text-indigo-600 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Send className="w-3.5 h-3.5" />
+        Send
+      </button>
     </div>
   </div>
   {tourStep === 'send-quote' && (
     <p className="text-[10px] font-bold text-indigo-400 pb-2 text-right pr-4 animate-pulse">
       ↑ Send it — Michael gets an email to Accept / Decline
     </p>
+    
   )}
+
+  
 </div>
 
      {sentHistory.length > 0 && (
@@ -309,13 +281,27 @@ className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg bg-t
         ))}
       </div>
     )}
+
+    {showPreview && (
+  <SentEmailPreview
+    type="quote"
+    customerName={lead.name}
+    customerEmail={lead.email}
+    amount={lead.quote_total ? `$${parseFloat(lead.quote_total).toLocaleString()}` : undefined}
+    onDismiss={() => setShowPreview(false)}
+  />
+)}
   </div>
+
+
 )}
 
 <p className="text-center text-xs text-gray-400">
   In your real account, you can email this quote to the customer with one click.
 </p>
     </div>
+
+    
   );
 }
 
