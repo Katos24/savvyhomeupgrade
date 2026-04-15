@@ -9,7 +9,6 @@ import {
   Download, ChevronLeft, ChevronRight, Image, CheckCircle2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { Lead, STATUS_OPTIONS, fmt } from '@/components/demo/types';
-import { type TourStep } from '@/components/demo/DemoTour';
 import { FolderOpen, CreditCard } from 'lucide-react';
 import OverviewTab from '@/components/demo/tabs/OverviewTab';
 import ScheduleTab from '@/components/demo/tabs/ScheduleTab';
@@ -17,7 +16,6 @@ import QuoteTab from '@/components/demo/tabs/QuoteTab';
 import PaymentTab from '@/components/demo/tabs/PaymentTab';
 import TasksTab from '@/components/demo/tabs/TasksTab';
 import AIBriefTab from '@/components/demo/tabs/AIBriefTab';
-import { TourProgressBar } from '@/components/demo/DemoTour';
 
 // ─── MOCK MEDIA DATA ──────────────────────────────────────────────────────────
 
@@ -258,29 +256,15 @@ type Props = {
   darkMode: boolean;
   onClose: () => void;
   onUpdate: (updates: Partial<Lead>) => void;
-  tourStep?: TourStep;
-  onTourAdvance?: (step: TourStep) => void;
-  onTourDismiss?: () => void;
 };
 
 // ─── MAIN MODAL ───────────────────────────────────────────────────────────────
 
 export default function LeadModal({
   lead, darkMode, onClose, onUpdate,
-  tourStep, onTourAdvance, onTourDismiss,
 }: Props) {
-const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'media' | 'ai'>(
-  tourStep === 'schedule-assign' || tourStep === 'schedule-done' ? 'schedule' :
-  tourStep === 'tasks-check'     || tourStep === 'tasks-done'    ? 'tasks' :
-  tourStep === 'save-quote' || tourStep === 'send-quote' || tourStep === 'accepted' ? 'quote' :
-  tourStep === 'mark-paid' ? 'payment' : 'overview'
-);
-useEffect(() => {
-  if (tourStep === 'schedule-assign' || tourStep === 'schedule-done') setActiveTab('schedule');
-  else if (tourStep === 'tasks-check' || tourStep === 'tasks-done')   setActiveTab('tasks');
-  else if (tourStep === 'save-quote' || tourStep === 'send-quote' || tourStep === 'accepted') setActiveTab('quote');
-  else if (tourStep === 'mark-paid') setActiveTab('payment');
-}, [tourStep]);
+const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'media' | 'ai'>('overview');
+
 const [showStatusMenu, setShowStatusMenu] = useState(false);
 const [showCompletedPrompt, setShowCompletedPrompt] = useState(false);
 
@@ -377,10 +361,6 @@ const handleStatusChange = (newStatus: string) => {
               )}
             </div>
 
-            {/* Tour progress bar */}
-{tourStep && !['idle','welcome','pick-card','done','schedule-assign','schedule-done','tasks-check','tasks-done'].includes(tourStep) && (
-  <TourProgressBar step={tourStep} />
-)}
 
 {/* Tab bar */}
 <div className="flex items-center overflow-x-auto gap-0" style={{ scrollbarWidth: 'none' }}>
@@ -458,26 +438,10 @@ const handleStatusChange = (newStatus: string) => {
  
  {/* Existing tabs */}
     {activeTab === 'overview' && <OverviewTab lead={lead} />}
-    {activeTab === 'schedule' && (
-  <ScheduleTab lead={lead} onUpdate={onUpdate} tourStep={tourStep} onTourAdvance={onTourAdvance} />
-)}
-{activeTab === 'quote' && (
-  <QuoteTab
-    lead={lead}
-    onUpdate={onUpdate}
-    tourStep={tourStep}
-    onTourAdvance={onTourAdvance}
-  />
-)}
-{activeTab === 'payment' && (
-  <PaymentTab
-    lead={lead}
-    onUpdate={onUpdate}
-    tourStep={tourStep}
-    onTourAdvance={onTourAdvance}
-  />
-)}
-    {activeTab === 'tasks' && <TasksTab lead={lead} onUpdate={onUpdate} tourStep={tourStep} onTourAdvance={onTourAdvance} />}
+{activeTab === 'schedule' && <ScheduleTab lead={lead} onUpdate={onUpdate} />}
+    {activeTab === 'quote' && <QuoteTab lead={lead} onUpdate={onUpdate} />}
+    {activeTab === 'payment' && <PaymentTab lead={lead} onUpdate={onUpdate} />}
+    {activeTab === 'tasks' && <TasksTab lead={lead} onUpdate={onUpdate} />}
     {activeTab === 'media'    && <MediaTab    lead={lead} />}
     {activeTab === 'ai'       && <AIBriefTab  lead={lead} />}
 

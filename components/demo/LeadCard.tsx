@@ -4,7 +4,7 @@ import { Calendar, Clock, Camera, ChevronRight, Sparkles, Zap } from 'lucide-rea
 import { Lead, STATUS_OPTIONS, fmt } from '@/components/demo/types';
 import { motion } from 'framer-motion';
 
-type Props = { lead: Lead & { isNew?: boolean }; darkMode: boolean; onClick: () => void; tourActive?: boolean };
+type Props = { lead: Lead & { isNew?: boolean }; darkMode: boolean; onClick: () => void; highlighted?: boolean };
 
 function formatTime(time?: string) {
   if (!time) return 'Not set';
@@ -20,7 +20,7 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function LeadCard({ lead, darkMode, onClick, tourActive }: Props) {
+export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props) {
   const s = STATUS_OPTIONS.find(o => o.value === lead.status) || STATUS_OPTIONS[0];
   const isCompleted = lead.status === 'completed';
   const isNew = (lead as any).isNew;
@@ -33,8 +33,10 @@ export default function LeadCard({ lead, darkMode, onClick, tourActive }: Props)
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', damping: 22, stiffness: 300 }}
           onClick={onClick}
-          className={`group relative flex bg-[#141821] border-2 rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-blue-500/50 shadow-sm hover:shadow-xl cursor-pointer ${
-            isNew ? 'border-emerald-500/60 shadow-emerald-500/10' : 'border-white'
+         className={`group relative flex border-2 rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-blue-500/50 shadow-sm hover:shadow-xl cursor-pointer ${
+            isNew ? 'border-emerald-500/60 shadow-emerald-500/10 bg-[#141821]' :
+            (lead as any).highlighted ? 'border-indigo-400 bg-white shadow-indigo-200/50 shadow-xl' :
+            'border-white bg-[#141821]'
           } ${isCompleted ? 'opacity-60' : ''}`}
         >
           {isNew && (
@@ -127,18 +129,6 @@ export default function LeadCard({ lead, darkMode, onClick, tourActive }: Props)
           </div>
         </motion.div>
 
-        {tourActive && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center justify-center gap-2 mt-2"
-          >
-            <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: '#818cf8' }} />
-            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>Open this lead to start</p>
-            <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: '#818cf8' }} />
-          </motion.div>
-        )}
       </>
     );
   }
@@ -232,18 +222,7 @@ export default function LeadCard({ lead, darkMode, onClick, tourActive }: Props)
         </div>
       </motion.div>
 
-      {tourActive && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center justify-center gap-2 mt-2"
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0" />
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>Open this lead to start</p>
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0" />
-        </motion.div>
-      )}
+   
     </>
   );
 }

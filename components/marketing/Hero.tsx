@@ -66,11 +66,12 @@ export default function Hero() {
                     <span className="text-[10px] text-slate-400 font-medium tracking-tight">Cancel anytime</span>
                 </div>
               </div>
-              <Link 
+             <Link 
                 href="/demo" 
-                className="text-sm font-bold text-slate-400 hover:text-[#0F1F3D] transition-colors border-b border-transparent hover:border-[#0F1F3D]"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-[#0F1F3D] text-[#0F1F3D] font-black text-sm hover:bg-[#0F1F3D] hover:text-white transition-all active:scale-[0.98]"
               >
                 See the live demo first
+                <ArrowRight size={15} />
               </Link>
             </div>
           </div>
@@ -96,9 +97,10 @@ export default function Hero() {
             <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">No credit card required</p>
             <Link 
               href="/demo" 
-              className="text-xs font-bold text-slate-400 underline underline-offset-4"
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-[#0F1F3D] text-[#0F1F3D] font-black text-sm hover:bg-[#0F1F3D] hover:text-white transition-all"
             >
-              See a live demo first
+              See the live demo first
+              <ArrowRight size={15} />
             </Link>
           </div>
         </div>

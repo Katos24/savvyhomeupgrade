@@ -1092,11 +1092,11 @@ const handleTourStart = (flow: TourFlow) => {
       position: 'relative',
     } : {}}
   >
-    <LeadCard
+   <LeadCard
       lead={lead}
-      darkMode={lead.id === 1 && tourStep === 'pick-card' ? false : isDark}
+      darkMode={isDark}
       onClick={() => handleSelectLead(lead)}
-      tourActive={lead.id === 1 && tourStep === 'pick-card'}
+      highlighted={lead.id === 1}
     />
     {lead.id === 1 && tourStep === 'pick-card' && (
       <div className="absolute inset-0 rounded-2xl pointer-events-none"
@@ -1153,33 +1153,19 @@ const handleTourStart = (flow: TourFlow) => {
         </div>
       </div>
 
-      {/* ── MODALS ────────────────────────────────────────────────────────── */}
-     <AnimatePresence>
-  {tourStep === 'welcome' && (
-    <WelcomeModal
-      onStart={() => advanceTo('pick-card')}
-      onSkip={dismissTour}
-    />
-  )}
-</AnimatePresence>
-
-{selectedLead && (
-  <LeadModal
+    {/* ── MODALS ────────────────────────────────────────────────────────── */}
+      {selectedLead && (
+        <LeadModal
           lead={leads.find(l => l.id === selectedLead.id) || selectedLead}
           darkMode={isDark}
           onClose={() => setSelectedLead(null)}
           onUpdate={(updates) => updateLead(selectedLead.id, updates)}
-          tourStep={tourStep}
-          onTourAdvance={advanceTo}
-          onTourDismiss={dismissTour}
         />
       )}
 
- 
-
-{showCreateModal && (
-  <DemoCreateModal isDark={isDark} onClose={() => setShowCreateModal(false)} />
-)}
+      {showCreateModal && (
+        <DemoCreateModal isDark={isDark} onClose={() => setShowCreateModal(false)} />
+      )}
 
       {showSettings && <SettingsPreviewCard onClose={() => setShowSettings(false)} />}
 
