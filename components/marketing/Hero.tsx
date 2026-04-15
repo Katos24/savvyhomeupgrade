@@ -17,8 +17,8 @@ export default function Hero() {
       />
 
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-16">
-          
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-center mb-8 lg:mb-16">
+
           {/* LEFT CONTENT */}
           <div className="flex flex-col items-start text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1a6645]/10 text-[#1a6645] mb-6">
@@ -35,8 +35,8 @@ export default function Hero() {
               <span className="text-[#1a6645]">text thread.</span>
             </h1>
 
-            <div className="relative mb-8">
-              <div className="absolute -left-6 top-0 bottom-0 w-1.5 bg-[#1a6645] hidden lg:block rounded-full" />
+<div className="relative mb-4 lg:mb-8">
+                <div className="absolute -left-6 top-0 bottom-0 w-1.5 bg-[#1a6645] hidden lg:block rounded-full" />
               <p className="text-xl md:text-2xl font-black text-[#0F1F3D] leading-tight mb-3">
                 Manage your empire from the couch <br className="hidden md:block" />
                 while you watch the game.
