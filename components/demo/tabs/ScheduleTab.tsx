@@ -90,11 +90,12 @@ export default function ScheduleTab({
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
           <Calendar className="w-3 h-3 text-indigo-400" /> Job Date
         </label>
-        <input
+       <input
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className={inputCls}
+          className={`${inputCls} max-w-full`}
+          style={{ maxWidth: '100%' }}
         />
       </div>
 

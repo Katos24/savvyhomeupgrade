@@ -453,13 +453,7 @@ const handleStatusChange = (newStatus: string) => {
           <button onClick={onClose} className="flex-1 py-3 border-2 border-gray-100 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 rounded-xl transition">
             Close
           </button>
-          <Link
-            href="/signup"
-            className="flex-[2] py-3 text-sm font-bold text-white text-center transition flex items-center justify-center gap-2 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-          >
-            Start Free Trial <ArrowRight className="w-4 h-4" />
-          </Link>
+        
         </div>
       </div>
     </div>

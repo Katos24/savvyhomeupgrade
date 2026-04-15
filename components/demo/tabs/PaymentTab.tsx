@@ -189,11 +189,10 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
           <div className="flex flex-col gap-3">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Paid Date</label>
-              <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={inputCls} />
-            </div>
+<input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />            </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Due Date</label>
-              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputCls} />
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />
             </div>
           </div>
 
