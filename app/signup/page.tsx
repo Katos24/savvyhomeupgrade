@@ -140,54 +140,80 @@ const [formData, setFormData] = useState({
         onEdit={() => setShowConfirm(false)}
       />
 
-      {/* Sidebar */}
-      <div className="hidden lg:flex lg:w-[400px] bg-slate-900 p-12 flex-col justify-between text-white sticky top-0 h-screen">
-        <div>
-          <div className="flex items-center gap-3 mb-16 cursor-pointer" onClick={() => router.push('/')}>
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-xl">
-              L2P
-            </div>
-            <span className="text-2xl font-black tracking-tighter text-white">Lead2Project</span>
-          </div>
-
-          <h2 className="text-4xl font-black leading-tight mb-8">
-            The Operating System for <span className="text-indigo-400">Pro Services.</span>
-          </h2>
-
-          <div className="space-y-8">
-            {[
-              { icon: <Clock className="w-5 h-5 text-indigo-400" />, text: 'Start with a 14-day free trial' },
-              { icon: <Zap className="w-5 h-5 text-indigo-400" />, text: 'Convert leads to projects in seconds' },
-              { icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />, text: 'Secure, automated client payments' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-4 text-slate-300 font-medium">
-                <div className="mt-1">{item.icon}</div>
-                <span className="text-lg leading-snug">{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-          <p className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-2">Step 1 of 2</p>
-          <p className="text-sm text-slate-300 font-bold">Create your administrative account to get started.</p>
-        </div>
+{/* Sidebar */}
+<div className="hidden lg:flex lg:w-[400px] bg-slate-900 p-12 flex-col justify-between text-white sticky top-0 h-screen">
+  <div>
+    {/* Brand */}
+    <div
+      className="flex items-center gap-3 mb-16 cursor-pointer"
+      onClick={() => router.push('/')}
+    >
+      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1">
+        <img
+          src="/Lead2ProjectLogo.png"
+          alt="Lead2Project"
+          className="w-full h-full object-contain"
+        />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-8 md:px-12 lg:px-24">
-        <div className="max-w-xl mx-auto">
+      <span className="text-2xl font-black tracking-tighter text-white">
+        Lead2Project
+      </span>
+    </div>
 
-          {/* Mobile Header */}
-          <div className="flex lg:hidden items-center justify-between mb-10">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm">
-                L2P
-              </div>
-              <span className="font-black tracking-tighter text-slate-900">Lead2Project</span>
-            </div>
-          </div>
+    {/* Headline */}
+    <h2 className="text-4xl font-black leading-tight mb-8">
+      The Operating System for{" "}
+      <span className="text-indigo-400">Pro Services.</span>
+    </h2>
 
+    {/* Feature list */}
+    <div className="space-y-8">
+      {[
+        { icon: <Clock className="w-5 h-5 text-indigo-400" />, text: 'Start with a 14-day free trial' },
+        { icon: <Zap className="w-5 h-5 text-indigo-400" />, text: 'Convert leads to projects in seconds' },
+        { icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />, text: 'Secure, automated client payments' },
+      ].map((item, i) => (
+        <div key={i} className="flex items-start gap-4 text-slate-300 font-medium">
+          <div className="mt-1">{item.icon}</div>
+          <span className="text-lg leading-snug">{item.text}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Bottom card */}
+  <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+    <p className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-2">
+      Step 1 of 2
+    </p>
+    <p className="text-sm text-slate-300 font-bold">
+      Create your administrative account to get started.
+    </p>
+  </div>
+</div>
+
+{/* Main Content */}
+<div className="flex-1 overflow-y-auto px-4 py-8 md:px-12 lg:px-24">
+  <div className="max-w-xl mx-auto">
+
+    {/* Mobile Header */}
+    <div className="flex lg:hidden items-center justify-between mb-10 px-1">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center p-1">
+          <img
+            src="/Lead2ProjectLogo.png"
+            alt="Lead2Project"
+            className="w-full h-full object-contain"
+          />
+        </div>
+
+        <span className="font-black tracking-tighter text-slate-900">
+          Lead2Project
+        </span>
+      </div>
+    </div>
+    
           <div className="mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full mb-4">
               <UserPlus className="w-3.5 h-3.5" />

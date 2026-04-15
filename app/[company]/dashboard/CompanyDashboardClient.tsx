@@ -134,7 +134,14 @@ const [globalStats, setGlobalStats] = useState<any>(null); // ← add here
 
   // UI state
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<ViewMode>('cards');
+const [currentView, setCurrentView] = useState<ViewMode>(() => {
+  if (typeof window === 'undefined') return 'cards';
+  return (localStorage.getItem('dashboard-view') as ViewMode) || 'cards';
+});
+
+useEffect(() => {
+  localStorage.setItem('dashboard-view', currentView);
+}, [currentView]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
