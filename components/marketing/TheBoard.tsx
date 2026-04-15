@@ -195,7 +195,7 @@ const VIEWS = [
 ];
 
 export default function TheBoard() {
-  const [current, setCurrent] = useState<View>('outbox');
+const [current, setCurrent] = useState<View>('table');
   const { ref, visible } = useFadeIn();
 
   return (
@@ -249,7 +249,7 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
               Get started — it's free
               <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <p className="text-[11px] font-semibold text-slate-600 mt-3">14-day free trial · No credit card required</p>
+            <p className="text-[11px] font-semibold text-slate-600 mt-3">14-day free trial · Cancel anytime</p>
           </div>
 
           {/* RIGHT — laptop */}

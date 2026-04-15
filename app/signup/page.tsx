@@ -39,16 +39,18 @@ const plan = searchParams.get('plan') || 'basic';
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
 
-  const [formData, setFormData] = useState({
-    companyName: '',
-    slug: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    businessType: 'general',
-    ownerName: '',
-  });
+const [formData, setFormData] = useState({
+  companyName: '',
+  slug: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  businessType: '',
+  ownerName: '',
+});
+
+
 
   const handleCompanyNameChange = (name: string) => {
     const slug = name
@@ -72,27 +74,32 @@ const plan = searchParams.get('plan') || 'basic';
   };
 
   // Step 1 — validate form, open confirm modal
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
+  if (!formData.businessType) {
+    setError('Please select a business type');
+    return;
+  }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+  if (formData.password.length < 6) {
+    setError('Password must be at least 6 characters');
+    return;
+  }
 
-    if (!agreedToTerms) {
-  setError('Please agree to the Terms of Service to continue');
-  return;
-}
+  if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
 
-    setShowConfirm(true);
-  };
+  if (!agreedToTerms) {
+    setError('Please agree to the Terms of Service to continue');
+    return;
+  }
+
+  setShowConfirm(true);
+};
 
   // Step 2 — user confirmed in modal, fire API
   const handleConfirm = async () => {
@@ -208,69 +215,6 @@ const plan = searchParams.get('plan') || 'basic';
               />
 
 
-  {formData.slug && (
-  <motion.div
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="space-y-3 pt-2"
-  >
-
-    {/* Header */}
-    <div className="flex items-center gap-3 px-1">
-      <div className="h-px flex-1 bg-slate-100" />
-      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Previewing Your Portals</span>
-      <div className="h-px flex-1 bg-slate-100" />
-    </div>
-
-    {/* Cards */}
-    <div className="grid grid-cols-2 gap-3">
-
-      {/* Customer Portal */}
-      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center shrink-0">
-            <Globe className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Customer Form</span>
-          <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Public</span>
-        </div>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
-          <span className="font-semibold text-slate-700">Share with customers.</span> They submit requests straight to you.
-        </p>
-        <div className="rounded-xl bg-white border border-dashed border-slate-300 px-3 py-2.5 break-all">
-          <span className="text-[13px] font-medium text-slate-300">lead2project.com/</span><span className="text-[13px] font-bold text-slate-700">{formData.slug}</span>
-        </div>
-      </div>
-
-      {/* Dashboard */}
-      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-700 bg-slate-900">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
-            <LayoutGrid className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Dashboard</span>
-          <span className="ml-auto text-[10px] font-bold text-indigo-300 bg-indigo-900 border border-indigo-700 px-2 py-0.5 rounded-full">Private</span>
-        </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          <span className="font-semibold text-slate-200">Your private view.</span> Every lead lands here — only you have access.
-        </p>
-        <div className="rounded-xl bg-slate-800 border border-dashed border-slate-600 px-3 py-2.5 break-all">
-          <span className="text-[13px] font-medium text-slate-500">lead2project.com/</span><span className="text-[13px] font-bold text-indigo-400">{formData.slug}</span><span className="text-[13px] font-medium text-slate-500">/dashboard</span>
-        </div>
-      </div>
-
-    </div>
-
-    {/* Activation nudge */}
-    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-100">
-      <Lock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-      <p className="text-[12px] text-indigo-600 font-medium leading-snug">
-        These portals activate instantly after your trial starts. <span className="font-bold">No charge today.</span>
-      </p>
-    </div>
-
-  </motion.div>
-)}
 
             <div className="space-y-2">
   <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">
@@ -421,8 +365,15 @@ function CustomInput({ label, value, onChange, placeholder, type = 'text', hint,
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium text-base shadow-sm ${isPassword ? 'pr-12' : ''} ${important ? 'border-indigo-200' : 'border-slate-200'}`}
-        />
+className={`
+  w-full px-4 py-3.5 rounded-xl border shadow-sm outline-none transition-all
+  !text-slate-900 !font-black text-base
+  placeholder:text-slate-300 placeholder:font-medium
+  focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500
+  bg-white
+  ${isPassword ? 'pr-12' : ''}
+  ${important ? 'border-indigo-200' : 'border-slate-200'}
+`}    />
         {isPassword && (
           <button
             type="button"

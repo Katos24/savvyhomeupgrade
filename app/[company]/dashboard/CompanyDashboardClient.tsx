@@ -711,50 +711,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
 <div className="flex items-center gap-2 shrink-0">
   {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />}
 
-  {/* Search icon — expands inline */}
-  <div className="relative flex items-center">
-    {searchQuery ? (
-      <div className="relative">
-        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
-        <input
-          autoFocus
-          type="search"
-          placeholder="Search..."
-          value={searchQuery}
-          onChange={e => {
-            const val = e.target.value;
-            setSearchQuery(val);
-            if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-            if (val.trim().length >= 2) {
-              setIsSearching(true);
-              searchTimeoutRef.current = setTimeout(async () => {
-                await fetchLeads(1, true, { search: val.trim() });
-                setIsSearching(false);
-              }, 400);
-            } else if (val.trim() === '') {
-              fetchLeads(1, true, { search: '' });
-            }
-          }}
-          className={`pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold w-48 outline-none border transition-all ${
-            isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/20' : 'bg-slate-50 border-slate-200 text-slate-900'
-          }`}
-        />
-        <button onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-400">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    ) : (
-      <button
-        onClick={() => setSearchQuery(' ')}
-        className={`p-2.5 rounded-xl border transition-all ${
-          isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900'
-        }`}
-      >
-        <Search className="w-4 h-4" />
-      </button>
-    )}
-  </div>
+
 
   <button
     onClick={() => setIsCreateModalOpen(true)}

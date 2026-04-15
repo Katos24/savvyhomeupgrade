@@ -100,7 +100,6 @@ export default function Hero() {
               className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-[#0F1F3D] text-[#0F1F3D] font-black text-sm hover:bg-[#0F1F3D] hover:text-white transition-all"
             >
               See the live demo first
-              <ArrowRight size={15} />
             </Link>
           </div>
         </div>

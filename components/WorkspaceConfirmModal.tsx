@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { ArrowRight, Globe, Lock, Pencil } from 'lucide-react';
 
 interface WorkspaceConfirmModalProps {
@@ -19,81 +18,83 @@ export default function WorkspaceConfirmModal({
   if (!isOpen || !slug) return null;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-    }}>
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 sm:p-4">
+
       {/* Backdrop */}
       <div
         onClick={onEdit}
-        style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(12px)' }}
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
       />
 
-      {/* Card */}
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: '460px',
-        backgroundColor: '#ffffff', borderRadius: '24px',
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden',
-      }}>
+      {/* Modal */}
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
 
         {/* Header */}
-<div style={{ padding: 'clamp(16px, 5vw, 28px) clamp(16px, 5vw, 28px) 20px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{
-            display: 'inline-flex', padding: '5px 12px',
-            backgroundColor: '#FEF2F2', border: '1px solid #FEE2E2',
-            borderRadius: '100px', marginBottom: '14px',
-          }}>
-            <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#EF4444' }}>
+        <div className="p-4 sm:p-6 text-center border-b border-slate-100">
+
+          <div className="inline-flex px-3 py-1 mb-3 rounded-full bg-red-50 border border-red-100">
+            <span className="text-[10px] font-black uppercase tracking-widest text-red-500">
               Double-check before continuing
             </span>
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+
+          <h2 className="text-lg sm:text-xl font-black text-slate-900">
             Does your URL look right?
           </h2>
-          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: 500, lineHeight: 1.6 }}>
-            This becomes your permanent address — it cannot be changed later.<br />
-            Words are separated by hyphens <strong style={{ color: '#0f172a' }}>( - )</strong>.
+
+          <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">
+            This becomes your permanent workspace URL and cannot be changed later.
           </p>
+
+          {/* ✅ SIMPLE CLARITY FIX */}
+          <p className="mt-2 text-[11px] font-semibold text-slate-500">
+  Your URL will be auto-formatted (e.g. “blue line” → “blue-line”)
+          </p>
+
         </div>
 
-        {/* URL Preview */}
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Content */}
+        <div className="p-4 sm:p-6 space-y-4">
 
-          {/* Customer Form */}
-          <div style={{ borderRadius: '14px', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', borderBottom: '1px solid #C8D5B0', display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#DBEAFE' }}>
-              <Globe size={12} color="#1E3A5F" />
-              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#1E3A5F' }}>
-                Share with customers
+          {/* Public URL */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-100">
+              <Globe size={12} className="text-blue-800" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-800">
+                Customer form
               </span>
-              <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, color: '#1E3A5F', backgroundColor: '#BFDBFE', padding: '2px 8px', borderRadius: '100px' }}>
+              <span className="ml-auto text-[10px] font-bold text-blue-800 bg-blue-200 px-2 py-0.5 rounded-full">
                 Public
               </span>
             </div>
-            <div style={{ padding: '14px' }}>
-              <div style={{ backgroundColor: 'white', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '10px 14px', fontFamily: 'monospace', fontSize: '14px', wordBreak: 'break-all' }}>
-                <span style={{ color: '#94a3b8' }}>lead2project.com/</span>
-                <span style={{ color: '#0F2744', fontWeight: 900 }}>{slug}</span>
+
+            <div className="p-3 sm:p-4">
+              <div className="rounded-lg border border-blue-200 bg-white px-3 py-2 font-mono text-xs sm:text-sm break-all">
+                <span className="text-slate-400">lead2project.com/</span>
+                <span className="font-black text-slate-800">{slug}</span>
               </div>
             </div>
           </div>
 
-          {/* Dashboard */}
-          <div style={{ borderRadius: '14px', border: '1px solid #334155', backgroundColor: '#0F172A', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#1E293B' }}>
-              <Lock size={12} color="#A5B4FC" />
-              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A5B4FC' }}>
-                Your dashboard
+          {/* Dashboard URL */}
+          <div className="rounded-xl border border-slate-700 bg-slate-900 overflow-hidden">
+
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-800">
+              <Lock size={12} className="text-indigo-300" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">
+                Dashboard
               </span>
-              <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 700, color: '#818CF8', backgroundColor: '#1E2A4A', padding: '2px 8px', borderRadius: '100px' }}>
+              <span className="ml-auto text-[10px] font-bold text-indigo-300 bg-slate-700 px-2 py-0.5 rounded-full">
                 Private
               </span>
             </div>
-            <div style={{ padding: '14px' }}>
-              <div style={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '10px', padding: '10px 14px', fontFamily: 'monospace', fontSize: '14px', wordBreak: 'break-all' }}>
-                <span style={{ color: '#475569' }}>lead2project.com/</span>
-                <span style={{ color: '#818CF8', fontWeight: 900 }}>{slug}</span>
-                <span style={{ color: '#475569' }}>/dashboard</span>
+
+            <div className="p-3 sm:p-4">
+              <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 font-mono text-xs sm:text-sm break-all">
+                <span className="text-slate-500">lead2project.com/</span>
+                <span className="text-indigo-300 font-black">{slug}</span>
+                <span className="text-slate-500">/dashboard</span>
               </div>
             </div>
           </div>
@@ -101,31 +102,22 @@ export default function WorkspaceConfirmModal({
         </div>
 
         {/* Actions */}
-<div style={{ padding: '0 clamp(16px, 4vw, 24px) 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="p-4 sm:p-6 space-y-3">
+
           <button
             onClick={onConfirm}
-            style={{
-              width: '100%', height: '52px', backgroundColor: '#4F46E5',
-              color: 'white', border: 'none', borderRadius: '14px',
-              fontSize: '15px', fontWeight: 800, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            }}
+            className="w-full h-12 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center gap-2 hover:bg-indigo-700 active:scale-[0.99] transition"
           >
             Looks good — continue
-            <ArrowRight size={17} />
+            <ArrowRight size={16} />
           </button>
 
           <button
             onClick={onEdit}
-            style={{
-              width: '100%', height: '44px', backgroundColor: 'transparent',
-              color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '14px',
-              fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-            }}
+            className="w-full h-11 rounded-xl border border-slate-200 text-slate-500 font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition"
           >
-            <Pencil size={13} />
-            Fix my spelling
+            <Pencil size={14} />
+            Fix spelling
           </button>
         </div>
 
