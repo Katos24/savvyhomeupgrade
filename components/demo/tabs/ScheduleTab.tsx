@@ -65,7 +65,7 @@ export default function ScheduleTab({
   const inputCls = 'w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-hidden w-full">
 
       {/* Assigned To */}
       <div>
@@ -85,17 +85,17 @@ export default function ScheduleTab({
         </div>
       </div>
 
-      {/* Date */}
-      <div>
+  {/* Date */}
+      <div className="overflow-hidden">
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
           <Calendar className="w-3 h-3 text-indigo-400" /> Job Date
         </label>
-       <input
+        <input
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className={`${inputCls} max-w-full`}
-          style={{ maxWidth: '100%' }}
+          className={inputCls}
+          style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
         />
       </div>
 
