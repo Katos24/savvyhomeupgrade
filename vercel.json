@@ -1,4 +1,15 @@
 {
+  "functions": {
+    "app/api/ai/analyze-photos/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/ai/brief/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/ai/quote-status/route.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     { "path": "/api/cron/check-trials", "schedule": "0 11 * * *" },
     { "path": "/api/cron/daily-digest", "schedule": "0 11 * * *" },
