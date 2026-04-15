@@ -103,8 +103,8 @@ export default function ScheduleTab({
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
           <Clock className="w-3 h-3 text-indigo-400" /> Start Time
         </label>
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-indigo-400 focus-within:bg-white transition-all">
-          <select value={timeHour} onChange={e => setTimeHour(e.target.value)} className="bg-transparent text-sm font-black outline-none flex-1 cursor-pointer text-slate-900">
+        <div className="flex items-center gap-1 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-indigo-400 focus-within:bg-white transition-all">
+          <select value={timeHour} onChange={e => setTimeHour(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer text-slate-900 min-w-0">
             <option value="">HH</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
           </select>

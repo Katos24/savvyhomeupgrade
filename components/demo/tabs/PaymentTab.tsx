@@ -159,7 +159,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
       {/* ── INPUT FORM — hidden once fully paid ── */}
       {!isPaidFull && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Amount</label>
               <div className="relative">
@@ -186,7 +186,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Paid Date</label>
               <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={inputCls} />
@@ -225,7 +225,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
             </button>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
+         <div className="flex flex-col gap-2">
             <button
               onClick={handleSave}
               disabled={saveAmount <= 0}
