@@ -24,6 +24,15 @@ export async function POST(request: Request) {
       WHERE id = ${companyId}
     `;
 
+// Get company's first category for the sample lead
+    const [companyRow] = await sql`
+      SELECT form_categories FROM companies WHERE id = ${companyId}
+    `;
+    const cats = companyRow?.form_categories;
+    const firstCat = Array.isArray(cats) && cats.length > 0 
+      ? (cats[0].label || cats[0].value || 'General')
+      : 'General';
+
     // Create sample lead
     const sampleTasks = JSON.stringify([
       { id: 't1', label: 'Call customer to confirm details', done: false },
@@ -54,7 +63,7 @@ export async function POST(request: Request) {
         'Sarah Johnson',
         'sarah.j@email.com',
         '5551234567',
-        'Sample Job',
+         ${firstCat},
         'new',
         'This is a sample lead so you can see how everything works. Open it to explore tasks, quotes, scheduling, and more. Delete it whenever you''re ready.',
         '123 Main Street',
