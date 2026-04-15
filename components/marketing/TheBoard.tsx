@@ -195,8 +195,7 @@ const VIEWS = [
 ];
 
 export default function TheBoard() {
-  const [current, setCurrent] = useState<View>('cards');
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [current, setCurrent] = useState<View>('outbox');
   const { ref, visible } = useFadeIn();
 
   return (
@@ -218,11 +217,22 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
               <span className="text-[#1a6645]">We think you'll stay.</span>
             </h2>
 
-            <p className="text-slate-500 font-normal leading-loose mb-8 max-w-sm text-[0.9rem]" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
-                Most contractors run their business out of their phone's text thread, Excel 
-                and a notes app. This replaces all of it — every lead, quote, 
-                scheduled job, and unpaid balance in one place.
+          <p className="text-slate-500 font-normal leading-loose mb-6 max-w-sm text-[0.9rem]" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
+              Most contractors run their business out of their phone&apos;s text thread, Excel and a notes app. This replaces all of it — every lead, quote, scheduled job, and unpaid balance in one place.
             </p>
+            <div className="flex flex-col gap-2 mb-8 max-w-sm">
+              {[
+                'Bulk edit multiple leads at once from table view',
+                'Export all your data to CSV anytime',
+                'Cards, Table, Calendar, and Outbox views',
+                'Full data ownership — yours forever',
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1a6645] shrink-0" />
+                  <p className="text-sm font-medium text-slate-400">{item}</p>
+                </div>
+              ))}
+            </div>
 
       
 
@@ -306,31 +316,7 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-4 gap-1.5 px-4 py-2.5 border-b border-slate-100">
-  {STATS.map(s => (
-    <div key={s.label} className="rounded-lg border bg-slate-50 border-slate-100 px-2 py-1.5">
-      <div className="flex items-center gap-1 mb-0.5">
-        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.accent}`} />
-        <p className="text-[7px] font-bold uppercase text-slate-400 tracking-widest truncate">{s.label}</p>
-      </div>
-      <p className="text-[13px] font-black text-slate-900 truncate">{s.value}</p>
-    </div>
-  ))}
-</div>
-
-                  {/* Filter pills */}
-                  <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-100 overflow-x-auto no-scrollbar">
-                    <Filter size={10} className="text-slate-400 shrink-0" />
-                    {FILTERS.map(f => (
-                      <button key={f} onClick={() => setActiveFilter(activeFilter === f ? null : f)}
-                        className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider whitespace-nowrap border transition-all ${
-                          activeFilter === f ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-500'
-                        }`}>
-                        {f}
-                      </button>
-                    ))}
-                  </div>
+          
 
                   {/* Content */}
                   <div className="px-4 pt-3 h-[280px] overflow-hidden relative">

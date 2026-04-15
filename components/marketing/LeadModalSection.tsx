@@ -24,10 +24,10 @@ function useFadeIn(threshold = 0.1) {
 }
 
 const STEPS = [
-  { step: '01', title: 'Lead lands on your board',  desc: 'Name, contact, service, photos — all captured from the form. No manual entry, no missed details.',        color: '#6366f1' },
-  { step: '02', title: 'Schedule with one click',   desc: 'Assign crew, pick date and time. A branded confirmation email goes to the customer automatically.',         color: '#3b82f6' },
-  { step: '03', title: 'Send a quote in seconds',   desc: 'Build from templates or use the AI brief. Customer gets a branded email with accept / decline.',            color: '#10b981' },
-  { step: '04', title: 'Collect payment & close',   desc: 'Send a payment reminder in one click. Track every unpaid balance. Every email logged in your outbox.',     color: '#f59e0b' },
+  { step: '01', title: 'Lead lands on your board',  desc: 'Name, contact, service, photos — all captured from the form. No manual entry, no missed details.', color: '#6366f1' },
+  { step: '02', title: 'Schedule with one click',   desc: 'Pick a date, assign your crew, and send a branded confirmation email to the customer in one tap. They know exactly when you\'re coming. Pro feature.', color: '#3b82f6' },
+  { step: '03', title: 'Send a quote in seconds',   desc: 'Build from templates or let AI generate line items from photos. One click sends a branded quote email — customer accepts or declines right from their inbox. Pro feature.', color: '#10b981' },
+  { step: '04', title: 'Collect payment & close',   desc: 'One-click payment reminder emails. A dashboard banner shows every unpaid balance so nothing slips through. Every email you send is logged in your outbox. Pro feature.', color: '#f59e0b' },
 ];
 
 export default function LeadModalSection() {

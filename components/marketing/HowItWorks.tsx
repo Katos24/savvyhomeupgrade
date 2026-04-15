@@ -1,7 +1,14 @@
 'use client';
 
-import { Truck, Instagram, MapPin, Mail, ExternalLink, Zap, Sunrise } from 'lucide-react';
+import { Truck, Instagram, MapPin, Mail, ExternalLink, Zap } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
+
+const PILLS = [
+  { icon: <Truck size={14} />,     label: 'Truck Wraps'  },
+  { icon: <Instagram size={14} />, label: 'Social Bio'   },
+  { icon: <MapPin size={14} />,    label: 'Yard Signs'   },
+  { icon: <Mail size={14} />,      label: 'Email Footer' },
+];
 
 export default function HowItWorks() {
   const { ref, visible } = useFadeIn();
@@ -31,9 +38,9 @@ export default function HowItWorks() {
               </span>
             </div>
 
-            <h2
+           <h2
               className="font-black mb-6 text-white"
-              style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', lineHeight: 0.92, letterSpacing: '-0.04em' }}
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.8rem)', lineHeight: 0.95, letterSpacing: '-0.03em' }}
             >
               If your competition<br />
               is getting leads<br />
@@ -41,27 +48,17 @@ export default function HowItWorks() {
               <span style={{ color: '#1a6645' }}>you should be too.</span>
             </h2>
 
-            <p className="text-sm font-light leading-loose mb-8 text-slate-400 max-w-md mx-auto lg:mx-0">
-              While you're on a roof or under a sink, customers are scanning your
-              truck and submitting jobs with photos. You pull up your dashboard
-              at lunch and three leads are waiting — name, number, photos, budget.
-              No missed calls. No texts lost in your phone.
-            </p>
+      
 
-            {/* PLACEMENT PILLS */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center lg:justify-start gap-3">
-              {[
-                { icon: <Truck size={14} />,     label: 'Truck Wraps'  },
-                { icon: <Instagram size={14} />, label: 'Social Bio'   },
-                { icon: <MapPin size={14} />,    label: 'Yard Signs'   },
-                { icon: <Mail size={14} />,      label: 'Email Footer' },
-              ].map(item => (
+            {/* PLACEMENT PILLS — desktop only */}
+            <div className="hidden lg:flex flex-wrap justify-start gap-3">
+              {PILLS.map(item => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-2.5 px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:border-[#1a6645]/60 transition-all group"
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all group"
                 >
                   <span className="text-[#1a6645] group-hover:scale-110 transition-transform">{item.icon}</span>
-                  <span className="text-[11px] font-bold tracking-wide text-slate-300 uppercase">{item.label}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-slate-800 uppercase">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -92,6 +89,19 @@ export default function HowItWorks() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* PLACEMENT PILLS — mobile only, under image */}
+          <div className="lg:hidden order-3 grid grid-cols-2 gap-2 w-full max-w-[560px] mx-auto px-1">
+            {PILLS.map(item => (
+              <div
+                key={item.label}
+                className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl border border-slate-200 bg-white"
+              >
+                <span className="text-[#1a6645]">{item.icon}</span>
+                <span className="text-[11px] font-bold tracking-wide text-slate-800 uppercase">{item.label}</span>
+              </div>
+            ))}
           </div>
 
         </div>

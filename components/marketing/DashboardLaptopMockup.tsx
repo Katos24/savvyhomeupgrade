@@ -16,8 +16,8 @@ const LEADS = [
 ];
 
 const STATS = [
-  { label: 'Leads',   value: '168',   accent: '#6366f1' },
-  { label: 'Active',  value: '63',    accent: '#3b82f6' },
+  { label: 'Leads',   value: '168',  accent: '#6366f1' },
+  { label: 'Active',  value: '63',   accent: '#3b82f6' },
   { label: 'Revenue', value: '$102k', accent: '#10b981' },
   { label: 'Pending', value: '$122k', accent: '#f59e0b' },
 ];
@@ -36,7 +36,7 @@ const CYCLE: CycleMode[] = [
 
 function CardsPanel({ dark }: { dark: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-1.5 h-full overflow-hidden pb-2">
+    <div className="grid grid-cols-2 gap-1 h-full overflow-hidden pb-2">
       {LEADS.map(lead => (
         <div
           key={lead.name}
@@ -46,8 +46,8 @@ function CardsPanel({ dark }: { dark: boolean }) {
             background: dark ? '#161d2f' : '#ffffff',
           }}
         >
-          {/* Status */}
-          <div className="px-2 pt-2 pb-1">
+         {/* Status */}
+          <div className="px-1.5 pt-1.5 pb-1">
             <span
               className="inline-flex items-center gap-1 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
               style={{ background: `${lead.statusColor}20`, color: lead.statusColor }}
@@ -58,7 +58,7 @@ function CardsPanel({ dark }: { dark: boolean }) {
           </div>
 
           {/* Name */}
-          <div className="px-2 pb-1.5">
+          <div className="px-1.5 pb-1">
             <p className="text-[10px] font-black leading-tight truncate" style={{ color: dark ? '#f9fafb' : '#0f172a' }}>
               {lead.name}
             </p>
@@ -69,7 +69,7 @@ function CardsPanel({ dark }: { dark: boolean }) {
 
           {/* Stats */}
           <div
-            className="mx-1.5 mb-1.5 grid grid-cols-2 p-1 rounded-lg"
+            className="mx-1 mb-1 grid grid-cols-2 p-1 rounded-lg"
             style={{
               background: dark ? '#0d1117' : '#f8fafc',
               border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#e2e8f0'}`,
@@ -86,8 +86,8 @@ function CardsPanel({ dark }: { dark: boolean }) {
           </div>
 
           {/* Footer */}
-          <div
-            className="flex items-center justify-between px-2 py-1.5 mt-auto"
+        <div
+            className="flex items-center justify-between px-1.5 py-1 mt-auto"
             style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'}` }}
           >
             <div className="flex items-center gap-1">
@@ -319,7 +319,7 @@ export function DashboardLaptopMockup() {
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.accent }} />
                     <p style={{ fontSize: 6, fontWeight: 700, color: labelColor, textTransform: 'uppercase', letterSpacing: '.08em' }}>{s.label}</p>
                   </div>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: current.dark ? '#f9fafb' : '#0f172a', transition: 'color 0.4s ease' }}>{s.value}</p>
+                  <p style={{ fontSize: 9, fontWeight: 800, color: current.dark ? '#f9fafb' : '#0f172a', transition: 'color 0.4s ease' }}>{s.value}</p>
                 </div>
               ))}
             </div>
@@ -344,7 +344,7 @@ export function DashboardLaptopMockup() {
             </div>
 
             {/* Content area with crossfade */}
-<div className="relative" style={{ height: 180, overflow: 'hidden' }}>
+<div className="relative" style={{ height: 160, overflow: 'hidden' }}>
                 <AnimatePresence mode="wait">
                 <motion.div
                   key={`${cycleIdx}`}

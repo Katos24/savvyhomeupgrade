@@ -129,10 +129,10 @@ return (
 
         {/* STEP 1: GENERATE (IMAGE PLACEHOLDER) */}
         <div className="flex flex-col" style={panelStyle(0)}>
-          <StepLabel
+         <StepLabel
             number="1"
             title="Generate your link"
-            caption="Claim your unique blast link. Download your high-res QR code for trucks or copy the link for your Instagram bio and website."
+            caption="Sign up and instantly get two things: a custom booking link and a QR code. Blast them everywhere — truck wraps, yard signs, Instagram bio, email footer. Customers click or scan to submit a job request directly to you."
           />
           {/* YOUR IMAGE ADDS HERE */}
         <div className="relative rounded-2xl overflow-hidden shadow-xl border border-white/5 bg-[#0F172A]">
@@ -149,8 +149,7 @@ return (
           <StepLabel
             number="2"
             title="Setup your link"
-            caption="Customize your intake form. Choose the questions and photos you need to see before you even leave the couch."
-          />
+caption="Your form, your rules. Toggle address collection on or off, add custom questions, require photos or video. Customers see exactly what you want them to fill out — nothing more, nothing less."          />
           <FormBento />
         </div>
 
@@ -159,8 +158,7 @@ return (
           <StepLabel
             number="3"
             title="Capture everywhere"
-            caption="Customers scan your QR code on trucks or yard signs. They submit photos, you get a lead instantly."
-          />
+caption="Customer scans your truck, yard sign, or clicks your bio link. They fill out your form, upload photos, and hit submit. You get the lead on your dashboard in seconds — name, number, service, photos, all of it."          />
           <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl" style={{ minHeight: 320 }}>
             <img 
               src="/images/qr-scan-2.png" 
@@ -170,7 +168,7 @@ return (
            {/* Dark gradient so modal is readable */}
             <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/40" />
             {/* Success Modal — bottom right on mobile, top right on desktop */}
-            <div className="absolute bottom-3 right-3 sm:top-3 sm:bottom-auto z-10 scale-[0.65] origin-bottom-right sm:scale-[0.82] sm:origin-top-right">
+            <div className="absolute top-3 right-3 z-10 scale-[0.65] origin-top-right sm:scale-[0.82]">
               <SuccessModal />
             </div>
           </div>
@@ -181,10 +179,9 @@ return (
           <StepLabel
             number="4"
             title="Close the job"
-            caption="Leads land on your dashboard. Send quotes, schedule, and mark 'Paid'—all from your phone."
-          />
-          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-4 px-3" style={{ height: 380 }}>
-            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+caption="Every lead becomes a job card. Schedule the job, build a quote from your templates, send it to the customer with one click — they accept or decline right from their email. Track payment status, upload photos and docs, assign crew, and log every email sent. Your whole business in one place."          />
+         <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-4 px-2" style={{ height: 380 }}>
+            <div style={{ transform: 'scale(0.95)', transformOrigin: 'top center' }}>
                 <DashboardLaptopMockup />
             </div>
           </div>

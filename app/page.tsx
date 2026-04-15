@@ -7,7 +7,7 @@ import LeadModalSection  from '@/components/marketing/LeadModalSection';
 import TheBoard          from '@/components/marketing/TheBoard';
 import SettingsShowcase  from '@/components/marketing/SettingsShowcase';
 import Pricing           from '@/components/marketing/Pricing';
-import FAQ               from '@/components/marketing/FAQ';
+import Comparison from '@/components/marketing/Comparison';
 import FinalCTA          from '@/components/marketing/FinalCTA';
 import Footer            from '@/components/marketing/Footer';
 
@@ -22,7 +22,7 @@ export default function Home() {
 <TheBoard />
 <SettingsShowcase />
 <Pricing />
-<FAQ />
+<Comparison />
 <FinalCTA />
 <Footer />
     </div>
