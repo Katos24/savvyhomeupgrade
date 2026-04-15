@@ -84,8 +84,8 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* MOBILE CTA — Simplified for thumb-access */}
-        <div className="flex lg:hidden flex-col items-center gap-4 mb-20">
+       {/* MOBILE CTA — Simplified for thumb-access */}
+        <div className="flex lg:hidden flex-col items-center gap-3 mb-20">
           <Link 
             href="/signup" 
             className="w-full flex items-center justify-center gap-3 text-white font-black rounded-2xl bg-[#0F1F3D] py-5 text-lg shadow-xl shadow-blue-900/20"
@@ -93,15 +93,14 @@ export default function Hero() {
             Get your L2P link
             <ArrowRight size={20} />
           </Link>
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">Cancel Anytime</p>
-            <Link 
-              href="/demo" 
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-[#0F1F3D] text-[#0F1F3D] font-black text-sm hover:bg-[#0F1F3D] hover:text-white transition-all"
-            >
-              See the live demo first
-            </Link>
-          </div>
+          <Link 
+            href="/demo" 
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-[#0F1F3D] text-[#0F1F3D] font-black text-sm hover:bg-[#0F1F3D] hover:text-white transition-all"
+          >
+            See the live demo first
+            <ArrowRight size={15} />
+          </Link>
+          <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">14-day free trial · Cancel anytime</p>
         </div>
 
         {/* SECTION TRANSITION */}

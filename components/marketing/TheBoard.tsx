@@ -217,19 +217,19 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
               <span className="text-[#1a6645]">We think you'll stay.</span>
             </h2>
 
-          <p className="text-slate-500 font-normal leading-loose mb-6 max-w-sm text-[0.9rem]" style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)' }}>
-              Most contractors run their business out of their phone&apos;s text thread, Excel and a notes app. This replaces all of it — every lead, quote, scheduled job, and unpaid balance in one place.
-            </p>
-            <div className="flex flex-col gap-2 mb-8 max-w-sm">
+         
+            <div className="flex flex-col gap-3 mb-8 max-w-sm">
               {[
                 'Bulk edit multiple leads at once from table view',
                 'Export all your data to CSV anytime',
                 'Cards, Table, Calendar, and Outbox views',
                 'Full data ownership — yours forever',
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#1a6645] shrink-0" />
-                  <p className="text-sm font-medium text-slate-400">{item}</p>
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-[#1a6645]/20 border border-[#1a6645]/40 flex items-center justify-center shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-300">{item}</p>
                 </div>
               ))}
             </div>

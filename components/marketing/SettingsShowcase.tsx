@@ -46,8 +46,7 @@ function PipelineBento() {
         ))}
       </div>
 
-      <p className="text-[11px] text-slate-400 font-medium mt-4">Rename & reorder to match your workflow</p>
-    </div>
+<p className="text-[11px] text-slate-600 font-semibold mt-4">Rename & reorder to match your workflow</p>    </div>
   );
 }
 
@@ -129,8 +128,7 @@ function CategoriesBento() {
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-400 font-medium mt-4">Custom tasks & quote templates per category</p>
-    </div>
+<p className="text-[11px] text-slate-600 font-semibold mt-4">Custom tasks & quote templates per category</p>    </div>
   );
 }
 
@@ -205,8 +203,7 @@ function EmailBento() {
         </div>
       </div>
 
-      <p className="text-[11px] text-white/30 font-medium mt-4">Fully branded · One click · Tracked in outbox</p>
-    </div>
+<p className="text-[11px] text-white/60 font-semibold mt-4">Fully branded · One click · Tracked in outbox</p>    </div>
   );
 }
 
@@ -241,7 +238,7 @@ export default function SettingsShowcase() {
           >
             Your rules.<br className="sm:hidden" /> Your workflow.
           </h2>
-          <p className="text-sm font-light text-slate-400 mt-3 max-w-sm mx-auto leading-relaxed">
+         <p className="text-sm font-medium text-slate-500 mt-3 max-w-sm mx-auto leading-relaxed">
             Customize your pipeline, categories, and emails to match exactly how you run your business.
           </p>
         </div>

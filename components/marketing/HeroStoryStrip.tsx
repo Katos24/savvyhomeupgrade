@@ -37,14 +37,14 @@ function StepLabel({ number, title, caption }: { number: string; title: string; 
         </div>
         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#1a6645]">{title}</p>
       </div>
-      <p
-        className="text-white font-bold leading-snug mb-2"
-        style={{ fontSize: 'clamp(1.1rem, 2.2vw, 1.4rem)', letterSpacing: '-0.02em' }}
+     <p
+        className="text-white font-black leading-snug mb-2"
+        style={{ fontSize: 'clamp(1.15rem, 2.4vw, 1.5rem)', letterSpacing: '-0.02em' }}
       >
         {first}.
       </p>
       {rest && (
-        <p className="text-slate-400 text-[13px] leading-relaxed font-light">{rest}</p>
+        <p className="text-slate-300 text-[13px] leading-relaxed font-normal">{rest}</p>
       )}
     </div>
   );
