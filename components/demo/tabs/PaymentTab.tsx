@@ -162,9 +162,9 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
       {/* ── INPUT FORM — hidden once fully paid ── */}
       {!isPaidFull && (
         <>
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Amount</label>
+          <div className="flex flex-col gap-3 overflow-hidden">
+            <div className="min-w-0">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Paid Date</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold pointer-events-none">$</span>
                 <input
@@ -192,11 +192,16 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
           <div className="flex flex-col gap-3">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Paid Date</label>
-<input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />
-           </div>
+<div className="min-w-0 overflow-hidden">
+                <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className={inputCls} style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', WebkitAppearance: 'none', fontSize: '13px' }} />
+              </div>
+                         </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Due Date</label>
-<input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={`${inputCls} max-w-full`} style={{ maxWidth: '100%' }} />            </div>
+<div className="min-w-0 overflow-hidden">
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputCls} style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', WebkitAppearance: 'none', fontSize: '13px' }} />
+              </div>
+                        </div>
           </div>
 
           {/* Mark Paid in Full */}
