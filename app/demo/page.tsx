@@ -1164,7 +1164,9 @@ const handleTourStart = (flow: TourFlow) => {
 
       {showSettings && <SettingsPreviewCard onClose={() => setShowSettings(false)} />}
 
-      <DemoAIButton showNudge={showAiNudge} onToggle={() => setShowAiNudge(v => !v)} />
+{!selectedLead && (
+  <DemoAIButton showNudge={showAiNudge} onToggle={() => setShowAiNudge(v => !v)} />
+)}
     </div>
   );
 }
