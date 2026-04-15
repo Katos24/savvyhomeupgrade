@@ -58,29 +58,29 @@ function FormBento() {
   ];
 
   return (
-    <div className="w-full rounded-2xl border border-white/5 overflow-hidden shadow-xl bg-[#0F172A]">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5 bg-white/5">
+    <div className="w-full rounded-2xl border border-slate-200 overflow-hidden shadow-xl bg-white">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
         <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
           <FileText size={14} className="text-emerald-500" />
         </div>
         <div>
-          <p className="text-[12px] font-black text-white">Intake Form</p>
-          <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Configuration</p>
+        <p className="text-[12px] font-black text-slate-900">Intake Form</p>
+          <p className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Configuration</p>
         </div>
       </div>
       <div className="px-5 py-3">
         {toggles.map((f, i) => (
-          <div key={i} className={`flex items-center justify-between py-3 ${i < toggles.length - 1 ? 'border-b border-white/5' : ''}`}>
+          <div key={i} className={`flex items-center justify-between py-3 ${i < toggles.length - 1 ? 'border-b border-slate-100' : ''}`}>
             <div className="min-w-0 pr-4">
-              <p className="text-[13px] font-semibold text-white leading-tight">{f.label}</p>
-              <p className="text-[10px] mt-0.5 text-slate-500">{f.desc}</p>
+              <p className="text-[13px] font-semibold text-slate-800 leading-tight">{f.label}</p>
+              <p className="text-[10px] mt-0.5 text-slate-400">{f.desc}</p>
             </div>
             <div className="shrink-0 flex items-center rounded-full p-0.5 bg-emerald-500 w-[30px] h-[17px] justify-end">
               <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
             </div>
           </div>
         ))}
-        <div className="flex items-center justify-center gap-1.5 py-3 mt-1 text-[11px] font-bold text-emerald-500 border-2 border-dashed border-white/5 rounded-xl">
+<div className="flex items-center justify-center gap-1.5 py-3 mt-1 text-[11px] font-bold text-emerald-600 border-2 border-dashed border-emerald-200 rounded-xl bg-emerald-50/50">
           <Plus size={11} /> Add question
         </div>
       </div>

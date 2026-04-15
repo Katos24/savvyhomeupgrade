@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
 
 function useFadeIn(threshold = 0.1) {
@@ -10,7 +10,6 @@ function useFadeIn(threshold = 0.1) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Fire immediately if already in view on load
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight) { setVisible(true); return; }
     const observer = new IntersectionObserver(
@@ -80,7 +79,7 @@ export default function LeadModalSection() {
               <img src="/images/modal-overview.png" alt="Lead2Project Job Card" className="w-full h-auto block" />
             </div>
 
-            {/* Phone — absolutely positioned, no hidden sm:block so always shows */}
+            {/* Phone */}
             <div
               style={{
                 position: 'absolute',
@@ -113,8 +112,9 @@ export default function LeadModalSection() {
 
           </div>
 
-          {/* RIGHT — steps */}
+          {/* RIGHT — steps + payment teaser + demo link */}
           <div className="flex flex-col gap-6 order-2">
+
             {STEPS.map((item, i) => (
               <div key={i} className="flex items-start gap-4">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-black text-white mt-0.5"
@@ -127,6 +127,11 @@ export default function LeadModalSection() {
                 </div>
               </div>
             ))}
+
+         
+
+         
+
           </div>
 
         </div>
