@@ -588,13 +588,8 @@ const handleTourStart = (flow: TourFlow) => {
               }`}>
                 <div className="flex items-center justify-between gap-4">
                   {/* Brand */}
-                  <div className="flex items-center gap-4 min-w-0">
-                    <button className={`p-2.5 rounded-xl transition-colors ${
-                      isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-                    }`}>
-                      <Menu className="w-5 h-5" />
-                    </button>
-                    <div className="flex items-center gap-3 min-w-0 border-l border-slate-200/20 pl-4">
+                 <div className="flex items-center gap-4 min-w-0">
+<div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-indigo-500/20">
                         T
                       </div>

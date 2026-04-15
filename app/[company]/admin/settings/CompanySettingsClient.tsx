@@ -486,7 +486,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
 
     {/* Action buttons */}
     {!isEditing && (
-<div className="grid grid-cols-3 gap-2.5">
+<div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
 
         {/* QR Code */}
         <button

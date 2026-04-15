@@ -213,7 +213,7 @@ const [formData, setFormData] = useState({
         </span>
       </div>
     </div>
-    
+
           <div className="mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full mb-4">
               <UserPlus className="w-3.5 h-3.5" />
@@ -256,8 +256,8 @@ const [formData, setFormData] = useState({
           key={type.value}
           type="button"
           onClick={() =>
-            setFormData({ ...formData, businessType: type.value })
-          }
+  setFormData(prev => ({ ...prev, businessType: type.value }))
+}
           className={`
             px-3 py-1.5 rounded-full text-xs font-bold border transition-all
             ${
@@ -279,7 +279,7 @@ const [formData, setFormData] = useState({
                   label="Contact Name"
                   placeholder="John Smith"
                   value={formData.ownerName}
-                  onChange={(v) => setFormData({ ...formData, ownerName: v })}
+                  onChange={(v) => setFormData(prev => ({ ...prev, ownerName: v }))}
                 />
                 <CustomInput
                   label="Phone Number"
@@ -294,7 +294,7 @@ const [formData, setFormData] = useState({
                 type="email"
                 placeholder="john@company.com"
                 value={formData.email}
-                onChange={(v) => setFormData({ ...formData, email: v })}
+                onChange={(v) => setFormData(prev => ({ ...prev, email: v }))}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -303,7 +303,7 @@ const [formData, setFormData] = useState({
                   type="password"
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(v) => setFormData({ ...formData, password: v })}
+                  onChange={(v) => setFormData(prev => ({ ...prev, password: v }))}
                   hint="6+ characters"
                 />
                 <CustomInput
@@ -311,7 +311,7 @@ const [formData, setFormData] = useState({
                   type="password"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
-                  onChange={(v) => setFormData({ ...formData, confirmPassword: v })}
+                  onChange={(v) => setFormData(prev => ({ ...prev, confirmPassword: v }))}
                 />
               </div>
             </div>
