@@ -88,10 +88,15 @@ const [email, setEmail] = useState(company.email || '');
 
   // Step 2 state
 const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
-  const allCats: Category[] = defaultCats;
   const [categories, setCategories] = useState<Category[]>(
     company.form_categories?.length > 0 ? company.form_categories : defaultCats
   );
+  const allCats: Category[] = [
+    ...defaultCats,
+    ...categories.filter(c => !defaultCats.some(d => d.value === c.value)),
+  ];
+    company.form_categories?.length > 0 ? company.form_categories : defaultCats
+ 
   const [newCatLabel, setNewCatLabel] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
 

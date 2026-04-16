@@ -123,15 +123,22 @@ useEffect(() => {
     setNewTaskLabel(''); setTaskInputError(false);
   };
 
-  const saveTaskTemplates = () => {
+  const saveTaskTemplates = async () => {
     if (newTaskLabel.trim()) { setTaskInputError(true); return; }
     if (taskEditorCatIndex === null) return;
-    setCategories(prev => {
-      const updated = [...prev];
-      updated[taskEditorCatIndex] = { ...updated[taskEditorCatIndex], task_templates: editingTasks };
-      return updated;
-    });
-    setUseDefaults(false); setTaskEditorCatIndex(null); markDirty();
+    const updatedCategories = [...categories];
+    updatedCategories[taskEditorCatIndex] = { ...updatedCategories[taskEditorCatIndex], task_templates: editingTasks };
+    setCategories(updatedCategories);
+    setUseDefaults(false);
+    try {
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-categories', data: { form_categories: updatedCategories } }),
+      });
+    } catch {}
+    setTaskEditorCatIndex(null);
+    setIsDirty(false);
   };
 
   const openQuoteEditor = (catValue: string) => {
@@ -427,10 +434,7 @@ useEffect(() => {
               <div className="p-5 border-t border-gray-100 grid grid-cols-2 gap-3">
                 <button onClick={() => setTaskEditorCatIndex(null)} className="py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold">Cancel</button>
                 <button 
-                  onClick={() => {
-                    if (newTaskLabel.trim()) { setTaskInputError(true); return; }
-                    saveTaskTemplates();
-                  }} 
+                 onClick={saveTaskTemplates}
                   className="py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100"
                 >
                   Save Checklist

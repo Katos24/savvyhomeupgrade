@@ -351,7 +351,7 @@ const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean;
   { id: 'photos',    label: 'Media',     icon: Image,         show: isProject, locked: !can(planTier, 'docs_on_card') },
   { id: 'activity',  label: 'Activity',  icon: MessageCircle, show: isProject },
   { id: 'reminders', label: 'Reminders', icon: Bell,          show: isProject, locked: !can(planTier, 'scheduling') },
-  { id: 'ai',        label: 'AI Brief',  icon: Sparkles,      show: true,      locked: !can(planTier, 'ai_brief') },
+{ id: 'ai', label: 'AI Brief', icon: Sparkles, show: isProject, locked: !can(planTier, 'ai_brief') },
 ];
 
 const renderProjectTab = () => {
@@ -607,11 +607,7 @@ return (
                   </button>
                 );
               })}
-              {!isProject && (
-                <div className="flex-shrink-0 flex items-center pl-3 pb-1">
-                  <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
-                </div>
-              )}
+            
             </div>
           </div>
         </div>
@@ -631,6 +627,20 @@ return (
               {/* ── OVERVIEW TAB ── */}
               {activeTab === 'overview' && (
                 <>
+                  {/* Convert to Project banner */}
+                  {!isProject && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      className="rounded-none border-2 border-dashed border-indigo-200 bg-indigo-50/60 p-5 flex items-center justify-between gap-4"
+                    >
+                      <div>
+                        <p className="text-sm font-black text-indigo-900">Ready to start this job?</p>
+                        <p className="text-xs text-indigo-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+                      </div>
+                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
+                    </motion.div>
+                  )}
+
                   {/* Client Card */}
                   <motion.div
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -816,17 +826,17 @@ return (
                     </AnimatePresence>
                   </motion.div>
 
-                  {/* Two-col: Message + Notes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <motion.div
+                {/* Two-col: Message + Notes */}
+                  <div className={`grid gap-4 ${isProject ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                  <motion.div
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+                      transition={{ delay: 0.15 }}
+                      className={`bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden ${!isProject ? 'hidden' : ''}`}
                     >
                       <div className="px-5 py-4 border-b border-gray-50">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
-                          Customer's Message
+                          <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
+                          Internal Notes
                         </h3>
                       </div>
                       <div className="p-5">
@@ -973,6 +983,7 @@ return (
                   </div>
                 </>
               )}
+
 
               {/* ── AI BRIEF TAB ── */}
               {activeTab === 'ai' && (
