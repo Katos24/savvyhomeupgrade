@@ -243,7 +243,7 @@ const [formData, setFormData] = useState({
 
 
             <div className="space-y-2">
-  <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">
+ <label className="text-[11px] font-black text-slate-600 uppercase tracking-wider ml-1">
     Business Type
   </label>
 
@@ -379,7 +379,7 @@ function CustomInput({ label, value, onChange, placeholder, type = 'text', hint,
   return (
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
-        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-400'}`}>
+        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-600'}`}>
           {label}
         </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}

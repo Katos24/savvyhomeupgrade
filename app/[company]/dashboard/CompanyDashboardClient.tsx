@@ -733,32 +733,38 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
   </header>
 
   {/* --- CRISP STATS ENGINE --- */}
-<section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8">
-  {[
-    { label: 'Leads',   value: globalStats?.total_leads ?? allLeads.length, accent: 'bg-indigo-500' },
-    { label: 'Active',  value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length, accent: 'bg-blue-500' },
-    { label: 'Revenue', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.revenue ?? 0), accent: 'bg-emerald-500' },
-    { label: 'Pending', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.pending ?? 0), accent: 'bg-amber-500' },
+<section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8 w-full">
+    {[
+    { label: 'Leads',   value: globalStats?.total_leads ?? allLeads.length,
+      light: 'bg-indigo-50 border-indigo-100', dark: 'bg-indigo-500/10 border-indigo-500/20',
+      labelLight: 'text-indigo-400', labelDark: 'text-indigo-300/60',
+      valueLight: 'text-indigo-900', valueDark: 'text-indigo-100' },
+    { label: 'Active',  value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length,
+      light: 'bg-blue-50 border-blue-100', dark: 'bg-blue-500/10 border-blue-500/20',
+      labelLight: 'text-blue-400', labelDark: 'text-blue-300/60',
+      valueLight: 'text-blue-900', valueDark: 'text-blue-100' },
+    { label: 'Revenue', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.revenue ?? 0),
+      light: 'bg-emerald-50 border-emerald-100', dark: 'bg-emerald-500/10 border-emerald-500/20',
+      labelLight: 'text-emerald-500', labelDark: 'text-emerald-300/60',
+      valueLight: 'text-emerald-900', valueDark: 'text-emerald-100' },
+    { label: 'Pending', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(globalStats?.pending ?? 0),
+      light: 'bg-amber-50 border-amber-100', dark: 'bg-amber-500/10 border-amber-500/20',
+      labelLight: 'text-amber-500', labelDark: 'text-amber-300/60',
+      valueLight: 'text-amber-900', valueDark: 'text-amber-100' },
   ].map((s, i) => (
     <div
       key={i}
-className={`rounded-xl border px-2 py-2 sm:px-3 sm:py-2.5 transition-all ${
-          isDark
-          ? 'bg-[#0A0C14] border-white/5'
-          : 'bg-white border-slate-200 shadow-sm'
-      }`}
+      className={`rounded-xl border px-3 py-3 sm:px-5 sm:py-4 transition-all ${isDark ? `${s.dark}` : `${s.light} shadow-sm`}`}
     >
-      <div className="flex items-center gap-1.5 mb-1">
-        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.accent}`} />
-        <p className={`text-[9px] font-bold uppercase tracking-widest truncate ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
-          {s.label}
-        </p>
-      </div>
-      <p className={`font-black tracking-tight tabular-nums leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}
-  style={{ fontSize: String(s.value).length > 7 ? '10px' : String(s.value).length > 5 ? '12px' : '15px' }}
->
-  {s.value}
-</p>
+      <p className={`text-[9px] font-bold uppercase tracking-widest truncate mb-1.5 ${isDark ? s.labelDark : s.labelLight}`}>
+        {s.label}
+      </p>
+      <p
+        className={`font-black tracking-tight tabular-nums leading-none ${isDark ? s.valueDark : s.valueLight}`}
+        style={{ fontSize: String(s.value).length > 7 ? '11px' : String(s.value).length > 5 ? '13px' : '17px' }}
+      >
+        {s.value}
+      </p>
     </div>
   ))}
 </section>
