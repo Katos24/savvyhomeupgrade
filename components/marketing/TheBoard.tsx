@@ -6,7 +6,7 @@ import { LayoutGrid, List, Calendar, Mail, ChevronRight, Search, Plus, DollarSig
 import { useFadeIn } from '@/components/marketing/hooks';
 
 const LEADS = [
-  { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
+  { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#3b82f6', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
   { name: 'Kim Gutters',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', paid: true,  assigned: '—',        category: 'Gutters'  },
   { name: 'Martinez Siding',   status: 'Quote Sent', statusColor: '#eab308', date: '—',      time: '—',        amount: '$5,200', paid: false, assigned: 'Dave R.',  category: 'Siding'   },
   { name: 'David Reyes',       status: 'New',        statusColor: '#10b981', date: '—',      time: '—',        amount: '—',      paid: false, assigned: '—',        category: 'Gutters'  },
@@ -15,8 +15,8 @@ const LEADS = [
 ];
 
 const STATS = [
-  { label: 'Leads',   value: '168',   accent: 'bg-indigo-500' },
-  { label: 'Active',  value: '63',    accent: 'bg-blue-500'   },
+  { label: 'Leads',   value: '168',   accent: 'bg-blue-500' },
+    { label: 'Active',  value: '63',    accent: 'bg-blue-500'   },
   { label: 'Revenue', value: '$102k', accent: 'bg-emerald-500' },
   { label: 'Pending', value: '$122k', accent: 'bg-amber-500'  },
 ];
@@ -72,8 +72,8 @@ function CardsPanel() {
             <div className="space-y-0.5">
               <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Job Date</p>
               <div className="flex items-center gap-1">
-                <Calendar size={8} className="text-indigo-500 shrink-0" />
-                <span className="text-[9px] font-black text-indigo-500 italic">{lead.date}</span>
+                <Calendar size={8} className="text-blue-500 shrink-0" />
+                <span className="text-[9px] font-black text-blue-500 italic">{lead.date}</span>
               </div>
             </div>
             <div className="border-l border-slate-200 pl-2 space-y-0.5">
@@ -90,8 +90,7 @@ function CardsPanel() {
           {/* Footer */}
           <div className="flex items-center justify-between px-2.5 py-2 border-t border-slate-100 mt-auto">
             <div className="flex items-center gap-1">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[7px] font-black text-white shrink-0">
-                {lead.assigned !== '—' ? lead.assigned.charAt(0) : '?'}
+<div className="w-4 h-4 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center text-[7px] font-black text-white shrink-0">                {lead.assigned !== '—' ? lead.assigned.charAt(0) : '?'}
               </div>
               <span className="text-[8px] font-bold text-slate-400 truncate max-w-[45px]">
                 {lead.assigned === '—' ? 'Unassigned' : lead.assigned}
@@ -125,8 +124,8 @@ function TablePanel() {
               <td className="p-2 font-black whitespace-nowrap text-slate-900">{lead.name}</td>
               <td className="p-2 whitespace-nowrap"><span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-sky-100 text-sky-700">{lead.category}</span></td>
               <td className="p-2 whitespace-nowrap"><span className="px-1.5 py-0.5 rounded text-[8px] font-black text-white" style={{ background: lead.statusColor }}>{lead.status}</span></td>
-              <td className="p-2 whitespace-nowrap font-bold text-indigo-600">{lead.date}</td>
-              <td className="p-2 whitespace-nowrap">{lead.assigned !== '—' ? <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-violet-100 text-violet-700">{lead.assigned}</span> : <span className="text-slate-300">—</span>}</td>
+              <td className="p-2 whitespace-nowrap font-bold text-blue-600">{lead.date}</td>
+<td className="p-2 whitespace-nowrap">{lead.assigned !== '—' ? <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-blue-100 text-blue-700">{lead.assigned}</span> : <span className="text-slate-300">—</span>}</td>
               <td className="p-2 whitespace-nowrap font-black text-emerald-500">{lead.amount}</td>
               <td className={`p-2 whitespace-nowrap font-black ${lead.paid ? 'text-emerald-500' : 'text-rose-500'}`}>{lead.paid ? 'Paid' : 'Unpaid'}</td>
             </tr>
@@ -303,15 +302,14 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
                       </div>
                       <div>
                         <div className="text-[12px] font-black text-slate-900 leading-none">Ridge Line Roofing</div>
-                        <div className="text-[7px] font-black text-indigo-500 uppercase tracking-widest mt-0.5">Dashboard</div>
+                        <div className="text-[7px] font-black text-blue-500 uppercase tracking-widest mt-0.5">Dashboard</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-slate-100 border-slate-200 text-slate-400 text-[10px]">
                         <Search size={10} /> Search...
                       </div>
-                      <div className="px-2.5 py-1.5 rounded-lg flex items-center gap-1 bg-indigo-600 text-white font-black text-[10px]">
-                        <Plus size={10} strokeWidth={3} /> Create
+                      <div className="px-2.5 py-1.5 rounded-lg flex items-center gap-1 bg-blue-600 text-white font-black text-[10px]">                        <Plus size={10} strokeWidth={3} /> Create
                       </div>
                     </div>
                   </div>

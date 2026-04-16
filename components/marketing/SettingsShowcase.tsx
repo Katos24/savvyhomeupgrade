@@ -4,20 +4,17 @@ import React from 'react';
 import { useFadeIn } from '@/components/marketing/hooks';
 import { SlidersHorizontal, LayoutGrid, Mail, Check, Plus, Pencil } from 'lucide-react';
 
-// ── Pipeline Bento ────────────────────────────────────────────────────────────
-
 function PipelineBento() {
   const stages = [
     { label: 'New',         color: '#10b981', required: true,  bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
     { label: 'Contacted',   color: '#f59e0b', required: false, bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
     { label: 'In Progress', color: '#3b82f6', required: false, bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-700'    },
-    { label: 'Quoted',      color: '#8b5cf6', required: false, bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
+    { label: 'Quoted',      color: '#3b82f6', required: false, bg: 'bg-slate-50',   border: 'border-slate-100',   text: 'text-slate-700'   },
     { label: 'Completed',   color: '#10b981', required: true,  bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700' },
   ];
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
@@ -25,12 +22,11 @@ function PipelineBento() {
           </div>
           <p className="text-[13px] font-black text-slate-900">Pipeline Stages</p>
         </div>
-        <div className="flex items-center gap-1 text-[9px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+        <div className="flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
           <Plus size={8} /> Add Stage
         </div>
       </div>
 
-      {/* Stages */}
       <div className="flex flex-col gap-2 flex-1">
         {stages.map((s, i) => (
           <div key={i} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border ${s.bg} ${s.border}`}>
@@ -38,7 +34,7 @@ function PipelineBento() {
             <p className={`text-[11px] font-semibold flex-1 ${s.text}`}>{s.label}</p>
             {s.required
               ? <span className="text-[9px] font-bold text-slate-300">Required</span>
-              : <div className="w-6 h-6 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 transition-colors">
+              : <div className="w-6 h-6 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-blue-300 transition-colors">
                   <Pencil size={9} className="text-slate-400" />
                 </div>
             }
@@ -46,15 +42,14 @@ function PipelineBento() {
         ))}
       </div>
 
-<p className="text-[11px] text-slate-600 font-semibold mt-4">Rename & reorder to match your workflow</p>    </div>
+      <p className="text-[11px] text-slate-600 font-semibold mt-4">Rename & reorder to match your workflow</p>
+    </div>
   );
 }
 
-// ── Categories Bento ──────────────────────────────────────────────────────────
-
 function CategoriesBento() {
   const cats = [
-    { label: 'Full Roof Replacement', tasks: 4, items: 4, color: '#6366f1' },
+    { label: 'Full Roof Replacement', tasks: 4, items: 4, color: '#3b82f6' },
     { label: 'Roof Repair',           tasks: 2, items: 4, color: '#10b981' },
     { label: 'Gutter Installation',   tasks: 1, items: 6, color: '#f59e0b' },
   ];
@@ -68,11 +63,10 @@ function CategoriesBento() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-            <LayoutGrid size={15} className="text-purple-600" />
+          <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+            <LayoutGrid size={15} className="text-blue-600" />
           </div>
           <p className="text-[13px] font-black text-slate-900">Categories</p>
         </div>
@@ -81,22 +75,20 @@ function CategoriesBento() {
         </div>
       </div>
 
-      {/* Category list */}
       <div className="flex flex-col gap-2 mb-4">
         {cats.map((cat, i) => (
-          <div key={i} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${i === 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
+          <div key={i} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${i === 0 ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />
-            <p className={`text-[11px] font-semibold flex-1 truncate ${i === 0 ? 'text-indigo-700' : 'text-slate-700'}`}>{cat.label}</p>
+            <p className={`text-[11px] font-semibold flex-1 truncate ${i === 0 ? 'text-blue-700' : 'text-slate-700'}`}>{cat.label}</p>
             <span className="text-[9px] font-black text-blue-400 hidden sm:inline">{cat.tasks} tasks</span>
             <span className="text-[9px] font-black text-emerald-500">{cat.items} items</span>
           </div>
         ))}
       </div>
 
-      {/* Expanded view — hidden on mobile */}
-      <div className="hidden sm:block rounded-xl border border-indigo-100 overflow-hidden flex-1">
-        <div className="px-3 py-2 border-b border-indigo-100 bg-indigo-50">
-          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Auto-loads on select</p>
+      <div className="hidden sm:block rounded-xl border border-blue-100 overflow-hidden flex-1">
+        <div className="px-3 py-2 border-b border-blue-100 bg-blue-50">
+          <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Auto-loads on select</p>
         </div>
         <div className="grid grid-cols-2 divide-x divide-slate-100">
           <div className="px-3 py-2.5">
@@ -104,7 +96,7 @@ function CategoriesBento() {
             <div className="flex flex-col gap-1.5">
               {expandedTasks.map((t, i) => (
                 <div key={i} className="flex items-start gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 shrink-0" />
                   <p className="text-[9px] text-slate-600 leading-tight">{t}</p>
                 </div>
               ))}
@@ -128,11 +120,10 @@ function CategoriesBento() {
         </div>
       </div>
 
-<p className="text-[11px] text-slate-600 font-semibold mt-4">Custom tasks & quote templates per category</p>    </div>
+      <p className="text-[11px] text-slate-600 font-semibold mt-4">Custom tasks & quote templates per category</p>
+    </div>
   );
 }
-
-// ── Email Bento ───────────────────────────────────────────────────────────────
 
 function EmailBento() {
   const lineItems = [
@@ -144,7 +135,6 @@ function EmailBento() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center gap-2.5 mb-5">
         <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
           <Mail size={15} className="text-blue-600" />
@@ -152,10 +142,8 @@ function EmailBento() {
         <p className="text-white text-[13px] font-black">Branded Emails</p>
       </div>
 
-      {/* Email mockup */}
       <div className="flex-1 rounded-xl overflow-hidden flex flex-col border border-white/8" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-        {/* Email banner */}
-        <div className="px-3 py-3" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>
+        <div className="px-3 py-3" style={{ background: 'linear-gradient(135deg, #1d4ed8, #0369a1)' }}>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-5 h-5 rounded bg-white/20 overflow-hidden flex items-center justify-center shrink-0">
               <img src="/images/ridgelinelogo.png" alt="" className="w-4 h-4 object-contain" />
@@ -167,13 +155,11 @@ function EmailBento() {
           <p className="text-[9px] text-white/60 mt-0.5">Quote #1042 · Sent Apr 9, 2026</p>
         </div>
 
-        {/* Email body */}
         <div className="px-3 pt-3 pb-2.5 flex-1 flex flex-col" style={{ background: '#1e293b' }}>
           <p className="text-[9px] text-white/50 leading-relaxed mb-3">
             Hi <span className="font-black text-white/90">Curtis</span>, thanks for choosing Ridge Line Roofing. Here's your quote for the roof replacement at <span className="text-white/70">42 Maple Ave, Brooklyn NY</span>.
           </p>
 
-          {/* Line items */}
           <div className="rounded-lg overflow-hidden mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="px-2.5 py-1.5 grid grid-cols-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
               <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Item</p>
@@ -191,9 +177,8 @@ function EmailBento() {
             </div>
           </div>
 
-          {/* CTA buttons */}
           <div className="grid grid-cols-2 gap-2 mt-auto">
-            <div className="py-2 rounded-lg text-center text-[10px] font-black text-white" style={{ background: 'linear-gradient(135deg,#667eea,#1c0866)' }}>
+            <div className="py-2 rounded-lg text-center text-[10px] font-black text-white" style={{ background: 'linear-gradient(135deg, #1d4ed8, #0369a1)' }}>
               Accept Quote
             </div>
             <div className="py-2 rounded-lg text-center text-[10px] font-black text-white/30" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -203,11 +188,10 @@ function EmailBento() {
         </div>
       </div>
 
-<p className="text-[11px] text-white/60 font-semibold mt-4">Fully branded · One click · Tracked in outbox</p>    </div>
+      <p className="text-[11px] text-white/60 font-semibold mt-4">Fully branded · One click · Tracked in outbox</p>
+    </div>
   );
 }
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function SettingsShowcase() {
   const { ref, visible } = useFadeIn();
@@ -219,7 +203,6 @@ export default function SettingsShowcase() {
     >
       <div className="max-w-7xl mx-auto">
 
-        {/* Header */}
         <div
           ref={ref}
           className="text-center mb-10 sm:mb-14"
@@ -238,12 +221,11 @@ export default function SettingsShowcase() {
           >
             Your rules.<br className="sm:hidden" /> Your workflow.
           </h2>
-         <p className="text-sm font-medium text-slate-500 mt-3 max-w-sm mx-auto leading-relaxed">
+          <p className="text-sm font-medium text-slate-500 mt-3 max-w-sm mx-auto leading-relaxed">
             Customize your pipeline, categories, and emails to match exactly how you run your business.
           </p>
         </div>
 
-        {/* Bento grid — 1 col mobile, 3 col desktop */}
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
           style={{

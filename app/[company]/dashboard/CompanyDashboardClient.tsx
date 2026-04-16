@@ -584,7 +584,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       <Toaster position="top-right" richColors />
 
       {/* Skip nav for accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:font-bold">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg focus:font-bold">
         Skip to main content
       </a>
 
@@ -638,14 +638,13 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       {/* Onboarding banner */}
 {!setupComplete && (
   <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-10">
-    <div
-      className="rounded-2xl border border-indigo-500/20 px-5 py-4 flex items-center gap-4"
-      style={{ background: 'rgba(99,102,241,0.08)' }}
+    <div className="rounded-2xl border border-blue-500/20 px-5 py-4 flex items-center gap-4"
+      style={{ background: 'rgba(59,130,246,0.08)' }}
     >
       <div className="flex-1 min-w-0">
         <p className="text-sm font-black text-white leading-snug">
           Your booking link isn't live yet —{' '}
-          <span className="text-indigo-300">customers can't find you.</span>
+          <span className="text-blue-300">customers can't find you.</span>
         </p>
         <div className="flex items-center gap-3 mt-2.5">
           <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -653,7 +652,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${(setupDoneCount / setupItems.length) * 100}%`,
-                background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
               }}
             />
           </div>
@@ -666,7 +665,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
                       
               href={`/${company.slug}/admin/settings`}
               className="shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white rounded-xl transition hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+        style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}
             >
                Complete Setup
       </a>
@@ -701,7 +700,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           {company.logo_url ? (
             <img src={company.logo_url} alt="Logo" className="h-8 w-auto object-contain shrink-0" />
           ) : (
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-indigo-500/20">
+<div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-blue-500/20">
               {company.name.charAt(0)}
             </div>
           )}
@@ -709,34 +708,30 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
             <h1 className={`text-sm sm:text-lg font-black tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {company.name}
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-500">Dashboard</p>
-          </div>
+<p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-500">Dashboard</p>          </div>
         </div>
       </div>
 
-      {/* Action Area */}
+     {/* Action Area */}
 <div className="flex items-center gap-2 shrink-0">
-  {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />}
-
-
-
+  {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
   <button
     onClick={() => setIsCreateModalOpen(true)}
-    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
   >
     <Plus className="w-4 h-4 stroke-[3px]" />
     <span className="hidden sm:inline">New Lead</span>
     <span className="sm:hidden">Add</span>
   </button>
 </div>
-    </div>
-  </header>
+</div>
+</header>
 
   {/* --- CRISP STATS ENGINE --- */}
 <section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8 w-full">
     {[
     { label: 'Leads',   value: globalStats?.total_leads ?? allLeads.length,
-      light: 'bg-indigo-50 border-indigo-100', dark: 'bg-indigo-500/10 border-indigo-500/20',
+      light: 'bg-indigo-50 border-indigo-100', dark: 'bg-blue-500/15 border-indigo-500/20',
       labelLight: 'text-indigo-400', labelDark: 'text-indigo-300/60',
       valueLight: 'text-indigo-900', valueDark: 'text-indigo-100' },
     { label: 'Active',  value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length,
@@ -841,7 +836,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           onClick={() => setCurrentView(v.id as any)}
           className={`p-2 rounded-lg transition-all ${
             currentView === v.id
-              ? 'bg-indigo-600 text-white shadow-lg'
+              ? 'bg-blue-500 text-white shadow-lg'
               : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
           }`}
         >
@@ -869,7 +864,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       onClick={() => setShowAdvancedFilters(v => !v)}
       className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
         showAdvancedFilters || hasActiveFilters
-          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/20'
+          ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20'
           : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
       }`}
     >
@@ -915,7 +910,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
       className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
         filterStatus === 'new'
-          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+          ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
           : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
       }`}
     >
@@ -954,12 +949,12 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
     >
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Assignee</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Assignee</label>
           <select 
             value={filterAssignee} 
             onChange={e => setFilterAssignee(e.target.value)}
             className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-              isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+              isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
             <option value="all">Everyone</option>
@@ -968,7 +963,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Category</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Category</label>
           <select 
             value={filterCategory} 
             onChange={e => setFilterCategory(e.target.value)}
@@ -986,7 +981,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
 
       <div className="grid grid-cols-2 gap-6 mb-8">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Start Date</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Start Date</label>
           <input 
             type="date" 
             value={startDate} 
@@ -997,7 +992,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">End Date</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">End Date</label>
           <input 
             type="date" 
             value={endDate} 
@@ -1010,7 +1005,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
       </div>
 
       <div className="mb-8 space-y-3">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Lifecycle Status</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Lifecycle Status</label>
         <div className="flex flex-wrap gap-2">
           {statusOptions.map(s => (
             <button 
@@ -1018,7 +1013,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
               onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                 filterStatus === s.value 
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/30'
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30'
                   : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
               }`}
             >
@@ -1037,8 +1032,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
         </button>
         <button 
           onClick={() => setShowAdvancedFilters(false)}
-          className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 transition-all"
-        >
+className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-600/20 transition-all"        >
           Apply Changes
         </button>
       </div>
@@ -1086,7 +1080,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
         <div className="grid grid-cols-1 gap-3 mt-12">
           <button 
             onClick={() => setShowAdvancedFilters(false)} 
-            className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40"
+            className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-blue-500 text-white shadow-2xl shadow-indigo-600/40"
           >
             Apply Filters
           </button>
@@ -1112,7 +1106,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
             <div className={`rounded-[3rem] p-16 sm:p-32 text-center border-2 border-dashed transition-all ${
               isDark ? 'bg-white/[0.01] border-white/5' : 'bg-slate-50 border-slate-200'
             }`}>
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-500/10 mb-6" aria-hidden>
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-500/15 mb-6" aria-hidden>
                 <Inbox className="w-10 h-10 text-indigo-500/40" />
               </div>
               <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No leads found</h2>
@@ -1122,7 +1116,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
               {hasActiveFilters && (
                 <button 
                   onClick={clearFilters} 
-                  className="mt-8 px-6 py-3 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                  className="mt-8 px-6 py-3 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all"
                 >
                   Clear filters
                 </button>

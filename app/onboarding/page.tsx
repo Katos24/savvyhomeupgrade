@@ -57,7 +57,7 @@ export default function OnboardingPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e]">
-      <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
+      <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
     </div>
   );
 
@@ -81,8 +81,8 @@ function OnboardingWizard({ company }: { company: any }) {
   const [companyName, setCompanyName] = useState(company.name || '');
   const [phone, setPhone] = useState(formatPhone(company.phone || ''));
 const [email, setEmail] = useState(company.email || '');
-  const [brandColor, setBrandColor] = useState(company.email_brand_color_1 || '#6366f1');
-  const [brandColor2, setBrandColor2] = useState(company.email_brand_color_2 || '#8b5cf6');
+ const [brandColor, setBrandColor] = useState(company.email_brand_color_1 || '#2563eb');
+  const [brandColor2, setBrandColor2] = useState(company.email_brand_color_2 || '#0891b2');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
 
@@ -213,7 +213,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/30">
+              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30">
                 <span className="text-white text-[10px] font-black tracking-tight">L2P</span>
               </div>
               <div>
@@ -272,11 +272,11 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
             <div>
               <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-3">Logo</label>
               <label className="flex items-center gap-4 cursor-pointer group">
-                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-white/10 group-hover:border-indigo-500/50 bg-white/5 flex items-center justify-center overflow-hidden transition-all shrink-0">
+                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-white/10 group-hover:border-blue-500/50 bg-white/5 flex items-center justify-center overflow-hidden transition-all shrink-0">
                   {logoPreview
                     ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                     : <div className="flex flex-col items-center gap-1">
-                        <Camera className="w-5 h-5 text-white/20 group-hover:text-indigo-400 transition" />
+                        <Camera className="w-5 h-5 text-white/20 group-hover:text-blue-400 transition" />
                         <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Upload</span>
                       </div>
                   }
@@ -306,7 +306,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                   value={companyName}
                   onChange={e => setCompanyName(e.target.value)}
                   placeholder="e.g. Ridge Line Roofing"
-                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-indigo-500/60 focus:bg-white/8 transition-all"
+                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-blue-500/60 focus:bg-white/8 transition-all"
                 />
               </div>
             </div>
@@ -321,7 +321,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="hello@yourcompany.com"
-                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-indigo-500/60 transition-all"
+                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-blue-500/60 transition-all"
                 />
               </div>
             </div>
@@ -337,7 +337,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                   onChange={e => setPhone(formatPhone(e.target.value))}
                   placeholder="(555) 000-0000"
                   maxLength={14}
-                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-indigo-500/60 focus:bg-white/8 transition-all"
+                  className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-base placeholder-white/20 outline-none focus:border-blue-500/60 focus:bg-white/8 transition-all"
                 />
               </div>
             </div>
@@ -390,13 +390,13 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
             </div>
 
             {/* Preview hint */}
-            <div className="flex items-start gap-3 px-4 py-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0 mt-1.5" />
+            <div className="flex items-start gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0 mt-1.5" />
               <div>
-                <p className="text-xs font-semibold text-indigo-300 leading-relaxed">
+                <p className="text-xs font-semibold text-blue-300 leading-relaxed">
                   When a customer scans your QR code, they'll see these as service options on their form.
                 </p>
-                <p className="text-xs text-indigo-400/60 mt-1">
+                <p className="text-xs text-blue-400/60 mt-1">
                   Each job type gets its own task checklist and quote template in Settings.
                 </p>
               </div>
@@ -420,11 +420,11 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                     }}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all active:scale-95 ${
                       isSelected
-                        ? 'bg-indigo-600/30 border-indigo-500/50 text-white'
+                        ? 'bg-blue-600/30 border-blue-500/50 text-white'
                         : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
                     }`}
                   >
-                    {isSelected && <Check className="w-3 h-3 text-indigo-400 shrink-0" />}
+                    {isSelected && <Check className="w-3 h-3 text-blue-400 shrink-0" />}
                     <span className="text-sm font-bold">{cat.label}</span>
                   </button>
                 );
@@ -452,9 +452,9 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                   onKeyDown={e => e.key === 'Enter' && addCat()}
                   placeholder="e.g. Emergency Repair"
                   autoFocus
-                  className="flex-1 px-4 py-3 bg-white/5 border border-indigo-500/40 rounded-xl text-white font-bold text-sm placeholder-white/20 outline-none focus:border-indigo-500 transition-all"
+                  className="flex-1 px-4 py-3 bg-white/5 border border-blue-500/40 rounded-xl text-white font-bold text-sm placeholder-white/20 outline-none focus:border-blue-500 transition-all"
                 />
-                <button onClick={addCat} className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black rounded-xl transition">
+                <button onClick={addCat} className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl transition">
                   Add
                 </button>
                 <button onClick={() => { setShowAddCat(false); setNewCatLabel(''); }} className="p-3 bg-white/5 hover:bg-white/10 text-white/40 rounded-xl transition">
@@ -484,7 +484,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
 
             {/* Success */}
             <div className="text-center py-6">
-              <div className="w-20 h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/40"
+              <div className="w-20 h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-600/40"
                 style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
                 <Sparkles className="w-9 h-9 text-white" />
               </div>
@@ -504,12 +504,12 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
               {/* Link + copy */}
                 <div className="flex items-center gap-2">
                   <div className="flex-1 min-w-0 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-                    <p className="text-sm font-mono font-bold text-indigo-300 truncate">{publicLink}</p>
+                    <p className="text-sm font-mono font-bold text-blue-300 truncate">{publicLink}</p>
                   </div>
                   <button
                     onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                     className={`shrink-0 flex items-center gap-2 px-4 py-3 rounded-xl font-black text-sm transition-all ${
-                      copied ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      copied ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-600 hover:bg-blue-500 text-white'
                     }`}
                   >
                     {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
@@ -574,7 +574,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
             {/* Go to dashboard */}
             <a
               href={`/${company.slug}/dashboard`}
-              className="w-full py-5 rounded-2xl text-white font-black text-base flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl shadow-indigo-600/30"
+              className="w-full py-5 rounded-2xl text-white font-black text-base flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl shadow-blue-600/30"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
             >
               Open my dashboard
@@ -604,7 +604,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
             <button
               onClick={handleNext}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 py-4 text-white font-black text-base rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] shadow-xl shadow-indigo-600/20"
+              className="flex-1 flex items-center justify-center gap-2 py-4 text-white font-black text-base rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] shadow-xl shadow-blue-600/20"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
             >
               {saving ? (

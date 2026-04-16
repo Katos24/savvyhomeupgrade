@@ -55,8 +55,8 @@ function Cell({ value, highlight }: { value: CellValue; highlight?: boolean }) {
     <div className="flex justify-center">
       <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
         highlight
-          ? value === 'Pro'
-            ? 'bg-violet-100 text-violet-700'
+         ? value === 'Pro'
+            ? 'bg-blue-100 text-blue-700'
             : 'bg-[#1a6645]/10 text-[#1a6645]'
           : 'bg-slate-100 text-slate-500'
       }`}>

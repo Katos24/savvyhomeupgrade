@@ -121,8 +121,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
       }`}>
         <div className="space-y-1">
           <span className="block text-[8px] font-black text-slate-500 uppercase tracking-widest">Job Date</span>
-          <div className={`flex items-center gap-2 font-black italic text-xs ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
-            <Calendar className="w-3.5 h-3.5" />
+<div className={`flex items-center gap-2 font-black italic text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>            <Calendar className="w-3.5 h-3.5" />
             {displayDate}
           </div>
         </div>
@@ -138,7 +137,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
       {/* Mobile inline stats */}
       <div className="flex sm:hidden items-center gap-3 text-[10px] text-slate-400 font-bold">
         <div className="flex items-center gap-1">
-          <Calendar className="w-3 h-3 text-indigo-400" />
+          <Calendar className="w-3 h-3 text-blue-400" />
           {displayDate}
         </div>
         <span>·</span>
@@ -152,7 +151,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
     {/* Footer */}
     <div className={`flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
       <div className="flex items-center gap-1.5">
-        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[8px] font-black text-white uppercase shrink-0">
+        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center text-[8px] font-black text-white uppercase shrink-0">
           {lead.assigned_to?.charAt(0) || <User className="w-3 h-3" />}
         </div>
         <span className="text-[10px] font-bold text-slate-500 truncate max-w-[100px]">
@@ -161,8 +160,8 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
       </div>
       <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
         isDark 
-          ? 'bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white' 
-          : 'bg-slate-900 text-white'
+          ? 'bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white'
+                    : 'bg-slate-900 text-white'
       }`}>
         <span className="text-[10px] font-black uppercase tracking-widest">Open</span>
         <ChevronRight className="w-3 h-3" />
