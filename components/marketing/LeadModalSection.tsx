@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { 
-  CheckCircle2, 
   Calendar, 
   FileText, 
   Wallet, 
@@ -11,17 +10,24 @@ import {
 } from 'lucide-react';
 import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
 
-const STEPS = [
+// Define the type for our steps to keep TS happy
+interface FeatureStep {
+  title: string;
+  desc: string;
+  color: string;
+  image?: string; // Optional string, avoids the 'null' error
+  icon: React.ReactNode;
+}
+
+const STEPS: FeatureStep[] = [
   { 
-    step: '01', 
     title: 'Lead lands on your board',  
     desc: 'Name, contact, and job photos captured instantly. No manual entry, no hunting through messy text threads.', 
     color: '#1a6645',
-    image: '/images/modal-overview2.webp', // Use .webp for speed
+    image: undefined, // Phone is the hero for step 1
     icon: <Zap size={18} />
   },
   { 
-    step: '02', 
     title: 'Schedule with one click',   
     desc: 'Pick a date and assign your crew. Send a branded confirmation so the customer knows when you’re coming.', 
     color: '#3b82f6',
@@ -29,7 +35,6 @@ const STEPS = [
     icon: <Calendar size={18} />
   },
   { 
-    step: '03', 
     title: 'Send a professional quote',   
     desc: 'One tap sends a branded quote. Customers can accept or decline right from their inbox. No more PDF hunting.', 
     color: '#10b981',
@@ -37,7 +42,6 @@ const STEPS = [
     icon: <FileText size={18} />
   },
   { 
-    step: '04', 
     title: 'Collect payment & close',   
     desc: 'Automated reminders for unpaid balances. Every email is logged so you know exactly what’s outstanding.', 
     color: '#f59e0b',
@@ -50,91 +54,94 @@ export default function LeadModalSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section 
-      id="features" 
-      className="py-12 lg:py-24 px-4 sm:px-6 border-y"
-      style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}
-    >
+    <section className="py-12 lg:py-24 px-4 sm:px-6 bg-[#F7F5F0] border-y border-[#E5E0D8]">
       <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
-        <div className="text-center mb-10 lg:mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 border border-green-200 mb-4">
-            <CheckCircle2 size={12} className="text-green-700" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700">The Field Command Center</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.1] lg:leading-[0.95] text-slate-900 mb-4 tracking-[-0.04em]">
+        {/* Header - Tight & Impactful */}
+        <div className="text-center mb-12 lg:mb-20">
+          <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[0.9] text-slate-900 tracking-[-0.05em]">
             The only job card<br />
             <span className="text-[#1a6645]">you'll ever need.</span>
           </h2>
         </div>
 
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
-          {/* TOP (Mobile) / LEFT (Desktop) — DYNAMIC VISUALS */}
-          <div className="w-full relative lg:sticky lg:top-24 h-fit order-1">
-            <div className="absolute -inset-4 rounded-[32px] blur-2xl -z-10 bg-[#1a6645]/5" />
+          {/* VISUAL STAGE */}
+          <div className="w-full relative min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] flex items-center justify-center order-1">
             
-            <div className="relative rounded-xl lg:rounded-[2.5rem] overflow-hidden border border-slate-200 bg-white shadow-2xl transition-all duration-500">
-              <img 
-                key={activeTab} 
-                src={STEPS[activeTab].image} 
-                alt={STEPS[activeTab].title} 
-                className="w-full h-auto block animate-in fade-in slide-in-from-bottom-2 duration-500 aspect-[4/3] object-cover" 
-              />
+            {/* SaaS UI Panel (Steps 2, 3, 4) */}
+            <div className={`relative w-full transition-all duration-700 ease-in-out ${
+              activeTab === 0 ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+            }`}>
+              <div className="rounded-[2rem] lg:rounded-[3rem] overflow-hidden border border-slate-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
+                {STEPS[activeTab].image && (
+                  <img 
+                    key={activeTab} 
+                    src={STEPS[activeTab].image} 
+                    alt={STEPS[activeTab].title} 
+                    className="w-full h-auto object-cover object-center scale-110 animate-in fade-in zoom-in-95 duration-500 aspect-[4/3]" 
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Phone Mockup — Hidden on very small phones to avoid clutter, shown on Desktop */}
+            {/* CYCLING PHONE - Dynamic Positioning */}
             <div 
-              className={`absolute -bottom-6 -left-4 lg:-bottom-10 lg:-left-8 z-20 scale-[0.5] sm:scale-[0.6] lg:scale-[0.75] origin-bottom-left filter drop-shadow-2xl transition-all duration-500 ${
+              className={`absolute z-20 transition-all duration-1000 cubic-bezier(0.16, 1, 0.3, 1) ${
                 activeTab === 0 
-                  ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 translate-y-4 pointer-events-none'
+                  ? 'scale-[1.1] sm:scale-[1.3] lg:scale-[1.4] translate-x-0 translate-y-0' 
+                  : 'scale-[0.5] sm:scale-[0.6] lg:scale-[0.7] -bottom-10 -left-6 lg:-bottom-12 lg:-left-12 origin-bottom-left'
               }`}
             >
-              <CyclingPhoneMockup visible={activeTab === 0} hideIndicators />
+              <CyclingPhoneMockup visible={true} hideIndicators={activeTab !== 0} />
             </div>
 
-          
+            {/* Decorative Atmosphere Glow for Phone Hero */}
+            {activeTab === 0 && (
+              <div className="absolute inset-0 bg-[#1a6645]/5 blur-[100px] rounded-full animate-pulse -z-10" />
+            )}
           </div>
 
-          {/* BOTTOM (Mobile) / RIGHT (Desktop) — INTERACTIVE ACCORDION */}
-          <div className="w-full flex flex-col gap-3 lg:gap-4 order-2 mt-8 lg:mt-0">
+          {/* INTERACTIVE ACCORDION */}
+          <div className="w-full space-y-3 order-2">
             {STEPS.map((item, i) => {
               const isActive = activeTab === i;
               return (
                 <button 
                   key={i} 
                   onClick={() => setActiveTab(i)}
-                  className={`w-full text-left group p-4 lg:p-6 rounded-xl lg:rounded-2xl border transition-all duration-300 outline-none ${
+                  className={`w-full text-left p-5 lg:p-7 rounded-2xl border-2 transition-all duration-300 outline-none ${
                     isActive 
-                    ? 'bg-white border-slate-200 shadow-md translate-x-1 lg:translate-x-2' 
-                    : 'bg-transparent border-transparent hover:bg-slate-200/50'
+                    ? 'bg-white border-[#1a6645] shadow-xl translate-x-1 lg:translate-x-2' 
+                    : 'bg-white/40 border-transparent hover:border-slate-200 hover:bg-white/60'
                   }`}
                 >
-                  <div className="flex items-start gap-3 lg:gap-4">
+                  <div className="flex items-start gap-4 lg:gap-6">
                     <div 
-                      className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-                        isActive ? 'text-white' : 'bg-slate-200 text-slate-500'
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 ${
+                        isActive ? 'text-white rotate-[360deg]' : 'bg-slate-100 text-slate-400'
                       }`}
                       style={{ background: isActive ? item.color : '' }}
                     >
                       {item.icon}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className={`font-black text-[14px] lg:text-[16px] transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`text-lg lg:text-xl font-black tracking-tight transition-colors ${
+                          isActive ? 'text-slate-900' : 'text-slate-500'
+                        }`}>
                           {item.title}
-                        </p>
+                        </h3>
                         <ChevronRight 
-                          className={`transition-all duration-300 ${isActive ? 'rotate-90 text-slate-900' : 'text-slate-300 group-hover:text-slate-400'}`} 
-                          size={14} 
+                          className={`transition-transform duration-300 ${isActive ? 'rotate-90 text-[#1a6645]' : 'text-slate-300'}`} 
+                          size={20} 
                         />
                       </div>
-                      <div className={`grid transition-all duration-300 overflow-hidden ${
-                        isActive ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'
+                      <div className={`grid transition-all duration-500 ${
+                        isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                       }`}>
-                        <p className="text-slate-500 text-[13px] lg:text-sm font-medium leading-relaxed overflow-hidden">
+                        <p className="text-slate-600 text-sm lg:text-base font-medium leading-relaxed overflow-hidden">
                           {item.desc}
                         </p>
                       </div>
