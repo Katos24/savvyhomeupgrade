@@ -16,9 +16,11 @@ export default function Home() {
     <div className="min-h-screen font-sans antialiased overflow-x-hidden">
      <Nav />
 <Hero />
+
 <HowItWorks />
-<ValueStrip />
 <LeadModalSection />
+
+<ValueStrip />
 <TheBoard />
 <SettingsShowcase />
 <Pricing />

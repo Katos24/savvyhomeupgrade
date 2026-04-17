@@ -137,7 +137,7 @@ return (
           {/* YOUR IMAGE ADDS HERE */}
         <div className="relative rounded-2xl overflow-hidden shadow-xl border border-white/5 bg-[#0F172A]">
             <img
-              src="/images/qr-screenshot.png"
+              src="/images/qr-screenshot.webp"
               alt="QR Code"
               className="w-full h-auto block max-h-[280px] object-contain object-center p-4"
             />
@@ -161,7 +161,7 @@ caption="Your form, your rules. Toggle address collection on or off, add custom 
 caption="Customer scans your truck, yard sign, or clicks your bio link. They fill out your form, upload photos, and hit submit. You get the lead on your dashboard in seconds — name, number, service, photos, all of it."          />
           <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl" style={{ minHeight: 320 }}>
             <img 
-              src="/images/qr-scan-2.png" 
+              src="/images/qr-scan-2.webp" 
               className="absolute inset-0 w-full h-full object-cover opacity-70" 
               alt="Customer scanning" 
             />

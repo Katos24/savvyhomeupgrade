@@ -146,7 +146,7 @@ function EmailBento() {
         <div className="px-3 py-3" style={{ background: 'linear-gradient(135deg, #1d4ed8, #0369a1)' }}>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-5 h-5 rounded bg-white/20 overflow-hidden flex items-center justify-center shrink-0">
-              <img src="/images/ridgelinelogo.png" alt="" className="w-4 h-4 object-contain" />
+              <img src="/images/ridgelinelogo.webp" alt="" className="w-4 h-4 object-contain" />
             </div>
             <p className="text-[10px] font-black text-white">Ridge Line Roofing</p>
             <span className="ml-auto text-[8px] text-white/50">hello@ridgeline.com</span>

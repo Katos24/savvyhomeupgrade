@@ -162,7 +162,7 @@ function DashboardMockupLight() {
           <div style={{ margin:'6px 10px', background:'#fff', borderRadius:14, border:'1px solid #e2e8f0', padding:'8px 10px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ width:30, height:30, background:'#f8fafc', borderRadius:9, border:'1px solid #e2e8f0', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
-                <img src="/images/ridgelinelogo.png" alt="" style={{ width:26, height:26, objectFit:'contain' }} />
+                <img src="/images/ridgelinelogo.webp" alt="" style={{ width:26, height:26, objectFit:'contain' }} />
               </div>
               <div>
                 <div style={{ fontSize:11, fontWeight:800, color:'#0f172a' }}>Ridge Line Roofing</div>
@@ -267,7 +267,7 @@ export function DashboardLaptopMockup() {
             >
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center rounded-lg overflow-hidden" style={{ width: 22, height: 22, background: '#fff' }}>
-                  <img src="/images/ridgelinelogo.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                  <img src="/images/ridgelinelogo.webp" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, color: current.dark ? '#f9fafb' : '#0f172a', letterSpacing: '-0.2px', transition: 'color 0.4s ease' }}>Ridge Line Roofing</div>

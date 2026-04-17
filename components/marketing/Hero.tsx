@@ -30,8 +30,8 @@ export default function Hero() {
   className="font-black text-[#0F1F3D] leading-[0.95] tracking-[-0.04em] mb-6" 
   style={{ fontSize: 'clamp(3.2rem, 8vw, 6rem)' }}
 >
-  Blast your link. <br />
-  <span className="text-[#1a6645]"> Get better leads.</span>
+  Get Leads In Your Sleep <br />
+  <span className="text-[#1a6645]"> Wake Up To More Deals</span>
 </h1>
 
             <div className="relative mb-4 lg:mb-8">

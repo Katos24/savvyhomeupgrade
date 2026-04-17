@@ -350,7 +350,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
             {/* Image 1 */}
             <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-3">
               <img
-                src="/images/pipelineimage.png"
+                src="/images/pipelineimage.webp"
                 alt="Card badges"
                 className="w-full h-auto object-cover"
               />

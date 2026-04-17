@@ -295,7 +295,10 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
   className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none transition-colors focus:border-indigo-300"
   placeholder="0.00"
 />
+
+
             </div>
+            
 
             <div className="min-w-0">
               <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">Method</label>
@@ -318,28 +321,42 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
               </div>
             </div>
 
-           <div className="min-w-0 overflow-hidden">
-  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">Paid Date</label>
-  <input
-    type="date"
-    value={paymentDate}
-    onChange={(e) => setPaymentDate(e.target.value)}
-    className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
-    style={{ maxWidth: '100%', WebkitAppearance: 'none', fontSize: '13px' }}
-  />
-</div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+  <div className="min-w-0 overflow-hidden">
+    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">
+      Paid Date
+    </label>
+    <input
+      type="date"
+      value={paymentDate}
+      onChange={(e) => setPaymentDate(e.target.value)}
+      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
+      style={{
+        maxWidth: '100%',
+        WebkitAppearance: 'none',
+        fontSize: '13px',
+      }}
+    />
+  </div>
 
-<div className="min-w-0 overflow-hidden">
-  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">Due Date</label>
-  <input
-    type="date"
-    value={paymentDueDate}
-    onChange={(e) => setPaymentDueDate(e.target.value)}
-    className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
-    style={{ maxWidth: '100%', WebkitAppearance: 'none', fontSize: '13px' }}
-  />
+  <div className="min-w-0 overflow-hidden">
+    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">
+      Due Date
+    </label>
+    <input
+      type="date"
+      value={paymentDueDate}
+      onChange={(e) => setPaymentDueDate(e.target.value)}
+      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
+      style={{
+        maxWidth: '100%',
+        WebkitAppearance: 'none',
+        fontSize: '13px',
+      }}
+    />
+  </div>
+   </div> 
 </div>
-          </div>
 
           {/* MARK PAID IN FULL */}
           {total > 0 && (

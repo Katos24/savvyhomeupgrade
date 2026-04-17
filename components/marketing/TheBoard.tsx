@@ -298,7 +298,7 @@ style={{ fontSize: 'clamp(2.8rem, 5vw, 4.5rem)', lineHeight: 0.95, letterSpacing
                   <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center">
-                        <img src="/images/ridgelinelogo.png" alt="" className="w-4.5 h-4.5 object-contain" style={{ width: 18, height: 18 }} />
+                        <img src="/images/ridgelinelogo.webp" alt="" className="w-4.5 h-4.5 object-contain" style={{ width: 18, height: 18 }} />
                       </div>
                       <div>
                         <div className="text-[12px] font-black text-slate-900 leading-none">Ridge Line Roofing</div>

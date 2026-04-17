@@ -55,7 +55,7 @@ export function DashboardMockup() {
                 overflow: 'hidden',
               }}>
                 <img
-                  src="/images/ridgelinelogo.png"
+                  src="/images/ridgelinelogo.webp"
                   alt="Ridge Line Roofing"
                   style={{ width: 26, height: 26, objectFit: 'contain' }}
                 />

@@ -13,7 +13,7 @@ function ScreenDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 28, height: 28, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <img src="/images/ridgelinelogo.png" alt="logo" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <img src="/images/ridgelinelogo.webp" alt="logo" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.15 }}>Ridge Line Roofing</div>

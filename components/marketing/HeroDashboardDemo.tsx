@@ -39,7 +39,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
             <div className="flex items-center justify-between mb-0.5">
               <div className="flex items-center gap-1.5">
                 <div className="w-5 h-5 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center">
-                  <img src="/images/ridgelinelogo.png" alt="" className="w-3.5 h-3.5 object-contain" />
+                  <img src="/images/ridgelinelogo.webp" alt="" className="w-3.5 h-3.5 object-contain" />
                 </div>
                 <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Dashboard</span>
               </div>
@@ -82,7 +82,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
               {leadVisible && (
                 <div className="relative w-full overflow-hidden" style={{ height: 36 }}>
                   <img
-                    src="/images/roof-damage.png"
+                    src="/images/roof-damage.webp"
                     alt="fence damage"
                     className="w-full h-full object-cover"
                     style={{ filter: 'brightness(0.7)' }}

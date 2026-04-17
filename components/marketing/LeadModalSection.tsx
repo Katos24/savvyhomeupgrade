@@ -1,137 +1,148 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { 
+  CheckCircle2, 
+  Calendar, 
+  FileText, 
+  Wallet, 
+  ChevronRight,
+  Zap
+} from 'lucide-react';
 import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
 
-function useFadeIn(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight) { setVisible(true); return; }
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { threshold }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
-
 const STEPS = [
-  { step: '01', title: 'Lead lands on your board',  desc: 'Name, contact, service, photos — all captured from the form. No manual entry, no missed details.', color: '#6366f1' },
-  { step: '02', title: 'Schedule with one click',   desc: 'Pick a date, assign your crew, and send a branded confirmation email to the customer in one tap. They know exactly when you\'re coming. Pro feature.', color: '#3b82f6' },
-  { step: '03', title: 'Send a quote in seconds',   desc: 'Build from templates or let AI generate line items from photos. One click sends a branded quote email — customer accepts or declines right from their inbox. Pro feature.', color: '#10b981' },
-  { step: '04', title: 'Collect payment & close',   desc: 'One-click payment reminder emails. A dashboard banner shows every unpaid balance so nothing slips through. Every email you send is logged in your outbox. Pro feature.', color: '#f59e0b' },
+  { 
+    step: '01', 
+    title: 'Lead lands on your board',  
+    desc: 'Name, contact, and job photos captured instantly. No manual entry, no hunting through messy text threads.', 
+    color: '#1a6645',
+    image: '/images/modal-overview2.webp', // Use .webp for speed
+    icon: <Zap size={18} />
+  },
+  { 
+    step: '02', 
+    title: 'Schedule with one click',   
+    desc: 'Pick a date and assign your crew. Send a branded confirmation so the customer knows when you’re coming.', 
+    color: '#3b82f6',
+    image: '/images/schedule-send.webp', 
+    icon: <Calendar size={18} />
+  },
+  { 
+    step: '03', 
+    title: 'Send a professional quote',   
+    desc: 'One tap sends a branded quote. Customers can accept or decline right from their inbox. No more PDF hunting.', 
+    color: '#10b981',
+    image: '/images/quote-send-tablet.webp', 
+    icon: <FileText size={18} />
+  },
+  { 
+    step: '04', 
+    title: 'Collect payment & close',   
+    desc: 'Automated reminders for unpaid balances. Every email is logged so you know exactly what’s outstanding.', 
+    color: '#f59e0b',
+    image: '/images/payment-send.webp', 
+    icon: <Wallet size={18} />
+  },
 ];
 
 export default function LeadModalSection() {
-  const { ref, visible } = useFadeIn();
+  const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section
-      id="features"
-      className="py-16 lg:py-24 px-4 sm:px-6 border-y"
+    <section 
+      id="features" 
+      className="py-12 lg:py-24 px-4 sm:px-6 border-y"
       style={{ backgroundColor: '#F7F5F0', borderColor: '#E5E0D8' }}
     >
       <div className="max-w-7xl mx-auto">
-
+        
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-10 lg:mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 border border-green-200 mb-4">
             <CheckCircle2 size={12} className="text-green-700" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700">Lead lands. You take action.</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-700">The Field Command Center</span>
           </div>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[0.95] text-slate-900 mb-4" style={{ letterSpacing: '-0.03em' }}>
+          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.1] lg:leading-[0.95] text-slate-900 mb-4 tracking-[-0.04em]">
             The only job card<br />
-            <span style={{ color: '#1a6645' }}>you'll ever need.</span>
+            <span className="text-[#1a6645]">you'll ever need.</span>
           </h2>
-          <p className="text-sm font-normal leading-loose text-slate-400 max-w-md mx-auto">
-            Lead2Project turns every scan into a managed job.
-          </p>
         </div>
 
-        {/* Grid — demo LEFT, steps RIGHT */}
-        <div
-          ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(24px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
-          }}
-        >
-
-          {/* LEFT — modal image + phone */}
-          <div className="relative order-1" style={{ paddingBottom: 40 }}>
-
-            {/* Glow */}
-            <div className="absolute -inset-4 rounded-[32px] blur-2xl -z-10 pointer-events-none"
-              style={{ background: 'rgba(26,102,69,0.08)' }} />
-
-            {/* Modal screenshot */}
-            <div className="relative rounded-2xl lg:rounded-[2rem] overflow-hidden border border-slate-200 bg-white"
-              style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.12)' }}>
-              <img src="/images/modal-overview2.png" alt="Lead2Project Job Card" className="w-full h-auto block" />
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+          
+          {/* TOP (Mobile) / LEFT (Desktop) — DYNAMIC VISUALS */}
+          <div className="w-full relative lg:sticky lg:top-24 h-fit order-1">
+            <div className="absolute -inset-4 rounded-[32px] blur-2xl -z-10 bg-[#1a6645]/5" />
+            
+            <div className="relative rounded-xl lg:rounded-[2.5rem] overflow-hidden border border-slate-200 bg-white shadow-2xl transition-all duration-500">
+              <img 
+                key={activeTab} 
+                src={STEPS[activeTab].image} 
+                alt={STEPS[activeTab].title} 
+                className="w-full h-auto block animate-in fade-in slide-in-from-bottom-2 duration-500 aspect-[4/3] object-cover" 
+              />
             </div>
 
-            {/* Phone */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: -8,
-                zIndex: 10,
-                willChange: 'opacity, transform',
-                opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(20px)',
-                transition: 'opacity 0.8s ease 0.35s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.35s',
-                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.25))',
-              }}
+            {/* Phone Mockup — Hidden on very small phones to avoid clutter, shown on Desktop */}
+            <div 
+              className={`absolute -bottom-6 -left-4 lg:-bottom-10 lg:-left-8 z-20 scale-[0.5] sm:scale-[0.6] lg:scale-[0.75] origin-bottom-left filter drop-shadow-2xl transition-all duration-500 ${
+                activeTab === 0 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 translate-y-4 pointer-events-none'
+              }`}
             >
-              <div style={{ transform: 'scale(0.72)', transformOrigin: 'bottom left' }}>
-                <CyclingPhoneMockup visible={visible} hideIndicators />
-              </div>
+              <CyclingPhoneMockup visible={activeTab === 0} hideIndicators />
             </div>
 
-            {/* Paid badge */}
-            <div className="flex items-center gap-2.5 bg-white p-3 rounded-2xl border border-slate-100"
-              style={{ position: 'absolute', bottom: 0, right: -8, zIndex: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-              <div className="bg-green-100 p-1.5 rounded-lg">
-                <CheckCircle2 size={14} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Accepted Quote</p>
-                <p className="text-[11px] font-black text-slate-900">$4,250 — Paid</p>
-              </div>
-            </div>
-
+          
           </div>
 
-          {/* RIGHT — steps + payment teaser + demo link */}
-          <div className="flex flex-col gap-6 order-2">
-
-            {STEPS.map((item, i) => (
-              <div key={i} className="flex items-start gap-4">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-black text-white mt-0.5"
-                  style={{ background: item.color }}>
-                  {item.step}
-                </div>
-                <div>
-                  <p className="font-black text-slate-900 text-[15px] mb-1">{item.title}</p>
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-
-         
-
-         
-
+          {/* BOTTOM (Mobile) / RIGHT (Desktop) — INTERACTIVE ACCORDION */}
+          <div className="w-full flex flex-col gap-3 lg:gap-4 order-2 mt-8 lg:mt-0">
+            {STEPS.map((item, i) => {
+              const isActive = activeTab === i;
+              return (
+                <button 
+                  key={i} 
+                  onClick={() => setActiveTab(i)}
+                  className={`w-full text-left group p-4 lg:p-6 rounded-xl lg:rounded-2xl border transition-all duration-300 outline-none ${
+                    isActive 
+                    ? 'bg-white border-slate-200 shadow-md translate-x-1 lg:translate-x-2' 
+                    : 'bg-transparent border-transparent hover:bg-slate-200/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 lg:gap-4">
+                    <div 
+                      className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                        isActive ? 'text-white' : 'bg-slate-200 text-slate-500'
+                      }`}
+                      style={{ background: isActive ? item.color : '' }}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className={`font-black text-[14px] lg:text-[16px] transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>
+                          {item.title}
+                        </p>
+                        <ChevronRight 
+                          className={`transition-all duration-300 ${isActive ? 'rotate-90 text-slate-900' : 'text-slate-300 group-hover:text-slate-400'}`} 
+                          size={14} 
+                        />
+                      </div>
+                      <div className={`grid transition-all duration-300 overflow-hidden ${
+                        isActive ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'
+                      }`}>
+                        <p className="text-slate-500 text-[13px] lg:text-sm font-medium leading-relaxed overflow-hidden">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
         </div>

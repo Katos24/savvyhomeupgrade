@@ -64,7 +64,7 @@ function Pill({ label, selected, tapping }: { label: string; selected: boolean; 
 function LogoBar() {
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 shrink-0 bg-white mt-2">
-      <img src="/images/ridgelinelogo.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+      <img src="/images/ridgelinelogo.webp" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
       <span className="text-[9px] font-black text-slate-800">Ridge Line Roofing</span>
     </div>
   );
@@ -98,14 +98,14 @@ function SuccessScreen() {
     <div className="flex flex-col items-center justify-center h-full px-3 py-4" style={{ background: '#f5f4f0' }}>
       <div className="bg-white rounded-3xl p-4 w-full shadow-lg flex flex-col items-center">
         <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 shadow-inner">
-          <img src="/images/ridgelinelogo.png" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />
+          <img src="/images/ridgelinelogo.webp" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />
         </div>
         <p className="text-[13px] font-black text-slate-900 mb-0.5">Request Received!</p>
         <p className="text-[8px] text-slate-500 text-center mb-3">We'll be in touch about your fencing project.</p>
 
         {/* Photo thumbnail in success */}
         <div className="w-full mb-2 rounded-xl overflow-hidden border border-slate-100" style={{ height: 44 }}>
-          <img src="/images/roof-damage.png" alt="roof damage" className="w-full h-full object-cover" />
+          <img src="/images/roof-damage.webp" alt="roof damage" className="w-full h-full object-cover" />
         </div>
         <p className="text-[7px] text-slate-400 mb-2 self-start flex items-center gap-1">
           <Check size={8} className="text-emerald-500" strokeWidth={3} />
@@ -287,7 +287,7 @@ const desc = 'Storm damaged roof, multiple shingles missing after last night';
                       {/* Real photo thumbnail */}
                       <div className="relative w-full rounded-xl overflow-hidden mb-2" style={{ height: 60 }}>
                         <img
-                          src="/images/roof-damage.png"
+                          src="/images/roof-damage.webp"
                           alt="fence damage"
                           className="w-full h-full object-cover"
                         />

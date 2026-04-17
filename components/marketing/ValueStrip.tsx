@@ -71,7 +71,7 @@ function JobSiteCard() {
   return (
     <div className="relative overflow-hidden rounded-3xl border-2 border-slate-900/10 shadow-sm h-full min-h-[320px]">
       <img
-        src="/images/dashboard-jobsite.png"
+        src="/images/dashboard-jobsite.webp"
         alt="Contractor checking dashboard on job site"
         className="absolute inset-0 w-full h-full object-cover"
         loading="lazy"

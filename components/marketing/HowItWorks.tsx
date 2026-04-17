@@ -64,7 +64,7 @@ export default function HowItWorks() {
             <div className="relative order-2 w-full max-w-[480px] lg:max-w-none mx-auto lg:translate-x-6">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-[#1a6645]/20 blur-[100px] rounded-full -z-10" />
               <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-2 border border-[#1a6645]/40 bg-white/5 backdrop-blur-sm shadow-2xl">
-                <img src="/images/qrbranded2.png" alt="System" className="w-full h-auto rounded-[1.8rem] block" />
+                <img src="/images/qrbranded2.webp" alt="System" className="w-full h-auto rounded-[1.8rem] block" />
               </div>
             </div>
 
