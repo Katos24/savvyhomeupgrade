@@ -10,7 +10,6 @@ import Pricing           from '@/components/marketing/Pricing';
 import Comparison from '@/components/marketing/Comparison';
 import FinalCTA          from '@/components/marketing/FinalCTA';
 import Footer            from '@/components/marketing/Footer';
-import RealCost from '@/components/marketing/RealCost';
 
 export default function Home() {
   return (
@@ -18,7 +17,6 @@ export default function Home() {
      <Nav />
 <Hero />
 <HowItWorks />
-<RealCost />
 <ValueStrip />
 <LeadModalSection />
 <TheBoard />
