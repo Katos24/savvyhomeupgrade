@@ -56,14 +56,14 @@ export default function Hero() {
                   href="/signup"
                   className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] bg-[#0F1F3D] px-8 py-4 text-lg shadow-xl shadow-blue-900/20"
                 >
-                  Get your L2P link
+                  Try Free for 14 Days
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1 text-[#1a6645] font-bold text-xs uppercase tracking-tighter">
                     <ShieldCheck size={14} /> 14-day free trial
                   </div>
-                  <span className="text-[10px] text-slate-400 font-medium tracking-tight">Cancel anytime</span>
+                  <span className="text-[10px] text-slate-400 font-medium tracking-tight">Card required · Cancel anytime</span>
                 </div>
               </div>
               <Link 
@@ -90,7 +90,7 @@ export default function Hero() {
             href="/signup" 
             className="w-full flex items-center justify-center gap-3 text-white font-black rounded-2xl bg-[#0F1F3D] py-5 text-lg shadow-xl shadow-blue-900/20"
           >
-            Get your L2P link
+            Try Free for 14 Days
             <ArrowRight size={20} />
           </Link>
           <Link 
@@ -100,7 +100,7 @@ export default function Hero() {
             See the live demo first
             <ArrowRight size={15} />
           </Link>
-          <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">14-day free trial · Cancel anytime</p>
+          <p className="text-[10px] font-black text-[#1a6645] uppercase tracking-widest">14-day free trial · Card required · Cancel anytime</p>
         </div>
 
         {/* SECTION TRANSITION */}
