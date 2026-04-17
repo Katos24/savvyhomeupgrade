@@ -1,132 +1,87 @@
 'use client';
 
-import React from 'react';
-import { Truck, Instagram, MapPin, Mail, Zap, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useFadeIn } from '@/components/marketing/hooks';
+import { QrCode, Smartphone, ArrowRight, MousePointer2, CheckCircle } from 'lucide-react';
 
-const PILLS = [
-  { icon: Truck, label: 'Truck Wraps' },
-  { icon: Instagram, label: 'Social Bio' },
-  { icon: MapPin, label: 'Yard Signs' },
-  { icon: Mail, label: 'Email Footer' },
-];
-
-const COMPARISON = [
-  { title: 'Inbound Leads', old: 'Text threads & lost voicemails', new: 'Instant Dashboard Entry' },
-  { title: 'Photos/Files', old: 'Scattered in phone gallery', new: 'Attached to Project Card' },
-  { title: 'Quoting', old: 'Manual pen & paper at night', new: 'Sent via SMS in 60s' },
-  { title: 'Status', old: "Customer calling for 'Update?'", new: 'Auto-Update Portal' },
-];
-
-export default function QRPowerSection() {
-  const { ref, visible } = useFadeIn();
-
-  const animationClass = "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]";
-  const visibleClass = visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8';
-
+export default function QRMarketingSection() {
   return (
-    <section className="py-20 md:py-32 px-5 md:px-6 bg-[#020617] overflow-hidden" ref={ref}>
-      <div className="max-w-7xl mx-auto">
-        
-        {/* ── THE HERO BLOCK ── */}
-        <div className={`${animationClass} ${visibleClass} delay-200`}>
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-24 md:mb-32">
+    <section className="py-24 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          {/* LEFT: The Visual Proof */}
+          <div className="relative">
+            {/* Main Image from your upload */}
+            <div className="relative rounded-[3rem] overflow-hidden shadow-2xl border-8 border-slate-50">
+              <img 
+                src="/images/qrbranded2.webp" 
+                alt="Branded QR Marketing" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
             
-            <div className="text-center lg:text-left order-1">
-              <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full bg-[#1a6645]/15 border border-[#1a6645]/30">
-                <Zap size={14} className="text-[#1a6645] fill-[#1a6645]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#1a6645]">
-                  The Lead2Project QR System
-                </span>
+            {/* Floating Tag: Direct Intake */}
+            <div className="absolute -bottom-6 -right-6 bg-slate-900 text-white p-6 rounded-3xl shadow-2xl max-w-[200px] hidden md:block border-4 border-white">
+              <div className="flex items-center gap-2 mb-2">
+                <Smartphone size={18} className="text-emerald-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Mobile Ready</span>
               </div>
+              <p className="text-sm font-bold leading-tight">Leads hit your board in &lt; 2 seconds.</p>
+            </div>
+          </div>
 
-              <h3 className="text-white font-black leading-[0.95] tracking-tighter mb-8 text-[clamp(2.5rem,6vw,4.2rem)]">
-                The hardest working<br />
-                member of your team<br />
-                <span className="text-[#1a6645]">doesn't need a salary.</span>
-              </h3>
+          {/* RIGHT: The Breakdown */}
+          <div className="flex flex-col text-left">
+            <div className="inline-flex items-center gap-2 mb-6">
+              <QrCode size={20} className="text-[#1a6645]" />
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#1a6645]">Automated Acquisition</span>
+            </div>
 
-              <p className="text-slate-400 text-lg md:text-xl font-medium mb-10 max-w-xl mx-auto lg:mx-0">
-                Slap your custom QR code on everything. It doesn't just collect info—it builds the project, files the photos, and notifies your team while you're on a ladder.
-              </p>
+            <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-8">
+              Every yard sign is a <br/>
+              <span className="text-emerald-600">digital salesperson.</span>
+            </h2>
 
-              {/* Desktop Pills */}
-              <div className="hidden lg:flex flex-wrap justify-start gap-3">
-                {PILLS.map((p) => (
-                  <div key={p.label} className="flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-white/5 bg-white/5 hover:border-[#1a6645]/50 hover:bg-white/10 transition-all cursor-default">
-                    <p.icon size={16} className="text-[#1a6645]" />
-                    <span className="text-[12px] font-black tracking-widest text-slate-200 uppercase">{p.label}</span>
+            <div className="space-y-8 mb-10">
+              {[
+                {
+                  title: "Branded QR Decals",
+                  desc: "We generate custom codes for your truck and yard signs that match your brand perfectly.",
+                  icon: <CheckCircle className="text-emerald-500" />
+                },
+                {
+                  title: "High-Conversion Intake",
+                  desc: "The link goes to a mobile-optimized form designed specifically for contractors to qualify leads fast.",
+                  icon: <MousePointer2 className="text-emerald-500" />
+                },
+                {
+                  title: "Instant Board Sync",
+                  desc: "No manual entry. The lead pops up on your project board with all details pre-filled.",
+                  icon: <QrCode className="text-emerald-500" />
+                }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="mt-1">{item.icon}</div>
+                  <div>
+                    <h4 className="font-black text-slate-900 text-lg leading-tight">{item.title}</h4>
+                    <p className="text-slate-500 font-medium text-sm mt-1">{item.desc}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: The Branded QR Visual */}
-            <div className="relative order-2 w-full max-w-[500px] lg:max-w-none mx-auto group">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#1a6645]/10 blur-[120px] rounded-full" />
-              <div className="relative rounded-[2.5rem] p-2 border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]">
-                <img 
-                  src="/images/qrbranded2.webp" 
-                  alt="Branded QR Code Interface" 
-                  className="w-full h-auto rounded-[2rem] block" 
-                />
-              </div>
-            </div>
-
-            {/* Mobile Pills Grid */}
-            <div className="lg:hidden order-3 grid grid-cols-2 gap-3 w-full max-w-[480px] mx-auto pt-4">
-              {PILLS.map((p) => (
-                <div key={p.label} className="flex items-center justify-center gap-2.5 px-4 py-4 rounded-2xl border border-white/5 bg-white/5">
-                  <p.icon size={14} className="text-[#1a6645]" />
-                  <span className="text-[10px] font-bold tracking-widest text-slate-200 uppercase">{p.label}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* ── THE "OLD WAY vs NEW WAY" COMPARISON ── */}
-        <div className={`${animationClass} ${visibleClass} delay-500`}>
-          <div className="rounded-[3rem] bg-white/[0.02] border border-white/5 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              
-              {/* Pain Point Side */}
-              <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/5">
-                <h4 className="flex items-center gap-3 text-red-500 font-black uppercase tracking-widest text-xs mb-8">
-                  <AlertCircle size={16} /> The Chaos Method
-                </h4>
-                <div className="space-y-8">
-                  {COMPARISON.map((item, i) => (
-                    <div key={i} className="opacity-40">
-                      <p className="text-white/40 text-[10px] font-black uppercase tracking-tighter mb-1">{item.title}</p>
-                      <p className="text-white text-lg font-bold line-through decoration-red-500/50">{item.old}</p>
-                    </div>
-                  ))}
+            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
+              <p className="text-slate-900 font-black text-lg mb-2">"We get 30% more leads from yard signs now."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-slate-200" />
+                <div>
+                  <p className="text-xs font-black text-slate-900">Alex Katas</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ridge Line Roofing</p>
                 </div>
               </div>
-
-              {/* Solution Side */}
-              <div className="p-8 md:p-12 bg-[#1a6645]/5">
-                <h4 className="flex items-center gap-3 text-[#1a6645] font-black uppercase tracking-widest text-xs mb-8">
-                  <CheckCircle2 size={16} /> The Lead2Project Way
-                </h4>
-                <div className="space-y-8">
-                  {COMPARISON.map((item, i) => (
-                    <div key={i} className="group cursor-default">
-                      <p className="text-[#1a6645] text-[10px] font-black uppercase tracking-tighter mb-1">{item.title}</p>
-                      <p className="text-white text-lg font-black italic flex items-center gap-2">
-                        {item.new}
-                        <ArrowRight size={16} className="text-[#1a6645] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </section>
   );
