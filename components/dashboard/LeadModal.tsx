@@ -423,8 +423,7 @@ return (
       >
 
         {/* ── HERO HEADER ── */}
-        <div className="flex-shrink-0 relative overflow-hidden" style={{ background: '#312e81' }}>
-          <div className="relative z-10 p-4 sm:p-6 pb-0">
+        <div className="flex-shrink-0 relative overflow-hidden" style={{ background: '#1e3a5f' }}>          <div className="relative z-10 p-4 sm:p-6 pb-0">
             {/* Top row */}
             <div className="flex items-start justify-between mb-3">
               <motion.div
@@ -591,10 +590,10 @@ return (
                     className="flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
                     style={{
                       color: activeTab === tab.id
-                        ? (isAi ? '#c4b5fd' : 'white')
-                        : (isAi ? 'rgba(196,181,253,0.5)' : 'rgba(255,255,255,0.4)'),
+                        ? (isAi ? '#93c5fd' : 'white')
+                        : (isAi ? 'rgba(147,197,253,0.5)' : 'rgba(255,255,255,0.4)'),
                       borderBottomColor: activeTab === tab.id
-                        ? (isAi ? '#c4b5fd' : '#a5b4fc')
+                        ? (isAi ? '#93c5fd' : '#60a5fa')
                         : 'transparent',
                       opacity: tab.locked ? 0.5 : 1,
                     }}
@@ -631,11 +630,10 @@ return (
                   {!isProject && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      className="rounded-none border-2 border-dashed border-indigo-200 bg-indigo-50/60 p-5 flex items-center justify-between gap-4"
-                    >
+className="rounded-none border-2 border-dashed border-blue-200 bg-blue-50/60 p-5 flex items-center justify-between gap-4"                    >
                       <div>
-                        <p className="text-sm font-black text-indigo-900">Ready to start this job?</p>
-                        <p className="text-xs text-indigo-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+                       <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
+                        <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
                       </div>
                       <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
                     </motion.div>
@@ -649,7 +647,7 @@ return (
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-indigo-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-indigo-400" /></span>
+                        <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-blue-400" /></span>
                         Client Info
                         {relatedLeads.length > 0 && (
                           <motion.button
@@ -665,8 +663,7 @@ return (
                       </h3>
                       <div className="relative">
                         <button onClick={() => setShowClientActions(!showClientActions)}
-                          className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-none transition">
-                          Actions ▾
+className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-none transition">                          Actions ▾
                         </button>
                         <AnimatePresence>
                           {showClientActions && (
@@ -687,8 +684,8 @@ return (
                                   <Phone className="w-4 h-4 text-green-500" /> Call
                                 </button>
                                 <button onClick={() => { window.location.href = `sms:${lead.phone}?body=${encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`)}`; setShowClientActions(false); }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 transition">
-                                  <MessageSquare className="w-4 h-4 text-purple-500" /> Text
+                                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
+                                  <MessageSquare className="w-4 h-4 text-blue-500" /> Text
                                 </button>
                                 {fullAddress && (
                                   <button onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'); setShowClientActions(false); }}
@@ -720,53 +717,53 @@ return (
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
                               <input type="text" value={editedDetails.name}
                                 onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
                             </div>
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
                               <input type="tel" value={editedDetails.phone}
                                 onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
-                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" maxLength={14} />
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400"maxLength={14} />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
                             <input type="email" value={editedDetails.email}
                               onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
-                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                             className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
                             <input type="text" value={editedDetails.address_line_1} placeholder="123 Main St"
                               onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
-                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                              className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
                               <input type="text" value={editedDetails.address_line_2}
                                 onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
                             </div>
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
                               <input type="text" value={editedDetails.city}
                                 onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400" />
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
                             <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-                              className="w-full px-3 py-2 border-2 border-indigo-200 rounded-none text-sm focus:outline-none focus:border-indigo-400">
+                              className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400">
                               {categories.map((cat: any) => (
                                 <option key={cat.value} value={cat.value}>{cat.label}</option>
                               ))}
                             </select>
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
-                              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-none transition text-sm">
+                           <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-none transition text-sm">
                               {saving ? 'Saving...' : 'Save Changes'}
                             </motion.button>
                             <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
@@ -793,7 +790,7 @@ return (
                             <div>
                               <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
                               {lead.category ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-none text-xs font-bold text-indigo-600">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-none text-xs font-bold text-blue-600">
                                   {formatCategory(lead.category)}
                                 </span>
                               ) : (
@@ -814,10 +811,10 @@ return (
                                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 onClick={btn.action}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-none border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 transition group"
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-none border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition group"
                               >
                                 <span style={{ color: btn.color }}>{btn.icon}</span>
-                                <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600">{btn.label}</span>
+                                <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-600">{btn.label}</span>
                               </motion.button>
                             ))}
                           </div>
@@ -871,7 +868,7 @@ return (
                         {customerPhotos.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <div className="flex items-center gap-1.5 mb-2">
-                              <Image className="w-3.5 h-3.5 text-indigo-400" />
+                              <Image className="w-3.5 h-3.5 text-blue-400" />
                               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                                 {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
                               </span>
@@ -884,7 +881,7 @@ return (
                                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                                   transition={{ delay: i * 0.04 }}
                                   onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
-                                  className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-indigo-400 transition group flex-shrink-0"
+                                  className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-blue-400 transition group flex-shrink-0"
                                 >
                                   <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition" />
                                 </motion.button>
@@ -893,7 +890,7 @@ return (
                                 <motion.button
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setLightbox({ photos: customerPhotos, index: 6, label: 'Customer Photos' })}
-                                  className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 hover:bg-indigo-50 hover:border-indigo-300 flex items-center justify-center flex-shrink-0 transition"
+                                  className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-center flex-shrink-0 transition"
                                 >
                                   <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
                                 </motion.button>
@@ -905,7 +902,7 @@ return (
                         {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
-                              className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                              className="text-xs font-bold text-blue-600 flex items-center gap-1">
                               {showCustomQuestions ? '▼' : '▶'} Additional ({Object.keys(lead.custom_answers).length})
                             </button>
                             <AnimatePresence>
@@ -951,10 +948,10 @@ return (
                             <motion.div key="editing-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
                               <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
                                 rows={5} placeholder="Notes visible only to your team..."
-                                className="w-full px-3 py-2.5 border-2 border-indigo-200 rounded-none text-sm resize-none focus:outline-none focus:border-indigo-400" />
+                              className="w-full px-3 py-2.5 border-2 border-blue-200 rounded-none text-sm resize-none focus:outline-none focus:border-blue-400" />
                               <div className="flex gap-2">
                                 <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveInternalNotes} disabled={saving}
-                                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2 rounded-none text-xs transition">
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2 rounded-none text-xs transition">
                                   {saving ? 'Saving...' : 'Save'}
                                 </motion.button>
                                 <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
@@ -966,7 +963,7 @@ return (
                           ) : lead.project_internal_notes ? (
                             <motion.div key="has-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                               <p className="text-sm text-gray-600 mb-3">{lead.project_internal_notes}</p>
-                              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Edit Notes</button>
+                              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700">Edit Notes</button>
                             </motion.div>
                           ) : (
                             <motion.button
@@ -974,10 +971,10 @@ return (
                               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => setIsEditingNotes(true)}
-                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-indigo-300 hover:bg-indigo-50/30 transition flex flex-col items-center gap-2"
+                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-blue-300 hover:bg-blue-50/30 transition flex flex-col items-center gap-2"
                             >
                               <NotebookPen className="w-6 h-6 text-gray-300" />
-                              <span className="text-xs font-semibold text-gray-400 hover:text-indigo-500">Add internal notes</span>
+                              <span className="text-xs font-semibold text-gray-400 hover:text-blue-500">Add internal notes</span>
                             </motion.button>
                           )}
                         </AnimatePresence>
@@ -1006,8 +1003,8 @@ return (
   animate={{ opacity: 1, y: 0 }}
   className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center"
 >
-  <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-    <Sparkles className="w-6 h-6 text-indigo-500" />
+  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <Sparkles className="w-6 h-6 text-blue-500" />
   </div>
 
   <h3 className="text-base font-bold text-gray-900 mb-2">AI Brief</h3>
@@ -1018,7 +1015,7 @@ return (
 
   <a
     href={`/${companySlug}/admin/settings`}
-    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition"
+    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition"
   >
     Upgrade to Pro — $79.99/mo
   </a>
@@ -1048,12 +1045,11 @@ return (
                     <div>
                       <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
                         placeholder="Add a note..." rows={3}
-                        className="w-full px-4 py-3 text-sm rounded-none border-2 border-gray-100 focus:border-indigo-300 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
+                className="w-full px-4 py-3 text-sm rounded-none border-2 border-gray-100 focus:border-blue-300 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
                       <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={handleAddNote} disabled={saving || !newNote.trim()}
-                        className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-3 text-sm rounded-none transition"
-                      >
+className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold py-3 text-sm rounded-none transition"                      >
                         {saving ? 'Adding...' : 'Add Note'}
                       </motion.button>
                     </div>
@@ -1072,8 +1068,7 @@ return (
                                 transition={{ delay: idx * 0.04 }}
                                 className="flex gap-3 p-3 bg-gray-50 rounded-none"
                               >
-                                <div className="w-7 h-7 rounded-none bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 flex-shrink-0">
-                                  {user.charAt(0).toUpperCase()}
+<div className="w-7 h-7 rounded-none bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0">                                  {user.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5">
@@ -1121,7 +1116,7 @@ return (
                 }}
                 disabled={saving}
                 className="flex-[2] py-3 rounded-none text-sm font-bold text-white transition overflow-hidden whitespace-nowrap px-4"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                style={{ background: 'linear-gradient(135deg, #2563eb, #0891b2)' }}
               >
                 {saving ? 'Saving...' : 'Save Note'}
               </motion.button>
@@ -1143,7 +1138,7 @@ return (
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="w-full sm:w-96 bg-white shadow-2xl flex flex-col h-full border-l border-gray-200"
             >
-              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#312e81' }}>
+              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#1e3a5f' }}>
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   onClick={() => setShowHistoryDrawer(false)}
@@ -1212,8 +1207,8 @@ return (
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center"
             >
-              <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
-                <LayoutGrid className="w-8 h-8 text-indigo-500" />
+              <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center mb-5 mx-auto">
+                <LayoutGrid className="w-8 h-8 text-blue-500" />
               </div>
               <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">
@@ -1231,7 +1226,7 @@ return (
                     setPendingCategoryChange(null);
                     await executeSaveDetails(items);
                   }}
-                  className="py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition text-sm">
+                  className="py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 transition text-sm">
                   Use Template
                 </motion.button>
               </div>
@@ -1258,7 +1253,6 @@ function InfoField({ label, value, isLink }: { label: string; value: string; isL
   return (
     <div>
       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">{label}</p>
-      <p className={`text-sm font-semibold ${isLink ? 'text-indigo-600' : 'text-gray-900'}`}>{value}</p>
-    </div>
+  <p className={`text-sm font-semibold ${isLink ? 'text-blue-600' : 'text-gray-900'}`}>{value}</p>    </div>
   );
 }

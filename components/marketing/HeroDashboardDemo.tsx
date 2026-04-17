@@ -9,16 +9,14 @@ import { FastDemoForm } from '@/components/marketing/FastDemoForm';
 function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
   const existingLeads = [
     { name: 'Marcus Thornton', status: 'Contacted',  color: '#f59e0b', amount: '$7,950',  date: 'Apr 12' },
-    { name: 'David Reyes',     status: 'Scheduled',  color: '#6366f1', amount: '$2,400',  date: 'Apr 15' },
-    { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200',  date: 'Apr 13' },
-    { name: 'James Patel',     status: 'Quote Sent', color: '#8b5cf6', amount: '$11,400', date: 'Apr 18' },
-    { name: 'Linda Ortega',    status: 'New',        color: '#10b981', amount: '—',       date: 'Apr 9'  },
+{ name: 'David Reyes',     status: 'Scheduled',  color: '#3b82f6', amount: '$2,400',  date: 'Apr 15' },    { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200',  date: 'Apr 13' },
+{ name: 'James Patel',     status: 'Quote Sent', color: '#0891b2', amount: '$11,400', date: 'Apr 18' },    { name: 'Linda Ortega',    status: 'New',        color: '#10b981', amount: '—',       date: 'Apr 9'  },
   ];
 
   return (
     <div className="relative" style={{ width: 260, height: 480 }}>
       <div className="absolute -top-4 -left-4 w-48 h-48 rounded-full opacity-20 pointer-events-none blur-3xl"
-        style={{ background: 'linear-gradient(135deg,#6366f1,#0F1F3D)' }} />
+        style={{ background: 'linear-gradient(135deg,#3b82f6,#0F1F3D)' }} />
 
       <div className="relative w-full h-full rounded-[3rem] border-[6px] border-[#0f172a] bg-[#0f172a] shadow-[0_32px_64px_rgba(0,0,0,0.7)] overflow-hidden">
         {/* Notch */}
@@ -180,8 +178,8 @@ export default function HeroDashboardDemo() {
           ① Customer form
         </p>
         <p className="text-[9px] font-black uppercase tracking-widest text-center transition-colors duration-500"
-          style={{ color: leadVisible ? '#6366f1' : '#cbd5e1' }}>
-          ② Your dashboard
+        style={{ color: leadVisible ? '#3b82f6' : '#cbd5e1' }}>
+                    ② Your dashboard
         </p>
       </div>
 

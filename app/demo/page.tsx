@@ -295,8 +295,8 @@ function DemoCreateModal({ isDark, onClose }: { isDark: boolean; onClose: () => 
 
   const inputClass = `w-full px-4 py-3 rounded-xl border text-sm font-medium outline-none transition-all ${
     isDark
-      ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-indigo-500'
-      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-400'
+      ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-blue-500'
+      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-400'
   }`;
 
   return (
@@ -313,7 +313,7 @@ function DemoCreateModal({ isDark, onClose }: { isDark: boolean; onClose: () => 
             <div className="flex items-start justify-between mb-5">
               <div>
                 <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Lead</h2>
-                <p className="text-indigo-400 text-[10px] uppercase tracking-widest font-bold mt-0.5">Demo Mode</p>
+                <p className="text-blue-400 text-[10px] uppercase tracking-widest font-bold mt-0.5">Demo Mode</p>
               </div>
               <button onClick={onClose} className={`p-2 rounded-xl transition ${isDark ? 'hover:bg-white/5 text-white/40' : 'hover:bg-gray-100 text-gray-400'}`}>
                 <X className="w-5 h-5" />
@@ -331,25 +331,25 @@ function DemoCreateModal({ isDark, onClose }: { isDark: boolean; onClose: () => 
                 ))}
               </select>
               <textarea rows={2} placeholder="Project details..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`${inputClass} resize-none`} />
-              <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
+              <button type="submit" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
                 <Plus className="w-5 h-5" /> Create Lead
               </button>
             </form>
           </div>
         ) : (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-indigo-400" />
+            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-blue-400" />
             </div>
             <h3 className={`text-xl font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>This is a demo!</h3>
             <p className={`text-sm mb-6 leading-relaxed ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-              In the real app, <span className="font-bold text-indigo-400">{form.name || 'this lead'}</span> would be instantly saved, notifications sent, and appear on your board.
+              In the real app, <span className="font-bold text-blue-400">{form.name || 'this lead'}</span> would be instantly saved, notifications sent, and appear on your board.
             </p>
             <div className="flex gap-3">
               <button onClick={onClose} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                 Close
               </button>
-              <Link href="/signup" className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-sm transition text-center">
+              <Link href="/signup" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-sm transition text-center">
                 Sign Up Free
               </Link>
             </div>
@@ -407,7 +407,7 @@ function DemoCalendar({ leads, isDark, onSelectLead }: { leads: Lead[]; isDark: 
           const todayCell = isToday(day);
           return (
             <div key={day} className={`min-h-[70px] border-r border-b p-1.5 transition ${border} ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'} ${(day + firstDay - 1) % 7 === 6 ? 'border-r-0' : ''}`}>
-              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black mb-1 ${todayCell ? 'bg-indigo-600 text-white' : isDark ? 'text-white/50' : 'text-gray-500'}`}>
+              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black mb-1 ${todayCell ? 'bg-blue-600 text-white' : isDark ? 'text-white/50' : 'text-gray-500'}`}>
                 {day}
               </div>
               <div className="space-y-0.5">
@@ -434,7 +434,7 @@ function SectionHeader({ title, count, isDark }: { title: string; count: number;
   return (
     <div className="flex items-center gap-4 mb-8 py-2">
       <div className="flex items-center gap-3">
-        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
         <h2 className={`text-[11px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {title}
         </h2>
@@ -577,7 +577,7 @@ const handleTourStart = (flow: TourFlow) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-12">
         <BrowserChrome isDark={isDark}>
-          <div className={`min-h-screen relative selection:bg-indigo-500/30 ${isDark ? 'bg-[#1e293b]' : 'bg-gray-50'}`}>
+          <div className={`min-h-screen relative selection:bg-blue-500/30 ${isDark ? 'bg-[#1e293b]' : 'bg-gray-50'}`}>
             <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10 relative z-10">
 
               {/* ── TOP NAV BAR ───────────────────────────────────────────── */}
@@ -590,14 +590,14 @@ const handleTourStart = (flow: TourFlow) => {
                   {/* Brand */}
                  <div className="flex items-center gap-4 min-w-0">
 <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-indigo-500/20">
+                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-blue-500/20">
                         T
                       </div>
                       <div className="min-w-0">
                         <h1 className={`text-sm sm:text-lg font-black tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           Torres Contracting
                         </h1>
-                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-500">Dashboard</p>
+                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-500">Dashboard</p>
                       </div>
                     </div>
                   </div>
@@ -605,7 +605,7 @@ const handleTourStart = (flow: TourFlow) => {
                   <div className="flex items-center gap-3 shrink-0">
                     <button
                       onClick={() => setShowCreateModal(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                     >
                       <Plus className="w-4 h-4 stroke-[3px]" />
                       <span className="hidden sm:inline">New Lead</span>
@@ -618,7 +618,7 @@ const handleTourStart = (flow: TourFlow) => {
               {/* ── STATS ─────────────────────────────────────────────────── */}
               <section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8">
   {[
-    { label: 'Leads',   value: leads.length,  accent: 'bg-indigo-500' },
+    { label: 'Leads',   value: leads.length,  accent: 'bg-blue-500' },
     { label: 'Active',  value: activeJobs,    accent: 'bg-blue-500' },
     { label: 'Revenue', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(revenue), accent: 'bg-emerald-500' },
     { label: 'Pending', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(pending), accent: 'bg-amber-500' },
@@ -665,7 +665,7 @@ const handleTourStart = (flow: TourFlow) => {
                 {/* Row 1: Search + View Toggles + Theme */}
                 <div className="flex items-center gap-2 md:gap-3">
                   <div className="relative flex-1 group">
-                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? 'text-white/20' : 'text-slate-400'} group-focus-within:text-indigo-500`} />
+                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? 'text-white/20' : 'text-slate-400'} group-focus-within:text-blue-500`} />
                     <input
                       type="search"
                       placeholder="Search name, email, phone..."
@@ -673,8 +673,8 @@ const handleTourStart = (flow: TourFlow) => {
                       onChange={e => setSearchQuery(e.target.value)}
                       className={`w-full pl-11 pr-10 py-3.5 rounded-2xl text-sm font-bold transition-all outline-none border ${
                         isDark
-                          ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-indigo-500/50'
-                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 shadow-sm'
+                          ? 'bg-[#0A0C14] border-white/5 text-white placeholder-white/20 focus:border-blue-500/50'
+                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-500 shadow-sm'
                       }`}
                     />
                     {searchQuery && (
@@ -690,7 +690,7 @@ const handleTourStart = (flow: TourFlow) => {
                   {/* View Switcher */}
                   <div className={`flex p-1 rounded-xl border transition-all ${
   isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'
-} ${!hasClickedView ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-transparent animate-pulse' : ''}`}>
+} ${!hasClickedView ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent animate-pulse' : ''}`}>
   {[
     { id: 'cards',    Icon: LayoutGrid },
     { id: 'table',    Icon: List },
@@ -701,7 +701,7 @@ const handleTourStart = (flow: TourFlow) => {
       onClick={() => { setViewMode(id as any); setHasClickedView(true); }}
                         className={`p-2 rounded-lg transition-all ${
                           viewMode === id
-                            ? 'bg-indigo-600 text-white shadow-lg'
+                            ? 'bg-blue-600 text-white shadow-lg'
                             : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
                         }`}
                       >
@@ -730,7 +730,7 @@ const handleTourStart = (flow: TourFlow) => {
                       onClick={() => setShowAdvancedFilters(v => !v)}
                       className={`${pillBase} ${
                         showAdvancedFilters || hasActiveFilters
-                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/20'
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20'
                           : pillOff
                       }`}
                     >
@@ -772,7 +772,7 @@ const handleTourStart = (flow: TourFlow) => {
                       onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
                       className={`${pillBase} ${
                         filterStatus === 'new'
-                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
                           : pillOff
                       }`}
                     >
@@ -806,12 +806,12 @@ const handleTourStart = (flow: TourFlow) => {
                       >
                         <div className="grid grid-cols-2 gap-6 mb-6">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Category</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Category</label>
                             <select
                               value={filterCategory}
                               onChange={e => setFilterCategory(e.target.value)}
                               className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-                                isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+                                isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
                               }`}
                             >
                               <option value="all">All Sectors</option>
@@ -821,12 +821,12 @@ const handleTourStart = (flow: TourFlow) => {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Payment</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Payment</label>
                             <select
                               value={filterPayment}
                               onChange={e => setFilterPayment(e.target.value)}
                               className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-                                isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+                                isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
                               }`}
                             >
                               <option value="all">All</option>
@@ -838,7 +838,7 @@ const handleTourStart = (flow: TourFlow) => {
 
                         <div className="grid grid-cols-2 gap-6 mb-8">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Start Date</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Start Date</label>
                             <input
                               type="date"
                               value={startDate}
@@ -847,7 +847,7 @@ const handleTourStart = (flow: TourFlow) => {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">End Date</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">End Date</label>
                             <input
                               type="date"
                               value={endDate}
@@ -858,7 +858,7 @@ const handleTourStart = (flow: TourFlow) => {
                         </div>
 
                         <div className="mb-8 space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Lifecycle Status</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Lifecycle Status</label>
                           <div className="flex flex-wrap gap-2">
                             {STATUS_OPTIONS.map(s => (
                               <button
@@ -866,7 +866,7 @@ const handleTourStart = (flow: TourFlow) => {
                                 onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                   filterStatus === s.value
-                                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/30'
+                                    ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30'
                                     : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
                                 }`}
                               >
@@ -885,7 +885,7 @@ const handleTourStart = (flow: TourFlow) => {
                           </button>
                           <button
                             onClick={() => setShowAdvancedFilters(false)}
-                            className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 transition-all"
+                            className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-600/20 transition-all"
                           >
                             Apply Changes
                           </button>
@@ -898,10 +898,10 @@ const handleTourStart = (flow: TourFlow) => {
                         <div className={`relative rounded-t-[3rem] p-8 pb-12 max-h-[90vh] overflow-y-auto shadow-[0_-24px_48px_rgba(0,0,0,0.6)] ${
                           isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
                         }`}>
-                          <div className="w-16 h-1.5 bg-indigo-500/20 rounded-full mx-auto mb-10" />
+                          <div className="w-16 h-1.5 bg-blue-500/20 rounded-full mx-auto mb-10" />
                           <div className="space-y-10">
                             <div className="space-y-4">
-                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Category</label>
+                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Category</label>
                               <select
                                 value={filterCategory}
                                 onChange={e => setFilterCategory(e.target.value)}
@@ -912,7 +912,7 @@ const handleTourStart = (flow: TourFlow) => {
                               </select>
                             </div>
                             <div className="space-y-4">
-                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Timeline</label>
+                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Timeline</label>
                               <div className="grid grid-cols-2 gap-4">
                                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                                   className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
@@ -921,7 +921,7 @@ const handleTourStart = (flow: TourFlow) => {
                               </div>
                             </div>
                             <div className="space-y-4">
-                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Status</label>
+                              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Status</label>
                               <div className="flex flex-wrap gap-2">
                                 {STATUS_OPTIONS.map(s => (
                                   <button
@@ -929,7 +929,7 @@ const handleTourStart = (flow: TourFlow) => {
                                     onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
                                     className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
                                       filterStatus === s.value
-                                        ? 'bg-indigo-600 text-white border-indigo-500'
+                                        ? 'bg-blue-600 text-white border-blue-500'
                                         : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-slate-100 border-slate-200 text-slate-500'
                                     }`}
                                   >
@@ -942,7 +942,7 @@ const handleTourStart = (flow: TourFlow) => {
                           <div className="grid grid-cols-1 gap-3 mt-12">
                             <button
                               onClick={() => setShowAdvancedFilters(false)}
-                              className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40"
+                              className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-blue-600 text-white shadow-2xl shadow-blue-600/40"
                             >
                               Apply Filters
                             </button>
@@ -966,8 +966,8 @@ const handleTourStart = (flow: TourFlow) => {
                   <div className={`rounded-[3rem] p-16 sm:p-32 text-center border-2 border-dashed transition-all ${
                     isDark ? 'bg-white/[0.01] border-white/5' : 'bg-slate-50 border-slate-200'
                   }`}>
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-500/10 mb-6">
-                      <Inbox className="w-10 h-10 text-indigo-500/40" />
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-500/10 mb-6">
+                      <Inbox className="w-10 h-10 text-blue-500/40" />
                     </div>
                     <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No leads found</h2>
                     <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">
@@ -976,7 +976,7 @@ const handleTourStart = (flow: TourFlow) => {
                     {hasActiveFilters && (
                       <button
                         onClick={clearFilters}
-                        className="mt-8 px-6 py-3 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
+                        className="mt-8 px-6 py-3 rounded-xl bg-blue-500 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
                       >
                         Clear filters
                       </button>
@@ -992,7 +992,7 @@ const handleTourStart = (flow: TourFlow) => {
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                       <div>
-                        <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                        <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                           All Leads
                         </h2>
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
@@ -1066,10 +1066,10 @@ const handleTourStart = (flow: TourFlow) => {
                   <div className="space-y-16">
                     {!hasOpenedLead && (
                       <div className={`sm:hidden flex items-center gap-2 px-3 py-2 rounded-xl mb-3 ${
-                        isDark ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100'
+                        isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-100'
                       }`}>
-                        <MousePointer2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                        <p className="text-xs font-bold text-indigo-400">Tap any card to open a full lead</p>
+                        <MousePointer2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <p className="text-xs font-bold text-blue-400">Tap any card to open a full lead</p>
                       </div>
                     )}
                     {groups.map(({ title, leads: groupLeads }) => groupLeads.length > 0 && (
@@ -1130,14 +1130,14 @@ const handleTourStart = (flow: TourFlow) => {
         </BrowserChrome>
 
         {/* ── BOTTOM CTA ──────────────────────────────────────────────────── */}
-        <div className="mt-10 bg-gradient-to-r from-indigo-900/60 to-blue-900/60 border border-indigo-500/30 rounded-[2rem] p-8 sm:p-10 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-3">Ready to run your business like this?</p>
+        <div className="mt-10 bg-gradient-to-r from-blue-900/60 to-blue-900/60 border border-blue-500/30 rounded-[2rem] p-8 sm:p-10 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Ready to run your business like this?</p>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Get your own dashboard in 2 minutes.</h2>
           <p className="text-slate-400 mb-8 max-w-lg mx-auto text-sm leading-relaxed">
             {dynamicCta || 'Share your booking link, customers submit their jobs with photos — everything lands here, organized and ready to quote.'}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/signup" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-8 py-4 rounded-2xl font-extrabold text-base hover:bg-indigo-50 transition shadow-2xl">
+            <Link href="/signup" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-8 py-4 rounded-2xl font-extrabold text-base hover:bg-blue-50 transition shadow-2xl">
               Start Free Trial <ArrowRight className="w-5 h-5" />
             </Link>
             <Link href="/" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-8 py-4 rounded-2xl font-bold text-base hover:bg-white/10 transition">

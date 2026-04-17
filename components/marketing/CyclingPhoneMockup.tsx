@@ -17,10 +17,9 @@ function ScreenDashboard() {
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1.15 }}>Ridge Line Roofing</div>
-            <div style={{ fontSize: 7, fontWeight: 700, color: '#6366f1', letterSpacing: '.1em', textTransform: 'uppercase' }}>Dashboard</div>
-          </div>
+            <div style={{ fontSize: 7, fontWeight: 700, color: '#3b82f6', letterSpacing: '.1em', textTransform: 'uppercase' }}>Dashboard</div>          </div>
         </div>
-        <div style={{ width: 26, height: 26, background: '#4f46e5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 26, height: 26, background: '#2563eb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/></svg>
         </div>
       </div>
@@ -28,7 +27,7 @@ function ScreenDashboard() {
       {/* Stats — compact 4-col */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 5, padding: '8px 10px 6px' }}>
         {[
-          { label: 'Leads',   value: '168',   accent: '#6366f1' },
+{ label: 'Leads',   value: '168',   accent: '#3b82f6' },
           { label: 'Active',  value: '63',    accent: '#3b82f6' },
           { label: 'Revenue', value: '$102k', accent: '#10b981' },
           { label: 'Pending', value: '$122k', accent: '#f59e0b' },
@@ -63,7 +62,7 @@ function ScreenDashboard() {
       {/* Filter pills */}
       <div style={{ display: 'flex', gap: 5, padding: '0 10px 6px', overflow: 'hidden' }}>
         {[
-          { label: 'Filters', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
+{ label: 'Filters', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
           { label: 'Today',   color: '#475569', bg: '#fff',    border: '#e2e8f0' },
           { label: 'Unpaid',  color: '#475569', bg: '#fff',    border: '#e2e8f0' },
           { label: 'New (23)',color: '#475569', bg: '#fff',    border: '#e2e8f0' },
@@ -75,7 +74,7 @@ function ScreenDashboard() {
       {/* Section label */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 10px 5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1' }} />
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6' }} />
           <span style={{ fontSize: 8, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '.1em' }}>Today</span>
         </div>
         <span style={{ fontSize: 7.5, fontWeight: 700, color: '#94a3b8' }}>1 job</span>
@@ -106,7 +105,7 @@ function ScreenDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 7, borderTop: '1px solid #f1f5f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff' }}>?</div>
+              <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff' }}>?</div>
               <span style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600 }}>Unassigned</span>
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -127,13 +126,12 @@ function ScreenSchedule() {
     <div style={{ background: '#0d0d1a', height: '100%', fontFamily: 'Inter, system-ui, sans-serif', overflowY: 'hidden' }}>
 
       {/* Modal header — dark navy */}
-      <div style={{ background: '#1e1b4b', padding: '10px 14px 0' }}>
+      <div style={{ background: '#1e3a5f', padding: '10px 14px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
             <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>#147</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Kevin White</div>
-            <div style={{ fontSize: 8.5, color: '#a5b4fc', fontWeight: 500 }}>Submitted Mar 31, 2026</div>
-          </div>
+<div style={{ fontSize: 8.5, color: '#93c5fd', fontWeight: 500 }}>Submitted Mar 31, 2026</div>          </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
             <div style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.08)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="4" r="1.5" fill="#9ca3af"/><circle cx="8" cy="8" r="1.5" fill="#9ca3af"/><circle cx="8" cy="12" r="1.5" fill="#9ca3af"/></svg>
@@ -147,15 +145,15 @@ function ScreenSchedule() {
         {/* Status chips */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
           <div style={{ background: '#78350f', border: '1px solid #92400e', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 800, color: '#fbbf24' }}>Contacted</div>
-          <div style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 700, color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#a5b4fc" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#a5b4fc" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            Apr 5 · 8:00 AM
+          <div style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 700, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#93c5fd" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            Mar 19 · 2:15 PM
           </div>
         </div>
         <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
           {[
-            { label: 'James' },
-            { label: '$5,385 due' },
+            { label: 'Joe' },
+            { label: '$900.00 paid' },
             { label: 'AI Brief', icon: '✦' },
           ].map(b => (
             <div key={b.label} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '3px 7px', fontSize: 8, fontWeight: 700, color: '#d1d5db', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -167,7 +165,7 @@ function ScreenSchedule() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           {['Overview', 'Schedule', 'Quote', 'Pay'].map((t, i) => (
-            <div key={t} style={{ padding: '6px 10px', fontSize: 9, fontWeight: 700, color: i === 1 ? '#fff' : '#6b7280', borderBottom: i === 1 ? '2px solid #6366f1' : '2px solid transparent', marginBottom: -1 }}>{t}</div>
+            <div key={t} style={{ padding: '6px 10px', fontSize: 9, fontWeight: 700, color: i === 1 ? '#fff' : '#6b7280', borderBottom: i === 1 ? '2px solid #3b82f6' : '2px solid transparent', marginBottom: -1 }}>{t}</div>
           ))}
         </div>
       </div>
@@ -177,8 +175,8 @@ function ScreenSchedule() {
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '10px 12px', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 26, height: 26, background: '#ede9fe', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#7c3aed"/></svg>
+             <div style={{ width: 26, height: 26, background: '#dbeafe', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#2563eb"/></svg>
               </div>
               <div>
                 <div style={{ fontSize: 9, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '.06em' }}>Schedule</div>
@@ -203,8 +201,7 @@ function ScreenSchedule() {
 
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <div style={{ flex: 1, background: '#0f172a', borderRadius: 10, padding: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#818cf8"/></svg>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '.06em' }}>Save Schedule</span>
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#60a5fa"/></svg>              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '.06em' }}>Save Schedule</span>
             </div>
             <div style={{ width: 34, height: 34, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13 3L6 10M13 3H9M13 3V7" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M6 3H3v10h10v-3" stroke="#475569" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -232,13 +229,12 @@ function ScreenQuote() {
     <div style={{ background: '#0d0d1a', height: '100%', fontFamily: 'Inter, system-ui, sans-serif', overflowY: 'hidden' }}>
 
       {/* Same modal header */}
-      <div style={{ background: '#1e1b4b', padding: '10px 14px 0' }}>
+      <div style={{ background: '#1e3a5f', padding: '10px 14px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
             <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>#147</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 2 }}>Kevin White</div>
-            <div style={{ fontSize: 8.5, color: '#a5b4fc', fontWeight: 500 }}>Submitted Mar 31, 2026</div>
-          </div>
+<div style={{ fontSize: 8.5, color: '#93c5fd', fontWeight: 500 }}>Submitted Mar 31, 2026</div>          </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
             <div style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.08)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="4" r="1.5" fill="#9ca3af"/><circle cx="8" cy="8" r="1.5" fill="#9ca3af"/><circle cx="8" cy="12" r="1.5" fill="#9ca3af"/></svg>
@@ -250,8 +246,8 @@ function ScreenQuote() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
           <div style={{ background: '#78350f', border: '1px solid #92400e', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 800, color: '#fbbf24' }}>Contacted</div>
-          <div style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 700, color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#a5b4fc" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#a5b4fc" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <div style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 7, padding: '3px 8px', fontSize: 8.5, fontWeight: 700, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <svg width="8" height="8" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#93c5fd" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round"/></svg>
             Apr 5 · 8:00 AM
           </div>
         </div>
@@ -264,7 +260,7 @@ function ScreenQuote() {
         </div>
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           {['Overview', 'Schedule', 'Quote', 'Pay'].map((t, i) => (
-            <div key={t} style={{ padding: '6px 10px', fontSize: 9, fontWeight: 700, color: i === 2 ? '#fff' : '#6b7280', borderBottom: i === 2 ? '2px solid #6366f1' : '2px solid transparent', marginBottom: -1 }}>{t}</div>
+            <div key={t} style={{ padding: '6px 10px', fontSize: 9, fontWeight: 700, color: i === 2 ? '#fff' : '#6b7280', borderBottom: i === 2 ? '2px solid #3b82f6' : '2px solid transparent', marginBottom: -1 }}>{t}</div>
           ))}
         </div>
       </div>

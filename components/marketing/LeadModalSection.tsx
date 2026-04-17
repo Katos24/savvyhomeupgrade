@@ -76,7 +76,7 @@ export default function LeadModalSection() {
             {/* Modal screenshot */}
             <div className="relative rounded-2xl lg:rounded-[2rem] overflow-hidden border border-slate-200 bg-white"
               style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.12)' }}>
-              <img src="/images/modal-overview.png" alt="Lead2Project Job Card" className="w-full h-auto block" />
+              <img src="/images/modal-overview2.png" alt="Lead2Project Job Card" className="w-full h-auto block" />
             </div>
 
             {/* Phone */}

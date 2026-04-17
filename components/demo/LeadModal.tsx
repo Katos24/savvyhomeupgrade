@@ -181,7 +181,7 @@ const customerPhotos = MOCK_CUSTOMER_PHOTOS[lead.id] || [];  const beforePhotos 
               onClick={() => setPhotoTab(t.id as any)}
               className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all ${
                 photoTab === t.id
-                  ? 'text-indigo-600 border-indigo-600'
+                  ? 'text-blue-600 border-blue-600'
                   : 'text-slate-400 border-transparent hover:text-slate-600'
               }`}
             >
@@ -189,7 +189,7 @@ const customerPhotos = MOCK_CUSTOMER_PHOTOS[lead.id] || [];  const beforePhotos 
               {t.label}
               {t.count > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  photoTab === t.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'
+                  photoTab === t.id ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'
                 }`}>
                   {t.count}
                 </span>
@@ -208,7 +208,7 @@ const customerPhotos = MOCK_CUSTOMER_PHOTOS[lead.id] || [];  const beforePhotos 
                     <button
                       key={i}
                       onClick={() => setLightbox({ photos: currentPhotos, index: i, label: subTabs.find(t => t.id === photoTab)?.label || '' })}
-                      className="group aspect-square rounded-xl overflow-hidden border border-slate-100 hover:border-indigo-300 hover:shadow-md transition-all"
+                      className="group aspect-square rounded-xl overflow-hidden border border-slate-100 hover:border-blue-300 hover:shadow-md transition-all"
                     >
                       <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-90 transition" />
                     </button>
@@ -228,8 +228,8 @@ const customerPhotos = MOCK_CUSTOMER_PHOTOS[lead.id] || [];  const beforePhotos 
           {photoTab === 'docs' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MOCK_DOCS.map((doc, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group cursor-pointer">
-                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors shrink-0">
+                <div key={i} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all group cursor-pointer">
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
                     {getDocIcon(doc.name)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -238,7 +238,7 @@ const customerPhotos = MOCK_CUSTOMER_PHOTOS[lead.id] || [];  const beforePhotos 
                       {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {doc.uploadedBy}
                     </p>
                   </div>
-                  <Download className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors shrink-0" />
+                  <Download className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors shrink-0" />
                 </div>
               ))}
             </div>
@@ -299,7 +299,7 @@ const handleStatusChange = (newStatus: string) => {
   onClick={e => { e.stopPropagation(); setShowStatusMenu(false); }}
 >
         {/* Hero header */}
-        <div className="flex-shrink-0 relative overflow-hidden" style={{ background: '#312e81' }}>
+        <div className="flex-shrink-0 relative overflow-hidden" style={{ background: '#1e3a5f' }}>
           <div className="relative z-10 p-4 sm:p-6 pb-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0 mr-4">
@@ -371,8 +371,7 @@ const handleStatusChange = (newStatus: string) => {
                   className="flex-shrink-0 px-4 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap"
                   style={{
                     color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.4)',
-                    borderBottomColor: activeTab === tab.id ? '#a5b4fc' : 'transparent',
-                    background: 'transparent',
+borderBottomColor: activeTab === tab.id ? '#60a5fa' : 'transparent',                    background: 'transparent',
                   }}
                 >
                   {tab.label}

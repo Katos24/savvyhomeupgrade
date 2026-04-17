@@ -683,8 +683,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
               { n: 3, title: 'Manage in your dashboard', body: 'Every submission lands as a lead. Quote it, schedule it, assign your team, and collect payment — all in one place.' },
             ].map(({ n, title, body }) => (
               <div key={n} className="p-5 flex items-start gap-4">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-indigo-200">{n}</div>
-                <div>
+<div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-blue-200">{n}</div>                <div>
                   <p className="text-sm font-black text-slate-900 leading-tight">{title}</p>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">{body}</p>
                 </div>
@@ -727,14 +726,12 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
               <div className="flex gap-2">
                 {['standard', 'brand', 'dark'].map(s => (
                   <button key={s} onClick={() => setQrStyle(s as any)}
-                    className={`flex-1 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${qrStyle === s ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
-                  >{s}</button>
+className={`flex-1 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${qrStyle === s ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}                  >{s}</button>
                 ))}
               </div>
               <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-sm font-bold text-slate-700">Embed Company Logo</span>
-                <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-indigo-600' : 'bg-slate-300'}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
+<button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-blue-600' : 'bg-slate-300'}`}>                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -758,7 +755,7 @@ function MenuCard({ icon: Icon, label, desc, color, onClick, locked, requiredPla
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 flex flex-col h-full active:scale-[0.98] border border-white/10 relative overflow-hidden"
+      className="bg-white rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 text-left group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 flex flex-col h-full active:scale-[0.98] border border-white/10 relative overflow-hidden"
     >
       {locked && (
         <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full">
@@ -770,12 +767,10 @@ function MenuCard({ icon: Icon, label, desc, color, onClick, locked, requiredPla
         style={{ backgroundColor: locked ? '#f1f5f9' : `${color}15` }}>
         <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: locked ? '#94a3b8' : color }} />
       </div>
-      <p className={`text-xs sm:text-sm font-black leading-tight mb-1.5 ${locked ? 'text-slate-400' : 'text-slate-900 group-hover:text-indigo-600'} transition-colors`}>
-        {label}
+<p className={`text-xs sm:text-sm font-black leading-tight mb-1.5 ${locked ? 'text-slate-400' : 'text-slate-900 group-hover:text-blue-600'} transition-colors`}>        {label}
       </p>
       <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-relaxed flex-1">{desc}</p>
-      <div className={`mt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0 ${locked ? 'text-purple-400' : 'text-indigo-500'}`}>
-        {locked ? `Upgrade to ${requiredPlan}` : 'Configure'} <ChevronRight className="w-3 h-3" />
+<div className={`mt-4 flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0 ${locked ? 'text-slate-400' : 'text-blue-500'}`}>        {locked ? `Upgrade to ${requiredPlan}` : 'Configure'} <ChevronRight className="w-3 h-3" />
       </div>
     </button>
   );

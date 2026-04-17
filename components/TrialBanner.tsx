@@ -92,7 +92,7 @@ export default function TrialBanner({
 
   // Normal trial
   return (
-    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 border-b border-purple-700 text-white">
+    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 border-b border-blue-700 text-white">
       <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
@@ -100,8 +100,7 @@ export default function TrialBanner({
             Free Trial — <strong className="mx-1">{daysLeft}</strong> days left
           </div>
           <button onClick={go}
-            className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-purple-600 transition">
-            Manage Billing
+className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-blue-600 transition">            Manage Billing
           </button>
         </div>
       </div>

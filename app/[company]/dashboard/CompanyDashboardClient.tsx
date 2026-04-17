@@ -564,7 +564,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
         aria-label="Loading dashboard"
       >
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" aria-hidden />
+<Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" aria-hidden />
           <p className="text-white text-lg font-semibold tracking-tight">Loading dashboard...</p>
         </div>
       </div>
@@ -577,7 +577,7 @@ style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a
 
   return (
   <div
-  className={`min-h-screen relative selection:bg-indigo-500/30 ${
+className={`min-h-screen relative selection:bg-blue-500/30 ${
   isDark ? 'bg-[#1e293b]' : 'bg-gray-50'
 }`}
 >

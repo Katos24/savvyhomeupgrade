@@ -4,20 +4,16 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────────────────────────────────────
-
 const LEADS = [
-  { name: 'Torres Roofing',  status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', amount: '$7,950', assigned: 'Mike T.', category: 'Roofing' },
+  { name: 'Torres Roofing',  status: 'Scheduled',  statusColor: '#3b82f6', date: 'Apr 12', amount: '$7,950', assigned: 'Mike T.', category: 'Roofing' },
   { name: 'Kim Gutters',     status: 'Won',        statusColor: '#10b981', date: 'Apr 13', amount: '$2,400', assigned: '—',       category: 'Gutters' },
   { name: 'Martinez Siding', status: 'Quote Sent', statusColor: '#eab308', date: '—',      amount: '$5,200', assigned: 'Dave R.', category: 'Siding'  },
   { name: 'David Reyes',     status: 'New',        statusColor: '#10b981', date: '—',      amount: '—',      assigned: '—',       category: 'Gutters' },
 ];
 
 const STATS = [
-  { label: 'Leads',   value: '168',  accent: '#6366f1' },
-  { label: 'Active',  value: '63',   accent: '#3b82f6' },
+  { label: 'Leads',   value: '168',   accent: '#3b82f6' },
+  { label: 'Active',  value: '63',    accent: '#0891b2' },
   { label: 'Revenue', value: '$102k', accent: '#10b981' },
   { label: 'Pending', value: '$122k', accent: '#f59e0b' },
 ];
@@ -29,10 +25,6 @@ const CYCLE: CycleMode[] = [
   { dark: false, view: 'cards' },
   { dark: false, view: 'table' },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CARDS PANEL
-// ─────────────────────────────────────────────────────────────────────────────
 
 function CardsPanel({ dark }: { dark: boolean }) {
   return (
@@ -46,7 +38,6 @@ function CardsPanel({ dark }: { dark: boolean }) {
             background: dark ? '#161d2f' : '#ffffff',
           }}
         >
-         {/* Status */}
           <div className="px-1.5 pt-1.5 pb-1">
             <span
               className="inline-flex items-center gap-1 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
@@ -57,7 +48,6 @@ function CardsPanel({ dark }: { dark: boolean }) {
             </span>
           </div>
 
-          {/* Name */}
           <div className="px-1.5 pb-1">
             <p className="text-[10px] font-black leading-tight truncate" style={{ color: dark ? '#f9fafb' : '#0f172a' }}>
               {lead.name}
@@ -67,7 +57,6 @@ function CardsPanel({ dark }: { dark: boolean }) {
             </p>
           </div>
 
-          {/* Stats */}
           <div
             className="mx-1 mb-1 grid grid-cols-2 p-1 rounded-lg"
             style={{
@@ -77,7 +66,7 @@ function CardsPanel({ dark }: { dark: boolean }) {
           >
             <div>
               <p className="text-[6px] font-black uppercase tracking-widest mb-0.5" style={{ color: dark ? '#374151' : '#94a3b8' }}>Date</p>
-              <p className="text-[8px] font-black text-indigo-400">{lead.date}</p>
+              <p className="text-[8px] font-black text-blue-400">{lead.date}</p>
             </div>
             <div className="pl-1.5" style={{ borderLeft: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#e2e8f0'}` }}>
               <p className="text-[6px] font-black uppercase tracking-widest mb-0.5" style={{ color: dark ? '#374151' : '#94a3b8' }}>Revenue</p>
@@ -85,13 +74,12 @@ function CardsPanel({ dark }: { dark: boolean }) {
             </div>
           </div>
 
-          {/* Footer */}
-        <div
+          <div
             className="flex items-center justify-between px-1.5 py-1 mt-auto"
             style={{ borderTop: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'}` }}
           >
             <div className="flex items-center gap-1">
-              <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[6px] font-black text-white shrink-0">
+              <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center text-[6px] font-black text-white shrink-0">
                 {lead.assigned !== '—' ? lead.assigned.charAt(0) : '?'}
               </div>
               <span className="text-[7px] font-bold truncate max-w-[35px]" style={{ color: dark ? '#4b5563' : '#94a3b8' }}>
@@ -100,11 +88,11 @@ function CardsPanel({ dark }: { dark: boolean }) {
             </div>
             <div
               className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md"
-              style={{ background: dark ? 'rgba(99,102,241,0.2)' : '#0f172a' }}
+              style={{ background: dark ? 'rgba(59,130,246,0.2)' : '#0f172a' }}
             >
-              <span className="text-[6px] font-black uppercase tracking-widest" style={{ color: dark ? '#a5b4fc' : '#ffffff' }}>Open</span>
+              <span className="text-[6px] font-black uppercase tracking-widest" style={{ color: dark ? '#93c5fd' : '#ffffff' }}>Open</span>
               <svg width="6" height="6" viewBox="0 0 16 16" fill="none">
-                <path d="M5 8h6M8 5l3 3-3 3" stroke={dark ? '#a5b4fc' : '#ffffff'} strokeWidth="2" strokeLinecap="round"/>
+                <path d="M5 8h6M8 5l3 3-3 3" stroke={dark ? '#93c5fd' : '#ffffff'} strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
           </div>
@@ -113,10 +101,6 @@ function CardsPanel({ dark }: { dark: boolean }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TABLE PANEL
-// ─────────────────────────────────────────────────────────────────────────────
 
 function TablePanel() {
   return (
@@ -144,7 +128,7 @@ function TablePanel() {
                   {lead.status}
                 </span>
               </td>
-              <td className="px-2 py-2 text-[8px] font-bold text-indigo-500 whitespace-nowrap">{lead.date}</td>
+              <td className="px-2 py-2 text-[8px] font-bold text-blue-500 whitespace-nowrap">{lead.date}</td>
               <td className="px-2 py-2 text-[8px] font-black text-emerald-500 whitespace-nowrap">{lead.amount}</td>
             </tr>
           ))}
@@ -153,10 +137,6 @@ function TablePanel() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PHONE MOCKUP LIGHT (bottom-right overlay)
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DashboardMockupLight() {
   return (
@@ -186,18 +166,18 @@ function DashboardMockupLight() {
               </div>
               <div>
                 <div style={{ fontSize:11, fontWeight:800, color:'#0f172a' }}>Ridge Line Roofing</div>
-                <div style={{ fontSize:7.5, fontWeight:700, color:'#6366f1', letterSpacing:'.1em', textTransform:'uppercase' }}>Dashboard</div>
+                <div style={{ fontSize:7.5, fontWeight:700, color:'#3b82f6', letterSpacing:'.1em', textTransform:'uppercase' }}>Dashboard</div>
               </div>
             </div>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, padding:'0 10px 8px' }}>
             {[
-              { label:'Total Leads',   value:'168',         color:'#0f172a'  },
-              { label:'Active Jobs',   value:'63',          color:'#2563eb'  },
-              { label:'Total Revenue', value:'$102,671.96', color:'#16a34a', small:true },
-              { label:'Total Pending', value:'$122,880',    color:'#d97706', small:true },
+              { label:'Total Leads',   value:'168',         color:'#0f172a',  bg:'#eff6ff',  border:'#bfdbfe' },
+              { label:'Active Jobs',   value:'63',          color:'#1d4ed8',  bg:'#eff6ff',  border:'#bfdbfe' },
+              { label:'Total Revenue', value:'$102,671.96', color:'#15803d',  bg:'#f0fdf4',  border:'#bbf7d0', small:true },
+              { label:'Total Pending', value:'$122,880',    color:'#d97706',  bg:'#fffbeb',  border:'#fde68a', small:true },
             ].map(s => (
-              <div key={s.label} style={{ background:'#fff', borderRadius:12, padding:'8px 10px', border:'1px solid #e2e8f0' }}>
+              <div key={s.label} style={{ background: s.bg, borderRadius:12, padding:'8px 10px', border:`1px solid ${s.border}` }}>
                 <div style={{ fontSize:7, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:4 }}>{s.label}</div>
                 <div style={{ fontSize:s.small?11:16, fontWeight:800, color:s.color, lineHeight:1 }}>{s.value}</div>
               </div>
@@ -216,8 +196,8 @@ function DashboardMockupLight() {
                   <div style={{ fontSize:13, fontWeight:800, color:'#0f172a' }}>$0</div>
                   <div style={{ fontSize:7, color:'#94a3b8', textTransform:'uppercase' }}>Unpaid</div>
                 </div>
-                <div style={{ width:28, height:28, background:'#ede9fe', borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#7c3aed"/></svg>
+                <div style={{ width:28, height:28, background:'#dbeafe', borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.2 3.8H13l-3.1 2.3 1.2 3.7L8 9.5l-3.1 2.3 1.2-3.7L3 5.8h3.8z" fill="#2563eb"/></svg>
                 </div>
               </div>
             </div>
@@ -229,17 +209,12 @@ function DashboardMockupLight() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN EXPORT
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function DashboardLaptopMockup() {
   const [cycleIdx, setCycleIdx] = useState(0);
   const [phoneVisible, setPhoneVisible] = useState(false);
 
   const current = CYCLE[cycleIdx];
 
-  // Laptop cycles every 3s
   useEffect(() => {
     const t = setInterval(() => {
       setCycleIdx(i => (i + 1) % CYCLE.length);
@@ -247,23 +222,22 @@ export function DashboardLaptopMockup() {
     return () => clearInterval(t);
   }, []);
 
-  // Phone appears after 1s delay
   useEffect(() => {
     const t = setTimeout(() => setPhoneVisible(true), 1000);
     return () => clearTimeout(t);
   }, []);
 
-  const bgColor = current.dark ? '#0d1117' : '#f1f5f9';
-  const navBg   = current.dark ? '#161d2f' : '#ffffff';
-  const navBorder = current.dark ? 'rgba(255,255,255,0.05)' : '#e2e8f0';
-  const statsBg = current.dark ? '#161d2f' : '#ffffff';
-  const statsBorder = current.dark ? 'rgba(255,255,255,0.05)' : '#e2e8f0';
-  const labelColor = current.dark ? '#4b5563' : '#94a3b8';
-  const filterBg = current.dark ? '#0d1117' : '#f1f5f9';
-  const filterBorder = current.dark ? 'rgba(255,255,255,0.06)' : '#e2e8f0';
-  const filterText = current.dark ? '#6b7280' : '#475569';
-  const contentBg = current.dark ? '#0d1117' : '#f8fafc';
-  const gradientFrom = current.dark ? '#0d1117' : '#f8fafc';
+  const bgColor      = current.dark ? '#0d1117'                  : '#f1f5f9';
+  const navBg        = current.dark ? '#161d2f'                  : '#ffffff';
+  const navBorder    = current.dark ? 'rgba(255,255,255,0.05)'   : '#e2e8f0';
+  const statsBg      = current.dark ? '#161d2f'                  : '#ffffff';
+  const statsBorder  = current.dark ? 'rgba(255,255,255,0.05)'   : '#e2e8f0';
+  const labelColor   = current.dark ? '#4b5563'                  : '#94a3b8';
+  const filterBg     = current.dark ? '#0d1117'                  : '#f1f5f9';
+  const filterBorder = current.dark ? 'rgba(255,255,255,0.06)'   : '#e2e8f0';
+  const filterText   = current.dark ? '#6b7280'                  : '#475569';
+  const contentBg    = current.dark ? '#0d1117'                  : '#f8fafc';
+  const gradientFrom = current.dark ? '#0d1117'                  : '#f8fafc';
 
   return (
     <div className="relative flex items-end justify-center w-full">
@@ -271,7 +245,6 @@ export function DashboardLaptopMockup() {
       {/* ── Laptop shell ── */}
       <div className="relative w-full" style={{ maxWidth: 820 }}>
 
-        {/* Screen bezel */}
         <div
           className="rounded-t-xl overflow-hidden border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
           style={{ background: '#0d1117', transition: 'background 0.4s ease' }}
@@ -298,7 +271,7 @@ export function DashboardLaptopMockup() {
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, color: current.dark ? '#f9fafb' : '#0f172a', letterSpacing: '-0.2px', transition: 'color 0.4s ease' }}>Ridge Line Roofing</div>
-                  <div style={{ fontSize: 7, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dashboard</div>
+                  <div style={{ fontSize: 7, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dashboard</div>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 rounded-lg px-2 py-1" style={{ background: filterBg, border: `1px solid ${filterBorder}` }}>
@@ -307,19 +280,25 @@ export function DashboardLaptopMockup() {
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats — now with soft colored backgrounds matching real dashboard */}
             <div className="grid grid-cols-4 gap-1.5 mb-3">
-              {STATS.map(s => (
+              {[
+                { label: 'Leads',   value: '168',   accent: '#3b82f6', lightBg: '#eff6ff', lightBorder: '#bfdbfe', lightText: '#1d4ed8', darkBg: 'rgba(59,130,246,0.1)', darkBorder: 'rgba(59,130,246,0.2)' },
+                { label: 'Active',  value: '63',    accent: '#0891b2', lightBg: '#ecfeff', lightBorder: '#a5f3fc', lightText: '#0e7490', darkBg: 'rgba(8,145,178,0.1)',  darkBorder: 'rgba(8,145,178,0.2)'  },
+                { label: 'Revenue', value: '$102k', accent: '#10b981', lightBg: '#f0fdf4', lightBorder: '#bbf7d0', lightText: '#15803d', darkBg: 'rgba(16,185,129,0.1)', darkBorder: 'rgba(16,185,129,0.2)' },
+                { label: 'Pending', value: '$122k', accent: '#f59e0b', lightBg: '#fffbeb', lightBorder: '#fde68a', lightText: '#d97706', darkBg: 'rgba(245,158,11,0.1)', darkBorder: 'rgba(245,158,11,0.2)' },
+              ].map(s => (
                 <div
                   key={s.label}
                   className="rounded-xl px-2 py-1.5"
-                  style={{ background: statsBg, border: `1px solid ${statsBorder}`, transition: 'background 0.4s ease' }}
+                  style={{
+                    background: current.dark ? s.darkBg : s.lightBg,
+                    border: `1px solid ${current.dark ? s.darkBorder : s.lightBorder}`,
+                    transition: 'background 0.4s ease',
+                  }}
                 >
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.accent }} />
-                    <p style={{ fontSize: 6, fontWeight: 700, color: labelColor, textTransform: 'uppercase', letterSpacing: '.08em' }}>{s.label}</p>
-                  </div>
-                  <p style={{ fontSize: 9, fontWeight: 800, color: current.dark ? '#f9fafb' : '#0f172a', transition: 'color 0.4s ease' }}>{s.value}</p>
+                  <p style={{ fontSize: 6, fontWeight: 700, color: current.dark ? s.accent + 'aa' : s.accent, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 2 }}>{s.label}</p>
+                  <p style={{ fontSize: 9, fontWeight: 800, color: current.dark ? s.accent : s.lightText, transition: 'color 0.4s ease' }}>{s.value}</p>
                 </div>
               ))}
             </div>
@@ -332,9 +311,9 @@ export function DashboardLaptopMockup() {
                   className="rounded-full px-2 py-0.5 whitespace-nowrap"
                   style={{
                     fontSize: 7, fontWeight: 700,
-                    color: i === 0 ? '#6366f1' : filterText,
-                    background: i === 0 ? (current.dark ? 'rgba(99,102,241,0.15)' : '#eef2ff') : filterBg,
-                    border: `1px solid ${i === 0 ? 'rgba(99,102,241,0.3)' : filterBorder}`,
+                    color: i === 0 ? '#2563eb' : filterText,
+                    background: i === 0 ? (current.dark ? 'rgba(59,130,246,0.15)' : '#eff6ff') : filterBg,
+                    border: `1px solid ${i === 0 ? 'rgba(59,130,246,0.3)' : filterBorder}`,
                     transition: 'background 0.4s ease',
                   }}
                 >
@@ -344,8 +323,8 @@ export function DashboardLaptopMockup() {
             </div>
 
             {/* Content area with crossfade */}
-<div className="relative" style={{ height: 160, overflow: 'hidden' }}>
-                <AnimatePresence mode="wait">
+            <div className="relative" style={{ height: 160, overflow: 'hidden' }}>
+              <AnimatePresence mode="wait">
                 <motion.div
                   key={`${cycleIdx}`}
                   initial={{ opacity: 0, y: 6 }}
@@ -359,7 +338,6 @@ export function DashboardLaptopMockup() {
                 </motion.div>
               </AnimatePresence>
 
-              {/* Fade out bottom */}
               <div
                 className="absolute bottom-0 inset-x-0 h-10 pointer-events-none"
                 style={{ background: `linear-gradient(to top, ${gradientFrom}, transparent)`, transition: 'background 0.4s ease' }}

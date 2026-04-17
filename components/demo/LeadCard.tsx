@@ -35,7 +35,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
           onClick={onClick}
          className={`group relative flex border-2 rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:border-blue-500/50 shadow-sm hover:shadow-xl cursor-pointer ${
             isNew ? 'border-emerald-500/60 shadow-emerald-500/10 bg-[#141821]' :
-            (lead as any).highlighted ? 'border-indigo-400 bg-white shadow-indigo-200/50 shadow-xl' :
+            (lead as any).highlighted ? 'border-blue-400 bg-white shadow-blue-200/50 shadow-xl' :
             'border-white bg-[#141821]'
           } ${isCompleted ? 'opacity-60' : ''}`}
         >
@@ -58,7 +58,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
                 {s.label}
               </span>
               {lead.ai_brief && (
-                <span className="text-[9px] font-bold text-indigo-400 flex items-center gap-1">
+                <span className="text-[9px] font-bold text-blue-400 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> AI
                 </span>
               )}
@@ -83,7 +83,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
             <div className="hidden sm:grid grid-cols-2 gap-2 mx-4 mb-4 bg-[#161B22]/50 p-3 rounded-xl border border-[#1C2029]">
               <div className="flex flex-col gap-1">
                 <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Date</span>
-                <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
+                <div className="flex items-center gap-1.5 text-blue-400 font-bold text-[11px]">
                   <Calendar className="w-3.5 h-3.5" />
                   {formatDate(lead.scheduled_date)}
                 </div>
@@ -100,7 +100,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
             {/* Mobile inline stats */}
             <div className="flex sm:hidden items-center gap-3 px-4 pb-2 text-[10px] text-gray-500 font-bold">
               <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-indigo-400" />
+                <Calendar className="w-3 h-3 text-blue-400" />
                 {formatDate(lead.scheduled_date)}
               </div>
               <span>·</span>
@@ -171,7 +171,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
 
           {/* Name + category */}
           <div className="px-3 pb-2">
-            <h3 className={`text-base font-bold transition-colors truncate ${isNew ? 'text-emerald-600' : 'text-gray-900 group-hover:text-indigo-600'}`}>
+            <h3 className={`text-base font-bold transition-colors truncate ${isNew ? 'text-emerald-600' : 'text-gray-900 group-hover:text-blue-600'}`}>
               {lead.name}
             </h3>
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{lead.category}</p>
@@ -182,7 +182,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
             <div>
               <p className="text-[9px] text-gray-400 font-bold uppercase mb-1">Date</p>
               <p className="text-xs font-bold text-gray-700 flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-indigo-400" />
+                <Calendar className="w-3 h-3 text-blue-400" />
                 {formatDate(lead.scheduled_date)}
               </p>
             </div>
@@ -198,7 +198,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
           {/* Mobile inline stats */}
           <div className="flex sm:hidden items-center gap-3 px-3 pb-2 text-[10px] text-gray-400 font-bold">
             <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-indigo-400" />
+              <Calendar className="w-3 h-3 text-blue-400" />
               {formatDate(lead.scheduled_date)}
             </div>
             <span>·</span>
@@ -217,7 +217,7 @@ export default function LeadCard({ lead, darkMode, onClick, highlighted }: Props
                 {lead.payment_status}
               </p>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
           </div>
         </div>
       </motion.div>
