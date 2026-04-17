@@ -11,33 +11,23 @@ const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], wei
 
 export const metadata: Metadata = {
   title: {
-    default: "Lead2Project | Job Management for Home Service Contractors",
+    default: "Lead2Project | Blast your link. Get better leads.",
     template: "%s | Lead2Project",
   },
   description:
-    "Stop losing leads. Get a custom booking link — customers submit requests, everything lands on your dashboard organized and ready to act on. Quote, schedule, and track every job in one place. Built for small and mid-size businesses.",
+    "Stop losing leads in your text threads. Blast your link, get better leads with photos, and manage your empire from the couch. Built for the guys in the field.",
   keywords: [
-      "small business lead management",
-    "service business job tracking",
-    "booking link for small business",
+    "contractor lead management",
+    "QR code for plumbers",
+    "landscaping job tracking",
+    "hvac business dashboard",
+    "service business outbox",
+    "Long Island contractor software",
+    "construction quote app",
+    "job management for trades",
+    "small business booking link",
     "contractor CRM",
-    "home service software",
-    "plumber job management",
-    "electrician lead tracking",
-    "cleaning business software",
-    "dog groomer client management",
-    "landscaping business app",
-    "roofing contractor software",
-    "painter job tracking",
-    "HVAC business management",
-    "handyman scheduling app",
-    "service business dashboard",
-    "quote and schedule software",
-    "small business booking form",
-    "QR code for service business",
-    "job management app",
-    "affordable CRM for service businesses",
-    
+    "field service software"
   ],
   authors: [{ name: "Lead2Project" }],
   creator: "Lead2Project",
@@ -49,16 +39,16 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://lead2project.com",
     siteName: "Lead2Project",
-   title: "Lead2Project | Job Management for Home Service Contractors",
+    title: "Lead2Project | Manage your empire from the couch.",
     description:
-      "Get a booking link, capture leads with photos, quote and schedule from your phone. Everything in one dashboard. Start your free 14-day trial.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project Dashboard" }],
+      "One link. One QR code. No more text thread madness. Quote, schedule, and track your jobs right from your phone.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project Dashboard Preview" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lead2Project | CRM & Project Management for Small Businesses",
+    title: "Lead2Project | Field Command Center",
     description:
-      "Turn leads into organized projects. Simple job and client management for contractors and small business owners.",
+      "Blast your link. Get better leads. The command center for your field operation.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -80,10 +70,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-<html lang="en" data-scroll-behavior="smooth">
-    <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}>
-  <UnhandledRejectionLogger />
-  {children}
+    <html lang="en" data-scroll-behavior="smooth">
+      <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}>
+        <UnhandledRejectionLogger />
+        {children}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-4TG9X39EQ5"
           strategy="afterInteractive"
