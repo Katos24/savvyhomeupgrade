@@ -26,14 +26,13 @@ export default function Hero() {
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live in 2 minutes</span>
             </div>
 
-            <h1 
-              className="font-black text-[#0F1F3D] leading-[0.9] tracking-[-0.05em] mb-6" 
-              style={{ fontSize: 'clamp(3.2rem, 8vw, 6rem)' }}
-            >
-              Stop losing <br />
-              jobs in your <br />
-              <span className="text-[#1a6645]">text thread.</span>
-            </h1>
+        <h1 
+  className="font-black text-[#0F1F3D] leading-[0.95] tracking-[-0.04em] mb-6" 
+  style={{ fontSize: 'clamp(3.2rem, 8vw, 6rem)' }}
+>
+  Blast your link. <br />
+  <span className="text-[#1a6645]"> Get better leads.</span>
+</h1>
 
             <div className="relative mb-4 lg:mb-8">
               <div className="absolute -left-6 top-0 bottom-0 w-1.5 bg-[#1a6645] hidden lg:block rounded-full" />
