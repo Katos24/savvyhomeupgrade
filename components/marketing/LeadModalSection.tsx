@@ -62,12 +62,12 @@ export default function LeadModalSection() {
             )}
 
             {!isPhoneHero && STEPS[activeTab].image && (
-              <div className="w-full rounded-[2rem] overflow-hidden border border-white/10 bg-[#0f172a] shadow-xl shadow-black/40">
+              <div className="w-full rounded-[2rem] overflow-hidden border border-white/10 bg-[#0f172a] shadow-xl shadow-black/40 group cursor-pointer">
                 <img
                   key={activeTab}
                   src={STEPS[activeTab].image}
                   alt={STEPS[activeTab].title}
-                  className="w-full h-auto object-cover aspect-[4/3] animate-in fade-in zoom-in-95 duration-500"
+                  className="w-full h-auto object-cover aspect-[4/3] animate-in fade-in zoom-in-95 duration-500 transition-transform duration-500 ease-out group-hover:scale-105"
                 />
               </div>
             )}
@@ -75,53 +75,53 @@ export default function LeadModalSection() {
 
           {/* ACCORDION */}
           <div className="w-full space-y-3 order-2">
-           {STEPS.map((item, i) => {
-  const isActive = activeTab === i;
-  return (
-    <button
-      key={i}
-      onClick={() => setActiveTab(i)}
-      className={`w-full text-left p-5 lg:p-7 rounded-2xl border transition-all duration-300 outline-none ${
-        isActive
-          ? 'bg-white border-white/20 shadow-lg shadow-black/30 translate-x-1 lg:translate-x-2'
-          : 'bg-white/8 border-white/5 hover:border-white/10 hover:bg-white/10'
-      }`}
-    >
-      <div className="flex items-start gap-4 lg:gap-6">
-        <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 ${
-            isActive ? 'text-white' : 'bg-white/5 text-white/30'
-          }`}
-          style={{ background: isActive ? item.color : '' }}
-        >
-          {item.icon}
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className={`text-lg lg:text-xl font-black tracking-tight transition-colors ${
-              isActive ? 'text-slate-900' : 'text-white/30'
-            }`}>
-              {item.title}
-            </h3>
-            <ChevronRight
-              className={`transition-transform duration-300 shrink-0 ml-2 ${
-                isActive ? 'rotate-90 text-[#1a6645]' : 'text-white/10'
-              }`}
-              size={20}
-            />
-          </div>
-          <div className={`grid transition-all duration-500 ${
-            isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}>
-            <p className="text-slate-600 text-sm lg:text-base font-medium leading-relaxed overflow-hidden">
-              {item.desc}
-            </p>
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-})}
+            {STEPS.map((item, i) => {
+              const isActive = activeTab === i;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActiveTab(i)}
+                  className={`w-full text-left p-5 lg:p-7 rounded-2xl border transition-all duration-300 outline-none ${
+                    isActive
+                      ? 'bg-white border-white/20 shadow-lg shadow-black/30 translate-x-1 lg:translate-x-2'
+                      : 'bg-white/8 border-white/5 hover:border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-start gap-4 lg:gap-6">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 ${
+                        isActive ? 'text-white' : 'bg-white/5 text-white/30'
+                      }`}
+                      style={{ background: isActive ? item.color : '' }}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`text-lg lg:text-xl font-black tracking-tight transition-colors ${
+                          isActive ? 'text-slate-900' : 'text-white/30'
+                        }`}>
+                          {item.title}
+                        </h3>
+                        <ChevronRight
+                          className={`transition-transform duration-300 shrink-0 ml-2 ${
+                            isActive ? 'rotate-90 text-[#1a6645]' : 'text-white/10'
+                          }`}
+                          size={20}
+                        />
+                      </div>
+                      <div className={`grid transition-all duration-500 ${
+                        isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}>
+                        <p className="text-slate-600 text-sm lg:text-base font-medium leading-relaxed overflow-hidden">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
         </div>
