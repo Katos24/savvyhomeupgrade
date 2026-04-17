@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useFadeIn } from '@/components/marketing/hooks';
 import { SlidersHorizontal, LayoutGrid, Mail, Check, Plus, Pencil } from 'lucide-react';
 
@@ -193,6 +193,70 @@ function EmailBento() {
   );
 }
 
+const TABS = [
+  { id: 'pipeline',   label: 'Pipeline',   dark: false },
+  { id: 'categories', label: 'Categories', dark: false },
+  { id: 'emails',     label: 'Emails',     dark: true  },
+];
+
+function TabShowcase({ visible }: { visible: boolean }) {
+  const [active, setActive] = useState('pipeline');
+  const current = TABS.find(t => t.id === active)!;
+
+  const card =
+    active === 'pipeline'   ? <PipelineBento />   :
+    active === 'categories' ? <CategoriesBento /> :
+                              <EmailBento />;
+
+  return (
+    <div
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(16px)',
+        transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
+      }}
+    >
+      {/* Tab bar */}
+      <div className="flex items-center justify-center gap-2 mb-6">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActive(t.id)}
+            className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
+              active === t.id
+                ? 'bg-[#0F1F3D] text-white shadow-lg'
+                : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Card */}
+      <div
+        key={active}
+        className="rounded-2xl p-6 sm:p-8 w-full max-w-2xl mx-auto border transition-all"
+        style={{
+          background: current.dark ? '#0f172a' : '#ffffff',
+          borderColor: current.dark ? 'rgba(255,255,255,0.08)' : '#f1f5f9',
+          boxShadow: current.dark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.06)',
+          animation: 'fadeUp 0.3s ease',
+        }}
+      >
+        {card}
+      </div>
+
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function SettingsShowcase() {
   const { ref, visible } = useFadeIn();
 
@@ -226,32 +290,7 @@ export default function SettingsShowcase() {
           </p>
         </div>
 
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'none' : 'translateY(16px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
-          }}
-        >
-          {[
-            { card: <PipelineBento />, dark: false },
-            { card: <CategoriesBento />, dark: false },
-            { card: <EmailBento />, dark: true },
-          ].map(({ card, dark }, i) => (
-            <div
-              key={i}
-              className="rounded-2xl p-5 sm:p-6 w-full border"
-              style={{
-                background: dark ? '#0f172a' : '#ffffff',
-                borderColor: dark ? 'rgba(255,255,255,0.08)' : '#f1f5f9',
-                boxShadow: dark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.06)',
-              }}
-            >
-              {card}
-            </div>
-          ))}
-        </div>
+       <TabShowcase visible={visible} />
 
       </div>
     </section>
