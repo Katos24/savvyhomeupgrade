@@ -164,15 +164,15 @@ const [formData, setFormData] = useState({
     {/* Headline */}
     <h2 className="text-4xl font-black leading-tight mb-8">
       The Operating System for{" "}
-      <span className="text-indigo-400">Pro Services.</span>
+      <span className="text-blue-400">Pro Services.</span>
     </h2>
 
     {/* Feature list */}
     <div className="space-y-8">
       {[
-        { icon: <Clock className="w-5 h-5 text-indigo-400" />, text: 'Start with a 14-day free trial' },
-        { icon: <Zap className="w-5 h-5 text-indigo-400" />, text: 'Convert leads to projects in seconds' },
-        { icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />, text: 'Secure, automated client payments' },
+        { icon: <Clock className="w-5 h-5 text-blue-400" />, text: 'Start with a 14-day free trial' },
+        { icon: <Zap className="w-5 h-5 text-blue-400" />, text: 'Convert leads to projects in seconds' },
+        { icon: <ShieldCheck className="w-5 h-5 text-blue-400" />, text: 'Secure, automated client payments' },
       ].map((item, i) => (
         <div key={i} className="flex items-start gap-4 text-slate-300 font-medium">
           <div className="mt-1">{item.icon}</div>
@@ -184,7 +184,7 @@ const [formData, setFormData] = useState({
 
   {/* Bottom card */}
   <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-    <p className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-2">
+    <p className="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">
       Step 1 of 2
     </p>
     <p className="text-sm text-slate-300 font-bold">
@@ -215,7 +215,7 @@ const [formData, setFormData] = useState({
     </div>
 
           <div className="mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full mb-4">
               <UserPlus className="w-3.5 h-3.5" />
               <span className="text-[10px] font-black uppercase tracking-widest">Account Setup</span>
             </div>
@@ -262,8 +262,8 @@ const [formData, setFormData] = useState({
             px-3 py-1.5 rounded-full text-xs font-bold border transition-all
             ${
               active
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200 hover:text-blue-600'
             }
           `}
         >
@@ -322,15 +322,15 @@ const [formData, setFormData] = useState({
     id="terms"
     checked={agreedToTerms}
     onChange={(e) => setAgreedToTerms(e.target.checked)}
-    className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
+    className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
   />
   <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed cursor-pointer">
     I agree to the{' '}
-    <a href="/terms" target="_blank" className="text-indigo-600 font-semibold hover:underline">
+    <a href="/terms" target="_blank" className="text-blue-600 font-semibold hover:underline">
       Terms of Service
     </a>{' '}
     and{' '}
-    <a href="/privacy" target="_blank" className="text-indigo-600 font-semibold hover:underline">
+    <a href="/privacy" target="_blank" className="text-blue-600 font-semibold hover:underline">
       Privacy Policy
     </a>
   </label>
@@ -340,7 +340,7 @@ const [formData, setFormData] = useState({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -362,7 +362,7 @@ const [formData, setFormData] = useState({
               </div>
               <p className="text-center text-slate-500 text-sm">
                 Already registered?{' '}
-                <a href="/login" className="text-indigo-600 font-black hover:underline">Log in here</a>
+                <a href="/login" className="text-blue-600 font-black hover:underline">Log in here</a>
               </p>
             </div>
           </form>
@@ -379,7 +379,7 @@ function CustomInput({ label, value, onChange, placeholder, type = 'text', hint,
   return (
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
-        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-indigo-500' : 'text-slate-600'}`}>
+        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-blue-500' : 'text-slate-600'}`}>
           {label}
         </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}
@@ -395,10 +395,10 @@ className={`
   w-full px-4 py-3.5 rounded-xl border shadow-sm outline-none transition-all
   !text-slate-900 !font-black text-base
   placeholder:text-slate-300 placeholder:font-medium
-  focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500
+  focus:ring-4 focus:ring-blue-50 focus:border-blue-500
   bg-white
   ${isPassword ? 'pr-12' : ''}
-  ${important ? 'border-indigo-200' : 'border-slate-200'}
+  ${important ? 'border-blue-200' : 'border-slate-200'}
 `}    />
         {isPassword && (
           <button
@@ -418,7 +418,7 @@ export default function SignupPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     }>
       <SignupForm />
