@@ -142,8 +142,8 @@ function SuccessPolling() {
       <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
         <div className="text-center animate-in fade-in slide-in-from-bottom-5 duration-500">
           <div className="relative inline-block mb-8">
-            <div className="absolute inset-0 rounded-full bg-indigo-500/30 animate-ping" />
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/50">
+           <div className="absolute inset-0 rounded-full bg-blue-500/30 animate-ping" />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-2xl shadow-blue-500/50">
               <Check className="w-10 h-10 text-white" strokeWidth={3} />
             </div>
           </div>
@@ -165,7 +165,7 @@ function SuccessPolling() {
           <p className="text-slate-400 mb-2 font-medium">Your payment was likely successful — Stripe can sometimes take a moment to confirm.</p>
           <p className="text-slate-500 text-sm mb-8">Check your email for a confirmation, or try logging in to your dashboard.</p>
           <div className="flex flex-col gap-3">
-            <button onClick={() => router.push('/login')} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition">Go to Login</button>
+            <button onClick={() => router.push('/login')} className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition">Go to Login</button>
             <button onClick={() => { attempts.current = 0; setElapsedSeconds(0); setStatus('polling'); }} className="w-full py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition">Try Again</button>
           </div>
           <p className="text-slate-600 text-xs mt-6">Need help? Email us at support@lead2project.com</p>
@@ -179,9 +179,9 @@ function SuccessPolling() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
       <div className="text-center">
         <div className="relative inline-block mb-8">
-          <div className="w-20 h-20 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+         <div className="w-20 h-20 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-indigo-500" />
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
           </div>
         </div>
         <h2 className="text-white text-xl font-black mb-2">Activating your account{'.'.repeat(dots)}</h2>
@@ -206,7 +206,7 @@ function CancelledScreen() {
         <p className="text-slate-400 mb-8 font-medium">No worries — your progress is saved.</p>
         <div className="flex gap-3">
           <button onClick={() => router.back()} className="flex-1 py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">Go Back</button>
-          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">Change Plan</button>
+          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition">Change Plan</button>
         </div>
       </div>
     </div>
@@ -356,19 +356,17 @@ function SubscribePageContent() {
                       const isAI = f.includes('✦');
                       return (
                         <li key={f} className="flex items-start gap-1.5 sm:gap-3">
-                          <div className={`mt-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shrink-0 ${
-                            isAI ? 'bg-violet-500/20' : plan.highlight ? 'bg-blue-500/20' : 'bg-white/10'
+                         <div className={`mt-0.5 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shrink-0 ${
+                            isAI ? 'bg-blue-500/20' : plan.highlight ? 'bg-blue-500/20' : 'bg-white/10'
                           }`}>
                             <Check className={`w-2 h-2 sm:w-3 sm:h-3 ${
-                              isAI ? 'text-violet-400' : plan.highlight ? 'text-blue-400' : 'text-slate-400'
+                              isAI ? 'text-blue-400' : plan.highlight ? 'text-blue-400' : 'text-slate-400'
                             }`} strokeWidth={4} />
                           </div>
-                          <span className={`text-[9px] sm:text-sm font-semibold tracking-tight leading-tight ${
-                            isAI ? 'text-violet-200' : 'text-slate-300'
-                          }`}>
+                         <span className="text-[9px] sm:text-sm font-semibold tracking-tight leading-tight text-slate-300">
                             {f.replace(' ✦', '')}
                             {isAI && (
-                              <span className="ml-1 sm:ml-2 text-[7px] sm:text-[8px] bg-violet-500/20 text-violet-400 px-1 sm:px-1.5 py-0.5 rounded-md font-black border border-violet-500/30 uppercase tracking-tighter">
+                              <span className="ml-1 sm:ml-2 text-[7px] sm:text-[8px] bg-blue-500/20 text-blue-400 px-1 sm:px-1.5 py-0.5 rounded-md font-black border border-blue-500/30 uppercase tracking-tighter">
                                 AI
                               </span>
                             )}
