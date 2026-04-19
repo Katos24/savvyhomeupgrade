@@ -53,7 +53,7 @@ export default function OverviewTab({ lead }: { lead: Lead }) {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{lead.file_urls.length} photos submitted</p>
               <div className="flex gap-2">
                 {lead.file_urls.slice(0, 4).map((_: any, i: number) => (
-                  <div key={i} className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl border border-blue-200 flex items-center justify-center">
+                  <div key={i} className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-100 rounded-xl border border-blue-200 flex items-center justify-center">
                     <Camera className="w-4 h-4 text-blue-400" />
                   </div>
                 ))}

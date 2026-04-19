@@ -67,7 +67,7 @@ export default function ScheduleTab({
   setTimeout(() => setSent(false), 2000);
 };
 
-  const inputCls = 'w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
+  const inputCls = 'w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all';
 
   return (
     <div className="space-y-5 overflow-hidden w-full">
@@ -75,13 +75,13 @@ export default function ScheduleTab({
       {/* Assigned To */}
       <div>
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-          <User className="w-3 h-3 text-indigo-400" /> Assign To
+          <User className="w-3 h-3 text-blue-400" /> Assign To
         </label>
         <div className="relative">
           <select
             value={crew}
             onChange={e => setCrew(e.target.value)}
-            className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer focus:border-indigo-400 focus:bg-white transition-all"
+            className="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer focus:border-blue-400 focus:bg-white transition-all"
           >
             <option value="">Choose team member...</option>
             {CREW.map(m => <option key={m} value={m}>{m}</option>)}
@@ -93,7 +93,7 @@ export default function ScheduleTab({
   {/* Date */}
       <div className="overflow-hidden">
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-          <Calendar className="w-3 h-3 text-indigo-400" /> Job Date
+          <Calendar className="w-3 h-3 text-blue-400" /> Job Date
         </label>
         <input
           type="date"
@@ -107,9 +107,9 @@ export default function ScheduleTab({
       {/* Time */}
       <div>
         <label className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-          <Clock className="w-3 h-3 text-indigo-400" /> Start Time
+          <Clock className="w-3 h-3 text-blue-400" /> Start Time
         </label>
-        <div className="flex items-center gap-1 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-indigo-400 focus-within:bg-white transition-all">
+        <div className="flex items-center gap-1 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-400 focus-within:bg-white transition-all">
           <select value={timeHour} onChange={e => setTimeHour(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer text-slate-900 min-w-0">
             <option value="">HH</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
@@ -119,7 +119,7 @@ export default function ScheduleTab({
             <option value="">MM</option>
             {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <select value={timeAmPm} onChange={e => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs font-black text-indigo-600 outline-none">
+          <select value={timeAmPm} onChange={e => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs font-black text-blue-600 outline-none">
             <option value="AM">AM</option>
             <option value="PM">PM</option>
           </select>
@@ -142,7 +142,7 @@ export default function ScheduleTab({
           onClick={handleSend}
           disabled={!date}
           className={`flex-1 py-4 bg-white border-2 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition disabled:opacity-30 ${
-            sent ? 'border-emerald-300 text-emerald-600' : 'border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600'
+            sent ? 'border-emerald-300 text-emerald-600' : 'border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-600'
           }`}
         >
           {sent ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}

@@ -52,7 +52,7 @@ export default function DemoHeader({
               <h1 className={`text-sm sm:text-base font-black tracking-tight leading-none ${textPrimary}`}>
                 Torres Roofing & Construction
               </h1>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold block mt-1">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold block mt-1">
                 Dashboard
               </span>
             </div>
@@ -71,14 +71,14 @@ export default function DemoHeader({
             </button>
             <button
               onClick={onCreateLead}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-slate-900 hover:bg-indigo-50 rounded-xl font-bold text-sm transition shadow-lg active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-slate-900 hover:bg-blue-50 rounded-xl font-bold text-sm transition shadow-lg active:scale-95"
             >
               <Plus className="w-4 h-4 stroke-[3px]" />
               <span className="hidden xs:inline">Create</span>
             </button>
            <Link
               href="/signup"
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition shadow-lg"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition shadow-lg"
             >
               <Zap className="w-4 h-4" /> Get Started
             </Link>

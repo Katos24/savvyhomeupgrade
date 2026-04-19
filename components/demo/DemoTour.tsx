@@ -72,8 +72,8 @@ style={{
       {/* Top bar */}
 <div className="flex items-center justify-between px-5 pt-5 pb-1">
   <div className="flex items-center gap-2">
-    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+    <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
       Live Demo
     </span>
   </div>
@@ -109,7 +109,7 @@ style={{
     className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
     style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}
   >
-    <span className="text-[9px] font-black text-indigo-500">{n}</span>
+    <span className="text-[9px] font-black text-blue-500">{n}</span>
   </div>
   <span className="text-xs font-medium text-slate-500">{label}</span>
 </div>
@@ -173,7 +173,7 @@ export function CardSpotlightOverlay({ onSkip }: { onSkip: () => void }) {
             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           }}
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
           <span className="text-xs font-black text-white whitespace-nowrap">
             Click on Michael Johnson to begin
           </span>
@@ -213,7 +213,7 @@ export function TourProgressBar({ step }: { step: TourStep }) {
               }`}>
                 {isComplete
                   ? <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                  : <span className={`text-[8px] font-black ${isActive ? 'text-indigo-900' : 'text-white/25'}`}>{i + 1}</span>
+                  : <span className={`text-[8px] font-black ${isActive ? 'text-blue-900' : 'text-white/25'}`}>{i + 1}</span>
                 }
               </div>
               <span className={`text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${
@@ -236,15 +236,15 @@ export function TourProgressBar({ step }: { step: TourStep }) {
 
 export function TourTipBanner({
   message,
-  color = 'indigo',
+  color = 'blue',
   onDismiss,
 }: {
   message: string;
-  color?: 'indigo' | 'sky' | 'violet' | 'emerald';
+  color?: 'blue' | 'sky' | 'violet' | 'emerald';
   onDismiss?: () => void;
 }) {
   const palettes = {
-    indigo:  { bg: 'linear-gradient(135deg,#312e81,#4338ca)', border: '#818cf8' },
+    blue:  { bg: 'linear-gradient(135deg,#312e81,#4338ca)', border: '#818cf8' },
     sky:     { bg: 'linear-gradient(135deg,#0c4a6e,#0369a1)', border: '#38bdf8' },
     violet:  { bg: 'linear-gradient(135deg,#3b0764,#6d28d9)', border: '#a78bfa' },
     emerald: { bg: 'linear-gradient(135deg,#052e16,#065f46)', border: '#34d399' },

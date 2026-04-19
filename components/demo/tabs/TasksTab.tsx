@@ -77,11 +77,11 @@ export default function TasksTab({
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-gray-700">{done} of {total} complete</span>
-            <span className={`text-sm font-black ${pct === 100 ? 'text-emerald-600' : 'text-indigo-600'}`}>{pct}%</span>
+            <span className={`text-sm font-black ${pct === 100 ? 'text-emerald-600' : 'text-blue-600'}`}>{pct}%</span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <motion.div
-              className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-600'}`}
+              className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
               transition={spring}
@@ -93,7 +93,7 @@ export default function TasksTab({
       {/* Task list */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-gray-50 flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-indigo-500" />
+          <CheckSquare className="w-4 h-4 text-blue-500" />
           <span className="text-sm font-bold text-gray-800">Checklist</span>
           {tourStep === 'tasks-check' && !flowDone && (
             <span className="ml-auto text-[10px] font-black text-violet-500 animate-pulse uppercase tracking-widest">
@@ -122,7 +122,7 @@ export default function TasksTab({
               <button
                 onClick={() => toggle(task.id)}
                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  task.done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-indigo-400'
+                  task.done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-blue-400'
                 }`}
               >
                 {task.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
@@ -147,11 +147,11 @@ export default function TasksTab({
             onChange={e => setNewLabel(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addTask()}
             placeholder="Add a task..."
-            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition placeholder-gray-300"
+            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition placeholder-gray-300"
           />
           <button
             onClick={addTask}
-            className="w-9 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center transition active:scale-90 shrink-0"
+            className="w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition active:scale-90 shrink-0"
           >
             <Plus className="w-4 h-4" />
           </button>

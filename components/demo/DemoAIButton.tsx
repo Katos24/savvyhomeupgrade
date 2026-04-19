@@ -73,18 +73,18 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
             transition={spring}
-            className="bg-[#0f172a] border border-indigo-500/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            className="bg-[#0f172a] border border-blue-500/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             style={{ width: 'min(calc(100vw - 32px), 360px)', maxHeight: '72vh' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10 shrink-0" style={{ background: '#1e1b4b' }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <div className="w-7 h-7 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-white text-xs font-black">AI Assistant</p>
-                  <p className="text-indigo-400/60 text-[9px] font-bold uppercase tracking-widest">Demo mode</p>
+                  <p className="text-blue-400/60 text-[9px] font-bold uppercase tracking-widest">Demo mode</p>
                 </div>
               </div>
               <button onClick={handleToggle} className="p-1.5 hover:bg-white/10 rounded-lg transition text-white/40 hover:text-white">
@@ -101,7 +101,7 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
                     <button
                       key={s.key}
                       onClick={() => send(s.label)}
-                      className="w-full text-left px-3.5 py-2.5 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-xl hover:border-indigo-500/40 hover:bg-indigo-500/10 transition font-medium"
+                      className="w-full text-left px-3.5 py-2.5 text-xs text-slate-300 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/40 hover:bg-blue-500/10 transition font-medium"
                     >
                       {s.label}
                     </button>
@@ -126,7 +126,7 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
               {loading && (
                 <div className="flex justify-start">
                   <div className="px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-2xl">
-                    <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
                   </div>
                 </div>
               )}
@@ -135,8 +135,8 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
 
             {/* Upgrade nudge */}
             {messages.length >= 2 && (
-              <div className="px-4 py-2.5 border-t border-white/5 bg-indigo-900/20 shrink-0">
-                <Link href="/signup" className="flex items-center justify-between text-indigo-300 hover:text-indigo-200 transition">
+              <div className="px-4 py-2.5 border-t border-white/5 bg-blue-900/20 shrink-0">
+                <Link href="/signup" className="flex items-center justify-between text-blue-300 hover:text-blue-200 transition">
                   <span className="text-[10px] font-black uppercase tracking-widest">Unlock full AI on your real data</span>
                   <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                 </Link>
@@ -151,12 +151,12 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') send(input); }}
                 placeholder="Ask about your leads..."
-                className="flex-1 px-3.5 py-2.5 text-xs bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:border-indigo-500 outline-none"
+                className="flex-1 px-3.5 py-2.5 text-xs bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:border-blue-500 outline-none"
               />
               <button
                 onClick={() => send(input)}
                 disabled={!input.trim() || loading}
-                className="p-2.5 rounded-xl bg-indigo-600 disabled:opacity-30 text-white transition hover:bg-indigo-500 active:scale-95"
+                className="p-2.5 rounded-xl bg-blue-600 disabled:opacity-30 text-white transition hover:bg-blue-500 active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </button>

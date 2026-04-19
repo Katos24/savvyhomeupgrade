@@ -53,7 +53,7 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
         {/* Nav */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">LEAD2PROJECT</span>
+            <span className="text-xs font-black text-blue-400 uppercase tracking-widest">LEAD2PROJECT</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/40">← Dashboard</span>
@@ -94,10 +94,10 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
               {/* Booking link */}
               <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-indigo-400" />
+                  <Globe className="w-4 h-4 text-blue-400" />
                   <div>
-                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Your Booking Link</p>
-                    <p className="text-xs font-bold text-gray-700">lead2project.com/<span className="text-indigo-600">torres</span></p>
+                    <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Your Booking Link</p>
+                    <p className="text-xs font-bold text-gray-700">lead2project.com/<span className="text-blue-600">torres</span></p>
                   </div>
                 </div>
                 <button className="flex items-center gap-1 text-[10px] font-black text-gray-500 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg">
@@ -153,9 +153,9 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
                   <ExternalLink className="w-4 h-4 text-gray-500" />
                   <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">View Form</span>
                 </button>
-                <button className="flex flex-col items-center gap-1.5 py-3 border border-indigo-200 bg-indigo-50 rounded-xl">
-                  <Mail className="w-4 h-4 text-indigo-500" />
-                  <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Digest On</span>
+                <button className="flex flex-col items-center gap-1.5 py-3 border border-blue-200 bg-blue-50 rounded-xl">
+                  <Mail className="w-4 h-4 text-blue-500" />
+                  <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Digest On</span>
                 </button>
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
           <div className="px-4 py-5">
             <Link
               href="/signup"
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm rounded-xl transition shadow-lg shadow-indigo-900/40"
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl transition shadow-lg shadow-blue-900/40"
             >
               Set up your account <ArrowRight className="w-4 h-4" />
             </Link>

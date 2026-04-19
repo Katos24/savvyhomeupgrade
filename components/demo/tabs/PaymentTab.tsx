@@ -63,7 +63,7 @@ const [showPreview, setShowPreview] = useState(false);
     setTimeout(() => setReminded(false), 2500);
   };
 
-  const inputCls = 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all';
+  const inputCls = 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all';
 
   return (
     <div className="space-y-4">
@@ -116,7 +116,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" strokeWidth="1.5" className="w-4 h-4">
                 <rect x="1" y="3" width="14" height="10" rx="2"/>
                 <path d="M1 7h14"/>
@@ -180,7 +180,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Method</label>
               <div className="relative">
                 <select value={method} onChange={e => setMethod(e.target.value)}
-                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer focus:border-indigo-400 focus:bg-white transition-all">
+                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer focus:border-blue-400 focus:bg-white transition-all">
                   <option value="">Select...</option>
                   {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -212,7 +212,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
                 markFull
                   ? 'border-emerald-400 bg-emerald-50 shadow-sm'
                   : tourStep === 'mark-paid'
-                    ? 'border-indigo-300 bg-indigo-50/40 hover:border-indigo-400'
+                    ? 'border-blue-300 bg-blue-50/40 hover:border-blue-400'
                     : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
@@ -249,7 +249,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
             <button
               onClick={handleRemind}
               className={`flex-1 py-4 bg-white border-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition active:scale-[0.98] ${
-                reminded ? 'border-blue-300 text-blue-600' : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                reminded ? 'border-blue-300 text-blue-600' : 'border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
               }`}
             >
               {reminded ? <><Check className="w-3.5 h-3.5" /> Sent!</> : <><Send className="w-3.5 h-3.5" /> Send Reminder</>}
@@ -311,7 +311,7 @@ Log the payment below — check "Mark as Paid in Full" then hit Record Payment  
 
 function ArrowBounce() {
   return (
-    <svg className="w-4 h-4 text-indigo-300 shrink-0 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-blue-300 shrink-0 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
       <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
     </svg>
   );

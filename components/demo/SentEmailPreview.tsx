@@ -87,7 +87,7 @@ export default function SentEmailPreview({ type, customerName, customerEmail, am
         <div className="bg-white p-4">
           {/* Email header */}
           <div className="flex items-start gap-3 mb-3 pb-3 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs shrink-0">
               T
             </div>
             <div className="min-w-0 flex-1">
@@ -145,8 +145,8 @@ export default function SentEmailPreview({ type, customerName, customerEmail, am
         </div>
 
         {/* Demo note */}
-        <div className="px-4 py-2.5 bg-indigo-50 border-t border-indigo-100">
-          <p className="text-[11px] font-bold text-indigo-600 text-center">
+        <div className="px-4 py-2.5 bg-blue-50 border-t border-blue-100">
+          <p className="text-[11px] font-bold text-blue-600 text-center">
             In your real account {firstName} receives this branded email instantly
           </p>
         </div>
