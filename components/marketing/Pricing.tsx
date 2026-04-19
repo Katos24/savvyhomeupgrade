@@ -48,18 +48,36 @@ export default function Pricing() {
   const { ref, visible } = useFadeIn();
 
   return (
-    <section id="pricing" className="py-20 sm:py-28 px-4 sm:px-6 bg-[#0F1F3D] border-t border-white/[0.06] overflow-hidden">
+    <section
+      id="pricing"
+      className="py-20 sm:py-28 px-4 sm:px-6 overflow-hidden relative"
+      style={{ background: '#020617' }}
+    >
+      {/* Top accent line */}
+      <div className="absolute top-0 inset-x-0 h-px pointer-events-none"
+        style={{ background: 'linear-gradient(to right, transparent, rgba(26,102,69,0.6), transparent)' }} />
+
+      {/* Dot grid */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+
+      {/* Glow orb */}
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none opacity-15"
+        style={{ background: 'radial-gradient(circle, #1a6645, transparent 70%)' }} />
+      <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full pointer-events-none opacity-10"
+        style={{ background: 'radial-gradient(circle, #1d4ed8, transparent 70%)' }} />
+
       <div className="max-w-5xl mx-auto relative">
-
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-[120px] pointer-events-none opacity-20"
-          style={{ background: '#1a6645' }} />
-
         <div
           ref={ref}
-          style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(24px)', transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)' }}
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'none' : 'translateY(24px)',
+            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
+          }}
         >
           <div className="text-center mb-12">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3" style={{ color: '#4ade80' }}>
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3 text-emerald-400">
               Lead2Project Pricing
             </p>
             <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
@@ -77,13 +95,15 @@ export default function Pricing() {
                 key={plan.name}
                 className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-8 border transition-all duration-300"
                 style={plan.highlight
-                  ? { background: '#fff', borderColor: '#e2e8f0', boxShadow: '0 24px 60px rgba(0,0,0,0.3)' }
+                  ? { background: '#fff', borderColor: '#e2e8f0', boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }
                   : { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }
                 }
               >
                 {plan.highlight && (
-                  <div className="absolute -top-3 sm:-top-4 left-4 sm:left-8 text-white text-[7px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1 sm:py-1.5 rounded-full whitespace-nowrap"
-                    style={{ background: '#1a6645' }}>
+                  <div
+                    className="absolute -top-3 sm:-top-4 left-4 sm:left-8 text-white text-[7px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1 sm:py-1.5 rounded-full whitespace-nowrap"
+                    style={{ background: '#1a6645' }}
+                  >
                     <span className="hidden sm:inline">Recommended for Growth</span>
                     <span className="sm:hidden">Most Popular</span>
                   </div>
@@ -109,7 +129,7 @@ export default function Pricing() {
                   href={plan.href}
                   className="block text-center w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-sm uppercase tracking-wider transition-all active:scale-95 mb-4 sm:mb-8"
                   style={plan.highlight
-                    ? { background: '#0F1F3D', color: '#fff' }
+                    ? { background: '#1a6645', color: '#fff' }
                     : { background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }
                   }
                 >
@@ -153,7 +173,6 @@ export default function Pricing() {
             <span className="text-white font-black tracking-tight text-sm uppercase">Stripe Secure</span>
             <span className="text-white font-black tracking-tight text-sm uppercase">256-Bit SSL</span>
           </div>
-
         </div>
       </div>
     </section>

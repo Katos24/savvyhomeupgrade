@@ -60,10 +60,9 @@ export default function Comparison() {
   const { ref, visible } = useFadeIn();
 
   return (
-    <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white border-b border-slate-100">
+    <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white">
       <div className="max-w-3xl mx-auto">
 
-        {/* Header — tighter */}
         <div
           ref={ref}
           className="text-center mb-8"
@@ -82,7 +81,6 @@ export default function Comparison() {
           </p>
         </div>
 
-        {/* Table */}
         <div
           className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm"
           style={{
@@ -91,7 +89,6 @@ export default function Comparison() {
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
           }}
         >
-          {/* Column headers */}
           <div className="grid grid-cols-4 border-b border-slate-200">
             <div className="px-3 py-3 bg-slate-50 border-r border-slate-200">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Feature</p>
@@ -107,7 +104,6 @@ export default function Comparison() {
             </div>
           </div>
 
-          {/* Rows */}
           {ROWS.map((row, i) => (
             <div
               key={row.feature}
@@ -129,7 +125,6 @@ export default function Comparison() {
           ))}
         </div>
 
-        {/* CTA — minimal */}
         <div className="mt-6 text-center">
           <Link
             href="/signup"

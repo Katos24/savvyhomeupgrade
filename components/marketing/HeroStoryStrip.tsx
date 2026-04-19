@@ -142,7 +142,7 @@ function CaptureCard() {
       {/* Photo strip — right 45%, full height */}
       <div className="absolute top-0 right-0 w-[45%] h-full">
         <img
-          src="/images/qr-scan.png"
+          src="/images/qr-scan-2.webp"
           className="w-full h-full object-cover object-left"
           alt="Customer scanning QR on truck"
         />

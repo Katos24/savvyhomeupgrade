@@ -9,13 +9,14 @@ import {
 } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
 
+// Replace the LEADS array status colors:
 const LEADS = [
-  { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#3b82f6', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
+  { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
   { name: 'Kim Gutters',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', paid: true,  assigned: '—',        category: 'Gutters'  },
-  { name: 'Martinez Siding',   status: 'Quote Sent', statusColor: '#eab308', date: '—',      time: '—',        amount: '$5,200', paid: false, assigned: 'Dave R.',  category: 'Siding'   },
-  { name: 'David Reyes',       status: 'New',        statusColor: '#10b981', date: '—',      time: '—',        amount: '—',      paid: false, assigned: '—',        category: 'Gutters'  },
+  { name: 'Martinez Siding',   status: 'Quote Sent', statusColor: '#0891b2', date: '—',      time: '—',        amount: '$5,200', paid: false, assigned: 'Dave R.',  category: 'Siding'   },
+  { name: 'David Reyes',       status: 'New',        statusColor: '#1a6645', date: '—',      time: '—',        amount: '—',      paid: false, assigned: '—',        category: 'Gutters'  },
   { name: 'ProClean Services', status: 'Won',        statusColor: '#10b981', date: 'Apr 15', time: '2:00 PM',  amount: '$1,800', paid: true,  assigned: 'Mike T.',  category: 'Cleaning' },
-  { name: 'Apex Fencing',      status: 'Contacted',  statusColor: '#f97316', date: 'Apr 18', time: '10:00 AM', amount: '$3,100', paid: false, assigned: 'Dave R.',  category: 'Fencing'  },
+  { name: 'Apex Fencing',      status: 'Contacted',  statusColor: '#8b5cf6', date: 'Apr 18', time: '10:00 AM', amount: '$3,100', paid: false, assigned: 'Dave R.',  category: 'Fencing'  },
 ];
 
 const CAL_EVENTS: Record<number, { name: string; color: string }[]> = {
