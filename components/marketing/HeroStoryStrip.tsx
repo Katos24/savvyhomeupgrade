@@ -68,7 +68,7 @@ function QRCard() {
         {/* QR image */}
         <div className="relative rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center p-4">
           <img
-            src="/images/qr-screenshot.webp"
+            src="/images/qrcode-ridgeline.webp"
             alt="QR Code"
             className="w-full h-auto max-h-[220px] object-contain rounded-xl"
           />
