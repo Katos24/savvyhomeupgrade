@@ -138,16 +138,26 @@ function FormCard() {
 function CaptureCard() {
   return (
     <div className="relative w-full rounded-[1.75rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[320px] sm:h-[380px]">
-      <img
-        src="/images/qr-scan-2.webp"
-        className="absolute inset-0 w-full h-full object-cover opacity-50"
-        alt="Customer scanning"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-      {/* success modal */}
-      <div className="absolute inset-0 flex items-center justify-center sm:items-start sm:justify-end sm:p-6">
-        <div className="w-full max-w-[240px] rounded-2xl overflow-hidden bg-white p-4 shadow-2xl border border-white/20">
+      {/* Slim photo strip — top-right corner only */}
+      <div className="absolute top-0 right-0 w-[42%] h-full">
+        <img
+          src="/images/qr-scan-2.webp"
+          className="w-full h-full object-cover object-center"
+          alt="Customer scanning QR code on truck"
+        />
+        {/* Fade left edge of photo into dark bg */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/60 to-transparent" />
+        {/* Fade bottom of photo */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+      </div>
+
+      {/* Dark base for left side */}
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/95 to-transparent w-[65%]" />
+
+      {/* Success modal — left/center aligned */}
+      <div className="absolute inset-0 flex items-center justify-start pl-5 sm:pl-7">
+        <div className="w-full max-w-[220px] rounded-2xl overflow-hidden bg-white p-4 shadow-2xl border border-white/20">
           <div className="flex flex-col items-center text-center">
             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-2">
               <CheckCircle2 size={22} className="text-[#1a6645]" />
@@ -169,7 +179,7 @@ function CaptureCard() {
         </div>
       </div>
 
-      {/* bottom label */}
+      {/* Bottom label */}
       <div className="absolute bottom-0 inset-x-0 px-5 pb-5">
         <div className="flex items-center gap-2">
           <Smartphone size={13} className="text-emerald-400" />

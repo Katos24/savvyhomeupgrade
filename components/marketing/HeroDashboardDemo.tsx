@@ -4,35 +4,27 @@ import { useEffect, useState } from 'react';
 import { QrCode, ChevronRight, Wifi, ArrowRight, Camera } from 'lucide-react';
 import { FastDemoForm } from '@/components/marketing/FastDemoForm';
 
-// ── Dashboard phone ───────────────────────────────────────────────────────────
-
 function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
   const existingLeads = [
     { name: 'Marcus Thornton', status: 'Contacted',  color: '#f59e0b', amount: '$7,950',  date: 'Apr 12' },
-    { name: 'David Reyes',     status: 'Scheduled',  color: '#3b82f6', amount: '$2,400',  date: 'Apr 15' },    
+    { name: 'David Reyes',     status: 'Scheduled',  color: '#3b82f6', amount: '$2,400',  date: 'Apr 15' },
     { name: 'Sarah Kim',       status: 'Won',        color: '#10b981', amount: '$5,200',  date: 'Apr 13' },
-    { name: 'James Patel',     status: 'Quote Sent', color: '#0891b2', amount: '$11,400', date: 'Apr 18' },    
+    { name: 'James Patel',     status: 'Quote Sent', color: '#0891b2', amount: '$11,400', date: 'Apr 18' },
     { name: 'Linda Ortega',    status: 'New',        color: '#10b981', amount: '—',       date: 'Apr 9'  },
   ];
 
   return (
     <div className="relative" style={{ width: 260, height: 480 }}>
-      {/* Background Glow behind phone */}
-      <div className="absolute -top-10 -right-10 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
-
       <div className="relative w-full h-full rounded-[3rem] border-[8px] border-[#0f172a] bg-[#0f172a] shadow-[0_40px_80px_rgba(0,0,0,0.4)] overflow-hidden ring-1 ring-white/10">
-        {/* Notch */}
         <div className="absolute top-0 inset-x-0 h-7 flex justify-center items-start z-30 pt-1.5">
           <div className="w-16 h-4 bg-black rounded-full" />
         </div>
-
         <div className="absolute inset-0 pt-8 flex flex-col bg-[#020617]">
-          {/* Header Area */}
           <div className="px-4 pt-4 pb-3 border-b border-white/5 bg-white/[0.02]">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#1a6645] flex items-center justify-center shadow-lg shadow-emerald-900/40">
-<img src="/images/ridgelinelogo.webp" alt="" className="w-4 h-4 object-contain" />
+                <div className="w-6 h-6 rounded-lg bg-[#1a6645] flex items-center justify-center">
+                  <img src="/images/ridgelinelogo.webp" alt="" className="w-4 h-4 object-contain" />
                 </div>
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Board</span>
               </div>
@@ -43,8 +35,6 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
             </div>
             <p className="text-base font-black text-white tracking-tight">Your Lead Pipeline</p>
           </div>
-
-          {/* Stats Grid */}
           <div className="grid grid-cols-3 bg-white/[0.01] border-b border-white/5">
             {[
               { label: 'Leads',   val: leadVisible ? '169' : '168', highlight: leadVisible },
@@ -57,10 +47,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
               </div>
             ))}
           </div>
-
-          {/* Lead list */}
           <div className="px-3 pt-4 pb-1 space-y-2 flex-1 overflow-hidden">
-            {/* New lead animates in */}
             <div
               className="rounded-2xl border-2 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
@@ -82,7 +69,6 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
                   </div>
                 </div>
               )}
-
               <div className="flex items-center gap-3 px-3 py-3">
                 <div className="w-1 h-7 rounded-full shrink-0 bg-emerald-500" />
                 <div className="flex-1 min-w-0">
@@ -95,7 +81,6 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
                 <ChevronRight size={12} className="text-white/20 shrink-0" />
               </div>
             </div>
-
             {existingLeads.map((lead, i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5 bg-white/[0.03] opacity-60">
                 <div className="w-1 h-5 rounded-full shrink-0" style={{ background: lead.color }} />
@@ -109,111 +94,146 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
               </div>
             ))}
           </div>
-
-          {/* Bottom Alert Banner */}
-          <div className="mx-3 mb-4 px-3 py-2 rounded-2xl flex items-center gap-3 border border-orange-500/20 bg-orange-500/5 shadow-lg">
-            <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
+          <div className="mx-3 mb-4 px-3 py-2 rounded-2xl flex items-center gap-3 border border-orange-500/20 bg-orange-500/5">
+            <div className="w-2 h-2 rounded-full bg-orange-500" />
             <div className="flex-1">
-               <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest leading-none">Payments Due</p>
-               <p className="text-[10px] font-black text-white/80">$34,200 pending</p>
+              <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest leading-none">Payments Due</p>
+              <p className="text-[10px] font-black text-white/80">$34,200 pending</p>
             </div>
             <ArrowRight size={12} className="text-orange-500/50" />
           </div>
         </div>
-
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-20 h-1 bg-white/10 rounded-full z-30" />
       </div>
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-
 export default function HeroDashboardDemo() {
   const [leadVisible, setLeadVisible] = useState(false);
   const [arrowPulse, setArrowPulse] = useState(false);
+  // Mobile tab: 'form' | 'board'
+  const [mobileTab, setMobileTab] = useState<'form' | 'board'>('form');
 
   useEffect(() => {
     let timers: ReturnType<typeof setTimeout>[] = [];
-
     function run() {
       setLeadVisible(false);
       setArrowPulse(false);
       timers.push(setTimeout(() => setArrowPulse(true), 3800));
-      timers.push(setTimeout(() => { 
-        setLeadVisible(true); 
-        setArrowPulse(false); 
+      timers.push(setTimeout(() => {
+        setLeadVisible(true);
+        setArrowPulse(false);
+        // On mobile, auto-flip to board tab when lead fires
+        setMobileTab('board');
       }, 4600));
+      // Reset mobile tab after showing board
+      timers.push(setTimeout(() => setMobileTab('form'), 8500));
       timers.push(setTimeout(run, 10000));
     }
-
     run();
     return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
     <div className="relative w-full mx-auto lg:mx-0" style={{ maxWidth: 600 }}>
-      {/* Step Labels */}
-      <div className="flex justify-between mb-6 px-12">
-        <div className="flex flex-col items-center gap-1.5">
-          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${!leadVisible ? 'bg-[#1a6645] text-white shadow-lg' : 'bg-slate-200 text-slate-400'}`}>
-            1. Customer scan
+
+      {/* Step labels */}
+      <div className="flex justify-between mb-6 px-4 sm:px-12">
+        <button
+          onClick={() => setMobileTab('form')}
+          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 lg:cursor-default
+            ${mobileTab === 'form' || true
+              ? (!leadVisible ? 'bg-[#1a6645] text-white shadow-lg' : 'bg-slate-200 text-slate-400')
+              : 'bg-slate-200 text-slate-400'
+            }`}
+          style={{ background: !leadVisible ? '#1a6645' : undefined, color: !leadVisible ? 'white' : undefined }}
+        >
+          1. Customer scan
+        </button>
+        <button
+          onClick={() => setMobileTab('board')}
+          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 lg:cursor-default
+            ${leadVisible ? 'bg-blue-600 text-white shadow-lg animate-bounce' : 'bg-slate-200 text-slate-400'}`}
+        >
+          2. Instant Board
+        </button>
+      </div>
+
+      {/* ── DESKTOP: side-by-side ── */}
+      <div className="hidden lg:flex items-center justify-center">
+        <div className="transition-transform duration-500 hover:scale-[1.02]">
+          <FastDemoForm autoPlay />
+        </div>
+        <div
+          className="flex items-center justify-center shrink-0 mx-[-20px] z-30 transition-all duration-700"
+          style={{ opacity: arrowPulse ? 1 : 0.2, transform: arrowPulse ? 'scale(1.4)' : 'scale(1)' }}
+        >
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 ${arrowPulse ? 'bg-[#1a6645]' : 'bg-white border-2 border-slate-200'}`}>
+            <ArrowRight size={20} className={arrowPulse ? 'text-white' : 'text-slate-300'} strokeWidth={3} />
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1.5">
-          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${leadVisible ? 'bg-blue-600 text-white shadow-lg animate-bounce' : 'bg-slate-200 text-slate-400'}`}>
-            2. Instant Board
-          </div>
+        <div className="transition-transform duration-500 hover:scale-[1.02]">
+          <DashboardPhone leadVisible={leadVisible} />
         </div>
       </div>
 
-      <style>{`
-        .phones-wrapper { transform-origin: top center; }
-        @media (max-width: 480px) { .phones-wrapper { transform: scale(0.75); margin-bottom: -120px; } }
-        @media (max-width: 380px) { .phones-wrapper { transform: scale(0.65); margin-bottom: -160px; } }
-      `}</style>
+      {/* ── MOBILE: single phone, tab-switched ── */}
+      <div className="flex lg:hidden flex-col items-center">
+        {/* Tab indicator dots */}
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={() => setMobileTab('form')}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${mobileTab === 'form' ? 'bg-emerald-500 w-6' : 'bg-slate-300'}`}
+          />
+          <button
+            onClick={() => setMobileTab('board')}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${mobileTab === 'board' ? 'bg-blue-500 w-6' : 'bg-slate-300'}`}
+          />
+        </div>
 
-      <div className="w-full flex justify-center">
-        <div className="phones-wrapper flex items-center justify-center relative">
-          
-          {/* Form Phone */}
-          <div className="relative z-20 group transition-transform duration-500 hover:scale-[1.02]">
-            <FastDemoForm autoPlay />
-            {/* Connection line effect */}
-            {arrowPulse && (
-              <div className="absolute top-1/2 -right-10 w-20 h-px bg-gradient-to-r from-emerald-500 to-transparent z-0 hidden lg:block" />
-            )}
-          </div>
-
-          {/* Transfer Arrow */}
+        {/* Phones: slide between them */}
+        <div className="relative overflow-hidden" style={{ width: 260, height: 480 }}>
+          {/* Form phone */}
           <div
-            className="flex items-center justify-center shrink-0 transition-all duration-700 z-30"
+            className="absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
             style={{
-              margin: '0 -20px',
-              opacity: arrowPulse ? 1 : 0.2,
-              transform: arrowPulse ? 'scale(1.4)' : 'scale(1)',
+              opacity: mobileTab === 'form' ? 1 : 0,
+              transform: mobileTab === 'form' ? 'translateX(0)' : 'translateX(-30px)',
+              pointerEvents: mobileTab === 'form' ? 'auto' : 'none',
             }}
           >
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 ${arrowPulse ? 'bg-[#1a6645] rotate-0' : 'bg-white border-2 border-slate-200 rotate-0'}`}
-            >
-              <ArrowRight size={20} className={arrowPulse ? 'text-white' : 'text-slate-300'} strokeWidth={3} />
-            </div>
+            <FastDemoForm autoPlay />
           </div>
-
-          {/* Dashboard Phone */}
-          <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02]">
+          {/* Dashboard phone */}
+          <div
+            className="absolute inset-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{
+              opacity: mobileTab === 'board' ? 1 : 0,
+              transform: mobileTab === 'board' ? 'translateX(0)' : 'translateX(30px)',
+              pointerEvents: mobileTab === 'board' ? 'auto' : 'none',
+            }}
+          >
             <DashboardPhone leadVisible={leadVisible} />
           </div>
-
         </div>
+
+        {/* Tap hint on form view */}
+        {mobileTab === 'form' && !leadVisible && (
+          <p className="mt-4 text-[11px] text-slate-400 font-bold uppercase tracking-widest animate-pulse">
+            Submitting → board updates live
+          </p>
+        )}
+        {mobileTab === 'board' && leadVisible && (
+          <p className="mt-4 text-[11px] text-emerald-500 font-bold uppercase tracking-widest">
+            New lead landed in 2 seconds
+          </p>
+        )}
       </div>
 
       <div className="mt-8 flex items-center justify-center gap-3">
         <div className="h-px w-12 bg-slate-200" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-          Syncs in Real-Time
-        </p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Syncs in Real-Time</p>
         <div className="h-px w-12 bg-slate-200" />
       </div>
     </div>
