@@ -202,7 +202,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
       {/* Header Section */}
       <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
             <ClipboardCheck className="w-4 h-4" />
           </div>
           <div>
@@ -226,7 +226,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
                 }}
               />
             </div>
-            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${percentage === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${percentage === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
               {percentage}%
             </span>
           </div>
@@ -237,7 +237,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
       <div className="min-h-[100px]">
         {loading ? (
           <div className="py-12 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+            <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Checklist...</p>
           </div>
         ) : !hasProject ? (
@@ -267,7 +267,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                   ) : (
-                    <div className="w-6 h-6 rounded-full border-2 border-slate-200 bg-white group-hover:border-indigo-400 flex items-center justify-center transition-colors" />
+                    <div className="w-6 h-6 rounded-full border-2 border-slate-200 bg-white group-hover:border-blue-400 flex items-center justify-center transition-colors" />
                   )}
                 </button>
                 
@@ -294,8 +294,8 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
             {/* Empty State */}
             {tasks.length === 0 && (
               <div className="py-12 flex flex-col items-center justify-center text-center px-6">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mb-3">
-                  <Plus className="w-5 h-5 text-indigo-400" />
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-3">
+                  <Plus className="w-5 h-5 text-blue-400" />
                 </div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No tasks yet</p>
               </div>
@@ -303,7 +303,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
 
             {/* Input Row */}
             <div className="p-4 bg-slate-50/30">
-              <div className="relative flex items-center gap-3 px-3 py-1 bg-white border border-slate-200 rounded-xl focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all">
+              <div className="relative flex items-center gap-3 px-3 py-1 bg-white border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all">
                 <Plus className="w-4 h-4 text-slate-300 flex-shrink-0" />
                 <input
                   type="text"
@@ -318,7 +318,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
                   <button
                     onClick={handleAddTask}
                     disabled={saving}
-                    className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-700 transition-all active:scale-95 shadow-md shadow-indigo-100"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-100"
                   >
                     {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Add'}
                   </button>

@@ -338,6 +338,12 @@ export default function LeadModal({
 
   const currentStatusConfig = getStatusConfig(selectedStatus);
   const statusHex = getStatusColor(currentStatusConfig?.color);
+  const hasSavedBrief =
+  isProject && !!(lead.ai_brief && (
+    typeof lead.ai_brief === 'string'
+      ? lead.ai_brief !== '{}' && lead.ai_brief !== ''
+      : Object.keys(lead.ai_brief).length > 0
+  ));
 
 const planTier = (company?.plan_tier || 'starter') as PlanTier;
 const isStarter = planTier === 'starter';
@@ -368,7 +374,7 @@ const renderProjectTab = () => {
     };
     const info = upgradeMap[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Basic' };
     return (
-      <div className="bg-white rounded-none border border-gray-100 shadow-sm p-8 text-center">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-8 text-center">
         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Lock className="w-6 h-6 text-blue-500" />
         </div>
@@ -563,13 +569,12 @@ return (
                 </div>
               )}
 
-              <AiBriefButton
-                hasSavedBrief={!!(lead.ai_brief && (
-                  typeof lead.ai_brief === 'string'
-                    ? lead.ai_brief !== '{}' && lead.ai_brief !== ''
-                    : Object.keys(lead.ai_brief).length > 0
-                ))} onClick={() => setActiveTab('ai')}
-              />
+           {isProject && (
+  <AiBriefButton
+    hasSavedBrief={hasSavedBrief}
+    onClick={() => setActiveTab('ai')}
+  />
+)}
             </motion.div>
 
             {/* Tab bar */}
@@ -620,7 +625,7 @@ return (
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
-              className="p-4 sm:p-6 space-y-4"
+className="p-5 sm:p-7 space-y-6"
             >
 
               {/* ── OVERVIEW TAB ── */}
@@ -630,7 +635,7 @@ return (
                   {!isProject && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-className="rounded-none border-2 border-dashed border-blue-200 bg-blue-50/60 p-5 flex items-center justify-between gap-4"                    >
+className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"                    >
                       <div>
                        <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
                         <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
@@ -643,10 +648,10 @@ className="rounded-none border-2 border-dashed border-blue-200 bg-blue-50/60 p-5
                   <motion.div
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 }}
-                    className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
+className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
                         <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-blue-400" /></span>
                         Client Info
                         {relatedLeads.length > 0 && (
@@ -663,7 +668,7 @@ className="rounded-none border-2 border-dashed border-blue-200 bg-blue-50/60 p-5
                       </h3>
                       <div className="relative">
                         <button onClick={() => setShowClientActions(!showClientActions)}
-className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-none transition">                          Actions ▾
+className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition hover:bg-blue-100 rounded-none transition">                          Actions ▾
                         </button>
                         <AnimatePresence>
                           {showClientActions && (
@@ -811,7 +816,7 @@ className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-
                                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 onClick={btn.action}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-none border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition group"
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition hover:bg-blue-50 hover:border-blue-200 transition group"
                               >
                                 <span style={{ color: btn.color }}>{btn.icon}</span>
                                 <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-600">{btn.label}</span>
@@ -830,10 +835,9 @@ className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-
                     <motion.div
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
-                    >
-                      <div className="px-5 py-4 border-b border-gray-50">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden"                    >
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
                           <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
                           Customer's Message
                         </h3>
@@ -869,7 +873,7 @@ className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-
                           <div className="mt-4 pt-4 border-t border-gray-100">
                             <div className="flex items-center gap-1.5 mb-2">
                               <Image className="w-3.5 h-3.5 text-blue-400" />
-                              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em]">
                                 {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
                               </span>
                             </div>
@@ -937,7 +941,7 @@ className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-
                       className={`bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden ${!isProject ? 'hidden' : ''}`}
                     >
                       <div className="px-5 py-4 border-b border-gray-50">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
                           <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
                           Internal Notes
                         </h3>
@@ -1030,10 +1034,9 @@ className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-
               {activeTab === 'activity' && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden"
-                >
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition"                >
                   <div className="px-5 py-4 border-b border-gray-50">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
                       <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>
                       Activity Log
                       {notesArray.length > 0 && (
@@ -1153,7 +1156,7 @@ className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-wh
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">
                   {relatedLeads.length} Previous Job{relatedLeads.length > 1 ? 's' : ''}
                 </p>
                 {relatedLeads.map((rl: any, i: number) => (

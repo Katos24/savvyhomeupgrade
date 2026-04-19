@@ -18,11 +18,11 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
     <div className={`relative group overflow-hidden rounded-2xl border transition-all duration-300 shadow-2xl ${
       isUrgent 
         ? 'bg-red-500/10 border-red-500/30 hover:border-red-500/50' 
-        : 'bg-indigo-500/10 border-indigo-500/30 hover:border-indigo-500/50'
+        : 'bg-blue-500/10 border-blue-500/30 hover:border-blue-500/50'
     }`}>
       {/* Animated Background Glow */}
       <div className={`absolute -inset-x-20 -top-20 -bottom-20 opacity-20 blur-3xl transition-opacity group-hover:opacity-30 ${
-        isUrgent ? 'bg-red-600' : 'bg-indigo-600'
+        isUrgent ? 'bg-red-600' : 'bg-blue-600'
       }`} />
 
       <div className="relative px-5 py-4 flex flex-col md:flex-row items-center justify-between gap-4 backdrop-blur-md">
@@ -31,7 +31,7 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-inner ${
             isUrgent 
               ? 'bg-red-500/20 border-red-400/30 text-red-400' 
-              : 'bg-indigo-500/20 border-indigo-400/30 text-indigo-400'
+              : 'bg-blue-500/20 border-blue-400/30 text-blue-400'
           }`}>
             {isUrgent ? (
               <AlertTriangle className="w-6 h-6 animate-pulse" />
@@ -43,7 +43,7 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                isUrgent ? 'bg-red-500/20 border-red-500/50 text-red-200' : 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
+                isUrgent ? 'bg-red-500/20 border-red-500/50 text-red-200' : 'bg-blue-500/20 border-blue-500/50 text-blue-200'
               }`}>
                 AI Insight
               </span>
@@ -74,7 +74,7 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
             className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
               isUrgent 
                 ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' 
-                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
             }`}
           >
             Review Analysis <ArrowRight className="w-4 h-4" />

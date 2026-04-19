@@ -190,8 +190,8 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
             >
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-indigo-500" />
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-blue-500" />
                   </div>
                   <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email Preview</p>
@@ -251,14 +251,14 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
               onClick={() => setShowAI(v => !v)}
               className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition ${
                 showAI
-                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-200'
-                  : 'bg-violet-50 text-violet-700 hover:bg-violet-100'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               AI
               {leadPhotos.length > 0 && !showAI && (
-                <span className="bg-violet-200 text-violet-700 px-1.5 rounded-full text-[9px]">
+                <span className="bg-blue-200 text-blue-700 px-1.5 rounded-full text-[9px]">
                   {leadPhotos.length}📷
                 </span>
               )}
@@ -269,7 +269,7 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   <motion.button
     whileTap={{ scale: 0.95 }}
     onClick={() => setIsEditing(true)}
-    className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors"
+    className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-blue-600 transition-colors"
   >
     <Edit2 className="w-4 h-4" />
   </motion.button>
@@ -284,10 +284,10 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mx-4 mt-3 flex items-center justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+              <div className="mx-4 mt-3 flex items-center justify-between gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-black text-indigo-800 truncate">Template: {categoryTemplate.name}</p>
-                  <p className="text-[10px] text-indigo-500">
+                  <p className="text-xs font-black text-blue-800 truncate">Template: {categoryTemplate.name}</p>
+                  <p className="text-[10px] text-blue-500">
                     {categoryTemplate.items?.length || 0} pre-filled items for {lead.category}
                   </p>
                 </div>
@@ -295,13 +295,13 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleLoadTemplate}
-                    className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-lg hover:bg-indigo-700 transition uppercase tracking-wider"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-[10px] font-black rounded-lg hover:bg-blue-700 transition uppercase tracking-wider"
                   >
                     Load
                   </motion.button>
                   <button
                     onClick={() => setTemplateBannerDismissed(true)}
-                    className="w-6 h-6 flex items-center justify-center text-indigo-400 hover:text-indigo-600 transition"
+                    className="w-6 h-6 flex items-center justify-center text-blue-400 hover:text-blue-600 transition"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -333,10 +333,10 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
         onClick={() => { setIsEditing(true); setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]); }}
         className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
       >
-        <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+        <div className="w-12 h-12 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all shadow-lg shadow-blue-200 group-hover:scale-110">
           <Plus className="w-5 h-5 text-white stroke-[3px]" />
         </div>
-        <span className="text-xs font-bold text-indigo-500 group-hover:text-indigo-600 transition-colors">Add line item</span>
+        <span className="text-xs font-bold text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
       </button>
     </td>
   </tr>
@@ -359,7 +359,7 @@ className={`border-b transition-colors group ${
   placeholder="Item description…"
   className={`w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 disabled:cursor-default rounded-lg transition-all ${
     isEditing
-      ? 'bg-white border border-slate-200 px-3 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100'
+      ? 'bg-white border border-slate-200 px-3 py-1.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
       : 'bg-transparent'
   }`}
 />
@@ -370,7 +370,7 @@ className={`border-b transition-colors group ${
   type="number"
   value={item.unitPrice || ''}
   onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-  className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg transition-all border border-slate-200 bg-white px-2 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 ${noSpinners}`}
+  className={`w-full outline-none text-sm text-right text-gray-900 rounded-lg transition-all border border-slate-200 bg-white px-2 py-1.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${noSpinners}`}
 />
   ) : (
     <div className="flex items-center justify-end gap-0.5">
@@ -389,7 +389,7 @@ className={`border-b transition-colors group ${
   onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
   className={`w-full outline-none text-sm text-right text-gray-900 disabled:cursor-default rounded-lg transition-all ${noSpinners} ${
     isEditing
-      ? 'bg-white border border-slate-200 px-2 py-1.5 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100'
+      ? 'bg-white border border-slate-200 px-2 py-1.5 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
       : 'bg-transparent'
   }`}
 />
@@ -414,9 +414,9 @@ className={`border-b transition-colors group ${
     <td colSpan={5} className="px-5 py-3 border-t border-dashed border-gray-200">
       <button
         onClick={() => setQuoteData([...quoteData, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }])}
-        className="flex items-center gap-2 text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+        className="flex items-center gap-2 text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors"
       >
-        <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
           <Plus className="w-3 h-3" />
         </div>
         Add line item
@@ -437,10 +437,10 @@ className={`border-b transition-colors group ${
     onClick={() => { setIsEditing(true); setQuoteData([{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 }]); }}
     className="w-full py-16 flex flex-col items-center justify-center gap-3 group"
   >
-    <div className="w-12 h-12 rounded-full bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center transition-all shadow-lg shadow-indigo-200 group-hover:scale-110">
+    <div className="w-12 h-12 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all shadow-lg shadow-blue-200 group-hover:scale-110">
       <Plus className="w-5 h-5 text-white stroke-[3px]" />
     </div>
-    <span className="text-xs font-bold text-indigo-500 group-hover:text-indigo-600 transition-colors">Add line item</span>
+    <span className="text-xs font-bold text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
   </button>
   ) : (
     <div className="p-3 flex flex-col gap-2">
@@ -509,12 +509,12 @@ className={`border-b transition-colors group ${
     setQuoteData([...quoteData, newItem]);
     setEditingItem(newItem);
   }}
-  className="w-full border-2 border-dashed border-indigo-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all group"
+  className="w-full border-2 border-dashed border-blue-200 rounded-2xl py-4 flex items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/40 transition-all group"
 >
-          <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-indigo-400 flex items-center justify-center transition-colors">
-            <Plus className="w-3 h-3 text-gray-400 group-hover:text-indigo-500" />
+          <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-blue-400 flex items-center justify-center transition-colors">
+            <Plus className="w-3 h-3 text-gray-400 group-hover:text-blue-500" />
           </div>
-          <span className="text-xs font-semibold text-gray-400 group-hover:text-indigo-500 transition-colors">Add line item</span>
+          <span className="text-xs font-semibold text-gray-400 group-hover:text-blue-500 transition-colors">Add line item</span>
         </button>
       )}
     </div>
@@ -564,7 +564,7 @@ className={`border-b transition-colors group ${
 </button>
             <button
   onClick={handleDoneEditing}
-  className="px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-xl transition-colors hover:bg-indigo-700"
+  className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl transition-colors hover:bg-blue-700"
 >
   Done
 </button>
@@ -582,7 +582,7 @@ className={`border-b transition-colors group ${
               onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
               placeholder="Item name or description…"
               autoFocus
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
 
@@ -590,7 +590,7 @@ className={`border-b transition-colors group ${
             {/* Unit price */}
             <div className="flex-1">
               <label className="block text-xs font-bold text-gray-700 mb-1.5">Unit price</label>
-              <div className="flex items-center gap-1.5 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+              <div className="flex items-center gap-1.5 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                 <span className="text-sm font-bold text-gray-400">$</span>
                 <input
                   type="number"
@@ -615,7 +615,7 @@ className={`border-b transition-colors group ${
                   setEditingItem({ ...editingItem, quantity, amount: editingItem.unitPrice * quantity });
                 }}
                 placeholder="1"
-                className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 text-center outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all ${noSpinners}`}
+                className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 text-center outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
               />
             </div>
           </div>
@@ -679,7 +679,7 @@ className={`border-b transition-colors group ${
          <motion.button whileTap={{ scale: 0.97 }}
   onClick={() => setShowEmailModal(true)}
   disabled={!hasProject || quoteData.length === 0}
-  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition hover:border-blue-300 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
 >
   <Send className="w-3.5 h-3.5" />
   Send Quote
@@ -714,7 +714,7 @@ className={`border-b transition-colors group ${
                 key={i}
                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-indigo-100 transition-colors group"
+                className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-blue-100 transition-colors group"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
@@ -737,7 +737,7 @@ className={`border-b transition-colors group ${
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setPreviewHtml(entry.html_body)}
-                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition opacity-0 group-hover:opacity-100"
+                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-500 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition opacity-0 group-hover:opacity-100"
                   >
                     <Eye className="w-3 h-3" /> View
                   </motion.button>
@@ -776,7 +776,7 @@ className={`border-b transition-colors group ${
               </div>
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-200">
+                  <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <div>
@@ -823,8 +823,8 @@ className={`border-b transition-colors group ${
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl"
             >
-              <div className="w-16 h-16 bg-violet-50 rounded-3xl flex items-center justify-center mx-auto mb-5">
-                <ArrowRightLeft className="w-8 h-8 text-violet-500" />
+              <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-5">
+                <ArrowRightLeft className="w-8 h-8 text-blue-500" />
               </div>
               <h3 className="text-xl font-black text-gray-900 mb-2 tracking-tight">Sync AI Items?</h3>
               <p className="text-sm text-gray-500 mb-8 leading-relaxed px-2">

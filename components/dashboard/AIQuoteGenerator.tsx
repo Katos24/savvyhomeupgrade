@@ -274,12 +274,12 @@ export default function AIQuoteGenerator({
         >
           {isGenerating ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin text-indigo-400 shrink-0" />
+              <Loader2 className="w-4 h-4 animate-spin text-blue-400 shrink-0" />
               <span>{statusMessage}</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4 text-indigo-400 group-hover:rotate-12 transition-transform shrink-0" />
+              <Sparkles className="w-4 h-4 text-blue-400 group-hover:rotate-12 transition-transform shrink-0" />
               <span>Generate Smart Quote</span>
               {validPhotos.length > 0 && (
                 <span className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full text-[9px] lowercase tracking-normal">
@@ -317,7 +317,7 @@ export default function AIQuoteGenerator({
           {/* Header */}
           <div className="flex items-center justify-between mb-4 px-1">
             <div>
-              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
                 AI Drafted Items
               </p>
               <p className="text-[10px] text-slate-400">
@@ -355,7 +355,7 @@ export default function AIQuoteGenerator({
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-sm font-black transition-colors ${item.selected ? 'text-indigo-600' : 'text-slate-400'}`}>
+                    <p className={`text-sm font-black transition-colors ${item.selected ? 'text-blue-600' : 'text-slate-400'}`}>
                       ${item.amount.toLocaleString()}
                     </p>
                     {item.selected && (
@@ -380,7 +380,7 @@ export default function AIQuoteGenerator({
             <button
               onClick={() => onAddItems(selectedItems)}
               disabled={selectedItems.length === 0}
-              className="w-full py-4 bg-indigo-500 hover:bg-indigo-400 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-blue-500 hover:bg-blue-400 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add {selectedItems.length > 0 ? `${selectedItems.length} Item${selectedItems.length !== 1 ? 's' : ''}` : 'Items'} to Quote

@@ -140,15 +140,15 @@ export default function ConvertToProjectButton({
           >
             {/* Header */}
             <div className="px-8 pt-8 pb-6 text-center">
-              <div className="w-14 h-14 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                <Rocket className="w-7 h-7 text-indigo-500" />
+              <div className="w-14 h-14 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                <Rocket className="w-7 h-7 text-blue-500" />
               </div>
               <h3 className="text-xl font-black text-gray-900 mb-1">Create Project</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
                 For <span className="font-bold text-gray-700">{lead.name}</span>
               </p>
               {categoryDisplay && (
-                <span className="inline-block mt-3 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-black text-indigo-600">
+                <span className="inline-block mt-3 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-xs font-black text-blue-600">
                   {categoryDisplay}
                 </span>
               )}
@@ -166,7 +166,7 @@ export default function ConvertToProjectButton({
               <button
                 onClick={handleConvert}
                 disabled={isConverting}
-                className="py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                className="py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isConverting ? (
                   <>

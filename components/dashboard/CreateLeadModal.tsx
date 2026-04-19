@@ -175,7 +175,7 @@ const onPlaceChanged = () => {
     }
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 sm:py-4 text-white focus:border-indigo-500 focus:outline-none transition-all text-base";
+  const inputClass = "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 sm:py-4 text-white focus:border-blue-500 focus:outline-none transition-all text-base";
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center sm:p-4">
@@ -191,7 +191,7 @@ const onPlaceChanged = () => {
           <div className="flex items-start justify-between mb-6 sm:mb-8">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Quick Add Lead</h2>
-              <p className="text-indigo-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">Direct Entry</p>
+              <p className="text-blue-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">Direct Entry</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white">
               <X className="w-6 h-6" />
@@ -204,7 +204,7 @@ const onPlaceChanged = () => {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Customer Name</label>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                 <input required type="text" placeholder="John Smith" value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className={`${inputClass} pl-12`} />
@@ -225,7 +225,7 @@ const onPlaceChanged = () => {
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
                 <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                   <input required type="tel" inputMode="tel" placeholder="(555) 000-0000" value={formData.phone}
                     onChange={handlePhoneChange}
                     className={`${inputClass} pl-12 font-mono`} />
@@ -274,7 +274,7 @@ const onPlaceChanged = () => {
                       Additional Details
                     </span>
                     {filledOptional > 0 && (
-                      <span className="text-[10px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">
                         {filledOptional} filled
                       </span>
                     )}
@@ -421,7 +421,7 @@ const onPlaceChanged = () => {
                                 onClick={() => setFormData({ ...formData, custom_answers: { ...formData.custom_answers, [q.id]: opt } })}
                                 className={`flex-1 py-3 rounded-2xl border font-bold text-sm transition-all ${
                                   formData.custom_answers[q.id] === opt
-                                    ? 'border-indigo-500 bg-indigo-600 text-white'
+                                    ? 'border-blue-500 bg-blue-600 text-white'
                                     : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
                                 }`}>
                                 {opt}
@@ -441,14 +441,14 @@ const onPlaceChanged = () => {
             <div className="flex flex-col gap-2 pt-1">
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div onClick={() => setNotifyOwner(!notifyOwner)}
-                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyOwner ? 'bg-indigo-600' : 'bg-white/10'}`}>
+                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyOwner ? 'bg-blue-600' : 'bg-white/10'}`}>
                   <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyOwner ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </div>
                 <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Notify owner</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div onClick={() => setNotifyCustomer(!notifyCustomer)}
-                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyCustomer ? 'bg-indigo-600' : 'bg-white/10'}`}>
+                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyCustomer ? 'bg-blue-600' : 'bg-white/10'}`}>
                   <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyCustomer ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </div>
                 <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Send confirmation to customer</span>
@@ -462,7 +462,7 @@ const onPlaceChanged = () => {
                 Cancel
               </button>
               <button type="submit" disabled={loading}
-                className="flex-[3] sm:flex-[2] px-6 py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2 active:scale-95 text-lg sm:text-base">
+                className="flex-[3] sm:flex-[2] px-6 py-4 rounded-2xl bg-blue-600 text-white font-black shadow-xl shadow-blue-600/20 hover:bg-blue-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2 active:scale-95 text-lg sm:text-base">
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6 sm:w-5 sm:h-5 stroke-[3px]" />}
                 Create Lead
               </button>

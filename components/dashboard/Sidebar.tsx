@@ -105,7 +105,7 @@ export default function Sidebar({
               )}
               <div className="min-w-0">
                 <p className="text-white font-bold text-sm truncate leading-tight">{companyName}</p>
-                <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mt-0.5">Workspace</p>
+                <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-0.5">Workspace</p>
               </div>
             </div>
             <button

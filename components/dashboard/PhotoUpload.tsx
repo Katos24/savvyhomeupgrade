@@ -401,14 +401,14 @@ export default function PhotoUpload({
               <Camera className="w-4 h-4 text-slate-600" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-tight text-slate-900">Project Gallery</h3>
-            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full border border-indigo-100">
+            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full border border-blue-100">
               {localPhotos.length}
             </span>
           </div>
           {localPhotos.length > 0 && (
             <label
               htmlFor={`photo-upload-${leadId}`}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-indigo-700 transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-blue-700 transition-all active:scale-95 shadow-sm"
             >
               <Plus className="w-3 h-3" />
               Add Photos
@@ -423,7 +423,7 @@ export default function PhotoUpload({
               <button
                 key={index}
                 onClick={() => setLightbox({ photos: projectPhotoUrls, index, label: 'Project Gallery' })}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
               >
                 <img
                   src={getThumb(photo)}
@@ -442,17 +442,17 @@ export default function PhotoUpload({
           /* Empty State */
           <label
             htmlFor={`photo-upload-${leadId}`}
-            className="group flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all cursor-pointer active:bg-indigo-50"
+            className="group flex flex-col items-center justify-center gap-4 p-10 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/40 transition-all cursor-pointer active:bg-blue-50"
           >
-            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-indigo-200 group-hover:shadow-md transition-all">
-              <UploadCloud className="w-8 h-8 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:border-blue-200 group-hover:shadow-md transition-all">
+              <UploadCloud className="w-8 h-8 text-slate-300 group-hover:text-blue-400 transition-colors" />
             </div>
             <div className="text-center space-y-1">
               <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Upload Project Photos</p>
               <p className="text-xs text-slate-400 font-medium">Track progress and keep the job organized</p>
               <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight mt-2">JPG, PNG · Max 10MB</p>
             </div>
-            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md group-hover:bg-indigo-700 transition-all">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest shadow-md group-hover:bg-blue-700 transition-all">
               <Camera className="w-4 h-4" />
               Add Photos
             </div>
@@ -476,14 +476,14 @@ export default function PhotoUpload({
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                   <span className="text-sm font-bold text-slate-700">Uploading photos...</span>
                 </div>
                 <span className="text-xs font-black text-slate-400">{uploadProgress}%</span>
               </div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="bg-indigo-600 h-full transition-all duration-300 ease-out rounded-full"
+                  className="bg-blue-600 h-full transition-all duration-300 ease-out rounded-full"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>

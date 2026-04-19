@@ -7,21 +7,16 @@ type AiBriefButtonProps = {
   onClick: () => void;
 };
 
-/**
- * Small chip in the LeadModal hero header.
- * Clicking jumps the user to the AI Brief tab.
- * Shows a ✓ and slightly brighter style when a brief is already saved.
- */
 export default function AiBriefButton({ hasSavedBrief, onClick }: AiBriefButtonProps) {
   if (hasSavedBrief) {
     return (
       <button
         onClick={onClick}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-black transition-all hover:opacity-90 active:scale-95"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all hover:opacity-90 active:scale-95"
         style={{
-          background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+          background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', // blue gradient
           color: 'white',
-          boxShadow: '0 0 12px rgba(124,58,237,0.4)',
+          boxShadow: '0 6px 16px rgba(37,99,235,0.35)',
         }}
       >
         <Sparkles className="w-3 h-3" />
@@ -33,11 +28,11 @@ export default function AiBriefButton({ hasSavedBrief, onClick }: AiBriefButtonP
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-bold transition-all hover:opacity-80 active:scale-95"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90 active:scale-95"
       style={{
-        background: 'rgba(167,139,250,0.12)',
-        border: '1px solid rgba(167,139,250,0.35)',
-        color: 'rgba(196,181,253,0.75)',
+        background: 'rgba(59,130,246,0.1)',
+        border: '1px solid rgba(59,130,246,0.35)',
+        color: '#2563eb',
       }}
     >
       <Sparkles className="w-3 h-3" />

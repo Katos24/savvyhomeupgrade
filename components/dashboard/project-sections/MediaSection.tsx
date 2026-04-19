@@ -316,7 +316,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
             <button
               onClick={() => setActiveTab('docs')}
               className={`pb-3 text-xs font-black uppercase tracking-widest transition-all relative ${
-                activeTab === 'docs' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                activeTab === 'docs' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -324,13 +324,13 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                 Documents
                 {documents.length > 0 && (
                   <span className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] ${
-                    activeTab === 'docs' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'
+                    activeTab === 'docs' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'
                   }`}>
                     {documents.length}
                   </span>
                 )}
               </div>
-              {activeTab === 'docs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />}
+              {activeTab === 'docs' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />}
             </button>
           </div>
 
@@ -348,7 +348,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               />
               <label
                 htmlFor="doc-upload"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 shadow-md cursor-pointer transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 shadow-md cursor-pointer transition-all active:scale-95"
               >
                 {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                 {uploading ? 'Uploading' : 'Add Document'}
@@ -361,7 +361,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
         {uploading && (
           <div className="h-1 w-full bg-slate-100">
             <div
-              className="h-full bg-indigo-500 transition-all duration-300"
+              className="h-full bg-blue-500 transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -412,7 +412,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                   {documents.map((doc: any, i: number) => (
                     <div
                       key={i}
-                      className="group relative flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                      className="group relative flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                     >
                       <a
                         href={doc.url}
@@ -420,7 +420,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                         rel="noopener noreferrer"
                         className="flex items-center gap-4 min-w-0 flex-1"
                       >
-                        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors shrink-0">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
                           {getDocIcon(doc.name)}
                         </div>
                         <div className="min-w-0">
@@ -447,7 +447,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                   </p>
                   <label
                     htmlFor="doc-upload"
-                    className="mt-8 px-6 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white hover:border-indigo-300 hover:text-indigo-600 transition-all cursor-pointer shadow-sm"
+                    className="mt-8 px-6 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all cursor-pointer shadow-sm"
                   >
                     Browse Files
                   </label>

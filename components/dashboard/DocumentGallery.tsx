@@ -19,7 +19,7 @@ export default function DocumentGallery({
   title, 
   documents, 
   emoji = "📄",
-  borderColor = "border-indigo-200" 
+  borderColor = "border-blue-200" 
 }: DocumentGalleryProps) {
   if (!documents || documents.length === 0) return null;
 
@@ -33,11 +33,11 @@ export default function DocumentGallery({
   };
 
   return (
-    <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 ${borderColor} p-4 shadow-sm`}>
+    <div className={`bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 ${borderColor} p-4 shadow-sm`}>
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xl">{emoji}</span>
         <h3 className="text-sm font-bold text-gray-900">{title}</h3>
-        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
+        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
           {documents.length}
         </span>
       </div>
@@ -49,7 +49,7 @@ export default function DocumentGallery({
             href={doc.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 p-3 transition-all hover:shadow-lg"
+            className="group block bg-white rounded-xl border-2 border-gray-200 hover:border-blue-500 p-3 transition-all hover:shadow-lg"
           >
             <div className="flex items-start gap-3">
               {/* Icon */}
@@ -59,7 +59,7 @@ export default function DocumentGallery({
               
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-indigo-600 transition mb-1">
+                <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition mb-1">
                   {doc.name}
                 </h4>
                 
@@ -79,7 +79,7 @@ export default function DocumentGallery({
               </div>
               
               {/* Download icon */}
-              <div className="text-gray-400 group-hover:text-indigo-600 transition flex-shrink-0 text-xl">
+              <div className="text-gray-400 group-hover:text-blue-600 transition flex-shrink-0 text-xl">
                 ⬇️
               </div>
             </div>

@@ -208,7 +208,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
         {/* HEADER */}
         <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 shrink-0">
               <CreditCard className="w-4 h-4" />
             </div>
             <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Payment Hub</h3>
@@ -258,7 +258,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
             </div>
             <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
               <motion.div
-                className={`h-full ${isPaid ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                className={`h-full ${isPaid ? 'bg-emerald-500' : 'bg-blue-500'}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min((paid / total) * 100, 100)}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -292,7 +292,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
     if (isNaN(num) || num === 0) { setPaymentAmount(''); setRawAmount(''); return; }
     setPaymentAmount(num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   }}
-  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none transition-colors focus:border-indigo-300"
+  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none transition-colors focus:border-blue-300"
   placeholder="0.00"
 />
 
@@ -306,7 +306,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none appearance-none transition-colors focus:border-indigo-300"
+                  className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none appearance-none transition-colors focus:border-blue-300"
                 >
                   <option value="">Select...</option>
                   <option value="cash">Cash</option>
@@ -330,7 +330,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
       type="date"
       value={paymentDate}
       onChange={(e) => setPaymentDate(e.target.value)}
-      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
+      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-blue-300 focus:bg-white"
       style={{
         maxWidth: '100%',
         WebkitAppearance: 'none',
@@ -347,7 +347,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
       type="date"
       value={paymentDueDate}
       onChange={(e) => setPaymentDueDate(e.target.value)}
-      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-indigo-300 focus:bg-white"
+      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-blue-300 focus:bg-white"
       style={{
         maxWidth: '100%',
         WebkitAppearance: 'none',
@@ -445,7 +445,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setPreviewHtml(entry.html_body)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-indigo-600 uppercase opacity-0 group-hover:opacity-100 hover:border-indigo-300 transition-all shrink-0 ml-2 shadow-sm"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-blue-600 uppercase opacity-0 group-hover:opacity-100 hover:border-blue-300 transition-all shrink-0 ml-2 shadow-sm"
                       >
                         <Eye className="w-3 h-3" /> View
                       </motion.button>
@@ -484,7 +484,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
               <h3 className="text-lg font-black text-slate-900 mb-1">Send Payment Reminder?</h3>
               <p className="text-xs text-slate-500 mb-4">
                 Send to <span className="font-bold text-slate-800">{lead.name}</span> for{' '}
-                <span className="font-bold text-indigo-600">{fmt(remaining)}</span>.
+                <span className="font-bold text-blue-600">{fmt(remaining)}</span>.
               </p>
 
               <div className={`rounded-xl p-3 mb-5 text-[10px] font-bold flex items-start gap-2 ${
@@ -516,7 +516,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
                   whileTap={{ scale: 0.97 }}
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="py-3 bg-indigo-600 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-indigo-700 transition disabled:opacity-60"
+                  className="py-3 bg-blue-600 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-60"
                 >
                   {sendingReminder ? (
                     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>

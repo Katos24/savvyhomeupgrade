@@ -32,7 +32,7 @@ export default function StickyActionBar({
             whileTap={{ scale: 0.97 }}
             onClick={onSecondary}
             disabled={secondaryDisabled}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition-all hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition-all hover:border-blue-300 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{secondaryLabel}</span>
