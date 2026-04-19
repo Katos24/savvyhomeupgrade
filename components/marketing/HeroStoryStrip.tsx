@@ -139,30 +139,30 @@ function CaptureCard() {
   return (
     <div className="relative w-full rounded-[1.75rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[320px] sm:h-[380px]">
 
-      {/* Slim photo strip — top-right corner only */}
-      <div className="absolute top-0 right-0 w-[42%] h-full">
+      {/* Photo strip — right 45%, full height */}
+      <div className="absolute top-0 right-0 w-[45%] h-full">
         <img
-          src="/images/qr-scan-2.webp"
-          className="w-full h-full object-cover object-center"
-          alt="Customer scanning QR code on truck"
+          src="/images/qr-scan.png"
+          className="w-full h-full object-cover object-left"
+          alt="Customer scanning QR on truck"
         />
-        {/* Fade left edge of photo into dark bg */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/60 to-transparent" />
-        {/* Fade bottom of photo */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+        {/* Fade left into dark bg */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/50 to-transparent" />
+        {/* Fade bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
       </div>
 
-      {/* Dark base for left side */}
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/95 to-transparent w-[65%]" />
+      {/* Dark bg covers left 60% cleanly */}
+      <div className="absolute inset-0 right-[40%] bg-slate-900" />
 
-      {/* Success modal — left/center aligned */}
-      <div className="absolute inset-0 flex items-center justify-start pl-5 sm:pl-7">
-        <div className="w-full max-w-[220px] rounded-2xl overflow-hidden bg-white p-4 shadow-2xl border border-white/20">
+      {/* Modal — pinned left, vertically centered */}
+      <div className="absolute inset-y-0 left-0 w-[58%] flex items-center justify-center pl-4 sm:pl-5">
+        <div className="w-full max-w-[200px] rounded-2xl overflow-hidden bg-white p-3.5 shadow-2xl border border-white/20">
           <div className="flex flex-col items-center text-center">
-            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-2">
-              <CheckCircle2 size={22} className="text-[#1a6645]" />
+            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center mb-2">
+              <CheckCircle2 size={20} className="text-[#1a6645]" />
             </div>
-            <p className="text-[13px] font-black text-slate-900 mb-0.5">Request Received!</p>
+            <p className="text-[12px] font-black text-slate-900 mb-0.5">Request Received!</p>
             <p className="text-[10px] text-slate-400 mb-3 leading-tight">Ridge Line Roofing is on it.</p>
             <div className="w-full space-y-1 mb-3">
               {['Check email', 'Photos saved'].map(t => (
@@ -180,7 +180,7 @@ function CaptureCard() {
       </div>
 
       {/* Bottom label */}
-      <div className="absolute bottom-0 inset-x-0 px-5 pb-5">
+      <div className="absolute bottom-0 inset-x-0 px-5 pb-4">
         <div className="flex items-center gap-2">
           <Smartphone size={13} className="text-emerald-400" />
           <p className="text-[11px] font-black text-white/60 uppercase tracking-widest">Instant mobile capture</p>
