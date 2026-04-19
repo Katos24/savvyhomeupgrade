@@ -5,7 +5,6 @@ import ValueStrip        from '@/components/marketing/ValueStrip';
 import HowItWorks        from '@/components/marketing/HowItWorks';
 import LeadModalSection  from '@/components/marketing/LeadModalSection';
 import TheBoard          from '@/components/marketing/TheBoard';
-import SettingsShowcase  from '@/components/marketing/SettingsShowcase';
 import Pricing           from '@/components/marketing/Pricing';
 import Comparison from '@/components/marketing/Comparison';
 import FinalCTA          from '@/components/marketing/FinalCTA';
@@ -19,10 +18,12 @@ export default function Home() {
 
 <HowItWorks />
 <LeadModalSection />
+<TheBoard />
+
+
 
 <ValueStrip />
-<TheBoard />
-<SettingsShowcase />
+
 <Pricing />
 <Comparison />
 <FinalCTA />

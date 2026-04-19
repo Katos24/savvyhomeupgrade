@@ -32,7 +32,7 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg bg-[#1a6645] flex items-center justify-center shadow-lg shadow-emerald-900/40">
-                  <img src="/images/ridgelinelogo.webp" alt="" className="w-4 h-4 object-contain brightness-0 invert" />
+<img src="/images/ridgelinelogo.webp" alt="" className="w-4 h-4 object-contain" />
                 </div>
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Board</span>
               </div>

@@ -1,9 +1,8 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { FileText, Plus, CheckCircle2, QrCode, Image as ImageIcon } from 'lucide-react';
+import { FileText, Plus, CheckCircle2, QrCode, Smartphone } from 'lucide-react';
 import { DashboardLaptopMockup } from '@/components/marketing/DashboardLaptopMockup';
-import { Img } from '@react-email/components';
 
 function useFadeUp() {
   const ref = useRef<HTMLDivElement>(null);
@@ -21,66 +20,113 @@ function useFadeUp() {
   return { ref, visible };
 }
 
-function StepLabel({ number, title, caption }: { number: string; title: string; caption: string }) {
-  const sentences = caption.split('.');
-  const first = sentences[0].trim();
-  const rest = sentences.slice(1).join('.').trim();
-
+function StepBadge({ number }: { number: string }) {
   return (
-    <div className="mb-7 w-full">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1a6645, #22c55e)' }}
-        >
-          {number}
-        </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#1a6645]">{title}</p>
-      </div>
-     <p
-        className="text-white font-black leading-snug mb-2"
-        style={{ fontSize: 'clamp(1.15rem, 2.4vw, 1.5rem)', letterSpacing: '-0.02em' }}
+    <div className="flex items-center gap-3 mb-5">
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 shadow-lg"
+        style={{ background: 'linear-gradient(135deg, #1a6645, #22c55e)' }}
       >
-        {first}.
-      </p>
-      {rest && (
-        <p className="text-slate-300 text-[13px] leading-relaxed font-normal">{rest}</p>
-      )}
+        {number}
+      </div>
+      <div className="h-px flex-1 bg-white/10" />
     </div>
   );
 }
 
-function FormBento() {
+function StepTitle({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mb-6">
+      <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight mb-2">
+        {title}
+      </h3>
+      <p className="text-white/50 text-sm sm:text-base font-medium leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+// ─── STEP 1: QR CARD ─────────────────────────────────────────────────────────
+function QRCard() {
+  return (
+    <div
+      className="relative w-full rounded-[1.75rem] overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0f4c2a 0%, #1a6645 60%, #15803d 100%)' }}
+    >
+      {/* blobs */}
+      <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full opacity-20"
+        style={{ background: 'radial-gradient(circle, #4ade80, transparent)' }} />
+      <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-15"
+        style={{ background: 'radial-gradient(circle, #86efac, transparent)' }} />
+
+      <div className="relative p-5">
+        {/* top badge */}
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-2.5 self-start inline-flex mb-5">
+          <QrCode size={13} className="text-emerald-300" />
+          <p className="text-[11px] font-black text-white uppercase tracking-widest">Your branded link</p>
+        </div>
+
+        {/* QR image */}
+        <div className="relative rounded-2xl overflow-hidden bg-white/10 border border-white/10 flex items-center justify-center p-4">
+          <img
+            src="/images/qr-screenshot.webp"
+            alt="QR Code"
+            className="w-full h-auto max-h-[220px] object-contain rounded-xl"
+          />
+        </div>
+
+        {/* bottom stat row */}
+        <div className="flex items-center gap-3 mt-4">
+          {[
+            { label: 'Truck wrap', dot: '#4ade80' },
+            { label: 'Yard sign', dot: '#60a5fa' },
+            { label: 'Bio link', dot: '#f472b6' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-1.5 bg-white/10 border border-white/10 rounded-xl px-3 py-1.5">
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: item.dot }} />
+              <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── STEP 2: FORM CARD ───────────────────────────────────────────────────────
+function FormCard() {
   const toggles = [
-    { label: 'Service address', desc: 'Autocomplete', on: true },
-    { label: 'Photo / video', desc: 'Job site photos', on: true },
-    { label: 'How old is your roof?', desc: 'Custom Dropdown', on: true },
+    { label: 'Service address', desc: 'Autocomplete' },
+    { label: 'Photo / video', desc: 'Job site photos' },
+    { label: 'How old is your roof?', desc: 'Custom dropdown' },
   ];
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200 overflow-hidden shadow-xl bg-white">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-          <FileText size={14} className="text-emerald-500" />
+    <div className="w-full rounded-[1.75rem] overflow-hidden border border-white/10 bg-[#0f172a] shadow-2xl">
+      {/* header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5 bg-white/5">
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+          <FileText size={14} className="text-emerald-400" />
         </div>
         <div>
-        <p className="text-[12px] font-black text-slate-900">Intake Form</p>
-          <p className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Configuration</p>
+          <p className="text-[12px] font-black text-white">Intake Form</p>
+          <p className="text-[9px] uppercase tracking-widest text-white/30 font-bold">Configuration</p>
         </div>
       </div>
+
+      {/* toggles */}
       <div className="px-5 py-3">
         {toggles.map((f, i) => (
-          <div key={i} className={`flex items-center justify-between py-3 ${i < toggles.length - 1 ? 'border-b border-slate-100' : ''}`}>
+          <div key={i} className={`flex items-center justify-between py-3.5 ${i < toggles.length - 1 ? 'border-b border-white/5' : ''}`}>
             <div className="min-w-0 pr-4">
-              <p className="text-[13px] font-semibold text-slate-800 leading-tight">{f.label}</p>
-              <p className="text-[10px] mt-0.5 text-slate-400">{f.desc}</p>
+              <p className="text-[13px] font-semibold text-white leading-tight">{f.label}</p>
+              <p className="text-[10px] mt-0.5 text-white/30">{f.desc}</p>
             </div>
             <div className="shrink-0 flex items-center rounded-full p-0.5 bg-emerald-500 w-[30px] h-[17px] justify-end">
               <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
             </div>
           </div>
         ))}
-<div className="flex items-center justify-center gap-1.5 py-3 mt-1 text-[11px] font-bold text-emerald-600 border-2 border-dashed border-emerald-200 rounded-xl bg-emerald-50/50">
+        <div className="flex items-center justify-center gap-1.5 py-3 mt-1 text-[11px] font-bold text-emerald-400 border border-dashed border-emerald-500/30 rounded-xl bg-emerald-500/5">
           <Plus size={11} /> Add question
         </div>
       </div>
@@ -88,111 +134,112 @@ function FormBento() {
   );
 }
 
-function SuccessModal() {
+// ─── STEP 3: CAPTURE ─────────────────────────────────────────────────────────
+function CaptureCard() {
   return (
-    <div className="w-full max-w-[260px] rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-white p-4 animate-in fade-in zoom-in duration-700">
-      <div className="flex flex-col items-center text-center">
-        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-2">
-            <CheckCircle2 size={24} className="text-[#1a6645]" />
-        </div>
-        <p className="text-[13px] font-black text-slate-900 mb-0.5">Request Received!</p>
-        <p className="text-[10px] text-slate-500 mb-3 leading-tight">Ridge Line Roofing is on it.</p>
-        
-        <div className="w-full space-y-1 mb-3">
-          {['Check email', 'Photos saved'].map(t => (
-            <div key={t} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 w-full">
-              <div className="w-4 h-4 bg-emerald-500 rounded-md flex items-center justify-center text-[8px] text-white">✓</div>
-              <p className="text-[9px] font-black text-slate-800">{t}</p>
+    <div className="relative w-full rounded-[1.75rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[320px] sm:h-[380px]">
+      <img
+        src="/images/qr-scan-2.webp"
+        className="absolute inset-0 w-full h-full object-cover opacity-50"
+        alt="Customer scanning"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+      {/* success modal */}
+      <div className="absolute inset-0 flex items-center justify-center sm:items-start sm:justify-end sm:p-6">
+        <div className="w-full max-w-[240px] rounded-2xl overflow-hidden bg-white p-4 shadow-2xl border border-white/20">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-2">
+              <CheckCircle2 size={22} className="text-[#1a6645]" />
             </div>
-          ))}
+            <p className="text-[13px] font-black text-slate-900 mb-0.5">Request Received!</p>
+            <p className="text-[10px] text-slate-400 mb-3 leading-tight">Ridge Line Roofing is on it.</p>
+            <div className="w-full space-y-1 mb-3">
+              {['Check email', 'Photos saved'].map(t => (
+                <div key={t} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2">
+                  <div className="w-4 h-4 bg-emerald-500 rounded-md flex items-center justify-center text-[8px] text-white shrink-0">✓</div>
+                  <p className="text-[9px] font-black text-slate-800">{t}</p>
+                </div>
+              ))}
+            </div>
+            <div className="w-full py-2 rounded-lg text-[10px] font-black text-white bg-[#1a6645]">
+              Visit Site →
+            </div>
+          </div>
         </div>
-        
-        <div className="w-full py-2 rounded-lg text-[10px] font-black text-white bg-[#1a6645]">
-          Visit Site →
+      </div>
+
+      {/* bottom label */}
+      <div className="absolute bottom-0 inset-x-0 px-5 pb-5">
+        <div className="flex items-center gap-2">
+          <Smartphone size={13} className="text-emerald-400" />
+          <p className="text-[11px] font-black text-white/60 uppercase tracking-widest">Instant mobile capture</p>
         </div>
       </div>
     </div>
   );
 }
 
+// ─── STEP 4: DASHBOARD ───────────────────────────────────────────────────────
+function DashboardCard() {
+  return (
+    <div className="w-full overflow-hidden bg-[#0F172A] rounded-[1.75rem] border border-white/5 pt-6 relative h-[300px] sm:h-[360px]">
+      <div className="absolute inset-x-0 top-6 scale-[0.72] sm:scale-[0.88] origin-top">
+        <DashboardLaptopMockup />
+      </div>
+      {/* bottom fade */}
+      <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#0F172A] to-transparent" />
+    </div>
+  );
+}
+
+// ─── MAIN ────────────────────────────────────────────────────────────────────
 export function HeroStoryStrip() {
   const { ref, visible } = useFadeUp();
 
   const panelStyle = (delay: number) => ({
     opacity: visible ? 1 : 0,
-    transform: visible ? 'translateY(0)' : 'translateY(24px)',
+    transform: visible ? 'translateY(0)' : 'translateY(28px)',
     transition: `all 0.75s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
   });
 
+  const steps = [
+    {
+      number: '1',
+      title: 'Get your branded link',
+      desc: 'Sign up and instantly get a custom QR code and booking link. Stick it everywhere — truck wraps, yard signs, Instagram bio.',
+      card: <QRCard />,
+    },
+    {
+      number: '2',
+      title: 'Set up your intake form',
+      desc: 'Toggle fields on or off, add custom questions, require job photos. Your form, your rules.',
+      card: <FormCard />,
+    },
+    {
+      number: '3',
+      title: 'Customer scans & submits',
+      desc: 'They fill out your form, upload photos, and hit submit. Lead lands on your board in under 2 seconds.',
+      card: <CaptureCard />,
+    },
+    {
+      number: '4',
+      title: 'Quote, schedule & close',
+      desc: 'Every lead becomes a job card. Schedule the crew, send a quote, track payment — all in one place.',
+      card: <DashboardCard />,
+    },
+  ];
+
   return (
     <div ref={ref} className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
-
-        {/* STEP 1: GENERATE */}
-        <div className="flex flex-col" style={panelStyle(0)}>
-          <StepLabel
-            number="1"
-            title="Generate your link"
-            caption="Sign up and instantly get two things: a custom booking link and a QR code. Blast them everywhere — truck wraps, yard signs, Instagram bio, email footer."
-          />
-          <div className="relative rounded-2xl overflow-hidden shadow-xl border border-white/5 bg-[#0F172A] p-4 flex justify-center">
-            <img
-              src="/images/qr-screenshot.webp"
-              alt="QR Code"
-              className="w-full h-auto max-h-[240px] sm:max-h-[280px] object-contain"
-            />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
+        {steps.map((step, i) => (
+          <div key={i} className="flex flex-col" style={panelStyle(i * 0.1)}>
+            <StepBadge number={step.number} />
+            <StepTitle title={step.title} desc={step.desc} />
+            {step.card}
           </div>
-        </div>
-
-        {/* STEP 2: CUSTOMIZE INTAKE */}
-        <div className="flex flex-col" style={panelStyle(0.1)}>
-          <StepLabel
-            number="2"
-            title="Setup your link"
-            caption="Your form, your rules. Toggle address collection on or off, add custom questions, require photos or video."
-          />
-          <FormBento />
-        </div>
-
-        {/* STEP 3: THE CAPTURE - Improved for Mobile */}
-        <div className="flex flex-col" style={panelStyle(0.2)}>
-          <StepLabel
-            number="3"
-            title="Capture everywhere"
-            caption="Customer scans your truck, yard sign, or clicks your bio link. They fill out your form, upload photos, and hit submit."
-          />
-          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[320px] sm:h-[400px]">
-            <img 
-              src="/images/qr-scan-2.webp" 
-              className="absolute inset-0 w-full h-full object-cover opacity-60" 
-              alt="Customer scanning" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            
-            {/* Modal Position: Centered on mobile, top-right on desktop */}
-            <div className="absolute inset-0 flex items-center justify-center sm:items-start sm:justify-end sm:p-6">
-              <div className="scale-[0.85] sm:scale-100 sm:origin-top-right">
-                <SuccessModal />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* STEP 4: THE RESULT - Improved for Mobile */}
-        <div className="flex flex-col" style={panelStyle(0.3)}>
-          <StepLabel
-            number="4"
-            title="Close the job"
-            caption="Every lead becomes a job card. Schedule the job, build a quote, and track payment status. Your whole business in one place."
-          />
-          <div className="w-full overflow-hidden bg-[#0F172A] rounded-2xl border border-white/5 pt-6 relative h-[300px] sm:h-[380px]">
-            {/* Using a wrapper to handle the scaling overflow on small screens */}
-            <div className="absolute inset-x-0 top-6 scale-[0.7] sm:scale-[0.9] origin-top">
-                <DashboardLaptopMockup />
-            </div>
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
   );
