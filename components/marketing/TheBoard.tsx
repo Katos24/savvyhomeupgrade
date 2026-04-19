@@ -208,8 +208,8 @@ export default function TheBoard() {
           </div>
 
           {/* RIGHT VISUAL */}
-<div className="w-full relative flex flex-col">
-<div className="order-2 lg:order-1 flex items-center gap-2 mt-4 lg:mt-0 mb-0 lg:mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+          <div className="w-full relative">
+            <div className="flex items-center gap-2 mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
               {VIEWS.map((v) => {
                 const isActive = current === v.key;
                 return (
@@ -221,7 +221,7 @@ export default function TheBoard() {
               })}
             </div>
 
-<div className="relative group order-1 lg:order-2">
+            <div className="relative group">
               <div className="relative rounded-t-3xl overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
                 {/* Window Controls */}
                 <div className="flex items-center px-4 gap-2 border-b border-white/5 h-8 bg-slate-900/50 backdrop-blur-md">
