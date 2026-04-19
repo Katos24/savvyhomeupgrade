@@ -3,7 +3,12 @@ import { QrCode, Smartphone, MousePointer2, CheckCircle } from 'lucide-react';
 
 export default function QRMarketingSection() {
   return (
-    <section className="py-24 bg-[#020617] overflow-hidden border-y border-white/5">
+    <section
+      className="py-24 overflow-hidden"
+      style={{
+        background: 'linear-gradient(180deg, #020617 0%, #0d1f14 50%, #0f2d1a 100%)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -15,7 +20,6 @@ export default function QRMarketingSection() {
                 alt="Branded QR Marketing"
                 className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              {/* subtle dark vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
             </div>
 
@@ -73,11 +77,33 @@ export default function QRMarketingSection() {
               ))}
             </div>
 
-           
+            {/* Testimonial */}
+            <div className="p-6 rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5">
+              <p className="text-white font-black text-base mb-3 leading-snug">
+                "We get 30% more leads from yard signs now."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] font-black text-emerald-400">AK</span>
+                </div>
+                <div>
+                  <p className="text-xs font-black text-white">Alex Katas</p>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Ridge Line Roofing</p>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
       </div>
+
+      {/* ── BOTTOM FADE into next light section ── */}
+      <div
+        className="pointer-events-none mt-24 h-32"
+        style={{
+          background: 'linear-gradient(180deg, transparent 0%, #ffffff 100%)',
+        }}
+      />
     </section>
   );
 }
