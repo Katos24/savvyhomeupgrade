@@ -213,9 +213,19 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30">
-                <span className="text-white text-[10px] font-black tracking-tight">L2P</span>
-              </div>
+              <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center shrink-0 shadow-lg overflow-hidden">
+  {logoPreview ? (
+    <img 
+      src={logoPreview} 
+      alt="Company Logo" 
+      className="w-full h-full object-contain p-1.5" 
+    />
+  ) : (
+    <span className="text-white text-[10px] font-black tracking-tight uppercase">
+      {companyName ? companyName.substring(0, 2) : 'L2P'}
+    </span>
+  )}
+</div>
               <div>
                 <p className="text-white font-black text-sm leading-none">Setup</p>
                 <p className="text-white/30 text-[10px] mt-0.5">Step {currentStep + 1} of {STEPS.length} · {STEPS[currentStep].label}</p>
@@ -605,7 +615,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
               onClick={handleNext}
               disabled={saving}
               className="flex-1 flex items-center justify-center gap-2 py-4 text-white font-black text-base rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] shadow-xl shadow-blue-600/20"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+              style={{ background: 'linear-gradient(135deg, #242696ff, #5222c4ff)' }}
             >
               {saving ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</>

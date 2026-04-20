@@ -32,9 +32,9 @@ export default function Hero() {
               </div>
 
               <h1 className="font-black text-white leading-[0.95] tracking-tight mb-8" style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)' }}>
-                Win jobs while <br />
-                <span className="text-emerald-500 italic">you are on the roof.</span>
-              </h1>
+  Win jobs while <br />
+  <span className="text-emerald-500 italic">you're in the field.</span>
+</h1>
 
               <p className="text-base sm:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0">
                 The easiest way to track leads and organize your payday. Let customers send <span className="text-white">photos and videos</span> so you can finalize quotes and settle jobs in one click.
@@ -52,7 +52,7 @@ export default function Hero() {
             <div className="order-3">
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-10">
                 <Link href="/signup" className="group flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl transition-all active:scale-[0.98] shadow-lg text-lg w-full lg:w-auto">
-                  Deploy Your Board
+                    Get Started Now
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link href="/demo" className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-5 rounded-2xl transition-all w-full lg:w-auto">
