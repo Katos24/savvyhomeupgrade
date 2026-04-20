@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
 
-// Replace the LEADS array status colors:
 const LEADS = [
   { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
   { name: 'Kim Gutters',       status: 'Won',        statusColor: '#10b981', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', paid: true,  assigned: '—',        category: 'Gutters'  },
@@ -155,7 +154,6 @@ function OutboxPanel() {
 // --- Main Component ---
 
 export default function TheBoard() {
-  // SETTING DEFAULT TO 'table'
   const [current, setCurrent] = useState<View>('table');
   const { ref, visible } = useFadeIn();
 
@@ -164,7 +162,7 @@ export default function TheBoard() {
       <div className="max-w-7xl mx-auto">
         <div
           ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center"
           style={{ 
             opacity: visible ? 1 : 0, 
             transform: visible ? 'none' : 'translateY(40px)', 
@@ -172,43 +170,50 @@ export default function TheBoard() {
           }}
         >
 
-          {/* LEFT CONTENT */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-               <Database size={12} className="text-emerald-500" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
-            </div>
-            
-            <h2 className="font-black tracking-tighter text-white mb-8" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.2rem)', lineHeight: 0.9 }}>
-              The Operating System <br />
-              <span className="text-emerald-500">for Your Pipeline.</span>
-            </h2>
+          {/* LEFT CONTENT — split into ordered blocks for mobile reorder */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left order-1">
 
-            <div className="space-y-6 mb-10 max-w-md">
-              <div className="flex items-start gap-4 text-left">
-                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-emerald-500 shrink-0"><Zap size={18} fill="currentColor" /></div>
-                 <div>
+            {/* Copy block — always first */}
+            <div className="order-1">
+              <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <Database size={12} className="text-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
+              </div>
+              
+              <h2 className="font-black tracking-tighter text-white mb-8" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.2rem)', lineHeight: 0.9 }}>
+                The Operating System <br />
+                <span className="text-emerald-500">for Your Pipeline.</span>
+              </h2>
+
+              <div className="space-y-6 mb-10 max-w-md">
+                <div className="flex items-start gap-4 text-left">
+                  <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-emerald-500 shrink-0"><Zap size={18} fill="currentColor" /></div>
+                  <div>
                     <h4 className="text-white font-bold text-base">Bulk Workflow Velocity</h4>
                     <p className="text-slate-400 text-sm leading-relaxed">Update status, assign crews, or send payment reminders to 50 leads at once via the Table View.</p>
-                 </div>
-              </div>
-              <div className="flex items-start gap-4 text-left">
-                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-blue-500 shrink-0"><Download size={18} /></div>
-                 <div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 text-left">
+                  <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-blue-500 shrink-0"><Download size={18} /></div>
+                  <div>
                     <h4 className="text-white font-bold text-base">Zero Data Lock-in</h4>
                     <p className="text-slate-400 text-sm leading-relaxed">It's your data. Export your entire project history, lead contacts, and payment records to CSV with one click.</p>
-                 </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-10 py-5 text-lg shadow-[0_20px_40px_-12px_rgba(26,102,69,0.4)]">
+            {/* CTA — on desktop: order-2 (stays in left column). On mobile: order-3 (after visual) */}
+            <div className="order-3 lg:order-2 w-full flex justify-center lg:justify-start">
+              <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-10 py-5 text-lg shadow-[0_20px_40px_-12px_rgba(26,102,69,0.4)] w-full sm:w-auto">
                 Start Your Trial
                 <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
-            </Link>
+              </Link>
+            </div>
           </div>
 
-          {/* RIGHT VISUAL */}
-          <div className="w-full relative">
+          {/* RIGHT VISUAL — on mobile: order-2 (between copy and CTA) */}
+          <div className="w-full relative order-2">
             <div className="flex items-center gap-2 mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
               {VIEWS.map((v) => {
                 const isActive = current === v.key;
@@ -245,7 +250,7 @@ export default function TheBoard() {
                       </div>
                     </div>
                     <div className="px-4 py-2 rounded-lg bg-[#1a6645] text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
-                        <Plus size={12} strokeWidth={3} /> New Project
+                      <Plus size={12} strokeWidth={3} /> New Project
                     </div>
                   </div>
 

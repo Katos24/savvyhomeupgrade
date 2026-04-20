@@ -8,55 +8,46 @@ import Pricing            from '@/components/marketing/Pricing';
 import Comparison         from '@/components/marketing/Comparison';
 import FinalCTA           from '@/components/marketing/FinalCTA';
 import Footer             from '@/components/marketing/Footer';
+import SectionDivider     from '@/components/marketing/SectionDivider';
 
 export default function Home() {
   return (
     <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-[#020617]">
       <Nav />
 
-      {/* ── DARK ZONE 1 ── */}
+      {/* ── DARK ZONE 1 — Hero + QR (seamless) ─────────────────── */}
       <Hero />
-
-      {/* dark → white */}
-      <div className="h-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, #020617, #ffffff)' }} />
-
-      {/* ── WHITE ZONE ── */}
+      {/* No divider — Hero and QR are both dark, flow directly */}
       <QRMarketingSection />
+      {/* QR has a built-in bottom fade to white */}
+
+      {/* ── WHITE ZONE — LeadModal ─────────────────────────────── */}
       <LeadModalSection />
 
-      {/* white → dark */}
-      <div className="h-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, #ffffff, #020617)' }} />
+      <SectionDivider variant="white-to-dark" />
 
-      {/* ── DARK ZONE 2 ── */}
+      {/* ── DARK ZONE 2 — Board + Value ────────────────────────── */}
       <TheBoard />
 
-      {/* dark → dark bloom */}
-      <div className="relative h-20 overflow-hidden pointer-events-none" style={{ background: '#020617' }}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-[500px] h-20 rounded-full opacity-25"
-            style={{ background: 'radial-gradient(ellipse at center, #1a6645, transparent 70%)' }} />
-        </div>
-        <div className="absolute bottom-0 inset-x-0 h-10"
-          style={{ background: 'linear-gradient(to bottom, transparent, #0a0f1e)' }} />
-      </div>
+      <SectionDivider variant="dark-to-dark" />
 
       <ValueStrip />
 
-      {/* dark → white */}
-      <div className="h-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, #0a0f1e, #ffffff)' }} />
+      <SectionDivider variant="dark-to-white" darkColor="#0a0f1e" />
 
-      {/* ── WHITE ZONE 2 ── */}
+      {/* ── WHITE ZONE 2 — Pricing + Comparison ────────────────── */}
       <Pricing />
-      <Comparison />
 
-      {/* white → dark */}
-      <div className="h-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, #ffffff, #020617)' }} />
+      <SectionDivider variant="white-to-slate" />
 
-      {/* ── DARK ZONE 3 ── */}
+      <div className="bg-slate-50">
+        <Comparison />
+      </div>
+
+      <SectionDivider variant="slate-to-white" className="!h-8" />
+      <SectionDivider variant="white-to-dark" />
+
+      {/* ── DARK ZONE 3 — Final CTA + Footer ───────────────────── */}
       <FinalCTA />
       <Footer />
     </div>
