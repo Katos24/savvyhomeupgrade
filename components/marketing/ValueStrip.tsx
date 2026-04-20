@@ -383,11 +383,6 @@ export default function ValueStrip() {
             MOBILE — stacked story cards (rebuilt)
             ════════════════════════════════════════════════════════ */}
         <div className="lg:hidden">
-          <h2 className="text-[2.25rem] font-black text-white tracking-[-0.02em] leading-[0.95] mb-10">
-            Know your day before<br />
-            <span className="text-emerald-400">you start your truck.</span>
-          </h2>
-
           <div className="space-y-5">
             {FEATURES.map((item, i) => (
               <div
