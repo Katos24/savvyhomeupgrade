@@ -48,6 +48,7 @@ function StepTitle({ title, desc }: { title: string; desc: string }) {
 // ─── STEP 1: QR CARD ─────────────────────────────────────────────────────────
 function QRCard() {
   return (
+    
     <div
       className="relative w-full rounded-[1.75rem] overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #0f4c2a 0%, #1a6645 60%, #15803d 100%)' }}
@@ -240,7 +241,8 @@ export function HeroStoryStrip() {
     },
   ];
 
-  return (
+ return (
+  <section id="how-it-works" className="py-20 sm:py-32">
     <div ref={ref} className="w-full max-w-6xl mx-auto px-4 sm:px-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
         {steps.map((step, i) => (
@@ -252,5 +254,6 @@ export function HeroStoryStrip() {
         ))}
       </div>
     </div>
-  );
+  </section>
+);
 }

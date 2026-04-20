@@ -4,7 +4,10 @@ import { Coffee, Zap, Heart, BellRing } from 'lucide-react';
 
 export default function LifestyleSection() {
   return (
-    <section className="relative bg-white py-16 sm:py-32 overflow-hidden">
+    <section 
+      id="features" 
+      className="relative bg-white py-16 sm:py-32 overflow-hidden scroll-mt-16"
+    >
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center">
