@@ -28,80 +28,90 @@ export default function Hero() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-20 items-center pb-12 sm:pb-20">
 
-          {/* LEFT */}
+          {/* LEFT column — flex so we can reorder children on mobile only */}
           <div className="flex flex-col">
 
-            <h1
-              className="font-black text-white leading-[0.95] tracking-[-0.035em] sm:tracking-[-0.04em] mb-6 sm:mb-8"
-              style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)' }}
-            >
-              Win{' '}
-              <span
-                className="relative inline-block pb-1"
-                style={{
-                  background: 'linear-gradient(135deg, #4ade80, #1a6645)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  lineHeight: '1',
-                }}
+            {/* 1. HEADLINE (first on all screens) */}
+            <div className="order-1">
+              <h1
+                className="font-black text-white leading-[0.95] tracking-[-0.035em] sm:tracking-[-0.04em] mb-6 sm:mb-8"
+                style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)' }}
               >
-                every job
-              </span>
-              <br />
-              before competition<br />
-              picks up.
-            </h1>
+                Win{' '}
+                <span
+                  className="relative inline-block pb-1"
+                  style={{
+                    background: 'linear-gradient(135deg, #4ade80, #1a6645)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: '1',
+                  }}
+                >
+                  every job
+                </span>
+                <br />
+                before competition<br />
+                picks up.
+              </h1>
 
-            <p className="text-base sm:text-xl text-white/60 font-medium leading-relaxed mb-8 sm:mb-10 max-w-lg">
-              One QR code on your truck. Customers scan, submit photos, and land on your board —
-              <span className="text-white/90 font-semibold"> while you're still on the roof.</span>
-            </p>
-
-            {/* ── CTA ── */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-6 w-full">
-
-              {/* PRIMARY */}
-              <Link
-                href="/signup"
-                className="group inline-flex items-center justify-center gap-3 text-white font-bold text-base sm:text-lg px-6 py-4 rounded-2xl transition-all active:scale-[0.98] shadow-2xl w-full sm:w-auto"
-                style={{
-                  background: 'linear-gradient(135deg, #1a6645, #15803d)',
-                  boxShadow: '0 20px 40px -12px rgba(26,102,69,0.5)',
-                }}
-              >
-                Start free for 14 days
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-
-              {/* SECONDARY */}
-              <Link
-                href="/demo"
-                className="inline-flex items-center justify-center gap-2 text-white/70 hover:text-white font-semibold text-sm sm:text-base px-6 py-4 sm:py-3 rounded-2xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition w-full sm:w-auto"
-              >
-                See it in action
-              </Link>
+              <p className="text-base sm:text-xl text-white/60 font-medium leading-relaxed mb-8 sm:mb-10 max-w-lg">
+                One QR code on your truck. Customers scan, submit photos, and land on your board —
+                <span className="text-white/90 font-semibold"> while you're still on the roof.</span>
+              </p>
             </div>
 
-            {/* ── TRUST (promises, not warnings) ── */}
-            <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-2 pt-1 sm:pt-2 text-[10px] sm:text-[11px] font-bold text-white/40 uppercase tracking-widest">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
-                No setup fees
+            {/* 2. DEMO (mobile only — sits between subheader and CTA) */}
+            <div className="order-2 lg:hidden mb-10">
+              <HeroDashboardDemo />
+            </div>
+
+            {/* 3. CTA + TRUST */}
+            <div className="order-3">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-6 w-full">
+
+                {/* PRIMARY */}
+                <Link
+                  href="/signup"
+                  className="group inline-flex items-center justify-center gap-3 text-white font-bold text-base sm:text-lg px-6 py-4 rounded-2xl transition-all active:scale-[0.98] shadow-2xl w-full sm:w-auto"
+                  style={{
+                    background: 'linear-gradient(135deg, #1a6645, #15803d)',
+                    boxShadow: '0 20px 40px -12px rgba(26,102,69,0.5)',
+                  }}
+                >
+                  Start free for 14 days
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+
+                {/* SECONDARY */}
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center gap-2 text-white/70 hover:text-white font-semibold text-sm sm:text-base px-6 py-4 sm:py-3 rounded-2xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 transition w-full sm:w-auto"
+                >
+                  See it in action
+                </Link>
               </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
-                Cancel anytime
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
-                Works on any phone
+
+              {/* TRUST */}
+              <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-2 pt-1 sm:pt-2 text-[10px] sm:text-[11px] font-bold text-white/40 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
+                  No setup fees
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
+                  Cancel anytime
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={11} className="text-emerald-500/70 shrink-0" />
+                  Works on any phone
+                </div>
               </div>
             </div>
 
           </div>
 
-          {/* RIGHT */}
-          <div className="w-full flex items-center justify-center lg:justify-end">
+          {/* RIGHT column — desktop only (mobile shows demo inside left column above) */}
+          <div className="hidden lg:flex w-full items-center justify-center lg:justify-end">
             <div className="w-full max-w-[560px] lg:max-w-[600px]">
               <HeroDashboardDemo />
             </div>
