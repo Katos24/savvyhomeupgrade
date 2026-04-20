@@ -56,7 +56,7 @@ export default function Hero() {
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link href="/demo" className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-5 rounded-2xl transition-all w-full lg:w-auto">
-                  Watch 2 minute Demo
+                  Try the Live Demo
                 </Link>
               </div>
 
