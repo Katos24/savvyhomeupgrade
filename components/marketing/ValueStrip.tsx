@@ -369,13 +369,7 @@ export default function ValueStrip() {
               );
             })}
 
-            <Link
-              href="/demo"
-              className="inline-flex items-center gap-2 mt-8 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition-all shadow-lg group/btn"
-            >
-              See live demo
-              <ArrowRight size={15} className="transition-transform group-hover/btn:translate-x-1" />
-            </Link>
+      
           </div>
         </div>
 
@@ -419,15 +413,7 @@ export default function ValueStrip() {
             ))}
           </div>
 
-          <div className="mt-10">
-            <Link
-              href="/demo"
-              className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition-all shadow-lg group/btn w-full"
-            >
-              See live demo
-              <ArrowRight size={15} className="transition-transform group-hover/btn:translate-x-1" />
-            </Link>
-          </div>
+         
         </div>
 
       </div>

@@ -170,10 +170,11 @@ export default function TheBoard() {
           }}
         >
 
-          {/* LEFT CONTENT — split into ordered blocks for mobile reorder */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left order-1">
+          {/* LEFT CONTENT CONTAINER */}
+          {/* Note: This container uses 'contents' on mobile to let its children participate in the parent grid order */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left contents lg:flex">
 
-            {/* Copy block — always first */}
+            {/* 1. Header & Copy block — Always First */}
             <div className="order-1">
               <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                 <Database size={12} className="text-emerald-500" />
@@ -203,8 +204,8 @@ export default function TheBoard() {
               </div>
             </div>
 
-            {/* CTA — on desktop: order-2 (stays in left column). On mobile: order-3 (after visual) */}
-            <div className="order-3 lg:order-2 w-full flex justify-center lg:justify-start">
+            {/* 3. CTA — order-3 on mobile (bottom), order-2 on desktop (left column) */}
+            <div className="order-3 lg:order-2 w-full flex justify-center lg:justify-start mt-8 lg:mt-0">
               <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-10 py-5 text-lg shadow-[0_20px_40px_-12px_rgba(26,102,69,0.4)] w-full sm:w-auto">
                 Start Your Trial
                 <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
@@ -212,7 +213,7 @@ export default function TheBoard() {
             </div>
           </div>
 
-          {/* RIGHT VISUAL — on mobile: order-2 (between copy and CTA) */}
+          {/* 2. THE BOARD VISUAL — order-2 on mobile (middle) */}
           <div className="w-full relative order-2">
             <div className="flex items-center gap-2 mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
               {VIEWS.map((v) => {
@@ -228,7 +229,6 @@ export default function TheBoard() {
 
             <div className="relative group">
               <div className="relative rounded-t-3xl overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
-                {/* Window Controls */}
                 <div className="flex items-center px-4 gap-2 border-b border-white/5 h-8 bg-slate-900/50 backdrop-blur-md">
                   <div className="flex gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
@@ -237,7 +237,6 @@ export default function TheBoard() {
                   </div>
                 </div>
 
-                {/* Internal App UI */}
                 <div className="bg-white">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
