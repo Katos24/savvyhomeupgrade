@@ -15,10 +15,7 @@ export default function QRMarketingSection() {
                 Automated Acquisition
               </span>
             </div>
-            <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-10">
-              Every yard sign is a<br />
-              <span className="text-emerald-600">digital salesperson.</span>
-            </h2>
+            
             <div className="space-y-7">
               {[
                 {
