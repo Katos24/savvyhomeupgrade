@@ -1,5 +1,6 @@
 import Nav                from '@/components/marketing/Nav';
 import Hero               from '@/components/marketing/Hero';
+import LifestyleSection   from '@/components/marketing/LifestyleSection';
 import QRMarketingSection from '@/components/marketing/QRMarketingSection';
 import LeadModalSection   from '@/components/marketing/LeadModalSection';
 import TheBoard           from '@/components/marketing/TheBoard';
@@ -15,27 +16,34 @@ export default function Home() {
     <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-[#020617]">
       <Nav />
 
-      {/* ── DARK ZONE 1 — Hero + QR (seamless) ─────────────────── */}
+    {/* 1. THE HOOK (Dark) */}
       <Hero />
-      {/* No divider — Hero and QR are both dark, flow directly */}
-      <QRMarketingSection />
-      {/* QR has a built-in bottom fade to white */}
 
-      {/* ── WHITE ZONE — LeadModal ─────────────────────────────── */}
+      {/* 2. THE DREAM (White) — Emotional payoff first */}
+      <SectionDivider variant="dark-to-white" />
+      <LifestyleSection /> 
+
+      {/* 3. THE TOOL (Dark) — How the dream actually works */}
+      <SectionDivider variant="white-to-dark" />
+      <QRMarketingSection />
+
+
+      {/* ── WHITE ZONE — LeadModal (The Customer Experience) ── */}
       <LeadModalSection />
 
       <SectionDivider variant="white-to-dark" />
 
-      {/* ── DARK ZONE 2 — Board + Value ────────────────────────── */}
+      {/* ── DARK ZONE 2 — Board + Value (The Efficiency) ── */}
       <TheBoard />
-
-      <SectionDivider variant="dark-to-dark" />
-
+      
+      {/* TIP: If the board section feels too long, slot a "Payday Reminder" 
+         call-out inside ValueStrip or right after it.
+      */}
       <ValueStrip />
 
       <SectionDivider variant="dark-to-white" darkColor="#0a0f1e" />
 
-      {/* ── WHITE ZONE 2 — Pricing + Comparison ────────────────── */}
+      {/* ── WHITE ZONE 2 — Pricing + Comparison ── */}
       <Pricing />
 
       <SectionDivider variant="white-to-slate" />
@@ -44,10 +52,9 @@ export default function Home() {
         <Comparison />
       </div>
 
+      {/* ── DARK ZONE 3 — Closing the Deal ── */}
       <SectionDivider variant="slate-to-white" className="!h-8" />
       <SectionDivider variant="white-to-dark" />
-
-      {/* ── DARK ZONE 3 — Final CTA + Footer ───────────────────── */}
       <FinalCTA />
       <Footer />
     </div>
