@@ -1,422 +1,150 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { Sunrise, AlertCircle, Send, CheckCircle2, SlidersHorizontal, Bell, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { 
+  Sunrise, SlidersHorizontal, 
+  Camera, BrainCircuit, MailCheck, Download, 
+  MousePointerClick, Sparkles 
+} from 'lucide-react';
 
-function useFadeIn(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { threshold }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
+// ─── TRANSITION HEADER ──────────────────────────────────────────────────
 
-// ─── CINEMATIC BANNER ─────────────────────────────────────────────────────────
-
-function FieldBanner() {
+function TransitionHeader() {
   return (
-    <div className="relative w-full h-56 sm:h-80 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden mb-12 sm:mb-16 lg:mb-24 group">
-      <img
-        src="/images/dashboard-jobsite.webp"
-        alt="Dashboard in the field"
-        className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)' }}
-      />
-      <div className="absolute top-4 right-4 sm:top-5 sm:right-5 flex items-center gap-2 bg-black/30 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5">
-        <Bell size={12} className="text-emerald-400 animate-bounce" />
-        <p className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-widest">Live Alert</p>
+    <div className="relative text-center pb-12 lg:pb-32 max-w-5xl mx-auto z-10 px-4">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6 lg:mb-8">
+        <Sparkles size={14} className="text-emerald-500" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">The Operations Engine</span>
       </div>
-      <div className="absolute bottom-0 inset-x-0 px-5 sm:px-10 pb-6 sm:pb-9 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5">From the field</p>
-          <h2 className="text-xl sm:text-4xl font-black text-white tracking-tight sm:tracking-tighter leading-[0.95] sm:leading-[0.9]">
-            Your board.<br />
-            <span className="text-emerald-400">Always in your pocket.</span>
-          </h2>
-        </div>
-        <Link
-          href="/demo"
-          className="hidden sm:inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm transition-all shadow-xl shrink-0 group/btn"
-        >
-          See demo
-          <ArrowRight size={15} className="transition-transform group-hover/btn:translate-x-1" />
-        </Link>
-      </div>
+      {/* Optimized text sizes for mobile */}
+      <h2 className="text-4xl sm:text-6xl lg:text-[110px] font-black text-white tracking-tighter leading-[0.9] lg:leading-[0.8] mb-6 lg:mb-10">
+        Branded Front-end.<br />
+        <span className="text-emerald-400 italic font-serif">Deep-tech back-end.</span>
+      </h2>
+      <p className="text-slate-400 text-lg lg:text-2xl font-medium max-w-2xl mx-auto leading-relaxed">
+        We provide the infrastructure to quote, schedule, and close leads in half the time.
+      </p>
     </div>
   );
 }
 
-// ─── VISUALS (unchanged — used on desktop) ────────────────────────────────────
-
-function DigestVisual() {
-  return (
-    <div className="relative w-full h-full min-h-[320px] rounded-[1.5rem] overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0f4c2a 0%, #1a6645 50%, #15803d 100%)' }}>
-      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #4ade80, transparent)' }} />
-      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, #86efac, transparent)' }} />
-      <div className="absolute inset-0 p-5 flex flex-col justify-between">
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-2.5 self-start">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <p className="text-[11px] font-black text-white uppercase tracking-widest">6:00 AM · Daily Brief</p>
-        </div>
-        <div className="space-y-2 mt-4">
-          {[
-            { label: 'Crews Out Today',     value: '2 Teams', accent: '#4ade80', sub: 'Torres · Martinez' },
-            { label: 'Overdue Invoices',    value: '$3,200',  accent: '#fbbf24', sub: '2 accounts'        },
-            { label: 'New Overnight Leads', value: '4',       accent: '#60a5fa', sub: 'via QR scan'       },
-          ].map((row, i) => (
-            <div key={i} className="flex items-center justify-between bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 rounded-full" style={{ background: row.accent }} />
-                <div>
-                  <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">{row.label}</p>
-                  <p className="text-xs font-bold text-white/80">{row.sub}</p>
-                </div>
-              </div>
-              <p className="text-base font-black text-white">{row.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentVisual() {
-  const [sent, setSent] = useState<number | null>(null);
-  const send = (id: number) => { setSent(id); setTimeout(() => setSent(null), 2500); };
-  return (
-    <div className="relative w-full h-full min-h-[320px] rounded-[1.5rem] overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%)' }}>
-      <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #fde68a, transparent)' }} />
-      <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, #fcd34d, transparent)' }} />
-      <div className="absolute inset-0 p-5 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2">
-            <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-            <p className="text-[11px] font-black text-white uppercase tracking-widest">2 Overdue</p>
-          </div>
-          <button className="bg-white/15 border border-white/20 rounded-xl px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest">
-            Send All
-          </button>
-        </div>
-        <div className="space-y-2 flex-1">
-          {[
-            { id: 1, name: 'Torres Roofing', amount: '$7,950', days: '14 days late' },
-            { id: 2, name: 'Apex Fencing',   amount: '$3,100', days: '7 days late'  },
-          ].map((r) => (
-            <div key={r.id} className="flex items-center justify-between bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
-              <div>
-                <p className="text-[10px] font-black text-amber-300 uppercase tracking-widest">{r.days}</p>
-                <p className="text-sm font-black text-white">{r.name}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-black text-white">{r.amount}</span>
-                <button
-                  onClick={() => send(r.id)}
-                  className={`p-2.5 rounded-xl transition-all duration-300 ${sent === r.id ? 'bg-emerald-500 text-white scale-110' : 'bg-white/15 border border-white/20 text-white hover:bg-white/25'}`}
-                >
-                  {sent === r.id ? <CheckCircle2 size={14} /> : <Send size={14} />}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[11px] text-white/40 font-bold mt-4">Branded reminder sent · Tracked in outbox</p>
-      </div>
-    </div>
-  );
-}
-
-function SettingsVisual() {
-  return (
-    <div className="relative w-full h-full min-h-[320px] rounded-[1.5rem] overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #3b82f6 100%)' }}>
-      <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #93c5fd, transparent)' }} />
-      <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, #bfdbfe, transparent)' }} />
-      <div className="absolute inset-0 p-5 flex flex-col gap-2.5">
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5 self-start">
-          <p className="text-[11px] font-black text-white uppercase tracking-widest">Your rules · Your workflow</p>
-        </div>
-        {[
-          { label: 'Pipeline Stages',  sub: 'New → Quoted → Closed',           dot: '#4ade80' },
-          { label: 'Job Categories',   sub: 'Auto-load tasks & quote items',    dot: '#fbbf24' },
-          { label: 'Branded Emails',   sub: 'Quotes, reminders, confirmations', dot: '#f472b6' },
-          { label: 'Custom Questions', sub: 'Capture exactly what you need',    dot: '#a78bfa' },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
-            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.dot }} />
-            <div className="flex-1">
-              <p className="text-sm font-black text-white leading-tight">{item.label}</p>
-              <p className="text-[11px] text-white/50 font-medium">{item.sub}</p>
-            </div>
-          </div>
-        ))}
-        <p className="text-[11px] text-white/30 font-bold mt-auto">No coding · Set up in minutes</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── MOBILE-OPTIMIZED VISUALS (denser spacing, smaller min-height) ────────────
-
-function DigestVisualMobile() {
-  return (
-    <div className="relative w-full rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0f4c2a 0%, #1a6645 50%, #15803d 100%)' }}>
-      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #4ade80, transparent)' }} />
-      <div className="relative p-4 space-y-3">
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 w-fit">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <p className="text-[10px] font-black text-white uppercase tracking-widest">6:00 AM</p>
-        </div>
-        <div className="space-y-1.5">
-          {[
-            { label: 'Crews Out',       value: '2',      accent: '#4ade80' },
-            { label: 'Overdue',         value: '$3,200', accent: '#fbbf24' },
-            { label: 'Overnight Leads', value: '4',      accent: '#60a5fa' },
-          ].map((row, i) => (
-            <div key={i} className="flex items-center justify-between bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-1 h-5 rounded-full" style={{ background: row.accent }} />
-                <p className="text-xs font-black text-white/70 uppercase tracking-wider">{row.label}</p>
-              </div>
-              <p className="text-sm font-black text-white">{row.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentVisualMobile() {
-  const [sent, setSent] = useState<number | null>(null);
-  const send = (id: number) => { setSent(id); setTimeout(() => setSent(null), 2500); };
-  return (
-    <div className="relative w-full rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%)' }}>
-      <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #fde68a, transparent)' }} />
-      <div className="relative p-4 space-y-3">
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 w-fit">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-          <p className="text-[10px] font-black text-white uppercase tracking-widest">2 Overdue</p>
-        </div>
-        <div className="space-y-1.5">
-          {[
-            { id: 1, name: 'Torres Roofing', amount: '$7,950', days: '14d late' },
-            { id: 2, name: 'Apex Fencing',   amount: '$3,100', days: '7d late'  },
-          ].map((r) => (
-            <div key={r.id} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-amber-300 uppercase tracking-wider">{r.days}</p>
-                  <p className="text-sm font-black text-white truncate">{r.name}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-black text-white">{r.amount}</span>
-                  <button
-                    onClick={() => send(r.id)}
-                    className={`p-2 rounded-lg transition-all duration-300 ${sent === r.id ? 'bg-emerald-500 text-white scale-110' : 'bg-white/15 border border-white/20 text-white'}`}
-                    aria-label="Send reminder"
-                  >
-                    {sent === r.id ? <CheckCircle2 size={13} /> : <Send size={13} />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-white/50 font-bold">Tracked in outbox</p>
-      </div>
-    </div>
-  );
-}
-
-function SettingsVisualMobile() {
-  return (
-    <div className="relative w-full rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #3b82f6 100%)' }}>
-      <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #93c5fd, transparent)' }} />
-      <div className="relative p-4 space-y-2">
-        {[
-          { label: 'Pipeline Stages',  dot: '#4ade80' },
-          { label: 'Job Categories',   dot: '#fbbf24' },
-          { label: 'Branded Emails',   dot: '#f472b6' },
-          { label: 'Custom Questions', dot: '#a78bfa' },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-2.5">
-            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: item.dot }} />
-            <p className="text-sm font-black text-white">{item.label}</p>
-            <CheckCircle2 size={14} className="text-white/40 ml-auto" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  {
-    id: 'digest',
-    icon: <Sunrise size={20} />,
-    color: '#1a6645',
-    eyebrow: '6:00 AM sync',
-    title: 'Your morning digest',
-    desc: 'Before you leave the house, see which crews are scheduled, which invoices are overdue, and how many new leads came in overnight.',
-    visual: <DigestVisual />,
-    visualMobile: <DigestVisualMobile />,
-  },
-  {
-    id: 'payment',
-    icon: <AlertCircle size={20} />,
-    color: '#d97706',
-    eyebrow: 'Automated AR',
-    title: 'Never miss a payment',
-    desc: 'Your dashboard flags every overdue balance automatically. One click sends a branded reminder — no spreadsheets, no chasing.',
-    visual: <PaymentVisual />,
-    visualMobile: <PaymentVisualMobile />,
-  },
-  {
-    id: 'settings',
-    icon: <SlidersHorizontal size={20} />,
-    color: '#1d4ed8',
-    eyebrow: 'Your workflow',
-    title: 'Built around your business',
-    desc: 'Customize pipeline stages, job categories, and branded emails to match exactly how you run your crew. No coding required.',
-    visual: <SettingsVisual />,
-    visualMobile: <SettingsVisualMobile />,
-  },
-];
-
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── VALUE STRIP COMPONENT ──────────────────────────────────────────────────
 
 export default function ValueStrip() {
-  const { ref, visible } = useFadeIn();
   const [activeTab, setActiveTab] = useState(0);
-  const activeFeature = FEATURES[activeTab];
+
+  const FEATURES = [
+    {
+      id: 'intake',
+      icon: <Camera size={22} />,
+      badge: 'Visual Intake',
+      title: 'The Gritty Truth',
+      desc: 'Customers upload photos of the damage before you pick up the phone. Know the scope before you burn fuel.',
+      img: '/images/fence-damage.webp', 
+    },
+    {
+      id: 'automation',
+      icon: <MousePointerClick size={22} />,
+      badge: 'One-Click Admin',
+      title: 'The Workflow',
+      desc: 'Send branded quotes with Accept/Decline buttons and trigger payment reminders automatically.',
+      img: '/images/quote-send-tablet.webp', 
+    },
+    {
+      id: 'intelligence',
+      icon: <BrainCircuit size={22} />,
+      badge: 'AI + Data',
+      title: 'Portability',
+      desc: 'Get 6:00 AM Daily Digests and export everything to CSV in one click. Own your data.',
+      img: '/images/dashboard-jobsite.webp', 
+    },
+  ];
 
   return (
-    <section className="py-16 lg:py-24 overflow-hidden" style={{ background: '#0a0f1e' }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <section className="relative pt-24 lg:pt-32 bg-[#020617] overflow-hidden">
+      
+      {/* Background Gradient Fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-[300px] lg:h-[500px] bg-gradient-to-t from-white to-transparent z-0" />
 
-        {/* ── CINEMATIC BANNER ── */}
-        <FieldBanner />
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <TransitionHeader />
 
-        {/* ════════════════════════════════════════════════════════
-            DESKTOP — accordion (unchanged)
-            ════════════════════════════════════════════════════════ */}
-        <div ref={ref} className="hidden lg:grid lg:grid-cols-2 lg:gap-16 items-center">
-          <div
-            key={activeTab}
-            className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-            style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.6s ease' }}
-          >
-            {activeFeature.visual}
-          </div>
-
-          <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(20px)', transition: 'all 0.7s ease 0.1s' }}>
-            <h2 className="text-4xl xl:text-5xl font-black text-white tracking-tight leading-[0.9] mb-10">
-              Know your day<br />before you start<br />
-              <span className="text-emerald-400">your truck.</span>
-            </h2>
-
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-20 items-start pb-20 lg:pb-32">
+          
+          {/* TABS - Appears first on Desktop, second on Mobile if you want the visual first */}
+          <div className="lg:col-span-5 space-y-3 lg:space-y-4 order-2 lg:order-1">
             {FEATURES.map((item, i) => {
               const isActive = activeTab === i;
               return (
-                <button key={i} onClick={() => setActiveTab(i)} className="w-full text-left outline-none group">
-                  <div className={`flex items-start gap-4 py-6 border-b transition-all duration-200 ${
-                    isActive ? 'opacity-100 border-white/10' : 'opacity-30 hover:opacity-55 border-white/5'
-                  }`}>
-                    <div
-                      className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300"
-                      style={{ background: isActive ? item.color : 'rgba(255,255,255,0.06)' }}
-                    >
-                      <span className={isActive ? 'text-white' : 'text-white/30'}>{item.icon}</span>
+                <button 
+                  key={i} 
+                  onClick={() => setActiveTab(i)} // Added Click for mobile
+                  onMouseEnter={() => setActiveTab(i)}
+                  className={`w-full text-left p-6 lg:p-8 rounded-[1.5rem] lg:rounded-[2rem] transition-all duration-500 border ${
+                    isActive 
+                      ? 'bg-white/10 border-white/20 shadow-xl' 
+                      : 'bg-transparent border-transparent opacity-50 lg:opacity-40'
+                  }`}
+                >
+                  <div className="flex gap-4 lg:gap-6">
+                    <div className={`shrink-0 p-3 h-fit rounded-xl transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white'}`}>
+                      {item.icon}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-0.5">{item.eyebrow}</p>
-                      <h3 className="text-xl font-black text-white leading-tight">{item.title}</h3>
-                      <div className={`grid transition-all duration-500 ${isActive ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
-                        <p className="text-white/50 text-sm font-normal leading-relaxed overflow-hidden">{item.desc}</p>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1 block">
+                        {item.badge}
+                      </span>
+                      <h3 className="text-xl lg:text-2xl font-black text-white mb-2">{item.title}</h3>
+                      {/* Hidden desc on mobile unless active to save space */}
+                      <div className={`grid transition-all duration-500 ${isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed overflow-hidden">
+                          {item.desc}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </button>
               );
             })}
+          </div>
 
-      
+          {/* VISUAL PREVIEW - Sticky on Desktop, Static on Mobile */}
+          <div className="lg:col-span-7 order-1 lg:order-2 lg:sticky lg:top-32">
+            <div className="relative aspect-video lg:aspect-[4/3] rounded-[2rem] lg:rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-900">
+               {FEATURES.map((f, i) => (
+                 <img 
+                   key={f.id}
+                   src={f.img} 
+                   alt={f.title}
+                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${activeTab === i ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                 />
+               ))}
+            </div>
           </div>
         </div>
 
-        {/* ════════════════════════════════════════════════════════
-            MOBILE — stacked story cards (rebuilt)
-            ════════════════════════════════════════════════════════ */}
-        <div className="lg:hidden">
-          <div className="space-y-5">
-            {FEATURES.map((item, i) => (
-              <div
-                key={i}
-                className="rounded-3xl border border-white/10 bg-white/[0.02] overflow-hidden"
-              >
-                {/* Eyebrow + title row */}
-                <div className="flex items-start gap-3 p-5 pb-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: item.color }}
-                  >
-                    <span className="text-white">{item.icon}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">{item.eyebrow}</p>
-                    <h3 className="text-lg font-black text-white leading-tight">{item.title}</h3>
-                  </div>
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-white/30 text-[11px] font-black shrink-0">
-                    {i + 1}
-                  </div>
-                </div>
-
-                {/* Visual */}
-                <div className="px-5">
-                  {item.visualMobile}
-                </div>
-
-                {/* Description */}
-                <p className="px-5 py-5 text-white/60 text-sm leading-relaxed font-medium">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-
-         
+        {/* PROOF BAR - Grid 1 on mobile, 4 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 py-12 lg:py-16 border-t border-slate-200 relative z-20">
+          <FeatureIconBox icon={<Download className="text-blue-600" />} title="CSV Export" desc="Take your data anywhere." />
+          <FeatureIconBox icon={<Sunrise className="text-orange-500" />} title="6AM Digest" desc="Daily briefings on crews." />
+          <FeatureIconBox icon={<MailCheck className="text-emerald-600" />} title="Outbox" desc="Every email verified." />
+          <FeatureIconBox icon={<SlidersHorizontal className="text-purple-600" />} title="Custom Pipelines" desc="Built for your trade." />
         </div>
-
       </div>
     </section>
+  );
+}
+
+function FeatureIconBox({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+  return (
+    <div className="flex sm:block items-center gap-4 sm:space-y-3">
+      <div className="w-12 h-12 shrink-0 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+        {icon}
+      </div>
+      <div>
+        <h4 className="text-slate-900 font-black text-sm uppercase tracking-tight">{title}</h4>
+        <p className="text-slate-500 text-xs font-medium leading-snug">{desc}</p>
+      </div>
+    </div>
   );
 }

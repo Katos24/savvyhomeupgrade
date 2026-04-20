@@ -1,7 +1,6 @@
 import Nav                from '@/components/marketing/Nav';
 import Hero               from '@/components/marketing/Hero';
-import LifestyleSection   from '@/components/marketing/LifestyleSection';
-import QRMarketingSection from '@/components/marketing/QRMarketingSection';
+import FeaturesSlider     from '@/components/marketing/FeaturesSlider';
 import LeadModalSection   from '@/components/marketing/LeadModalSection';
 import TheBoard           from '@/components/marketing/TheBoard';
 import ValueStrip         from '@/components/marketing/ValueStrip';
@@ -16,45 +15,34 @@ export default function Home() {
     <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-[#020617]">
       <Nav />
 
-    {/* 1. THE HOOK (Dark) */}
+      {/* 1. THE HOOK (Dark) */}
       <Hero />
 
-      {/* 2. THE DREAM (White) — Emotional payoff first */}
-      <SectionDivider variant="dark-to-white" />
-      <LifestyleSection /> 
+      {/* 2. THE TECH & LIFESTYLE (Toggles Dark/White) */}
+      {/* We remove the divider here because FeaturesSlider handles its own bg transition */}
+      <FeaturesSlider />
 
-      {/* 3. THE TOOL (Dark) — How the dream actually works */}
-      <SectionDivider variant="white-to-dark" />
-      <QRMarketingSection />
+ 
+{/* 3. THE CUSTOMER EXPERIENCE (White Zone) */}
+<div className="bg-white">
+  <LeadModalSection />
+</div>
 
+{/* Sharp transition into the "Engine Room" */}
+<SectionDivider variant="white-to-dark" />
 
-      {/* ── WHITE ZONE — LeadModal (The Customer Experience) ── */}
-      <LeadModalSection />
-
-      <SectionDivider variant="white-to-dark" />
-
-      {/* ── DARK ZONE 2 — Board + Value (The Efficiency) ── */}
-      <TheBoard />
-      
-      {/* TIP: If the board section feels too long, slot a "Payday Reminder" 
-         call-out inside ValueStrip or right after it.
-      */}
-      <ValueStrip />
+{/* 4. THE OPERATIONS ENGINE (Dark Zone) */}
+<ValueStrip />
+<TheBoard />
 
       <SectionDivider variant="dark-to-white" darkColor="#0a0f1e" />
 
-      {/* ── WHITE ZONE 2 — Pricing + Comparison ── */}
+      {/* 5. CLOSING (White to Slate) */}
       <Pricing />
-
-      <SectionDivider variant="white-to-slate" />
-
       <div className="bg-slate-50">
         <Comparison />
       </div>
 
-      {/* ── DARK ZONE 3 — Closing the Deal ── */}
-      <SectionDivider variant="slate-to-white" className="!h-8" />
-      <SectionDivider variant="white-to-dark" />
       <FinalCTA />
       <Footer />
     </div>

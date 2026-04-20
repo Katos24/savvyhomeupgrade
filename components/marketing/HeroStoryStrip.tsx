@@ -241,19 +241,27 @@ export function HeroStoryStrip() {
     },
   ];
 
- return (
-  <section id="how-it-works" className="py-20 sm:py-32">
-    <div ref={ref} className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
+  return (
+    /* Added the ID back here. 
+       'scroll-mt-24' ensures that when you click a Nav link, 
+       the content doesn't get cut off by your navbar.
+    */
+    <div 
+      id="how-it-works" 
+      ref={ref} 
+      className="w-full max-w-6xl mx-auto px-4 sm:px-6 scroll-mt-24"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-16">
         {steps.map((step, i) => (
           <div key={i} className="flex flex-col" style={panelStyle(i * 0.1)}>
             <StepBadge number={step.number} />
             <StepTitle title={step.title} desc={step.desc} />
-            {step.card}
+            <div className="mt-auto">
+              {step.card}
+            </div>
           </div>
         ))}
       </div>
     </div>
-  </section>
-);
+  );
 }

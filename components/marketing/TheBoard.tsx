@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
-  LayoutGrid, List, Calendar, Mail, ChevronRight, Search, 
-  Plus, DollarSign, Bell, ArrowRight, Download, ShieldCheck, 
+  LayoutGrid, List, Calendar, Mail, 
+  Plus, DollarSign, Bell, ArrowRight, Download, 
   Zap, Database 
 } from 'lucide-react';
 import { useFadeIn } from '@/components/marketing/hooks';
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const LEADS = [
   { name: 'Torres Roofing',    status: 'Scheduled',  statusColor: '#6366f1', date: 'Apr 12', time: '9:00 AM',  amount: '$7,950', paid: false, assigned: 'Mike T.',  category: 'Roofing'  },
@@ -30,7 +32,6 @@ const OUTBOX = [
   { type: 'schedule',         name: 'Kim Gutters',       detail: 'Apr 13 · 11:00 AM confirmed', time: '5h ago', color: '#60a5fa', icon: 'calendar' },
   { type: 'payment_reminder', name: 'Apex Fencing',      detail: '$3,100 payment reminder',     time: '1d ago', color: '#fb923c', icon: 'bell'     },
   { type: 'quote',            name: 'Martinez Siding',   detail: '$5,200 quote sent',           time: '2d ago', color: '#f97316', icon: 'dollar'   },
-  { type: 'schedule',         name: 'ProClean Services', detail: 'Apr 15 · 2:00 PM confirmed',  time: '3d ago', color: '#60a5fa', icon: 'calendar' },
 ];
 
 type View = 'cards' | 'table' | 'calendar' | 'outbox';
@@ -42,7 +43,7 @@ const VIEWS: { key: View; icon: React.ReactNode; label: string }[] = [
   { key: 'outbox',   icon: <Mail size={13} />,       label: 'Outbox'   },
 ];
 
-// --- Sub-Panels ---
+// ─── SUB-PANELS ───────────────────────────────────────────────────────────────
 
 function CardsPanel() {
   return (
@@ -151,18 +152,18 @@ function OutboxPanel() {
   );
 }
 
-// --- Main Component ---
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function TheBoard() {
   const [current, setCurrent] = useState<View>('table');
   const { ref, visible } = useFadeIn();
 
   return (
-    <section className="py-24 md:py-32 px-4 sm:px-6 bg-[#020617] overflow-hidden">
+    <section className="py-24 lg:py-32 px-4 sm:px-6 bg-[#020617] overflow-hidden border-t border-white/5">
       <div className="max-w-7xl mx-auto">
         <div
           ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center"
           style={{ 
             opacity: visible ? 1 : 0, 
             transform: visible ? 'none' : 'translateY(40px)', 
@@ -170,52 +171,49 @@ export default function TheBoard() {
           }}
         >
 
-          {/* LEFT CONTENT CONTAINER */}
-          {/* Note: This container uses 'contents' on mobile to let its children participate in the parent grid order */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left contents lg:flex">
+          {/* LEFT CONTENT */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-1">
+            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <Database size={12} className="text-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
+            </div>
+            
+            <h2 className="font-black tracking-tighter text-white mb-8" style={{ fontSize: 'clamp(2.5rem, 5.5vw, 4rem)', lineHeight: 0.9 }}>
+              The Operating System <br />
+              <span className="text-emerald-500 font-serif italic">for contractors.</span>
+            </h2>
 
-            {/* 1. Header & Copy block — Always First */}
-            <div className="order-1">
-              <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                <Database size={12} className="text-emerald-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
-              </div>
-              
-              <h2 className="font-black tracking-tighter text-white mb-8" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.2rem)', lineHeight: 0.9 }}>
-                The Operating System <br />
-                <span className="text-emerald-500">for Your Pipeline.</span>
-              </h2>
-
-              <div className="space-y-6 mb-10 max-w-md">
-                <div className="flex items-start gap-4 text-left">
-                  <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-emerald-500 shrink-0"><Zap size={18} fill="currentColor" /></div>
-                  <div>
-                    <h4 className="text-white font-bold text-base">Bulk Workflow Velocity</h4>
-                    <p className="text-slate-400 text-sm leading-relaxed">Update status, assign crews, or send payment reminders to 50 leads at once via the Table View.</p>
-                  </div>
+            <div className="space-y-8 mb-12 max-w-md">
+              <div className="flex items-start gap-5 text-left">
+                <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shrink-0 border border-emerald-500/20">
+                  <Zap size={20} fill="currentColor" />
                 </div>
-                <div className="flex items-start gap-4 text-left">
-                  <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-blue-500 shrink-0"><Download size={18} /></div>
-                  <div>
-                    <h4 className="text-white font-bold text-base">Zero Data Lock-in</h4>
-                    <p className="text-slate-400 text-sm leading-relaxed">It's your data. Export your entire project history, lead contacts, and payment records to CSV with one click.</p>
-                  </div>
+                <div>
+                  <h4 className="text-white font-bold text-lg mb-1">Mass Action Workflow</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">Update status, assign crews, or send payment reminders to 50 leads at once via the Table View.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-5 text-left">
+                <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500 shrink-0 border border-blue-500/20">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-lg mb-1">Zero Data Lock-in</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">It's your data. Export your entire project history, lead contacts, and payment records to CSV with one click.</p>
                 </div>
               </div>
             </div>
 
-            {/* 3. CTA — order-3 on mobile (bottom), order-2 on desktop (left column) */}
-            <div className="order-3 lg:order-2 w-full flex justify-center lg:justify-start mt-8 lg:mt-0">
-              <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-10 py-5 text-lg shadow-[0_20px_40px_-12px_rgba(26,102,69,0.4)] w-full sm:w-auto">
-                Start Your Trial
-                <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
-              </Link>
-            </div>
+            <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-10 py-5 text-lg shadow-[0_20px_40px_-12px_rgba(26,102,69,0.4)] w-full sm:w-auto">
+              Start My Free Trial
+              <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
+            </Link>
           </div>
 
-          {/* 2. THE BOARD VISUAL — order-2 on mobile (middle) */}
-          <div className="w-full relative order-2">
-            <div className="flex items-center gap-2 mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+          {/* RIGHT VISUAL (THE INTERACTIVE BOARD) */}
+          <div className="w-full relative order-1 lg:order-2">
+            {/* View Switcher Overlay */}
+            <div className="flex items-center gap-2 mb-6 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
               {VIEWS.map((v) => {
                 const isActive = current === v.key;
                 return (
@@ -227,42 +225,47 @@ export default function TheBoard() {
               })}
             </div>
 
+            {/* Browser Mockup */}
             <div className="relative group">
               <div className="relative rounded-t-3xl overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
-                <div className="flex items-center px-4 gap-2 border-b border-white/5 h-8 bg-slate-900/50 backdrop-blur-md">
+                <div className="flex items-center px-4 gap-2 border-b border-white/5 h-10 bg-slate-900/50 backdrop-blur-md">
                   <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/50" />
                   </div>
                 </div>
 
                 <div className="bg-white">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                  {/* Top Bar inside "Board" */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
+                      <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center">
                         <img src="/images/ridgelinelogo.webp" alt="Logo" className="w-5 h-5 object-contain invert" />
                       </div>
-                      <div className="hidden sm:block text-left">
-                        <div className="text-[12px] font-black text-slate-900 leading-none">Ridge Line Roofing</div>
-                        <div className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mt-1">Project Engine</div>
+                      <div className="text-left">
+                        <div className="text-[12px] font-black text-slate-900">Ridge Line Dashboard</div>
+                        <div className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Active Site Control</div>
                       </div>
                     </div>
-                    <div className="px-4 py-2 rounded-lg bg-[#1a6645] text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                    <div className="hidden sm:flex px-4 py-2 rounded-lg bg-[#1a6645] text-white font-black text-[10px] uppercase tracking-widest items-center gap-2 cursor-pointer hover:bg-emerald-700 transition-colors">
                       <Plus size={12} strokeWidth={3} /> New Project
                     </div>
                   </div>
 
-                  <div className="px-5 pt-4 h-[320px] overflow-hidden relative text-left">
+                  {/* Dynamic Content Area */}
+                  <div className="px-6 pt-6 h-[340px] overflow-hidden relative text-left">
                     {current === 'table'    && <TablePanel />}
                     {current === 'cards'    && <CardsPanel />}
                     {current === 'calendar' && <CalendarPanel />}
                     {current === 'outbox'   && <OutboxPanel />}
-                    <div className="absolute bottom-0 inset-x-0 h-20 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent" />
+                    
+                    <div className="absolute bottom-0 inset-x-0 h-24 pointer-events-none bg-gradient-to-t from-white via-white/90 to-transparent" />
                   </div>
                 </div>
               </div>
-              <div className="h-4 rounded-b-2xl bg-slate-800 border-x border-b border-white/20 relative" />
+              {/* Bottom bezel of browser */}
+              <div className="h-4 rounded-b-2xl bg-slate-800 border-x border-b border-white/20 relative mx-4" />
             </div>
           </div>
 
