@@ -64,7 +64,7 @@ export default function LifestyleSection() {
             
             <div className="relative rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.12)] border border-slate-100 bg-slate-50">
               <img 
-                src="/images/og-image.png" 
+                src="/images/og-image.webp" 
                 alt="Contractor relaxing at baseball game" 
                 className="w-full h-auto object-cover transform transition-transform duration-[2000ms] group-hover:scale-105"
               />
