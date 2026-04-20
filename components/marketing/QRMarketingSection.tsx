@@ -32,8 +32,8 @@ export default function QRMarketingSection() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-          {/* LEFT: Visual (now first on desktop for variety vs. other sections) */}
-          <div className="relative order-1">
+         {/* LEFT: Visual */}
+<div className="relative order-2 lg:order-1">
             <div className="relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 group">
               <img
                 src="/images/qrbranded2.webp"
@@ -58,8 +58,8 @@ export default function QRMarketingSection() {
             </div>
           </div>
 
-          {/* RIGHT: Copy */}
-          <div className="flex flex-col order-2">
+         {/* RIGHT: Copy */}
+<div className="flex flex-col order-1 lg:order-2">
 
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 mb-6 self-start">
               <QrCode size={12} className="text-emerald-400" />
