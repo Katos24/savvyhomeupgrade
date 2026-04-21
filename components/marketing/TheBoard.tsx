@@ -61,31 +61,57 @@ const VIEWS: { key: View; icon: React.ReactNode; label: string }[] = [
 
 function CardsPanel() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 h-full overflow-y-auto pb-4 no-scrollbar">
-      {LEADS.map(lead => (
-        <div key={lead.name} className="flex flex-col bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-sm cursor-pointer group">
-          <div className="px-3 pt-3 pb-1.5 flex justify-between items-start">
-            <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: lead.statusColor }} />
-              {lead.status}
-            </span>
-          </div>
-          <div className="px-3 pb-3">
-            <p className="text-[14px] font-black text-slate-900 leading-tight mb-1 truncate">{lead.name}</p>
-            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{lead.category}</p>
-          </div>
-          <div className="mx-3 mb-3 grid grid-cols-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <div className="space-y-0.5">
-              <p className="text-[7px] font-black text-slate-400 uppercase">Date</p>
-              <span className="text-[10px] font-black text-emerald-600 italic">{lead.date}</span>
-            </div>
-            <div className="border-l border-slate-200 pl-3 space-y-0.5">
-              <p className="text-[7px] font-black text-slate-400 uppercase">Rev</p>
-              <span className="text-[10px] font-black text-slate-700">{lead.amount}</span>
+    <div className="h-full overflow-y-auto pb-4 no-scrollbar">
+      {/* MOBILE: compact single-column list-style cards */}
+      <div className="sm:hidden space-y-2">
+        {LEADS.map(lead => (
+          <div key={lead.name} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer">
+            <div className="w-2 h-full min-h-[36px] rounded-full shrink-0" style={{ background: lead.statusColor }} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <p className="text-[13px] font-black text-slate-900 truncate">{lead.name}</p>
+                <span className="text-[12px] font-black text-slate-900 shrink-0">{lead.amount}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>
+                  <span className="w-1 h-1 rounded-full shrink-0" style={{ background: lead.statusColor }} />
+                  {lead.status}
+                </span>
+                <span className="text-[9px] font-bold text-slate-400">{lead.category}</span>
+                {lead.date !== '—' && <span className="text-[9px] font-bold text-slate-400">· {lead.date}</span>}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      {/* DESKTOP: 2-col card grid */}
+      <div className="hidden sm:grid grid-cols-2 gap-3">
+        {LEADS.map(lead => (
+          <div key={lead.name} className="flex flex-col bg-white border-2 border-slate-900 rounded-2xl overflow-hidden shadow-sm cursor-pointer group">
+            <div className="px-3 pt-3 pb-1.5 flex justify-between items-start">
+              <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: `${lead.statusColor}15`, color: lead.statusColor }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: lead.statusColor }} />
+                {lead.status}
+              </span>
+            </div>
+            <div className="px-3 pb-3">
+              <p className="text-[14px] font-black text-slate-900 leading-tight mb-1 truncate">{lead.name}</p>
+              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{lead.category}</p>
+            </div>
+            <div className="mx-3 mb-3 grid grid-cols-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="space-y-0.5">
+                <p className="text-[7px] font-black text-slate-400 uppercase">Date</p>
+                <span className="text-[10px] font-black text-emerald-600 italic">{lead.date}</span>
+              </div>
+              <div className="border-l border-slate-200 pl-3 space-y-0.5">
+                <p className="text-[7px] font-black text-slate-400 uppercase">Rev</p>
+                <span className="text-[10px] font-black text-slate-700">{lead.amount}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -144,9 +170,9 @@ function CalendarPanel() {
         {cells.map((day, i) => {
           const events = day ? (CAL_EVENTS[day] || []) : [];
           return (
-            <div key={i} className={`min-h-[38px] p-1 border ${day ? 'bg-slate-50 border-slate-100' : 'border-transparent'}`}>
-              {day && <span className="text-[9px] font-black text-slate-400">{day}</span>}
-              {events.map((ev, j) => <div key={j} className="text-[7px] font-black text-white px-1 py-0.5 rounded truncate mt-0.5" style={{ background: ev.color }}>{ev.name}</div>)}
+            <div key={i} className={`min-h-[32px] sm:min-h-[38px] p-0.5 sm:p-1 border ${day ? 'bg-slate-50 border-slate-100' : 'border-transparent'}`}>
+              {day && <span className="text-[8px] sm:text-[9px] font-black text-slate-400">{day}</span>}
+              {events.map((ev, j) => <div key={j} className="text-[6px] sm:text-[7px] font-black text-white px-0.5 sm:px-1 py-0.5 rounded truncate mt-0.5" style={{ background: ev.color }}>{ev.name}</div>)}
             </div>
           );
         })}
@@ -187,7 +213,7 @@ export default function TheBoard() {
       <div className="max-w-7xl mx-auto">
         <div
           ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-center"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-24 items-center"
           style={{ 
             opacity: visible ? 1 : 0, 
             transform: visible ? 'none' : 'translateY(40px)', 
@@ -196,17 +222,18 @@ export default function TheBoard() {
         >
           {/* LEFT CONTENT */}
           <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-1 px-2">
-            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <div className="inline-flex items-center gap-2 mb-5 sm:mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
               <Database size={12} className="text-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
             </div>
             
-            <h2 className="font-black tracking-tighter text-white mb-8 text-4xl sm:text-5xl lg:text-7xl leading-[0.9]">
-              The Operating System <br />
+            <h2 className="font-black tracking-tighter text-white mb-6 sm:mb-8 text-3xl sm:text-5xl lg:text-7xl leading-[0.9]">
+              The Operating System{' '}
+              <br className="hidden sm:block" />
               <span className="text-emerald-500 font-serif italic">for contractors.</span>
             </h2>
 
-            <div className="space-y-6 mb-10 max-w-md">
+            <div className="space-y-6 mb-8 sm:mb-10 max-w-md">
               <div className="flex items-start gap-4 text-left">
                 <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0 border border-emerald-500/20">
                   <Zap size={18} fill="currentColor" />
@@ -218,7 +245,7 @@ export default function TheBoard() {
               </div>
             </div>
 
-            <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-8 py-4 text-base shadow-xl w-full sm:w-auto">
+            <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-xl sm:rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-8 py-4 text-base shadow-xl w-full sm:w-auto">
               Start Free Trial
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -226,46 +253,46 @@ export default function TheBoard() {
 
           {/* RIGHT VISUAL */}
           <div className="lg:col-span-7 w-full relative order-1 lg:order-2">
-            <div className="flex items-center gap-1 mb-4 p-1.5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+            <div className="flex items-center gap-1 mb-3 sm:mb-4 p-1 sm:p-1.5 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-md">
               {VIEWS.map((v) => {
                 const isActive = current === v.key;
                 return (
                   <button 
                     key={v.key} 
                     onClick={() => setCurrent(v.key)} 
-                    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2.5 sm:py-3 rounded-xl text-[8px] sm:text-[10px] font-black transition-all uppercase tracking-widest ${isActive ? 'bg-white text-[#0F1F3D] shadow-xl' : 'text-slate-400 hover:text-white'}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black transition-all uppercase tracking-widest ${isActive ? 'bg-white text-[#0F1F3D] shadow-xl' : 'text-slate-400 hover:text-white'}`}
                   >
                     {v.icon}
-                    <span>{v.label}</span>
+                    <span className="hidden xs:inline sm:inline">{v.label}</span>
                   </button>
                 );
               })}
             </div>
 
             <div className="relative group">
-              <div className="relative rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
+              <div className="relative rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
                 <div className="bg-white">
-                  <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100">
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
-                        <div className="w-4 h-4 bg-emerald-500 rounded-sm rotate-45" />
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-500 rounded-sm rotate-45" />
                       </div>
                       <div className="text-left overflow-hidden">
                         <div className="text-[11px] sm:text-[12px] font-black text-slate-900 truncate">Ridge Line Dashboard</div>
                         <div className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">Control Center</div>
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center sm:hidden">
-                       <Plus size={16} className="text-slate-900" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 flex items-center justify-center sm:hidden">
+                       <Plus size={14} className="text-slate-900" />
                     </div>
                   </div>
 
-                  <div className="px-4 sm:px-6 pt-4 sm:pt-6 h-[300px] sm:h-[400px] overflow-hidden relative text-left">
+                  <div className="px-3 sm:px-6 pt-3 sm:pt-6 h-[320px] sm:h-[460px] overflow-hidden relative text-left">
                     {current === 'table'    && <TablePanel />}
                     {current === 'cards'    && <CardsPanel />}
                     {current === 'calendar' && <CalendarPanel />}
                     {current === 'outbox'   && <OutboxPanel />}
-                    <div className="absolute bottom-0 inset-x-0 h-16 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent" />
+                    <div className="absolute bottom-0 inset-x-0 h-12 sm:h-16 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent" />
                   </div>
                 </div>
               </div>

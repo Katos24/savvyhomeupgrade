@@ -35,7 +35,7 @@ const formatCategory = (cat: string) => {
 
 const formatCustomAnswer = (value: any, question: CustomQuestion): string => {
   if (value === null || value === undefined || value === '') return '—';
-  if (question.type === 'checkbox') return value === true || value === 'true' ? '✅ Yes' : '❌ No';
+  if (question.type === 'checkbox') return value === true || value === 'true' ? 'Yes' : 'No';
   return String(value);
 };
 
@@ -78,11 +78,6 @@ export default function TableView({
         : { key, direction: 'asc' }
     );
   };
-
-  const parseLocalDate = (dateStr: string) => {
-  const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
 
   const toggleEditMode = () => { setEditMode(e => !e); setSelectedIds(new Set()); setShowActionsMenu(false); };
   const toggleSelectAll = () => setSelectedIds(selectedIds.size === leads.length ? new Set() : new Set(leads.map(l => l.id)));
@@ -151,164 +146,195 @@ export default function TableView({
 
   const SortIcon = ({ k }: { k: string }) =>
     sortConfig?.key !== k
-      ? <span className={`${t.textMuted} ml-1`}>⇅</span>
+      ? <span className={`${t.textMuted} ml-1`}>&#8693;</span>
       : sortConfig.direction === 'asc'
-        ? <span className="text-indigo-400 ml-1">↑</span>
-        : <span className="text-indigo-400 ml-1">↓</span>;
+        ? <span className="text-blue-400 ml-1">&#8593;</span>
+        : <span className="text-blue-400 ml-1">&#8595;</span>;
 
   const Th = ({ label, sortKey, className = '' }: { label: string; sortKey?: string; className?: string }) => (
     <th
-      className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider whitespace-nowrap select-none ${sortKey ? `cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition` : ''} ${className}`}
+      className={`px-3 lg:px-4 py-3 text-left text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-wider whitespace-nowrap select-none ${sortKey ? `cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition` : ''} ${className}`}
       onClick={sortKey ? () => handleSort(sortKey) : undefined}
     >
       {label}{sortKey && <SortIcon k={sortKey} />}
     </th>
   );
 
-  return (
-    <div className={`${t.tableBg} border ${t.tableBorderCol} overflow-hidden shadow-xl`}>
+  // ── MOBILE TABLE ──────────────────────────────────────────────────────────
+  // Slim 3-col table: Name, Status, Amount. Tap row to open lead.
+  // Edit mode adds checkbox column. Horizontal scroll reveals all other columns.
 
-      {/* Toolbar */}
-      <div className={`${t.toolbarBg} px-4 py-3 border-b ${t.toolbarBorder} flex items-center justify-between`}>
-        <div className="flex items-center gap-4">
-          {editMode ? (
-            <>
-              <label className={`flex items-center gap-2 ${t.textPrimary} cursor-pointer text-sm font-medium`}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === leads.length && leads.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                />
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select All'}
-              </label>
+  const MobileTable = () => (
+    <div className="lg:hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[600px]" style={{ borderCollapse: 'collapse' }}>
+          <thead className={t.tableHeadBg}>
+            <tr className={`border-b ${t.tableBorderCol}`}>
+              {editMode && <th className="px-3 py-2.5 w-8" />}
+              <Th label="Name" sortKey="name" />
+              <Th label="Status" sortKey="status" />
+              <Th label="Quote" sortKey="quote_total" />
+              {/* Extra columns visible on scroll */}
+              <Th label="Contact" sortKey="phone" />
+              <Th label="Category" sortKey="category" />
+              <Th label="Scheduled" sortKey="scheduled_date" />
+              <Th label="Assigned" />
+              <Th label="Payment" sortKey="payment_amount" />
+              <Th label="Created" sortKey="date" />
+              <Th label="Source" sortKey="lead_source" />
+              {customQuestions.map((q) => (
+                <th
+                  key={q.id}
+                  className={`px-3 py-2.5 text-left text-[10px] font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition whitespace-nowrap select-none border-l ${t.tableBorderCol}`}
+                  onClick={() => handleSort(`cq_${q.id}`)}
+                  title={q.label}
+                >
+                  {q.label.length > 14 ? q.label.slice(0, 14) + '...' : q.label}
+                  <SortIcon k={`cq_${q.id}`} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={`${t.tableDivide} divide-y`}>
+            {sortedLeads.map((lead) => {
+              const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
+              const statusHex = getHex(statusConfig.color);
+              const isSelected = selectedIds.has(lead.id);
+              const customAnswers = lead.custom_answers || {};
 
-              {selectedIds.size > 0 && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowActionsMenu(!showActionsMenu)}
-                    disabled={bulkActionLoading}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs transition"
-                  >
-                    {bulkActionLoading ? 'Working...' : 'Actions'}
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-
-                  {showActionsMenu && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
-                      <div className={`absolute left-0 top-full mt-1 w-56 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-20 overflow-hidden`}>
-                        <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                          Change Status
-                        </div>
-                        <div className="max-h-40 overflow-y-auto">
-                          {statusOptions.map((s) => (
-                            <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
-                              className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition flex items-center gap-2`}>
-                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
-                              {s.label}
-                            </button>
-                          ))}
-                        </div>
-
-                        {teamMembers.length > 0 && (
-                          <>
-                            <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                              Assign To
-                            </div>
-                            <div className="max-h-40 overflow-y-auto">
-                              {teamMembers.map((m) => (
-                                <button key={m.id} onClick={() => handleBulkAssign(m.name)}
-                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
-                                  {m.name}
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
-
-                        {categories.length > 0 && (
-                          <>
-                            <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                              Category
-                            </div>
-                            <div className="max-h-40 overflow-y-auto">
-                              {categories.map((c: any) => (
-                                <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
-                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
-                                  {c.label}
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
-
-                        <div className={`border-t ${t.toolbarBorder}`} />
-                        <button
-                          onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
-                          className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition flex items-center gap-2 font-bold"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
-                        </button>
-                      </div>
-                    </>
+              return (
+                <tr
+                  key={lead.id}
+                  className={`transition ${
+                    isSelected
+                      ? t.tableRowSelected
+                      : lead.project_id
+                      ? t.tableRowProject
+                      : t.tableRowHover
+                  }`}
+                  onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
+                >
+                  {editMode && (
+                    <td className="px-3 py-2.5">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                    </td>
                   )}
-                </div>
-              )}
-            </>
-          ) : (
-            <span className={`${t.textMuted} text-sm`}>{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
-          )}
-        </div>
 
-        <button
-          onClick={toggleEditMode}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold text-xs transition ${
-            editMode
-              ? `${isDark ? 'bg-slate-700 hover:bg-slate-600 border-slate-600' : 'bg-gray-200 hover:bg-gray-300 border-gray-300'} ${t.textPrimary} border`
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-          }`}
-        >
-          {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
-        </button>
+                  {/* NAME — primary column */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <div className={`text-[13px] font-bold ${t.textPrimary} truncate max-w-[140px]`}>{lead.name}</div>
+                    <div className={`text-[10px] ${t.textMuted}`}>{lead.category ? formatCategory(lead.category) : ''}</div>
+                  </td>
+
+                  {/* STATUS */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 text-[9px] font-black text-white rounded-sm" style={{ backgroundColor: statusHex }}>
+                      {statusConfig.label}
+                    </span>
+                  </td>
+
+                  {/* QUOTE */}
+                  <td className="px-3 py-2.5 whitespace-nowrap text-[13px]">
+                    {lead.quote_total
+                      ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span>
+                      : <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  {/* CONTACT — scroll zone starts here */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <div className={`text-[12px] ${t.textPrimary}`}>{formatPhone(lead.phone || '')}</div>
+                    <div className={`text-[10px] ${t.textMuted} truncate max-w-[140px]`}>{lead.email}</div>
+                  </td>
+
+                  {/* CATEGORY */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {lead.category
+                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-sky-500/20 text-white border border-sky-400/40' : 'bg-sky-100 text-sky-800 border border-sky-300'}`}>
+                          {formatCategory(lead.category)}
+                        </span>
+                      : <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  {/* SCHEDULED */}
+                  <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
+                    {lead.scheduled_date
+                      ? <div>
+                          <div className={`${t.textPrimary} font-medium`}>
+                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                          </div>
+                          {lead.scheduled_time && <div className={`text-[10px] ${t.textMuted}`}>{lead.scheduled_time}</div>}
+                        </div>
+                      : <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  {/* ASSIGNED */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {lead.assigned_to
+                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-violet-500/20 text-white border border-violet-400/40' : 'bg-violet-100 text-violet-800 border border-violet-300'}`}>{lead.assigned_to}</span>
+                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
+                  </td>
+
+                  {/* PAYMENT */}
+                  <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
+                    {lead.payment_amount
+                      ? <div>
+                          <div className="font-bold text-sky-500">{formatCurrency(lead.payment_amount)}</div>
+                          {lead.payment_status && <div className={`text-[10px] ${t.textMuted} capitalize`}>{lead.payment_status}</div>}
+                        </div>
+                      : lead.payment_status
+                      ? <span className={`text-[10px] ${t.textMuted} capitalize`}>{lead.payment_status}</span>
+                      : <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  {/* CREATED */}
+                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
+                    {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </td>
+
+                  {/* SOURCE */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {lead.lead_source
+                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold capitalize ${isDark ? 'bg-blue-500/20 text-white border border-blue-400/40' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
+                          {lead.lead_source.replace('_', ' ')}
+                        </span>
+                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
+                  </td>
+
+                  {/* CUSTOM QUESTIONS */}
+                  {customQuestions.map((q) => {
+                    const raw = customAnswers[q.id];
+                    const display = formatCustomAnswer(raw, q);
+                    const has = raw !== null && raw !== undefined && raw !== '';
+                    return (
+                      <td key={q.id} className={`px-3 py-2.5 whitespace-nowrap text-[12px] border-l ${t.tableBorderCol}`}>
+                        {has
+                          ? q.type === 'checkbox'
+                            ? <span className={raw === true || raw === 'true' ? 'text-emerald-500 font-bold' : 'text-red-400 font-bold'}>{display}</span>
+                            : <span className={`px-1.5 py-0.5 text-[9px] font-medium ${isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}>{display}</span>
+                          : <span className={t.textEmpty}>—</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Delete confirm modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border max-w-sm w-full shadow-2xl`}>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <Trash2 className="w-5 h-5 text-red-400" />
-                </div>
-                <div>
-                  <h3 className={`${t.textPrimary} font-bold`}>Delete {selectedIds.size} Lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
-                  <p className={`${t.textMuted} text-sm`}>This cannot be undone.</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
-                  className={`flex-1 px-4 py-2.5 ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-100 hover:bg-gray-200'} ${t.textPrimary} font-bold text-sm transition`}>
-                  Cancel
-                </button>
-                <button onClick={handleBulkDelete} disabled={bulkActionLoading}
-                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm transition">
-                  {bulkActionLoading ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {leads.length === 0 && (
+        <div className={`py-12 text-center ${t.textMuted} text-sm`}>No leads to display</div>
       )}
+    </div>
+  );
 
-      {/* Mobile scroll hint */}
-      <div className={`lg:hidden ${t.scrollHint} px-4 py-1.5 text-xs text-center border-b`}>
-        ← Scroll to see all columns →
-      </div>
+  // ── DESKTOP TABLE ─────────────────────────────────────────────────────────
+  // Full table with all columns — unchanged from original.
 
+  const DesktopTable = () => (
+    <div className="hidden lg:block">
       <div className="overflow-x-auto">
         <table className="min-w-full" style={{ borderCollapse: 'collapse' }}>
           <thead className={t.tableHeadBg}>
@@ -339,7 +365,7 @@ export default function TableView({
                   onClick={() => handleSort(`cq_${q.id}`)}
                   title={q.label}
                 >
-                  {q.label.length > 18 ? q.label.slice(0, 18) + '…' : q.label}
+                  {q.label.length > 18 ? q.label.slice(0, 18) + '...' : q.label}
                   <SortIcon k={`cq_${q.id}`} />
                 </th>
               ))}
@@ -374,7 +400,7 @@ export default function TableView({
                     <td className="px-4 py-3">
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" />
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                     </td>
                   )}
 
@@ -432,7 +458,7 @@ export default function TableView({
                     {lead.scheduled_date
                       ? <div>
                           <div className={`${t.textPrimary} font-medium`}>
-{(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
                           </div>
                           {lead.scheduled_time && <div className={`text-xs ${t.textMuted}`}>{lead.scheduled_time}</div>}
                         </div>
@@ -443,7 +469,7 @@ export default function TableView({
                     {lead.preferred_date
                       ? <div>
                           <div className="text-amber-500 font-medium">
-{(() => { const [y,m,d] = lead.preferred_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                            {(() => { const [y,m,d] = lead.preferred_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
                           </div>
                           {lead.preferred_time && <div className={`text-xs ${t.textMuted}`}>{lead.preferred_time}</div>}
                         </div>
@@ -476,8 +502,8 @@ export default function TableView({
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {lead.payment_due_date
                       ? (() => {
-const [py,pm,pd] = lead.payment_due_date.split('T')[0].split('-').map(Number);
-const due = new Date(py,pm-1,pd);
+                          const [py,pm,pd] = lead.payment_due_date.split('T')[0].split('-').map(Number);
+                          const due = new Date(py,pm-1,pd);
                           const isOverdue = !lead.payment_status?.includes('paid') && due < new Date();
                           return (
                             <span className={`font-medium ${isOverdue ? 'text-red-500' : t.textPrimary}`}>
@@ -490,10 +516,19 @@ const due = new Date(py,pm-1,pd);
                   </td>
 
                   <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {images.length > 0 && `${images.length} photos`}
-                    {images.length > 0 && videos.length > 0 && ' · '}
-                    {videos.length > 0 && `${videos.length} videos`}
-                    {images.length === 0 && videos.length === 0 && <span className={t.textEmpty}>—</span>}
+                    {(() => {
+                      const fileUrls2 = safeJSONParse(lead.file_urls) || [];
+                      const imgs = fileUrls2.filter((f: any) => f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+                      const vids = fileUrls2.filter((f: any) => f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i));
+                      return (
+                        <>
+                          {imgs.length > 0 && `${imgs.length} photos`}
+                          {imgs.length > 0 && vids.length > 0 && ' / '}
+                          {vids.length > 0 && `${vids.length} videos`}
+                          {imgs.length === 0 && vids.length === 0 && <span className={t.textEmpty}>—</span>}
+                        </>
+                      );
+                    })()}
                   </td>
 
                   <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
@@ -502,21 +537,21 @@ const due = new Date(py,pm-1,pd);
 
                   <td className="px-4 py-3 whitespace-nowrap">
                     {lead.lead_source
-                      ? <span className={`px-2 py-0.5 text-xs font-bold capitalize ${isDark ? 'bg-indigo-500/20 text-white border border-indigo-400/40' : 'bg-indigo-100 text-indigo-800 border border-indigo-300'}`}>
+                      ? <span className={`px-2 py-0.5 text-xs font-bold capitalize ${isDark ? 'bg-blue-500/20 text-white border border-blue-400/40' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
                           {lead.lead_source.replace('_', ' ')}
                         </span>
                       : <span className={`${t.textEmpty} text-sm`}>—</span>}
                   </td>
 
                   {customQuestions.map((q) => {
-                    const raw = customAnswers[q.id];
+                    const raw = (lead.custom_answers || {})[q.id];
                     const display = formatCustomAnswer(raw, q);
                     const has = raw !== null && raw !== undefined && raw !== '';
                     return (
                       <td key={q.id} className={`px-4 py-3 whitespace-nowrap text-sm border-l ${t.tableBorderCol}`}>
                         {has
                           ? q.type === 'checkbox'
-                            ? <span className={raw === true || raw === 'true' ? 'text-emerald-500' : 'text-red-400'}>{display}</span>
+                            ? <span className={raw === true || raw === 'true' ? 'text-emerald-500 font-bold' : 'text-red-400 font-bold'}>{display}</span>
                             : <span className={`px-2 py-0.5 text-xs font-medium ${isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}>{display}</span>
                           : <span className={t.textEmpty}>—</span>}
                       </td>
@@ -527,9 +562,9 @@ const due = new Date(py,pm-1,pd);
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <button
                         onClick={(e) => { e.stopPropagation(); onSelectLead(lead); }}
-                        className="text-indigo-500 hover:text-indigo-400 font-bold text-xs transition"
+                        className="text-blue-500 hover:text-blue-400 font-bold text-xs transition"
                       >
-                        View →
+                        View
                       </button>
                     </td>
                   )}
@@ -543,6 +578,158 @@ const due = new Date(py,pm-1,pd);
       {leads.length === 0 && (
         <div className={`py-16 text-center ${t.textMuted} text-sm`}>No leads to display</div>
       )}
+    </div>
+  );
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+
+  return (
+    <div className={`${t.tableBg} border ${t.tableBorderCol} overflow-hidden shadow-xl`}>
+
+      {/* Toolbar */}
+      <div className={`${t.toolbarBg} px-3 lg:px-4 py-2.5 lg:py-3 border-b ${t.toolbarBorder} flex items-center justify-between`}>
+        <div className="flex items-center gap-3 lg:gap-4">
+          {editMode ? (
+            <>
+              <label className={`flex items-center gap-2 ${t.textPrimary} cursor-pointer text-xs lg:text-sm font-medium`}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === leads.length && leads.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select All'}
+              </label>
+
+              {selectedIds.size > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowActionsMenu(!showActionsMenu)}
+                    disabled={bulkActionLoading}
+                    className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-[10px] lg:text-xs transition"
+                  >
+                    {bulkActionLoading ? 'Working...' : 'Actions'}
+                    <ChevronDown className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
+                  </button>
+
+                  {showActionsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
+                      <div className={`absolute left-0 top-full mt-1 w-52 lg:w-56 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-20 overflow-hidden`}>
+                        <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                          Change Status
+                        </div>
+                        <div className="max-h-40 overflow-y-auto">
+                          {statusOptions.map((s) => (
+                            <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
+                              className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition flex items-center gap-2`}>
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {teamMembers.length > 0 && (
+                          <>
+                            <div className={`border-t ${t.toolbarBorder}`} />
+                            <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                              Assign To
+                            </div>
+                            <div className="max-h-40 overflow-y-auto">
+                              {teamMembers.map((m) => (
+                                <button key={m.id} onClick={() => handleBulkAssign(m.name)}
+                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
+                                  {m.name}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {categories.length > 0 && (
+                          <>
+                            <div className={`border-t ${t.toolbarBorder}`} />
+                            <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                              Category
+                            </div>
+                            <div className="max-h-40 overflow-y-auto">
+                              {categories.map((c: any) => (
+                                <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
+                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
+                                  {c.label}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        <div className={`border-t ${t.toolbarBorder}`} />
+                        <button
+                          onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
+                          className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition flex items-center gap-2 font-bold"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className={`${t.textMuted} text-xs lg:text-sm`}>{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
+
+        <button
+          onClick={toggleEditMode}
+          className={`inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 font-bold text-[10px] lg:text-xs transition ${
+            editMode
+              ? `${isDark ? 'bg-slate-700 hover:bg-slate-600 border-slate-600' : 'bg-gray-200 hover:bg-gray-300 border-gray-300'} ${t.textPrimary} border`
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
+        </button>
+      </div>
+
+      {/* Delete confirm modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border max-w-sm w-full shadow-2xl`}>
+            <div className="p-5 lg:p-6">
+              <div className="flex items-center gap-3 mb-4 lg:mb-5">
+                <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className={`${t.textPrimary} font-bold`}>Delete {selectedIds.size} Lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
+                  <p className={`${t.textMuted} text-sm`}>This cannot be undone.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
+                  className={`flex-1 px-4 py-2.5 ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-100 hover:bg-gray-200'} ${t.textPrimary} font-bold text-sm transition`}>
+                  Cancel
+                </button>
+                <button onClick={handleBulkDelete} disabled={bulkActionLoading}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm transition">
+                  {bulkActionLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile scroll hint */}
+      <div className={`lg:hidden ${t.scrollHint} px-4 py-1.5 text-[10px] text-center border-b font-bold ${t.textMuted} uppercase tracking-wider`}>
+        Scroll for more columns
+      </div>
+
+      {/* Render both tables — CSS handles visibility */}
+      <MobileTable />
+      <DesktopTable />
     </div>
   );
 }

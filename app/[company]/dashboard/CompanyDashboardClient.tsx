@@ -98,14 +98,14 @@ function AiMessageBody({ content }: { content: string }) {
         if (/^[-*]\s/.test(line))
           return (
             <div key={j} className="flex gap-2">
-              <span className="text-indigo-400 shrink-0 mt-0.5" aria-hidden></span>
+              <span className="text-blue-400 shrink-0 mt-0.5" aria-hidden></span>
               <span>{renderInline(line.replace(/^[-*]\s/, ''))}</span>
             </div>
           );
         if (/^\d+\.\s/.test(line))
           return (
             <div key={j} className="flex gap-2">
-              <span className="text-indigo-400 shrink-0 font-bold">{line.match(/^\d+/)![0]}.</span>
+              <span className="text-blue-400 shrink-0 font-bold">{line.match(/^\d+/)![0]}.</span>
               <span>{renderInline(line.replace(/^\d+\.\s/, ''))}</span>
             </div>
           );
@@ -731,9 +731,9 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
 <section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8 w-full">
     {[
     { label: 'Leads',   value: globalStats?.total_leads ?? allLeads.length,
-      light: 'bg-indigo-50 border-indigo-100', dark: 'bg-blue-500/15 border-indigo-500/20',
-      labelLight: 'text-indigo-400', labelDark: 'text-indigo-300/60',
-      valueLight: 'text-indigo-900', valueDark: 'text-indigo-100' },
+      light: 'bg-blue-50 border-blue-100', dark: 'bg-blue-500/15 border-blue-500/20',
+      labelLight: 'text-blue-400', labelDark: 'text-blue-300/60',
+      valueLight: 'text-blue-900', valueDark: 'text-blue-100' },
     { label: 'Active',  value: globalStats?.active_jobs ?? allLeads.filter(l => !['completed','cancelled','lost'].includes(l.status)).length,
       light: 'bg-blue-50 border-blue-100', dark: 'bg-blue-500/10 border-blue-500/20',
       labelLight: 'text-blue-400', labelDark: 'text-blue-300/60',
@@ -819,7 +819,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
             isDark ? 'bg-[#0A0C14] border-white/5 text-white/40 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'
           }`}
         >
-          {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> : <Search className="w-4 h-4" />}
+          {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Search className="w-4 h-4" />}
         </button>
       )}
     </div>
@@ -968,7 +968,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
             value={filterCategory} 
             onChange={e => setFilterCategory(e.target.value)}
             className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-              isDark ? 'bg-white/5 border-white/10 text-white hover:border-indigo-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+              isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
             <option value="all">All Sectors</option>
@@ -1047,11 +1047,11 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
         <div className={`relative rounded-t-[3rem] p-8 pb-12 max-h-[90vh] overflow-y-auto shadow-[0_-24px_48px_rgba(0,0,0,0.6)] ${
         isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
       }`}>
-        <div className="w-16 h-1.5 bg-indigo-500/20 rounded-full mx-auto mb-10" />
+        <div className="w-16 h-1.5 bg-blue-500/20 rounded-full mx-auto mb-10" />
         
         <div className="space-y-10">
           <div className="space-y-4">
-            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Target Segment</label>
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Target Segment</label>
             <div className="grid grid-cols-1 gap-3">
               <select 
                 value={filterAssignee} 
@@ -1067,7 +1067,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
           </div>
 
           <div className="space-y-4">
-            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Timeline</label>
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Timeline</label>
             <div className="grid grid-cols-2 gap-4">
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                 className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
@@ -1080,7 +1080,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
         <div className="grid grid-cols-1 gap-3 mt-12">
           <button 
             onClick={() => setShowAdvancedFilters(false)} 
-            className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-blue-500 text-white shadow-2xl shadow-indigo-600/40"
+            className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-blue-500 text-white shadow-2xl shadow-blue-600/40"
           >
             Apply Filters
           </button>
@@ -1107,7 +1107,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
               isDark ? 'bg-white/[0.01] border-white/5' : 'bg-slate-50 border-slate-200'
             }`}>
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-500/15 mb-6" aria-hidden>
-                <Inbox className="w-10 h-10 text-indigo-500/40" />
+                <Inbox className="w-10 h-10 text-blue-500/40" />
               </div>
               <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No leads found</h2>
               <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">
@@ -1116,7 +1116,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
               {hasActiveFilters && (
                 <button 
                   onClick={clearFilters} 
-                  className="mt-8 px-6 py-3 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all"
+                  className="mt-8 px-6 py-3 rounded-xl bg-blue-500 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all"
                 >
                   Clear filters
                 </button>
@@ -1137,7 +1137,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
                 <section key={title} aria-label={`${title} leads`} className="relative">
                   <div className="flex items-center gap-4 mb-8 sticky top-0 z-10 py-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                       <h2 className={`text-[11px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
                         {title}
                       </h2>
@@ -1166,7 +1166,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
             <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <div>
-                 <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                 <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                     All Leads
                   </h2>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
