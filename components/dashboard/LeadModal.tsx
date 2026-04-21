@@ -470,7 +470,7 @@ return (
                             initial={{ opacity: 0, scale: 0.95, y: -4 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                            className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+                            className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
                           >
                             {!showDeleteConfirm ? (
                               <button onClick={() => setShowDeleteConfirm(true)}
@@ -534,13 +534,13 @@ return (
               </div>
 
               {!isStarter && (lead.scheduled_date ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold"
                   style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc' }}>
                   <Calendar className="w-3 h-3" />
                   {formatScheduledDate()}{formatScheduledTime() && ` · ${formatScheduledTime()}`}
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.35)' }}>
                   <Calendar className="w-3 h-3" />
                   Not scheduled
@@ -548,7 +548,7 @@ return (
               ))}
 
               {lead.assigned_to && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold"
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)' }}>
                   <User className="w-3 h-3" />
                   {lead.assigned_to}
@@ -652,7 +652,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-blue-400" /></span>
+                        <span className="w-5 h-5 rounded-lg bg-blue-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-blue-400" /></span>
                         Client Info
                         {relatedLeads.length > 0 && (
                           <motion.button
@@ -668,7 +668,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg
                       </h3>
                       <div className="relative">
                         <button onClick={() => setShowClientActions(!showClientActions)}
-className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition hover:bg-blue-100 rounded-none transition">                          Actions ▾
+className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition">                          Actions ▾
                         </button>
                         <AnimatePresence>
                           {showClientActions && (
@@ -678,7 +678,7 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
                                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                                className="absolute right-0 top-full mt-2 bg-white rounded-none shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+                                className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
                               >
                                 <button onClick={() => { window.location.href = `mailto:${lead.email}`; setShowClientActions(false); }}
                                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
@@ -722,45 +722,45 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
                               <input type="text" value={editedDetails.name}
                                 onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
                             </div>
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
                               <input type="tel" value={editedDetails.phone}
                                 onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
-                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400"maxLength={14} />
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"maxLength={14} />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
                             <input type="email" value={editedDetails.email}
                               onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
-                             className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
+                             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
                             <input type="text" value={editedDetails.address_line_1} placeholder="123 Main St"
                               onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
-                              className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
                               <input type="text" value={editedDetails.address_line_2}
                                 onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
                             </div>
                             <div>
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
                               <input type="text" value={editedDetails.city}
                                 onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
-                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400" />
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
                             <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-                              className="w-full px-3 py-2 border-2 border-blue-200 rounded-none text-sm focus:outline-none focus:border-blue-400">
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
                               {categories.map((cat: any) => (
                                 <option key={cat.value} value={cat.value}>{cat.label}</option>
                               ))}
@@ -768,7 +768,7 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
                           </div>
                           <div className="flex gap-2 pt-1">
                            <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
-                              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-none transition text-sm">
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition text-sm">
                               {saving ? 'Saving...' : 'Save Changes'}
                             </motion.button>
                             <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
@@ -795,7 +795,7 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
                             <div>
                               <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
                               {lead.category ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-none text-xs font-bold text-blue-600">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-xs font-bold text-blue-600">
                                   {formatCategory(lead.category)}
                                 </span>
                               ) : (
@@ -816,7 +816,7 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
                                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 onClick={btn.action}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition hover:bg-blue-50 hover:border-blue-200 transition group"
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition hover:bg-blue-50 hover:border-blue-200 transition-all group"
                               >
                                 <span style={{ color: btn.color }}>{btn.icon}</span>
                                 <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-600">{btn.label}</span>
@@ -838,7 +838,7 @@ className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-b
 className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden"                    >
                       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-none bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
+                          <span className="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
                           Customer's Message
                         </h3>
                       </div>
@@ -894,7 +894,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                                 <motion.button
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setLightbox({ photos: customerPhotos, index: 6, label: 'Customer Photos' })}
-                                  className="w-12 h-12 rounded-none border border-gray-200 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-center flex-shrink-0 transition"
+                                  className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-center flex-shrink-0 transition"
                                 >
                                   <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
                                 </motion.button>
@@ -938,11 +938,11 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                     <motion.div
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.15 }}
-                      className={`bg-white rounded-none border border-gray-100 shadow-sm overflow-hidden ${!isProject ? 'hidden' : ''}`}
+                      className={`bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden ${!isProject ? 'hidden' : ''}`}
                     >
                       <div className="px-5 py-4 border-b border-gray-50">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-none bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
+                          <span className="w-5 h-5 rounded-lg bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
                           Internal Notes
                         </h3>
                       </div>
@@ -975,7 +975,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => setIsEditingNotes(true)}
-                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-none hover:border-blue-300 hover:bg-blue-50/30 transition flex flex-col items-center gap-2"
+                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition flex flex-col items-center gap-2"
                             >
                               <NotebookPen className="w-6 h-6 text-gray-300" />
                               <span className="text-xs font-semibold text-gray-400 hover:text-blue-500">Add internal notes</span>
@@ -1037,7 +1037,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition"                >
                   <div className="px-5 py-4 border-b border-gray-50">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-none bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>
+                      <span className="w-5 h-5 rounded-lg bg-blue-50 flex items-center justify-center"><Activity className="w-3 h-3 text-blue-400" /></span>
                       Activity Log
                       {notesArray.length > 0 && (
                         <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-none">{notesArray.length}</span>
@@ -1048,7 +1048,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                     <div>
                       <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
                         placeholder="Add a note..." rows={3}
-                className="w-full px-4 py-3 text-sm rounded-none border-2 border-gray-100 focus:border-blue-300 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
+                className="w-full px-4 py-3 text-sm rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none resize-none bg-gray-50 focus:bg-white transition" />
                       <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={handleAddNote} disabled={saving || !newNote.trim()}
@@ -1069,9 +1069,9 @@ className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-wh
                                 key={idx}
                                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.04 }}
-                                className="flex gap-3 p-3 bg-gray-50 rounded-none"
+                                className="flex gap-3 p-3 bg-gray-50 rounded-xl"
                               >
-<div className="w-7 h-7 rounded-none bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0">                                  {user.charAt(0).toUpperCase()}
+<div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0">                                  {user.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5">
@@ -1100,7 +1100,7 @@ className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-wh
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={onClose}
-            className="flex-1 py-3 rounded-none border-2 border-gray-100 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition"
+className="flex-1 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition"
           >
             Close
           </motion.button>
@@ -1164,7 +1164,7 @@ className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-wh
                     key={rl.id}
                     initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.06 }}
-                    className="bg-white border border-gray-200 rounded-none p-4 space-y-2 shadow-sm"
+                    className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
