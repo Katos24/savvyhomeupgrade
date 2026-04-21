@@ -46,14 +46,16 @@ export function FormCard() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 bg-white/5 shrink-0">
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-            <Settings2 size={13} className="text-indigo-400" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+            <Settings2 size={13} className="text-blue-400" />
           </div>
           <p className="text-[11px] sm:text-[12px] font-black text-white uppercase tracking-tight">Intake Builder</p>
         </div>
-        <div className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-          <span className="text-[8px] sm:text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Live Preview</span>
-        </div>
+       <div className="hidden sm:flex px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+  <span className="text-[8px] sm:text-[9px] font-black text-blue-400 uppercase tracking-tighter">
+    Live Preview
+  </span>
+</div>
       </div>
 
       {/* MOBILE: Compact single-column layout */}
@@ -71,85 +73,85 @@ export function FormCard() {
             ].map((field, i) => (
               <div key={i} className="flex items-center justify-between group cursor-pointer" onClick={() => field.setter(!field.state)}>
                 <div className="flex items-center gap-2.5 sm:gap-3">
-                  <div className={`p-1.5 sm:p-2 rounded-lg ${field.state ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-600'}`}>
+                  <div className={`p-1.5 sm:p-2 rounded-lg ${field.state ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-600'}`}>
                     {field.icon}
                   </div>
                   <span className={`text-[11px] sm:text-xs font-bold ${field.state ? 'text-slate-200' : 'text-slate-500'}`}>{field.label}</span>
                 </div>
-                <div className={`w-9 h-5 rounded-full relative transition-colors duration-300 ${field.state ? 'bg-indigo-600' : 'bg-slate-700'}`}>
+                <div className={`w-9 h-5 rounded-full relative transition-colors duration-300 ${field.state ? 'bg-blue-600' : 'bg-slate-700'}`}>
                   <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${field.state ? 'left-5' : 'left-1'}`} />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="pt-3 sm:pt-4 border-t border-white/5">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2.5 sm:mb-3">Custom Questions</p>
-            <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-2.5 sm:p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-white italic">&quot;How old is your roof?&quot;</span>
-                <span className="text-[7px] font-black bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">SELECT</span>
-              </div>
-              <div className="flex gap-1.5">
-                {['0-5yrs', '5-15yrs', '15+'].map(opt => (
-                  <div key={opt} className="px-2 py-1 bg-slate-800 rounded-md text-[8px] font-bold text-slate-400 border border-white/5">{opt}</div>
-                ))}
-              </div>
-            </div>
-            <button className="w-full mt-2.5 sm:mt-3 py-2 border border-dashed border-slate-700 rounded-xl text-[9px] font-black text-slate-500 flex items-center justify-center gap-2">
-              <Plus size={10} /> Add Question
-            </button>
-          </div>
+     <div className="pt-3 sm:pt-4 border-t border-white/5">
+  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2.5 sm:mb-3">
+    Custom Questions
+  </p>
+  <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-2.5 sm:p-3 space-y-2">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] font-bold text-white italic">
+        &quot;How old is your roof?&quot;
+      </span>
+      <span className="text-[7px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
+        SELECT
+      </span>
+    </div>
+    {/* flex-row ensures same line, gap-1.5 for spacing */}
+    <div className="flex flex-row gap-1.5">
+      {['0-5yrs', '5-15yrs', '15+'].map((opt) => (
+        <div 
+          key={opt} 
+          className="flex-1 py-1 bg-slate-800 rounded-md text-[8px] font-bold text-slate-400 border border-white/5 text-center"
+        >
+          {opt}
+        </div>
+      ))}
+    </div>
+  </div>
+  <button className="w-full mt-2.5 sm:mt-3 py-2 border border-dashed border-slate-700 rounded-xl text-[9px] font-black text-slate-500 flex items-center justify-center gap-2 hover:bg-white/5 transition-colors">
+    <Plus size={10} /> Add Question
+  </button>
+</div>
         </div>
 
-        {/* RIGHT: PHONE PREVIEW — hidden on mobile carousel, shown on desktop */}
-        <div className="hidden md:flex p-6 bg-[#020617] items-center justify-center">
-          <div className="w-full max-w-[240px] bg-white rounded-[2.5rem] shadow-2xl border-[6px] border-slate-800 overflow-hidden text-left flex flex-col h-[340px]">
-            <div className="h-4 bg-slate-800 w-1/3 mx-auto rounded-b-xl mb-1 shrink-0" />
-            
-            <div className="p-4 flex-1 space-y-4 overflow-y-auto no-scrollbar">
-              <div className="flex justify-between items-start">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-black text-slate-900 leading-tight">Details</p>
-                </div>
-                <Smartphone size={14} className="text-slate-200" />
-              </div>
+       {/* RIGHT: PHONE PREVIEW */}
+<div className="hidden md:flex p-6 bg-[#020617] items-center justify-center">
+  <div className="w-full max-w-[230px] bg-white rounded-[2.5rem] shadow-2xl border-[6px] border-slate-800 overflow-hidden flex flex-col h-[320px] text-left">
+    <div className="h-4 bg-slate-800 w-1/3 mx-auto rounded-b-xl mb-1 shrink-0" />
+    
+    <div className="p-4 flex-1 space-y-3 overflow-y-auto no-scrollbar">
+      <div className="flex justify-between items-center mb-1">
+        <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Project Intake</p>
+        <Smartphone size={12} className="text-slate-300" />
+      </div>
 
-              {addressEnabled && (
-                <div className="space-y-1">
-                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Address</div>
-                  <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center gap-2">
-                    <MapPin size={10} className="text-slate-300" />
-                    <span className="text-[9px] text-slate-400 font-medium">123 Main St...</span>
-                  </div>
-                </div>
-              )}
-
-              {filesEnabled && (
-                <div className="space-y-1">
-                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Job Photos</div>
-                  <div className="w-full h-16 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50 flex flex-col items-center justify-center gap-1">
-                    <Upload size={14} className="text-slate-200" />
-                    <span className="text-[8px] font-bold text-slate-300">Tap to Upload</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Roof Age?</div>
-                <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-medium">Select...</span>
-                  <ChevronRight size={10} className="text-slate-300" />
-                </div>
-              </div>
-
-              <div className="w-full py-3 rounded-xl bg-indigo-600 text-[10px] font-black text-white text-center shadow-lg shadow-indigo-200 mt-2">
-                Submit Request
-              </div>
-            </div>
-          </div>
+      {addressEnabled && (
+        <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center gap-2">
+          <MapPin size={10} className="text-blue-500" />
+          <span className="text-[9px] text-slate-400 font-medium">Property Address...</span>
         </div>
+      )}
 
+      {filesEnabled && (
+        <div className="w-full h-14 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50 flex flex-col items-center justify-center gap-1">
+          <Upload size={12} className="text-slate-300" />
+          <span className="text-[8px] font-bold text-slate-400">Add Photos</span>
+        </div>
+      )}
+
+      <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center justify-between">
+        <span className="text-[9px] text-slate-400 font-medium">Roof Age?</span>
+        <ChevronRight size={10} className="text-slate-300" />
+      </div>
+
+      <div className="w-full py-2.5 rounded-xl bg-blue-600 text-[9px] font-black text-white text-center shadow-md mt-2 uppercase tracking-widest">
+        Submit
+      </div>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );
@@ -208,8 +210,8 @@ export function HeroStoryStrip() {
       title: 'Auto Capture',
       desc: 'Leads land on your board instantly via scan.',
       card: <CaptureCard />,
-      popColor: 'border-indigo-500/20',
-      glow: 'from-indigo-600/20'
+      popColor: 'border-blue-500/20',
+      glow: 'from-blue-600/20'
     },
     {
       number: '4',
