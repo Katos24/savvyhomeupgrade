@@ -877,9 +877,9 @@ export function CyclingPhoneMockup({
 
     // Animate phases for all screens
     // Phase 1: action animation after 1.2s
-    const t1 = setTimeout(() => setPhase(1), 1200);
+const t1 = setTimeout(() => setPhase(1), 400);
     // Phase 2: confirmation/settled state after 2s  
-    const t2 = setTimeout(() => setPhase(2), 2000);
+const t2 = setTimeout(() => setPhase(2), 900);
     phaseTimerRef.current.push(t1, t2);
 
     return () => clearPhaseTimers();
@@ -900,7 +900,7 @@ export function CyclingPhoneMockup({
       }, 300);
     };
 
-    timerRef.current = setTimeout(cycle, 4000);
+timerRef.current = setTimeout(cycle, 2200);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [visible, internalIdx, activeTab]);
 
