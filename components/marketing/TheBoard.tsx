@@ -220,39 +220,65 @@ export default function TheBoard() {
             transition: 'all 1s cubic-bezier(0.16,1,0.3,1)' 
           }}
         >
-          {/* LEFT CONTENT */}
-          <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-1 px-2">
-            <div className="inline-flex items-center gap-2 mb-5 sm:mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <Database size={12} className="text-emerald-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Total Project Control</span>
-            </div>
-            
-            <h2 className="font-black tracking-tighter text-white mb-6 sm:mb-8 text-3xl sm:text-5xl lg:text-7xl leading-[0.9]">
-              The Operating System{' '}
-              <br className="hidden sm:block" />
-              <span className="text-emerald-500 font-serif italic">for contractors.</span>
-            </h2>
 
-            <div className="space-y-6 mb-8 sm:mb-10 max-w-md">
-              <div className="flex items-start gap-4 text-left">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0 border border-emerald-500/20">
-                  <Zap size={18} fill="currentColor" />
-                </div>
-                <div>
-                  <h4 className="text-white font-bold text-base mb-1">Mass Action Workflow</h4>
-                  <p className="text-slate-400 text-sm leading-relaxed">Update status, assign crews, or send reminders to 50 leads at once.</p>
+          {/* ─── LEFT CONTENT ─── */}
+          <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left px-2 order-1">
+
+            {/* HEADER */}
+            <div className="w-full">
+              
+              {/* BADGE */}
+              <div className="inline-flex items-center gap-2 mb-5 sm:mb-6 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <Database size={12} className="text-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">
+                  Total Project Control
+                </span>
+              </div>
+
+              {/* HEADLINE */}
+              <h2 className="font-black tracking-tighter text-white mb-6 sm:mb-8 text-3xl sm:text-5xl lg:text-7xl leading-[0.9]">
+                The Operating System{' '}
+                <br className="hidden sm:block" />
+                <span className="text-emerald-500 font-serif italic">
+                  for contractors.
+                </span>
+              </h2>
+
+              {/* FEATURE */}
+              <div className="space-y-6 mb-8 sm:mb-10 max-w-md">
+                <div className="flex items-start gap-4 text-left">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0 border border-emerald-500/20">
+                    <Zap size={18} fill="currentColor" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold text-base mb-1">
+                      Mass Action Workflow
+                    </h4>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                      Update status, assign crews, or change categories for 50 leads at once.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <Link href="/signup" className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-xl sm:rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-8 py-4 text-base shadow-xl w-full sm:w-auto">
-              Start Free Trial
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            {/* CTA (FIXED POSITIONING) */}
+            <div className="order-3 lg:order-none w-full flex justify-center lg:justify-start mt-6 lg:mt-0">
+              <Link 
+                href="/signup" 
+                className="group inline-flex items-center justify-center gap-3 text-white font-black rounded-xl sm:rounded-2xl transition-all hover:scale-[1.05] active:scale-[0.98] bg-[#1a6645] px-8 py-4 text-base shadow-xl w-full sm:w-auto"
+              >
+                Start Free Trial
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
           </div>
 
-          {/* RIGHT VISUAL */}
-          <div className="lg:col-span-7 w-full relative order-1 lg:order-2">
+          {/* ─── RIGHT VISUAL (BOARD) ─── */}
+          <div className="lg:col-span-7 w-full relative order-2">
+
+            {/* VIEW SWITCH */}
             <div className="flex items-center gap-1 mb-3 sm:mb-4 p-1 sm:p-1.5 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-md">
               {VIEWS.map((v) => {
                 const isActive = current === v.key;
@@ -260,7 +286,11 @@ export default function TheBoard() {
                   <button 
                     key={v.key} 
                     onClick={() => setCurrent(v.key)} 
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black transition-all uppercase tracking-widest ${isActive ? 'bg-white text-[#0F1F3D] shadow-xl' : 'text-slate-400 hover:text-white'}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black transition-all uppercase tracking-widest ${
+                      isActive
+                        ? 'bg-white text-[#0F1F3D] shadow-xl'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
                   >
                     {v.icon}
                     <span className="hidden xs:inline sm:inline">{v.label}</span>
@@ -269,35 +299,47 @@ export default function TheBoard() {
               })}
             </div>
 
+            {/* BOARD */}
             <div className="relative group">
               <div className="relative rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl bg-[#090d12]">
                 <div className="bg-white">
+                  
+                  {/* HEADER */}
                   <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
                         <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-500 rounded-sm rotate-45" />
                       </div>
                       <div className="text-left overflow-hidden">
-                        <div className="text-[11px] sm:text-[12px] font-black text-slate-900 truncate">Ridge Line Dashboard</div>
-                        <div className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">Control Center</div>
+                        <div className="text-[11px] sm:text-[12px] font-black text-slate-900 truncate">
+                          Ridge Line Dashboard
+                        </div>
+                        <div className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">
+                          Control Center
+                        </div>
                       </div>
                     </div>
+
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 flex items-center justify-center sm:hidden">
-                       <Plus size={14} className="text-slate-900" />
+                      <Plus size={14} className="text-slate-900" />
                     </div>
                   </div>
 
+                  {/* CONTENT */}
                   <div className="px-3 sm:px-6 pt-3 sm:pt-6 h-[320px] sm:h-[460px] overflow-hidden relative text-left">
                     {current === 'table'    && <TablePanel />}
                     {current === 'cards'    && <CardsPanel />}
                     {current === 'calendar' && <CalendarPanel />}
                     {current === 'outbox'   && <OutboxPanel />}
+
                     <div className="absolute bottom-0 inset-x-0 h-12 sm:h-16 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent" />
                   </div>
+
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </section>
