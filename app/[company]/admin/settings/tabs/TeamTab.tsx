@@ -140,7 +140,7 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
         <p className="mt-4 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Syncing Team</p>
       </div>
     );
@@ -163,8 +163,8 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
         <div className="space-y-2">
             <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-indigo-500" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500">Access Control</span>
+                <Sparkles className="w-4 h-4 text-blue-500" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500">Access Control</span>
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Your Team</h1>
             <p className="text-slate-400 font-bold text-sm">Manage seats for <span className="text-slate-900">{company.name}</span>.</p>
@@ -172,18 +172,18 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
 
         <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                 <input 
                     type="text"
                     placeholder="Search members..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-64 pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                    className="w-full sm:w-64 pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                 />
             </div>
             <button
                 onClick={() => setShowInviteModal(true)}
-                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-black shadow-xl shadow-indigo-100 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-black shadow-xl shadow-blue-100 transition-all active:scale-95"
             >
                 <UserPlus className="w-4 h-4" />
                 Invite
@@ -211,23 +211,23 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
           const isOwner = member.role === 'owner';
 
           return (
-            <div key={member.id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-7 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-500">
+            <div key={member.id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-7 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-500">
               <div className="flex justify-between items-start mb-8">
                 <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-xl font-black ${
-                  isOwner ? 'bg-amber-100 text-amber-600' : 'bg-indigo-50 text-indigo-600'
+                  isOwner ? 'bg-amber-100 text-amber-600' : 'bg-blue-50 text-blue-600'
                 }`}>
                   {member.name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                         isOwner ? 'bg-amber-50 border-amber-100 text-amber-600' : 
-                        member.role === 'admin' ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 
+                        member.role === 'admin' ? 'bg-blue-50 border-blue-100 text-blue-600' : 
                         'bg-slate-50 border-slate-100 text-slate-500'
                     }`}>
                         {member.role}
                     </span>
                     {isYou && (
-                        <div className="flex items-center gap-1.5 text-[8px] font-black text-indigo-400 bg-indigo-50/50 px-2 py-1 rounded-lg">
+                        <div className="flex items-center gap-1.5 text-[8px] font-black text-blue-400 bg-blue-50/50 px-2 py-1 rounded-lg">
                             <Fingerprint className="w-3 h-3" /> YOU
                         </div>
                     )}
@@ -244,7 +244,7 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
                             <select 
                                 value={member.role}
                                 onChange={(e) => handleUpdateRole(member.user_id, e.target.value as any)}
-                                className="w-full appearance-none bg-slate-50 border-none text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl pl-4 pr-10 py-3 cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-all outline-none"
+                                className="w-full appearance-none bg-slate-50 border-none text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl pl-4 pr-10 py-3 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-all outline-none"
                             >
                                 <option value="member">Member</option>
                                 <option value="admin">Admin</option>
@@ -268,9 +268,9 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
 
         <button 
             onClick={() => setShowInviteModal(true)}
-            className="flex flex-col items-center justify-center border-4 border-dashed border-slate-50 rounded-[2.5rem] p-10 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all group min-h-[280px]"
+            className="flex flex-col items-center justify-center border-4 border-dashed border-slate-50 rounded-[2.5rem] p-10 hover:border-blue-100 hover:bg-blue-50/20 transition-all group min-h-[280px]"
         >
-            <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 group-hover:scale-110">
+            <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 group-hover:scale-110">
                 <UserPlus className="w-6 h-6 text-slate-400 group-hover:text-white" />
             </div>
             <p className="font-black text-slate-900 text-sm uppercase tracking-widest">New Seat</p>
@@ -292,15 +292,15 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
                 <div className="relative group">
-                    <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                    <input autoFocus type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Michael Scott" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold" />
+                    <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                    <input autoFocus type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Michael Scott" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Work Email</label>
                 <div className={`relative group ${emailError ? 'animate-shake' : ''}`}>
-                    <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${emailError ? 'text-red-500' : 'text-slate-300 group-focus-within:text-indigo-500'}`} />
+                    <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${emailError ? 'text-red-500' : 'text-slate-300 group-focus-within:text-blue-500'}`} />
                     <input 
                       type="email" 
                       value={formData.email} 
@@ -309,13 +309,13 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
                         if(emailError) setEmailError(false);
                       }} 
                       placeholder="name@company.com" 
-                      className={`w-full pl-12 pr-5 py-4 border-none rounded-2xl focus:ring-4 outline-none transition-all font-bold ${emailError ? 'bg-red-50 focus:ring-red-500/10' : 'bg-slate-50 focus:ring-indigo-500/10'}`} 
+                      className={`w-full pl-12 pr-5 py-4 border-none rounded-2xl focus:ring-4 outline-none transition-all font-bold ${emailError ? 'bg-red-50 focus:ring-red-500/10' : 'bg-slate-50 focus:ring-blue-500/10'}`} 
                     />
                 </div>
               </div>
 
               <div className="pt-6">
-                <button onClick={handleSendInvite} disabled={saving} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50">
+                <button onClick={handleSendInvite} disabled={saving} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50">
                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Access Link <ArrowRight className="w-4 h-4" /></>}
                 </button>
               </div>

@@ -22,8 +22,8 @@ Quote Total: {{quote_total}}
 Please review the attached quote and let us know if you have any questions.
 
 Best regards,
-{{company_name}}{{#company_phone}}
-{{company_phone}}{{/company_phone}}`,
+{{company_name}}
+{{company_phone}}`,
     },
     schedule: {
       subject: 'Appointment Scheduled - {{company_name}}',
@@ -38,8 +38,9 @@ Address: {{customer_address}}{{/customer_address}}
 We look forward to serving you!
 
 Best regards,
-{{company_name}}{{#company_phone}}
-{{company_phone}}{{/company_phone}}`,
+{{company_name}}
+{{#company_phone}}
+`,
     },
     payment: {
       subject: 'Payment Reminder - {{company_name}}',
@@ -53,8 +54,8 @@ Due Date: {{due_date}}{{/due_date}}
 Please contact us if you have any questions.
 
 Best regards,
-{{company_name}}{{#company_phone}}
-{{company_phone}}{{/company_phone}}`,
+{{company_name}}
+{{company_phone}}`,
     },
   };
 }

@@ -261,7 +261,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
           <div className="max-w-4xl mx-auto flex items-center gap-3">
             <button
               onClick={closeTab}
-              className="flex items-center gap-1.5 text-indigo-400 font-black text-xs uppercase tracking-widest hover:text-indigo-300 transition"
+              className="flex items-center gap-1.5 text-blue-400 font-black text-xs uppercase tracking-widest hover:text-blue-300 transition"
             >
               <ArrowLeft className="w-4 h-4" /> Settings
             </button>
@@ -282,10 +282,10 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
   }
 
   return (
-    <div className="min-h-screen bg-[#0F172A] pb-20 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#0F172A] pb-20 selection:bg-blue-500/30">
       <header className="bg-slate-900/40 backdrop-blur-md border-b border-white/5 px-4 py-4 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <h1 className="text-xs sm:text-sm font-black text-white uppercase tracking-[0.15em] sm:tracking-[0.2em] italic underline decoration-indigo-500 decoration-2 underline-offset-4 truncate">
+          <h1 className="text-xs sm:text-sm font-black text-white uppercase tracking-[0.15em] sm:tracking-[0.2em] italic underline decoration-blue-500 decoration-2 underline-offset-4 truncate">
             Lead2Project
           </h1>
           <a href={`/${company.slug}/dashboard`} className="text-xs font-bold text-slate-400 flex items-center gap-1 hover:text-white transition">
@@ -318,7 +318,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
           }
         </div>
         {isEditing && (
-          <label className="absolute -bottom-1 -right-1 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
+          <label className="absolute -bottom-1 -right-1 p-2 bg-blue-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
             <Camera className="w-3.5 h-3.5" />
             <input type="file" className="hidden" accept="image/*" onChange={(e) => {
               const file = e.target.files?.[0];
@@ -340,7 +340,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
           : <input
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-indigo-200 focus:border-indigo-500 w-full bg-transparent leading-tight pb-1"
+              className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 w-full bg-transparent leading-tight pb-1"
               placeholder="Company Name"
             />
         }
@@ -357,7 +357,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
       {!isEditing && (
         <button
           onClick={() => setIsEditing(true)}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition shadow-md"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition shadow-md"
         >
           <Pencil className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Edit</span>
@@ -404,7 +404,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Support Email</label>
         {isEditing
           ? <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition" />
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition" />
           : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
               <Mail className="w-4 h-4 text-slate-400 shrink-0" />
               <span className="truncate">{formData.email || 'Not set'}</span>
@@ -420,7 +420,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
                 const input = e.target.value.replace(/\D/g, '');
                 if (input.length <= 10) setFormData({ ...formData, phone: formatPhone(input) });
               }}
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition font-medium"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition font-medium"
             />
           : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
               <Phone className="w-4 h-4 text-slate-400 shrink-0" />
@@ -434,14 +434,14 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Website</label>
     {isEditing
       ? <input value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })}
-          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-500/10 transition"
+          className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition"
           placeholder="https://yourwebsite.com"
         />
       : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
           <Globe className="w-4 h-4 text-slate-400 shrink-0" />
           <span className="truncate flex-1">{formData.website || 'Not set'}</span>
           {formData.website && (
-            <a href={formData.website} target="_blank" className="text-indigo-500 hover:text-indigo-600 shrink-0">
+            <a href={formData.website} target="_blank" className="text-blue-500 hover:text-blue-600 shrink-0">
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
@@ -478,7 +478,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
           <X className="w-4 h-4" /> Cancel
         </button>
         <button onClick={handleSaveIdentity} disabled={loading}
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-200 transition active:scale-[0.98]">
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition active:scale-[0.98]">
           <Save className="w-4 h-4" /> {loading ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
@@ -507,7 +507,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
   rel="noopener noreferrer"
   className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 border border-slate-100 hover:border-slate-200 rounded-2xl transition-all active:scale-95"
 >
-  <ExternalLink className="w-5 h-5 text-slate-500 group-hover:text-indigo-500 transition-colors" />
+  <ExternalLink className="w-5 h-5 text-slate-500 group-hover:text-blue-500 transition-colors" />
   <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
     View Form
   </span>
@@ -559,7 +559,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
                 });
               }}
               className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition ${
-                digestEnabled ? 'bg-rose-500 hover:bg-rose-600' : 'bg-indigo-600 hover:bg-indigo-700'
+                digestEnabled ? 'bg-rose-500 hover:bg-rose-600' : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
               {digestEnabled ? 'Turn Off' : 'Turn On'}
@@ -591,7 +591,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
               { label: "Follow-up reminders", desc: "Any follow-up tasks due today or overdue." },
             ].map(({ label, desc }) => (
               <div key={label} className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
                 <div>
                   <p className="text-xs font-black text-slate-800">{label}</p>
                   <p className="text-[11px] text-slate-400 font-medium">{desc}</p>
@@ -612,12 +612,12 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         onClick={() => setShowDigestConfirm(true)}
         className={`group flex flex-col items-center justify-center gap-2 p-4 border rounded-2xl transition-all active:scale-95 w-full ${
           digestEnabled
-            ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
             : 'bg-slate-50 border-slate-100 hover:bg-slate-100 hover:border-slate-200'
         }`}
       >
         <div
-          className={`w-10 h-5 rounded-full relative transition-colors duration-200 flex-shrink-0 ${digestEnabled ? 'bg-indigo-500' : 'bg-slate-300'}`}
+          className={`w-10 h-5 rounded-full relative transition-colors duration-200 flex-shrink-0 ${digestEnabled ? 'bg-blue-500' : 'bg-slate-300'}`}
           style={{ minWidth: '40px' }}
         >
           <div
@@ -625,8 +625,8 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
             style={{ left: digestEnabled ? '22px' : '2px' }}
           />
         </div>
-        <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
-      <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${digestEnabled ? 'text-indigo-600' : 'text-slate-500'}`}>
+        <Mail className={`w-5 h-5 transition-colors ${digestEnabled ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+      <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${digestEnabled ? 'text-blue-600' : 'text-slate-500'}`}>
   {digestEnabled ? 'Digest On' : 'Digest Off'}
   <div
     onClick={e => { e.stopPropagation(); setShowDigestInfo(true); }}
