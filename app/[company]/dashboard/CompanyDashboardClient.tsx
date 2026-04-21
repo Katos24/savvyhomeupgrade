@@ -20,6 +20,8 @@ import { can, type PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
 import { Sun, Moon } from 'lucide-react';
+import DashboardTour, { useShouldShowTour } from '@/components/dashboard/DashboardTour';
+
 
 
 // ---------------------------------------------------------------------------
@@ -179,6 +181,17 @@ const [isSearching, setIsSearching] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // ── Tour ──
+  const [tourActive, setTourActive] = useState(false);
+  const showTour = useShouldShowTour(company.slug, company.onboarding_completed);
+
+  useEffect(() => {
+    if (!isInitialLoad && showTour) {
+      const timer = setTimeout(() => setTourActive(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad, showTour]);
 
   const statusOptions: StatusOption[] = company.status_options?.length
     ? company.status_options
@@ -541,16 +554,7 @@ const categories = useMemo(() =>
 const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
     || filterPayment !== 'all' || timeFilter !== 'all' || startDate || endDate || searchQuery;
 
-  // Setup checklist
-  const setupItems = [
-    !!company.logo_url,
-    (company.form_categories?.length || 0) >= 3,
-    !!company.phone,
-    !!company.website,
-  ];
-  const setupDoneCount = setupItems.filter(Boolean).length;
-  const setupComplete = setupDoneCount === setupItems.length;
-
+ 
   // -------------------------------------------------------------------------
   // Loading screen (first load only)
   // -------------------------------------------------------------------------
@@ -635,44 +639,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
 />
       </div>
 
-      {/* Onboarding banner */}
-{!setupComplete && (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-10">
-    <div className="rounded-2xl border border-blue-500/20 px-5 py-4 flex items-center gap-4"
-      style={{ background: 'rgba(59,130,246,0.08)' }}
-    >
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-black text-white leading-snug">
-          Your booking link isn't live yet —{' '}
-          <span className="text-blue-300">customers can't find you.</span>
-        </p>
-        <div className="flex items-center gap-3 mt-2.5">
-          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${(setupDoneCount / setupItems.length) * 100}%`,
-                background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
-              }}
-            />
-          </div>
-          <p className="text-[11px] font-black text-white/30 shrink-0 tabular-nums">
-            {setupDoneCount}/{setupItems.length} done
-          </p>
-        </div>
-      </div>
-            <a
-                      
-              href={`/${company.slug}/admin/settings`}
-              className="shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white rounded-xl transition hover:opacity-90"
-        style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}
-            >
-               Complete Setup
-      </a>
-    </div>
-  </div>
-)}
-
+     
 
   {/* --- MAIN --- */}
 
@@ -688,6 +655,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
       {/* Brand & Menu */}
       <div className="flex items-center gap-4 min-w-0">
         <button
+        data-tour="sidebar-toggle" 
           onClick={() => setSidebarOpen(true)}
           className={`p-2.5 rounded-xl transition-colors ${
             isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
@@ -716,6 +684,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
 <div className="flex items-center gap-2 shrink-0">
   {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
   <button
+    data-tour="create-lead"  
     onClick={() => setIsCreateModalOpen(true)}
     className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
   >
@@ -825,7 +794,9 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
     </div>
 
     {/* View Switcher */}
-    <div className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+    <div 
+    data-tour="view-switcher" 
+    className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
       {[
         { id: 'cards', icon: LayoutGrid },
         { id: 'table', icon: List },
@@ -847,6 +818,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
 
     {/* Theme Toggle */}
     <button
+      data-tour="theme-toggle"  
       onClick={() => setIsDark(v => !v)}
       className={`p-2.5 rounded-xl border transition-all active:scale-95 shrink-0 ${
         isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
@@ -857,7 +829,9 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
   </div>
 
   {/* Row 2: Filter Pills */}
-  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+  <div 
+  data-tour="filters" 
+  className="flex items-center gap-2 overflow-x-auto no-scrollbar">
     
     {/* Advanced Filter Launcher */}
     <button
@@ -1407,6 +1381,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
             )}
 
             <button
+              data-tour="ai-chat"
               onClick={() => setShowAiChat(v => !v)}
               aria-label={showAiChat ? 'Close AI assistant' : 'Open AI assistant'}
               aria-expanded={showAiChat}
@@ -1435,6 +1410,21 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
             </button>
           </div>
         )
+      )}
+
+      {/* ── Dashboard Tour ── */}
+      {tourActive && (
+        <DashboardTour
+          companyName={company.name}
+          companySlug={company.slug}
+          userName={currentUser?.name}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(v => !v)}
+          onToggleView={(view) => setCurrentView(view)}
+          onOpenSidebar={() => setSidebarOpen(true)}
+          onOpenCreateModal={() => setIsCreateModalOpen(true)}
+          onComplete={() => setTourActive(false)}
+        />
       )}
     </div>
   );

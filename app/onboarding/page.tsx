@@ -583,7 +583,7 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
 
             {/* Go to dashboard */}
             <a
-              href={`/${company.slug}/dashboard`}
+  href={`/${company.slug}/dashboard?onboarded=1`}
               className="w-full py-5 rounded-2xl text-white font-black text-base flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl shadow-blue-600/30"
               style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
             >

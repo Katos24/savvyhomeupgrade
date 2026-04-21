@@ -16,7 +16,7 @@ const plans = [
       'Custom Booking Link (No Website Needed)',
       'Branded QR Code for Trucks & Signs',
       'Unlimited Lead Capture & Photo Uploads',
-      'Visual Lead Board (Kanban & Table)',
+      'Visual Lead Board (Card View & Table)',
       'Job Scheduling & Quote Builder',
       'Custom Pipeline Stages & Task Lists',
       'CSV Export for Bookkeeping',
@@ -28,7 +28,7 @@ const plans = [
     price: 79.99,
     desc: 'The complete AI-powered office for contractors who want to scale.',
     highlight: true,
-    cta: 'Go Pro — 14 Days Free',
+    cta: 'Go Pro | 14 Days Free',
     ctaShort: 'Try Free',
     href: '/signup?plan=pro',
     features: [

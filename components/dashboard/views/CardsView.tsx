@@ -63,8 +63,9 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
           : 'TBD';
 
         return (
-         <motion.div
+        <motion.div
   key={lead.id}
+  data-tour={leads.indexOf(lead) === 0 ? 'lead-card' : undefined}
   variants={cardVariants}
   whileHover={{ y: -2, transition: { duration: 0.2 } }}
   onClick={() => onSelectLead(lead)}
