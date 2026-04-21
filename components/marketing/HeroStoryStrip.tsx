@@ -5,7 +5,7 @@ import {
   FileText, Plus, CheckCircle2, QrCode as QrIcon, 
   ChevronRight, ImageIcon, MapPin, Calendar, Upload, X, Settings2, Smartphone
 } from 'lucide-react';
-import { DashboardLaptopMockup } from './DashboardLaptopMockup';
+import { LeadModalMockup } from './LeadModalMockup';
 
 // ─── STEP 1: QR CARD ─────────────────────────────────────────────────────────
 
@@ -34,124 +34,92 @@ function QRCard() {
   );
 }
 
-// ─── STEP 2: SMART INTAKE ─────────────────────────────────────────────────────
+// ─── STEP 2: CUSTOMER FORM ────────────────────────────────────────────────────
 
 export function FormCard() {
-  const [addressEnabled, setAddressEnabled] = useState(true);
-  const [filesEnabled, setFilesEnabled] = useState(true);
-
   return (
-    <div className="w-full rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/10 bg-[#0f172a] shadow-2xl flex flex-col">
+    <div className="w-full rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/10 bg-white shadow-2xl flex flex-col text-left">
       
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 bg-white/5 shrink-0">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-            <Settings2 size={13} className="text-blue-400" />
-          </div>
-          <p className="text-[11px] sm:text-[12px] font-black text-white uppercase tracking-tight">Intake Builder</p>
+      {/* Branded header */}
+      <div className="px-3 sm:px-5 py-2.5 sm:py-3 flex items-center gap-2.5"
+        style={{ background: 'linear-gradient(135deg, #1a6645, #15803d)' }}>
+        <img src="/images/ridgelinelogo.webp" alt="Logo" className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-contain bg-white/20 p-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] sm:text-[12px] font-black text-white leading-tight truncate">Ridge Line Roofing</p>
+          <p className="text-[7px] sm:text-[8px] text-white/50 font-bold">Submit Your Request</p>
         </div>
-       <div className="hidden sm:flex px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
-  <span className="text-[8px] sm:text-[9px] font-black text-blue-400 uppercase tracking-tighter">
-    Live Preview
-  </span>
-</div>
       </div>
 
-      {/* MOBILE: Compact single-column layout */}
-      {/* DESKTOP: Side-by-side settings + phone preview */}
-      <div className="flex-1 overflow-hidden flex flex-col md:grid md:grid-cols-2">
-        
-        {/* LEFT: SETTINGS */}
-        <div className="p-4 sm:p-6 border-b md:border-b-0 md:border-r border-white/5 space-y-4 sm:space-y-5 bg-slate-900/50">
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Core Fields</p>
-          
-          <div className="space-y-2.5 sm:space-y-3">
-            {[
-              { label: 'Address Lookup', icon: <MapPin size={14} />, state: addressEnabled, setter: setAddressEnabled },
-              { label: 'Photo/Video Upload', icon: <ImageIcon size={14} />, state: filesEnabled, setter: setFilesEnabled },
-            ].map((field, i) => (
-              <div key={i} className="flex items-center justify-between group cursor-pointer" onClick={() => field.setter(!field.state)}>
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  <div className={`p-1.5 sm:p-2 rounded-lg ${field.state ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-600'}`}>
-                    {field.icon}
-                  </div>
-                  <span className={`text-[11px] sm:text-xs font-bold ${field.state ? 'text-slate-200' : 'text-slate-500'}`}>{field.label}</span>
-                </div>
-                <div className={`w-9 h-5 rounded-full relative transition-colors duration-300 ${field.state ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${field.state ? 'left-5' : 'left-1'}`} />
-                </div>
+      {/* Form fields */}
+      <div className="p-3 sm:p-5 space-y-2 sm:space-y-3">
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
+            <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">Name</p>
+            <p className="text-[10px] sm:text-[11px] font-semibold text-gray-900 truncate">Jason Merritt</p>
+          </div>
+          <div className="px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
+            <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">Phone</p>
+            <p className="text-[10px] sm:text-[11px] font-semibold text-gray-900">(555) 482-9301</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="px-2.5 py-1.5 sm:py-2 bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl">
+            <p className="text-[7px] font-bold text-blue-400 uppercase tracking-wider">Service</p>
+            <p className="text-[10px] sm:text-[11px] font-bold text-blue-700">Roofing</p>
+          </div>
+          <div className="px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
+            <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">Address</p>
+            <p className="text-[10px] sm:text-[11px] font-semibold text-gray-900 truncate">42 Maple Ave</p>
+          </div>
+        </div>
+
+        {/* Description + photo side by side */}
+        <div className="flex gap-2">
+          <div className="flex-1 min-w-0 px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
+            <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Description</p>
+            <p className="text-[9px] sm:text-[10px] text-gray-600 leading-snug line-clamp-2">Storm damaged roof, shingles missing. Leak through bedroom ceiling.</p>
+          </div>
+          <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl overflow-hidden border-2 border-emerald-200">
+            <img src="/images/roof-damage.webp" alt="Roof damage" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        {/* Custom question */}
+        <div className="px-2.5 py-2 bg-indigo-50 border border-indigo-200 rounded-lg sm:rounded-xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[7px] font-bold text-indigo-400 uppercase tracking-wider">Custom Question</p>
+            <span className="text-[6px] font-black bg-indigo-200 text-indigo-600 px-1 py-0.5 rounded">YOU CONFIGURE</span>
+          </div>
+          <p className="text-[9px] sm:text-[10px] font-bold text-indigo-900 mb-1.5">"How old is your roof?"</p>
+          <div className="flex gap-1">
+            {['0-5 yrs', '5-15 yrs', '15+'].map((opt, i) => (
+              <div
+                key={opt}
+                className={`flex-1 py-1 rounded-md text-[8px] font-bold text-center transition-all ${
+                  i === 2
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white border border-indigo-100 text-indigo-400'
+                }`}
+              >
+                {opt}
               </div>
             ))}
           </div>
-
-     <div className="pt-3 sm:pt-4 border-t border-white/5">
-  <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2.5 sm:mb-3">
-    Custom Questions
-  </p>
-  <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-2.5 sm:p-3 space-y-2">
-    <div className="flex items-center justify-between">
-      <span className="text-[10px] font-bold text-white italic">
-        &quot;How old is your roof?&quot;
-      </span>
-      <span className="text-[7px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
-        SELECT
-      </span>
-    </div>
-    {/* flex-row ensures same line, gap-1.5 for spacing */}
-    <div className="flex flex-row gap-1.5">
-      {['0-5yrs', '5-15yrs', '15+'].map((opt) => (
-        <div 
-          key={opt} 
-          className="flex-1 py-1 bg-slate-800 rounded-md text-[8px] font-bold text-slate-400 border border-white/5 text-center"
-        >
-          {opt}
-        </div>
-      ))}
-    </div>
-  </div>
-  <button className="w-full mt-2.5 sm:mt-3 py-2 border border-dashed border-slate-700 rounded-xl text-[9px] font-black text-slate-500 flex items-center justify-center gap-2 hover:bg-white/5 transition-colors">
-    <Plus size={10} /> Add Question
-  </button>
-</div>
         </div>
 
-       {/* RIGHT: PHONE PREVIEW */}
-<div className="hidden md:flex p-6 bg-[#020617] items-center justify-center">
-  <div className="w-full max-w-[230px] bg-white rounded-[2.5rem] shadow-2xl border-[6px] border-slate-800 overflow-hidden flex flex-col h-[320px] text-left">
-    <div className="h-4 bg-slate-800 w-1/3 mx-auto rounded-b-xl mb-1 shrink-0" />
-    
-    <div className="p-4 flex-1 space-y-3 overflow-y-auto no-scrollbar">
-      <div className="flex justify-between items-center mb-1">
-        <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">Project Intake</p>
-        <Smartphone size={12} className="text-slate-300" />
+        {/* Submit */}
+        <div className="w-full py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black text-white text-center uppercase tracking-widest"
+          style={{ background: 'linear-gradient(135deg, #1a6645, #15803d)' }}>
+          Submit Request
+        </div>
       </div>
 
-      {addressEnabled && (
-        <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center gap-2">
-          <MapPin size={10} className="text-blue-500" />
-          <span className="text-[9px] text-slate-400 font-medium">Property Address...</span>
-        </div>
-      )}
-
-      {filesEnabled && (
-        <div className="w-full h-14 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50 flex flex-col items-center justify-center gap-1">
-          <Upload size={12} className="text-slate-300" />
-          <span className="text-[8px] font-bold text-slate-400">Add Photos</span>
-        </div>
-      )}
-
-      <div className="w-full h-8 bg-slate-50 border border-slate-100 rounded-lg px-2 flex items-center justify-between">
-        <span className="text-[9px] text-slate-400 font-medium">Roof Age?</span>
-        <ChevronRight size={10} className="text-slate-300" />
-      </div>
-
-      <div className="w-full py-2.5 rounded-xl bg-blue-600 text-[9px] font-black text-white text-center shadow-md mt-2 uppercase tracking-widest">
-        Submit
-      </div>
-    </div>
-  </div>
-</div>
+      {/* Customization footer */}
+      <div className="px-3 sm:px-5 py-2 border-t border-gray-100 bg-gray-50 flex items-center justify-center gap-1.5">
+        <Settings2 size={9} className="text-blue-400" />
+        <p className="text-[7px] sm:text-[8px] font-bold text-gray-400">Your logo, colors, fields & custom questions</p>
       </div>
     </div>
   );
@@ -161,20 +129,28 @@ export function FormCard() {
 
 function CaptureCard() {
   return (
-    <div className="relative w-full rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[220px] sm:h-[300px] text-left">
-      <div className="absolute top-0 right-0 w-[50%] h-full">
-        <img src="/images/qr-scan-2.webp" className="w-full h-full object-cover object-left opacity-60" alt="Scanning" />
+    <div className="relative w-full rounded-2xl sm:rounded-[2rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl h-[240px] sm:h-[440px] text-left">
+      <div className="absolute inset-y-0 right-0 w-[50%]">
+        <img src="/images/qr-scan-2.webp" className="w-full h-full object-cover object-center opacity-60" alt="Scanning" />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/40 to-transparent" />
       </div>
       <div className="absolute inset-y-0 left-0 w-[65%] flex items-center justify-center pl-4 sm:pl-5">
-        <div className="w-full max-w-[140px] sm:max-w-[180px] rounded-xl sm:rounded-2xl overflow-hidden bg-white p-3 sm:p-4 shadow-2xl transform -rotate-2">
+        <div className="w-full max-w-[140px] sm:max-w-[220px] rounded-xl sm:rounded-2xl overflow-hidden bg-white p-3 sm:p-5 shadow-2xl transform -rotate-2">
           <div className="flex flex-col items-center text-center">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
-              <CheckCircle2 size={18} className="text-[#1a6645] sm:w-[22px] sm:h-[22px]" />
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
+              <CheckCircle2 size={18} className="text-[#1a6645] sm:w-[24px] sm:h-[24px]" />
             </div>
-            <p className="text-[12px] sm:text-[13px] font-black text-slate-900">Received!</p>
+            <p className="text-[12px] sm:text-[15px] font-black text-slate-900">Lead Received!</p>
+            <p className="text-[8px] sm:text-[10px] text-slate-400 mt-1">Jason Merritt · Roofing</p>
             <div className="w-full h-px bg-slate-100 my-2 sm:my-3" />
-            <div className="w-full py-1.5 sm:py-2 rounded-lg text-[9px] sm:text-[10px] font-black text-white bg-[#1a6645]">View Lead</div>
+            <div className="flex items-center gap-1.5 mb-2 sm:mb-3">
+              <img src="/images/roof-damage.webp" alt="Roof damage" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover border border-slate-200" />
+              <div className="text-left">
+                <p className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase">1 photo attached</p>
+                <p className="text-[8px] sm:text-[9px] text-slate-500 leading-tight">Storm damaged roof...</p>
+              </div>
+            </div>
+            <div className="w-full py-1.5 sm:py-2.5 rounded-lg text-[9px] sm:text-[10px] font-black text-white bg-[#1a6645]">View Lead</div>
           </div>
         </div>
       </div>
@@ -199,25 +175,25 @@ export function HeroStoryStrip() {
     },
     {
       number: '2',
-      title: 'Smart Intake',
-      desc: 'Toggle fields and require job site photos.',
+      title: 'Customer Submits',
+      desc: 'They fill out your branded form with photos. Fully customizable.',
       card: <FormCard />,
       popColor: 'border-blue-500/20',
       glow: 'from-blue-600/20'
     },
     {
       number: '3',
-      title: 'Auto Capture',
-      desc: 'Leads land on your board instantly via scan.',
+      title: 'Lead Lands',
+      desc: 'Name, photos, and details hit your board instantly.',
       card: <CaptureCard />,
-      popColor: 'border-blue-500/20',
-      glow: 'from-blue-600/20'
+      popColor: 'border-emerald-500/20',
+      glow: 'from-emerald-600/20'
     },
     {
       number: '4',
-      title: 'Contractor OS',
-      desc: 'Track every payday from one screen.',
-      card: <DashboardLaptopMockup />,
+      title: 'Manage the Job',
+      desc: 'Tasks, quotes, scheduling, and payments — all in one view.',
+      card: <LeadModalMockup />,
       popColor: 'border-slate-500/20',
       glow: 'from-slate-600/20'
     },
@@ -234,8 +210,6 @@ export function HeroStoryStrip() {
       
       {/* MOBILE: SWIPE CAROUSEL */}
       <div className="md:hidden">
-
-        {/* Dots + swipe hint ABOVE the cards so they're always visible */}
         <div className="flex items-center justify-center gap-3 mb-5 px-4">
           <div className="flex gap-1.5">
             {steps.map((_, i) => (
@@ -245,7 +219,8 @@ export function HeroStoryStrip() {
               />
             ))}
           </div>
-<span className="text-white/80 text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1">            Swipe <ChevronRight size={10} />
+          <span className="text-white/80 text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1">
+            Swipe <ChevronRight size={10} />
           </span>
         </div>
 
@@ -256,18 +231,17 @@ export function HeroStoryStrip() {
         >
           {steps.map((step, i) => (
             <div key={i} className="min-w-[88%] snap-center flex flex-col">
-              <div className={`relative overflow-hidden rounded-2xl p-4 border ${step.popColor} bg-[#020617] shadow-xl flex flex-col`}>
+              <div className={`relative overflow-hidden rounded-2xl p-3 border ${step.popColor} bg-[#020617] shadow-xl flex flex-col`}>
                 <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-br ${step.glow} to-transparent opacity-30 pointer-events-none`} />
-                
                 <div className="relative z-10 flex flex-col">
-                  {/* Step header — compact row */}
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-sm font-black shadow-lg shrink-0">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xs font-black shadow-lg shrink-0">
                       {step.number}
                     </div>
-                    <h3 className="text-base font-black text-white tracking-tight">{step.title}</h3>
+                    <h3 className="text-sm font-black text-white tracking-tight">{step.title}</h3>
                   </div>
-<p className="text-white/70 text-xs font-medium mb-4 leading-snug">{step.desc}</p>                  <div>{step.card}</div>
+                  <p className="text-white/60 text-[11px] font-medium mb-3 leading-snug">{step.desc}</p>
+                  <div>{step.card}</div>
                 </div>
               </div>
             </div>
@@ -283,7 +257,6 @@ export function HeroStoryStrip() {
             className={`group relative overflow-hidden rounded-[3.5rem] p-10 lg:p-14 border-2 ${step.popColor} bg-[#020617] transition-all duration-500 hover:scale-[1.01] hover:border-white/20 shadow-2xl flex flex-col`}
           >
             <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-br ${step.glow} to-transparent opacity-20 pointer-events-none`} />
-
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex items-center gap-5 mb-5">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-xl">
@@ -291,7 +264,8 @@ export function HeroStoryStrip() {
                 </div>
                 <h3 className="text-4xl font-black text-white tracking-tight">{step.title}</h3>
               </div>
-<p className="text-white/70 text-lg font-medium mb-12 max-w-sm">{step.desc}</p>              <div className="mt-auto transition-transform duration-500 group-hover:scale-[1.02]">
+              <p className="text-white/70 text-lg font-medium mb-6 max-w-sm">{step.desc}</p>
+              <div className="mt-auto transition-transform duration-500 group-hover:scale-[1.02]">
                 {step.card}
               </div>
             </div>

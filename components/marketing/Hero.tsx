@@ -53,7 +53,7 @@ export default function Hero() {
             <div className="order-3">
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-10">
                 <Link href="/signup" className="group flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 sm:px-8 py-4 sm:py-5 rounded-xl sm:rounded-2xl transition-all active:scale-[0.98] shadow-lg text-base sm:text-lg w-full lg:w-auto">
-                    Get Started Now
+                  Start 14-Day Free Trial
                   <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link href="/demo" className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-6 sm:px-8 py-4 sm:py-5 rounded-xl sm:rounded-2xl transition-all w-full lg:w-auto">

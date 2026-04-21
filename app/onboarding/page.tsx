@@ -295,12 +295,21 @@ const defaultCats: Category[] = CATEGORY_MAP[company.business_type || 'general']
                   <p className="text-sm font-bold text-white/70 group-hover:text-white transition">
                     {logoPreview ? 'Change logo' : 'Upload your logo'}
                   </p>
-                  <p className="text-xs text-white/30 mt-1">PNG, JPG, SVG — shows in emails and your booking page</p>
+<p className="text-xs text-white/30 mt-1">PNG, JPG, SVG under 5MB — shows in emails and your booking page</p>
                 </div>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setLogoFile(f); const r = new FileReader(); r.onloadend = () => setLogoPreview(r.result as string); r.readAsDataURL(f); }
-                }} />
+               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) {
+    showErr('Logo must be under 5MB. Try a smaller image.');
+    e.target.value = '';
+    return;
+  }
+  setLogoFile(f);
+  const r = new FileReader();
+  r.onloadend = () => setLogoPreview(r.result as string);
+  r.readAsDataURL(f);
+}} />
               </label>
             </div>
 
