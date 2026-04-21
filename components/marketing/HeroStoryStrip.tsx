@@ -243,8 +243,7 @@ export function HeroStoryStrip() {
               />
             ))}
           </div>
-          <span className="text-slate-600 text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1">
-            Swipe <ChevronRight size={10} />
+<span className="text-white/80 text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1">            Swipe <ChevronRight size={10} />
           </span>
         </div>
 
@@ -266,8 +265,7 @@ export function HeroStoryStrip() {
                     </div>
                     <h3 className="text-base font-black text-white tracking-tight">{step.title}</h3>
                   </div>
-                  <p className="text-white/40 text-xs font-medium mb-4 leading-snug">{step.desc}</p>
-                  <div>{step.card}</div>
+<p className="text-white/70 text-xs font-medium mb-4 leading-snug">{step.desc}</p>                  <div>{step.card}</div>
                 </div>
               </div>
             </div>
@@ -291,8 +289,7 @@ export function HeroStoryStrip() {
                 </div>
                 <h3 className="text-4xl font-black text-white tracking-tight">{step.title}</h3>
               </div>
-              <p className="text-white/40 text-lg font-medium mb-12 max-w-sm">{step.desc}</p>
-              <div className="mt-auto transition-transform duration-500 group-hover:scale-[1.02]">
+<p className="text-white/70 text-lg font-medium mb-12 max-w-sm">{step.desc}</p>              <div className="mt-auto transition-transform duration-500 group-hover:scale-[1.02]">
                 {step.card}
               </div>
             </div>
