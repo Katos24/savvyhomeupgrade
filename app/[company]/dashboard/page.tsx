@@ -144,18 +144,23 @@ export default async function CompanyDashboardPage({
   const company = await getCompany(companySlug);
   if (!company) notFound();
 
+  const isTrialing =
+    company.subscription_status === 'trialing' &&
+    company.trial_ends_at &&
+    new Date(company.trial_ends_at) > new Date();
+
   const isTrialExpired =
     company.subscription_status === 'trialing' &&
     company.trial_ends_at &&
-    new Date(company.trial_ends_at) < new Date();
+    new Date(company.trial_ends_at) <= new Date();
 
   const needsPayment =
     !company.subscription_status ||
     ['canceled', 'past_due', 'inactive'].includes(company.subscription_status) ||
     isTrialExpired;
 
-  if (needsPayment) {
-    redirect(`/subscribe?reason=payment_required&company=${companySlug}`);
+  if (needsPayment && !isTrialing) {
+    redirect(`/${companySlug}/admin/settings#billing`);
   }
 
   return <CompanyDashboardClient company={company} />;
