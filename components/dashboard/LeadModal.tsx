@@ -628,202 +628,366 @@ return (
 className="p-5 sm:p-7 space-y-6"
             >
 
-          {/* ── OVERVIEW TAB ── */}
-{activeTab === 'overview' && (
-  <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-    {/* Convert to Project banner */}
-    {!isProject && (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 shadow-sm flex items-center justify-between gap-4"
-      >
-        <div className="min-w-0">
-          <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
-          <p className="text-xs text-blue-500 mt-0.5 truncate">Unlock scheduling, quotes, and tasks.</p>
-        </div>
-        <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
-      </motion.div>
-    )}
+              {/* ── OVERVIEW TAB ── */}
+              {activeTab === 'overview' && (
+                <>
+                  {/* Convert to Project banner */}
+                  {!isProject && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"                    >
+                      <div>
+                       <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
+                        <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+                      </div>
+                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
+                    </motion.div>
+                  )}
 
-    {/* Client Card */}
-    <motion.div
-      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.05 }}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-    >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 bg-gray-50/30">
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <UserCircle className="w-3.5 h-3.5 text-blue-500" />
-          Client Contact
-          {relatedLeads.length > 0 && (
-            <button
-              onClick={() => setShowHistoryDrawer(true)}
-              className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[#b45309] text-[9px] font-black flex items-center gap-1"
-            >
-              <History className="w-2.5 h-2.5" /> {relatedLeads.length} PAST
-            </button>
-          )}
-        </h3>
-        <button 
-          onClick={() => setIsEditingDetails(!isEditingDetails)}
-          className="text-blue-600 text-[10px] font-black uppercase tracking-wider hover:underline"
-        >
-          {isEditingDetails ? 'Cancel' : 'Edit Details'}
-        </button>
-      </div>
+                  {/* Client Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-lg bg-blue-50 flex items-center justify-center"><UserCircle className="w-3 h-3 text-blue-400" /></span>
+                        Client Info
+                        {relatedLeads.length > 0 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowHistoryDrawer(true)}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-bold transition hover:opacity-80"
+                            style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#f59e0b' }}
+                          >
+                            <History className="w-3 h-3" />
+                            {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
+                          </motion.button>
+                        )}
+                      </h3>
+                      <div className="relative">
+                        <button onClick={() => setShowClientActions(!showClientActions)}
+className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition hover:bg-blue-100 rounded-none transition">                          Actions ▾
+                        </button>
+                        <AnimatePresence>
+                          {showClientActions && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setShowClientActions(false)} />
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+                              >
+                                <button onClick={() => { window.location.href = `mailto:${lead.email}`; setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
+                                  <Mail className="w-4 h-4 text-blue-500" /> Email
+                                </button>
+                                <button onClick={() => { window.location.href = `tel:${lead.phone}`; setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 transition">
+                                  <Phone className="w-4 h-4 text-green-500" /> Call
+                                </button>
+                                <button onClick={() => { window.location.href = `sms:${lead.phone}?body=${encodeURIComponent(`Hi ${lead.name}, I reviewed your project.`)}`; setShowClientActions(false); }}
+                                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition">
+                                  <MessageSquare className="w-4 h-4 text-blue-500" /> Text
+                                </button>
+                                {fullAddress && (
+                                  <button onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'); setShowClientActions(false); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition">
+                                    <Navigation className="w-4 h-4 text-red-500" /> Directions
+                                  </button>
+                                )}
+                                <div className="border-t border-gray-100 my-1" />
+                                <button onClick={() => { setIsEditingDetails(true); setShowClientActions(false); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                  <Edit2 className="w-4 h-4 text-gray-400" /> Edit Details
+                                </button>
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
 
-      <AnimatePresence mode="wait">
-        {isEditingDetails ? (
-          <motion.div key="editing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <input type="text" value={editedDetails.name} onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })} placeholder="Name" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" />
-              <input type="tel" value={editedDetails.phone} onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })} placeholder="Phone" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" maxLength={14} />
-            </div>
-            <input type="email" value={editedDetails.email} onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })} placeholder="Email" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" />
-            <input type="text" value={editedDetails.address_line_1} onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })} placeholder="Address" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" />
-            <div className="grid grid-cols-2 gap-3">
-              <input type="text" value={editedDetails.address_line_2} onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })} placeholder="Apt/Suite" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" />
-              <input type="text" value={editedDetails.city} onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })} placeholder="City" className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 outline-none" />
-            </div>
-            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none">
-              {categories.map((cat: any) => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
-            </select>
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving} className="w-full bg-blue-600 text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-widest">
-              {saving ? 'Saving...' : 'Update Records'}
-            </motion.button>
-          </motion.div>
-        ) : (
-          <motion.div key="viewing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-sm font-bold text-gray-900">{lead.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-sm text-gray-600 truncate">{lead.email || 'No email'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-sm text-gray-600">{formatPhoneNumber(lead.phone)}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-gray-600 leading-tight">{fullAddress || 'No address'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <LayoutGrid className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-md border border-blue-100">
-                    {formatCategory(lead.category)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Action Row */}
-            <div className="flex border-t border-gray-50">
-              {[
-                { icon: <Mail className="w-4 h-4" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: 'text-blue-500' },
-                { icon: <Phone className="w-4 h-4" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: 'text-green-500' },
-                { icon: <MessageSquare className="w-4 h-4" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: 'text-purple-500' },
-                ...(fullAddress ? [{ icon: <Navigation className="w-4 h-4" />, label: 'Map', action: () => window.open(`https://maps.apple.com/?q=${encodeURIComponent(fullAddress)}`, '_blank'), color: 'text-rose-500' }] : []),
-              ].map((btn) => (
-                <button key={btn.label} onClick={btn.action} className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-gray-50 transition border-r last:border-r-0 border-gray-50">
-                  <span className={btn.color}>{btn.icon}</span>
-                  <span className="text-[9px] font-black uppercase tracking-tighter text-gray-400 mt-1">{btn.label}</span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+                    <AnimatePresence mode="wait">
+                      {isEditingDetails ? (
+                        <motion.div
+                          key="editing"
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          className="p-5 space-y-3"
+                        >
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
+                              <input type="text" value={editedDetails.name}
+                                onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
+                              <input type="tel" value={editedDetails.phone}
+                                onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"maxLength={14} />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
+                            <input type="email" value={editedDetails.email}
+                              onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
+                             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
+                            <input type="text" value={editedDetails.address_line_1} placeholder="123 Main St"
+                              onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
+                              <input type="text" value={editedDetails.address_line_2}
+                                onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
+                              <input type="text" value={editedDetails.city}
+                                onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
+                            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                              {categories.map((cat: any) => (
+                                <option key={cat.value} value={cat.value}>{cat.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                           <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition text-sm">
+                              {saving ? 'Saving...' : 'Save Changes'}
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
+                              setEditedDetails({ name: lead.name || '', email: lead.email || '', phone: lead.phone || '', address_line_1: lead.address_line_1 || '', address_line_2: lead.address_line_2 || '', city: lead.city || '' });
+                              setSelectedCategory(lead.category || '');
+                              setIsEditingDetails(false);
+                            }}
+                              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-none transition text-sm">
+                              Cancel
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div key="viewing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <InfoField label="Name" value={lead.name} />
+                            <InfoField label="Email" value={lead.email} isLink />
+                            <InfoField label="Phone" value={formatPhoneNumber(lead.phone)} isLink />
+                            {lead.address_line_1 && (
+                              <div className="col-span-2">
+                                <InfoField label="Address" value={fullAddress || ''} />
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
+                              {lead.category ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-xs font-bold text-blue-600">
+                                  {formatCategory(lead.category)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs italic">None</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 px-5 pb-4">
+                            {[
+                              { icon: <Mail className="w-4 h-4" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: '#3b82f6' },
+                              { icon: <Phone className="w-4 h-4" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: '#22c55e' },
+                              { icon: <MessageSquare className="w-4 h-4" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: '#a855f7' },
+                              ...(fullAddress ? [{ icon: <Navigation className="w-4 h-4" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: '#ef4444' }] : []),
+                            ].map((btn, i) => (
+                              <motion.button
+                                key={btn.label}
+                                whileTap={{ scale: 0.95 }}
+                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                onClick={btn.action}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition hover:bg-blue-50 hover:border-blue-200 transition-all group"
+                              >
+                                <span style={{ color: btn.color }}>{btn.icon}</span>
+                                <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-600">{btn.label}</span>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
 
-    {/* Request Description & Logic */}
-    <div className={`grid gap-4 ${isProject ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-50 bg-blue-50/20">
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <MessageCircle className="w-3.5 h-3.5 text-blue-500" />
-            Project Description
-          </h3>
-        </div>
-        <div className="p-4">
-          <p className="text-sm text-gray-700 leading-relaxed italic">
-            "{lead.description || "No message provided by customer."}"
-          </p>
+                {/* Two-col: Message + Notes */}
+                  <div className={`grid gap-4 ${isProject ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
 
-          {(lead.preferred_date || lead.preferred_time) && (
-            <div className="mt-4 pt-3 border-t border-gray-50 flex flex-wrap gap-4">
-              {lead.preferred_date && (
-                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-500">
-                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                  PREFER: {new Date(lead.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </div>
-              )}
-              {lead.preferred_time && (
-                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-500">
-                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                  TIME: {lead.preferred_time}
-                </div>
-              )}
-            </div>
-          )}
+                    {/* Customer's Message */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden"                    >
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
+                          Customer's Message
+                        </h3>
+                      </div>
+                      <div className="p-5">
+                        {lead.description
+                          ? <p className="text-sm text-gray-600 leading-relaxed">{lead.description}</p>
+                          : <p className="text-sm text-gray-400 italic">No message provided</p>
+                        }
 
-          {customerPhotos.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-50">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Photos ({customerPhotos.length})</span>
-              </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {customerPhotos.map((url: string, i: number) => (
-                  <button key={i} onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })} className="w-14 h-14 rounded-lg overflow-hidden border border-gray-100 shrink-0">
-                    <img src={url} className="w-full h-full object-cover" alt="Customer site" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
+                        {(lead.preferred_date || lead.preferred_time) && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+                            {lead.preferred_date && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                <span className="font-semibold text-gray-400 uppercase tracking-wide mr-1">Preferred:</span>
+                                {(() => {
+                                  const d = new Date(lead.preferred_date);
+                                  return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                                })()}
+                              </div>
+                            )}
+                            {lead.preferred_time && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                                {lead.preferred_time}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-      {/* Internal Notes */}
-      {isProject && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50 bg-amber-50/20">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-              Office Only Notes
-            </h3>
-          </div>
-          <div className="p-4">
-            <AnimatePresence mode="wait">
-              {isEditingNotes ? (
-                <motion.div key="edit-n" className="space-y-2">
-                  <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)} rows={4} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/10" placeholder="Add private project details..." />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveInternalNotes} className="flex-1 bg-gray-900 text-white text-[10px] font-black uppercase py-2 rounded-lg transition">Save</button>
-                    <button onClick={() => setIsEditingNotes(false)} className="flex-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase py-2 rounded-lg">Cancel</button>
+                        {customerPhotos.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Image className="w-3.5 h-3.5 text-blue-400" />
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em]">
+                                {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {customerPhotos.slice(0, 6).map((url: string, i: number) => (
+                                <motion.button
+                                  key={i}
+                                  whileTap={{ scale: 0.95 }}
+                                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: i * 0.04 }}
+                                  onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
+                                  className="w-12 h-12 rounded-none overflow-hidden border border-gray-200 hover:border-blue-400 transition group flex-shrink-0"
+                                >
+                                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition" />
+                                </motion.button>
+                              ))}
+                              {customerPhotos.length > 6 && (
+                                <motion.button
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setLightbox({ photos: customerPhotos, index: 6, label: 'Customer Photos' })}
+                                  className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-center flex-shrink-0 transition"
+                                >
+                                  <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
+                                </motion.button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                            <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
+                              className="text-xs font-bold text-blue-600 flex items-center gap-1">
+                              {showCustomQuestions ? '▼' : '▶'} Additional ({Object.keys(lead.custom_answers).length})
+                            </button>
+                            <AnimatePresence>
+                              {showCustomQuestions && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden mt-3 space-y-2"
+                                >
+                                  {Object.entries(lead.custom_answers).map(([qId, answer]: [string, any]) => {
+                                    const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
+                                    return (
+                                      <div key={qId} className="text-sm">
+                                        <div className="text-xs text-gray-400 mb-0.5">{qDef?.label || qId}</div>
+                                        <div className="text-gray-800 font-medium">
+                                          {typeof answer === 'boolean' ? (answer ? 'Yes' : 'No') : answer || <span className="text-gray-400 italic">No answer</span>}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+
+                    {/* Internal Notes — project only */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className={`bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden ${!isProject ? 'hidden' : ''}`}
+                    >
+                      <div className="px-5 py-4 border-b border-gray-50">
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-lg bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
+                          Internal Notes
+                        </h3>
+                      </div>
+                      <div className="p-5">
+                        <AnimatePresence mode="wait">
+                          {isEditingNotes ? (
+                            <motion.div key="editing-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                              <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
+                                rows={5} placeholder="Notes visible only to your team..."
+                              className="w-full px-3 py-2.5 border-2 border-blue-200 rounded-none text-sm resize-none focus:outline-none focus:border-blue-400" />
+                              <div className="flex gap-2">
+                                <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveInternalNotes} disabled={saving}
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2 rounded-none text-xs transition">
+                                  {saving ? 'Saving...' : 'Save'}
+                                </motion.button>
+                                <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
+                                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-none text-xs transition">
+                                  Cancel
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          ) : lead.project_internal_notes ? (
+                            <motion.div key="has-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                              <p className="text-sm text-gray-600 mb-3">{lead.project_internal_notes}</p>
+                              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700">Edit Notes</button>
+                            </motion.div>
+                          ) : (
+                            <motion.button
+                              key="empty-notes"
+                              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setIsEditingNotes(true)}
+                              className="w-full py-8 border-2 border-dashed border-gray-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition flex flex-col items-center gap-2"
+                            >
+                              <NotebookPen className="w-6 h-6 text-gray-300" />
+                              <span className="text-xs font-semibold text-gray-400 hover:text-blue-500">Add internal notes</span>
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
-              ) : (
-                <div onClick={() => setIsEditingNotes(true)} className="cursor-pointer group">
-                  <p className="text-sm text-gray-600 leading-relaxed min-h-[60px]">
-                    {lead.project_internal_notes || <span className="text-gray-300 italic">Tap to add private notes for the crew...</span>}
-                  </p>
-                  <span className="text-[10px] font-black text-blue-600 uppercase mt-2 block opacity-0 group-hover:opacity-100 transition">Edit Notes</span>
-                </div>
+                </>
               )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  </div>
-)}
+
 
               {/* ── AI BRIEF TAB ── */}
               {activeTab === 'ai' && (

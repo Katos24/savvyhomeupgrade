@@ -40,15 +40,16 @@ export default function Sidebar({
     return pathname.includes(path);
   };
 
-  const navItems = [
-    { href: `/${companySlug}/dashboard`,           icon: LayoutGrid, label: 'Dashboard', exactMatch: true,  color: '#818cf8' },
-    { href: `/${companySlug}/dashboard/customers`, icon: UsersIcon,  label: 'Customers', exactMatch: false, color: '#fbbf24' },
-    { href: `/${companySlug}/dashboard/analytics`, icon: BarChart3,  label: 'Analytics', exactMatch: false, color: '#a78bfa' },
-    { href: `/${companySlug}/dashboard/calendar`,  icon: Calendar,   label: 'Calendar',  exactMatch: false, color: '#34d399' },
-    { href: `/${companySlug}/outbox`,              icon: Mail,       label: 'Outbox',    exactMatch: false, color: '#fb923c' },
-    { href: `/${companySlug}/admin/settings`,      icon: Settings,   label: 'Settings',  exactMatch: false, color: '#c084fc' },
-  ];
-
+const navItems = [
+  { href: `/${companySlug}/dashboard`,           icon: LayoutGrid, label: 'Dashboard', exactMatch: true,  color: '#818cf8' },
+  { href: `/${companySlug}/dashboard/customers`, icon: UsersIcon,  label: 'Customers', exactMatch: false, color: '#fbbf24' },
+  { href: `/${companySlug}/dashboard/analytics`, icon: BarChart3,  label: 'Analytics', exactMatch: false, color: '#a78bfa' },
+  { href: `/${companySlug}/dashboard/calendar`,  icon: Calendar,   label: 'Calendar',  exactMatch: false, color: '#34d399' },
+  { href: `/${companySlug}/outbox`,              icon: Mail,       label: 'Outbox',    exactMatch: false, color: '#fb923c' },
+  
+  // CHANGED COLOR: Moved from purple to a crisp Slate-Cyan or Gray-Blue
+  { href: `/${companySlug}/admin/settings`,      icon: Settings,   label: 'Settings',  exactMatch: false, color: '#94a3b8' }, 
+];
   useEffect(() => {
     if (isOpen && window.innerWidth < 1024) {
       document.body.style.overflow = 'hidden';
@@ -122,41 +123,53 @@ export default function Sidebar({
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-3">
             Navigation
           </p>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href, item.exactMatch);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-all group relative ${
-                  active
-                    ? 'text-white'
-                    : 'text-slate-500 hover:text-white hover:bg-white/5'
-                }`}
-                style={active ? {
-                  background: 'rgba(99,102,241,0.12)',
-                  border: '1px solid rgba(99,102,241,0.2)',
-                } : { border: '1px solid transparent' }}
-              >
-                {/* Active left bar */}
-                {active && (
-                  <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
-                    style={{ background: item.color }}
-                  />
-                )}
-                <Icon
-                  className="w-4 h-4 shrink-0 transition-colors"
-                  style={{ color: active ? item.color : undefined }}
-                />
-                <span className="flex-1">{item.label}</span>
-                {active && (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-                )}
-              </Link>
-            );
-          })}
+         {navItems.map((item) => {
+  const Icon = item.icon;
+  const active = isActive(item.href, item.exactMatch);
+  
+  // 1. Identify if this is the settings item
+  const isSettings = item.label === 'Settings';
+
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-all group relative ${
+        active
+          ? 'text-white'
+          : isSettings 
+            ? 'text-blue-400/80 hover:text-blue-300' // Distinct color for Settings when inactive
+            : 'text-slate-500 hover:text-white hover:bg-white/5'
+      }`}
+      style={active ? {
+        background: isSettings ? 'rgba(56, 189, 248, 0.1)' : 'rgba(99,102,241,0.12)', // Subtle unique glow if active
+        border: active && isSettings ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid rgba(99,102,241,0.2)',
+      } : { border: '1px solid transparent' }}
+    >
+      {/* Active left bar */}
+      {active && (
+        <div
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+          style={{ background: item.color }}
+        />
+      )}
+      
+      <Icon
+        className="w-4 h-4 shrink-0 transition-colors"
+        style={{ color: active ? item.color : undefined }}
+      />
+
+      {/* 2. Apply unique color logic to the span label */}
+      <span className={`flex-1 ${!active && isSettings ? 'text-blue-400/90 font-bold' : ''}`}>
+        {item.label}
+      </span>
+
+      {active && (
+        <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+      )}
+    </Link>
+  );
+})}
         </nav>
 
         {/* User Section */}
@@ -170,7 +183,7 @@ export default function Sidebar({
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                  style={{ background: 'linear-gradient(135deg, #27299fff, #280e63ff)' }}
                 >
                   {currentUser?.name?.charAt(0) || 'U'}
                 </div>

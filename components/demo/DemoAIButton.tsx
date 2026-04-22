@@ -171,10 +171,10 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
         whileHover={{ scale: 1.08 }}
         onClick={handleToggle}
         className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all"
-        style={{
-          background: open ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
-        }}
+      style={{
+  background: open ? '#1d4ed8' : '#2563eb', // Solid Blue
+  boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)',
+}}
       >
         {open
           ? <X className="w-6 h-6 text-white" />
