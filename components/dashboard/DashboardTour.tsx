@@ -62,26 +62,22 @@ const TOUR_STEPS: TourStep[] = [
     position: 'bottom',
     highlight: true,
   },
-  {
+ {
     id: 'view-modes',
     title: 'Three ways to see your work',
-    description: 'Cards for a quick scan, Table for bulk actions and CSV export, Calendar to see your schedule at a glance. Try switching now.',
+    description: 'Cards for a quick scan, Table for bulk actions and CSV export, Calendar to see your schedule at a glance.',
     icon: <LayoutGrid className="w-6 h-6" />,
     targetSelector: '[data-tour="view-switcher"]',
     position: 'bottom',
-    action: 'toggle-view',
-    actionLabel: 'Try Table View',
     highlight: true,
   },
-  {
+ {
     id: 'theme-toggle',
     title: 'Light mode or dark mode',
     description: 'Your eyes, your rules. Switch between dark and light themes anytime. Your preference is saved automatically.',
     icon: <Sun className="w-6 h-6" />,
     targetSelector: '[data-tour="theme-toggle"]',
     position: 'bottom',
-    action: 'toggle-theme',
-    actionLabel: 'Toggle Theme',
     highlight: true,
   },
   {
@@ -96,12 +92,10 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'sidebar',
     title: 'Your main menu',
-    description: 'Settings, team management, email templates, your booking page, and integrations — everything lives in the sidebar.',
+    description: 'Settings, team management, email templates, your booking page, and integrations — everything lives here.',
     icon: <Menu className="w-6 h-6" />,
     targetSelector: '[data-tour="sidebar-toggle"]',
-    position: 'right',
-    action: 'open-menu',
-    actionLabel: 'Open Menu',
+    position: 'bottom',
     highlight: true,
   },
   {
@@ -546,13 +540,17 @@ export function useShouldShowTour(companySlug: string, onboardingJustCompleted?:
   useEffect(() => {
     try {
       const completed = localStorage.getItem(`tour-completed-${companySlug}`);
-      if (!completed && onboardingJustCompleted !== false) {
+      if (completed === 'true') {
+        setShow(false);
+        return;
+      }
+      const params = new URLSearchParams(window.location.search);
+      const justOnboarded = params.get('onboarded') === '1';
+      if (justOnboarded) {
         setShow(true);
       }
-    } catch {
-      // localStorage unavailable
-    }
-  }, [companySlug, onboardingJustCompleted]);
+    } catch {}
+  }, [companySlug]);
 
   return show;
 }
