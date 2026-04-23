@@ -92,6 +92,14 @@ export async function POST(req: NextRequest) {
     const isDowngrade = PLAN_ORDER.indexOf(newPlan) < PLAN_ORDER.indexOf(company.plan_tier);
 
     if (isDowngrade) {
+      // Block downgrades during trial
+      if (subscription.status === 'trialing') {
+        return NextResponse.json(
+          { error: 'Downgrades are available after your trial ends. You can cancel anytime from Settings.' },
+          { status: 400 }
+        );
+      }
+
       // ── DOWNGRADE: schedule change for end of current billing period ──
 
       // Release any existing schedule first to avoid conflicts
@@ -151,13 +159,15 @@ export async function POST(req: NextRequest) {
         periodEnd:    currentPeriodEnd,
       });
 
-    } else {
-      // ── UPGRADE: apply immediately with proration ──
+   } else {
+      // ── UPGRADE: apply immediately ──
+      const isTrialing = subscription.status === 'trialing';
+
       const updatedSubscription = await stripe.subscriptions.update(
         company.stripe_subscription_id,
         {
           items: [{ id: currentItem.id, price: newPriceId }],
-          proration_behavior: 'always_invoice',
+          proration_behavior: isTrialing ? 'none' : 'always_invoice',
         }
       );
 

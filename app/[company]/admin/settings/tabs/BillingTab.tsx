@@ -54,7 +54,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
   async function executePlanChange() {
     const newPlan = confirmModal.plan;
-    if (!newPlan || isTrialing) return;
+if (!newPlan) return;
 
     setConfirmModal({ isOpen: false, plan: null });
     setChangingPlan(true);
@@ -148,15 +148,9 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <div className="text-center md:text-left flex-1">
-            <p className="font-black text-lg">Trialing Pro Features</p>
-            <p className="text-slate-400 text-sm">Ends {new Date(company.trial_ends_at).toLocaleDateString()}. Changes disabled during trial.</p>
+            <p className="font-black text-lg">Free Trial Active</p>
+            <p className="text-slate-400 text-sm">Ends {new Date(company.trial_ends_at).toLocaleDateString()}. You can upgrade to Pro anytime.</p>
           </div>
-          <button 
-            onClick={handleManageSubscription} 
-            className="w-full md:w-auto px-8 py-4 bg-white text-slate-950 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg"
-          >
-            Manage Billing
-          </button>
         </motion.div>
       )}
 
@@ -187,7 +181,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
               className={`relative p-8 rounded-[3rem] border-2 transition-all duration-300 flex flex-col ${
                 isCurrent ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 bg-white'
-              } ${isTrialing && !isCurrent ? 'opacity-60 grayscale-[0.3]' : ''}`}
+} ${isTrialing && !isCurrent && planKey !== 'pro' ? 'opacity-60 grayscale-[0.3]' : ''}`}
             >
               {isPro && (
                 <div className="absolute -top-3 right-10 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
@@ -217,18 +211,18 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
               <button
                 onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
-                disabled={changingPlan || isCurrent || isTrialing}
+disabled={changingPlan || isCurrent || (isTrialing && planKey !== 'pro')}
                 className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
-                  isCurrent 
-                    ? 'bg-indigo-100 text-indigo-600 cursor-default' 
-                    : isTrialing
-                      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
-                      : isPro 
-                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200' 
-                        : 'bg-slate-900 text-white'
-                }`}
+  isCurrent 
+    ? 'bg-indigo-100 text-indigo-600 cursor-default' 
+    : isTrialing && planKey !== 'pro'
+      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+      : isPro 
+        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200' 
+        : 'bg-slate-900 text-white'
+}`}
               >
-                {isCurrent ? 'Current Plan' : isTrialing ? 'Trial Active' : changingPlan ? '...' : `Select ${config.label}`}
+{isCurrent ? 'Current Plan' : isTrialing && planKey !== 'pro' ? 'Trial Active' : changingPlan ? '...' : `Select ${config.label}`}
               </button>
             </motion.div>
           );
