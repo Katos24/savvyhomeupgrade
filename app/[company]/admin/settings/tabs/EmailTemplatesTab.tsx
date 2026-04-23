@@ -335,6 +335,16 @@ Best regards,
                   <pre className="whitespace-pre-wrap text-xs text-gray-600 font-sans leading-relaxed">{preview.body}</pre>
                 </div>
 
+                {/* Line items note for quote */}
+                {activeTemplate === 'quote' && (
+                  <div className="px-4 py-3 border-t border-gray-100 bg-blue-50/50">
+                    <p className="text-[10px] font-bold text-blue-500 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" />
+                      Itemized quote breakdown and accept/decline buttons are automatically included when sent.
+                    </p>
+                  </div>
+                )}
+
                 {/* Footer */}
                 <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-center">
                   <p className="text-[10px] text-gray-400">Powered by Lead2Project</p>

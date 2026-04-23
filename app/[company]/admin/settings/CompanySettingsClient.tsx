@@ -424,7 +424,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
             />
           : <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
               <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-              <span>{formData.phone || 'Not set'}</span>
+              <span>{formData.phone ? formatPhone(formData.phone) : 'Not set'}</span>
             </div>
         }
       </div>
