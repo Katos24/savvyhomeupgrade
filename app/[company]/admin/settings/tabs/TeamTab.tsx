@@ -204,6 +204,28 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
         </div>
       )}
 
+      {/* --- ROLES GUIDE --- */}
+      <div className="mb-8 p-5 bg-slate-50 rounded-[2rem] border border-slate-100">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Role Permissions</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { role: 'Owner', color: 'text-amber-600', bg: 'bg-amber-50', perms: 'Full access, billing, delete company, manage team' },
+            { role: 'Admin', color: 'text-blue-600', bg: 'bg-blue-50', perms: 'Full access, manage team & leads, cannot access billing' },
+            { role: 'Member', color: 'text-slate-500', bg: 'bg-slate-50', perms: 'View and update leads, add notes, cannot delete or manage team' },
+          ].map(r => (
+            <div key={r.role} className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-xl ${r.bg} flex items-center justify-center shrink-0`}>
+                <span className={`text-xs font-black ${r.color}`}>{r.role.charAt(0)}</span>
+              </div>
+              <div>
+                <p className={`text-xs font-black ${r.color}`}>{r.role}</p>
+                <p className="text-[10px] text-slate-400 font-medium leading-relaxed">{r.perms}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* --- CARDS GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMembers.map(member => {
@@ -233,9 +255,14 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
                     )}
                 </div>
               </div>
-              <div className="space-y-1 mb-8">
+             <div className="space-y-1 mb-8">
                 <h4 className="text-xl font-black text-slate-900 tracking-tight truncate">{member.name}</h4>
                 <p className="text-sm font-bold text-slate-400 truncate">{member.email}</p>
+                <p className="text-[10px] font-bold text-slate-300 mt-1">
+                  {member.role === 'owner' ? 'Full access · Billing · Can delete company'
+                    : member.role === 'admin' ? 'Full access · Can manage team & leads'
+                    : 'Can view & update leads only'}
+                </p>
               </div>
               <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                 {(!isOwner && !isYou) ? (
