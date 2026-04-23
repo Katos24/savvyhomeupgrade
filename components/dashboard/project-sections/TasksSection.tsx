@@ -40,7 +40,7 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
   const [saving, setSaving] = useState(false);
   const [companyCategories, setCompanyCategories] = useState<any[]>([]);
   const [templatesLoaded, setTemplatesLoaded] = useState(false);
-  const templateCreatedRef = useRef(false);
+const templateCreatedRef = useRef<number | null>(null);
 
   useEffect(() => {
     async function fetchCompanyCategories() {
@@ -65,16 +65,17 @@ export default function TasksSection({ lead, currentUser, onRefresh, hasProject 
     else setLoading(false);
   }, [lead.project_id, hasProject]);
 
-  useEffect(() => {
+ useEffect(() => {
     if (!templatesLoaded || !hasProject || !lead.project_id) return;
+    if (loading) return; // ← wait for initial fetch to finish
     if (tasks.length > 0 || !lead?.category) return;
-    if (templateCreatedRef.current) return;
+    if (templateCreatedRef.current === lead.project_id) return;
+templateCreatedRef.current = lead.project_id;
     const match = companyCategories.find(c => c.value === lead?.category);
     if (match?.task_templates?.length > 0) {
-      templateCreatedRef.current = true;
       createTasksFromTemplate(match.task_templates);
     }
-  }, [templatesLoaded, lead?.category, lead?.id, hasProject, tasks.length]);
+  }, [templatesLoaded, loading, lead?.category, lead?.id, hasProject, tasks.length]);
 
   const fetchTasks = async () => {
     try {

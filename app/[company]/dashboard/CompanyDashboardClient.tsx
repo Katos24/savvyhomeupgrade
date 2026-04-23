@@ -349,21 +349,19 @@ useEffect(() => {
   }, [selectedLead, currentUser]);
 
   const addNote = useCallback(async (id: number, noteText: string) => {
-    try {
-      const res = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        await fetchLeads(1, true);
-        // Refresh modal lead from fresh data
-        return true;
-      }
-      return false;
-    } catch (e) { console.error('addNote:', e); return false; }
-  }, [fetchLeads, currentUser]);
+  try {
+    const res = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
+    });
+    const result = await res.json();
+    if (res.ok && result.success) {
+      return true;
+    }
+    return false;
+  } catch (e) { console.error('addNote:', e); return false; }
+}, [currentUser]);
 
   const deleteLead = useCallback(async (id: number) => {
     try {
@@ -596,17 +594,19 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
       {/* Sidebar overlay                                                      */}
       {/* ------------------------------------------------------------------ */}
       <div
-        className={`fixed inset-0 z-[100] transition-all duration-300 ${sidebarOpen ? 'visible' : 'invisible pointer-events-none'}`}
-        aria-hidden={!sidebarOpen}
-      >
+  className={`fixed inset-0 transition-all duration-300 ${sidebarOpen ? 'visible' : 'invisible pointer-events-none'}`}
+  style={{ zIndex: sidebarOpen ? 10000 : 100 }}
+  aria-hidden={!sidebarOpen}
+>
         <div
           className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
           onClick={() => setSidebarOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 z-[110] w-72 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-          aria-label="Navigation sidebar"
-        >
+  className={`absolute left-0 top-0 bottom-0 w-72 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+  style={{ zIndex: sidebarOpen ? 10001 : 110 }}
+  aria-label="Navigation sidebar"
+>
           <Sidebar
             companySlug={company.slug}
             companyName={company.name}

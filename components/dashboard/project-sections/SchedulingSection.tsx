@@ -39,6 +39,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [estimatedHours, setEstimatedHours] = useState('');
   const [actualHours, setActualHours] = useState('');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+const [teamLoading, setTeamLoading] = useState(true);
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -71,13 +72,14 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
 
-  useEffect(() => {
+ useEffect(() => {
     async function fetchTeam() {
       try {
         const res = await fetch('/api/team/members');
         const data = await res.json();
         if (data.success) setTeamMembers(data.members);
       } catch {}
+      finally { setTeamLoading(false); }
     }
     fetchTeam();
   }, []);
@@ -228,17 +230,18 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             {!showCustomAssignee ? (
               <div className="relative">
                 <select
-                  value={assignedTo}
-                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
-                  className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer"
-                >
-                  <option value="">Choose team member...</option>
-                  {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
-                    <option value={assignedTo}>{assignedTo}</option>
-                  )}
-                  <option value="__custom__">+ Add Custom Name</option>
-                </select>
+  value={assignedTo}
+  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
+  disabled={teamLoading}
+  className={`w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer ${teamLoading ? 'opacity-50' : ''}`}
+>
+  <option value="">{teamLoading ? 'Loading team...' : 'Choose team member...'}</option>
+  {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
+    <option value={assignedTo}>{assignedTo}</option>
+  )}
+  {!teamLoading && <option value="__custom__">+ Add Custom Name</option>}
+</select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             ) : (

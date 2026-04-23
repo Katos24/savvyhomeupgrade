@@ -492,9 +492,11 @@ export default function DashboardTour({
         // Re-measure after DOM updates
         setTimeout(measureTarget, 100);
         break;
-      case 'open-menu':
-        onOpenSidebar();
-        break;
+     case 'open-menu':
+  onOpenSidebar();
+  // Brief delay to let sidebar animate in above tour overlay
+  setTimeout(measureTarget, 300);
+  break;
       case 'click':
         if (step.targetSelector) {
           const el = document.querySelector(step.targetSelector) as HTMLElement;
