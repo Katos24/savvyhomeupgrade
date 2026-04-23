@@ -19,7 +19,7 @@ export default function Footer() {
           </div>
 
           {[
-            { heading: 'Product',   links: [['Pricing','#pricing'],['Sign Up','/signup'],['Login','/login']] },
+{ heading: 'Product',   links: [['Pricing','#pricing'],['Blog','/blog'],['Sign Up','/signup'],['Login','/login']] },
             { heading: 'Solutions', links: [['Roofing','/solutions/roofing'],['Cleaning','/solutions/cleaning']] },
             { heading: 'Legal',     links: [['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.com']] },
           ].map(col => (

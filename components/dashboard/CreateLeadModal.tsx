@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { X, Loader2, User, Mail, Phone, Tag, AlignLeft, Plus, ChevronDown, ChevronUp, MapPin, Home, Calendar, Clock, HelpCircle, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
-import { useLoadScript, Autocomplete } from '@react-google-maps/api';
-
-const libraries: ('places')[] = ['places'];
 
 type CreateLeadModalProps = {
   isOpen: boolean;
@@ -46,49 +43,7 @@ export default function CreateLeadModal({
     custom_answers: {} as Record<string, string>,
   });
 
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries,
-  });
-
-  const onLoadAutocomplete = (ac: google.maps.places.Autocomplete) => {
-    autocompleteRef.current = ac;
-    ac.setComponentRestrictions({ country: 'us' });
-  };
-
-const onPlaceChanged = () => {
-  try {
-    if (!autocompleteRef.current) return;
-    const place = autocompleteRef.current.getPlace();
-    if (!place?.formatted_address) return;
-
-    let city = '';
-    let zip = '';
-    if (place.address_components) {
-      const locality = place.address_components.find(c => c.types.includes('locality'));
-      const sublocality = place.address_components.find(c =>
-        c.types.includes('sublocality') || c.types.includes('sublocality_level_1')
-      );
-      const adminArea3 = place.address_components.find(c =>
-        c.types.includes('administrative_area_level_3')
-      );
-      const postal = place.address_components.find(c => c.types.includes('postal_code'));
-      city = locality?.long_name || sublocality?.long_name || adminArea3?.long_name || '';
-      zip = postal?.long_name || '';
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      address_line_1: place.formatted_address || '',
-      city,
-      zip_code: zip,
-    }));
-  } catch {
-    // Google Maps autocomplete failed silently — user can still type manually
-  }
-};
+  
 
   if (!isOpen) return null;
 
@@ -289,29 +244,36 @@ const onPlaceChanged = () => {
                   <div className="px-4 pb-4 space-y-4 border-t border-white/10 pt-4">
 
                     {/* Address with Google Maps autocomplete */}
-                    {showAddress && isLoaded && (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-  Service Address
+                    {showAddress && (
+  <>
+    <div className="space-y-2">
+      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+Service Address
 </label>
-                          <div className="relative">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none z-10" />
-                            <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
-                              <input
-                                type="text"
-                                value={formData.address_line_1}
-                                onChange={e => setFormData({ ...formData, address_line_1: e.target.value })}
-                                placeholder="Start typing address..."
-                                className={`${inputClass} pl-12`}
-                              />
-                            </Autocomplete>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Zip Code</label>
+      <div className="relative">
+        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none z-10" />
+        <input
+          type="text"
+          value={formData.address_line_1}
+          onChange={e => setFormData({ ...formData, address_line_1: e.target.value })}
+          placeholder="123 Main St"
+          className={`${inputClass} pl-12`}
+        />
+      </div>
+    </div>
+                       <div className="grid grid-cols-3 gap-3">
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">City</label>
+        <input
+          type="text"
+          value={formData.city}
+          onChange={e => setFormData({ ...formData, city: e.target.value })}
+          placeholder="City"
+          className={`${inputClass} text-sm`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Zip Code</label>
                             <div className="relative">
                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                               <input
