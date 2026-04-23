@@ -201,14 +201,10 @@ export async function POST(req: NextRequest) {
               `;
             }
 
-            const formattedDate = accessUntil.toLocaleDateString('en-US', {
-              month: 'long', day: 'numeric', year: 'numeric',
-            });
-
             await sendCancellationScheduledEmail({
               companyEmail: company[0].email,
               companyName:  company[0].name,
-              accessUntil:  formattedDate,
+              accessUntil:  accessUntil.toISOString().split('T')[0],
               isTrialing,
             });
           }

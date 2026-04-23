@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { sendQuoteToCustomer, sendScheduleConfirmation } from '@/lib/email';
 import { can, type PlanTier } from '@/lib/permissions';
+import { formatPhone } from '@/lib/emailTemplates';
 
 export async function POST(request: Request) {
   try {
@@ -490,11 +491,11 @@ await sql`UPDATE projects
       updated_at = NOW()
   WHERE id = ${lead.project_id}`;
 
-        const emailResult = await sendQuoteToCustomer({
+  const emailResult = await sendQuoteToCustomer({
   customerEmail: lead.email,
   customerName: lead.name,
   companyName: lead.company_name || 'Your Service Provider',
-  companyPhone: lead.company_phone,
+  companyPhone: formatPhone(lead.company_phone),
   companyId: lead.company_id,
   quoteTotal: parseFloat(lead.quote_total),
   quoteItems: quoteItems,
@@ -620,7 +621,7 @@ const emailResult = await sendScheduleConfirmation({
   customerEmail: lead.email,
   customerName: lead.name,
   companyName: lead.company_name || 'Your Service Provider',
-  companyPhone: lead.company_phone,
+  companyPhone: formatPhone(lead.company_phone),
   companyId: lead.company_id,
   scheduledDate: lead.scheduled_date,
   scheduledTime: lead.scheduled_time || undefined,

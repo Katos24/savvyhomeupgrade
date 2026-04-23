@@ -302,7 +302,7 @@ const [teamLoading, setTeamLoading] = useState(true);
   primaryLabel="Save Schedule"
   primaryLoading={saving}
   onPrimary={() => handleSave()}
-  secondaryLabel="Send Confirmation"
+  secondaryLabel="Send Schedule"
   secondaryDisabled={!hasProject || !scheduledDate || saving}
   onSecondary={() => setShowEmailModal(true)}
 />

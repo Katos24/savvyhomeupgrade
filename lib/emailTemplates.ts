@@ -38,9 +38,7 @@ Address: {{customer_address}}{{/customer_address}}
 We look forward to serving you!
 
 Best regards,
-{{company_name}}
-{{#company_phone}}
-`,
+{{company_name}}`,
     },
     payment: {
       subject: 'Payment Reminder - {{company_name}}',
@@ -79,16 +77,24 @@ export function renderEmailTemplate(
     return value !== undefined && value !== null && value !== '' ? content : '';
   });
 
+// Always strip company_phone from body — it's shown in the CTA button already
+  body = body.replace(/\{\{company_phone\}\}/g, '');
+
   // Replace remaining {{variable}} placeholders
-  // Skip null/undefined — those were handled (and stripped) by the conditional block pass above
+  // Skip null/undefined/empty — replace with empty string so labels without values get cleaned up
   Object.keys(variables).forEach(key => {
     const raw = variables[key];
-    if (raw === null || raw === undefined) return;
+    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+    if (raw === null || raw === undefined || raw === '') {
+      // Replace placeholder with empty string
+      subject = subject.replace(regex, '');
+      body = body.replace(regex, '');
+      return;
+    }
     let value = raw;
     if (key === 'line_items' && Array.isArray(value)) {
       value = formatLineItems(value);
     }
-    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
     subject = subject.replace(regex, value);
     body = body.replace(regex, value);
   });
@@ -97,7 +103,24 @@ export function renderEmailTemplate(
   subject = subject.replace(/\{\{[\w]+\}\}/g, '');
   body = body.replace(/\{\{[\w]+\}\}/g, '');
 
+  // Clean up lines that are just a label with no value (e.g., "Due Date: " or "Time: ")
+  body = body.replace(/^.*:\s*$/gm, '');
+  // Clean up multiple blank lines left behind
+  body = body.replace(/\n{3,}/g, '\n\n');
+
   return { subject, body };
+}
+
+export function formatPhone(phone: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits[0] === '1') {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return phone; // return as-is if unexpected format
 }
 
 function formatLineItems(items: { description: string; amount: number }[]) {
@@ -165,15 +188,17 @@ export function textToHtml(
     : '';
 
   // CTA call button — only if phone is provided
+  const formattedPhone = formatPhone(companyPhone || '');
+  const rawDigits = (companyPhone || '').replace(/\D/g, '');
   const callCta = companyPhone
     ? `
       <tr>
         <td style="padding: 0 40px 40px 40px;">
           <div style="border-top: 2px solid #e2e8f0; padding-top: 32px; text-align: center;">
             <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">Have questions? We're here to help.</p>
-            <a href="tel:${companyPhone}"
+            <a href="tel:${rawDigits}"
               style="display: inline-block; background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
-              Call Us: ${companyPhone}
+              Call Us: ${formattedPhone}
             </a>
           </div>
         </td>
