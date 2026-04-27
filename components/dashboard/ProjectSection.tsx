@@ -192,7 +192,7 @@ export default function ProjectSection({
 
       {/* ── FINANCIALS SECTION ───────────────────────── */}
       {(activeSection === 'financials' || !hideTabs) && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           {!hideTabs && (
             <div className="px-5 py-4 border-b border-gray-50"
               style={{ background: 'linear-gradient(to right, #faf5ff, #fdf4ff)' }}>

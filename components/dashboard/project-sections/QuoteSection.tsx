@@ -642,27 +642,29 @@ className={`border-b transition-colors group ${
 
 
 {/* Replace the entire total bar + save section with: */}
-<div className="sticky bottom-0 z-10 bg-white border-t border-slate-100">
-  <div className="px-4 py-3 flex items-center justify-between gap-3">
-    <div className="min-w-0">
-      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total</p>
-      <motion.p key={total} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-        className="text-xl font-black text-slate-900">
-        {fmt(total)}
-      </motion.p>
+<div className="sticky bottom-0 z-10 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+  <div className="px-4 py-3">
+    <div className="flex items-center justify-between mb-2">
+      <div className="min-w-0">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">Total</p>
+        <motion.p key={total} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+          className="text-xl font-black text-slate-900">
+          {fmt(total)}
+        </motion.p>
+      </div>
     </div>
-<div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+    <div className="flex items-center gap-2">
       {isEditing ? (
         <>
           <motion.button whileTap={{ scale: 0.97 }}
             onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
-            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-500 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300"
+            className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-500 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300 text-center"
           >
             Cancel
           </motion.button>
           <motion.button whileTap={{ scale: 0.97 }}
             onClick={handleSave} disabled={saving || quoteData.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest transition disabled:opacity-40 shadow-lg shadow-slate-200"
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest transition disabled:opacity-40 shadow-lg shadow-slate-200"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Save Quote
@@ -672,18 +674,18 @@ className={`border-b transition-colors group ${
         <>
           <motion.button whileTap={{ scale: 0.97 }}
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300"
+            className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-[11px] font-black uppercase tracking-widest transition hover:border-slate-300 text-center"
           >
             Edit
           </motion.button>
-         <motion.button whileTap={{ scale: 0.97 }}
-  onClick={() => setShowEmailModal(true)}
-  disabled={!hasProject || quoteData.length === 0}
-  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition hover:border-blue-300 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
->
-  <Send className="w-3.5 h-3.5" />
-  Send Quote
-</motion.button>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => setShowEmailModal(true)}
+            disabled={!hasProject || quoteData.length === 0}
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-700 text-[11px] font-black uppercase tracking-widest transition hover:border-blue-300 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <Send className="w-3.5 h-3.5" />
+            Send Quote
+          </motion.button>
         </>
       )}
     </div>
