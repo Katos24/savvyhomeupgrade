@@ -667,7 +667,7 @@ className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-i
                   <motion.div
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 }}
-className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition overflow-hidden"
+className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition"
                   >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
