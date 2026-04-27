@@ -489,7 +489,7 @@ return (
                             initial={{ opacity: 0, scale: 0.95, y: -4 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                            className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 w-44 overflow-hidden"
+className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 w-44 overflow-y-auto max-h-60"
                           >
                             {!showDeleteConfirm ? (
                               <button onClick={() => setShowDeleteConfirm(true)}
