@@ -219,22 +219,21 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 </AnimatePresence>
 
 {/* ── PUBLIC URL BANNER ── */}
- <div className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-2xl mb-6 shadow-sm">
-  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+ <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-6">
   <div className="flex-1 min-w-0">
-    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Your booking link</p>
-<span className="text-xs sm:text-sm font-semibold text-slate-700 break-all block">{publicUrl}</span>  </div>
-  <motion.button
-    whileTap={{ scale: 0.97 }}
+    <p className="text-[11px] font-medium text-gray-400 mb-0.5">Your booking link</p>
+    <span className="text-sm font-medium text-gray-700 break-all block">{publicUrl}</span>
+  </div>
+  <button
     onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-    className={`shrink-0 px-4 py-2 text-xs font-black rounded-xl transition-all uppercase tracking-widest ${
+    className={`shrink-0 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all ${
       urlCopied
         ? 'bg-emerald-500 text-white'
-        : 'bg-slate-900 hover:bg-slate-700 text-white'
+        : 'bg-gray-900 hover:bg-gray-800 text-white'
     }`}
   >
-    {urlCopied ? 'Copied!' : 'Copy'}
-  </motion.button>
+    {urlCopied ? 'Copied' : 'Copy'}
+  </button>
 </div>
 
       {/* ── MOBILE TAB BAR ── */}
@@ -271,39 +270,31 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             {/* Step pills */}
             <div className="flex items-center gap-1.5">
               {([1, 2, 3] as const).map((step) => (
-                <motion.button
-                  key={step}
-                  onClick={() => setPreviewStep(step)}
-                  whileTap={{ scale: 0.95 }}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
-                    previewStep === step
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                  }`}
-                >
-                  {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Done'}
-                </motion.button>
+                <button
+  key={step}
+  onClick={() => setPreviewStep(step)}
+  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+    previewStep === step
+      ? 'bg-gray-900 text-white'
+      : 'bg-gray-100 text-gray-400 hover:text-gray-600'
+  }`}
+>
+  {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Done'}
+</button>
               ))}
 <span className="ml-auto text-[10px] text-gray-300 font-medium tracking-wide">Customer view</span>            </div>
 
-            {/* Phone shell */}
-            <div className="relative">
-              {/* Glow */}
-              <div className="absolute -inset-4 rounded-[3rem] opacity-20 blur-2xl pointer-events-none"
-                style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }} />
-
-              <div className="relative bg-gray-950 rounded-[2.8rem] p-3.5 border-[6px] border-gray-900 shadow-2xl overflow-hidden aspect-[9/19] max-h-[700px] flex flex-col">
-                {/* Notch */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-950 rounded-b-2xl z-10" />
-                <div className="bg-white rounded-[2rem] flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={previewStep}
-                      initial={{ opacity: 0, x: 12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -12 }}
-                      transition={spring}
-                      className="h-full"
+           {/* Preview card — clean, no fake device chrome */}
+<div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-h-[680px]">
+  <div className="overflow-y-auto h-full" style={{ scrollbarWidth: 'none' }}>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={previewStep}
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -12 }}
+        transition={spring}
+        className="h-full"
                     >
                       {previewStep === 1 && (
                        <PreviewStep1
@@ -335,10 +326,9 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
                         />
                       )}
                     </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
+    </AnimatePresence>
+  </div>
+</div>
 
             {/* Open real form */}
             <a
@@ -355,17 +345,17 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
         <div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'}`}>
 
           {/* STEP 1 — subtle, locked, collapsed */}
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 px-5 py-3.5">
-            <div className="flex items-center gap-2 mb-1">
-              <Lock className="w-3.5 h-3.5 text-gray-300" />
-              <span className="text-xs font-bold text-gray-400">Step 1 — always collected</span>
-<span className="ml-auto text-[10px] text-gray-300 font-medium hidden sm:block">Required to create a lead — can't be turned off</span>            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
-                <span key={f} className="text-[11px] text-gray-300 font-medium">{f}</span>
-              ))}
-            </div>
-          </div>
+          <div className="rounded-xl border border-gray-150 bg-gray-50 px-4 py-3">
+  <div className="flex items-center gap-2 mb-1.5">
+    <Lock className="w-3.5 h-3.5 text-gray-300" />
+    <span className="text-xs font-medium text-gray-400">Step 1 — always collected</span>
+  </div>
+  <div className="flex flex-wrap gap-x-2 gap-y-1">
+    {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
+      <span key={f} className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-md border border-gray-100">{f}</span>
+    ))}
+  </div>
+</div>
 
           {/* STEP 2 — Optional fields */}
           <Section
@@ -536,18 +526,17 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 </Section>
 
         {/* Save button */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleSaveAll}
-          disabled={loading}
-          className="w-full py-4 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
-        >
+        <button
+  onClick={handleSaveAll}
+  disabled={loading}
+  className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2"
+>
           {loading
             ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             : <Save className="w-3.5 h-3.5" />
           }
           {loading ? 'Saving...' : 'Save changes'}
-        </motion.button>
+</button>
 
       </div>
     </div>
@@ -568,25 +557,23 @@ function Section({ icon, title, subtitle, badge, badgeColor, action, children }:
 }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-<div className="px-4 py-3 border-b border-gray-50 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-gray-800">{title}</span>
-            {badge && (
-              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                badgeColor === 'indigo' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-400'
-              }`}>
-                {badge}
-              </span>
-            )}
-          </div>
-          {subtitle && <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{subtitle}</p>}
-        </div>
-        {action}
-      </div>
+<div className="px-4 py-3.5 border-b border-gray-100 flex items-center gap-2.5">
+  <div className="shrink-0">{icon}</div>
+  <div className="flex-1 min-w-0">
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-sm font-semibold text-gray-900">{title}</span>
+      {badge && (
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+          badgeColor === 'indigo' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-400'
+        }`}>
+          {badge}
+        </span>
+      )}
+    </div>
+    {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+  </div>
+  {action}
+</div>
      <div className="px-4 py-3">
   {children}
 </div>
@@ -610,16 +597,12 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
         <p className={`text-[11px] transition-colors ${enabled ? 'text-gray-400' : 'text-gray-300'}`}>{description}</p>
       </div>
       <div className="shrink-0" onClick={e => { e.stopPropagation(); onToggle(); }}>
-        <motion.div
-          className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
-        >
-          <motion.div
-            layout
-            transition={spring}
-            className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
-            style={{ left: enabled ? 22 : 4 }}
-          />
-        </motion.div>
+        <div className={`w-9 h-[22px] rounded-full relative transition-colors duration-200 ${enabled ? 'bg-gray-900' : 'bg-gray-200'}`}>
+  <div
+    className="absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
+    style={{ transform: enabled ? 'translateX(14px)' : 'translateX(0)' }}
+  />
+</div>
       </div>
     </motion.div>
   );
@@ -730,7 +713,7 @@ function PreviewStep1({heading, categories, brandColor1, brandColor2, logoUrl, c
   const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-2xl px-3 text-gray-300 text-[10px] flex items-center gap-2";
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+<div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
         <div className="w-6 h-0.5 bg-white/20 rounded-full mx-auto mb-3" />
@@ -826,7 +809,7 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
     (canUsePhotoUpload && fieldConfig.file_upload.enabled) || customQuestions.length > 0;
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+<div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
         <div className="flex items-center gap-1.5 text-[8px] mb-2">
