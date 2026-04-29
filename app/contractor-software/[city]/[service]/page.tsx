@@ -516,28 +516,6 @@ export default async function CityServicePage({
         </div>
       </section>
 
-      {/* SEO text */}
-      <section className="sr-only" aria-hidden="true">
-        <h2>{service} contractor software {city}</h2>
-        <p>
-          {detail.searchTerms.join('. ')}. 
-          Best {service.toLowerCase()} app for contractors in {city}. 
-          {service} lead tracking {city}. 
-          {service.toLowerCase()} job management app. 
-          How to get more {service.toLowerCase()} leads in {city}. 
-          {service.toLowerCase()} booking software. 
-          {service.toLowerCase()} estimate and quoting app. 
-          Best app for {service.toLowerCase()} contractors. 
-          {service.toLowerCase()} business software {city}. 
-          {city} {service.toLowerCase()} contractor scheduling. 
-          Simple CRM for {service.toLowerCase()} businesses. 
-          How to organize {service.toLowerCase()} leads.
-          {service.toLowerCase()} contractor app for iPhone.
-          {service.toLowerCase()} contractor app for Android.
-          Free {service.toLowerCase()} scheduling software.
-          {service.toLowerCase()} invoice and payment app.
-        </p>
-      </section>
     </div>
   );
 }
