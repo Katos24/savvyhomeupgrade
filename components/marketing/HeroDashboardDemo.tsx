@@ -16,7 +16,9 @@ function DashboardPhone({ leadVisible }: { leadVisible: boolean }) {
   return (
     <div className="relative" style={{ width: 260, height: 480 }}>
       <div className="relative w-full h-full rounded-[3rem] border-[8px] border-[#0f172a] bg-[#0f172a] shadow-[0_40px_80px_rgba(0,0,0,0.4)] overflow-hidden ring-1 ring-white/10">
-      
+        <div className="absolute top-0 inset-x-0 h-7 flex justify-center items-start z-30 pt-1.5">
+          <div className="w-16 h-4 bg-black rounded-full" />
+        </div>
         <div className="absolute inset-0 pt-8 flex flex-col bg-[#020617]">
           <div className="px-4 pt-4 pb-3 border-b border-white/5 bg-white/[0.02]">
             <div className="flex items-center justify-between mb-2">
