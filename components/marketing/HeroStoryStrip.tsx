@@ -6,7 +6,6 @@ import {
   ChevronRight, ImageIcon, MapPin, Calendar, Upload, X, Settings2, Smartphone
 } from 'lucide-react';
 import { LeadModalMockup } from './LeadModalMockup';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── STEP 1: QR CARD ─────────────────────────────────────────────────────────
 
@@ -53,6 +52,7 @@ export function FormCard() {
 
       {/* Form fields */}
       <div className="p-3 sm:p-5 space-y-2 sm:space-y-3">
+
         <div className="grid grid-cols-2 gap-2">
           <div className="px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
             <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">Name</p>
@@ -75,6 +75,7 @@ export function FormCard() {
           </div>
         </div>
 
+        {/* Description + photo side by side */}
         <div className="flex gap-2">
           <div className="flex-1 min-w-0 px-2.5 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
             <p className="text-[7px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Description</p>
@@ -85,6 +86,7 @@ export function FormCard() {
           </div>
         </div>
 
+        {/* Custom question */}
         <div className="px-2.5 py-2 bg-indigo-50 border border-indigo-200 rounded-lg sm:rounded-xl">
           <div className="flex items-center justify-between mb-1.5">
             <p className="text-[7px] font-bold text-indigo-400 uppercase tracking-wider">Custom Question</p>
@@ -107,12 +109,14 @@ export function FormCard() {
           </div>
         </div>
 
+        {/* Submit */}
         <div className="w-full py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black text-white text-center uppercase tracking-widest"
           style={{ background: 'linear-gradient(135deg, #1a6645, #15803d)' }}>
           Submit Request
         </div>
       </div>
 
+      {/* Customization footer */}
       <div className="px-3 sm:px-5 py-2 border-t border-gray-100 bg-gray-50 flex items-center justify-center gap-1.5">
         <Settings2 size={9} className="text-blue-400" />
         <p className="text-[7px] sm:text-[8px] font-bold text-gray-400">Your logo, colors, fields & custom questions</p>
@@ -157,7 +161,8 @@ function CaptureCard() {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export function HeroStoryStrip() {
-  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(0);
 
   const steps = [
     {
@@ -166,8 +171,7 @@ export function HeroStoryStrip() {
       desc: 'Get a custom QR code for trucks and yard signs.',
       card: <QRCard />,
       popColor: 'border-emerald-500/20',
-      glow: 'from-emerald-600/20',
-      accentColor: '#10b981',
+      glow: 'from-emerald-600/20'
     },
     {
       number: '2',
@@ -175,8 +179,7 @@ export function HeroStoryStrip() {
       desc: 'They fill out your branded form with photos. Fully customizable.',
       card: <FormCard />,
       popColor: 'border-blue-500/20',
-      glow: 'from-blue-600/20',
-      accentColor: '#3b82f6',
+      glow: 'from-blue-600/20'
     },
     {
       number: '3',
@@ -184,8 +187,7 @@ export function HeroStoryStrip() {
       desc: 'Name, photos, and details hit your board instantly.',
       card: <CaptureCard />,
       popColor: 'border-emerald-500/20',
-      glow: 'from-emerald-600/20',
-      accentColor: '#10b981',
+      glow: 'from-emerald-600/20'
     },
     {
       number: '4',
@@ -193,100 +195,61 @@ export function HeroStoryStrip() {
       desc: 'Tasks, quotes, scheduling, and payments — all in one view.',
       card: <LeadModalMockup />,
       popColor: 'border-slate-500/20',
-      glow: 'from-slate-600/20',
-      accentColor: '#64748b',
+      glow: 'from-slate-600/20'
     },
   ];
 
-  const handleCardTap = (index: number) => {
-    setActiveCard(activeCard === index ? null : index);
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, offsetWidth } = scrollRef.current;
+    setActiveStep(Math.round(scrollLeft / offsetWidth));
   };
 
   return (
     <div id="how-it-works" className="w-full max-w-6xl mx-auto scroll-mt-24">
       
-      {/* ── MOBILE: STACKED CARD DECK ── */}
-      <div className="md:hidden px-4">
-        <div className="text-center mb-8">
-          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-2">How It Works</p>
-          <p className="text-white/40 text-xs font-bold">Tap a card to expand</p>
+      {/* MOBILE: SWIPE CAROUSEL */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-center gap-3 mb-5 px-4">
+          <div className="flex gap-1.5">
+            {steps.map((_, i) => (
+              <div 
+                key={i} 
+                className={`h-1.5 rounded-full transition-all duration-500 ${activeStep === i ? 'w-8 bg-emerald-500' : 'w-1.5 bg-white/10'}`} 
+              />
+            ))}
+          </div>
+          <span className="text-white/80 text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-1">
+            Swipe <ChevronRight size={10} />
+          </span>
         </div>
 
-        <div className="relative flex flex-col items-center">
-          {steps.map((step, i) => {
-            const isActive = activeCard === i;
-            const isBelow = activeCard !== null && i > activeCard;
-            const isAbove = activeCard !== null && i < activeCard;
-
-            return (
-              <motion.div
-                key={i}
-                onClick={() => handleCardTap(i)}
-                layout
-                className="w-full cursor-pointer"
-                style={{
-                  zIndex: isActive ? 50 : steps.length - i,
-                  marginTop: i === 0 ? 0 : isActive ? 8 : -60,
-                }}
-                animate={{
-                  scale: isActive ? 1 : isAbove ? 0.92 : 0.96,
-                  y: isActive ? 0 : isAbove ? -20 : 0,
-                  opacity: isActive ? 1 : activeCard !== null ? 0.5 : 1 - (i * 0.08),
-                }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              >
-                <div
-                  className={`relative overflow-hidden rounded-2xl border bg-[#020617] shadow-xl transition-all ${
-                    isActive ? 'border-white/20' : step.popColor
-                  }`}
-                >
-                  <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-br ${step.glow} to-transparent opacity-30 pointer-events-none`} />
-                  
-                  <div className="relative z-10 p-4">
-                    {/* Header - always visible */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shrink-0"
-                        style={{ background: step.accentColor }}
-                      >
-                        {step.number}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-black text-white tracking-tight">{step.title}</h3>
-                        <p className="text-white/40 text-[10px] font-medium leading-snug truncate">{step.desc}</p>
-                      </div>
-                      <motion.div
-                        animate={{ rotate: isActive ? 90 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronRight size={16} className="text-white/20 shrink-0" />
-                      </motion.div>
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 px-4 pb-4"
+        >
+          {steps.map((step, i) => (
+            <div key={i} className="min-w-[88%] snap-center flex flex-col">
+              <div className={`relative overflow-hidden rounded-2xl p-3 border ${step.popColor} bg-[#020617] shadow-xl flex flex-col`}>
+                <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-br ${step.glow} to-transparent opacity-30 pointer-events-none`} />
+                <div className="relative z-10 flex flex-col">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xs font-black shadow-lg shrink-0">
+                      {step.number}
                     </div>
-
-                    {/* Expanded content */}
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                          className="overflow-hidden"
-                        >
-                          <p className="text-white/60 text-[11px] font-medium mt-3 mb-4 leading-relaxed">{step.desc}</p>
-                          <div>{step.card}</div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <h3 className="text-sm font-black text-white tracking-tight">{step.title}</h3>
                   </div>
+                  <p className="text-white/60 text-[11px] font-medium mb-3 leading-snug">{step.desc}</p>
+                  <div>{step.card}</div>
                 </div>
-              </motion.div>
-            );
-          })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── DESKTOP: BENTO GRID ── */}
+      {/* DESKTOP: BENTO GRID */}
       <div className="hidden md:grid grid-cols-2 gap-8 lg:gap-12">
         {steps.map((step, i) => (
           <div 
