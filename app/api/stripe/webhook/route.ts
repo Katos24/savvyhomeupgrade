@@ -8,7 +8,9 @@ import {
   sendPaymentFailedEmail,
   sendCancellationScheduledEmail,
   sendPlanChangedEmail,
+  sendPaymentReceiptEmail,
 } from '@/lib/email';
+
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -275,6 +277,61 @@ export async function POST(req: NextRequest) {
       }
 
       break;
+    }
+
+// Send payment receipt email on successful payment (including trial end when amount is $0)
+
+    case 'invoice.paid': {
+      const invoice = event.data.object;
+
+      // Skip the first invoice during trial/signup (amount is $0)
+      if (invoice.amount_paid === 0) {
+        console.log('Skipping $0 invoice (trial period)');
+        break;
+      }
+
+      try {
+        const company = await sql`
+          SELECT name, email, slug, plan_tier FROM companies
+          WHERE stripe_customer_id = ${invoice.customer as string}
+          LIMIT 1
+        `;
+
+        if (company[0]) {
+          const amountPaid = (invoice.amount_paid / 100).toFixed(2);
+          const invoiceDate = new Date((invoice.created || 0) * 1000).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+          const nextBillingDate = periodEnd
+            ? new Date(periodEnd * 1000).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : null;
+
+          await sendPaymentReceiptEmail({
+            companyEmail: company[0].email,
+            companyName: company[0].name,
+            amountPaid,
+            invoiceDate,
+            planTier: company[0].plan_tier || 'basic',
+            nextBillingDate,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
+            invoiceUrl: invoice.hosted_invoice_url || null,
+          });
+
+          console.log('Payment receipt email sent to:', company[0].email);
+        }
+      } catch (emailError) {
+        console.error('Failed to send payment receipt email:', emailError);
+      }
+
+     break;
     }
 
     default:

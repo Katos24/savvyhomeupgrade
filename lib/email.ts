@@ -1263,8 +1263,7 @@ export async function sendPaymentReminderEmail({
   }
 }
 
-// 📋 Daily digest email to contractor
-// Add this function to /lib/email.ts
+
 // 📋 Daily digest email to contractor
 // Replace the existing sendDailyDigestEmail function in /lib/email.ts with this
 
@@ -1680,5 +1679,93 @@ export async function sendPlanChangedEmail({
   </div>
 </body>
 </html>`,
+  });
+}
+
+
+// ─── ADD THIS FUNCTION TO YOUR lib/email.ts ───
+
+export async function sendPaymentReceiptEmail({
+  companyEmail,
+  companyName,
+  amountPaid,
+  invoiceDate,
+  planTier,
+  nextBillingDate,
+  dashboardUrl,
+  invoiceUrl,
+}: {
+  companyEmail: string;
+  companyName: string;
+  amountPaid: string;
+  invoiceDate: string;
+  planTier: string;
+  nextBillingDate: string | null;
+  dashboardUrl: string;
+  invoiceUrl: string | null;
+}) {
+  const planName = planTier.charAt(0).toUpperCase() + planTier.slice(1);
+
+  await resend.emails.send({
+    from: 'Lead2Project <hello@lead2project.com>',
+    to: companyEmail,
+    subject: `Payment received - $${amountPaid}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
+        <div style="margin-bottom: 32px;">
+          <img src="https://lead2project.com/Lead2ProjectLogo.png" alt="Lead2Project" style="width: 36px; height: 36px;" />
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px;">
+          Payment received
+        </h1>
+        <p style="font-size: 15px; color: #64748b; margin: 0 0 28px; line-height: 1.6;">
+          Hi ${companyName}, your payment has been processed successfully. Here are the details.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 28px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-size: 13px; color: #94a3b8; font-weight: 600;">Amount</td>
+              <td style="padding: 8px 0; font-size: 16px; color: #0f172a; font-weight: 700; text-align: right;">$${amountPaid}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 13px; color: #94a3b8; font-weight: 600;">Plan</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #0f172a; text-align: right;">${planName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 13px; color: #94a3b8; font-weight: 600;">Date</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #0f172a; text-align: right;">${invoiceDate}</td>
+            </tr>
+            ${nextBillingDate ? `
+            <tr>
+              <td style="padding: 8px 0; font-size: 13px; color: #94a3b8; font-weight: 600;">Next billing</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #0f172a; text-align: right;">${nextBillingDate}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        <div style="margin-bottom: 28px;">
+          <a href="${dashboardUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+            Go to Dashboard
+          </a>
+          ${invoiceUrl ? `
+          <a href="${invoiceUrl}" style="display: inline-block; font-size: 14px; font-weight: 600; color: #2563eb; padding: 12px 24px; text-decoration: none;">
+            View Invoice
+          </a>
+          ` : ''}
+        </div>
+
+        <p style="font-size: 13px; color: #94a3b8; margin: 0; line-height: 1.5;">
+          Thank you for using Lead2Project. If you have any questions about your billing, reply to this email.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0 20px;" />
+        <p style="font-size: 12px; color: #cbd5e1; margin: 0;">
+          Lead2Project - Job management for contractors
+        </p>
+      </div>
+    `,
   });
 }

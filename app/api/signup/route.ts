@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         companyId: newCompany.id,
         companySlug: newCompany.slug,
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+  process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
 
