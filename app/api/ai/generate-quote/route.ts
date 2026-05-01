@@ -13,7 +13,7 @@
 //   - Job expires after 1 hour — no stale data
 //   - No NY hardcoding — works for any US region
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
 import { neon } from '@neondatabase/serverless';
@@ -416,12 +416,16 @@ export async function POST(request: Request) {
 
     const jobId = jobRows[0].id;
 
-    // ── Kick off async processing (fire and return jobId) ─────────────────
-    // We don't await this — client will poll for status
+     // ── Kick off async processing (fire and return jobId) ─────────────────
+    // after() sends the response immediately but keeps the function alive
+    // until processQuoteJob completes (up to maxDuration)
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    processQuoteJob(jobId, sql, anthropic).catch(err => {
-      console.error('Unhandled processQuoteJob error:', err);
-    });
+
+    after(
+      processQuoteJob(jobId, sql, anthropic).catch(err => {
+        console.error('Unhandled processQuoteJob error:', err);
+      })
+    );
 
     // Return jobId immediately — client polls from here
     return NextResponse.json({
