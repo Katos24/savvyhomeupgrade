@@ -175,7 +175,7 @@ export function HeroStoryStrip() {
     },
     {
       number: '2',
-      title: 'Customer Submits',
+      title: 'Customize Form',
       desc: 'They fill out your branded form with photos. Fully customizable.',
       card: <FormCard />,
       popColor: 'border-blue-500/20',
