@@ -30,17 +30,17 @@ const FEATURES: Feature[] = [
   {
     icon: <LayoutDashboard size={22} strokeWidth={1.8} />,
     name: 'Lead & Project Board',
-    // screenshot: '/images/feature-board.webp',
+    screenshot: '/images/mobilelaptophero2.webp',
   },
   {
     icon: <FileText size={22} strokeWidth={1.8} />,
     name: 'One-Click Quote Builder',
-    // screenshot: '/images/feature-quote.webp',
+    screenshot: '/images/quote-builder.webp',
   },
   {
     icon: <CalendarDays size={22} strokeWidth={1.8} />,
     name: 'Job Scheduling',
-    // screenshot: '/images/feature-schedule.webp',
+    screenshot: '/images/schedule-send.webp',
   },
   {
     icon: <Mail size={22} strokeWidth={1.8} />,
@@ -50,7 +50,7 @@ const FEATURES: Feature[] = [
   {
     icon: <FormInput size={22} strokeWidth={1.8} />,
     name: 'Custom Booking Forms',
-    // screenshot: '/images/feature-forms.webp',
+    screenshot: '/images/form-builder.webp',
   },
   {
     icon: <Download size={22} strokeWidth={1.8} />,
