@@ -1,222 +1,107 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { QrCode, Check, Camera, Clock, DollarSign } from 'lucide-react';
-
-/* ─────────────────────────────────────────────────────────
-   HERO CAROUSEL — V2 (FieldPulse style)
-   ─────────────────────────────────────────────────────────
-   • Big rounded images — real photos or placeholders
-   • Small floating UI overlays on top (badges, mini cards)
-   • No text blocks below — images tell the story
-   • Auto-scrolls, swipeable on mobile, dots navigation
-   
-   IMAGE SETUP:
-   Drop your images in /public/images/ and update imageSrc.
-   Ideal size: 600x600 or 600x700, .webp format.
-   Mix of: real contractor photos + product screenshots.
-   ───────────────────────────────────────────────────────── */
+import { QrCode, Check, Camera, Clock } from 'lucide-react';
 
 interface CarouselSlide {
   imageSrc?: string;
-  placeholderGradient: string;
-  overlays: React.ReactNode;
+  badge: string;
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  accent: string;
 }
-
-/* ── FLOATING UI OVERLAY COMPONENTS ── */
-
-function Badge({ text, color = 'emerald' }: { text: string; color?: string }) {
-  const colors: Record<string, string> = {
-    emerald: 'bg-emerald-500/90 text-white',
-    blue: 'bg-blue-500/90 text-white',
-    amber: 'bg-amber-400/90 text-black',
-    white: 'bg-white/90 text-slate-800',
-    violet: 'bg-violet-500/90 text-white',
-  };
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide shadow-lg ${colors[color] || colors.white}`}
-      style={{ backdropFilter: 'blur(8px)' }}
-    >
-      {text}
-    </span>
-  );
-}
-
-function MiniCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-xl px-4 py-3 shadow-2xl"
-      style={{
-        background: 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(12px)',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/* ── SLIDE DATA ── */
 
 const SLIDES: CarouselSlide[] = [
   {
-    // Slide 1: QR code scanning — contractor truck / yard sign
+    imageSrc: '/images/morning-brief.webp',
+    badge: 'MORNING BRIEF',
+    title: 'Daily Digest',
+    subtitle: '3 Jobs Scheduled',
+    icon: <Clock size={16} />,
+    accent: 'bg-slate-900',
+  },
+  {
     imageSrc: '/images/qr-scan-2.webp',
-    placeholderGradient: 'from-emerald-900/40 to-teal-900/60',
-    overlays: (
-      <>
-        <div className="absolute top-4 right-4 flex gap-2">
-          <Badge text="QR Scanned" color="emerald" />
-        </div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <MiniCard>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <QrCode size={16} className="text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-slate-800">New Lead Received</p>
-                <p className="text-[10px] text-slate-400">via QR Code · Just now</p>
-              </div>
-            </div>
-          </MiniCard>
-        </div>
-      </>
-    ),
+    badge: 'NEW SCAN',
+    title: 'Lead Received',
+    subtitle: 'via Truck QR • Just now',
+    icon: <QrCode size={16} />,
+    accent: 'bg-emerald-500',
   },
   {
-    // Slide 2: Photo/video upload — damage photo
     imageSrc: '/images/fence-damage.webp',
-    placeholderGradient: 'from-sky-900/40 to-blue-900/60',
-    overlays: (
-      <>
-        <div className="absolute top-4 left-4 flex gap-2">
-          <Badge text="Photo Received" color="blue" />
-        </div>
-        <div className="absolute bottom-4 right-4">
-          <MiniCard>
-            <div className="flex items-center gap-2">
-              <Camera size={14} className="text-sky-500" />
-              <p className="text-[11px] font-bold text-slate-700">1 photo attached</p>
-            </div>
-          </MiniCard>
-        </div>
-      </>
-    ),
+    badge: 'SITE SURVEY',
+    title: 'Media Uploaded',
+    subtitle: '2 Photos • Job #4421',
+    icon: <Camera size={16} />,
+    accent: 'bg-yellow-400',
   },
   {
-    // Slide 3: Quote sent — show accept/decline overlay
     imageSrc: '/images/quote-send-tablet.webp',
-    placeholderGradient: 'from-amber-900/40 to-orange-900/60',
-    overlays: (
-      <>
-        <div className="absolute top-4 left-4 flex gap-2">
-          <Badge text="Quote Sent" color="white" />
-          <Badge text="Accepted" color="emerald" />
-        </div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <MiniCard>
-            <p className="text-[12px] font-bold text-slate-800">Roof Replacement</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Sent Apr 18 · $7,950</p>
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                <Check size={10} className="text-white" strokeWidth={3} />
-              </div>
-              <span className="text-[10px] font-bold text-emerald-600">Customer Accepted</span>
-            </div>
-          </MiniCard>
-        </div>
-      </>
-    ),
+    badge: 'CONVERSION',
+    title: 'Quote Accepted',
+    subtitle: '$7,950 • Roof Repair',
+    icon: <Check size={16} />,
+    accent: 'bg-emerald-500',
   },
   {
-    // Slide 4: Daily digest — morning routine
-    imageSrc: '/images/og-image.webp',
-    placeholderGradient: 'from-violet-900/40 to-purple-900/60',
-    overlays: (
-      <>
-        <div className="absolute top-4 right-4">
-          <Badge text="6:00 AM" color="violet" />
-        </div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <MiniCard>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Clock size={16} className="text-violet-600" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-slate-800">Daily Digest</p>
-                <p className="text-[10px] text-slate-400">3 jobs today · $12,400 pending</p>
-              </div>
-            </div>
-          </MiniCard>
-        </div>
-      </>
-    ),
+    imageSrc: '/images/roof-onsite.webp',
+    badge: 'ON SITE',
+    title: 'Job In Progress',
+    subtitle: 'Roof Repair • Mike T.',
+    icon: <Camera size={16} />,
+    accent: 'bg-yellow-400',
   },
   {
-    // Slide 5: Get paid — payment tracking
-    imageSrc: '/images/settings-view.webp',
-    placeholderGradient: 'from-rose-900/40 to-pink-900/60',
-    overlays: (
-      <>
-        <div className="absolute top-4 left-4 flex gap-2">
-          <Badge text="Payment Reminder Sent" color="white" />
-        </div>
-        <div className="absolute bottom-4 right-4">
-          <MiniCard>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <DollarSign size={16} className="text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-slate-800">$7,950.00</p>
-                <p className="text-[10px] text-slate-400">Marked Paid · Just now</p>
-              </div>
-            </div>
-          </MiniCard>
-        </div>
-      </>
-    ),
+    imageSrc: '/images/get-paid.webp',
+    badge: 'CLOSED',
+    title: 'Payment Received',
+    subtitle: '$7,950 • Complete',
+    icon: <Check size={16} />,
+    accent: 'bg-emerald-500',
   },
 ];
 
-export default function HeroCarousel() {
+export default function IndustrialScrollCarousel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Auto-scroll
+  // Drag state refs (not state — avoids re-renders during drag)
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollStart = useRef(0);
+  const hasDragged = useRef(false);
+
+  // ── Slow continuous auto-scroll ──
   useEffect(() => {
     if (paused) return;
+    const container = scrollRef.current;
+    if (!container) return;
 
-    const interval = setInterval(() => {
-      if (!scrollRef.current) return;
-      const container = scrollRef.current;
-      const cardEl = container.firstElementChild as HTMLElement | null;
-      if (!cardEl) return;
-      const cardWidth = cardEl.offsetWidth + 16;
-      const nextIndex = (activeIndex + 1) % SLIDES.length;
+    const speed = 0.5;
+    let animId: number;
 
-      if (nextIndex === 0) {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        container.scrollTo({ left: cardWidth * nextIndex, behavior: 'smooth' });
+    const step = () => {
+      container.scrollLeft += speed;
+     if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
+        setPaused(true);
       }
-      setActiveIndex(nextIndex);
-    }, 3500);
+      animId = requestAnimationFrame(step);
+    };
 
-    return () => clearInterval(interval);
-  }, [paused, activeIndex]);
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [paused]);
 
-  // Track scroll position
+  // ── Track active card index on scroll ──
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
 
     const handleScroll = () => {
-      const cardEl = container.firstElementChild as HTMLElement | null;
+      const cardEl = container.firstElementChild as HTMLElement;
       if (!cardEl) return;
       const cardWidth = cardEl.offsetWidth + 16;
       const index = Math.round(container.scrollLeft / cardWidth);
@@ -227,95 +112,124 @@ export default function HeroCarousel() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToIndex = (index: number) => {
-    if (!scrollRef.current) return;
-    const container = scrollRef.current;
-    const cardEl = container.firstElementChild as HTMLElement | null;
-    if (!cardEl) return;
-    const cardWidth = cardEl.offsetWidth + 16;
-    container.scrollTo({ left: cardWidth * index, behavior: 'smooth' });
-    setActiveIndex(index);
+  // ── Desktop: click and drag ──
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    hasDragged.current = false;
+    startX.current = e.pageX;
+    scrollStart.current = scrollRef.current?.scrollLeft || 0;
+    setPaused(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const diff = e.pageX - startX.current;
+    if (Math.abs(diff) > 5) hasDragged.current = true;
+    scrollRef.current.scrollLeft = scrollStart.current - diff;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    setTimeout(() => setPaused(false), 3000);
+  };
+
+  // ── Mobile: touch pause + resume ──
+  const handleTouchStart = () => {
+    setPaused(true);
+  };
+
+  const handleTouchEnd = () => {
+    setTimeout(() => setPaused(false), 3000);
   };
 
   return (
-    <div
-      className="w-full"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setTimeout(() => setPaused(false), 5000)}
-    >
-      {/* Scrollable track */}
+    <div className="w-full py-6 sm:py-8">
+      {/* Scrollable Track */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-5 sm:px-8 lg:px-12 pb-4"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch',
-        }}
+        className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide px-4 sm:px-24 pb-6 sm:pb-10 cursor-grab active:cursor-grabbing select-none"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => { setPaused(false); isDragging.current = false; }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {SLIDES.map((slide, i) => (
           <div
             key={i}
-            className="snap-center shrink-0 group cursor-pointer"
-            style={{ width: 'min(320px, 80vw)' }}
-            onClick={() => scrollToIndex(i)}
+            className="shrink-0"
+            style={{ width: 'min(280px, 72vw)' }}
+            onClick={() => {
+              if (hasDragged.current) return;
+              const container = scrollRef.current;
+              if (!container) return;
+              const cardEl = container.firstElementChild as HTMLElement;
+              if (!cardEl) return;
+              const cardWidth = cardEl.offsetWidth + 16;
+              container.scrollTo({ left: cardWidth * i, behavior: 'smooth' });
+              setActiveIndex(i);
+            }}
           >
             <div
-              className="relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:translate-y-[-4px]"
-              style={{
-                aspectRatio: '4/5',
-                boxShadow: activeIndex === i
-                  ? '0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)'
-                  : '0 8px 24px rgba(0,0,0,0.3)',
-                transform: activeIndex === i ? 'scale(1)' : 'scale(0.97)',
-                opacity: activeIndex === i ? 1 : 0.7,
-                transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
+              className={`relative overflow-hidden border-[3px] sm:border-[4px] border-slate-950 transition-all duration-500 bg-white
+                ${activeIndex === i
+                  ? 'shadow-[8px_8px_0px_#10b981] sm:shadow-[12px_12px_0px_#10b981] scale-100'
+                  : 'shadow-[4px_4px_0px_#1e3a8a] sm:shadow-[6px_6px_0px_#1e3a8a] scale-[0.96] opacity-50'
+                }
+              `}
+              style={{ aspectRatio: '4/5' }}
             >
-              {/* Image or gradient placeholder */}
+              {/* Image */}
               {slide.imageSrc ? (
                 <img
                   src={slide.imageSrc}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  draggable={false}
                 />
               ) : (
-                <div className={`absolute inset-0 bg-gradient-to-br ${slide.placeholderGradient}`} />
+                <div className="absolute inset-0 bg-slate-200" />
               )}
 
-              {/* Dark overlay for contrast with UI elements */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/20" />
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none" />
 
-              {/* Floating UI overlays */}
-              <div className="absolute inset-0">
-                {slide.overlays}
+              {/* Content overlays */}
+              <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between pointer-events-none">
+                {/* Top badge */}
+                <div className="self-start">
+                  <div className="bg-yellow-400 text-slate-950 px-2.5 sm:px-3 py-1 font-[1000] text-[9px] sm:text-[10px] tracking-widest italic border-2 border-slate-950 shadow-[2px_2px_0px_#000] sm:shadow-[3px_3px_0px_#000]">
+                    {slide.badge}
+                  </div>
+                </div>
+
+                {/* Bottom info card */}
+                <div className="bg-white border-2 border-slate-950 p-2.5 sm:p-3 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000]">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center text-white border-2 border-slate-950 ${slide.accent}`}>
+                      {slide.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-[1000] text-slate-950 text-[12px] sm:text-[13px] leading-tight uppercase tracking-tighter truncate">
+                        {slide.title}
+                      </h4>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase truncate">
+                        {slide.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         ))}
 
-        {/* End spacer for mobile scroll */}
-        <div className="shrink-0 w-4 sm:w-8" aria-hidden />
-      </div>
-
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-2 mt-8">
-        {SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => scrollToIndex(i)}
-            className="transition-all duration-300"
-            style={{
-              width: activeIndex === i ? 28 : 8,
-              height: 8,
-              borderRadius: 4,
-              background: activeIndex === i ? '#34d399' : 'rgba(255,255,255,0.15)',
-            }}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+        {/* End spacer so last card isn't cut off */}
+        <div className="shrink-0 w-4 sm:w-24" aria-hidden />
       </div>
     </div>
   );

@@ -1,65 +1,146 @@
 'use client';
 
-import { Zap, QrCode, Mail, Download, Wrench } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Zap, Download, Sunrise, MailCheck, SlidersHorizontal, 
+  Wrench, Sparkles, QrCode, ClipboardList, Send, Bot, FileSpreadsheet
+} from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────
-   TRUST / METRICS STRIP — NO PURPLE
-   ─────────────────────────────────────────────────────────
-   Light gray-blue background. Dark text. Navy/emerald accents.
+   SILICON VALLEY "HEAVY-DUTY" TRUST STRIP
+   Interactive Accordion System for High-Context Selling
    ───────────────────────────────────────────────────────── */
 
-const TRADES = [
-  'Roofing', 'Fencing', 'Cleaning', 'Painting',
-  'HVAC', 'Electrical', 'Plumbing', 'Landscaping',
+const FEATURES = [
+  { 
+    id: 'intake',
+    icon: <QrCode size={24} />, 
+    title: 'THE LEAD MAGNET', 
+    desc: 'QR & Custom Forms', 
+    accent: 'bg-yellow-400',
+    details: 'Blast your custom link or QR everywhere. Customize the form with your branding, specific questions, and preferred dates. It\'s your digital storefront that never sleeps.'
+  },
+  { 
+    id: 'pipeline',
+    icon: <SlidersHorizontal size={24} />, 
+    title: 'COMMAND CENTER', 
+    desc: 'Visual Pipelines', 
+    accent: 'bg-emerald-500',
+    details: 'Manage leads on a visual board. Customize categories, set up unique workflows, and move jobs from "Quote" to "Paid." Add photos, docs, and short vids directly to the job card.'
+  },
+  { 
+    id: 'automation',
+    icon: <Send size={24} />, 
+    title: 'ONE-CLICK OPS', 
+    desc: 'Branded Comms', 
+    accent: 'bg-blue-600',
+    details: 'Send professional quotes with "Accept/Decline" buttons, schedule confirmations, and payment reminders in one click. Every move is logged in a dedicated Outbox for 100% transparency.'
+  },
+  { 
+    id: 'ai-intel',
+    icon: <Bot size={24} />, 
+    title: 'AI ASSISTANT', 
+    desc: 'Briefs & Drafting', 
+    accent: 'bg-slate-900',
+    details: 'Get AI-generated project briefs and chat assistance to speed up your workflow. Our AI quote generator helps you draft faster (it\'s a powerful co-pilot, not a replacement).'
+  },
 ];
 
 export default function NewTrustStrip() {
-  return (
-    <section style={{ background: '#f1f5f9' }}>
-      <div className="max-w-5xl mx-auto px-6 sm:px-10 py-16 sm:py-24">
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const heavyFont = "font-[1000] tracking-tighter uppercase";
 
-        {/* Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-14 sm:mb-20">
-          {[
-            { icon: <Zap size={24} className="text-emerald-600" />, value: '2 Minutes', label: 'Setup Time' },
-            { icon: <QrCode size={24} className="text-emerald-600" />, value: '1 Link', label: 'Everything You Need' },
-            { icon: <Mail size={24} className="text-emerald-600" />, value: '6:00 AM', label: 'Daily Digest' },
-            { icon: <Download size={24} className="text-emerald-600" />, value: '100%', label: 'Your Data, Always' },
-          ].map((m, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center text-center px-4 py-7 sm:py-8 rounded-2xl bg-white"
-              style={{ border: '1px solid #e2e8f0' }}
-            >
-              <div className="mb-3">{m.icon}</div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">
-                {m.value}
-              </p>
-              <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-[0.12em]">
-                {m.label}
-              </p>
+  return (
+    <section className="relative overflow-hidden bg-[#f8fafc] py-12 sm:py-24 border-t-4 border-slate-950">
+      {/* Blueprint Grid */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]" 
+        style={{ 
+          backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`,
+          backgroundSize: '30px 30px'
+        }} 
+      />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+        
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950 text-white mb-4 sm:mb-6 shadow-[4px_4px_0px_#10b981]">
+            <Sparkles size={14} className="text-yellow-400" />
+            <span className="text-[9px] sm:text-[10px] font-black tracking-widest uppercase">The Pro-Contractor Operating System</span>
+          </div>
+          <h2 className={`${heavyFont} text-3xl sm:text-6xl text-slate-950 mb-3 sm:mb-4`}>
+            BUILT TO <span className="text-emerald-600 italic">SCALE</span>
+          </h2>
+          <p className="text-slate-500 font-bold uppercase text-xs sm:text-sm tracking-tight">Click a module to see how we handle your heavy lifting</p>
+        </div>
+
+        {/* Interactive Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-16">
+          {FEATURES.map((item) => (
+            <div key={item.id} className="flex flex-col">
+              <button
+                onClick={() => setActiveTab(activeTab === item.id ? null : item.id)}
+                className={`relative flex flex-col items-start p-4 sm:p-6 border-2 border-slate-950 transition-all text-left
+                  ${activeTab === item.id ? 'bg-white shadow-[0px_0px_0px_#000] translate-y-1' : 'bg-white shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] hover:-translate-y-1'}
+                `}
+              >
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 flex items-center justify-center text-white border-2 border-slate-950 shadow-[2px_2px_0px_#000] sm:shadow-[3px_3px_0px_#000] ${item.accent}`}>
+                  {item.icon}
+                </div>
+                <h3 className={`${heavyFont} text-base sm:text-lg text-slate-950`}>{item.title}</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase">{item.desc}</p>
+                
+                {/* Arrow indicator */}
+                <div className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 transition-transform duration-300 ${activeTab === item.id ? 'rotate-180' : ''}`}>
+                  <div className="w-6 h-6 border-2 border-slate-950 flex items-center justify-center bg-slate-50">
+                    <span className="text-xs font-black">↓</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Accordion Details */}
+              <AnimatePresence>
+                {activeTab === item.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden bg-slate-950 text-white border-x-2 border-b-2 border-slate-950 shadow-[4px_4px_0px_#10b981] sm:shadow-[6px_6px_0px_#10b981]"
+                  >
+                    <div className="p-4 sm:p-6 text-sm font-medium leading-relaxed italic">
+                      {item.details}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
 
-        {/* Built for trades */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-5">
-            <Wrench size={15} className="text-slate-400" />
-            <p className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-[0.18em]">
-              Built for every trade
-            </p>
+        {/* Global Value Bar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 border-y-2 border-slate-200 py-8 sm:py-12">
+          <div className="flex gap-3 sm:gap-4">
+            <Sunrise className="text-yellow-500 shrink-0" size={24} />
+            <div>
+              <h4 className={`${heavyFont} text-xs sm:text-sm text-slate-950`}>6AM Daily Digest</h4>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">Wake up to your daily briefing. Every lead, every quote, every dollar pending.</p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-            {TRADES.map((trade) => (
-              <span
-                key={trade}
-                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[13px] sm:text-sm font-semibold text-slate-700 bg-white"
-                style={{ border: '1px solid #e2e8f0' }}
-              >
-                {trade}
-              </span>
-            ))}
+          <div className="flex gap-3 sm:gap-4">
+            <FileSpreadsheet className="text-blue-600 shrink-0" size={24} />
+            <div>
+              <h4 className={`${heavyFont} text-xs sm:text-sm text-slate-950`}>Total Data Ownership</h4>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">Export CSVs anytime. Bulk edit tables for lightning-fast project updates.</p>
+            </div>
+          </div>
+          <div className="flex gap-3 sm:gap-4">
+            <MailCheck className="text-emerald-600 shrink-0" size={24} />
+            <div>
+              <h4 className={`${heavyFont} text-xs sm:text-sm text-slate-950`}>Outbox Tracking</h4>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase">Stop guessing. See every email sent, when it was delivered, and to whom.</p>
+            </div>
           </div>
         </div>
 

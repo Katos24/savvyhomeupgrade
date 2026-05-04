@@ -1,40 +1,40 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, FileText, Wallet, Zap, Sparkles } from 'lucide-react';
+import { Calendar, FileText, Wallet, Zap, ChevronRight, Activity } from 'lucide-react';
 import { CyclingPhoneMockup } from '@/components/marketing/CyclingPhoneMockup';
 
 const STEPS = [
   {
     title: 'Lead',
-    fullTitle: 'Lead lands on your board',
-    desc: 'Name, contact, and job photos captured instantly. No manual entry required.',
-    color: '#10b981',
-    icon: <Zap size={16} />,
+    fullTitle: 'Leads Hit Your Board',
+    desc: 'Instant capture from QR scans or forms. No manual typing required.',
+    color: '#fbbf24', 
+    icon: <Zap size={20} strokeWidth={3} />,
     screenIdx: 0
   },
   {
     title: 'Schedule',
-    fullTitle: 'Schedule with one click',
-    desc: 'Pick a date and assign your crew. Branded confirmation goes out automatically.',
-    color: '#3b82f6',
-    icon: <Calendar size={16} />,
+    fullTitle: 'One-Tap Dispatch',
+    desc: 'Assign your crew and lock the date. The system blasts confirmations.',
+    color: '#3b82f6', 
+    icon: <Calendar size={20} strokeWidth={3} />,
     screenIdx: 1
   },
   {
     title: 'Quote',
-    fullTitle: 'Send a professional quote',
-    desc: 'One tap sends a branded quote. Customers can accept right from their inbox.',
-    color: '#8b5cf6',
-    icon: <FileText size={16} />,
+    fullTitle: 'High-Speed Quoting',
+    desc: 'Send professional quotes before you even leave the driveway.',
+    color: '#a855f7', 
+    icon: <FileText size={20} strokeWidth={3} />,
     screenIdx: 2
   },
   {
     title: 'Pay',
-    fullTitle: 'Collect payment & close',
-    desc: 'Automated reminders for unpaid balances. Mark paid in one tap.',
-    color: '#f59e0b',
-    icon: <Wallet size={16} />,
+    fullTitle: 'Automated Collections',
+    desc: 'Stop chasing checks. Automated reminders ensure you get paid.',
+    color: '#10b981', 
+    icon: <Wallet size={20} strokeWidth={3} />,
     screenIdx: 3
   },
 ];
@@ -43,139 +43,122 @@ export default function LeadModalSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section className="relative py-12 lg:py-36 bg-slate-50 overflow-hidden">
+    <section className="relative py-12 lg:py-20 bg-white overflow-hidden border-t-[12px] border-slate-950">
       
-      {/* ─── AMBIENT BACKGROUND ─── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />
-        {/* Rapid color transition for background spotlight */}
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[600px] aspect-square rounded-full blur-[100px] opacity-10 transition-colors duration-300"
-          style={{ backgroundColor: STEPS[activeTab].color }}
-        />
-      </div>
+      {/* Industrial Grid Overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
+           style={{ backgroundImage: `radial-gradient(#000 2px, transparent 2px)`, backgroundSize: '24px 24px' }} />
 
-      <div className="max-w-7xl mx-auto px-5 lg:px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
 
-        {/* ─── HEADLINE ─── */}
-        <div className="max-w-3xl mb-8 lg:mb-20 text-center lg:text-left">
-          <div className="inline-block px-3 py-1 rounded-md bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest mb-4">
-            Operations
+        {/* ─── TIGHTENED TOP NAV / STATUS BAR ─── */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12 border-b-4 border-slate-950 pb-8">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 bg-yellow-400 text-slate-950 px-3 py-1 mb-4 border-2 border-slate-950 shadow-[4px_4px_0px_#000]">
+              <Activity size={12} strokeWidth={3} />
+              <p className="text-[10px] font-[1000] uppercase tracking-widest italic">System Workflow</p>
+            </div>
+            <h2 className="text-4xl lg:text-7xl font-[1000] text-slate-950 tracking-tighter uppercase italic leading-[0.85]">
+              First Scan <span className="text-slate-300">to</span> Final Payday.
+            </h2>
           </div>
-          <h2 className="text-[2.5rem] lg:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-4 sm:mb-6">
-            From first scan <br />
-            <span className="text-emerald-600 italic font-serif">to final payday.</span>
-          </h2>
+          
+          <div className="hidden lg:block text-right">
+            <p className="text-sm font-black text-emerald-500 uppercase italic tracking-tighter">Optimized & Active</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-24 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
 
-          {/* ─── MOBILE: TAB CONTROL + TEXT (ORDER 1) ─── */}
-          <div className="lg:hidden order-1 w-full space-y-6">
-            {/* Nav Row */}
-            <div className="flex justify-between items-center bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          {/* ─── MOBILE: COMPACT TABS ─── */}
+          <div className="lg:hidden w-full space-y-6">
+            <div className="grid grid-cols-4 bg-slate-950 p-1 border-2 border-slate-950 shadow-[4px_4px_0px_#000]">
               {STEPS.map((step, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveTab(i)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all duration-200 ${
-                    activeTab === i ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'
+                  className={`flex flex-col items-center gap-1 py-3 transition-all ${
+                    activeTab === i ? 'bg-yellow-400 text-slate-950' : 'text-slate-500'
                   }`}
                 >
-                  <div 
-                    style={{ color: activeTab === i ? '#fff' : step.color }} 
-                    className="transition-colors duration-200"
-                  >
-                    {step.icon}
-                  </div>
+                  {step.icon}
                   <span className="text-[8px] font-black uppercase tracking-tighter">{step.title}</span>
                 </button>
               ))}
             </div>
-
-            {/* Description Area (Min-height keeps phone from jumping) */}
-            <div className="text-center min-h-[90px] flex flex-col justify-center">
-              <h3 className="text-xl font-black text-slate-900 mb-1 transition-all duration-200">
-                {STEPS[activeTab].fullTitle}
-              </h3>
-              <p className="text-sm text-slate-500 font-medium leading-relaxed px-4">
-                {STEPS[activeTab].desc}
-              </p>
+            <div className="bg-slate-50 border-2 border-slate-950 p-5 rounded-2xl">
+               <h3 className="text-xl font-[1000] text-slate-950 uppercase italic mb-1">{STEPS[activeTab].fullTitle}</h3>
+               <p className="text-slate-600 text-sm font-bold leading-tight italic">"{STEPS[activeTab].desc}"</p>
             </div>
           </div>
 
-          {/* ─── DESKTOP: ACCORDION (ORDER 1) ─── */}
-          <div className="hidden lg:flex lg:col-span-6 flex-col gap-3 order-1">
-            {STEPS.map((step, i) => (
-              <button
-                key={i}
-                onMouseEnter={() => setActiveTab(i)}
-                className={`w-full text-left p-7 rounded-[2.5rem] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] border ${
-                  activeTab === i
-                    ? 'bg-white border-slate-200 shadow-xl translate-x-6 scale-[1.03]'
-                    : 'bg-transparent border-transparent opacity-30 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-5">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                      activeTab === i ? 'text-white shadow-lg rotate-3' : 'bg-slate-200 text-slate-500'
-                    }`}
-                    style={{ backgroundColor: activeTab === i ? step.color : '' }}
-                  >
-                    {step.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className={`text-xl font-black tracking-tight transition-colors duration-200 ${activeTab === i ? 'text-slate-900' : 'text-slate-400'}`}>
-                      {step.fullTitle}
-                    </h4>
-                    <div className={`grid transition-all duration-300 ${activeTab === i ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
-                      <p className="text-slate-500 text-sm font-medium leading-relaxed overflow-hidden">
-                        {step.desc}
-                      </p>
+          {/* ─── DESKTOP: LIST ─── */}
+          <div className="hidden lg:flex lg:col-span-5 flex-col gap-4">
+            {STEPS.map((step, i) => {
+              const isActive = activeTab === i;
+              return (
+                <button
+                  key={i}
+                  onMouseEnter={() => setActiveTab(i)}
+                  className={`group relative w-full text-left px-6 py-5 transition-all duration-200 border-l-[6px] ${
+                    isActive
+                      ? 'bg-slate-950 border-yellow-400 translate-x-2'
+                      : 'bg-white border-slate-200 opacity-60 hover:opacity-100 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-5">
+                    <div className={`${isActive ? 'text-yellow-400' : 'text-slate-400'}`}>
+                      {step.icon}
+                    </div>
+                    <div>
+                      <h4 className={`text-xl font-[1000] uppercase italic tracking-tighter leading-none ${isActive ? 'text-white' : 'text-slate-950'}`}>
+                        {step.fullTitle}
+                      </h4>
+                      {isActive && (
+                        <p className="text-slate-400 text-xs font-bold mt-2 leading-snug max-w-[280px]">
+                          {step.desc}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
-          {/* ─── PHONE VISUAL (ORDER 2) ─── */}
-          <div className="lg:col-span-6 flex justify-center order-2 lg:sticky lg:top-32 mt-4 lg:mt-0">
-            <div className="relative w-full max-w-[260px] sm:max-w-[320px]">
+          {/* ─── PHONE VISUAL (LOWERED & INTEGRATED) ─── */}
+          <div className="lg:col-span-7 flex justify-center lg:justify-end lg:pr-12">
+            <div className="relative w-full max-w-[300px] lg:max-w-[360px]">
               
-              {/* Faster Glow Response */}
-              <div
-                className="absolute inset-0 blur-[60px] opacity-20 transition-colors duration-300"
-                style={{ backgroundColor: STEPS[activeTab].color }}
-              />
-
-              <div className="relative bg-[#020617] p-5 lg:p-7 rounded-[3rem] lg:rounded-[4rem] shadow-2xl border border-slate-800">
-                <div className="flex flex-col items-center">
-                  
-                  {/* Status Indicator */}
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-6">
-                    <div 
-                      className="w-1.5 h-1.5 rounded-full animate-pulse" 
-                      style={{ backgroundColor: STEPS[activeTab].color }}
-                    />
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">
-                      Live Preview
+              {/* Device Frame */}
+              <div className="relative bg-slate-950 p-4 lg:p-6 rounded-[3rem] shadow-[20px_20px_0px_#facc15] border-[6px] border-slate-900">
+                
+                {/* Internal HUD */}
+                <div className="flex items-center justify-between mb-4 px-4">
+                    <div className="flex gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-red-600" />
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    </div>
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">
+                        DEVICE_LINK::ESTABLISHED
                     </span>
-                  </div>
+                </div>
 
-                  {/* Mockup - duration reduced for snapiness */}
-                  <div className="scale-[0.9] sm:scale-100 origin-top transition-transform duration-300">
-                    <CyclingPhoneMockup
-                      visible={true}
-                      hideIndicators={true}
-                      activeTab={STEPS[activeTab].screenIdx}
-                      phase={activeTab}
-                    />
-                  </div>
+                {/* Mockup Screen */}
+                <div className="bg-white rounded-[1.8rem] overflow-hidden border-4 border-slate-950">
+                    <div className="scale-95 origin-top transition-all duration-500">
+                        <CyclingPhoneMockup
+                            visible={true}
+                            hideIndicators={true}
+                            activeTab={STEPS[activeTab].screenIdx}
+                        />
+                    </div>
                 </div>
               </div>
 
+              {/* Background Detail */}
+              <div className="absolute -top-6 -right-6 w-24 h-24 opacity-5 pointer-events-none" 
+                   style={{ backgroundImage: `repeating-linear-gradient(0deg, #000, #000 2px, transparent 2px, transparent 8px)` }} />
             </div>
           </div>
 

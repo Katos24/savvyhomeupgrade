@@ -1,205 +1,165 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-
-/* ─────────────────────────────────────────────────────────
-   WHY LEAD2PROJECT — MOBILE OPTIMIZED
-   ─────────────────────────────────────────────────────────
-   Mobile: stacked vertically, no dashed lines, 
-           smaller fonts, full-width images
-   Desktop: alternating grid, dashed SVG connectors
-   No purple anywhere.
-   ───────────────────────────────────────────────────────── */
+import { motion } from 'framer-motion';
+import { ArrowRight, Check, Hammer, ShieldCheck, Zap } from 'lucide-react';
 
 interface StoryBlock {
   badge: string;
+  icon: React.ReactNode;
   headline: string;
   desc: string;
   bullets: string[];
-  imageSrc?: string;
+  imageSrc: string;
   imageAlt: string;
   reverse?: boolean;
 }
 
 const BLOCKS: StoryBlock[] = [
   {
-    badge: 'Lead Capture',
-    headline: 'Your Truck Is Now a Lead Machine.',
-    desc: 'Most yard signs get eyeballs but not calls. With a custom QR code and booking link, every truck, sign, and business card becomes a self-service intake form.',
+    badge: 'LEAD CAPTURE',
+    icon: <Zap size={20} className="text-slate-950 fill-yellow-400" />,
+    headline: 'YOUR TRUCK IS NOW A LEAD MACHINE.',
+    desc: 'Most yard signs get eyeballs but not calls. Lead2Project turns every truck and sign into a digital intake form that works while you’re on the roof.',
     bullets: [
-      'Custom branded QR code decals',
-      'Photo & video uploads from customers',
-      'Zero missed leads while on site',
+      'Custom branded QR decals',
+      'Direct-to-board photo uploads',
+'Real-time board updates',
     ],
-    imageAlt: 'QR code scanning on contractor truck',
     imageSrc: '/images/qrbranded2.webp',
+    imageAlt: 'QR code decals on a work truck',
   },
   {
-    badge: 'Job Management',
-    headline: 'From First Scan to Final Payday.',
-    desc: 'Every lead lands on your board with photos and details. Schedule the job, send a quote, track payment — all from one screen.',
+    badge: 'JOB MANAGEMENT',
+    icon: <Hammer size={20} className="text-slate-950" />,
+    headline: 'COMMAND THE FIELD IN REAL-TIME.',
+desc: 'Stop using napkins and notes. Every lead lands on a visual board. Switch between card, table, and calendar views. Mass-edit from the table in seconds.',
     bullets: [
-      'Visual pipeline board',
-      'One-click quote emails with Accept/Decline',
-      'Payment tracking and reminders',
+'Card, Table & Calendar Views',
+      '1-Click Quote Approvals',
+      '1-Click Payment Reminders',
     ],
-    imageAlt: 'Lead2Project dashboard showing project management',
     imageSrc: '/images/og-image.webp',
+    imageAlt: 'Lead2Project job management dashboard',
     reverse: true,
   },
   {
-    badge: 'Stay Professional',
-    headline: 'Stop Chasing. Start Owning Your Time.',
-    desc: 'Your competitor is still texting quotes at 9 PM. You send branded emails in one click and your outbox tracks every message automatically.',
+    badge: 'PRO STATUS',
+    icon: <ShieldCheck size={20} className="text-slate-950" />,
+    headline: 'STOP CHASING. START OWNING.',
+    desc: 'The guy texting quotes at 9 PM loses. You send professional, branded emails that track opens and clicks automatically. Look bigger than you are.',
     bullets: [
-      'Branded email templates',
-      '6AM daily digest',
-      'Full email outbox tracking',
+      'Automatic Outbox Tracking',
+      'Daily 6AM Strategy Digest',
+      'Branded Contractor Templates',
     ],
-    imageAlt: 'Contractor relaxing while system handles leads',
-    imageSrc: '/images/quote-send-tablet.webp',
+    imageSrc: '/images/marketing.webp',
+    imageAlt: 'Contractor using a tablet to send quotes',
   },
 ];
 
-export default function NewWhySection() {
-  return (
-    <section style={{ background: '#eef2ff' }}>
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 py-16 sm:py-28">
+export default function IndustrialWhySection() {
+  const heavyFont = "font-[1000] tracking-tighter uppercase leading-[0.9] sm:leading-[0.85]";
 
-        {/* Headline */}
-        <div className="text-center mb-12 sm:mb-24">
-          <h2
-            className="font-black text-slate-900 leading-[1.08] tracking-tight"
-            style={{
-              fontSize: 'clamp(1.6rem, 5.5vw, 3.5rem)',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            }}
-          >
-            So, Why Lead2Project?
+  return (
+    <section className="bg-[#f8f9fa] py-16 sm:py-36 overflow-hidden relative">
+      
+      {/* ─── THE "I-BEAM" SPINE (Structural Backbone) ─── */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-full hidden lg:block pointer-events-none">
+        <div className="w-full h-full bg-slate-200 border-x-2 border-slate-300 relative">
+            {/* Rivet Details */}
+            <div className="absolute top-0 w-full flex flex-col items-center gap-24 opacity-20">
+                {[...Array(20)].map((_, i) => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-950" />
+                ))}
+            </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-10 relative z-10">
+        
+        {/* Header */}
+        <div className="mb-24 sm:mb-32">
+          <div className="flex items-center gap-3 mb-6">
+            
+          </div>
+          <h2 className={`${heavyFont} text-5xl sm:text-9xl text-slate-950 italic`}>
+            CORE <span className="text-emerald-600">PILLARS.</span>
           </h2>
-          <p className="text-sm sm:text-lg text-slate-500 font-medium mt-3 sm:mt-4">
-            Built to adapt. Simple to run. You own everything.
-          </p>
         </div>
 
-        {/* Story blocks */}
-        <div className="flex flex-col gap-12 sm:gap-20">
+        {/* Pillars Blocks */}
+        <div className="space-y-32 sm:space-y-48 relative">
           {BLOCKS.map((block, i) => (
-            <div key={i}>
+            <div 
+              key={i}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center relative"
+            >
+              {/* STRUCTURAL CONNECTOR (Joint) */}
+              <div className={`hidden lg:block absolute top-1/2 -translate-y-1/2 w-1/2 h-[2px] bg-slate-300 -z-10 ${block.reverse ? 'left-0' : 'right-0'}`} />
+              <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-yellow-400 border-2 border-slate-950 rotate-45 z-20" />
 
-              {/* Dashed connector — desktop only */}
-              {i > 0 && (
-                <div className="hidden sm:flex justify-center mb-12 sm:mb-16">
-                  <svg
-                    width="120"
-                    height="80"
-                    viewBox="0 0 120 80"
-                    fill="none"
-                    className="text-slate-300"
-                  >
-                    <path
-                      d={
-                        block.reverse
-                          ? 'M60 0 C60 30, 100 30, 100 80'
-                          : 'M60 0 C60 30, 20 30, 20 80'
-                      }
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeDasharray="8 8"
-                      strokeLinecap="round"
+              {/* Content Side */}
+              <div className={`${block.reverse ? 'lg:order-2' : 'lg:order-1'} flex flex-col items-start`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-slate-950 text-white px-4 py-1 text-[10px] font-black tracking-widest uppercase italic">
+                    Pillar {i+1}
+                  </div>
+                </div>
+
+                <h3 className={`${heavyFont} text-3xl sm:text-6xl text-slate-950 mb-6 sm:mb-8`}>
+                  {block.headline}
+                </h3>
+
+                <p className="text-base sm:text-xl text-slate-600 font-bold leading-relaxed mb-8 sm:mb-10 max-w-xl">
+                  {block.desc}
+                </p>
+
+                <div className="grid grid-cols-1 gap-4 w-full mb-10">
+                  {block.bullets.map((bullet, j) => (
+                    <div key={j} className="flex items-start gap-4 group">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 mt-2 rotate-45 shrink-0" />
+                      <span className="text-sm sm:text-lg font-black text-slate-800 uppercase tracking-tight leading-tight">
+                        {bullet}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  href="/signup"
+                  className="w-full sm:w-auto inline-flex items-center group bg-slate-950 p-1 pr-6 hover:bg-emerald-600 transition-colors duration-300"
+                >
+                  <div className="bg-yellow-400 text-slate-950 p-3 sm:p-4 mr-4">
+                    <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
+                  </div>
+                  <span className="text-lg sm:text-xl font-[1000] text-white uppercase tracking-tighter">
+                    Get Started Today
+                  </span>
+                </Link>
+              </div>
+
+              {/* Image Side */}
+              <div className={`${block.reverse ? 'lg:order-1' : 'lg:order-2'} w-full`}>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  className="relative group mx-auto max-w-[500px] lg:max-w-none"
+                >
+                  <div className="relative overflow-hidden border-[4px] border-slate-950 shadow-[15px_15px_0px_#020617] aspect-[4/3] bg-white">
+                    <img
+                      src={block.imageSrc}
+                      alt={block.imageAlt}
+                      className="w-full h-full object-cover transition-all duration-700"
                     />
-                  </svg>
-                </div>
-              )}
-
-              {/* Content */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-
-                {/* Text */}
-                <div className={block.reverse ? 'lg:order-2' : 'lg:order-1'}>
-                  <div
-                    className="inline-flex items-center px-4 py-1.5 rounded-full mb-5"
-                    style={{ background: '#dde5f0', border: '1px solid #c8d3e3' }}
-                  >
-                    <span
-                      className="text-[11px] sm:text-xs font-bold text-slate-800 tracking-wide"
-                      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-                    >
-                      {block.badge}
-                    </span>
                   </div>
-
-                  <h3
-                    className="font-black text-slate-900 leading-[1.15] tracking-tight mb-4"
-                    style={{
-                      fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    }}
-                  >
-                    {block.headline}
-                  </h3>
-
-                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-5">
-                    {block.desc}
-                  </p>
-
-                  <ul className="space-y-2.5 mb-6">
-                    {block.bullets.map((bullet, j) => (
-                      <li key={j} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                        <span className="text-[13px] sm:text-sm font-semibold text-slate-700">
-                          {bullet}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
-                  >
-                    Get Started Free
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-
-                {/* Image */}
-                <div className={block.reverse ? 'lg:order-1' : 'lg:order-2'}>
-                  <div
-                    className="relative rounded-2xl sm:rounded-3xl overflow-hidden"
-                    style={{
-                      boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
-                      aspectRatio: '4/3',
-                    }}
-                  >
-                    {block.imageSrc ? (
-                      <img
-                        src={block.imageSrc}
-                        alt={block.imageAlt}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ background: '#dde5f0' }}
-                      >
-                        <p className="text-sm font-bold text-slate-400">
-                          Image Coming Soon
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                </motion.div>
               </div>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );
