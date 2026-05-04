@@ -230,8 +230,10 @@ export default function NewFeatures() {
         <div className="grid grid-cols-1 lg:grid-cols-12 border-[3px] sm:border-[6px] border-slate-950 bg-slate-950 shadow-[8px_8px_0px_#facc15] sm:shadow-[15px_15px_0px_#facc15]">
           
           {/* Navigation */}
-          <div className="lg:col-span-4 flex lg:flex-col divide-x-2 lg:divide-x-0 lg:divide-y-2 divide-slate-900 overflow-x-auto no-scrollbar">
-            {FEATURES.map((f, i) => (
+<div className="lg:col-span-4 relative">
+            {/* Scroll hint fade — mobile only */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none lg:hidden" />
+            <div className="flex lg:flex-col divide-x-2 lg:divide-x-0 lg:divide-y-2 divide-slate-900 overflow-x-auto no-scrollbar">            {FEATURES.map((f, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}
@@ -242,7 +244,8 @@ export default function NewFeatures() {
                 <div className={active === i ? 'scale-110 rotate-3' : 'opacity-50'}>{f.icon}</div>
                 <span className="text-sm sm:text-lg lg:text-2xl font-[1000] uppercase italic tracking-tighter whitespace-nowrap">{f.name}</span>
               </button>
-            ))}
+           ))}
+            </div>
           </div>
 
           {/* Preview Canvas */}
@@ -259,6 +262,7 @@ export default function NewFeatures() {
             </div>
           </div>
         </div>
+        
 
         {/* Bottom Ticker */}
         <div className="mt-8 sm:mt-12 flex flex-wrap items-center justify-between gap-4 sm:gap-6 border-t-2 border-slate-100 pt-6 sm:pt-8">
@@ -272,6 +276,7 @@ export default function NewFeatures() {
           </div>
         </div>
       </div>
+      
     </section>
   );
 }
