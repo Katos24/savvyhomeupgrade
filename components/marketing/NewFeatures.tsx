@@ -236,6 +236,7 @@ export default function NewFeatures() {
   function renderPreview() {
     if (current.id === 'board') {
       return (
+        
         <div className="flex flex-col h-full">
           {/* SUB-NAV: Steel Blue/Emerald Theme (No Yellow/Black) */}
           <div className="flex gap-1 sm:gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 p-1 bg-slate-200/80 rounded-xl border-2 border-slate-950">
@@ -282,7 +283,7 @@ export default function NewFeatures() {
         </div>
       );
     }
-    
+
     if (current.id === 'outbox') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><OutboxView /></div>;
     if (current.id === 'export') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><ExportView /></div>;
     
@@ -290,9 +291,11 @@ export default function NewFeatures() {
   }
 
  return (
-    <section className="bg-white py-12 lg:py-20 border-t-[6px] sm:border-t-[12px] border-slate-950">
+    <section 
+      id="features" 
+      className="bg-white py-12 lg:py-20 border-t-[6px] sm:border-t-[12px] border-slate-950 scroll-mt-20"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        
         {/* Header (Stacking correctly on mobile) */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 border-b-4 border-slate-950 pb-8">
            <div className="max-w-3xl">

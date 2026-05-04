@@ -158,8 +158,12 @@ export function HeroStoryStrip() {
     },
   ];
 
-  return (
-    <div className="flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-14 pt-8 md:pt-12 px-4 sm:px-0">
+ return (
+    /* ADD ID="how-it-works" AND scroll-mt-20 TO THIS DIV */
+    <div 
+      id="how-it-works" 
+      className="flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-14 pt-8 md:pt-12 px-4 sm:px-0 scroll-mt-20"
+    >
       {steps.map((step, i) => (
        <div 
   key={i} 
