@@ -263,11 +263,26 @@ export default function NewFeatures() {
 
     if (current.img) {
       return (
-        <div className="h-full p-3 sm:p-8 flex items-center justify-center">
-          <img src={current.img} alt={current.name} className="max-h-full w-auto rounded-[1.2rem] sm:rounded-[2rem] border-2 border-slate-950 shadow-2xl" />
+        <div className="h-full w-full flex items-start sm:items-center justify-center overflow-hidden">
+          <div className="w-full h-full px-0 sm:px-8 py-4 sm:py-8 flex items-start sm:items-center justify-center">
+            <img 
+              src={current.img} 
+              alt={current.name} 
+              className="
+                w-[95%] sm:w-auto 
+                h-auto sm:max-h-full 
+                object-contain 
+                rounded-lg sm:rounded-[2rem] 
+                border-2 border-slate-950 
+                shadow-xl 
+                transition-transform duration-500
+              " 
+            />
+          </div>
         </div>
       );
     }
+    
     if (current.id === 'outbox') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><OutboxView /></div>;
     if (current.id === 'export') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><ExportView /></div>;
     
