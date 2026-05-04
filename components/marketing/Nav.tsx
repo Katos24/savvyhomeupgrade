@@ -1,12 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Menu, X, ArrowRight, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, X, ArrowRight, ChevronRight, ChevronDown, QrCode, LayoutDashboard, Zap } from 'lucide-react';
+
+const FEATURE_LINKS = [
+  { label: 'Lead Capture', desc: 'QR codes, forms, photo intake', href: '/features/lead-capture', icon: <QrCode size={18} /> },
+  { label: 'Operations', desc: 'Board, quotes, scheduling, payments', href: '/features/operations', icon: <LayoutDashboard size={18} /> },
+  { label: 'Tools & Exports', desc: 'Outbox, CSV, digest, AI briefs', href: '/features/tools', icon: <Zap size={18} /> },
+];
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -19,11 +28,16 @@ export default function Nav() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const navLinks = [
-    { label: 'How it works', href: '#how-it-works' },
-    { label: 'Features', href: '#features' },
-    { label: 'Pricing', href: '#pricing' },
-  ];
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setFeaturesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -56,19 +70,65 @@ export default function Nav() {
 
           {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`text-sm font-semibold transition-colors ${
-                  scrolled
-                    ? 'text-slate-500 hover:text-slate-900'
-                    : 'text-white/70 hover:text-white'
+            <Link
+              href="#how-it-works"
+              className={`text-sm font-semibold transition-colors ${
+                scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              How it works
+            </Link>
+
+            {/* Features Dropdown */}
+            <div ref={dropdownRef} className="relative">
+              <button
+                onClick={() => setFeaturesOpen(!featuresOpen)}
+                onMouseEnter={() => setFeaturesOpen(true)}
+                className={`flex items-center gap-1 text-sm font-semibold transition-colors ${
+                  scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/70 hover:text-white'
                 }`}
               >
-                {item.label}
-              </Link>
-            ))}
+                Features
+                <ChevronDown size={14} className={`transition-transform duration-200 ${featuresOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div
+                onMouseLeave={() => setFeaturesOpen(false)}
+                className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[300px] transition-all duration-200 ${
+                  featuresOpen
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : 'opacity-0 -translate-y-2 pointer-events-none'
+                }`}
+              >
+                <div className="bg-white border border-slate-200 shadow-xl rounded-xl p-2 overflow-hidden">
+                  {FEATURE_LINKS.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setFeaturesOpen(false)}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="w-9 h-9 bg-slate-900 text-emerald-400 flex items-center justify-center rounded-lg shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        {item.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{item.label}</p>
+                        <p className="text-[11px] text-slate-400">{item.desc}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="#pricing"
+              className={`text-sm font-semibold transition-colors ${
+                scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Pricing
+            </Link>
           </div>
 
           {/* DESKTOP ACTIONS */}
@@ -76,9 +136,7 @@ export default function Nav() {
             <Link
               href="/login"
               className={`text-sm font-semibold px-4 py-2 transition-colors ${
-                scrolled
-                  ? 'text-slate-500 hover:text-slate-900'
-                  : 'text-white/70 hover:text-white'
+                scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/70 hover:text-white'
               }`}
             >
               Log in
@@ -104,9 +162,7 @@ export default function Nav() {
 
             <button
               onClick={() => setMobileOpen(true)}
-              className={`p-2 ${
-                scrolled ? 'text-slate-600' : 'text-white'
-              }`}
+              className={`p-2 ${scrolled ? 'text-slate-600' : 'text-white'}`}
               aria-label="Open menu"
             >
               <Menu size={24} />
@@ -129,6 +185,7 @@ export default function Nav() {
           mobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
+        {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
           <div className="flex items-center gap-2">
             <img src="/Lead2ProjectLogo.png" className="h-6 brightness-0 invert" alt="" />
@@ -143,20 +200,58 @@ export default function Nav() {
           </button>
         </div>
 
-        <div className="flex flex-col px-4 gap-1 flex-1">
-          {navLinks.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-bold hover:bg-white/5"
-            >
-              {item.label}
-              <ChevronRight size={18} className="text-white/20" />
-            </Link>
-          ))}
+        {/* Links */}
+        <div className="flex flex-col px-4 gap-1 flex-1 overflow-y-auto">
+          <Link
+            href="#how-it-works"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-bold hover:bg-white/5"
+          >
+            How it works
+            <ChevronRight size={18} className="text-white/20" />
+          </Link>
+
+          {/* Features accordion */}
+          <button
+            onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)}
+            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-bold hover:bg-white/5 w-full text-left"
+          >
+            Features
+            <ChevronDown size={18} className={`text-white/40 transition-transform duration-200 ${mobileFeaturesOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {mobileFeaturesOpen && (
+            <div className="ml-2 space-y-1 mb-2">
+              {FEATURE_LINKS.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5"
+                >
+                  <div className="w-8 h-8 bg-slate-800 text-emerald-400 flex items-center justify-center shrink-0 rounded-lg">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{item.label}</p>
+                    <p className="text-[10px] text-white/40 font-medium">{item.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <Link
+            href="#pricing"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-bold hover:bg-white/5"
+          >
+            Pricing
+            <ChevronRight size={18} className="text-white/20" />
+          </Link>
         </div>
 
+        {/* Actions */}
         <div className="px-4 pb-8 pt-4 flex flex-col gap-3 border-t border-white/5">
           <Link
             href="/signup"
