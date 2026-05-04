@@ -59,9 +59,17 @@ export default function DeletedLeadsClient({ company }: { company: Company }) {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className="animate-spin text-6xl mb-4">⏳</div>
-        <p className={styles.loadingText}>Loading deleted leads...</p>
+      <div className="fixed inset-0 bg-[#0a1628] flex flex-col items-center justify-center z-[100]">
+        {/* Using a custom spinner that matches your Emerald/Yellow theme */}
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-white/10 border-t-emerald-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 bg-yellow-400 rotate-45 animate-pulse"></div>
+          </div>
+        </div>
+        <p className="mt-6 text-white font-black uppercase tracking-[0.2em] text-xs">
+          Loading Data...
+        </p>
       </div>
     );
   }
@@ -70,18 +78,19 @@ export default function DeletedLeadsClient({ company }: { company: Company }) {
     <div className={styles.container}>
       <Toaster position="top-right" />
       <div className={styles.innerContainer}>
-        {/* HEADER */}
+        
+        {/* HEADER - Adjusted for mobile stack */}
         <div className={styles.header}>
-          <div className="flex items-center justify-between w-full">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
             <div>
               <h1 className={styles.title}>🗑️ Deleted Leads</h1>
               <p className="text-white/80 text-sm mt-1">{company.name}</p>
             </div>
             <a
               href={`/${company.slug}/dashboard`}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold transition"
+              className="w-full sm:w-auto text-center bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold transition"
             >
-              ← Back to Dashboard
+              ← Back
             </a>
           </div>
         </div>
@@ -94,193 +103,143 @@ export default function DeletedLeadsClient({ company }: { company: Company }) {
               <p className="text-2xl font-bold text-white">{deletedLeads.length}</p>
             </div>
             <div className="text-white/60 text-sm">
-              Deleted leads can be restored at any time
+              Leads can be restored at any time
             </div>
           </div>
         </div>
 
-        {/* DELETED LEADS TABLE */}
+        {/* EMPTY STATE */}
         {deletedLeads.length === 0 ? (
           <div className="bg-white/10 backdrop-blur rounded-lg p-12 text-center">
             <div className="text-6xl mb-4">✨</div>
             <p className="text-white text-xl font-semibold">No deleted leads</p>
-            <p className="text-white/70 mt-2">All your leads are active!</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
+          <>
+            {/* MOBILE LIST (Cards) - Shown only on small screens */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {deletedLeads.map((lead) => (
+                <div key={lead.id} className="bg-white rounded-xl p-4 shadow-lg border-l-4 border-red-500">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{lead.name}</h3>
+                      <p className="text-xs text-gray-500">ID: {lead.id} • {lead.category}</p>
+                    </div>
+                    <span className="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-600 font-bold">
+                      {new Date(lead.deleted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 mb-4 italic">
+                    "{lead.deleted_reason || 'No reason provided'}"
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedLead(lead)}
+                      className="flex-1 bg-blue-50 py-2 rounded-lg text-blue-700 text-sm font-bold border border-blue-100"
+                    >
+                      👁️ Details
+                    </button>
+                    <button
+                      onClick={() => handleRestore(lead.id, lead.name)}
+                      className="flex-1 bg-green-600 py-2 rounded-lg text-white text-sm font-bold shadow-sm"
+                    >
+                      ↩️ Restore
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* DESKTOP TABLE - Hidden on small screens */}
+            <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lead
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Deleted By
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Deleted At
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reason
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lead</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deleted At</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {deletedLeads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div>
-                          <p className="font-semibold text-gray-900">{lead.name}</p>
-                          <p className="text-sm text-gray-500">ID: {lead.id}</p>
-                        </div>
+                        <p className="font-semibold text-gray-900">{lead.name}</p>
+                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{lead.category}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <p className="text-gray-900">{lead.email}</p>
-                          <p className="text-gray-500">{lead.phone}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                          {lead.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-900">{lead.deleted_by_name || 'Unknown'}</p>
-                          <p className="text-gray-500 text-xs">{lead.deleted_by_email || '—'}</p>
-                        </div>
+                      <td className="px-6 py-4 text-sm">
+                        <p>{lead.email}</p>
+                        <p className="text-gray-500">{lead.phone}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(lead.deleted_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        })}
+                        {new Date(lead.deleted_at).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-gray-600 truncate max-w-[150px]">
                         {lead.deleted_reason || '—'}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold transition"
-                          >
-                            👁️ View
-                          </button>
-                          <button
-                            onClick={() => handleRestore(lead.id, lead.name)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold transition"
-                          >
-                            ↩️ Restore
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button onClick={() => setSelectedLead(lead)} className="text-blue-600 font-bold text-sm">View</button>
+                        <button onClick={() => handleRestore(lead.id, lead.name)} className="text-green-600 font-bold text-sm">Restore</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </>
         )}
       </div>
 
-      {/* VIEW MODAL */}
+      {/* MODAL FIX: Mobile Friendly Modal */}
       {selectedLead && (
-        <div className={styles.modalOverlay} onClick={() => setSelectedLead(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedLead(null)}>
+          <div 
+            className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden animate-in slide-in-from-bottom duration-300" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold">{selectedLead.name}</h2>
+              <button onClick={() => setSelectedLead(null)} className="text-2xl">&times;</button>
+            </div>
+            
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div>
-                <h2 className={styles.modalTitle}>{selectedLead.name}</h2>
-                <p className={styles.modalDate}>
-                  Deleted on {new Date(selectedLead.deleted_at).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
+                <label className="text-xs font-bold text-gray-400 uppercase">Contact</label>
+                <p className="text-gray-900 font-medium">{selectedLead.email}</p>
+                <p className="text-gray-900 font-medium">{selectedLead.phone}</p>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase">Reason for Deletion</label>
+                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg mt-1 italic">
+                  {selectedLead.deleted_reason || "No reason specified"}
                 </p>
               </div>
-              <button onClick={() => setSelectedLead(null)} className={styles.closeButton}>×</button>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm">
+                <div>
+                  <label className="text-xs text-gray-400 block">Deleted By</label>
+                  <p className="font-bold">{selectedLead.deleted_by_name || 'Unknown'}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block">Date</label>
+                  <p className="font-bold">{new Date(selectedLead.deleted_at).toLocaleString()}</p>
+                </div>
+              </div>
             </div>
 
-            <div className={styles.modalContent}>
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Contact Information</h3>
-                <div className={styles.contactGrid}>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Email</span>
-                    <span className={styles.contactValue}>{selectedLead.email}</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Phone</span>
-                    <span className={styles.contactValue}>{selectedLead.phone}</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Category</span>
-                    <span className={styles.contactValue}>{selectedLead.category}</span>
-                  </div>
-                </div>
-              </div>
-
-              {selectedLead.description && (
-                <div className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Description</h3>
-                  <div className={styles.description}>{selectedLead.description}</div>
-                </div>
-              )}
-
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Deletion Info</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Deleted By:</span>
-                    <span className="font-medium">{selectedLead.deleted_by_name || 'Unknown'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Email:</span>
-                    <span className="font-medium">{selectedLead.deleted_by_email || '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Deleted At:</span>
-                    <span className="font-medium">
-                      {new Date(selectedLead.deleted_at).toLocaleString()}
-                    </span>
-                  </div>
-                  {selectedLead.deleted_reason && (
-                    <div className="pt-2 mt-2 border-t">
-                      <span className="text-gray-500">Reason:</span>
-                      <p className="font-medium mt-1">{selectedLead.deleted_reason}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4 mt-4 border-t">
-                <button
-                  onClick={() => {
-                    handleRestore(selectedLead.id, selectedLead.name);
-                    setSelectedLead(null);
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition"
-                >
-                  ↩️ Restore This Lead
-                </button>
-              </div>
+            <div className="p-6 bg-gray-50">
+              <button
+                onClick={() => {
+                  handleRestore(selectedLead.id, selectedLead.name);
+                  setSelectedLead(null);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95"
+              >
+                ↩️ Restore Lead
+              </button>
             </div>
           </div>
         </div>
