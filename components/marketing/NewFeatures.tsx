@@ -255,7 +255,6 @@ export default function NewFeatures() {
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-800" />
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-800" />
               </div>
-              <span className="ml-auto text-[7px] sm:text-[8px] text-white/30 font-black uppercase tracking-widest">sys_module_{current.id}.exe</span>
             </div>
             <div className="h-full pt-7 sm:pt-8">
               {renderPreview()}
