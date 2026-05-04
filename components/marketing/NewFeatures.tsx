@@ -283,10 +283,10 @@ export default function NewFeatures() {
            <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-slate-950 text-yellow-400 px-3 py-1 mb-4 shadow-[4px_4px_0px_#e2e8f0]">
               <Terminal size={12} strokeWidth={3} />
-              <p className="text-[10px] font-[1000] uppercase tracking-widest italic text-white">OS_V2.0_MOBILE_READY</p>
-            </div>
-            <h2 className="text-4xl sm:text-5xl lg:text-8xl font-[1000] text-slate-950 leading-[0.8] tracking-tighter italic uppercase">
-              Industrial <span className="text-slate-300 italic">Power</span>.
+              <p className="text-[10px] font-[1000] uppercase tracking-widest italic text-white">Lead2Project</p>
+              </div>
+            <h2 className="text-3xl sm:text-5xl lg:text-8xl font-[1000] text-slate-950 leading-[0.8] tracking-tighter italic uppercase">
+              Built <span className="text-slate-300 italic">to</span> <br/>Dominate.
             </h2>
           </div>
         </div>
