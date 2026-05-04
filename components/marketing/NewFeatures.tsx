@@ -20,17 +20,17 @@ import {
    ───────────────────────────────────────────────────────── */
 
 const LEADS = [
-  { name: 'Torres Roofing',    status: 'Scheduled',  color: '#2563eb', amount: '$7,950', cat: 'Roofing', date: 12 },
-  { name: 'Kim Gutters',       status: 'Won',        color: '#10b981', amount: '$2,400', cat: 'Gutters', date: 13 },
-  { name: 'Martinez Siding',   status: 'Quote Sent', color: '#0891b2', amount: '$5,200', cat: 'Siding',  date: 21 },
-  { name: 'David Reyes',       status: 'New',        color: '#16a34a', amount: '—',      cat: 'Gutters', date: 21 },
+  { name: 'Marcus Holloway',    status: 'Scheduled',  color: '#2563eb', amount: '$7,950', cat: 'Roofing', date: 12 },
+  { name: 'Sarah Jenkins',      status: 'Won',        color: '#10b981', amount: '$2,400', cat: 'Gutters', date: 13 },
+  { name: 'Julian Martinez',    status: 'Quote Sent', color: '#0891b2', amount: '$5,200', cat: 'Siding',  date: 21 },
+  { name: 'David Reyes',        status: 'New',        color: '#16a34a', amount: '—',      cat: 'Gutters', date: 21 },
 ];
 
 const OUTBOX_LOGS = [
-  { name: 'Torres Roofing',    msg: 'Quote #4402 Sent',    time: '2h ago',  type: 'quote' },
-  { name: 'Kim Gutters',       msg: 'Schedule Confirmed',  time: '5h ago',  type: 'event' },
-  { name: 'Apex Fencing',      msg: 'Payment Reminder',    time: '1d ago',  type: 'bill'  },
-  { name: 'Martinez Siding',   msg: 'Follow-up Email',     time: '2d ago',  type: 'msg'   },
+  { name: 'Marcus Holloway',    msg: 'Quote #4402 Sent',    time: '2h ago',  type: 'quote' },
+  { name: 'Sarah Jenkins',      msg: 'Schedule Confirmed',  time: '5h ago',  type: 'event' },
+  { name: 'Apex Fencing',       msg: 'Payment Reminder',    time: '1d ago',  type: 'bill'  },
+  { name: 'Julian Martinez',    msg: 'Follow-up Email',     time: '2d ago',  type: 'msg'   },
 ];
 
 // ── CARDS VIEW ──────────────────────────────
@@ -55,36 +55,105 @@ function CardsView() {
 
 // ── CALENDAR VIEW (COMPACT SCHEDULE LIST) ───
 
+// ── CALENDAR VIEW (ACTUAL GRID) ───
+
 function CalendarView() {
-  const scheduled = [
-    { name: 'Torres Roofing', date: 'Apr 12', time: '9:00 AM', amount: '$7,950', color: '#2563eb', status: 'Confirmed' },
-    { name: 'Kim Gutters', date: 'Apr 13', time: '11:00 AM', amount: '$2,400', color: '#10b981', status: 'Complete' },
-    { name: 'ProClean Services', date: 'Apr 15', time: '2:00 PM', amount: '$1,800', color: '#10b981', status: 'Confirmed' },
-    { name: 'Martinez Siding', date: 'Apr 21', time: '10:00 AM', amount: '$5,200', color: '#0891b2', status: 'Pending' },
-  ];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  // Example items mapped to specific dates
+  const scheduledItems: Record<number, any[]> = {
+    12: [{ name: 'Marcus H.', color: '#2563eb' }],
+    13: [{ name: 'Sarah J.', color: '#10b981' }],
+    15: [{ name: 'Elena G.', color: '#10b981' }],
+    21: [
+      { name: 'Julian M.', color: '#0891b2' },
+      { name: 'David R.', color: '#16a34a' }
+    ],
+  };
+
+  // We'll show a fixed grid of 35 days (5 weeks) starting from a Sunday
+  const calendarDays = Array.from({ length: 35 }, (_, i) => i - 2); // Adjust -2 to align Apr 1st to Wed
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex items-center justify-between px-1 mb-2">
-        <span className="text-[11px] sm:text-[13px] font-[1000] uppercase italic tracking-tighter text-slate-950">April 2026</span>
-        <span className="text-[9px] font-black text-slate-400 uppercase">{scheduled.length} Jobs</span>
-      </div>
-      {scheduled.map((job, i) => (
-        <div key={i} className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-4 bg-white border-2 border-slate-950 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-[2px_2px_0px_#000] sm:shadow-[4px_4px_0px_#000]">
-          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-2xl flex flex-col items-center justify-center shrink-0 border-2 border-slate-950" style={{ background: job.color }}>
-            <span className="text-[7px] sm:text-[8px] font-black text-white/70 uppercase leading-none">Apr</span>
-            <span className="text-[14px] sm:text-[18px] font-[1000] text-white leading-none">{job.date.split(' ')[1]}</span>
+    <div className="flex flex-col h-full">
+      {/* Month Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg sm:text-2xl font-[1000] uppercase italic tracking-tighter text-slate-950">
+          April 2026
+        </h3>
+        <div className="flex gap-1">
+          <div className="w-6 h-6 border-2 border-slate-950 flex items-center justify-center bg-white cursor-pointer hover:bg-yellow-400">
+            <span className="text-[10px] font-black">{"<"}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-[13px] font-[1000] uppercase italic tracking-tighter text-slate-950 truncate">{job.name}</p>
-            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">{job.time}</p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[10px] sm:text-[13px] font-black text-slate-950 italic">{job.amount}</p>
-            <p className="text-[7px] sm:text-[8px] font-black uppercase" style={{ color: job.color }}>{job.status}</p>
+          <div className="w-6 h-6 border-2 border-slate-950 flex items-center justify-center bg-white cursor-pointer hover:bg-yellow-400">
+            <span className="text-[10px] font-black">{">"}</span>
           </div>
         </div>
-      ))}
+      </div>
+
+      {/* Weekday Labels */}
+      <div className="grid grid-cols-7 border-x-2 border-t-2 border-slate-950 bg-slate-950">
+        {days.map(day => (
+          <div key={day} className="py-1 text-center border-r last:border-r-0 border-slate-800">
+            <span className="text-[8px] sm:text-[10px] font-black text-white/50 uppercase tracking-widest">{day}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* The Calendar Grid */}
+      <div className="grid grid-cols-7 border-2 border-slate-950 bg-white shadow-[4px_4px_0px_#000]">
+        {calendarDays.map((date, i) => {
+          const isCurrentMonth = date > 0 && date <= 30;
+          const items = scheduledItems[date] || [];
+
+          return (
+            <div 
+              key={i} 
+              className={`min-h-[60px] sm:min-h-[90px] border-r border-b border-slate-200 p-1 flex flex-col gap-1 transition-colors hover:bg-slate-50
+                ${!isCurrentMonth ? 'bg-slate-100/50' : ''} 
+                ${i % 7 === 6 ? 'border-r-0' : ''}
+              `}
+            >
+              {/* Date Number */}
+              <span className={`text-[9px] sm:text-[11px] font-black ${isCurrentMonth ? 'text-slate-950' : 'text-slate-300'}`}>
+                {isCurrentMonth ? date : ''}
+              </span>
+
+              {/* Scheduled Items inside the date */}
+              <div className="flex flex-col gap-0.5 sm:gap-1">
+                {items.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="group relative flex items-center px-1 py-0.5 sm:py-1 rounded-sm border border-slate-950 shadow-[1px_1px_0px_#000] overflow-hidden"
+                    style={{ backgroundColor: item.color }}
+                  >
+                    <span className="text-[7px] sm:text-[9px] font-[1000] text-white uppercase leading-none truncate">
+                      {item.name.split(' ')[0]}
+                    </span>
+                    
+                    {/* Hover Tooltip for Mobile/Desktop */}
+                    <div className="hidden group-hover:block absolute z-50 bg-slate-950 text-white p-2 rounded text-[10px] whitespace-nowrap -top-8 left-0">
+                      {item.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend / Key */}
+      <div className="mt-4 flex flex-wrap gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-[#2563eb] border border-slate-950 shadow-[1px_1px_0px_#000]" />
+          <span className="text-[9px] font-black uppercase text-slate-400">Roofing</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-[#10b981] border border-slate-950 shadow-[1px_1px_0px_#000]" />
+          <span className="text-[9px] font-black uppercase text-slate-400">Gutters</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -168,17 +237,16 @@ export default function NewFeatures() {
     if (current.id === 'board') {
       return (
         <div className="flex flex-col h-full">
-          <div className="flex gap-1 sm:gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 p-1 bg-slate-200 rounded-full border-2 border-slate-950">
+          {/* SUB-NAV: Steel Blue/Emerald Theme (No Yellow/Black) */}
+          <div className="flex gap-1 sm:gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 p-1 bg-slate-200/80 rounded-xl border-2 border-slate-950">
             {['cards', 'calendar'].map(v => (
               <button
                 key={v}
                 onClick={() => setBoardTab(v)}
-                className={`flex-1 py-2 sm:py-2.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase italic transition-all ${
+                className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[10px] font-[1000] uppercase italic transition-all duration-200 ${
                   boardTab === v
-                    ? v === 'cards'
-                      ? 'bg-yellow-400 text-slate-950 shadow-sm'
-                      : 'bg-emerald-500 text-white shadow-sm'
-                    : 'text-slate-500'
+                    ? 'bg-blue-600 text-white shadow-[3px_3px_0px_#1e3a8a] -translate-y-0.5' 
+                    : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {v}
@@ -191,6 +259,8 @@ export default function NewFeatures() {
         </div>
       );
     }
+
+
     if (current.img) {
       return (
         <div className="h-full p-3 sm:p-8 flex items-center justify-center">
@@ -204,78 +274,65 @@ export default function NewFeatures() {
     return <div className="flex items-center justify-center h-full text-slate-400 font-black uppercase italic">Module_Offline</div>;
   }
 
-  return (
+ return (
     <section className="bg-white py-12 lg:py-20 border-t-[6px] sm:border-t-[12px] border-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-10 border-b-2 sm:border-b-4 border-slate-950 pb-6 sm:pb-8">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-slate-950 text-yellow-400 px-3 py-1 mb-3 sm:mb-4 shadow-[3px_3px_0px_#e2e8f0] sm:shadow-[4px_4px_0px_#e2e8f0]">
+        {/* Header (Stacking correctly on mobile) */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 border-b-4 border-slate-950 pb-8">
+           <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-slate-950 text-yellow-400 px-3 py-1 mb-4 shadow-[4px_4px_0px_#e2e8f0]">
               <Terminal size={12} strokeWidth={3} />
-              <p className="text-[9px] sm:text-[10px] font-[1000] uppercase tracking-widest italic">Core Operating System</p>
+              <p className="text-[10px] font-[1000] uppercase tracking-widest italic text-white">OS_V2.0_MOBILE_READY</p>
             </div>
-            <h2 className="text-3xl sm:text-5xl lg:text-8xl font-[1000] text-slate-950 leading-[0.8] tracking-tighter italic uppercase">
-              Built <span className="text-slate-300 italic">to</span> <br/>Dominate.
+            <h2 className="text-4xl sm:text-5xl lg:text-8xl font-[1000] text-slate-950 leading-[0.8] tracking-tighter italic uppercase">
+              Industrial <span className="text-slate-300 italic">Power</span>.
             </h2>
           </div>
-          
-          <div className="flex items-center gap-4 sm:gap-6">
-           
-            
-          </div>
         </div>
 
-        {/* Industrial Grid */}
+        {/* The Grid Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 border-[3px] sm:border-[6px] border-slate-950 bg-slate-950 shadow-[8px_8px_0px_#facc15] sm:shadow-[15px_15px_0px_#facc15]">
           
-          {/* Navigation */}
-<div className="lg:col-span-4 relative">
-            {/* Scroll hint fade — mobile only */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none lg:hidden" />
-            <div className="flex lg:flex-col divide-x-2 lg:divide-x-0 lg:divide-y-2 divide-slate-900 overflow-x-auto no-scrollbar">            {FEATURES.map((f, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                className={`flex items-center gap-2 sm:gap-4 lg:gap-5 p-3 sm:p-5 lg:p-7 text-left shrink-0 transition-all ${
-                  active === i ? 'bg-yellow-400 text-slate-950' : 'text-slate-500 hover:bg-slate-900 hover:text-white'
-                }`}
-              >
-                <div className={active === i ? 'scale-110 rotate-3' : 'opacity-50'}>{f.icon}</div>
-                <span className="text-sm sm:text-lg lg:text-2xl font-[1000] uppercase italic tracking-tighter whitespace-nowrap">{f.name}</span>
-              </button>
-           ))}
+          {/* NAVIGATION: Snap-to-center + Scroll Indicators */}
+          <div className="lg:col-span-4 relative flex flex-col border-b-[3px] lg:border-b-0 lg:border-r-[6px] border-slate-950 overflow-hidden">
+            {/* Mobile "Swipe" Indicators */}
+            <div className="lg:hidden flex justify-center gap-1.5 py-2 bg-slate-900/50">
+              {FEATURES.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${active === i ? 'bg-yellow-400 w-4' : 'bg-slate-700'}`} />
+              ))}
+            </div>
+
+            <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible no-scrollbar snap-x snap-mandatory">
+              {FEATURES.map((f, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`
+                    flex items-center gap-4 p-5 lg:p-7 shrink-0 lg:shrink snap-center transition-all min-w-[70%] lg:min-w-full
+                    ${active === i ? 'bg-yellow-400 text-slate-950' : 'text-slate-500 hover:bg-slate-900'}
+                  `}
+                >
+                  <div className={active === i ? 'scale-110 rotate-3' : 'opacity-50'}>{f.icon}</div>
+                  <span className="text-lg lg:text-2xl font-[1000] uppercase italic tracking-tighter">{f.name}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Preview Canvas */}
-          <div className="lg:col-span-8 bg-slate-50 min-h-[320px] sm:min-h-[450px] lg:min-h-[550px] relative border-t-[3px] sm:border-t-[6px] lg:border-t-0 lg:border-l-[6px] border-slate-950 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-7 sm:h-8 bg-slate-950 flex items-center px-3 sm:px-4 gap-1.5 z-30">
-              <div className="flex gap-1.5">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-800" />
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-800" />
-              </div>
-            </div>
-            <div className="h-full pt-7 sm:pt-8">
-              {renderPreview()}
-            </div>
-          </div>
-        </div>
-        
-
-        {/* Bottom Ticker */}
-        <div className="mt-8 sm:mt-12 flex flex-wrap items-center justify-between gap-4 sm:gap-6 border-t-2 border-slate-100 pt-6 sm:pt-8">
-          <div className="flex items-center gap-4 sm:gap-6 opacity-40 grayscale">
-            
-           
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-yellow-400 rotate-45" />
-            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Industrial Grade Performance</p>
+          {/* PREVIEW CANVAS */}
+          <div className="lg:col-span-8 bg-slate-50 min-h-[400px] lg:min-h-[550px] relative overflow-hidden">
+             {/* Industrial Window Bar */}
+             <div className="h-8 bg-slate-950 flex items-center px-4 gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-slate-800" />
+                <div className="w-2 h-2 rounded-full bg-slate-800" />
+             </div>
+             <div className="h-full pt-2">
+               {renderPreview()}
+             </div>
           </div>
         </div>
       </div>
-      
     </section>
   );
 }

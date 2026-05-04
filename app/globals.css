@@ -351,3 +351,54 @@ textarea {
   color: #cbd5e1;
   font-style: italic;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+
+
+/* ── Industrial UI Enhancements ────────────────────────────────────────── */
+
+/* Better touch targets for mobile */
+@media (max-width: 1024px) {
+  button, 
+  [role="button"] {
+    min-height: 44px; /* Apple/Google standard for touch */
+  }
+}
+
+/* Custom Scrollbar for the Preview Canvas (Desktop only) */
+@media (min-width: 1024px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* Calendar Grid Fix: Ensure date cells don't collapse */
+.grid-cols-7 > div {
+  aspect-ratio: 1 / 1.1; /* Keeps cells slightly taller than wide */
+}
+
+/* High-Contrast selection for the industrial look */
+::selection {
+  background: #facc15;
+  color: #0f172a;
+}
+
+/* Neobrutalism Button Active State */
+.active-press:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
