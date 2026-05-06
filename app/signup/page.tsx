@@ -30,7 +30,7 @@ interface CustomInputProps {
 
 function SignupForm() {
   const searchParams = useSearchParams();
-const plan = searchParams.get('plan') || 'basic';
+const plan = searchParams.get('plan') || 'free';
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -117,8 +117,12 @@ const [formData, setFormData] = useState({
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        window.location.href = `/subscribe?plan=${plan}`;
+     if (response.ok && data.success) {
+        if (plan === 'free') {
+          window.location.href = `/${data.companySlug}/dashboard`;
+        } else {
+          window.location.href = `/subscribe?plan=${plan}`;
+        }
       } else {
         setError(data.error || 'Failed to create account');
         setLoading(false);
@@ -184,11 +188,11 @@ const [formData, setFormData] = useState({
 
   {/* Bottom card */}
   <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-    <p className="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">
-      Step 1 of 2
+   <p className="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">
+      {plan === 'free' ? 'Free Account' : 'Step 1 of 2'}
     </p>
     <p className="text-sm text-slate-300 font-bold">
-      Create your administrative account to get started.
+      {plan === 'free' ? 'Create your account and start receiving leads.' : 'Create your administrative account to get started.'}
     </p>
   </div>
 </div>
@@ -346,7 +350,7 @@ const [formData, setFormData] = useState({
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    Continue to Plan Selection
+                    {plan === 'free' ? 'Create Free Account' : 'Continue to Plan Selection'}
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}

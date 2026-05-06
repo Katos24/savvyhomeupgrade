@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       password, 
       businessType,
       ownerName,
-      plan = 'starter',
+      plan = 'free',
     } = await req.json();
 
     if (!companyName || !slug || !email || !password || !ownerName) {
@@ -99,7 +99,7 @@ form_field_config
         ${businessType},
         ${JSON.stringify(DEFAULT_STATUSES)},
         ${JSON.stringify(defaultCategories)},
-        'inactive',
+        ${plan === 'free' ? 'free' : 'inactive'},
         true,
         ${addressConfig.show},
         ${addressConfig.required},
@@ -142,7 +142,8 @@ ${defaultFieldConfig}::jsonb
     const response = NextResponse.json({
       success: true,
       companySlug: newCompany.slug,
-      message: 'Account created! Complete your subscription.',
+      plan,
+      message: plan === 'free' ? 'Account created!' : 'Account created! Complete your subscription.',
     });
 
     response.cookies.set('auth-token', token, {
