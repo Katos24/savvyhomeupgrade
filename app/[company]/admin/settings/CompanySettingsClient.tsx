@@ -365,38 +365,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
       )}
     </div>
 
-    {/* Booking link */}
-    <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border"
-      style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${formData.color1} 5%, white), white)`,
-        borderColor: `color-mix(in srgb, ${formData.color1} 20%, transparent)`,
-      }}
-    >
-      <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: `linear-gradient(135deg, ${formData.color1}, ${formData.color2})` }}
-      >
-        <Globe className="w-4 h-4 text-white" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Your Booking Link</p>
-        <p className="text-sm font-mono font-bold text-slate-700 truncate">
-          lead2project.com/<span style={{ color: formData.color1 }}>{publicLink?.split('/').pop() || 'your-company'}</span>
-        </p>
-      </div>
-      <button
-        onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-        className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
-        style={{
-          background: copied ? '#dcfce7' : `color-mix(in srgb, ${formData.color1} 10%, white)`,
-          color: copied ? '#16a34a' : formData.color1,
-        }}
-      >
-        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-        <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
-      </button>
-    </div>
+
 
     {/* Fields */}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
@@ -483,6 +452,41 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         </button>
       </div>
     )}
+
+ {/* Booking link */}
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border"
+      style={{
+        background: `linear-gradient(135deg, color-mix(in srgb, ${formData.color1} 5%, white), white)`,
+        borderColor: `color-mix(in srgb, ${formData.color1} 20%, transparent)`,
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${formData.color1}, ${formData.color2})` }}
+      >
+        <Globe className="w-4 h-4 text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Your Booking Link</p>
+        <p className="text-sm font-mono font-bold text-slate-700 truncate">
+          lead2project.com/<span style={{ color: formData.color1 }}>{publicLink?.split('/').pop() || 'your-company'}</span>
+        </p>
+      </div>
+      <button
+        onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+        style={{
+          background: copied ? '#dcfce7' : `color-mix(in srgb, ${formData.color1} 10%, white)`,
+          color: copied ? '#16a34a' : formData.color1,
+        }}
+      >
+        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+        <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
+      </button>
+    </div>
+
+
 
     {/* Action buttons */}
     {!isEditing && (
