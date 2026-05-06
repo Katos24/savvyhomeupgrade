@@ -366,18 +366,29 @@ export async function sendQuoteToCustomer({
 
     const accentColor = company.email_brand_color_1 || '#667eea';
 const acceptDeclineHtml = quoteToken ? `
-  <div style="margin: 32px 0; text-align: center;">
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Please review your quote and let us know:</p>
-    <div style="display: inline-flex; gap: 12px;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=accept"
-        style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin-right:8px;">
-        Accept Quote
-      </a>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=decline"
-        style="display:inline-block;background:#f1f5f9;color:#64748b;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid #e2e8f0;">
-        Decline
-      </a>
-    </div>
+  <div style="margin: 40px 0; text-align: center; padding-top: 32px; border-top: 1px solid #f1f5f9;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center">
+          <table cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td style="padding: 0 8px;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=accept"
+                  style="display: inline-block; background-color: ${accentColor}; color: #ffffff; font-family: sans-serif; font-size: 15px; font-weight: 800; line-height: 52px; text-align: center; text-decoration: none; padding: 0 32px; border-radius: 12px;">
+                  Accept Quote
+                </a>
+              </td>
+              <td style="padding: 0 8px;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=decline"
+                  style="display: inline-block; background-color: #ffffff; color: #94a3b8; font-family: sans-serif; font-size: 15px; font-weight: 700; line-height: 50px; text-align: center; text-decoration: none; padding: 0 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                  Decline
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </div>
 ` : '';
 
@@ -452,6 +463,8 @@ company_phone: company.phone || companyPhone || null,
     throw error;
   }
 }
+
+
 
 // 📅 Send schedule confirmation to customer (NOW USES CUSTOM TEMPLATES WITH BRANDING!)
 export async function sendScheduleConfirmation({
