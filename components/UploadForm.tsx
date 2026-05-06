@@ -315,8 +315,14 @@ export default function UploadForm({
   return (
     <div className="min-h-screen bg-slate-50">
       {toasts.map(toast => (
-        <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
-      ))}
+  <Toast 
+    key={toast.id} 
+    message={toast.message} 
+    type={toast.type} 
+    onClose={() => removeToast(toast.id)} 
+    darkText={true} // <--- ADD THIS LINE
+  />
+))}
 
        {showHeader && company && (
         <>

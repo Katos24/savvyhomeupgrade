@@ -7,14 +7,16 @@ interface ToastProps {
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
+  darkText?: boolean; // Interface updated
 }
 
-export default function Toast({ message, type, onClose }: ToastProps) {
+// 1. Destructure darkText here
+export default function Toast({ message, type, onClose, darkText }: ToastProps) {
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
     const duration = 4000;
-    const interval = 10; // Smoothness of progress bar
+    const interval = 10;
     const step = (interval / duration) * 100;
 
     const timer = setTimeout(() => {
@@ -64,28 +66,26 @@ export default function Toast({ message, type, onClose }: ToastProps) {
         ${current.bg} ${current.border} ${current.glow}
         backdrop-blur-xl border rounded-2xl p-4 flex items-center gap-4
       `}>
-        {/* Animated Progress Bar */}
         <div 
           className={`absolute bottom-0 left-0 h-[2px] transition-all linear ${current.bar}`}
           style={{ width: `${progress}%` }}
         />
 
-        {/* Icon Container */}
         <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
           {current.icon}
         </div>
 
-        {/* Text Content */}
+        {/* 2. Text Content Update */}
         <div className="flex-1">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5">
             System {type}
           </p>
-          <p className="text-sm font-bold text-white tracking-tight leading-snug">
+          {/* We toggle text-white vs text-slate-900 based on darkText prop */}
+          <p className={`text-sm font-bold tracking-tight leading-snug ${darkText ? 'text-slate-900' : 'text-white'}`}>
             {message}
           </p>
         </div>
 
-        {/* Close Button */}
         <button 
           onClick={onClose}
           className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-colors"
