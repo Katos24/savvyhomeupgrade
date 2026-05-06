@@ -193,6 +193,8 @@ const [isSearching, setIsSearching] = useState(false);
     }
   }, [isInitialLoad, showTour]);
 
+ const planTier = (company.plan_tier || 'free') as PlanTier;
+
   const statusOptions: StatusOption[] = company.status_options?.length
     ? company.status_options
     : DEFAULT_STATUSES;
@@ -683,15 +685,25 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
      {/* Action Area */}
 <div className="flex items-center gap-2 shrink-0">
   {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-  <button
-    data-tour="create-lead"  
-    onClick={() => setIsCreateModalOpen(true)}
-    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-  >
-    <Plus className="w-4 h-4 stroke-[3px]" />
-    <span className="hidden sm:inline">New Lead</span>
-    <span className="sm:hidden">Add</span>
-  </button>
+  {can(planTier, 'create_lead_manual') ? (
+    <button
+      data-tour="create-lead"  
+      onClick={() => setIsCreateModalOpen(true)}
+      className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+    >
+      <Plus className="w-4 h-4 stroke-[3px]" />
+      <span className="hidden sm:inline">New Lead</span>
+      <span className="sm:hidden">Add</span>
+    </button>
+  ) : (
+    <button
+      onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
+      className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed"
+    >
+      <Lock className="w-4 h-4" />
+      <span className="hidden sm:inline">New Lead</span>
+    </button>
+  )}
 </div>
 </div>
 </header>
@@ -796,23 +808,29 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
     <div 
     data-tour="view-switcher" 
     className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
-      {[
-        { id: 'cards', icon: LayoutGrid },
-        { id: 'table', icon: List },
-        { id: 'calendar', icon: Calendar }
-      ].map((v) => (
-        <button
-          key={v.id}
-          onClick={() => setCurrentView(v.id as any)}
-          className={`p-2 rounded-lg transition-all ${
-            currentView === v.id
-              ? 'bg-blue-500 text-white shadow-lg'
-              : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
-          }`}
-        >
-          <v.icon className="w-4 h-4" />
-        </button>
-      ))}
+     {[
+        { id: 'cards', icon: LayoutGrid, feature: null },
+        { id: 'table', icon: List, feature: 'table_view' as const },
+        { id: 'calendar', icon: Calendar, feature: 'calendar_view' as const }
+      ].map((v) => {
+        const locked = v.feature && !can(planTier, v.feature);
+        return (
+          <button
+            key={v.id}
+            onClick={() => locked ? router.push(`/${company.slug}/admin/settings#billing`) : setCurrentView(v.id as any)}
+            className={`p-2 rounded-lg transition-all relative ${
+              locked
+                ? 'text-slate-600 cursor-not-allowed opacity-40'
+                : currentView === v.id
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <v.icon className="w-4 h-4" />
+            {locked && <Lock className="w-2 h-2 absolute -top-0.5 -right-0.5 text-slate-500" />}
+          </button>
+        );
+      })}
     </div>
 
     {/* Theme Toggle */}
@@ -1147,7 +1165,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
                   </p>
                 </div>
 
-                {can((company.plan_tier || 'basic') as PlanTier, 'csv_export') ? (
+                {can(planTier, 'csv_export') ? (
                   <a
                     href={`/api/company/${company.slug}/export-csv`}
                     className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all border ${
@@ -1243,7 +1261,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
       {/* AI Chat                                                              */}
       {/* ------------------------------------------------------------------ */}
      {!selectedLead && !isCreateModalOpen && (
-        can((company.plan_tier || 'basic') as PlanTier, 'ai_chat') ? (
+        can(planTier, 'ai_chat') ? (
           <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-3">
 
             {showAiChat && (

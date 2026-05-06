@@ -31,7 +31,7 @@ export async function GET() {
 
     const sql = neon(process.env.DATABASE_URL!);
     const [company] = await sql`
-      SELECT id, slug, name, subscription_status, onboarding_completed, stripe_customer_id
+      SELECT id, slug, name, subscription_status, onboarding_completed, stripe_customer_id, plan_tier
 FROM companies
 WHERE id = ${companyId}
     `;
@@ -41,7 +41,8 @@ WHERE id = ${companyId}
     }
 
 const isActive = ['trialing', 'active'].includes(company.subscription_status)
-  || !!company.stripe_customer_id;
+  || !!company.stripe_customer_id
+  || company.plan_tier === 'free';
 
     return NextResponse.json({
       success: true,

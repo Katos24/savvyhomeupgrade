@@ -92,8 +92,10 @@ export default function UploadForm({
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
   const businessType = company?.business_type || 'general';
-  const categories: Category[] =
-    company?.form_categories?.length
+  const isFree = company?.plan_tier === 'free';
+  const categories: Category[] = isFree
+    ? [{ value: 'general', label: 'General' }]
+    : company?.form_categories?.length
       ? company.form_categories
       : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
@@ -122,13 +124,14 @@ export default function UploadForm({
     },
   };
 
-  const hasStep2Content =
-    fieldConfig.address.enabled ||
-    fieldConfig.preferred_date.enabled ||
-    fieldConfig.preferred_time.enabled ||
-    fieldConfig.lead_source.enabled ||
-    fieldConfig.file_upload.enabled ||
-    customQuestions.length > 0;
+  const hasStep2Content = isFree
+    ? false
+    : fieldConfig.address.enabled ||
+      fieldConfig.preferred_date.enabled ||
+      fieldConfig.preferred_time.enabled ||
+      fieldConfig.lead_source.enabled ||
+      fieldConfig.file_upload.enabled ||
+      customQuestions.length > 0;
 
   const getCtaHeading = () => {
     if (company?.cta_heading) return company.cta_heading;
@@ -324,7 +327,7 @@ export default function UploadForm({
   />
 ))}
 
-       {showHeader && company && (
+       {showHeader && company && !isFree && (
         <>
           <FormHeader company={company} />
           {step === 1 && <FormHero company={company} ctaHeading={getCtaHeading()} />}

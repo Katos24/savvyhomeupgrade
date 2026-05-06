@@ -75,7 +75,7 @@ async function getCompany(slug: string): Promise<Company | null> {
   const c = rows[0];
   return {
     ...c,
-    plan_tier: c.plan_tier || 'basic',
+    plan_tier: c.plan_tier || 'free',
     status_options: c.status_options || [],
     form_categories: c.form_categories || [],
     custom_questions: c.custom_questions || [],
@@ -154,12 +154,14 @@ export default async function CompanyDashboardPage({
     company.trial_ends_at &&
     new Date(company.trial_ends_at) <= new Date();
 
+  const isFree = company.plan_tier === 'free';
+
   const needsPayment =
     !company.subscription_status ||
     ['canceled', 'past_due', 'inactive'].includes(company.subscription_status) ||
     isTrialExpired;
 
-  if (needsPayment && !isTrialing) {
+  if (needsPayment && !isTrialing && !isFree) {
     redirect(`/${companySlug}/admin/settings#billing`);
   }
 

@@ -15,16 +15,17 @@
 //   Update PLAN_CONFIG prices. Done.
 //
 // Plans:
+//   free    → $0     — booking link + basic form + view leads
 //   starter → $29.99 — lead capture only, no workflow tools
 //   basic   → $49.99 — full workflow, no emails, no AI
 //   pro     → $79.99 — everything + one-click emails + AI
 // ============================================================
 
 // ── Plan types ────────────────────────────────────────────────
-export type PlanTier = 'starter' | 'basic' | 'pro';
+export type PlanTier = 'free' | 'starter' | 'basic' | 'pro';
 export type UserRole = 'owner' | 'admin' | 'member';
 
-export const PLAN_ORDER: PlanTier[] = ['starter', 'basic', 'pro'];
+export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'basic', 'pro'];
 
 export function planMeetsRequirement(
   userPlan: PlanTier,
@@ -37,17 +38,22 @@ export function planMeetsRequirement(
 // THIS is the single source of truth for what each plan gets.
 // Change a value here — it propagates everywhere automatically.
 //
+// free    → booking link + basic form + view leads (card view only)
 // starter → lead capture machine only
 // basic   → full workflow, manual emails
 // pro     → automation + AI on top of basic
 export const FEATURE_PLAN_MAP = {
   // ── Customer form ──────────────────────────────────────────
+  basic_form:               'free',    // name, email, phone, description only
   customize_form:           'starter', // branding, field toggles — all plans
   customer_video_upload:    'basic',   // customer attaches photos/video on form
   custom_form_questions:    'basic',   // add your own questions to form
 
   // ── Lead board ─────────────────────────────────────────────
-  lead_board:               'starter',
+  lead_board:               'free',    // kanban cards view only
+  view_lead_details:        'free',    // can open and read lead info
+  table_view:               'starter', // table view with sorting/filtering
+  calendar_view:            'starter', // calendar view
   photos_on_card:           'starter',
   docs_on_card:             'starter',
   payment_tracking:         'starter', // basic payment status on all plans
@@ -82,14 +88,20 @@ export const FEATURE_PLAN_MAP = {
   role_permissions:         'basic',
 
   // ── Settings tabs ──────────────────────────────────────────
-  settings_company:         'starter',
+  settings_company:         'free',    // can view company info
+  settings_billing:         'free',    // can upgrade from here
   settings_form:            'starter',
-  settings_billing:         'starter',
   settings_team:            'starter',
   settings_pipeline:        'basic',
   settings_categories:      'basic',
   settings_email_templates: 'pro',
   settings_notifications:   'pro',
+
+  // ── Lead management actions ────────────────────────────────
+  create_lead_manual:       'starter', // manual lead creation from dashboard
+  convert_to_project:       'starter', // convert lead → project
+  delete_lead:              'starter', // delete/archive leads
+  assign_lead:              'starter', // assign leads to team members
 } as const;
 
 export type FeatureKey = keyof typeof FEATURE_PLAN_MAP;
@@ -103,19 +115,34 @@ export function can(userPlan: PlanTier, feature: FeatureKey): boolean {
 
 // ── Plan metadata ─────────────────────────────────────────────
 export const PLAN_CONFIG = {
+  free: {
+    label:        'Free',
+    price:        0,
+    priceLabel:   'Free forever',
+    description:  'See your leads come in. Upgrade when you\'re ready to manage them.',
+    stripePriceId: '',
+    features: [
+      'Booking link & QR code',
+      'Basic form (name, email, phone, description)',
+      'Lead dashboard (card view)',
+      'View lead details',
+    ],
+  },
   starter: {
     label:        'Starter',
     price:        29.99,
     priceLabel:   '$29.99/mo',
     description:  'Lead capture machine for solo contractors',
-stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || '',
+    stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || '',
     features: [
+      'Everything in Free',
       'Custom QR code & booking form',
-      'Lead board (kanban view)',
+      'Table & calendar views',
       'Photo & doc uploads on cards',
       'Payment status tracking',
       'Unlimited team members',
       'Form branding (logo & colors)',
+      'Manual lead creation & assignment',
     ],
   },
   basic: {
@@ -123,7 +150,7 @@ stripePriceId: process.env.STRIPE_STARTER_PRICE_ID || '',
     price:        49.99,
     priceLabel:   '$49.99/mo',
     description:  'Full job management for growing crews',
-stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
+    stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
     features: [
       'Everything in Starter',
       'Custom pipeline stages',
@@ -140,7 +167,7 @@ stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
     price:        79.99,
     priceLabel:   '$79.99/mo',
     description:  'Automation + AI for serious contractors',
-stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
+    stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
     features: [
       'Everything in Basic',
       'One-click emails (quote, schedule, reminder)',
@@ -160,7 +187,61 @@ export const UPGRADE_PROMPTS: Record<string, {
   title: string;
   description: string;
 }> = {
-  // starter → basic
+  // ── free → starter ─────────────────────────────────────────
+  customize_form: {
+    title: 'Customize your booking form',
+    description: 'Add your logo, categories, address fields, photos, and custom questions to your form.',
+  },
+  table_view: {
+    title: 'Table & calendar views',
+    description: 'Sort, filter, and bulk-manage leads in table view. See your schedule at a glance in calendar view.',
+  },
+  calendar_view: {
+    title: 'Calendar view',
+    description: 'See all your scheduled jobs on a calendar at a glance.',
+  },
+  photos_on_card: {
+    title: 'See customer photos',
+    description: 'Customers can upload job site photos on your booking form and you\'ll see them right on the lead card.',
+  },
+  docs_on_card: {
+    title: 'Document attachments',
+    description: 'Attach and view documents on any lead card.',
+  },
+  payment_tracking: {
+    title: 'Payment tracking',
+    description: 'Track payment status on every job — see who\'s paid and who hasn\'t.',
+  },
+  team_members: {
+    title: 'Team members',
+    description: 'Invite your crew and assign leads to specific people.',
+  },
+  create_lead_manual: {
+    title: 'Create leads manually',
+    description: 'Add leads directly from your dashboard when a customer calls or walks in.',
+  },
+  convert_to_project: {
+    title: 'Convert to project',
+    description: 'Turn leads into full projects with tasks, quotes, and scheduling.',
+  },
+  delete_lead: {
+    title: 'Delete & archive leads',
+    description: 'Clean up your board by deleting or archiving old leads.',
+  },
+  assign_lead: {
+    title: 'Assign leads',
+    description: 'Assign leads to specific team members so nothing falls through the cracks.',
+  },
+  settings_form: {
+    title: 'Form settings',
+    description: 'Control what customers fill out — toggle address, photos, custom questions, and more.',
+  },
+  settings_team: {
+    title: 'Team settings',
+    description: 'Manage your team members, roles, and permissions.',
+  },
+
+  // ── starter → basic ────────────────────────────────────────
   custom_pipeline: {
     title: 'Customize your pipeline',
     description: 'Add, rename, and reorder your board stages to match your exact workflow.',
@@ -210,7 +291,7 @@ export const UPGRADE_PROMPTS: Record<string, {
     description: 'Set up job types with auto-loaded tasks and quote templates.',
   },
 
-  // basic → pro
+  // ── basic → pro ────────────────────────────────────────────
   send_quote_email: {
     title: 'One-click emails',
     description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',

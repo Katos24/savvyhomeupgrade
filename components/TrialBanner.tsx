@@ -20,7 +20,10 @@ export default function TrialBanner({
 }: TrialBannerProps) {
   const router = useRouter();
 
-  const go = () => router.push(`/${companySlug}/admin/settings`);
+ const go = () => router.push(`/${companySlug}/admin/settings`);
+
+  // Free plan — no trial banner
+  if (subscriptionStatus === 'free' || (!subscriptionStatus && !trialEndsAt)) return null;
 
   // Scheduled cancellation — show over anything else
   if (cancelAtPeriodEnd && subscriptionCancelAt) {

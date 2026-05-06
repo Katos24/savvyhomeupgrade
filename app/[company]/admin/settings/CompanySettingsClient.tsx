@@ -33,9 +33,11 @@ const TAB_LABELS: Record<Tab, string> = {
 
 // Tab → feature key mapping — reads from FEATURE_PLAN_MAP in permissions.ts
 const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
+  form:              'settings_form',
   pipeline:          'settings_pipeline',
   'email-templates': 'settings_email_templates',
   categories:        'settings_categories',
+  team:              'settings_team',
   notifications:     'settings_notifications',
 };
 
@@ -88,7 +90,7 @@ function UpgradeOverlay({ feature, companySlug }: {
 }
 
 export default function CompanySettingsClient({ company, currentUser }: { company: any; currentUser: any }) {
-  const planTier = (company.plan_tier ?? 'basic') as PlanTier;
+  const planTier = (company.plan_tier ?? 'free') as PlanTier;
 const [showDigestConfirm, setShowDigestConfirm] = useState(false);
 const [showDigestInfo, setShowDigestInfo] = useState(false);
 
@@ -674,11 +676,11 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         <div>
           <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-4 px-1">System Configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Pro" />
-            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} locked={!can(planTier, 'settings_categories')} requiredPlan="Pro" />
-            <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} />
+            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Basic" />
+            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template that auto-loads on new jobs." color="#8b5cf6" onClick={() => openTab('categories')} locked={!can(planTier, 'settings_categories')} requiredPlan="Basic" />
+            <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} locked={!can(planTier, 'settings_form')} requiredPlan="Basic" />
             <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
-            <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} />
+            <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
             <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
           </div>
         </div>

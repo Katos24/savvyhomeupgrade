@@ -659,7 +659,7 @@ className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-i
                        <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
                         <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
                       </div>
-                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} />
+                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
                     </motion.div>
                   )}
 

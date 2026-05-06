@@ -2,23 +2,27 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { can, type PlanTier } from '@/lib/permissions';
 
 type ConvertToProjectButtonProps = {
   lead: any;
   currentUser: any;
   onRefresh: () => Promise<void>;
+  planTier?: string;
 };
 
 export default function ConvertToProjectButton({
   lead,
   currentUser,
   onRefresh,
+  planTier = 'basic',
 }: ConvertToProjectButtonProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  if (lead.project_id) return null;
-
+if (lead.project_id) return null;
+  if (!can(planTier as PlanTier, 'convert_to_project')) return null;
+  
   const category = lead.category || '';
 
   const categoryDisplay = category

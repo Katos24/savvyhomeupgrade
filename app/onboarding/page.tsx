@@ -52,7 +52,7 @@ export default function OnboardingPage() {
         const companyData = await companyRes.json();
 
         if (companyData.success && companyData.company) {
-          if (companyData.company.onboarding_completed) {
+          if (companyData.company.onboarding_completed || companyData.company.plan_tier === 'free') {
             router.push(`/${slug}/dashboard`);
             return;
           }
