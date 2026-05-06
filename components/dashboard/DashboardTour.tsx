@@ -238,7 +238,7 @@ function TourTooltip({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-            style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
+            style={{ background: '#2563eb' }}>
             {step.icon}
           </div>
           <div className="flex gap-1">
@@ -296,7 +296,7 @@ function TourTooltip({
         <button
           onClick={onNext}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 text-white font-black text-sm rounded-xl transition-all active:scale-[0.97] shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}
+          style={{ background: '#2563eb', boxShadow: '0 4px 20px rgba(37,99,235,0.3)' }}
         >
           {isLast ? (
             <><Check className="w-4 h-4" /> Open Dashboard</>
@@ -315,8 +315,8 @@ function TourTooltip({
         <div
           className="w-full max-w-md p-6 rounded-3xl border border-white/10 animate-in fade-in zoom-in-95 duration-300"
           style={{
-            background: 'linear-gradient(145deg, #0f172a 0%, #1a1040 50%, #0f172a 100%)',
-            boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)',
+            background: '#0a0f1e',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.1)',
           }}
         >
           {isFirst && (
@@ -324,7 +324,7 @@ function TourTooltip({
               <div
                 className="w-20 h-20 mx-auto mb-4 rounded-3xl flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                  background: '#2563eb',
                   boxShadow: '0 8px 40px rgba(99,102,241,0.4)',
                 }}
               >
@@ -359,8 +359,8 @@ className="fixed z-[9995] w-[calc(100vw-32px)] sm:w-[380px] p-5 rounded-2xl bord
       style={{
         top: pos.top,
         left: pos.left,
-        background: 'linear-gradient(145deg, #0f172a 0%, #1a1040 50%, #0f172a 100%)',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)',
+        background: '#0a0f1e',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.1)',
       }}
     >
       {cardContent}
@@ -401,7 +401,7 @@ export default function DashboardTour({
     // Add highlight class
     els.forEach(el => {
       el.style.transition = 'box-shadow 0.5s ease, transform 0.5s ease';
-      el.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.6), 0 0 20px rgba(99,102,241,0.3)';
+el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0.3)';
       el.style.transform = 'scale(1.03)';
       el.style.borderRadius = '12px';
       el.style.position = 'relative';

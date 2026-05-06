@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowRight, Globe, Lock, Pencil } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { ArrowRight, Globe, Info, Lock, Pencil, X } from 'lucide-react';
 
 interface WorkspaceConfirmModalProps {
   isOpen: boolean;
@@ -15,81 +16,134 @@ export default function WorkspaceConfirmModal({
   onConfirm,
   onEdit,
 }: WorkspaceConfirmModalProps) {
+  
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
   if (!isOpen || !slug) return null;
 
+  /**
+   * DYNAMIC FONT SIZING LOGIC
+   * Scales down based on slug length to keep it on one line.
+   */
+  const getSlugFontSize = (text: string) => {
+    const len = text.length;
+    if (len > 20) return 'text-xl';
+    if (len > 15) return 'text-2xl';
+    if (len > 12) return 'text-3xl';
+    return 'text-4xl';
+  };
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
+      <div
+        onClick={onEdit}
+        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+      />
 
-      {/* Backdrop */}
-      <div onClick={onEdit} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
-
-        {/* Header */}
-        <div className="px-6 pt-7 pb-5">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">
-            Confirm your URL
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            This is permanent — it can't be changed after you continue.
-          </p>
+      <div className="relative w-full max-w-md bg-white shadow-2xl 
+                      rounded-t-[2rem] sm:rounded-2xl 
+                      animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-4 duration-300 ease-out
+                      flex flex-col max-h-[95vh]">
+        
+        <div className="flex justify-center pt-3 sm:hidden">
+          <div className="h-1.5 w-12 rounded-full bg-gray-300" />
         </div>
 
-        {/* URLs */}
-        <div className="px-6 pb-5 space-y-4">
-
-          {/* Public */}
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Globe className="w-3.5 h-3.5 text-green-600" />
-              <span className="text-xs font-bold text-gray-700">Customer Booking Page</span>
-              <span className="ml-auto text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-md">Public</span>
-            </div>
-            <div className="rounded-lg bg-gray-100 px-4 py-3 font-mono text-sm text-gray-900 break-all">
-              <span className="text-gray-500">lead2project.com/</span><span className="font-bold text-gray-900">{slug}</span>
-            </div>
-          </div>
-
-          {/* Dashboard */}
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Lock className="w-3.5 h-3.5 text-blue-600" />
-              <span className="text-xs font-bold text-gray-700">Your Dashboard</span>
-              <span className="ml-auto text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">Private</span>
-            </div>
-            <div className="rounded-lg bg-gray-100 px-4 py-3 font-mono text-sm text-gray-900 break-all">
-              <span className="text-gray-500">lead2project.com/</span><span className="font-bold text-gray-900">{slug}</span><span className="text-gray-500">/dashboard</span>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500">
-            Spaces auto-convert to dashes. "Blue Line" → "blue-line"
-          </p>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-gray-200" />
-
-        {/* Actions */}
-        <div
-          className="px-6 py-4 flex items-center justify-between gap-3"
-          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        <button 
+          onClick={onEdit}
+          className="hidden sm:flex absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-100 transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Edit
-          </button>
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="overflow-y-auto px-6 pt-6 sm:pt-8 pb-4">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">
+              Confirm your link
+            </h2>
+            <p className="text-sm text-gray-600 font-medium">
+              This is your permanent address. <br className="hidden sm:block" />
+              <span className="text-red-600 font-bold italic underline decoration-red-200 underline-offset-2">
+                It cannot be changed later.
+              </span>
+            </p>
+          </div>
+
+          <div className="mb-6">
+            <div className="rounded-2xl bg-gray-950 p-6 text-center ring-4 ring-gray-100 flex flex-col items-center justify-center min-h-[120px]">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-3">
+                Unique Workspace Name
+              </p>
+              {/* Dynamic size applied here + forced single line */}
+              <div className={`font-mono font-bold text-white tracking-tighter whitespace-nowrap leading-none transition-all duration-200 ${getSlugFontSize(slug)}`}>
+                {slug}
+              </div>
+            </div>
+            
+            <button
+              onClick={onEdit}
+              className="mt-4 mx-auto flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-full transition-all active:scale-95"
+            >
+              <Pencil className="w-4 h-4" /> 
+              Change Name
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">
+              Live Preview
+            </label>
+            
+            <div className="flex items-center gap-4 rounded-xl bg-emerald-50 border-2 border-emerald-100 p-4">
+              <div className="bg-emerald-500 p-2 rounded-lg shrink-0">
+                <Globe className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-emerald-700 uppercase">Client Access</p>
+<p className="font-mono text-[13px] sm:text-sm text-emerald-950 break-all">
+                  lead2project.com/<span className="font-bold underline decoration-emerald-300">{slug}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 rounded-xl bg-blue-50 border-2 border-blue-100 p-4">
+              <div className="bg-blue-500 p-2 rounded-lg shrink-0">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-blue-700 uppercase">Private Admin</p>
+<p className="font-mono text-[13px] sm:text-sm text-blue-950 break-all">
+                  lead2project.com/{slug}/<span className="font-bold">dashboard</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-start gap-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
+            <Info className="w-5 h-5 text-gray-400 shrink-0" />
+            <p className="text-xs font-medium text-gray-500 leading-relaxed">
+              <span className="text-gray-900 font-bold">Pro-tip:</span> Spaces are turned into dashes. &quot;Blue Line&quot; → &quot;blue-line&quot;
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-100 bg-gray-50/50 sm:rounded-b-2xl">
           <button
             onClick={onConfirm}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-base shadow-lg shadow-blue-200 transition-all active:scale-[0.97] touch-manipulation"
           >
-            Confirm <ArrowRight className="w-4 h-4" />
+            Confirm & Create Workspace
+            <ArrowRight className="w-5 h-5" />
           </button>
+          <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
         </div>
-
       </div>
     </div>
   );

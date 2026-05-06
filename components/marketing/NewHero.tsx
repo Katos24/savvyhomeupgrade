@@ -69,7 +69,7 @@ export default function NewHero() {
           {/* Subtext - Balanced for mobile reading */}
           <p className="text-base sm:text-xl text-slate-300 font-bold leading-relaxed max-w-2xl mx-auto mb-10 sm:mb-12">
             One link and QR code for trucks and yard signs. 
-            Customers submit photos and details. You quote and schedule — <span className="text-white underline decoration-emerald-500 decoration-4 underline-offset-4">all from one dashboard.</span>
+            Customers submit photos and details. You quote and schedule <span className="text-white underline decoration-emerald-500 decoration-4 underline-offset-4">all from one dashboard.</span>
           </p>
 
           {/* CTAs - Heavy Industrial Buttons (Stacked on Mobile) */}
