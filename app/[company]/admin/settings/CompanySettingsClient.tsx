@@ -730,16 +730,24 @@ className={`flex-1 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase tr
                 ))}
               </div>
               <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                
                 <span className="text-sm font-bold text-slate-700">Embed Company Logo</span>
 <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-blue-600' : 'bg-slate-300'}`}>                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
                 </button>
+                
               </div>
+
+              
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setShowQrModal(false)} className="py-3.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition bg-slate-50 rounded-2xl">Cancel</button>
                 <button onClick={downloadStyledQR} className="py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg">
                   <Download className="w-4 h-4" /> Export PNG
                 </button>
               </div>
+         <p className="text-xs text-slate-500 font-medium px-1 mt-2 leading-relaxed">
+  <span className="text-blue-600 font-black uppercase tracking-wide">Tip:</span>{' '}
+  Pull out your phone, scan it, and test your booking form before sharing.
+</p>
             </div>
           </div>
         </div>
