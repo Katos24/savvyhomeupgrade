@@ -94,6 +94,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
 
 
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
+  const [companyData, setCompanyData] = useState(company);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -147,10 +148,17 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const closeTab = useCallback(() => {
+  const closeTab = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`);
+      const data = await res.json();
+      if (data.success && data.company) {
+        setCompanyData(data.company);
+      }
+    } catch {}
     setActiveTab(null);
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
+  }, [company.slug]);
 
   const downloadStyledQR = async () => {
     const canvas = document.createElement('canvas');
@@ -243,12 +251,12 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
 
     // Unlocked — render normally
     switch (tab) {
-      case 'form':            return <FormTab company={company} currentUser={currentUser} />;
-      case 'pipeline':        return <PipelineTab company={company} currentUser={currentUser} />;
-      case 'email-templates': return <EmailTemplatesTab company={company} currentUser={currentUser} />;
-      case 'categories':      return <CategoriesTab company={company} currentUser={currentUser} />;
-      case 'team':            return <TeamTab company={company} currentUser={currentUser} />;
-      case 'billing':         return <BillingTab company={company} currentUser={currentUser} />;
+    case 'form':            return <FormTab company={companyData} currentUser={currentUser} />;
+      case 'pipeline':        return <PipelineTab company={companyData} currentUser={currentUser} />;
+      case 'email-templates': return <EmailTemplatesTab company={companyData} currentUser={currentUser} />;
+      case 'categories':      return <CategoriesTab company={companyData} currentUser={currentUser} />;
+      case 'team':            return <TeamTab company={companyData} currentUser={currentUser} />;
+      case 'billing':         return <BillingTab company={companyData} currentUser={currentUser} />;
     }
   };
 
