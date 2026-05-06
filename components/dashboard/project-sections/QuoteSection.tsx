@@ -690,67 +690,52 @@ className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-x
     </div>
   </div>
 </div>
+{/* SENT HISTORY — permanent small preview cards */}
+      {outboxLog.length > 0 && !isEditing && (
+        <div className="px-4 pb-4 pt-3 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-1.5 mb-3 px-1">
+            <Mail className="w-3 h-3 text-slate-400" />
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
+              Sent History ({outboxLog.length})
+            </span>
+          </div>
 
-{/* SENT HISTORY — collapsible */}
-{outboxLog.length > 0 && !isEditing && (
-  <div className="px-4 pb-4 pt-2 border-t border-slate-100">
-    <button
-      onClick={() => setShowHistory(v => !v)}
-      className="flex items-center justify-between w-full py-1"
-    >
-      <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-        <Mail className="w-3 h-3 text-slate-400" /> Sent History ({outboxLog.length})
-      </span>
-      {showHistory ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
-    </button>
-    <AnimatePresence>
-      {showHistory && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden"
-        >
-          <div className="mt-2 space-y-2">
+          <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
             {outboxLog.map((entry: any, i: number) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-blue-100 transition-colors group"
+                className="flex items-center justify-between px-3 py-2.5 bg-white border border-slate-200/60 rounded-xl gap-3 hover:border-blue-200 transition-all group shadow-sm"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 shadow-sm ${entry.status === 'failed' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-black text-slate-800">
-                        {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-700">
+                        {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[9px] font-medium text-slate-400">
                         {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    {entry.sent_by_email && <p className="text-[10px] text-slate-400 truncate">{entry.sent_by_email}</p>}
-                    {entry.status === 'failed' && entry.error_message && (
-                      <p className="text-[10px] text-rose-500 font-bold truncate">{entry.error_message}</p>
+                    {entry.sent_by_email && (
+                      <p className="text-[10px] text-slate-400 truncate leading-tight">{entry.sent_by_email}</p>
                     )}
                   </div>
                 </div>
+
                 {entry.html_body && (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={() => setPreviewHtml(entry.html_body)}
-                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-500 hover:text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition opacity-0 group-hover:opacity-100"
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-lg text-[9px] font-black uppercase tracking-wider transition-colors"
                   >
-                    <Eye className="w-3 h-3" /> View
-                  </motion.button>
+                    <Eye className="w-3 h-3" /> Preview
+                  </button>
                 )}
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
-  </div>
-)}
       </motion.div>
 
       {/* ── AI MODAL ── */}
@@ -861,18 +846,18 @@ className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-x
       </AnimatePresence>
 
       <SendEmailModal
-  open={showEmailModal}
-  onClose={() => setShowEmailModal(false)}
-  onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
-  type="quote"
-  leadId={lead.id}
-  currentUser={currentUser}
-  customerName={lead.name}
-  customerEmail={lead.email}
-  contextLine={quoteData.length > 0 ? fmt(total) : null}
-  lastSentAt={outboxLog[0]?.created_at || null}
-  lastHtmlBody={lastHtmlBody}
-/>
+        open={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
+        type="quote"
+        leadId={lead.id}
+        currentUser={currentUser}
+        customerName={lead.name}
+        customerEmail={lead.email}
+        contextLine={quoteData.length > 0 ? fmt(total) : null}
+        lastSentAt={outboxLog[0]?.created_at || null}
+        lastHtmlBody={lastHtmlBody}
+      />
 
       <style jsx>{`
         input[type='number']::-webkit-inner-spin-button,

@@ -337,54 +337,52 @@ const [teamLoading, setTeamLoading] = useState(true);
               )}
             </AnimatePresence>
           </div>
-
-          {/* SENT HISTORY — collapsible */}
+{/* SENT HISTORY — Permanent Small Card List */}
           {outboxLog.length > 0 && (
-            <div className="pt-2 border-t border-slate-100">
-              <button onClick={() => setShowHistory(v => !v)} className="flex items-center justify-between w-full py-1">
-                <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                  <History size={10} className="text-blue-400" /> Sent History ({outboxLog.length})
+            <div className="pt-3 border-t border-slate-100 bg-slate-50/50 -mx-4 px-4 pb-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <History size={10} className="text-blue-500" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                  Sent History ({outboxLog.length})
                 </span>
-                {showHistory ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
-              </button>
-              <AnimatePresence>
-                {showHistory && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-2 space-y-2">
-                      {outboxLog.map((entry: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
-                                  {entry.status}
-                                </span>
-                                <p className="text-[9px] font-black text-[#0F1F3D]">{new Date(entry.created_at).toLocaleDateString()}</p>
-                              </div>
-                              {entry.sent_by_email && <p className="text-[9px] text-slate-400 truncate">{entry.sent_by_email}</p>}
-                              {entry.status === 'failed' && entry.error_message && (
-                                <p className="text-[9px] text-red-500 font-bold">{entry.error_message}</p>
-                              )}
-                            </div>
-                          </div>
-                          {entry.html_body && (
-                            <button
-                              onClick={() => setPreviewHtml(entry.html_body)}
-                              className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-[8px] font-black text-blue-600 uppercase hover:border-blue-400 transition-colors opacity-0 group-hover:opacity-100 shadow-sm shrink-0 ml-2"
-                            >
-                              <Eye size={10} /> Preview
-                            </button>
-                          )}
+              </div>
+
+              <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                {outboxLog.map((entry: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200/60 shadow-sm group transition-all hover:border-blue-200">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {entry.status}
+                          </span>
+                          <p className="text-[9px] font-black text-[#0F1F3D]">
+                            {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </p>
+                          <span className="text-[8px] text-slate-400 font-medium">
+                            {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                      ))}
+                        {entry.sent_by_email && (
+                          <p className="text-[9px] text-slate-400 truncate mt-0.5 leading-tight">{entry.sent_by_email}</p>
+                        )}
+                        {entry.status === 'failed' && entry.error_message && (
+                          <p className="text-[9px] text-red-500 font-bold mt-0.5 leading-tight">{entry.error_message}</p>
+                        )}
+                      </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {entry.html_body && (
+                      <button
+                        onClick={() => setPreviewHtml(entry.html_body)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[8px] font-black text-blue-600 uppercase hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm shrink-0"
+                      >
+                        <Eye size={10} /> Preview
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

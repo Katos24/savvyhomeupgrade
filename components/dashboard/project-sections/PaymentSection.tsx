@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle, AlertCircle, Clock,
   CreditCard, Calendar, MessageSquare,
-  ChevronDown, ChevronUp, DollarSign, Send, X, Mail, Eye,
+  ChevronDown, ChevronUp, DollarSign, Send, X, Mail, Eye, BellRing, Loader2
 } from 'lucide-react';
 import StickyActionBar from '@/components/dashboard/StickyActionBar';
 
@@ -412,19 +412,21 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
   onSecondary={!isPaid && total > 0 ? () => setShowReminderConfirm(true) : undefined}
 />
 
-          {/* SENT HISTORY */}
+{/* SENT HISTORY — Permanent Small Card List */}
           {outboxLog.length > 0 && (
-            <div className="pt-2 border-t border-slate-100">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <Mail className="w-3 h-3" /> Sent History
-              </p>
-              <div className="space-y-2">
+            <div className="pt-3 border-t border-slate-100 bg-slate-50/50 -mx-4 px-4 pb-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <Mail className="w-3 h-3 text-slate-400" />
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                  Sent History ({outboxLog.length})
+                </p>
+              </div>
+
+              <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                 {outboxLog.map((entry: any, i: number) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                    className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl group"
+                  <div 
+                    key={i} 
+                    className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200/60 shadow-sm group transition-all hover:border-blue-200"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
@@ -433,24 +435,28 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
                           <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
                             {entry.status}
                           </span>
-                          <span className="text-[10px] font-black text-slate-700">{fmtDate(entry.created_at)}</span>
+                          <span className="text-[10px] font-black text-slate-700">
+                            {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium">
+                            {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        {entry.sent_by_email && <p className="text-[9px] text-slate-400 truncate mt-0.5">{entry.sent_by_email}</p>}
+                        {entry.sent_by_email && <p className="text-[9px] text-slate-400 truncate mt-0.5 leading-tight">{entry.sent_by_email}</p>}
                         {entry.status === 'failed' && entry.error_message && (
-                          <p className="text-[9px] text-red-500 font-bold truncate">{entry.error_message}</p>
+                          <p className="text-[9px] text-red-500 font-bold truncate mt-0.5 leading-tight">{entry.error_message}</p>
                         )}
                       </div>
                     </div>
                     {entry.html_body && (
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
+                      <button
                         onClick={() => setPreviewHtml(entry.html_body)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-blue-600 uppercase opacity-0 group-hover:opacity-100 hover:border-blue-300 transition-all shrink-0 ml-2 shadow-sm"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-blue-600 uppercase hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm shrink-0 ml-2"
                       >
-                        <Eye className="w-3 h-3" /> View
-                      </motion.button>
+                        <Eye className="w-3 h-3" /> Preview
+                      </button>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -474,56 +480,68 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6 shadow-2xl"
+              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl overflow-hidden"
             >
-              {/* Drag handle */}
-              <div className="flex justify-center mb-4 sm:hidden">
-                <div className="w-10 h-1 rounded-full bg-slate-200" />
+              {/* Drag handle for mobile */}
+              <div className="flex justify-center mb-6 sm:hidden">
+                <div className="w-12 h-1.5 rounded-full bg-slate-200" />
               </div>
 
-              <h3 className="text-lg font-black text-slate-900 mb-1">Send Payment Reminder?</h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Send to <span className="font-bold text-slate-800">{lead.name}</span> for{' '}
-                <span className="font-bold text-blue-600">{fmt(remaining)}</span>.
-              </p>
-
-              <div className={`rounded-xl p-3 mb-5 text-[10px] font-bold flex items-start gap-2 ${
-                !lastReminderSent ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'
-              }`}>
-                <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <div>
-                  {!lastReminderSent ? (
-                    <p>No reminder has been sent yet.</p>
-                  ) : (
-                    <>
-                      <p>Last reminder: {fmtDate(lastReminderSent)}</p>
-                      <p className="font-medium">{daysSinceReminder === 0 ? 'Already sent today!' : `${daysSinceReminder} days ago`}</p>
-                    </>
-                  )}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-5">
+                  <BellRing className="w-8 h-8 text-blue-500" />
                 </div>
-              </div>
+                
+                <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Send Payment Reminder?</h3>
+                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                  Send to <span className="font-bold text-slate-800">{lead.name}</span> for{' '}
+                  <span className="font-bold text-blue-600">{fmt(remaining)}</span>.
+                </p>
 
-              <div className="grid grid-cols-2 gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowReminderConfirm(false)}
-                  disabled={sendingReminder}
-                  className="py-3 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition hover:bg-slate-200"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleSendReminder}
-                  disabled={sendingReminder}
-                  className="py-3 bg-blue-600 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-60"
-                >
-                  {sendingReminder ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
-                      <Clock className="w-3.5 h-3.5" />
-                    </motion.div>
-                  ) : 'Send Now'}
-                </motion.button>
+                <div className={`rounded-2xl p-4 mb-8 text-[11px] font-bold flex items-start gap-3 text-left ${
+                  !lastReminderSent ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-50 text-slate-500 border border-slate-100'
+                }`}>
+                  <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    {!lastReminderSent ? (
+                      <p>No reminder has been sent yet. Perfect time to follow up!</p>
+                    ) : (
+                      <>
+                        <p className="uppercase tracking-wider opacity-70 mb-0.5">Last reminder sent</p>
+                        <p className="text-sm font-black">{fmtDate(lastReminderSent)}</p>
+                        <p className="font-medium mt-1">{daysSinceReminder === 0 ? '⚠️ Sent earlier today' : `${daysSinceReminder} days ago`}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleSendReminder}
+                    disabled={sendingReminder}
+                    className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition shadow-xl shadow-blue-100 disabled:opacity-60"
+                  >
+                    {sendingReminder ? (
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
+                        <Loader2 className="w-4 h-4" />
+                      </motion.div>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        Send Now
+                      </>
+                    )}
+                  </motion.button>
+                  
+                  <button
+                    onClick={() => setShowReminderConfirm(false)}
+                    disabled={sendingReminder}
+                    className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600 transition"
+                  >
+                    Not now, go back
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
