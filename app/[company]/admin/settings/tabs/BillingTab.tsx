@@ -20,10 +20,10 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     plan: 'basic' | 'pro' | null 
   }>({ isOpen: false, plan: null });
 
-  const [activePlan, setActivePlan] = useState<'basic' | 'pro'>(
-    (company.plan_tier === 'pro' ? 'pro' : 'basic')
+  const [activePlan, setActivePlan] = useState<'free' | 'basic' | 'pro'>(
+    company.plan_tier === 'pro' ? 'pro' : company.plan_tier === 'basic' ? 'basic' : 'free'
   );
-  
+
   const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
     company.pending_downgrade_at
       ? { periodEnd: Math.floor(new Date(company.pending_downgrade_at).getTime() / 1000) }
@@ -54,7 +54,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
   async function executePlanChange() {
     const newPlan = confirmModal.plan;
-if (!newPlan) return;
+    if (!newPlan) return;
 
     setConfirmModal({ isOpen: false, plan: null });
     setChangingPlan(true);
@@ -62,6 +62,21 @@ if (!newPlan) return;
     setSuccess('');
 
     try {
+      // Free users need checkout, not plan change
+      if (activePlan === 'free') {
+        const res = await fetch('/api/stripe/create-subscription-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId: company.id, companyEmail: company.email, plan: newPlan }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error(data.error || 'Failed to start checkout');
+      }
+
       const res = await fetch('/api/stripe/change-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,7 +114,11 @@ if (!newPlan) return;
     active: { icon: CheckCircle, text: 'Active', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-100' },
     past_due: { icon: AlertCircle, text: 'Past Due', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
-  }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || { icon: AlertCircle, text: 'Inactive', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' };
+ }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || (
+    company.plan_tier === 'free' 
+      ? { icon: Zap, text: 'Free Plan', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' }
+      : { icon: AlertCircle, text: 'Inactive', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' }
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
@@ -119,13 +138,15 @@ if (!newPlan) return;
               <p className={`text-xl font-black ${statusInfo.color}`}>{statusInfo.text}</p>
             </div>
           </div>
-          <button
-            onClick={handleManageSubscription}
-            disabled={loading}
-            className="px-5 py-3 bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-200 transition-all active:scale-95 font-black text-xs uppercase tracking-wider"
-          >
-            {loading ? '...' : 'Manage'}
-          </button>
+          {company.plan_tier !== 'free' && (
+            <button
+              onClick={handleManageSubscription}
+              disabled={loading}
+              className="px-5 py-3 bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-200 transition-all active:scale-95 font-black text-xs uppercase tracking-wider"
+            >
+              {loading ? '...' : 'Manage'}
+            </button>
+          )}
         </motion.div>
 
         <motion.div 
@@ -211,7 +232,7 @@ if (!newPlan) return;
 
               <button
                 onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
-disabled={changingPlan || isCurrent || (isTrialing && planKey !== 'pro')}
+disabled={changingPlan || isCurrent}
                 className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
   isCurrent 
     ? 'bg-indigo-100 text-indigo-600 cursor-default' 
@@ -222,7 +243,7 @@ disabled={changingPlan || isCurrent || (isTrialing && planKey !== 'pro')}
         : 'bg-slate-900 text-white'
 }`}
               >
-{isCurrent ? 'Current Plan' : isTrialing && planKey !== 'pro' ? 'Trial Active' : changingPlan ? '...' : `Select ${config.label}`}
+{isCurrent ? 'Current Plan' : changingPlan ? '...' : activePlan === 'free' ? `Upgrade to ${config.label}` : `Select ${config.label}`}
               </button>
             </motion.div>
           );
