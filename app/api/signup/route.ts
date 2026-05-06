@@ -68,6 +68,14 @@ export async function POST(req: NextRequest) {
     const defaultCategories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
     const addressConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
 
+const defaultFieldConfig = JSON.stringify({
+  address: { enabled: addressConfig.show, required: addressConfig.required },
+  file_upload: { enabled: true },
+  lead_source: { enabled: true },
+  preferred_date: { enabled: true },
+  preferred_time: { enabled: false },
+});
+
     const [newCompany] = await sql`
       INSERT INTO companies (
         name,
@@ -81,7 +89,8 @@ export async function POST(req: NextRequest) {
         email_notifications_enabled,
         address_enabled,
         address_required,
-        plan_tier
+        plan_tier,
+form_field_config
       ) VALUES (
         ${companyName},
         ${slug},
@@ -94,7 +103,8 @@ export async function POST(req: NextRequest) {
         true,
         ${addressConfig.show},
         ${addressConfig.required},
-        ${plan}
+        ${plan},
+${defaultFieldConfig}::jsonb
       )
       RETURNING id, slug
     `;
