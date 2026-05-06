@@ -1148,7 +1148,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
                     onSelectLead={setSelectedLead}
                     statusOptions={statusOptions}
                     isDark={isDark}
-                    planTier={company.plan_tier || 'starter'}
+                    planTier={planTier}
                   />
                 </section>
               ))}

@@ -382,7 +382,7 @@ export async function POST(request: Request) {
     }
 
     const { id: companyId, plan_tier } = companyRows[0];
-    const dbPlanTier = (plan_tier ?? 'starter') as PlanTier;
+    const dbPlanTier = (plan_tier ?? 'free') as PlanTier;
 
     if (!can(dbPlanTier, 'ai_quote')) {
       return NextResponse.json({

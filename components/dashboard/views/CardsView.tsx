@@ -31,7 +31,7 @@ const cardVariants: Variants = {
   }
 };
 
-export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true, planTier = 'starter' }: CardsViewProps) {
+export default function CardsView({ leads, onSelectLead, statusOptions, isDark = true, planTier = 'free' }: CardsViewProps) {
   const t = getTheme(isDark);  
 
   const getStatusConfig = (statusValue: string) =>

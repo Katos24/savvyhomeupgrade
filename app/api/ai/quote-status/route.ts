@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     const { id: companyId, plan_tier } = companyRows[0];
 
     // Re-check plan on every poll (plan could have been downgraded)
-    if (!can((plan_tier ?? 'starter') as PlanTier, 'ai_quote')) {
+    if (!can((plan_tier ?? 'free') as PlanTier, 'ai_quote')) {
       return NextResponse.json({
         success: false,
         error: 'AI quote generator is available on the Pro plan',

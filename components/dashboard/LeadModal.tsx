@@ -364,8 +364,8 @@ const currentNotes = parseNotes(lead.project_notes || lead.notes);
       : Object.keys(lead.ai_brief).length > 0
   ));
 
-const planTier = (company?.plan_tier || 'starter') as PlanTier;
-const isStarter = planTier === 'starter';
+const planTier = (company?.plan_tier || 'free') as PlanTier;
+const isFreePlan = !can(planTier, 'scheduling');
 
 const tabs: { id: TopTab; label: string; icon: React.ElementType; show: boolean; locked?: boolean }[] = [
   { id: 'overview',  label: 'Overview',  icon: User,          show: true },
@@ -552,7 +552,7 @@ className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border 
                 </div>
               </div>
 
-              {!isStarter && (lead.scheduled_date ? (
+              {!isFreePlan && (lead.scheduled_date ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold"
                   style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)', color: '#7dd3fc' }}>
                   <Calendar className="w-3 h-3" />
@@ -574,7 +574,7 @@ className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border 
                 </div>
               )}
 
-              {!isStarter && lead.quote_total && (
+              {!isFreePlan && lead.quote_total && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold ${
                   lead.payment_status === 'paid' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
                   : lead.payment_status === 'partial' ? 'bg-orange-500/20 border border-orange-500/30 text-orange-300'
