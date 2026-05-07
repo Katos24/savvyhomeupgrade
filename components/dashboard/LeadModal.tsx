@@ -37,6 +37,93 @@ type LeadModalProps = {
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 type TabDef = { id: TopTab; label: string; icon: React.ElementType; show: boolean; locked?: boolean };
 
+function LockedTabsPreview({ companySlug }: { companySlug: string }) {
+  const [activePreview, setActivePreview] = useState<string>('schedule');
+
+  const previewTabs = [
+    { id: 'schedule', icon: Calendar,    label: 'Schedule',  plan: 'Basic',   desc: 'Set job dates, arrival windows, and manage your crew calendar.' },
+    { id: 'quote',    icon: FileText,    label: 'Quote',     plan: 'Basic',   desc: 'Build professional quotes with line items and send them in one click.' },
+    { id: 'payment',  icon: CreditCard,  label: 'Payment',   plan: 'Starter', desc: 'Track payments, send reminders, and mark jobs as paid.' },
+    { id: 'tasks',    icon: CheckSquare, label: 'Tasks',     plan: 'Basic',   desc: 'Create task checklists for each job and track completion.' },
+    { id: 'photos',   icon: Image,       label: 'Media',     plan: 'Starter', desc: 'Upload before & after photos and attach job documents.' },
+    { id: 'ai',       icon: Sparkles,    label: 'AI',        plan: 'Pro',     desc: 'Get AI-generated job summaries, scope analysis, and smart suggestions.' },
+  ];
+
+  const active = previewTabs.find(t => t.id === activePreview) || previewTabs[0];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm"
+    >
+      {/* Tab bar */}
+      <div className="flex items-center overflow-x-auto border-b border-slate-100" style={{ scrollbarWidth: 'none' }}>
+        {previewTabs.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activePreview === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActivePreview(tab.id)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-3 text-[11px] font-bold transition-all border-b-2 whitespace-nowrap"
+              style={{
+                color: isActive ? '#3b82f6' : '#94a3b8',
+                borderBottomColor: isActive ? '#3b82f6' : 'transparent',
+                background: isActive ? '#eff6ff' : 'transparent',
+              }}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+              <Lock className="w-2.5 h-2.5 opacity-50" />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content area */}
+      <div className="relative">
+        {/* Blurred fake content */}
+        <div className="px-5 py-6 blur-[3px] select-none pointer-events-none opacity-40">
+          <div className="space-y-3">
+            <div className="h-4 bg-slate-200 rounded-full w-3/4" />
+            <div className="h-4 bg-slate-200 rounded-full w-1/2" />
+            <div className="h-10 bg-slate-100 rounded-xl w-full" />
+            <div className="flex gap-2">
+              <div className="h-8 bg-slate-100 rounded-lg flex-1" />
+              <div className="h-8 bg-slate-100 rounded-lg flex-1" />
+            </div>
+            <div className="h-4 bg-slate-200 rounded-full w-2/3" />
+          </div>
+        </div>
+
+      {/* Overlay */}
+<div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[1px] px-6">
+  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-3">
+    <Lock className="w-5 h-5 text-blue-500" />
+  </div>
+
+  <p className="text-sm font-black text-slate-900 text-center">
+    {active.desc}
+  </p>
+
+  <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider mt-1.5 mb-4">
+    Available on {active.plan}
+  </span>
+
+  <a
+    href={`/${companySlug}/admin/settings#billing`}
+    className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-500 transition active:scale-[0.98] shadow-lg shadow-blue-200"
+  >
+    View Plans
+  </a>
+</div>
+
+      </div>
+    </motion.div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function LeadModal({
   lead,
@@ -646,28 +733,29 @@ className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border 
               transition={{ duration: 0.18 }}
 className="p-5 sm:p-7 space-y-6"
             >
-
-              {/* ── OVERVIEW TAB ── */}
-              {activeTab === 'overview' && (
+{/* ── OVERVIEW TAB ── */}
+{activeTab === 'overview' && (
+  <>
+{/* Locked project tabs preview for free users */}
+                  {!isProject && !can(planTier, 'convert_to_project') && (
+                    <LockedTabsPreview companySlug={companySlug} />
+                  )}
+  </>
+)}
+        
                 <>
                   {/* Convert to Project banner */}
-                  {!isProject && (
-                    can((company?.plan_tier || 'free') as PlanTier, 'convert_to_project') ? (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"
-                      >
-                        <div>
-                          <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
-                          <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
-                        </div>
-                        <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
-                      </motion.div>
-                    ) : (
-                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                        <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
-                      </motion.div>
-                    )
+                  {!isProject && can(planTier, 'convert_to_project') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"
+                    >
+                      <div>
+                        <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
+                        <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+                      </div>
+                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
+                    </motion.div>
                   )}
 
                   {/* Client Card */}
@@ -1054,7 +1142,7 @@ className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md
                     </motion.div>
                   </div>
                 </>
-              )}
+              
 
 
               {/* ── AI BRIEF TAB ── */}

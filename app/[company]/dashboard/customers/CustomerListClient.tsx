@@ -75,13 +75,18 @@ export default function CustomerListClient({
   if (!projects || projects.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-4">
-        <div className="w-20 h-20 bg-white shadow-sm rounded-3xl flex items-center justify-center mb-6 border border-slate-100">
+       <div className="w-20 h-20 bg-white shadow-sm rounded-3xl flex items-center justify-center mb-6 border border-slate-100">
           <User className="w-10 h-10 text-slate-300" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Clean Slate</h2>
-        <p className="text-slate-500 max-w-[240px] mt-2 text-sm font-medium leading-relaxed">
-          Your customer database will grow as soon as you start creating projects.
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Your Customer Directory</h2>
+        <p className="text-slate-500 max-w-[280px] mt-2 text-sm font-medium leading-relaxed">
+          When you convert leads into projects, your customers automatically appear here with their full job history.
         </p>
+        <div className="mt-4 px-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl max-w-[300px]">
+  <p className="text-blue-600 text-xs font-black leading-relaxed">
+    Available on Basic and above. Upgrade to unlock your customer directory and track your business growth.
+  </p>
+</div>
         <a
           href={`/${companySlug}/dashboard`}
           className="mt-8 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-900 shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2"

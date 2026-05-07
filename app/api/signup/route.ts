@@ -103,11 +103,19 @@ form_field_config
         true,
         ${addressConfig.show},
         ${addressConfig.required},
-        ${plan},
+       ${plan},
 ${defaultFieldConfig}::jsonb
       )
       RETURNING id, slug
     `;
+
+    if (plan === 'free') {
+  await sql`
+    UPDATE companies 
+    SET onboarding_completed = true, onboarding_completed_at = NOW()
+    WHERE id = ${newCompany.id}
+  `;
+}
 
     const [newUser] = await sql`
       INSERT INTO users (
@@ -125,6 +133,63 @@ ${defaultFieldConfig}::jsonb
       )
       RETURNING id
     `;
+
+    // Create sample lead for free-plan users so dashboard isn't empty
+if (plan === 'free') {
+  try {
+    const cats = defaultCategories;
+    const firstCat = Array.isArray(cats) && cats.length > 0
+      ? (cats[0].label || cats[0].value || 'General')
+      : 'General';
+
+    const sampleTasks = JSON.stringify([
+      { id: 't1', label: 'Call customer to confirm details', done: false },
+      { id: 't2', label: 'Send quote for approval', done: false },
+      { id: 't3', label: 'Schedule job date', done: false },
+      { id: 't4', label: 'Complete the work', done: false },
+      { id: 't5', label: 'Collect payment', done: false },
+    ]);
+
+    const sampleQuote = JSON.stringify({
+      items: [
+        { id: 'q1', description: 'Labor (8 hours)', quantity: 8, unitPrice: 150, amount: 1200 },
+        { id: 'q2', description: 'Materials & Supplies', quantity: 1, unitPrice: 800, amount: 800 },
+        { id: 'q3', description: 'Travel & Equipment', quantity: 1, unitPrice: 500, amount: 500 },
+      ],
+      total: 2500,
+    });
+
+    await sql`
+      INSERT INTO leads (
+        company_id, name, email, phone,
+        category, status, description,
+        address_line_1, city, zip_code,
+        quote_total, quote_data, payment_status,
+        assigned_to, tasks, origin, created_at
+      ) VALUES (
+        ${newCompany.id},
+        'Sarah Johnson',
+        'sarah.j@email.com',
+        '5551234567',
+        ${firstCat},
+        'new',
+        'This is a sample lead so you can see how everything works. Open it to explore tasks, quotes, scheduling, and more. Delete it whenever you''re ready.',
+        '123 Main Street',
+        'New York',
+        '10001',
+        2500.00,
+        ${sampleQuote},
+        'unpaid',
+        'You',
+        ${sampleTasks},
+        'sample',
+        NOW()
+      )
+    `;
+  } catch (sampleErr) {
+    console.error('Sample lead creation failed (non-blocking):', sampleErr);
+  }
+}
 
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(

@@ -7,19 +7,27 @@ import {
   Search, Filter, Plus, MessageSquare, Zap,
   ArrowRight, PartyPopper, Rocket, Eye, MousePointer,
 } from 'lucide-react';
+import { type PlanTier } from '@/lib/permissions';
+
+const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'basic', 'pro'];
+
+function planMeetsMin(userPlan: PlanTier, minPlan: PlanTier): boolean {
+  return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(minPlan);
+}
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 type TourStep = {
   id: string;
+  minPlan: PlanTier;
   title: string;
   description: string;
   icon: React.ReactNode;
-  targetSelector?: string;        // CSS selector to spotlight
+  targetSelector?: string;
   position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
   action?: 'click' | 'hover' | 'toggle-theme' | 'toggle-view' | 'open-menu';
   actionLabel?: string;
-  highlight?: boolean;             // pulse-glow the target
+  highlight?: boolean;
 };
 
 type DashboardTourProps = {
@@ -27,11 +35,12 @@ type DashboardTourProps = {
   companySlug: string;
   userName?: string;
   isDark: boolean;
+  planTier: PlanTier;
   onToggleTheme: () => void;
   onToggleView: (view: 'cards' | 'table' | 'calendar') => void;
   onOpenSidebar: () => void;
   onOpenCreateModal: () => void;
-  onComplete: () => void;          // fires when user finishes or dismisses
+  onComplete: () => void;
 };
 
 // ─── TOUR STEPS ───────────────────────────────────────────────────────────────
@@ -39,6 +48,7 @@ type DashboardTourProps = {
 const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
+    minPlan: 'free',
     title: 'Welcome to your command center',
     description: 'This is where you\'ll manage every lead, job, and dollar. Let\'s take a 60-second tour so you know where everything lives.',
     icon: <Rocket className="w-6 h-6" />,
@@ -46,6 +56,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'sample-lead',
+    minPlan: 'free',
     title: 'Your first lead is waiting',
     description: 'We created a sample lead so you can explore tasks, quotes, scheduling, and notes. Tap any lead card to open it.',
     icon: <MousePointer className="w-6 h-6" />,
@@ -55,6 +66,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'create-lead',
+    minPlan: 'starter',
     title: 'Add leads in one tap',
     description: 'New customer calls? Tap this button to create a lead instantly — or share your booking link and let customers submit their own.',
     icon: <Plus className="w-6 h-6" />,
@@ -62,8 +74,9 @@ const TOUR_STEPS: TourStep[] = [
     position: 'bottom',
     highlight: true,
   },
- {
+  {
     id: 'view-modes',
+    minPlan: 'starter',
     title: 'Three ways to see your work',
     description: 'Cards for a quick scan, Table for bulk actions and CSV export, Calendar to see your schedule at a glance.',
     icon: <LayoutGrid className="w-6 h-6" />,
@@ -71,8 +84,9 @@ const TOUR_STEPS: TourStep[] = [
     position: 'bottom',
     highlight: true,
   },
- {
+  {
     id: 'theme-toggle',
+    minPlan: 'free',
     title: 'Light mode or dark mode',
     description: 'Your eyes, your rules. Switch between dark and light themes anytime. Your preference is saved automatically.',
     icon: <Sun className="w-6 h-6" />,
@@ -82,6 +96,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'filters',
+    minPlan: 'starter',
     title: 'Find anything instantly',
     description: 'Filter by status, category, date, assignee, or payment. Use quick-filter pills for common views like "Unpaid" or "New leads."',
     icon: <Filter className="w-6 h-6" />,
@@ -91,6 +106,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'sidebar',
+    minPlan: 'free',
     title: 'Your main menu',
     description: 'Settings, team management, email templates, your booking page, and integrations — everything lives here.',
     icon: <Menu className="w-6 h-6" />,
@@ -100,6 +116,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'ai-chat',
+    minPlan: 'pro',
     title: 'AI that knows your business',
     description: 'Ask questions like "What\'s scheduled this week?" or "Which jobs are unpaid?" and get instant answers from your data.',
     icon: <Sparkles className="w-6 h-6" />,
@@ -109,6 +126,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'complete',
+    minPlan: 'free',
     title: 'You\'re all set!',
     description: 'Your dashboard is ready. Start by opening that sample lead to see how everything connects — tasks, quotes, scheduling, payments, and notes.',
     icon: <PartyPopper className="w-6 h-6" />,
@@ -375,6 +393,7 @@ export default function DashboardTour({
   companySlug,
   userName,
   isDark,
+  planTier,
   onToggleTheme,
   onToggleView,
   onOpenSidebar,
@@ -386,11 +405,13 @@ export default function DashboardTour({
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [showPostHighlight, setShowPostHighlight] = useState(false);
 
+  const filteredSteps = TOUR_STEPS.filter(s => planMeetsMin(planTier, s.minPlan));
+
   // After tour ends, pulse all toured elements briefly
   useEffect(() => {
     if (!showPostHighlight) return;
 
-    const selectors = TOUR_STEPS
+    const selectors = filteredSteps
       .map(s => s.targetSelector)
       .filter(Boolean) as string[];
 
@@ -429,7 +450,7 @@ el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0
     };
   }, [showPostHighlight, onComplete]);
 
-  const step = TOUR_STEPS[currentStep];
+  const step = filteredSteps[currentStep];
 
   // Find and measure the target element
   const measureTarget = useCallback(() => {
@@ -458,7 +479,7 @@ el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0
   }, [measureTarget, currentStep]);
 
   const handleNext = useCallback(() => {
-    if (currentStep >= TOUR_STEPS.length - 1) {
+    if (currentStep >= filteredSteps.length - 1) {
       setActive(false);
       try {
         localStorage.setItem(`tour-completed-${companySlug}`, 'true');
@@ -523,7 +544,7 @@ el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0
       <TourTooltip
         step={step}
         stepIndex={currentStep}
-        totalSteps={TOUR_STEPS.length}
+        totalSteps={filteredSteps.length}
         targetRect={targetRect}
         onNext={handleNext}
         onPrev={handlePrev}
@@ -536,23 +557,15 @@ el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0
 
 // ─── HOOK: Should show tour? ──────────────────────────────────────────────────
 
-export function useShouldShowTour(companySlug: string, onboardingJustCompleted?: boolean): boolean {
+export function useShouldShowTour(companySlug: string): boolean {
   const [show, setShow] = useState(false);
-
   useEffect(() => {
     try {
       const completed = localStorage.getItem(`tour-completed-${companySlug}`);
-      if (completed === 'true') {
-        setShow(false);
-        return;
-      }
-      const params = new URLSearchParams(window.location.search);
-      const justOnboarded = params.get('onboarded') === '1';
-      if (justOnboarded) {
+      if (completed !== 'true') {
         setShow(true);
       }
     } catch {}
   }, [companySlug]);
-
   return show;
 }

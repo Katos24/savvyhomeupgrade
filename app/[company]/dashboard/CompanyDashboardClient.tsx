@@ -131,6 +131,7 @@ const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
 const [serverStatusCounts, setServerStatusCounts] = useState<Record<string, number>>({});  const [isInitialLoad, setIsInitialLoad] = useState(true);
 const [globalStats, setGlobalStats] = useState<any>(null); // ← add here
 
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
 
@@ -155,6 +156,16 @@ useEffect(() => {
 useEffect(() => {
   localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
 }, [isDark]);
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tour') === '1') {
+    setTourActive(true);
+
+    // Optional: clean URL after loading
+    window.history.replaceState({}, '', `/${company.slug}/dashboard`);
+  }
+}, [company.slug]);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -183,15 +194,33 @@ const [isSearching, setIsSearching] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // ── Tour ──
-  const [tourActive, setTourActive] = useState(false);
-  const showTour = useShouldShowTour(company.slug, company.onboarding_completed);
 
-  useEffect(() => {
-    if (!isInitialLoad && showTour) {
-      const timer = setTimeout(() => setTourActive(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialLoad, showTour]);
+const baseShouldShowTour = useShouldShowTour(company.slug);
+
+const [tourActive, setTourActive] = useState(false);
+
+const shouldShowTour = baseShouldShowTour;
+  
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+
+  const hasTourParam = params.get('tour') === '1';
+
+  if (hasTourParam) {
+    setTourActive(true);
+    window.history.replaceState({}, '', `/${company.slug}/dashboard`);
+    return;
+  }
+
+  if (!isInitialLoad && shouldShowTour) {
+    const timer = setTimeout(() => {
+      setTourActive(true);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }
+}, [company.slug, shouldShowTour, isInitialLoad]);
 
  const planTier = (company.plan_tier || 'free') as PlanTier;
 
@@ -610,16 +639,17 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
   aria-label="Navigation sidebar"
 >
           <Sidebar
-            companySlug={company.slug}
-            companyName={company.name}
-            companyLogoUrl={company.logo_url}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            currentView={currentView}
-            onViewChange={setCurrentView}
-          />
+  companySlug={company.slug}
+  companyName={company.name}
+  companyLogoUrl={company.logo_url}
+  currentUser={currentUser}
+  onLogout={handleLogout}
+  isOpen={sidebarOpen}
+  onClose={() => setSidebarOpen(false)}
+  currentView={currentView}
+  onViewChange={setCurrentView}
+  
+/>
         </aside>
       </div>
 
@@ -1431,18 +1461,21 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
 
       {/* ── Dashboard Tour ── */}
       {tourActive && (
-        <DashboardTour
-          companyName={company.name}
-          companySlug={company.slug}
-          userName={currentUser?.name}
-          isDark={isDark}
-          onToggleTheme={() => setIsDark(v => !v)}
-          onToggleView={(view) => setCurrentView(view)}
-          onOpenSidebar={() => setSidebarOpen(true)}
-          onOpenCreateModal={() => setIsCreateModalOpen(true)}
-          onComplete={() => setTourActive(false)}
-        />
-      )}
+  <DashboardTour
+    companyName={company.name}
+    companySlug={company.slug}
+    userName={currentUser?.name}
+    isDark={isDark}
+      planTier={planTier}
+
+    onToggleTheme={() => setIsDark(v => !v)}
+    onToggleView={(view) => setCurrentView(view)}
+    onOpenSidebar={() => setSidebarOpen(true)}
+    onOpenCreateModal={() => setIsCreateModalOpen(true)}
+    onComplete={() => setTourActive(false)}
+  />
+)}
+
     </div>
   );
 }
