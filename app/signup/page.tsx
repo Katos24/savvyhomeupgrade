@@ -174,7 +174,7 @@ const [formData, setFormData] = useState({
     {/* Feature list */}
     <div className="space-y-8">
       {[
-        { icon: <Clock className="w-5 h-5 text-blue-400" />, text: 'Start with a 14-day free trial' },
+        { icon: <Clock className="w-5 h-5 text-blue-400" />, text: 'Start Free. Upgrade plan with a 14-day free trial' },
         { icon: <Zap className="w-5 h-5 text-blue-400" />, text: 'Convert leads to projects in seconds' },
         { icon: <ShieldCheck className="w-5 h-5 text-blue-400" />, text: 'Secure, automated client payments' },
       ].map((item, i) => (

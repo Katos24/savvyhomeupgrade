@@ -83,7 +83,7 @@ export default function NewHero() {
                 <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
               </div>
               <span className="text-lg sm:text-xl font-[1000] text-slate-950 uppercase tracking-tighter">
-                Start Free — 14 Days
+                Start Free
               </span>
             </Link>
 

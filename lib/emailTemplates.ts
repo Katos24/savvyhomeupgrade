@@ -157,7 +157,7 @@ export function textToHtml(
   extraHtml?: string
 ): string {
   const color1 = brandColor1 || '#667eea';
-  const color2 = brandColor2 || '#764ba2';
+  const color2 = brandColor2 || '#584ba2ff';
 
   const bodyHtml = text.split('\n\n').map(paragraph => {
     const trimmed = paragraph.trim();

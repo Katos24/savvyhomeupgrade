@@ -119,8 +119,8 @@ export async function POST(
               website = ${data.website || null},
               business_type = ${data.business_type || 'general'},
               logo_url = ${data.logo_url || null},
-              email_brand_color_1 = ${data.email_brand_color_1 || '#667eea'},
-              email_brand_color_2 = ${data.email_brand_color_2 || '#764ba2'}
+              email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
+              email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'}
             WHERE id = ${company.id}
             RETURNING *
           `;
