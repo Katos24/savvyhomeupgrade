@@ -652,15 +652,22 @@ className="p-5 sm:p-7 space-y-6"
                 <>
                   {/* Convert to Project banner */}
                   {!isProject && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"                    >
-                      <div>
-                       <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
-                        <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
-                      </div>
-                      <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
-                    </motion.div>
+                    can((company?.plan_tier || 'free') as PlanTier, 'convert_to_project') ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"
+                      >
+                        <div>
+                          <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
+                          <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+                        </div>
+                        <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
+                      </motion.div>
+                    ) : (
+                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                        <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
+                      </motion.div>
+                    )
                   )}
 
                   {/* Client Card */}

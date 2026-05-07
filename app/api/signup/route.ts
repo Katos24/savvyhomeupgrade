@@ -139,6 +139,23 @@ ${defaultFieldConfig}::jsonb
       { expiresIn: '7d' }
     );
 
+   if (plan === 'free') {
+      try {
+        const { sendFreeWelcomeEmail } = await import('@/lib/email');
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lead2project.com';
+        await sendFreeWelcomeEmail({
+          userEmail: email,
+          userName: ownerName,
+          companyName,
+          companySlug: newCompany.slug,
+          dashboardUrl: `${baseUrl}/${newCompany.slug}/dashboard`,
+          formUrl: `${baseUrl}/${newCompany.slug}`,
+        });
+      } catch (emailErr) {
+        console.error('Welcome email failed (non-blocking):', emailErr);
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
       companySlug: newCompany.slug,

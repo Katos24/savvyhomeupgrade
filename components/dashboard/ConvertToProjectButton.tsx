@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { can, type PlanTier } from '@/lib/permissions';
+import { Lock } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+
+import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
 type ConvertToProjectButtonProps = {
   lead: any;
@@ -20,8 +23,36 @@ export default function ConvertToProjectButton({
   const [isConverting, setIsConverting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const pathname = usePathname();
+  const companySlug = pathname?.split('/')[1] || '';
+
 if (lead.project_id) return null;
-  if (!can(planTier as PlanTier, 'convert_to_project')) return null;
+
+  if (!can(planTier as PlanTier, 'convert_to_project')) {
+    const requiredPlan = FEATURE_PLAN_MAP['convert_to_project'];
+    const config = PLAN_CONFIG[requiredPlan as keyof typeof PLAN_CONFIG];
+   return (
+      <div className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
+        <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+          <Lock className="w-4 h-4 text-blue-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-black text-slate-900">Upgrade to create projects</p>
+          <p className="text-[10px] text-slate-500">Unlock quotes, scheduling, tasks & payment tracking</p>
+      </div>
+        
+        {/* FIXED THE TAG BELOW */}
+        <a 
+          href={`/${companySlug}/admin/settings#billing`}
+          className="inline-flex items-center gap-1.5 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-200"
+        >
+          Upgrade Plan
+        </a>
+        
+        <p className="text-[10px] text-slate-400 mt-1 font-bold">Starting at $49.99/mo</p>
+      </div>
+    );
+  }
   
   const category = lead.category || '';
 

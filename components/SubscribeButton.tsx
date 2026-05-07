@@ -12,6 +12,7 @@ type SubscribeButtonProps = {
   trialEndsAt?: string | null;
   variant?: 'primary' | 'banner' | 'cta';
   plan?: 'starter' | 'basic' | 'pro';
+  currentPlanTier?: string;
 };
 
 const PLAN_META: Record<string, { label: string; price: string }> = {
@@ -28,6 +29,7 @@ export default function SubscribeButton({
   trialEndsAt,
   variant = 'primary',
   plan = 'starter',
+  currentPlanTier,
 }: SubscribeButtonProps) {
   const [loading, setLoading]       = useState(false);
   const [showModal, setShowModal]   = useState(false);
@@ -36,7 +38,7 @@ export default function SubscribeButton({
 
   const handleSubscribe = async () => {
     setLoading(true);
-    setShowModal(true); // ← immediate feedback on click
+    setShowModal(true);
 
     try {
       const response = await fetch('/api/stripe/create-subscription-checkout', {
@@ -48,7 +50,6 @@ export default function SubscribeButton({
       const data = await response.json();
 
       if (response.ok && data.url) {
-        // Small pause so user sees the final step land before redirect
         await new Promise((r) => setTimeout(r, 400));
         window.location.href = data.url;
       } else {
@@ -64,9 +65,22 @@ export default function SubscribeButton({
     }
   };
 
-  // ── Status badge base ─────────────────────────────────────────────────────
+  // ── Shared styles (defined early so all branches can use them) ─────────────
   const badgeBase =
     'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm border';
+
+  const styles: Record<string, string> = {
+    primary: 'bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98]',
+    banner:  'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-3 sm:px-8 sm:py-5 rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-[0.98] text-center',
+    cta:     'bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-xl transition-all shadow-lg active:scale-[0.98]',
+  };
+
+  const spinnerSvg = (
+    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+    </svg>
+  );
 
   // ── Active ────────────────────────────────────────────────────────────────
   if (isSubscribed || subscriptionStatus === 'active') {
@@ -75,6 +89,28 @@ export default function SubscribeButton({
         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
         Active — {meta.price}
       </div>
+    );
+  }
+
+  // ── Free plan → upgrade CTA ───────────────────────────────────────────────
+  if (subscriptionStatus === 'free' || currentPlanTier === 'free') {
+    return (
+      <>
+        <CheckoutLoadingModal isOpen={showModal} planLabel={meta.label} planPrice={meta.price} />
+        <button
+          onClick={handleSubscribe}
+          disabled={loading}
+          className={`${styles[variant]} disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3`}
+        >
+          {loading ? (
+            <>{spinnerSvg}<span>Opening Checkout...</span></>
+          ) : (
+            <span className="uppercase tracking-widest text-sm">
+              Upgrade to {meta.label} — 14 Days Free
+            </span>
+          )}
+        </button>
+      </>
     );
   }
 
@@ -113,13 +149,7 @@ export default function SubscribeButton({
     );
   }
 
-  // ── Main CTA button styles ────────────────────────────────────────────────
- const styles = {
-  primary: 'bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98]',
-banner: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-3 sm:px-8 sm:py-5 rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-[0.98] text-center',
-  cta:     'bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-xl transition-all shadow-lg active:scale-[0.98]',
-};
-
+  // ── Default CTA (inactive / canceled / new) ───────────────────────────────
   return (
     <>
       <CheckoutLoadingModal isOpen={showModal} planLabel={meta.label} planPrice={meta.price} />
@@ -130,22 +160,7 @@ banner: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-
         className={`${styles[variant]} disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3`}
       >
         {loading ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>Opening Checkout...</span>
-          </>
+          <>{spinnerSvg}<span>Opening Checkout...</span></>
         ) : (
           <span className="uppercase tracking-widest text-sm">
             {subscriptionStatus === 'canceled' ? 'Resubscribe' : 'Start 14-Day Free Trial'}

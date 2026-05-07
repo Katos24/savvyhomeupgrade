@@ -801,7 +801,6 @@ export async function sendSubscriptionActivatedEmail({
     throw error;
   }
 }
-
 export async function sendWelcomeEmail({
   userEmail,
   userName,
@@ -824,19 +823,19 @@ export async function sendWelcomeEmail({
       label: 'Starter',
       price: '$29.99/mo',
       features: ['Custom booking form', 'Lead board', 'Payment tracking', 'Unlimited team members'],
-      color: '#6366f1',
+      color: '#3b82f6', // Clean Blue
     },
     basic: {
       label: 'Basic',
       price: '$49.99/mo',
       features: ['Everything in Starter', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
-      color: '#3b82f6',
+      color: '#2563eb', // Deeper Blue
     },
     pro: {
       label: 'Pro',
       price: '$79.99/mo',
       features: ['Everything in Basic', 'One-click emails', 'AI quote generator', 'Daily digest', 'Email outbox'],
-      color: '#8b5cf6',
+      color: '#0f172a', // Professional Slate
     },
   }[plan];
 
@@ -850,39 +849,40 @@ export async function sendWelcomeEmail({
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>
-        <body style="margin:0;padding:0;background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fc;padding:32px 16px;">
+        <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
             <tr><td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);max-width:600px;width:100%;">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05);max-width:600px;width:100%;border:1px solid #e2e8f0;">
 
-                <!-- Header -->
                 <tr>
-                  <td style="background:linear-gradient(135deg,#312e81 0%,#1e1b4b 100%);padding:36px 40px;text-align:center;">
-                    <p style="margin:0 0 8px 0;color:#a5b4fc;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Welcome to Lead2Project</p>
-                    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;line-height:1.3;">You're all set, ${userName}!</h1>
-                    <p style="margin:12px 0 0 0;color:#c7d2fe;font-size:15px;">Here's everything you need to get started with <strong>${companyName}</strong>.</p>
+                  <td style="padding:48px 40px 32px;text-align:center;">
+                    <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
+                      <img src="https://lead2project.com/logo-blue.png" width="40" height="40" alt="L2P" style="display:block;">
+                    </div>
+                    <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Subscription Active</p>
+                    <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">You're all set, ${userName}!</h1>
+                    <p style="margin:16px 0 0 0;color:#64748b;font-size:16px;">Everything you need for <strong style="color:#0f172a;">${companyName}</strong> is ready to go.</p>
                   </td>
                 </tr>
 
-                <!-- Plan Badge -->
                 <tr>
-                  <td style="padding:28px 40px 0;">
-                    <div style="background:${planDetails.color}12;border:1px solid ${planDetails.color}30;border-radius:12px;padding:20px;">
+                  <td style="padding:0 40px 32px;">
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td style="vertical-align:middle;">
-                            <p style="margin:0 0 2px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:${planDetails.color};">Your Plan</p>
-                            <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;">${planDetails.label} <span style="font-size:14px;font-weight:500;color:#64748b;">${planDetails.price}</span></p>
+                            <p style="margin:0 0 2px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#64748b;">Your Selected Plan</p>
+                            <p style="margin:0;font-size:20px;font-weight:900;color:#0f172a;">${planDetails.label} <span style="font-size:14px;font-weight:500;color:#94a3b8;">${planDetails.price}</span></p>
                           </td>
                           <td style="text-align:right;vertical-align:middle;">
-                            <span style="display:inline-block;background:${planDetails.color};color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">14-day trial</span>
+                            <span style="display:inline-block;background:#0f172a;color:#fff;padding:8px 16px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">14-day trial</span>
                           </td>
                         </tr>
                       </table>
-                      <div style="border-top:1px solid ${planDetails.color}25;margin-top:14px;padding-top:14px;">
+                      <div style="border-top:1px solid #e2e8f0;margin-top:16px;padding-top:16px;">
                         ${planDetails.features.map(f =>
-                          `<div style="padding:3px 0;font-size:13px;color:#475569;">
-                            <span style="color:${planDetails.color};font-weight:700;">&#10003;</span>&nbsp;&nbsp;${f}
+                          `<div style="padding:4px 0;font-size:13px;color:#475569;font-weight:500;">
+                            <span style="color:#10b981;font-weight:900;">&#10003;</span>&nbsp;&nbsp;${f}
                           </div>`
                         ).join('')}
                       </div>
@@ -890,54 +890,40 @@ export async function sendWelcomeEmail({
                   </td>
                 </tr>
 
-                <!-- Your two URLs -->
                 <tr>
-                  <td style="padding:28px 40px 0;">
-                    <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Your two most important links</h2>
+                  <td style="padding:0 40px;">
+                    <h2 style="margin:0 0 16px 0;color:#0f172a;font-size:18px;font-weight:900;">Quick Access Links</h2>
 
-                    <!-- Customer Form URL -->
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:12px;">
-                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#166534;">Customer Booking Form</p>
-                      <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">Share this link with customers. They fill it out, and the lead lands straight in your dashboard.</p>
-                      <a href="${formUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;">
-                        ${formUrl}
-                      </a>
+                    <div style="background:#f0fdf4;border:1px solid #dcfce7;border-radius:16px;padding:20px;margin-bottom:16px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#166534;">Booking Form</p>
+                      <p style="margin:0 0 12px 0;font-size:13px;color:#374151;line-height:1.5;">Share this with customers to capture leads instantly.</p>
+                      <a href="${formUrl}" style="color:#16a34a;text-decoration:none;font-weight:800;font-size:13px;word-break:break-all;">${formUrl}</a>
                     </div>
 
-                    <!-- Dashboard URL -->
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px;">
-                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#1e40af;">Your Dashboard</p>
-                      <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">This is where you manage all your leads, quotes, schedules, and payments.</p>
-                      <a href="${dashboardUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;">
-                        ${dashboardUrl}
-                      </a>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:20px;margin-bottom:32px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#1e40af;">Dashboard</p>
+                      <p style="margin:0 0 12px 0;font-size:13px;color:#374151;line-height:1.5;">Manage leads, quotes, schedules, and payments.</p>
+                      <a href="${dashboardUrl}" style="color:#2563eb;text-decoration:none;font-weight:800;font-size:13px;word-break:break-all;">${dashboardUrl}</a>
                     </div>
                   </td>
                 </tr>
 
-                <!-- What you can set up -->
                 <tr>
-                  <td style="padding:28px 40px 0;">
-                    <h2 style="margin:0 0 16px 0;color:#1e293b;font-size:16px;font-weight:700;">Set up your account in 5 minutes</h2>
+                  <td style="padding:0 40px;">
+                    <h2 style="margin:0 0 16px 0;color:#0f172a;font-size:18px;font-weight:900;">Setup Checklist</h2>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       ${[
-                        { title: 'Add service categories', desc: 'Create categories like Roofing, Plumbing, or HVAC — each can have its own task checklist and pricing template that auto-load when you create a project.' },
-                        { title: 'Set up pricing templates', desc: 'Pre-fill quote line items per category. When a new job comes in, your quote is already half-built.' },
-                        { title: 'Build task checklists', desc: 'Add steps your team should complete for each job type. They auto-load when you convert a lead to a project.' },
-                        { title: 'Add your logo and brand colors', desc: 'Your logo and colors appear on every customer email — quotes, schedules, and payment reminders all look like they came from you.' },
-                        { title: 'Customize your booking form', desc: 'Turn on address collection, photo uploads, preferred date — whatever makes sense for your business.' },
-                        { title: 'Update your email templates', desc: 'Personalize the messages your customers receive when you send a quote, confirm a schedule, or request payment.' },
+                        { title: 'Service Categories', desc: 'Roofing, Plumbing, HVAC — each with its own tasks.' },
+                        { title: 'Pricing Templates', desc: 'Pre-fill quote line items for faster bidding.' },
+                        { title: 'Task Checklists', desc: 'Automatic steps for your team on every job.' },
+                        { title: 'Brand Identity', desc: 'Upload your logo to appear on all customer emails.' },
                       ].map(item => `
                         <tr>
                           <td style="padding:0 0 12px 0;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;overflow:hidden;">
-                              <tr>
-                                <td style="padding:14px 16px;vertical-align:top;">
-                                  <p style="margin:0 0 3px 0;font-size:14px;font-weight:700;color:#1e293b;">${item.title}</p>
-                                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.5;">${item.desc}</p>
-                                </td>
-                              </tr>
-                            </table>
+                            <div style="background:#ffffff;border:1px solid #f1f5f9;border-radius:12px;padding:16px;">
+                                  <p style="margin:0 0 4px 0;font-size:14px;font-weight:800;color:#0f172a;">${item.title}</p>
+                                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.4;">${item.desc}</p>
+                            </div>
                           </td>
                         </tr>
                       `).join('')}
@@ -945,22 +931,20 @@ export async function sendWelcomeEmail({
                   </td>
                 </tr>
 
-                <!-- CTA -->
                 <tr>
-                  <td style="padding:28px 40px 36px;text-align:center;">
-                    <a href="${settingsUrl}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:10px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(99,102,241,0.3);">
+                  <td style="padding:32px 40px 48px;text-align:center;">
+                    <a href="${settingsUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:18px 42px;border-radius:16px;font-weight:900;font-size:15px;box-shadow:0 10px 15px -3px rgba(15,23,42,0.2);">
                       Complete Your Setup
                     </a>
-                    <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;">Takes about 5 minutes. You can always change things later.</p>
+                    <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;font-weight:500;">Takes about 5 minutes to fully customize your brand.</p>
                   </td>
                 </tr>
 
-                <!-- Footer -->
                 <tr>
-                  <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;text-align:center;">
-                    <p style="margin:0;color:#94a3b8;font-size:12px;">
-                      Lead2Project — built for contractors who want to work smarter.<br>
-                      Questions? Reply to this email and we'll help you out.
+                  <td style="background:#f8fafc;padding:32px 40px;border-top:1px solid #e2e8f0;text-align:center;">
+                    <p style="margin:0;color:#94a3b8;font-size:12px;font-weight:500;line-height:1.8;">
+                      Lead2Project &copy; 2026 — The CRM for the Trades.<br>
+                      Questions? Just reply to this email.
                     </p>
                   </td>
                 </tr>
@@ -975,7 +959,7 @@ export async function sendWelcomeEmail({
     await resend.emails.send({
       from: 'Lead2Project <hello@lead2project.com>',
       to: userEmail,
-      subject: `Welcome to Lead2Project — here's your booking link`,
+      subject: `Welcome to Lead2Project — Your ${planDetails.label} dashboard is ready`,
       html: emailHtml,
     });
 
@@ -1781,4 +1765,123 @@ export async function sendPaymentReceiptEmail({
       </div>
     `,
   });
+}
+
+
+export async function sendFreeWelcomeEmail({
+  userEmail,
+  userName,
+  companyName,
+  companySlug,
+  dashboardUrl,
+  formUrl,
+}: {
+  userEmail: string;
+  userName: string;
+  companyName: string;
+  companySlug: string;
+  dashboardUrl: string;
+  formUrl: string;
+}) {
+  try {
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
+            <tr><td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05);max-width:600px;width:100%;border:1px solid #e2e8f0;">
+
+                <tr>
+                  <td style="padding:48px 40px 32px;text-align:center;background:#ffffff;">
+                    <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
+                      <img src="https://lead2project.com/logo-blue.png" width="40" height="40" alt="L2P" style="display:block;">
+                    </div>
+                    <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Onboarding Complete</p>
+                    <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">Welcome, ${userName}!</h1>
+                    <p style="margin:16px 0 0 0;color:#64748b;font-size:16px;line-height:1.6;">Your free account for <strong style="color:#0f172a;">${companyName}</strong> is officially active.</p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:0 40px;">
+                    <div style="height:1px;background:#f1f5f9;width:100%;"></div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:32px 40px 0;">
+                    <h2 style="margin:0 0 12px 0;color:#0f172a;font-size:18px;font-weight:800;">The Workflow</h2>
+                    <p style="margin:0 0 24px 0;font-size:15px;color:#64748b;line-height:1.6;">Share your link. Customers book. Leads hit your dashboard. It's that simple.</p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:0 40px 16px;">
+                    <div style="background:#f0fdf4;border:1px solid #dcfce7;border-radius:20px;padding:24px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#166534;">Your Booking Link</p>
+                      <p style="margin:0 0 16px 0;font-size:13px;color:#374151;line-height:1.5;">Print this on your truck or yard signs to capture more leads.</p>
+                      <a href="${formUrl}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(16,185,129,0.1);">
+                        View Booking Page
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:0 40px 16px;">
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#1e40af;">Manage Leads</p>
+                      <p style="margin:0 0 16px 0;font-size:13px;color:#374151;line-height:1.5;">Check this often to see new requests and customer details.</p>
+                      <a href="${dashboardUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(15,23,42,0.1);">
+                        Open Dashboard
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:16px 40px 48px;">
+                    <div style="background:#ffffff;border:2px dashed #cbd5e1;border-radius:20px;padding:28px;text-align:center;">
+                      <p style="margin:0 0 8px 0;font-size:16px;font-weight:900;color:#0f172a;">Ready to grow your business?</p>
+                      <p style="margin:0 0 20px 0;font-size:14px;color:#64748b;line-height:1.5;">Upgrade to professional tools like AI-generated quotes, job scheduling, and payment tracking.</p>
+                      <a href="${dashboardUrl.replace('/dashboard', '/admin/settings?tab=billing')}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 10px rgba(59,130,246,0.2);">
+                        Explore Pro Features
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:32px 40px;background:#f8fafc;text-align:center;">
+                    <p style="margin:0;color:#94a3b8;font-size:12px;font-weight:500;line-height:1.8;">
+                      Lead2Project &copy; 2026 — Built for the trades.<br>
+                      Need help? Just reply to this email.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td></tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: 'Lead2Project <hello@lead2project.com>',
+      to: userEmail,
+      subject: `Welcome to Lead2Project — Your booking link is ready`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Free welcome email sent to:', userEmail);
+  } catch (error) {
+    console.error('❌ Failed to send free welcome email:', error);
+    throw error;
+  }
 }

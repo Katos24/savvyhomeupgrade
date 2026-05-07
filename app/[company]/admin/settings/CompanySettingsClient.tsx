@@ -8,7 +8,7 @@ import {
   Lock,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
-import { can, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
+import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 
 // Sub-tab imports
 import FormTab from './tabs/FormTab';
@@ -47,12 +47,12 @@ function UpgradeOverlay({ feature, companySlug }: {
   companySlug: string;
 }) {
   const prompt = UPGRADE_PROMPTS[feature];
-  // Always Pro for now — reads from PLAN_CONFIG automatically
-  const config = PLAN_CONFIG['pro'];
-  const colors = {
-    bg: 'from-blue-50 to-indigo-50', border: 'border-blue-200',
-    badge: 'bg-blue-600', text: 'text-blue-900',
-  };
+  const requiredPlan = (FEATURE_PLAN_MAP as any)[feature] as PlanTier | undefined;
+  const planKey = requiredPlan === 'pro' ? 'pro' : 'basic';
+  const config = PLAN_CONFIG[planKey];
+  const colors = planKey === 'pro'
+    ? { bg: 'from-indigo-50 to-purple-50', border: 'border-indigo-200', badge: 'bg-indigo-600', text: 'text-indigo-900' }
+    : { bg: 'from-blue-50 to-cyan-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-900' };
 
   return (
     <div className={`rounded-2xl border ${colors.border} bg-gradient-to-br ${colors.bg} p-8 text-center`}>
@@ -81,7 +81,7 @@ function UpgradeOverlay({ feature, companySlug }: {
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white ${colors.badge} hover:opacity-90 transition`}
       >
-        Upgrade to Pro
+       Upgrade to {config.label}
         {config?.price && <span className="opacity-75 font-normal">— ${config.price}/mo</span>}
       </a>
       <p className="text-xs text-gray-400 mt-3">Cancel anytime. No contracts.</p>

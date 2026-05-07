@@ -92,12 +92,10 @@ export default function UploadForm({
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
   const businessType = company?.business_type || 'general';
-  const isFree = company?.plan_tier === 'free';
-  const categories: Category[] = isFree
-    ? [{ value: 'general', label: 'General' }]
-    : company?.form_categories?.length
-      ? company.form_categories
-      : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
+ const isFree = company?.plan_tier === 'free';
+  const categories: Category[] = company?.form_categories?.length
+    ? company.form_categories
+    : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
 
   const finalCompanySlug = company?.slug || companySlug;
   const finalCompanyId = company?.id || companyId;

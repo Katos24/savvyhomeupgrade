@@ -80,7 +80,7 @@ export default function CustomerListClient({
         </div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Clean Slate</h2>
         <p className="text-slate-500 max-w-[240px] mt-2 text-sm font-medium leading-relaxed">
-          Your customer database will grow as soon as you start landing leads.
+          Your customer database will grow as soon as you start creating projects.
         </p>
         <a
           href={`/${companySlug}/dashboard`}

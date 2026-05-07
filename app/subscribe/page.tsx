@@ -194,7 +194,7 @@ function SuccessPolling() {
 }
 
 // ─── Cancelled screen ─────────────────────────────────────────────────────────
-function CancelledScreen() {
+function CancelledScreen({ companySlug }: { companySlug?: string }) {
   const router = useRouter();
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-slate-950">
@@ -204,9 +204,14 @@ function CancelledScreen() {
         </div>
         <h1 className="text-white text-2xl font-black mb-2">Checkout Cancelled</h1>
         <p className="text-slate-400 mb-8 font-medium">No worries — your progress is saved.</p>
-        <div className="flex gap-3">
-          <button onClick={() => router.back()} className="flex-1 py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">Go Back</button>
-          <button onClick={() => router.push('/subscribe')} className="flex-1 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition">Change Plan</button>
+        <div className="flex flex-col gap-3">
+          <button onClick={() => router.push('/subscribe')} className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition">Change Plan</button>
+          <button onClick={() => router.back()} className="w-full py-3.5 rounded-xl bg-white/10 text-white font-bold text-sm border border-white/10 hover:bg-white/20 transition">Go Back</button>
+          {companySlug && (
+            <button onClick={() => router.push(`/${companySlug}/dashboard`)} className="w-full py-2.5 text-xs font-bold text-slate-500 hover:text-white transition">
+              Back to Dashboard
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -248,7 +253,7 @@ function SubscribePageContent() {
   }, []);
 
   if (subscriptionStatus === 'success') return <SuccessPolling />;
-  if (subscriptionStatus === 'cancelled') return <CancelledScreen />;
+  if (subscriptionStatus === 'cancelled') return <CancelledScreen companySlug={company?.slug} />;
 
   if (loading) {
     return (
@@ -270,7 +275,7 @@ function SubscribePageContent() {
             </div>
             <span className="text-lg font-black tracking-tighter text-white">Lead2Project</span>
           </div>
-          {company?.subscription_status === 'active' && (
+          {company?.slug && (
             <a href={`/${company.slug}/dashboard`} className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-400 transition">
               ← Dashboard
             </a>

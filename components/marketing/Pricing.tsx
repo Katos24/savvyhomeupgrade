@@ -76,7 +76,7 @@ export default function Pricing() {
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          <div className="text-center mb-12">
+       <div className="text-center mb-12">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] mb-3 text-emerald-400">
               Lead2Project Pricing
             </p>
@@ -87,6 +87,27 @@ export default function Pricing() {
             <p className="text-slate-400 font-medium max-w-md mx-auto">
               No setup fees, no contracts, cancel anytime.
             </p>
+          </div>
+
+          {/* Free tier banner */}
+          <div className="max-w-4xl mx-auto mb-6 sm:mb-8">
+            <Link
+              href="/signup?plan=free"
+              className="flex items-center justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all group"
+            >
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <Check size={18} className="text-emerald-400" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-white font-black text-sm sm:text-base tracking-tight">Start Free</p>
+                  <p className="text-slate-500 text-[10px] sm:text-xs font-medium">Booking link, QR code, lead dashboard — no credit card needed</p>
+                </div>
+              </div>
+              <span className="shrink-0 px-4 py-2 rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-widest text-emerald-400 border border-emerald-500/20 bg-emerald-500/5 group-hover:bg-emerald-500/10 transition">
+                Sign Up Free →
+              </span>
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-6 max-w-4xl mx-auto items-start">
