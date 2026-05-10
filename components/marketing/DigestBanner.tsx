@@ -1,117 +1,135 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Mail, Clock, TrendingUp, Users, AlertCircle } from 'lucide-react';
-
-const font = "'Nunito', sans-serif";
+import { Mail, Clock, TrendingUp, Users, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
 
 export default function DigestBanner() {
   return (
-    <section className="relative overflow-hidden py-10 sm:py-14 bg-slate-900">
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+    <section className="relative overflow-hidden py-12 sm:py-20 bg-slate-900 selection:bg-amber-500/30">
+      {/* Background Pattern - subtle dots */}
+      <div 
+        className="absolute inset-0 opacity-[0.05]" 
+        style={{ 
+          backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', 
+          backgroundSize: '24px 24px' 
+        }} 
+      />
+      
+      {/* Glow Effect */}
+      <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-amber-500/10 blur-[120px] rounded-full" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[5fr_4fr] gap-8 lg:gap-12 items-center">
-
-          {/* Left — Mini digest preview */}
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          
+          {/* Left — Interactive Digest Preview */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="order-2 lg:order-1"
           >
-            <div className="bg-white rounded-xl sm:rounded-2xl border-3 border-slate-700 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] max-w-md mx-auto lg:max-w-none" style={{ borderWidth: '3px' }}>
-              
+            <motion.div 
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="bg-white rounded-2xl sm:rounded-[2rem] border-[3px] border-slate-800 overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] max-w-sm mx-auto lg:max-w-none"
+            >
               {/* Email header */}
-              <div className="bg-slate-950 px-4 sm:px-5 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center">
-                    <Mail size={13} className="text-white" />
+              <div className="bg-slate-950 px-5 py-4 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <Mail size={18} className="text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-white" style={{ fontFamily: font, fontWeight: 900 }}>Daily Strategy Digest</p>
-                    <p className="text-[8px] text-slate-500" style={{ fontFamily: font, fontWeight: 600 }}>Delivered every morning at 6:00 AM</p>
+                    <p className="text-xs text-white font-black tracking-tight leading-tight">Daily Strategy Digest</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">6:00 AM • Automated Report</p>
                   </div>
                 </div>
-                <span className="text-[8px] text-amber-400 px-2 py-0.5 bg-amber-500/15 rounded border border-amber-500/25" style={{ fontFamily: font, fontWeight: 900 }}>
-                  PRO
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:block text-[10px] text-amber-400 font-black px-2 py-1 bg-amber-500/10 rounded border border-amber-500/20">
+                    PRO
+                  </span>
+                </div>
               </div>
 
               {/* Digest content */}
-              <div className="px-4 sm:px-5 py-3 sm:py-4 space-y-2">
+              <div className="p-5 sm:p-6 space-y-4">
                 {/* Stats row */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center border border-slate-100">
-                    <p className="text-lg text-slate-900" style={{ fontFamily: font, fontWeight: 900 }}>7</p>
-                    <p className="text-[8px] text-slate-500 uppercase tracking-wider" style={{ fontFamily: font, fontWeight: 700 }}>New Leads</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center border border-slate-100">
-                    <p className="text-lg text-emerald-500" style={{ fontFamily: font, fontWeight: 900 }}>3</p>
-                    <p className="text-[8px] text-slate-500 uppercase tracking-wider" style={{ fontFamily: font, fontWeight: 700 }}>Scheduled</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center border border-slate-100">
-                    <p className="text-lg text-amber-500" style={{ fontFamily: font, fontWeight: 900 }}>2</p>
-                    <p className="text-[8px] text-slate-500 uppercase tracking-wider" style={{ fontFamily: font, fontWeight: 700 }}>Need Follow-Up</p>
-                  </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'New Leads', val: '7', color: 'text-slate-900' },
+                    { label: 'Scheduled', val: '3', color: 'text-emerald-500' },
+                    { label: 'Pending', val: '2', color: 'text-amber-500' },
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100 shadow-sm">
+                      <p className={`text-xl font-black ${stat.color}`}>{stat.val}</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">{stat.label}</p>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Action items */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 bg-red-50 rounded-lg border border-red-100">
-                    <AlertCircle size={10} className="text-red-500 shrink-0" />
-                    <p className="text-[9px] text-red-700" style={{ fontFamily: font, fontWeight: 700 }}>
-                      <strong>Kevin White</strong> — quote sent 3 days ago, no response
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3 p-3 bg-red-50/50 rounded-xl border border-red-100">
+                    <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-red-900 font-medium leading-relaxed">
+                      <span className="font-bold">Kevin White</span> — Quote sent 3 days ago, no response. Follow up needed.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 bg-blue-50 rounded-lg border border-blue-100">
-                    <Clock size={10} className="text-blue-500 shrink-0" />
-                    <p className="text-[9px] text-blue-700" style={{ fontFamily: font, fontWeight: 700 }}>
-                      <strong>Sarah Johnson</strong> — inspection scheduled today at 10 AM
+                  <div className="flex items-start gap-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                    <Clock size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-blue-900 font-medium leading-relaxed">
+                      <span className="font-bold">Sarah Johnson</span> — Inspection scheduled today at 10:00 AM.
                     </p>
                   </div>
                 </div>
+
+                {/* Bottom CTA Mockup */}
+                <div className="pt-2 flex justify-center">
+                  <div className="w-full py-2 bg-slate-100 rounded-lg flex items-center justify-center gap-2 opacity-60">
+                    <span className="text-[10px] font-bold text-slate-400">View Full Report</span>
+                    <ChevronRight size={12} className="text-slate-400" />
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Right — Value text */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="text-center lg:text-left"
+            className="text-center lg:text-left order-1 lg:order-2"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/15 rounded-full border border-amber-500/25 mb-4">
-              <span className="text-[10px] text-amber-400 uppercase tracking-widest" style={{ fontFamily: font, fontWeight: 900 }}>Pro Plan Feature</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 rounded-full border border-amber-500/20 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Available on Pro</span>
             </div>
 
-            <h3
-              className="text-2xl sm:text-3xl text-white mb-3 leading-snug"
-              style={{ fontFamily: font, fontWeight: 900 }}
-            >
+            <h3 className="text-3xl sm:text-4xl md:text-5xl text-white mb-6 font-black leading-[1.1] tracking-tight">
               Wake Up Knowing
               <br />
               <span className="text-amber-400">Exactly What to Do.</span>
             </h3>
 
-            <p
-              className="text-sm sm:text-base text-slate-400 leading-relaxed mb-5"
-              style={{ fontFamily: font, fontWeight: 600 }}
-            >
-              Every morning at 6 AM, you get an email with your new leads, today's schedule, overdue follow-ups, and which deals need attention. Before your coffee's ready, you already have a plan.
+            <p className="text-base sm:text-lg text-slate-400 font-medium leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+              Your "command center" arrives in your inbox at 6:00 AM. Review new leads, handle follow-ups, and organize your day before you even finish your first coffee.
             </p>
 
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-              {['New leads summary', 'Today\'s schedule', 'Overdue follow-ups', 'Revenue snapshot'].map(item => (
-                <span
+            <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start mb-8">
+              {['New Leads', 'Schedule', 'Overdue tasks', 'Revenue'].map(item => (
+                <div
                   key={item}
-                  className="px-3 py-1.5 bg-slate-800 rounded-full text-[11px] text-slate-300 border border-slate-700"
-                  style={{ fontFamily: font, fontWeight: 700 }}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 backdrop-blur-sm rounded-lg text-xs font-bold text-slate-300 border border-slate-700/50"
                 >
+                  <CheckCircle2 size={12} className="text-amber-400" />
                   {item}
-                </span>
+                </div>
               ))}
             </div>
+            
+      
           </motion.div>
 
         </div>

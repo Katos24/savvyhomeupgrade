@@ -231,27 +231,27 @@ export default function CustomizeFormSection() {
               </div>
 
               <div className="px-4 sm:px-5 py-4" style={{ minHeight: '420px' }}>
-                {/* Name + Email + Phone row */}
-                <div className="grid grid-cols-3 gap-2 mb-2.5">
-                  <div>
+                {/* Name + Email + Phone row - UPDATED FOR MOBILE FRIENDLY EMAIL */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2.5">
+                  <div className="col-span-1">
                     <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Name</label>
-                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
+                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[10px] sm:text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
                       <User size={9} className="text-slate-400 shrink-0" />
                       John Smith
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Email</label>
-                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
-                      <Mail size={9} className="text-slate-400 shrink-0" />
-                      john@email.com
-                    </div>
-                  </div>
-                  <div>
+                  <div className="col-span-1">
                     <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Phone</label>
-                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
+                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[10px] sm:text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
                       <Phone size={9} className="text-slate-400 shrink-0" />
                       (555) 000-0000
+                    </div>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Email</label>
+                    <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[10px] sm:text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
+                      <Mail size={9} className="text-slate-400 shrink-0" />
+                      <span className="truncate">john@email.com</span>
                     </div>
                   </div>
                 </div>
