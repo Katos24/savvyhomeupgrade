@@ -118,7 +118,7 @@ export const PLAN_CONFIG = {
   free: {
     label:        'Free',
     price:        0,
-    priceLabel:   'Free forever',
+    priceLabel:   'Free ',
     description:  'See your leads come in. Upgrade when you\'re ready to manage them.',
     stripePriceId: '',
     features: [

@@ -3,6 +3,7 @@
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
+import BuildFormSection from '@/components/marketing/BuildFormSection';
 import LeadLandingSection from '@/components/marketing/LeadLandingSection';
 import DigestBanner from '@/components/marketing/DigestBanner';
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
@@ -48,10 +49,17 @@ export default function NewHome() {
       <NewHero />
 
       {/* white → dark */}
-      <DarkFadeIn />
+
+            <BuildFormSection />
+
+            <div className="h-16 sm:h-24 bg-gradient-to-b from-white to-slate-900" />
+
+
 
       {/* 2. CUSTOMIZE FORM — dark (slate-900) */}
       <CustomizeFormSection />
+
+
 
       {/* dark → amber */}
       <DarkToAmber />

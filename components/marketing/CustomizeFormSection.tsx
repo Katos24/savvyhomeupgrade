@@ -154,7 +154,6 @@ export default function CustomizeFormSection() {
               Everything.
             </motion.span>
             <br />
-            Launch in Minutes.
           </motion.h2>
         </div>
 
@@ -399,7 +398,6 @@ export default function CustomizeFormSection() {
                   Everything.
                 </motion.span>
                 <br />
-                Launch in Minutes.
               </motion.h2>
             </div>
 
@@ -413,7 +411,7 @@ export default function CustomizeFormSection() {
                 {
                   step: 2,
                   title: 'Create Custom Questions',
-                  desc: 'Pill-select options, text fields, dropdowns — ask exactly what you need.',
+                  desc: 'Shape the experience to match how your business works.',
                 },
                 {
                   step: 3,

@@ -12,7 +12,7 @@ const plans = [
     desc: 'Your entire digital storefront and job tracking in one link.',
     highlight: false,
     cta: 'Start 14-Day Free Trial',
-    href: '/signup?plan=basic',
+    href: '/signup',
     features: [
       'Custom Booking Link',
       'Branded QR Codes',
@@ -30,7 +30,7 @@ const plans = [
     desc: 'The complete AI-powered office for contractors who want to scale.',
     highlight: true,
     cta: 'Go Pro | 14 Days Free',
-    href: '/signup?plan=pro',
+    href: '/signup',
     features: [
       'Everything in Basic',
       'One-Click Email Sending',
@@ -98,10 +98,10 @@ export default function Pricing() {
                       className="text-white text-base sm:text-lg leading-none mb-0.5"
                       style={{ fontFamily: font, fontWeight: 900 }}
                     >
-                      Start Free Forever
+                      Start Free
                     </p>
                     <p className="text-slate-400 text-xs sm:text-sm" style={{ fontFamily: font, fontWeight: 600 }}>
-                      QR codes, lead dashboard & booking link — $0 forever
+                      QR codes, lead dashboard & booking link — $0
                     </p>
                   </div>
                 </div>
