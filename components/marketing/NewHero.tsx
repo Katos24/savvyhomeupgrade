@@ -14,7 +14,8 @@ const VALUE_PROPS = [
 
 export default function NewHero() {
   return (
-    <section className="relative overflow-hidden bg-white pt-16 pb-12 sm:pt-32 sm:pb-20">
+    /* Added pt-28 for mobile and sm:pt-44 for desktop to clear the fixed nav */
+    <section className="relative overflow-hidden bg-white pt-28 pb-12 sm:pt-44 sm:pb-20">
       {/* Background stays subtle to keep focus on text */}
       <div 
         className="absolute inset-0 opacity-[0.05] pointer-events-none" 

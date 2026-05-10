@@ -13,9 +13,6 @@ const PAIN_POINTS = [
     fix: 'What if you saw the job site, the damage, and the budget before you started the truck?',
     color: 'bg-orange-500',
     borderColor: 'border-orange-400',
-    // IMAGE: Frustrated contractor sitting in truck cab, looking at phone, 
-    // stuck in traffic or parked in a driveway. Late afternoon light.
-    // Think: wasted time, wasted gas, wasted day.
     image: '/images/morning-brief.webp',
   },
   {
@@ -24,9 +21,6 @@ const PAIN_POINTS = [
     fix: 'One dashboard. Every lead. Nothing falls through the cracks ever again.',
     color: 'bg-blue-500',
     borderColor: 'border-blue-400',
-    // IMAGE: Contractor at messy kitchen table at night, laptop open, 
-    // papers scattered, phone in hand, tired look. Family in background.
-    // Think: this is not the life you signed up for.
     image: '/images/marketing-quote.webp',
   },
   {
@@ -35,9 +29,6 @@ const PAIN_POINTS = [
     fix: 'Branded emails. Quote templates. One click. The homeowner picks the pro who looks like a pro.',
     color: 'bg-emerald-500',
     borderColor: 'border-emerald-400',
-    // IMAGE: Confident contractor on a job site smiling, tablet in hand, 
-    // homeowner shaking their hand. Clean truck with logo in background.
-    // Think: this is what winning looks like.
     image: '/images/quote-send-tablet.webp',
   },
 ];
@@ -60,7 +51,7 @@ export default function ValueSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl text-white mb-3 leading-tight"
@@ -78,20 +69,22 @@ export default function ValueSection() {
           </p>
         </motion.div>
 
-        {/* Mobile: horizontal scroll */}
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 lg:hidden -mx-5 px-5">
+        {/* Mobile: horizontal scroll - FIXED HEIGHT ISSUES */}
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-8 lg:hidden -mx-5 px-5 items-stretch">
           {PAIN_POINTS.map((item, i) => (
             <div
               key={i}
-              className="min-w-[88%] snap-center bg-slate-900 rounded-2xl border-3 border-slate-800 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
+              className="min-w-[88%] snap-center bg-slate-900 rounded-2xl border-3 border-slate-800 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] flex flex-col"
               style={{ borderWidth: '3px' }}
             >
-              <img
-                src={item.image}
-                className="h-44 w-full object-cover"
-                alt=""
-              />
-              <div className="p-5">
+              <div className="h-40 shrink-0 bg-slate-800">
+                <img
+                  src={item.image}
+                  className="h-full w-full object-cover"
+                  alt=""
+                />
+              </div>
+              <div className="p-5 flex flex-col flex-1">
                 <p
                   className="text-lg text-white mb-1.5 leading-snug"
                   style={{ fontFamily: font, fontWeight: 900 }}
@@ -104,8 +97,9 @@ export default function ValueSection() {
                 >
                   {item.painSub}
                 </p>
-                <div className={`${item.color} px-4 py-3 rounded-xl border-2 ${item.borderColor}`}>
-                  <p className="text-xs text-white leading-relaxed" style={{ fontFamily: font, fontWeight: 800 }}>
+                {/* MT-AUTO ensures the fix box always aligns to bottom of the card */}
+                <div className={`${item.color} px-4 py-3 rounded-xl border-2 ${item.borderColor} mt-auto`}>
+                  <p className="text-[11px] text-white leading-relaxed" style={{ fontFamily: font, fontWeight: 800 }}>
                     {item.fix}
                   </p>
                 </div>
@@ -129,7 +123,6 @@ export default function ValueSection() {
                   className="grid grid-cols-2 bg-slate-900 rounded-3xl border-3 border-slate-800 overflow-hidden shadow-[5px_5px_0px_0px_rgba(0,0,0,0.3)]"
                   style={{ borderWidth: '3px' }}
                 >
-                  {/* Text side */}
                   <div className={`flex flex-col justify-between ${imageRight ? 'order-1' : 'order-2'}`}>
                     <div className="px-10 pt-8 pb-4">
                       <p
@@ -155,7 +148,6 @@ export default function ValueSection() {
                     </div>
                   </div>
 
-                  {/* Image side */}
                   <div className={`${imageRight ? 'order-2' : 'order-1'} bg-slate-800`}>
                     <img
                       src={item.image}
