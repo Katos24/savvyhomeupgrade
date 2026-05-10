@@ -124,6 +124,7 @@ function AiMessageBody({ content }: { content: string }) {
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
   // Lead data
   const [allLeads, setAllLeads] = useState<any[]>([]);
@@ -179,6 +180,7 @@ const [isSearching, setIsSearching] = useState(false);
   const [filterPayment, setFilterPayment] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  
 
   // User / team
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -205,22 +207,20 @@ const shouldShowTour = baseShouldShowTour;
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);
 
-  const hasTourParam = params.get('tour') === '1';
-
-  if (hasTourParam) {
+  if (params.get('tour') === '1') {
     setTourActive(true);
     window.history.replaceState({}, '', `/${company.slug}/dashboard`);
     return;
   }
 
-  if (!isInitialLoad && shouldShowTour) {
+  if (!isInitialLoad && shouldShowTour && !tourActive) {
     const timer = setTimeout(() => {
       setTourActive(true);
     }, 800);
 
     return () => clearTimeout(timer);
   }
-}, [company.slug, shouldShowTour, isInitialLoad]);
+}, [company.slug, shouldShowTour, isInitialLoad, tourActive]);
 
  const planTier = (company.plan_tier || 'free') as PlanTier;
 
@@ -725,13 +725,14 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
       <span className="hidden sm:inline">New Lead</span>
       <span className="sm:hidden">Add</span>
     </button>
-  ) : (
+   ) : (
     <button
-      onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
-      className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed"
+      onClick={() => setLockedDashboardModal('create_lead')}
+      className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white rounded-xl font-bold text-sm transition-all active:scale-95"
     >
       <Lock className="w-4 h-4" />
       <span className="hidden sm:inline">New Lead</span>
+      <span className="sm:hidden">Add</span>
     </button>
   )}
 </div>
@@ -847,7 +848,7 @@ className={`min-h-screen relative selection:bg-blue-500/30 ${
         return (
           <button
             key={v.id}
-            onClick={() => locked ? router.push(`/${company.slug}/admin/settings#billing`) : setCurrentView(v.id as any)}
+            onClick={() => locked ? setLockedDashboardModal(v.feature!) : setCurrentView(v.id as any)}
             className={`p-2 rounded-lg transition-all relative ${
               locked
                 ? 'text-slate-600 cursor-not-allowed opacity-40'
@@ -1206,8 +1207,8 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
                   </a>
                 ) : (
                   <button
-                    onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 cursor-not-allowed"
+                    onClick={() => setLockedDashboardModal('csv_export')}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 transition-all active:scale-95"
                   >
                     <Lock className="w-3.5 h-3.5" />
                     Export (PRO)
@@ -1447,7 +1448,7 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
         ) : (
           <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999]">
             <button
-              onClick={() => router.push(`/${company.slug}/admin/settings#billing`)}
+              onClick={() => setLockedDashboardModal('ai_chat')}
               aria-label="Upgrade to Pro for AI features"
               className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
               style={{ background: '#0f1a0f', border: '2px solid #1a3a1a' }}
@@ -1458,6 +1459,130 @@ className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.
           </div>
         )
       )}
+
+      {/* Locked Feature Modal */}
+      {lockedDashboardModal && (() => {
+        const featureInfo: Record<string, { icon: React.ElementType; title: string; desc: string; plan: string; bullets: string[] }> = {
+          create_lead: {
+            icon: Plus,
+            title: 'Create Leads Manually',
+            desc: 'A customer calls, walks in, or sends a text — add them to your board in seconds without waiting for a form submission.',
+            plan: 'Basic',
+            bullets: ['Add leads from phone calls or walk-ins', 'Assign to team members instantly', 'Track every opportunity in one place'],
+          },
+          ai_chat: {
+            icon: Sparkles,
+            title: 'AI Assistant',
+            desc: 'Ask questions about your business in plain English and get instant answers powered by your actual lead data.',
+            plan: 'Pro',
+            bullets: ['\"What\'s scheduled this week?\"', '\"Which jobs are unpaid?\"', '\"Who are my biggest customers?\"'],
+          },
+          table_view: {
+            icon: List,
+            title: 'Table View',
+            desc: 'See all your leads in a sortable, filterable spreadsheet. Bulk-select, update, and export with ease.',
+            plan: 'Basic',
+            bullets: ['Sort by any column', 'Bulk update status or assignee', 'Export to CSV for bookkeeping'],
+          },
+          calendar_view: {
+            icon: Calendar,
+            title: 'Calendar View',
+            desc: 'See every scheduled job on a calendar at a glance. Never double-book or miss a window.',
+            plan: 'Basic',
+            bullets: ['Visual day/week/month layout', 'Drag to reschedule', 'Color-coded by status'],
+          },
+          csv_export: {
+            icon: Download,
+            title: 'CSV Export',
+            desc: 'Download all your leads and job data as a spreadsheet for bookkeeping, reporting, or importing elsewhere.',
+            plan: 'Basic',
+            bullets: ['All lead fields included', 'Filter before exporting', 'Works with Excel, Sheets, QuickBooks'],
+          },
+        };
+        const info = featureInfo[lockedDashboardModal] || {
+          icon: Lock,
+          title: 'Premium Feature',
+          desc: 'This feature requires a higher plan.',
+          plan: 'Basic',
+          bullets: [],
+        };
+        const FeatureIcon = info.icon;
+        return (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={() => setLockedDashboardModal(null)}
+          >
+            <div
+              className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50" />
+                <div className="relative p-8 text-center">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+                    style={{ background: '#0f172a', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}
+                  >
+                    <FeatureIcon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mb-2">{info.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed max-w-[260px] mx-auto">{info.desc}</p>
+                </div>
+              </div>
+
+              {/* Bullets */}
+              {info.bullets.length > 0 && (
+                <div className="px-8 pb-2">
+                  <div className="space-y-2.5">
+                    {info.bullets.map((b, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-none bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                        <p className="text-sm text-slate-700 font-medium leading-snug">{b}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Plan badge */}
+              <div className="flex justify-center py-3">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 rounded-none shadow-[3px_3px_0px_#0f172a]">
+                  <Sparkles className="w-3 h-3 text-slate-900" />
+                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{info.plan} Plan</span>
+                </div>
+              </div>
+
+             {/* CTA */}
+<div
+  className="px-6 pb-6 pt-2 grid grid-cols-2 gap-3"
+  style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+>
+  <button
+    onClick={() => setLockedDashboardModal(null)}
+    className="py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition active:scale-[0.97]"
+  >
+    Maybe Later
+  </button>
+
+  <a
+    href={`/${company.slug}/admin/settings#billing`}
+    className="py-4 text-white font-black text-sm rounded-xl transition text-center shadow-lg active:scale-[0.97]"
+    style={{
+      background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+      boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
+    }}
+  >
+    View Plans
+  </a>
+</div>
+
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Dashboard Tour ── */}
       {tourActive && (

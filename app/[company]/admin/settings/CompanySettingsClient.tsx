@@ -51,7 +51,7 @@ function UpgradeOverlay({ feature, companySlug }: {
   const planKey = requiredPlan === 'pro' ? 'pro' : 'basic';
   const config = PLAN_CONFIG[planKey];
   const colors = planKey === 'pro'
-    ? { bg: 'from-indigo-50 to-purple-50', border: 'border-indigo-200', badge: 'bg-indigo-600', text: 'text-indigo-900' }
+    ? { bg: 'from-blue-50 to-blue-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-900' }
     : { bg: 'from-blue-50 to-cyan-50', border: 'border-blue-200', badge: 'bg-blue-600', text: 'text-blue-900' };
 
   return (
@@ -529,7 +529,29 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
 
         {/* Daily Digest */}
     {/* Daily Digest */}
-{can(planTier, 'daily_digest') ? (
+{planTier === 'free' ? (
+  <a
+    href={`/${company.slug}/admin/settings`}
+    onClick={(e) => {
+      e.preventDefault();
+      openTab('billing');
+    }}
+    className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all active:scale-95 overflow-hidden"
+    style={{
+      background: '#0f172a',
+      boxShadow: '6px 6px 0px #facc15',
+    }}
+  >
+    <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent" />
+    <CreditCard className="w-5 h-5 text-white relative z-10" />
+    <span className="text-[10px] font-black text-white uppercase tracking-widest relative z-10">
+      Upgrade
+    </span>
+    <span className="text-[8px] font-bold text-white/60 relative z-10">
+      From $49.99/mo
+    </span>
+  </a>
+) : can(planTier, 'daily_digest') ? (
   <>
     {/* Confirm popup */}
     {showDigestConfirm && (
@@ -656,14 +678,14 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
     </div>
   </>
 ) : (
-  <button
+<button
     onClick={() => openTab('billing')}
-    className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl transition-all hover:border-purple-300 hover:bg-purple-50 active:scale-95"
+    className="group flex flex-col items-center justify-center gap-2 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl transition-all hover:border-blue-300 hover:bg-blue-50 active:scale-95"
   >
-    <Lock className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
+    <Lock className="w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors" />
     <div className="text-center">
-      <p className="text-[10px] font-black text-slate-300 group-hover:text-purple-400 uppercase tracking-widest transition-colors">Digest</p>
-      <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mt-0.5">Pro</p>
+      <p className="text-[10px] font-black text-slate-300 group-hover:text-blue-400 uppercase tracking-widest transition-colors">Digest</p>
+      <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Pro</p>
     </div>
   </button>
 )}
@@ -681,8 +703,9 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
             <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request. Turn on address, photos, and custom questions." color="#f97316" onClick={() => openTab('form')} locked={!can(planTier, 'settings_form')} requiredPlan="Basic" />
             <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive for quotes, schedules, and payment reminders — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people so nothing falls through the cracks." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
-            <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
-          </div>
+{planTier !== 'free' && (
+  <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
+)}          </div>
         </div>
 
         {/* HOW IT WORKS */}

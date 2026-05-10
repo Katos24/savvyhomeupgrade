@@ -1,57 +1,59 @@
 'use client';
+
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { useFadeIn } from '@/components/marketing/hooks';
+import { motion } from 'framer-motion';
+
+const font = "'Nunito', sans-serif";
 
 export default function FinalCTA() {
-  const { ref, visible } = useFadeIn();
-
   return (
-    <section className="relative py-24 px-6 text-center overflow-hidden" style={{ background: '#020617' }}>
+    <section className="relative py-20 sm:py-28 px-5 sm:px-6 text-center overflow-hidden bg-slate-950">
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+      <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl opacity-10" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-400 rounded-full blur-3xl opacity-10" />
 
-      {/* Top accent */}
-      <div className="absolute top-0 inset-x-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(26,102,69,0.6), transparent)' }} />
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-        style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-
-      {/* Center glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[600px] h-[300px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(ellipse at center, #1a6645, transparent 70%)' }} />
-      </div>
-
-      <div
-        ref={ref}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
         className="relative z-10 max-w-2xl mx-auto"
-        style={{
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'none' : 'translateY(20px)',
-          transition: 'all 0.7s ease',
-        }}
       >
-        <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight leading-[0.95] mb-5">
-          Stop bleeding leads.<br />
-          <span className="text-emerald-400">One win pays for the year.</span>
-        </h2>
-        <p className="text-slate-400 text-lg font-medium mb-10 leading-relaxed max-w-md mx-auto">
-          Your competitor down the street is still texting quotes from his
-          personal number. You don't have to be.
-        </p>
-        <Link
-          href="/signup"
-          className="group inline-flex items-center gap-2.5 text-white px-10 py-4 rounded-2xl text-base font-black transition-all hover:scale-[1.02] active:scale-[0.98]"
-          style={{ background: '#1a6645', boxShadow: '0 0 60px rgba(26,102,69,0.4)' }}
+        <h2
+          className="text-3xl sm:text-4xl lg:text-5xl text-white mb-5 leading-tight"
+          style={{ fontFamily: font, fontWeight: 900 }}
         >
-          Start Free Trial
-          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          Stop Bleeding Leads.
+          <br />
+          <span className="text-yellow-400">One Win Pays for the Year.</span>
+        </h2>
+
+        <p
+          className="text-white text-base sm:text-lg mb-10 leading-relaxed max-w-lg mx-auto"
+          style={{ fontFamily: font, fontWeight: 700 }}
+        >
+          Your competitor down the street is still texting quotes from his personal number. You don't have to be.
+        </p>
+
+        <Link href="/signup">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-3 bg-yellow-400 text-slate-900 px-10 py-5 rounded-2xl text-lg group border-4 border-slate-900 shadow-[5px_5px_0px_0px_rgba(0,0,0,0.3)]"
+            style={{ fontFamily: font, fontWeight: 900 }}
+          >
+            Start Free Trial
+            <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
+          </motion.div>
         </Link>
-        <p className="mt-5 text-[11px] text-slate-600 uppercase tracking-[0.2em] font-bold">
+
+        <p
+          className="mt-6 text-sm text-white/60 uppercase tracking-wider"
+          style={{ fontFamily: font, fontWeight: 800 }}
+        >
           14-day free trial · Cancel anytime · 2 min setup
         </p>
-      </div>
+      </motion.div>
     </section>
   );
 }

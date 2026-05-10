@@ -969,7 +969,6 @@ export async function sendWelcomeEmail({
     throw error;
   }
 }
-
 export async function sendSubscriptionCancelledEmail({
   companyEmail,
   companyName,

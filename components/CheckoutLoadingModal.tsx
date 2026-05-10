@@ -17,8 +17,8 @@ const STEPS = [
 
 export default function CheckoutLoadingModal({
   isOpen,
-  planLabel = 'Starter',
-  planPrice = '$29/month',
+  planLabel = 'Basic',
+  planPrice = '$49/month',
 }: CheckoutLoadingModalProps) {
   const [step, setStep] = useState(0);
 

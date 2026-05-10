@@ -1,366 +1,250 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check, ChevronRight, Image as ImageIcon,
   User, Mail, Phone, AlignLeft, Upload,
   MapPin,
 } from 'lucide-react';
 
-function OrangeBtn({ children, done }: { children: React.ReactNode; done?: boolean }) {
+// --- Components ---
+
+function OrangeBtn({ children, done, active }: { children: React.ReactNode; done?: boolean; active?: boolean }) {
   return (
-    <button
-      className="w-full py-2.5 rounded-2xl text-[11px] font-black text-white flex items-center justify-center gap-2 shadow-md transition-all duration-300"
-      style={{ background: done ? 'linear-gradient(135deg,#22c55e,#15803d)' : 'linear-gradient(135deg,#f97316 0%,#c2410c 50%,#1c1917 100%)' }}
+    <motion.button
+      animate={{ scale: active ? 0.96 : 1 }}
+      className="w-full py-2.5 rounded-2xl text-[11px] font-black text-white flex items-center justify-center gap-2 shadow-lg transition-all duration-500"
+      style={{ 
+        background: done 
+          ? 'linear-gradient(135deg,#10b981,#059669)' 
+          : 'linear-gradient(135deg,#f97316 0%,#ea580c 50%,#c2410c 100%)' 
+      }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
-function Label({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between mb-0.5">
-      <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{children}</p>
-      {right && <span className="text-[7px] text-slate-400">{right}</span>}
-    </div>
-  );
-}
-
-function Field({ active, filled, icon, value, placeholder }: {
-  active: boolean; filled: boolean; icon: React.ReactNode; value: string; placeholder: string;
+function Field({ active, icon, value, placeholder }: {
+  active: boolean; icon: React.ReactNode; value: string; placeholder: string;
 }) {
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-2 rounded-2xl border transition-all duration-150 ${
-      active ? 'border-orange-400 ring-2 ring-orange-50 shadow-sm bg-white' : filled ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50/80'
+    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border transition-all duration-300 ${
+      active ? 'border-orange-500 bg-white shadow-md ring-4 ring-orange-500/10' : 'border-slate-200 bg-slate-50/50'
     }`}>
-      <span className="text-slate-400 shrink-0">{icon}</span>
-      <span className="text-[10px] font-medium text-slate-800 flex-1 truncate">
-        {value
-          ? <>{value}{active && <span className="inline-block w-px h-3 bg-orange-500 ml-0.5 align-middle animate-pulse" />}</>
-          : <><span className="text-slate-400">{placeholder}</span>{active && <span className="inline-block w-px h-3 bg-orange-500 ml-0.5 align-middle animate-pulse" />}</>
-        }
+      <span className={active ? 'text-orange-500' : 'text-slate-400'}>{icon}</span>
+      <span className="text-[10px] font-bold text-slate-800 flex-1 truncate">
+        {value || <span className="text-slate-300 font-medium">{placeholder}</span>}
+        {active && <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} className="inline-block w-0.5 h-3 bg-orange-500 ml-0.5 align-middle" />}
       </span>
     </div>
   );
 }
 
-function Pill({ label, selected, tapping }: { label: string; selected: boolean; tapping?: boolean }) {
-  return (
-    <div
-      className="px-2 py-1 rounded-xl text-[8px] font-bold border transition-all duration-200"
-      style={selected
-        ? { background: 'linear-gradient(135deg,#f97316,#c2410c,#1c1917)', color: '#fff', borderColor: 'transparent', transform: 'scale(1.05)' }
-        : tapping
-          ? { background: '#fff7ed', color: '#f97316', borderColor: '#fed7aa', transform: 'scale(0.95)' }
-          : { background: '#fff', color: '#374151', borderColor: '#e5e7eb' }
-      }
-    >
-      {label}
-    </div>
-  );
-}
+// --- Main Demo ---
 
-function LogoBar() {
-  return (
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 shrink-0 bg-white mt-2">
-      <img src="/images/ridgelinelogo.webp" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
-      <span className="text-[9px] font-black text-slate-800">Ridge Line Roofing</span>
-    </div>
-  );
-}
-
-function StepBar({ step }: { step: 1 | 2 | 'success' }) {
-  const s1done = step !== 1;
-  const s2active = step === 2 || step === 'success';
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 border-b border-slate-100 bg-white">
-      <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-black"
-        style={{ background: 'linear-gradient(135deg,#f97316,#c2410c)', color: '#fff' }}>
-        {s1done ? <Check size={9} strokeWidth={3} /> : '1'}
-      </div>
-      <span className={`text-[7px] font-black uppercase tracking-widest ${s1done ? 'text-slate-400 line-through' : 'text-slate-800'}`}>Your Info</span>
-      <div className="flex-1 h-px bg-slate-200" />
-      <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-black transition-all"
-        style={s2active
-          ? { background: 'linear-gradient(135deg,#f97316,#c2410c)', color: '#fff' }
-          : { background: '#e5e7eb', color: '#9ca3af' }
-        }>
-        2
-      </div>
-      <span className={`text-[7px] font-black uppercase tracking-widest ${s2active ? 'text-slate-800' : 'text-slate-400'}`}>Details</span>
-    </div>
-  );
-}
-
-function SuccessScreen() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full px-3 py-4" style={{ background: '#f5f4f0' }}>
-      <div className="bg-white rounded-3xl p-4 w-full shadow-lg flex flex-col items-center">
-        <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-2 shadow-inner">
-          <img src="/images/ridgelinelogo.webp" alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />
-        </div>
-        <p className="text-[13px] font-black text-slate-900 mb-0.5">Request Received!</p>
-        <p className="text-[8px] text-slate-500 text-center mb-3">We'll be in touch about your fencing project.</p>
-
-        {/* Photo thumbnail in success */}
-        <div className="w-full mb-2 rounded-xl overflow-hidden border border-slate-100" style={{ height: 44 }}>
-          <img src="/images/roof-damage.webp" alt="roof damage" className="w-full h-full object-cover" />
-        </div>
-        <p className="text-[7px] text-slate-400 mb-2 self-start flex items-center gap-1">
-          <Check size={8} className="text-emerald-500" strokeWidth={3} />
-          1 photo received · roof-damage.png
-        </p>
-
-        {[
-          { icon: <Mail size={12} className="text-blue-500" />, t: 'Check your email', s: 'Confirmation sent to your inbox' },
-          { icon: <Check size={12} className="text-emerald-500" />, t: "We'll reach out shortly", s: 'Our team reviews every request' },
-        ].map(i => (
-          <div key={i.t} className="flex items-center gap-2 bg-slate-50 rounded-2xl p-2 w-full mb-1.5">
-            <div className="w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm">{i.icon}</div>
-            <div>
-              <p className="text-[8px] font-black text-slate-800">{i.t}</p>
-              <p className="text-[7px] text-slate-400">{i.s}</p>
-            </div>
-          </div>
-        ))}
-        <div className="w-full mt-2">
-          <OrangeBtn>Visit Ridge Line Roofing <ChevronRight size={11} /></OrangeBtn>
-        </div>
-        <p className="text-[6px] text-slate-400 uppercase tracking-widest mt-2">Powered by Lead2Project</p>
-      </div>
-    </div>
-  );
-}
-
-export function FastDemoForm({ autoPlay = false, showSuccess = false }: { autoPlay?: boolean; showSuccess?: boolean }) {
-  type Phase = 'idle' | 's1-done' | 's1-exit' | 's2-enter' | 's2-q1' | 's2-photo' | 's2-drop' | 's2-done' | 'success';
-
-  const [phase, setPhase] = useState<Phase>('idle');
-  const name = 'Jason Merritt';
-  const email = 'jasonm@email.com';
-  const phone = '(555) 482-9301';
-const desc = 'Storm damaged roof, multiple shingles missing after last night';
-  const addr = '42 Maple Ave';
-  const city = 'Brooklyn';
-  const zip = '11201';
-  const [q1, setQ1] = useState('');
-  const [tapping, setTapping] = useState(false);
-  const [photoDrop, setPhotoDrop] = useState(false);
+export function FastDemoForm({ autoPlay = true, showSuccess = true }) {
+  const [step, setStep] = useState(1);
+  const [phase, setPhase] = useState('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [step, setStep] = useState<1 | 2 | 'success'>(1);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [q1, setQ1] = useState('');
 
   useEffect(() => {
     if (!autoPlay) return;
-    let running = true;
-    const go = (fn: () => void, ms: number) => { if (running) timerRef.current = setTimeout(fn, ms); };
+    let timer: NodeJS.Timeout;
 
-    function reset() {
-      setPhase('idle');
-      setStep(1);
-      setQ1('');
-      setTapping(false);
-      setPhotoDrop(false);
-      setUploadProgress(0);
-    }
+    const sequence = async () => {
+      // Step 1: Entry
+      setStep(1); setPhase('typing');
+      await new Promise(r => timer = setTimeout(r, 1200));
+      
+      // Step 1: Submit
+      setPhase('s1-done');
+      await new Promise(r => timer = setTimeout(r, 800));
+      
+      // Step 2: Transition
+      setStep(2); setPhase('idle');
+      await new Promise(r => timer = setTimeout(r, 1000));
+      
+      // Step 2: Select Option
+      setPhase('tapping-pill');
+      await new Promise(r => timer = setTimeout(r, 600));
+      setQ1('5–10 yrs');
+      
+      // Step 2: Photo Upload
+      await new Promise(r => timer = setTimeout(r, 800));
+      setPhase('uploading');
+      for (let i = 0; i <= 100; i += 5) {
+        setUploadProgress(i);
+        await new Promise(r => timer = setTimeout(r, 50));
+      }
+      setPhase('s2-done');
+      
+      // Success
+      await new Promise(r => timer = setTimeout(r, 1000));
+      if (showSuccess) setStep(3);
+      
+      await new Promise(r => timer = setTimeout(r, 4000));
+      setQ1(''); setUploadProgress(0); sequence();
+    };
 
-    function run() {
-      reset();
-      go(() => setPhase('s1-done'), 400);
-      go(() => setPhase('s1-exit'), 800);
-      go(() => { setStep(2); setPhase('s2-enter'); }, 1200);
-      go(() => { setTapping(true); setPhase('s2-q1'); }, 1800);
-      go(() => { setQ1('Under 10 yrs'); setTapping(false); }, 2150);
-      go(() => setPhase('s2-photo'), 2600);
-      // Photo drops in
-      go(() => { setPhotoDrop(true); setPhase('s2-drop'); setUploadProgress(0); }, 3200);
-      // Progress animates
-      go(() => setUploadProgress(30), 3450);
-      go(() => setUploadProgress(65), 3700);
-      go(() => setUploadProgress(88), 3950);
-      go(() => setUploadProgress(100), 4250);
-      go(() => setPhase('s2-done'), 4600);
-     if (showSuccess) {
-  go(() => { setStep('success'); setPhase('success'); }, 5600);
-  go(run, 9200);
-} else {
-  go(run, 9200);
-}
-    }
-
-    run();
-    return () => { running = false; if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [autoPlay]);
+    sequence();
+    return () => clearTimeout(timer);
+  }, [autoPlay, showSuccess]);
 
   return (
-    <div className="relative" style={{ width: 260, height: 480 }}>
-      <div className="absolute inset-0 blur-2xl bg-orange-500/10 rounded-[3rem]" />
-      <div className="relative w-full h-full rounded-[3rem] border-[6px] border-[#1e293b] bg-[#0f172a] shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-6 flex justify-center items-end z-30">
-          <div className="w-14 h-3 bg-black rounded-b-lg mb-1" />
+    <div className="relative group" style={{ width: 280, height: 500 }}>
+      {/* Phone Shell */}
+      <div className="absolute inset-0 bg-slate-950 rounded-[3.5rem] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-t border-white/10">
+        {/* Dynamic Island */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-b-2xl z-50 flex items-center justify-center">
+          <div className="w-10 h-1 bg-white/10 rounded-full" />
         </div>
-        <div className="absolute inset-0 pt-12 overflow-hidden">
 
-          {/* SUCCESS */}
-          <div className={`absolute inset-0 transition-all duration-700 ${step === 'success' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
-            <SuccessScreen />
-          </div>
+        <div className="relative w-full h-full bg-white rounded-[2.5rem] overflow-hidden flex flex-col">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="flex-1 flex flex-col pt-8"
+              >
+                <header className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500 flex items-center justify-center shadow-orange-500/20 shadow-lg">
+                    <img src="/images/ridgelinelogo.webp" className="w-5 h-5 object-contain invert brightness-0" />
+                  </div>
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none">Ridge Line</h3>
+                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Roofing Specialists</p>
+                  </div>
+                </header>
 
-          {/* STEP 1 */}
-          <div className={`absolute inset-0 flex flex-col bg-white transition-all duration-700 ${step === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8 pointer-events-none'}`}>
-            <LogoBar />
-            <div className="shrink-0 px-3 py-2.5" style={{ background: 'linear-gradient(135deg,#f97316 0%,#c2410c 40%,#1c1917 100%)' }}>
-              <p className="text-[12px] font-black text-white">Submit Your Request</p>
-              <p className="text-[8px] text-orange-100/80">Takes less than 2 minutes.</p>
-            </div>
-            <StepBar step={step} />
-            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5">
-              <div><Label>Full Name</Label><Field active={false} filled icon={<User size={10} />} value={name} placeholder="" /></div>
-              <div><Label>Email</Label><Field active={false} filled icon={<Mail size={10} />} value={email} placeholder="" /></div>
-              <div><Label>Phone</Label><Field active={false} filled icon={<Phone size={10} />} value={phone} placeholder="" /></div>
-              <div><Label>Service Needed</Label><Field active={false} filled icon={<MapPin size={10} className="text-slate-400" />} value="Roofing" placeholder="" /></div>
-              <div>
-                <Label right="0/500">Project Description</Label>
-                <div className="flex items-start gap-2 px-2.5 py-2 rounded-2xl border border-slate-200 bg-white min-h-[40px]">
-                  <AlignLeft size={10} className="text-slate-400 shrink-0 mt-0.5" />
-                  <span className="text-[9px] text-slate-800 flex-1 leading-relaxed">{desc}</span>
-                </div>
-              </div>
-              <div className="pt-1">
-                <OrangeBtn done={phase === 's1-done' || phase === 's1-exit'}>
-                  {phase === 's1-exit' ? <><Check size={11} strokeWidth={3} /> Saved!</> : <>Continue <ChevronRight size={11} /></>}
-                </OrangeBtn>
-              </div>
-            </div>
-          </div>
-
-          {/* STEP 2 */}
-          <div className={`absolute inset-0 flex flex-col bg-white transition-all duration-700 ${step === 2 ? 'opacity-100 translate-x-0' : step === 'success' ? 'opacity-0 -translate-x-8 pointer-events-none' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
-            <LogoBar />
-            <div className="shrink-0 px-3 py-2" style={{ background: 'linear-gradient(135deg,#f97316 0%,#c2410c 40%,#1c1917 100%)' }}>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <div className="w-4 h-4 rounded-full bg-white/20 border border-white/30 flex items-center justify-center">
-                  <Check size={8} className="text-white" strokeWidth={3} />
-                </div>
-                <ChevronRight size={8} className="text-white/50" />
-                <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                  <span className="text-[7px] font-black text-orange-600">2</span>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-white">Request saved!</p>
-              <p className="text-[7px] text-orange-100/80">A few more details — all optional.</p>
-            </div>
-            <StepBar step={step} />
-            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-1.5">
-
-              {/* Address */}
-              <div><Label>Address</Label><Field active={false} filled icon={<MapPin size={10} className="text-red-400" />} value={addr} placeholder="" /></div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <div><Label>City</Label><Field active={false} filled icon={<MapPin size={10} className="text-slate-300" />} value={city} placeholder="" /></div>
-                <div><Label>Zip</Label><Field active={false} filled icon={<MapPin size={10} className="text-emerald-400" />} value={zip} placeholder="" /></div>
-              </div>
-
-              {/* Question */}
-              <div className="pt-1">
-                <Label>How old is your fence?</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {['Under 5 yrs', '5–10 yrs', '10+ yrs', 'Unknown'].map(o => (
-                    <Pill key={o} label={o} selected={q1 === o} tapping={tapping && o === 'Under 10 yrs'} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Photo upload with real image + progress */}
-              <div>
-                <Label>
-                  Photos or Videos
-                  <span className="text-slate-400 ml-1 normal-case font-normal">optional</span>
-                </Label>
-                <div className={`border-2 border-dashed rounded-2xl transition-all duration-400 overflow-hidden ${
-                  photoDrop ? 'border-orange-400 bg-orange-50/40' :
-                  phase === 's2-photo' ? 'border-blue-300 bg-blue-50/40' :
-                  'border-slate-200 bg-slate-50'
-                }`}>
-                  {photoDrop ? (
-                    <div className="p-2">
-                      {/* Real photo thumbnail */}
-                      <div className="relative w-full rounded-xl overflow-hidden mb-2" style={{ height: 60 }}>
-                        <img
-                          src="/images/roof-damage.webp"
-                          alt="fence damage"
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Uploading overlay */}
-                        <div
-                          className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity duration-500"
-                          style={{ opacity: uploadProgress < 100 ? 1 : 0 }}
-                        >
-                          <p className="text-white text-[8px] font-black mb-1">Uploading...</p>
-                          <p className="text-white/60 text-[7px]">{uploadProgress}%</p>
-                        </div>
-                        {/* Done checkmark */}
-                        <div
-                          className="absolute top-1.5 right-1.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg transition-all duration-300"
-                          style={{ opacity: uploadProgress === 100 ? 1 : 0, transform: uploadProgress === 100 ? 'scale(1)' : 'scale(0)' }}
-                        >
-                          <Check size={9} className="text-white" strokeWidth={3} />
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500 ease-out"
-                            style={{
-                              width: `${uploadProgress}%`,
-                              background: uploadProgress === 100
-                                ? '#10b981'
-                                : 'linear-gradient(90deg,#f97316,#c2410c)',
-                            }}
-                          />
-                        </div>
-                        <p
-                          className="text-[7px] font-black shrink-0 transition-colors duration-300"
-                          style={{ color: uploadProgress === 100 ? '#10b981' : '#f97316' }}
-                        >
-                          {uploadProgress === 100 ? 'Done!' : `${uploadProgress}%`}
-                        </p>
-                      </div>
-
-                      {/* Filename */}
-                      <p className="text-[7px] text-slate-400 truncate">fence-damage.png · 2.4 MB</p>
+                <div className="flex-1 p-5 space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Details</p>
+                    <Field active={phase === 'typing'} icon={<User size={12}/>} value="Jason Merritt" placeholder="Name" />
+                    <Field active={false} icon={<Mail size={12}/>} value="jasonm@email.com" placeholder="Email" />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest px-1">Project</p>
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 min-h-[60px]">
+                      <p className="text-[10px] font-bold text-slate-800 leading-relaxed">Storm damage, need an inspection ASAP.</p>
                     </div>
-                  ) : phase === 's2-photo' ? (
-                    <div className="py-3 flex flex-col items-center">
-                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mb-0.5 animate-bounce">
-                        <ImageIcon size={12} className="text-blue-500" />
-                      </div>
-                      <p className="text-[8px] font-bold text-blue-500">Drop photo here...</p>
-                    </div>
-                  ) : (
-                    <div className="py-2.5 flex flex-col items-center">
-                      <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center mb-0.5">
-                        <ImageIcon size={13} className="text-blue-400" />
-                      </div>
-                      <p className="text-[8px] font-semibold text-slate-500">Click or drag photos here</p>
-                    </div>
-                  )}
+                  </div>
+
+                  <div className="pt-2">
+                    <OrangeBtn active={phase === 's1-done'} done={phase === 's1-done'}>
+                      {phase === 's1-done' ? <Check size={14} strokeWidth={3}/> : 'Continue'}
+                    </OrangeBtn>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
+            )}
 
-              <OrangeBtn done={phase === 's2-done' || phase === 'success'}>
-                {phase === 's2-done' || phase === 'success'
-                  ? <><Check size={11} strokeWidth={3} /> Submitted!</>
-                  : <><Upload size={11} /> Submit Details</>
-                }
-              </OrangeBtn>
-            </div>
-          </div>
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="flex-1 flex flex-col pt-8"
+              >
+                <div className="px-5 py-4 bg-slate-900 text-white">
+                  <p className="text-[8px] font-black text-orange-400 uppercase tracking-[0.2em]">Step 02</p>
+                  <h3 className="text-sm font-black mt-1">Final Details</h3>
+                </div>
 
+                <div className="flex-1 p-5 space-y-5">
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-black text-slate-800">How old is your roof?</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['New', '5–10 yrs', '10–20 yrs', 'Unknown'].map(opt => (
+                        <motion.div
+                          key={opt}
+                          animate={{ 
+                            scale: phase === 'tapping-pill' && opt === '5–10 yrs' ? 0.95 : 1,
+                            backgroundColor: q1 === opt ? '#f97316' : '#fff',
+                            borderColor: q1 === opt ? '#f97316' : '#e2e8f0',
+                            color: q1 === opt ? '#fff' : '#475569'
+                          }}
+                          className="py-2 px-3 rounded-xl border text-[9px] font-bold text-center transition-colors"
+                        >
+                          {opt}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-black text-slate-800">Upload Photos</p>
+                    <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 flex flex-col items-center">
+                      {uploadProgress > 0 ? (
+                        <div className="w-full space-y-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200">
+                               <img src="/images/roof-damage.webp" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                              <p className="text-[8px] font-black text-slate-800 truncate">damage_01.jpg</p>
+                              <div className="h-1 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                                <motion.div 
+                                  className="h-full bg-orange-500" 
+                                  initial={{ width: 0 }} 
+                                  animate={{ width: `${uploadProgress}%` }} 
+                                />
+                              </div>
+                            </div>
+                            {uploadProgress === 100 && <Check size={12} className="text-emerald-500" />}
+                          </div>
+                        </div>
+                      ) : (
+                        <ImageIcon className="text-slate-300 mb-1" size={24} />
+                      )}
+                    </div>
+                  </div>
+
+                  <OrangeBtn active={phase === 's2-done'} done={phase === 's2-done'}>
+                    {phase === 's2-done' ? 'Submitted' : 'Submit Request'}
+                  </OrangeBtn>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div
+                key="success"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex-1 flex flex-col items-center justify-center p-8 text-center"
+              >
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12 }}
+                  className="w-16 h-16 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-500/20 mb-4"
+                >
+                  <Check size={32} className="text-white" strokeWidth={4} />
+                </motion.div>
+                <h2 className="text-lg font-black text-slate-900 leading-tight">Got it, Jason!</h2>
+                <p className="text-[10px] font-medium text-slate-500 mt-2">Our team is reviewing your roof photos and will text you shortly.</p>
+                
+                <div className="mt-8 w-full space-y-2">
+                  <div className="p-3 bg-slate-50 rounded-2xl flex items-center gap-3 border border-slate-100">
+                    <Mail size={14} className="text-orange-500" />
+                    <p className="text-[9px] font-bold text-slate-700">Email Confirmation Sent</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Home Bar */}
+          <div className="h-1.5 w-20 bg-slate-200 rounded-full mx-auto mb-2 shrink-0" />
         </div>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-16 h-1 bg-white/20 rounded-full z-30" />
       </div>
     </div>
   );

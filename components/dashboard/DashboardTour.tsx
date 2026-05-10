@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { type PlanTier } from '@/lib/permissions';
 
-const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'basic', 'pro'];
+const PLAN_ORDER: PlanTier[] = ['free', 'basic', 'pro'];
 
 function planMeetsMin(userPlan: PlanTier, minPlan: PlanTier): boolean {
   return PLAN_ORDER.indexOf(userPlan) >= PLAN_ORDER.indexOf(minPlan);
@@ -66,7 +66,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'create-lead',
-    minPlan: 'starter',
+    minPlan: 'basic',
     title: 'Add leads in one tap',
     description: 'New customer calls? Tap this button to create a lead instantly — or share your booking link and let customers submit their own.',
     icon: <Plus className="w-6 h-6" />,
@@ -76,7 +76,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'view-modes',
-    minPlan: 'starter',
+    minPlan: 'basic',
     title: 'Three ways to see your work',
     description: 'Cards for a quick scan, Table for bulk actions and CSV export, Calendar to see your schedule at a glance.',
     icon: <LayoutGrid className="w-6 h-6" />,
@@ -96,7 +96,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'filters',
-    minPlan: 'starter',
+    minPlan: 'basic',
     title: 'Find anything instantly',
     description: 'Filter by status, category, date, assignee, or payment. Use quick-filter pills for common views like "Unpaid" or "New leads."',
     icon: <Filter className="w-6 h-6" />,

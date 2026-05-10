@@ -1,354 +1,223 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   FileText,
   CalendarDays,
   Mail,
-  FormInput,
   Download,
-  DollarSign,
-  Bell,
+  Sparkles,
   CheckCircle2,
-  Activity,
-  Terminal
+  Clock,
+  Database
 } from 'lucide-react';
 
-/* ─────────────────────────────────────────────────────────
-   FEATURES — THE FULL INDUSTRIAL OS (MOBILE OPTIMIZED)
-   ───────────────────────────────────────────────────────── */
-
 const LEADS = [
-  { name: 'Marcus Holloway',    status: 'Scheduled',  color: '#2563eb', amount: '$7,950', cat: 'Roofing', date: 12 },
-  { name: 'Sarah Jenkins',      status: 'Won',        color: '#10b981', amount: '$2,400', cat: 'Gutters', date: 13 },
-  { name: 'Julian Martinez',    status: 'Quote Sent', color: '#0891b2', amount: '$5,200', cat: 'Siding',  date: 21 },
-  { name: 'David Reyes',        status: 'New',        color: '#16a34a', amount: '—',      cat: 'Gutters', date: 21 },
+  { name: 'Marcus Holloway', status: 'Scheduled', color: 'bg-emerald-500', amount: '$7,950', icon: <CalendarDays size={14}/> },
+  { name: 'Sarah Jenkins', status: 'Won!', color: 'bg-yellow-400', amount: '$2,400', icon: <CheckCircle2 size={14}/> },
+  { name: 'Julian Martinez', status: 'Quote Sent', color: 'bg-sky-400', amount: '$5,200', icon: <FileText size={14}/>  },
+  { name: 'David Reyes', status: 'New Lead', color: 'bg-orange-400', amount: '—', icon: <Sparkles size={14}/> },
 ];
 
 const OUTBOX_LOGS = [
-  { name: 'Marcus Holloway',    msg: 'Quote #4402 Sent',    time: '2h ago',  type: 'quote' },
-  { name: 'Sarah Jenkins',      msg: 'Schedule Confirmed',  time: '5h ago',  type: 'event' },
-  { name: 'Apex Fencing',       msg: 'Payment Reminder',    time: '1d ago',  type: 'bill'  },
-  { name: 'Julian Martinez',    msg: 'Follow-up Email',     time: '2d ago',  type: 'msg'   },
+  { name: 'Marcus Holloway', msg: 'Quote #4402 Sent', time: '2h ago', icon: <FileText size={18}/> },
+  { name: 'Sarah Jenkins', msg: 'Schedule Confirmed', time: '5h ago', icon: <CalendarDays size={18}/> },
+  { name: 'Apex Fencing', msg: 'Payment Reminder', time: '1d ago', icon: <Clock size={18}/>  },
+  { name: 'Julian Martinez', msg: 'Follow-up Automated', time: '2d ago', icon: <Mail size={18}/>   },
 ];
-
-// ── CARDS VIEW ──────────────────────────────
 
 function CardsView() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
       {LEADS.map(lead => (
-        <div key={lead.name} className="bg-white border-2 border-slate-950 p-3 sm:p-4 rounded-[1.2rem] sm:rounded-[1.8rem] shadow-[2px_2px_0px_#000] sm:shadow-[4px_4px_0px_#000]">
-          <p className="text-[12px] sm:text-[14px] font-[1000] uppercase italic tracking-tighter text-slate-900 mb-2">{lead.name}</p>
+        <motion.div 
+          key={lead.name} 
+          whileHover={{ scale: 1.05 }}
+          className="bg-white border-2 border-slate-900 p-5 rounded-2xl shadow-xl"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-base font-black text-slate-900" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {lead.name}
+            </p>
+            <div className="text-slate-400">{lead.icon}</div>
+          </div>
           <div className="flex justify-between items-center">
-            <span className="text-[8px] sm:text-[9px] font-black px-2 sm:px-3 py-1 rounded-full uppercase text-white shadow-sm" style={{ background: lead.color }}>
+            <span className={`text-xs font-black px-3 py-1.5 rounded-full text-white uppercase ${lead.color}`}>
               {lead.status}
             </span>
-            <span className="text-[11px] sm:text-[13px] font-black text-slate-950 italic">{lead.amount}</span>
+            <span className="text-lg font-black text-emerald-600" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {lead.amount}
+            </span>
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 }
-
-// ── CALENDAR VIEW (COMPACT SCHEDULE LIST) ───
-
-// ── CALENDAR VIEW (ACTUAL GRID) ───
-
-function CalendarView() {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
-  // Example items mapped to specific dates
-  const scheduledItems: Record<number, any[]> = {
-    12: [{ name: 'Marcus H.', color: '#2563eb' }],
-    13: [{ name: 'Sarah J.', color: '#10b981' }],
-    15: [{ name: 'Elena G.', color: '#10b981' }],
-    21: [
-      { name: 'Julian M.', color: '#0891b2' },
-      { name: 'David R.', color: '#16a34a' }
-    ],
-  };
-
-  // We'll show a fixed grid of 35 days (5 weeks) starting from a Sunday
-  const calendarDays = Array.from({ length: 35 }, (_, i) => i - 2); // Adjust -2 to align Apr 1st to Wed
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Month Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg sm:text-2xl font-[1000] uppercase italic tracking-tighter text-slate-950">
-          April 2026
-        </h3>
-        <div className="flex gap-1">
-          <div className="w-6 h-6 border-2 border-slate-950 flex items-center justify-center bg-white cursor-pointer hover:bg-yellow-400">
-            <span className="text-[10px] font-black">{"<"}</span>
-          </div>
-          <div className="w-6 h-6 border-2 border-slate-950 flex items-center justify-center bg-white cursor-pointer hover:bg-yellow-400">
-            <span className="text-[10px] font-black">{">"}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Weekday Labels */}
-      <div className="grid grid-cols-7 border-x-2 border-t-2 border-slate-950 bg-slate-950">
-        {days.map(day => (
-          <div key={day} className="py-1 text-center border-r last:border-r-0 border-slate-800">
-            <span className="text-[8px] sm:text-[10px] font-black text-white/50 uppercase tracking-widest">{day}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* The Calendar Grid */}
-      <div className="grid grid-cols-7 border-2 border-slate-950 bg-white shadow-[4px_4px_0px_#000]">
-        {calendarDays.map((date, i) => {
-          const isCurrentMonth = date > 0 && date <= 30;
-          const items = scheduledItems[date] || [];
-
-          return (
-            <div 
-              key={i} 
-              className={`min-h-[60px] sm:min-h-[90px] border-r border-b border-slate-200 p-1 flex flex-col gap-1 transition-colors hover:bg-slate-50
-                ${!isCurrentMonth ? 'bg-slate-100/50' : ''} 
-                ${i % 7 === 6 ? 'border-r-0' : ''}
-              `}
-            >
-              {/* Date Number */}
-              <span className={`text-[9px] sm:text-[11px] font-black ${isCurrentMonth ? 'text-slate-950' : 'text-slate-300'}`}>
-                {isCurrentMonth ? date : ''}
-              </span>
-
-              {/* Scheduled Items inside the date */}
-              <div className="flex flex-col gap-0.5 sm:gap-1">
-                {items.map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className="group relative flex items-center px-1 py-0.5 sm:py-1 rounded-sm border border-slate-950 shadow-[1px_1px_0px_#000] overflow-hidden"
-                    style={{ backgroundColor: item.color }}
-                  >
-                    <span className="text-[7px] sm:text-[9px] font-[1000] text-white uppercase leading-none truncate">
-                      {item.name.split(' ')[0]}
-                    </span>
-                    
-                    {/* Hover Tooltip for Mobile/Desktop */}
-                    <div className="hidden group-hover:block absolute z-50 bg-slate-950 text-white p-2 rounded text-[10px] whitespace-nowrap -top-8 left-0">
-                      {item.name}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Legend / Key */}
-      <div className="mt-4 flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-[#2563eb] border border-slate-950 shadow-[1px_1px_0px_#000]" />
-          <span className="text-[9px] font-black uppercase text-slate-400">Roofing</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-[#10b981] border border-slate-950 shadow-[1px_1px_0px_#000]" />
-          <span className="text-[9px] font-black uppercase text-slate-400">Gutters</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── OUTBOX VIEW ─────────────────────────────
 
 function OutboxView() {
-  const icons: Record<string, React.ReactNode> = { 
-    quote: <DollarSign size={14}/>, 
-    event: <CalendarDays size={14}/>, 
-    bill: <Bell size={14}/>, 
-    msg: <Mail size={14}/> 
-  };
-
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-3">
       {OUTBOX_LOGS.map((log, i) => (
-        <div key={i} className="flex items-center gap-2 sm:gap-4 p-2.5 sm:p-4 bg-white border-2 border-slate-950 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-[2px_2px_0px_#3b82f6] sm:shadow-[4px_4px_0px_#3b82f6]">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-            {icons[log.type] || <Mail size={14} />}
+        <motion.div 
+          key={i} 
+          whileHover={{ scale: 1.02 }}
+          className="flex items-center gap-4 p-4 bg-white border-2 border-slate-200 rounded-2xl shadow-lg"
+        >
+          <div className="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
+            {log.icon}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-[12px] font-[1000] uppercase italic truncate text-slate-950 leading-none mb-1">{log.name}</p>
-            <p className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-tight">{log.msg}</p>
+          <div className="flex-1">
+            <p className="text-sm font-black text-slate-900" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {log.name}
+            </p>
+            <p className="text-xs font-bold text-slate-500">{log.msg}</p>
           </div>
-          <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase italic whitespace-nowrap">{log.time}</span>
-        </div>
+          <span className="text-xs font-bold text-slate-400">{log.time}</span>
+        </motion.div>
       ))}
     </div>
   );
 }
-
-// ── EXPORT VIEW ─────────────────────────────
 
 function ExportView() {
   return (
-    <div className="flex flex-col h-full">
-      <div className="border-2 border-slate-950 bg-white rounded-[1.2rem] sm:rounded-[1.5rem] overflow-hidden mb-3 sm:mb-4">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-950 text-white text-[7px] sm:text-[8px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em]">
-            <tr><th className="p-2 sm:p-3">Client</th><th className="p-2 sm:p-3">Cat.</th><th className="p-2 sm:p-3 text-right">Value</th></tr>
+    <div className="space-y-6">
+      <div className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-xl">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 text-xs font-black uppercase text-slate-700">
+            <tr>
+              <th className="p-4">Client</th>
+              <th className="p-4 text-right">Value</th>
+            </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {LEADS.map(l => (
-              <tr key={l.name} className="text-[10px] sm:text-[11px] font-bold text-slate-700">
-                <td className="p-2 sm:p-3">{l.name}</td>
-                <td className="p-2 sm:p-3 uppercase text-[8px] sm:text-[9px] text-slate-400">{l.cat}</td>
-                <td className="p-2 sm:p-3 text-right font-black">{l.amount}</td>
+              <tr key={l.name} className="border-t text-sm font-bold">
+                <td className="p-4">{l.name}</td>
+                <td className="p-4 text-right text-emerald-600">{l.amount}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <button className="group w-full bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-slate-950 p-3 sm:p-4 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-[3px_3px_0px_#000] sm:shadow-[6px_6px_0px_#000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 sm:gap-3">
-        <Download size={16} strokeWidth={3} />
-        <span className="text-[11px] sm:text-[14px] font-[1000] uppercase italic tracking-tighter">Export_Database.CSV</span>
+
+      <button className="w-full bg-emerald-500 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 border-2 border-slate-900">
+        <Database size={20} />
+        Export Data
       </button>
     </div>
   );
 }
 
-// ── FEATURES LIST ───────────────────────────
-
 const FEATURES = [
-  { id: 'board', icon: <LayoutDashboard size={20} />, name: 'Project Board' },
-  { id: 'quote', icon: <FileText size={20} />, name: 'One-Click Quote', img: '/images/quote-builder.webp' },
-  { id: 'schedule', icon: <CalendarDays size={20} />, name: 'Scheduling', img: '/images/schedule-send.webp' },
-  { id: 'outbox', icon: <Mail size={20} />, name: 'Email Outbox' },
-  { id: 'forms', icon: <FormInput size={20} />, name: 'Booking Forms', img: '/images/form-builder.webp' },
-  { id: 'export', icon: <Download size={20} />, name: 'CSV Export' },
+  { id: 'board', icon: <LayoutDashboard size={22} />, name: 'Project Board' },
+  { id: 'quote', icon: <FileText size={22} />, name: 'Create Quote Template', img: '/images/quote-builder.webp' },
+  { id: 'schedule', icon: <CalendarDays size={22} />, name: 'Schedule and Send', img: '/images/schedule-screen.webp' },
+  { id: 'outbox', icon: <Mail size={22} />, name: 'Outbox' },
+  { id: 'export', icon: <Download size={22} />, name: 'Data Export' },
 ];
-
-// ── MAIN COMPONENT ──────────────────────────
 
 export default function NewFeatures() {
   const [active, setActive] = useState(0);
-  const [boardTab, setBoardTab] = useState('cards');
   const current = FEATURES[active];
 
-  function renderPreview() {
-    if (current.id === 'board') {
-      return (
-        
-        <div className="flex flex-col h-full">
-          {/* SUB-NAV: Steel Blue/Emerald Theme (No Yellow/Black) */}
-          <div className="flex gap-1 sm:gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 p-1 bg-slate-200/80 rounded-xl border-2 border-slate-950">
-            {['cards', 'calendar'].map(v => (
+  return (
+    <section className="bg-white py-16 sm:py-32 overflow-hidden">
+
+      <div className="max-w-7xl mx-auto px-5 sm:px-6">
+
+        {/* HEADER */}
+        <div className="text-center mb-16">
+          <h2 className="text-5xl sm:text-7xl font-black text-slate-900 leading-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+            Everything You Need.
+            <br />
+            <span className="text-emerald-600">One Dashboard.</span>
+          </h2>
+
+          <p className="text-slate-600 font-bold text-lg mt-6">
+            Manage leads, quotes, schedules, and payments all in one place.
+          </p>
+        </div>
+
+        {/* GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 rounded-3xl overflow-hidden border-4 border-slate-200 shadow-2xl">
+
+          {/* NAV */}
+          <div className="lg:col-span-4 bg-white border-r border-slate-200 flex lg:flex-col overflow-x-auto">
+            {FEATURES.map((f, i) => (
               <button
-                key={v}
-                onClick={() => setBoardTab(v)}
-                className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[10px] font-[1000] uppercase italic transition-all duration-200 ${
-                  boardTab === v
-                    ? 'bg-blue-600 text-white shadow-[3px_3px_0px_#1e3a8a] -translate-y-0.5' 
-                    : 'text-slate-500 hover:text-slate-700'
+                key={i}
+                onClick={() => setActive(i)}
+                className={`flex items-center gap-4 p-6 whitespace-nowrap transition-all ${
+                  active === i ? 'bg-emerald-500 text-white' : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                {v}
+                {f.icon}
+                <span className="font-black">{f.name}</span>
               </button>
             ))}
           </div>
-          <div className="px-3 sm:px-6 pt-3 sm:pt-4 flex-1 overflow-y-auto pb-4 sm:pb-6">
-            {boardTab === 'cards' ? <CardsView /> : <CalendarView />}
-          </div>
-        </div>
-      );
-    }
 
+          {/* PREVIEW — FIXED CLEAN UI */}
+          <div className="lg:col-span-8 bg-slate-100 p-10 min-h-[600px] flex items-center justify-center">
 
-    if (current.img) {
-      return (
-        <div className="h-full w-full flex items-start sm:items-center justify-center overflow-hidden">
-          <div className="w-full h-full px-0 sm:px-8 py-4 sm:py-8 flex items-start sm:items-center justify-center">
-            <img 
-              src={current.img} 
-              alt={current.name} 
-              className="
-                w-[95%] sm:w-auto 
-                h-auto sm:max-h-full 
-                object-contain 
-                rounded-lg sm:rounded-[2rem] 
-                border-2 border-slate-950 
-                shadow-xl 
-                transition-transform duration-500
-              " 
-            />
-          </div>
-        </div>
-      );
-    }
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="w-full max-w-3xl"
+              >
 
-    if (current.id === 'outbox') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><OutboxView /></div>;
-    if (current.id === 'export') return <div className="p-3 sm:p-10 h-full overflow-y-auto"><ExportView /></div>;
-    
-    return <div className="flex items-center justify-center h-full text-slate-400 font-black uppercase italic">Module_Offline</div>;
-  }
+                {/* IMAGE */}
+                {current.img && (
+                  <div className="rounded-3xl overflow-hidden border-4 border-white shadow-2xl mb-6">
+                    <img
+                      src={current.img}
+                      alt={current.name}
+                      className="w-full h-[420px] object-cover"
+                    />
+                  </div>
+                )}
 
- return (
-    <section 
-      id="features" 
-      className="bg-white py-12 lg:py-20 border-t-[6px] sm:border-t-[12px] border-slate-950 scroll-mt-20"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Header (Stacking correctly on mobile) */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 border-b-4 border-slate-950 pb-8">
-           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-slate-950 text-yellow-400 px-3 py-1 mb-4 shadow-[4px_4px_0px_#e2e8f0]">
-              <Terminal size={12} strokeWidth={3} />
-              <p className="text-[10px] font-[1000] uppercase tracking-widest italic text-white">Lead2Project</p>
-              </div>
-            <h2 className="text-3xl sm:text-5xl lg:text-8xl font-[1000] text-slate-950 leading-[0.8] tracking-tighter italic uppercase">
-              Built <span className="text-slate-300 italic">to</span> <br/>Dominate.
-            </h2>
-          </div>
-        </div>
+                {/* UI CARD */}
+                <div className="bg-white rounded-3xl border-4 border-slate-200 shadow-xl p-6">
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">
+                    {current.name}
+                  </h3>
+                  <p className="text-slate-600 font-semibold">
+                    Live preview of this feature inside your dashboard.
+                  </p>
+                </div>
 
-        {/* The Grid Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 border-[3px] sm:border-[6px] border-slate-950 bg-slate-950 shadow-[8px_8px_0px_#facc15] sm:shadow-[15px_15px_0px_#facc15]">
-          
-          {/* NAVIGATION: Snap-to-center + Scroll Indicators */}
-          <div className="lg:col-span-4 relative flex flex-col border-b-[3px] lg:border-b-0 lg:border-r-[6px] border-slate-950 overflow-hidden">
-            {/* Mobile "Swipe" Indicators */}
-            <div className="lg:hidden flex justify-center gap-1.5 py-2 bg-slate-900/50">
-              {FEATURES.map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${active === i ? 'bg-yellow-400 w-4' : 'bg-slate-700'}`} />
-              ))}
-            </div>
+                {/* RENDER COMPONENTS */}
+                {current.id === 'board' && (
+                  <div className="mt-6">
+                    <CardsView />
+                  </div>
+                )}
 
-            <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible no-scrollbar snap-x snap-mandatory">
-              {FEATURES.map((f, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActive(i)}
-                  className={`
-                    flex items-center gap-4 p-5 lg:p-7 shrink-0 lg:shrink snap-center transition-all min-w-[70%] lg:min-w-full
-                    ${active === i ? 'bg-yellow-400 text-slate-950' : 'text-slate-500 hover:bg-slate-900'}
-                  `}
-                >
-                  <div className={active === i ? 'scale-110 rotate-3' : 'opacity-50'}>{f.icon}</div>
-                  <span className="text-lg lg:text-2xl font-[1000] uppercase italic tracking-tighter">{f.name}</span>
-                </button>
-              ))}
-            </div>
+                {current.id === 'outbox' && (
+                  <div className="mt-6">
+                    <OutboxView />
+                  </div>
+                )}
+
+                {current.id === 'export' && (
+                  <div className="mt-6">
+                    <ExportView />
+                  </div>
+                )}
+
+              </motion.div>
+            </AnimatePresence>
+
           </div>
 
-          {/* PREVIEW CANVAS */}
-          <div className="lg:col-span-8 bg-slate-50 min-h-[400px] lg:min-h-[550px] relative overflow-hidden">
-             {/* Industrial Window Bar */}
-             <div className="h-8 bg-slate-950 flex items-center px-4 gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-slate-800" />
-                <div className="w-2 h-2 rounded-full bg-slate-800" />
-             </div>
-             <div className="h-full pt-2">
-               {renderPreview()}
-             </div>
-          </div>
         </div>
       </div>
     </section>
