@@ -53,8 +53,8 @@ const EXAMPLES = [
         selected: 3,
       },
     ],
-    uploadPreview: null,
-    uploadFileName: null,
+    uploadPreview: '', // Fixed null type error
+    uploadFileName: '',
   },
   {
     trade: 'Plumbing',
@@ -75,8 +75,8 @@ const EXAMPLES = [
         selected: 0,
       },
     ],
-    uploadPreview: null,
-    uploadFileName: null,
+    uploadPreview: '',
+    uploadFileName: '',
   },
   {
     trade: 'Solar',
@@ -97,8 +97,8 @@ const EXAMPLES = [
         selected: 2,
       },
     ],
-    uploadPreview: null,
-    uploadFileName: null,
+    uploadPreview: '',
+    uploadFileName: '',
   },
 ];
 
@@ -116,6 +116,13 @@ export default function CustomizeFormSection() {
 
   return (
     <section className="relative overflow-hidden py-14 sm:py-20 bg-slate-900">
+      {/* 1. THE INVISIBLE ANCHOR */}
+      <div 
+        id="#howitworks" 
+        className="absolute -top-24 left-0 w-full h-1 pointer-events-none" 
+      />
+
+      {/* Background Decor */}
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -123,29 +130,33 @@ export default function CustomizeFormSection() {
           backgroundSize: '24px 24px',
         }}
       />
+      
+      {/* Glow Effects */}
       <div className="absolute top-20 left-10 w-64 h-64 bg-emerald-500 rounded-full blur-3xl opacity-10" />
       <div className="absolute bottom-20 right-10 w-64 h-64 bg-blue-500 rounded-full blur-3xl opacity-10" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6">
-       <div className="block lg:hidden text-center mb-10">
-  <motion.h2
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    className="text-3xl sm:text-4xl text-white leading-snug"
-    style={{ fontFamily: font, fontWeight: 900 }}
-  >
-    Customize{' '}
-    <motion.span
-      animate={{ color: current.color }}
-      transition={{ duration: 0.5 }}
-    >
-      Everything.
-    </motion.span>
-    <br />
-    Launch in Minutes.
-  </motion.h2>
-</div>
+        
+        {/* Mobile Header */}
+        <div className="block lg:hidden text-center mb-10">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl text-white leading-snug"
+            style={{ fontFamily: font, fontWeight: 900 }}
+          >
+            Customize{' '}
+            <motion.span
+              animate={{ color: current.color }}
+              transition={{ duration: 0.5 }}
+            >
+              Everything.
+            </motion.span>
+            <br />
+            Launch in Minutes.
+          </motion.h2>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-10 lg:gap-14 items-start">
           <motion.div
@@ -154,6 +165,7 @@ export default function CustomizeFormSection() {
             viewport={{ once: true }}
             className="order-1"
           >
+            {/* Tabs */}
             <div className="flex gap-2 mb-4 flex-wrap justify-center lg:justify-start">
               {EXAMPLES.map((example, i) => (
                 <button
@@ -175,6 +187,7 @@ export default function CustomizeFormSection() {
               ))}
             </div>
 
+            {/* Form Mockup */}
             <motion.div
               animate={{ borderColor: current.color }}
               transition={{ duration: 0.5 }}
@@ -231,7 +244,6 @@ export default function CustomizeFormSection() {
               </div>
 
               <div className="px-4 sm:px-5 py-4" style={{ minHeight: '420px' }}>
-                {/* Name + Email + Phone row - UPDATED FOR MOBILE FRIENDLY EMAIL */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2.5">
                   <div className="col-span-1">
                     <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Name</label>
@@ -256,7 +268,6 @@ export default function CustomizeFormSection() {
                   </div>
                 </div>
 
-                {/* Address */}
                 <div className="mb-3">
                   <label className="block text-[9px] uppercase text-slate-400 mb-0.5 tracking-widest" style={{ fontFamily: font, fontWeight: 800 }}>Address</label>
                   <div className="px-2 py-1.5 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-900 text-[11px] flex items-center gap-1" style={{ fontFamily: font, fontWeight: 700 }}>
@@ -265,7 +276,6 @@ export default function CustomizeFormSection() {
                   </div>
                 </div>
 
-                {/* Questions */}
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={current.trade}
@@ -304,20 +314,17 @@ export default function CustomizeFormSection() {
                   </motion.div>
                 </AnimatePresence>
 
-                {/* Project */}
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-[11px] text-slate-900 uppercase tracking-wider" style={{ fontFamily: font, fontWeight: 900 }}>
                       Tell Us About Your Project
                     </label>
-                    <span className="text-[9px] text-slate-400" style={{ fontFamily: font, fontWeight: 700 }}>0/500</span>
                   </div>
                   <div className="px-2.5 py-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-[11px] text-slate-400 leading-relaxed" style={{ fontFamily: font, fontWeight: 600, minHeight: '48px' }}>
-                    e.g. Missing shingles after storm, possible leak in attic, roof is ~15 years old...
+                    e.g. Missing shingles after storm...
                   </div>
                 </div>
 
-                {/* Upload */}
                 <div className="mb-4">
                   <label className="block text-[11px] text-slate-900 mb-1 uppercase tracking-wider" style={{ fontFamily: font, fontWeight: 900 }}>
                     Upload Photos
@@ -377,23 +384,23 @@ export default function CustomizeFormSection() {
             className="order-2 text-center lg:text-left"
           >
             <div className="hidden lg:block mb-8">
-            <motion.h2
-  initial={{ opacity: 0, y: 20 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true }}
-className="text-3xl lg:text-4xl text-white leading-snug"
-  style={{ fontFamily: font, fontWeight: 900 }}
->
-  Customize{' '}
-  <motion.span
-    animate={{ color: current.color }}
-    transition={{ duration: 0.5 }}
-  >
-    Everything.
-  </motion.span>
-  <br />
-  Launch in Minutes.
-</motion.h2>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-3xl lg:text-4xl text-white leading-snug"
+                style={{ fontFamily: font, fontWeight: 900 }}
+              >
+                Customize{' '}
+                <motion.span
+                  animate={{ color: current.color }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Everything.
+                </motion.span>
+                <br />
+                Launch in Minutes.
+              </motion.h2>
             </div>
 
             <div className="space-y-6 sm:space-y-7 mb-10">
