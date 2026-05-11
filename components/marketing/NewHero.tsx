@@ -9,10 +9,9 @@ const font = "'Nunito', sans-serif";
 
 export default function ArchitectHero() {
   return (
-    // Reduced pb-20 to pb-8 for mobile, and pb-32 to pb-16 for desktop to kill that dead space
-    <section className="relative bg-white pt-20 lg:pt-44 pb-8 lg:pb-16 overflow-hidden">
+    // Reduced padding to keep everything tight
+    <section className="relative bg-white pt-16 lg:pt-44 pb-8 lg:pb-16 overflow-hidden">
       
-      {/* 1. BACKGROUND TEXTURE */}
       <div
         className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{
@@ -21,18 +20,17 @@ export default function ArchitectHero() {
         }}
       />
       
-      {/* 2. THE DESK SURFACE: Reduced height (h-32 on mobile, h-60 on desktop) */}
       <div className="absolute bottom-0 left-0 right-0 h-32 lg:h-60 bg-gradient-to-t from-slate-100/60 to-transparent -z-10" />
 
       <div className="relative z-10 max-w-[1440px] mx-auto px-6 lg:px-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-8 lg:gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-4 lg:gap-8 items-start">
           
           {/* LEFT CONTENT */}
-          <div className="flex flex-col items-start text-left space-y-6 lg:space-y-10 z-30">
+          <div className="flex flex-col items-start text-left space-y-4 lg:space-y-10 z-30">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 mb-2 lg:mb-0"
             >
               <QrCode size={14} />
               <span className="text-[10px] uppercase tracking-[0.2em] font-black" style={{ fontFamily: font }}>
@@ -40,8 +38,8 @@ export default function ArchitectHero() {
               </span>
             </motion.div>
 
-            <div className="space-y-4 lg:space-y-6">
-              <h1 className="text-slate-900 text-4xl sm:text-7xl lg:text-[7rem] leading-[1.1] lg:leading-[0.9] tracking-tight font-black" style={{ fontFamily: font }}>
+            <div className="space-y-2 lg:space-y-6">
+              <h1 className="text-slate-900 text-5xl sm:text-7xl lg:text-[7rem] leading-[1.1] lg:leading-[0.9] tracking-tight font-black" style={{ fontFamily: font }}>
                 Capture. <br />
                 Convert. <br />
                 <span className="text-emerald-500 font-black">Run Work.</span>
@@ -55,32 +53,25 @@ export default function ArchitectHero() {
             {/* Desktop Buttons */}
             <div className="hidden lg:flex flex-row items-center gap-5 w-full">
               <Link href="/signup">
-                <div className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-10 py-5 rounded-2xl font-black uppercase transition-all shadow-xl">
+                <div className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-10 py-5 rounded-2xl font-black uppercase shadow-xl transition-all">
                   Get Your QR System
                   <ArrowRight size={20} strokeWidth={3} />
-                </div>
-              </Link>
-              <Link href="/demo" className="group">
-                <div className="flex items-center justify-center gap-3 px-8 py-5 text-slate-900 font-black uppercase text-xs tracking-widest transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                    <Play size={12} fill="currentColor" className="ml-0.5" />
-                  </div>
-                  Watch Demo
                 </div>
               </Link>
             </div>
           </div>
 
-          {/* RIGHT VISUALS */}
+          {/* RIGHT VISUALS - Fixed the mobile gap here */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            className="relative flex justify-center lg:justify-start items-center h-auto lg:h-[600px] my-6 lg:my-0"
+            // Removed 'my-10' and reduced h-auto to keep it tight to the header
+            className="relative flex justify-center lg:justify-start items-center h-auto lg:h-[600px] mt-4 lg:mt-0"
           >
             <div className="absolute inset-0 bg-emerald-100/30 blur-[80px] rounded-full -z-10 scale-90" />
 
-            {/* LAPTOP CONTAINER: Massive on mobile (w-[140%]) */}
+            {/* LAPTOP: Massive on mobile (w-[140%]) */}
             <div
               className="relative w-[140%] lg:w-[125%] lg:-ml-24 z-10"
               style={{ perspective: "1500px", transformStyle: "preserve-3d" }}
@@ -102,10 +93,10 @@ export default function ArchitectHero() {
                 />
               </motion.div>
 
-              <div className="absolute -bottom-6 lg:-bottom-10 left-1/2 -translate-x-1/2 w-[85%] h-8 lg:h-12 bg-slate-900/15 blur-[60px] lg:blur-[80px] rounded-full -z-10" />
+              <div className="absolute -bottom-4 lg:-bottom-10 left-1/2 -translate-x-1/2 w-[85%] h-6 lg:h-12 bg-slate-900/15 blur-[40px] lg:blur-[80px] rounded-full -z-10" />
             </div>
 
-            {/* PHONE: HIDDEN ON MOBILE (lg:block ensures it only shows on desktop) */}
+            {/* PHONE: HIDDEN ON MOBILE */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -113,39 +104,19 @@ export default function ArchitectHero() {
               className="hidden lg:block absolute right-[-30px] top-1/2 -translate-y-1/2 w-[230px] bg-white rounded-[2.2rem] shadow-2xl border-4 border-white z-20"
             >
               <div className="bg-slate-900 px-4 py-3 text-white rounded-t-[2rem]">
-                <p className="text-[10px] font-black uppercase tracking-widest">New Lead · Roof Replacement</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">New Lead · Leak Detection</p>
               </div>
               
               <div className="p-5 space-y-3 bg-white">
                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-[11px] text-slate-700 font-bold">
-                        <User size={12} className="text-emerald-500" /> Jason Merritt
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-600 font-bold">
-                        <Phone size={12} className="text-slate-400" /> (631) 555-0192
+                        <User size={12} className="text-emerald-500" /> Jennifer L
                     </div>
                  </div>
-
-                 <div className="space-y-1.5">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">Attached Media</p>
-                    <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden border border-slate-100">
-                      <Image 
-                        src="/images/roof-damage.webp" 
-                        alt="Attached Roof Damage" 
-                        fill 
-                        className="object-cover"
-                      />
-                      <div className="absolute top-1.5 right-1.5 bg-slate-900/80 backdrop-blur-sm text-[7px] text-white px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                        <Check size={8} className="text-emerald-400" /> Imported
-                      </div>
-                    </div>
+                 <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden border border-slate-100">
+                    <Image src="/images/roof-damage.webp" alt="Attached" fill className="object-cover" />
                  </div>
-
-                 <div className="flex items-center gap-2 text-[11px] text-slate-600 font-bold">
-                    <MapPin size={12} className="text-emerald-500" /> Holbrook, NY
-                 </div>
-                 
-                 <div className="h-10 w-full bg-emerald-500 rounded-xl flex items-center justify-center text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                 <div className="h-10 w-full bg-emerald-500 rounded-xl flex items-center justify-center text-white text-[11px] font-black uppercase tracking-widest">
                    Submit Request
                  </div>
               </div>
@@ -153,19 +124,14 @@ export default function ArchitectHero() {
           </motion.div>
 
           {/* MOBILE ONLY: Buttons & Subtext */}
-          <div className="flex lg:hidden flex-col items-center text-center space-y-6 pt-4">
-            <p className="text-slate-600 text-base font-bold leading-relaxed max-w-sm" style={{ fontFamily: font }}>
+          <div className="flex lg:hidden flex-col items-center text-center space-y-6 pt-2">
+            <p className="text-slate-600 text-sm font-bold leading-relaxed max-w-[280px]" style={{ fontFamily: font }}>
               Customers submit through your branded QR form while your team manages everything.
             </p>
-            <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-3 w-full">
               <Link href="/signup">
-                <div className="flex items-center justify-center gap-3 bg-slate-950 text-white px-8 py-5 rounded-2xl font-black uppercase shadow-xl">
-                  Get Your QR System <ArrowRight size={18} />
-                </div>
-              </Link>
-              <Link href="/demo">
-                <div className="flex items-center justify-center gap-3 text-slate-900 font-black uppercase text-[11px] tracking-widest">
-                   Watch Demo
+                <div className="flex items-center justify-center gap-3 bg-slate-950 text-white px-8 py-4 rounded-xl font-black uppercase shadow-xl">
+                  Get Started <ArrowRight size={18} />
                 </div>
               </Link>
             </div>
