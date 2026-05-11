@@ -857,7 +857,7 @@ export async function sendWelcomeEmail({
                 <tr>
                   <td style="padding:48px 40px 32px;text-align:center;">
                     <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
-                      <img src="https://lead2project.com/logo-blue.png" width="40" height="40" alt="L2P" style="display:block;">
+                      <img src="https://lead2project.com/Lead2ProjectLogo.png" width="40" height="40" alt="L2P" style="display:block;">
                     </div>
                     <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Subscription Active</p>
                     <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">You're all set, ${userName}!</h1>
@@ -969,6 +969,8 @@ export async function sendWelcomeEmail({
     throw error;
   }
 }
+
+
 export async function sendSubscriptionCancelledEmail({
   companyEmail,
   companyName,
@@ -1798,7 +1800,7 @@ export async function sendFreeWelcomeEmail({
                 <tr>
                   <td style="padding:48px 40px 32px;text-align:center;background:#ffffff;">
                     <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
-                      <img src="https://lead2project.com/logo-blue.png" width="40" height="40" alt="L2P" style="display:block;">
+                      <img src="https://lead2project.com/Lead2ProjectLogo.png" width="40" height="40" alt="L2P" style="display:block;">
                     </div>
                     <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Onboarding Complete</p>
                     <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">Welcome, ${userName}!</h1>
