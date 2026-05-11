@@ -41,10 +41,12 @@ export default function NewHome() {
       <EfficiencyShowcase />
 
       {/* 8. VALUE SECTION — dark */}
-      <ValueSection />
+<ValueSection />
 
-      {/* 9. PRICING — dark */}
-      <Pricing />
+
+
+{/* 9. PRICING — dark */}
+<Pricing />
 
       {/* 10. COMPARISON — white */}
       <Comparison />

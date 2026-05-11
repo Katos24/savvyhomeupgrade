@@ -62,6 +62,15 @@ export default function ValueSection() {
           </h2>
         </motion.div>
 
+        {/* Job site photo */}
+        <div className="mb-10 sm:mb-14">
+          <img
+            src="/images/marketing-quote.webp"
+            alt="Send quotes from the job site"
+            className="w-full h-auto rounded-2xl sm:rounded-3xl border border-white/10"
+          />
+        </div>
+
         {/* Cards */}
         <div className="space-y-4 sm:space-y-5">
           {PAIN_POINTS.map((item, i) => (
