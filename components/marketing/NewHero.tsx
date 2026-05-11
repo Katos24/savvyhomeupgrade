@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -30,7 +30,25 @@ export default function ArchitectHero() {
           {/* LEFT */}
           <div className="space-y-6 lg:space-y-10 flex flex-col">
 
-            {/* 1. HEADLINE (mobile first) */}
+            {/* 0. KICKER — anti-enterprise punch */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="order-[0]"
+            >
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5">
+                <Zap size={13} className="text-emerald-600" fill="currentColor" />
+                <span
+                  className="text-[11px] sm:text-xs font-black uppercase tracking-[0.15em] text-emerald-700"
+                  style={{ fontFamily: font }}
+                >
+                  No demo calls. No contracts. Just sign up.
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 1. HEADLINE */}
             <h1
               className="
                 order-1
@@ -44,7 +62,7 @@ export default function ArchitectHero() {
               <span className="text-emerald-600">Run Work.</span>
             </h1>
 
-            {/* 2. LAPTOP IMAGE (mobile second) */}
+            {/* 2. LAPTOP IMAGE (mobile only) */}
             <div className="order-2 lg:hidden relative w-full">
               <Image
                 src="/images/hero-image-laptop.webp"
@@ -57,39 +75,50 @@ export default function ArchitectHero() {
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[80%] h-8 bg-slate-900/10 blur-2xl rounded-full" />
             </div>
 
-            {/* 3. SUBHEAD (mobile third) */}
+            {/* 3. SUBHEAD — speaks contractor */}
             <p
               className="
                 order-3
-                text-slate-600 font-semibold leading-relaxed
+                text-black font-semibold leading-relaxed
                 text-base sm:text-lg lg:text-xl
-                max-w-md border-l-4 border-slate-200 pl-5
+                max-w-md border-l-4 border-emerald-500 pl-5
               "
             >
-              Turn any scan or link into structured jobs instantly.
-              No spreadsheets. No missed leads. Just clean intake → live dashboard.
+              Put your link on trucks, yard signs, cards — anywhere.
+              Customers fill out your branded form with photos and details.
+              Leads hit your dashboard ready to quote, schedule, and close.
             </p>
 
-            {/* 4. CTA (mobile last) */}
-            <div className="order-4 flex flex-col sm:flex-row gap-4 pt-2">
+            {/* 4. CTA */}
+            <div className="order-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
 
               <Link href="/signup">
-                <div className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-wide shadow-lg transition-all">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-wide shadow-lg transition-colors cursor-pointer"
+                >
                   Get Started Free
                   <ArrowRight size={18} strokeWidth={3} />
-                </div>
+                </motion.div>
               </Link>
 
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                <Check size={16} className="text-emerald-600" />
-                No credit card • Setup in minutes
+              <div className="flex flex-col gap-1.5 text-sm font-semibold text-slate-500">
+                <div className="flex items-center gap-2">
+                  <Check size={15} className="text-emerald-600" strokeWidth={3} />
+                  No credit card required
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check size={15} className="text-emerald-600" strokeWidth={3} />
+                  Live in under 5 minutes
+                </div>
               </div>
 
             </div>
 
           </div>
 
-          {/* RIGHT (DESKTOP LAPTOP ONLY BIG VERSION) */}
+          {/* RIGHT (DESKTOP LAPTOP) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -97,7 +126,7 @@ export default function ArchitectHero() {
             className="relative hidden lg:flex justify-center items-center"
           >
 
-            <div className="relative w-full max-w-[900px]">
+            <div className="relative w-full max-w-[1000px]">
 
               <motion.div
                 animate={{ rotateY: -9, rotateX: 3 }}
@@ -106,7 +135,7 @@ export default function ArchitectHero() {
               >
                 <Image
                   src="/images/hero-image-laptop.webp"
-                  alt="Dashboard"
+                  alt="Dashboard showing leads from QR code scans"
                   width={1600}
                   height={1200}
                   priority
@@ -116,15 +145,18 @@ export default function ArchitectHero() {
 
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[85%] h-10 bg-slate-900/10 blur-2xl rounded-full" />
 
-              <div className="absolute top-6 right-6 bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-
+              {/* Live badge */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.4 }}
+                className="absolute top-6 right-6 bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm"
+              >
                 <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse" />
-
                 <div className="text-xs font-black uppercase tracking-wider text-slate-700">
                   Live Intake Active
                 </div>
-
-              </div>
+              </motion.div>
 
             </div>
 
