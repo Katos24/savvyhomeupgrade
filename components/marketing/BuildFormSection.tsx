@@ -39,7 +39,7 @@ export default function BuildFormSection() {
           className="text-2xl sm:text-4xl font-black text-slate-950 leading-tight"
           style={{ fontFamily: font }}
         >
-          Build your form instantly
+          Build your form. Customer submits. You get the lead.
         </motion.h2>
 
 
