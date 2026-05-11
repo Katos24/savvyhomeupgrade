@@ -66,10 +66,12 @@ export default function ArchitectHero() {
   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[70%] h-4 bg-slate-900/10 blur-xl rounded-full" />
 </div>
 
-            {/* 3. SUBHEAD */}
-            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Put your link on trucks, yard signs, cards — anywhere. Customers fill out your branded form with photos and details. Leads hit your dashboard ready to quote, schedule, and close.
-            </p>
+           {/* 3. SUBHEAD — Focus on the Result */}
+<p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+  Stop playing phone tag and chasing dead ends. 
+  Build a professional, lead-generating machine that 
+  captures every job opportunity while you're busy in the field.
+</p>
 
             {/* 4. CTA */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-2">
