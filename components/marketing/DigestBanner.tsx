@@ -28,8 +28,41 @@ export default function DigestBanner() {
       <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
 
-          {/* LEFT — CLEAN EMAIL */}
+          {/* RIGHT COPY — MOBILE FIRST */}
+          <div className="text-center lg:text-left order-1 lg:order-2">
+
+            <h3
+              className="text-4xl sm:text-5xl text-white leading-tight mb-6"
+              style={{ fontFamily: font, fontWeight: 900 }}
+            >
+              Your Business,
+              <br />
+              <span className="text-sky-400">Delivered Every Morning</span>
+            </h3>
+
+            <p
+              className="text-slate-400 text-lg mb-8"
+              style={{ fontFamily: font, fontWeight: 700 }}
+            >
+              Every morning at 6:00 AM, Lead2Project sends a branded operational digest showing jobs, stale quotes, overdue invoices, and daily priorities—customized to your company.
+            </p>
+
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+              {['New Leads', 'Schedule', 'Revenue', 'Follow-ups'].map((t) => (
+                <div
+                  key={t}
+                  className="px-4 py-2 rounded-full bg-slate-800 text-slate-200 text-sm"
+                  style={{ fontFamily: font, fontWeight: 800 }}
+                >
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* LEFT EMAIL — MOBILE SECOND */}
           <motion.div
+            className="order-2 lg:order-1"
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -43,7 +76,7 @@ export default function DigestBanner() {
               {/* EMAIL CARD */}
               <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
 
-                {/* HEADER (BRAND ONLY) */}
+                {/* HEADER */}
                 <div className="px-6 py-5 bg-slate-900 flex items-center gap-4">
                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
                     <Image
@@ -73,7 +106,6 @@ export default function DigestBanner() {
                 {/* BODY */}
                 <div className="p-6 sm:p-7 space-y-6">
 
-                  {/* TITLE */}
                   <div>
                     <h3
                       className="text-xl sm:text-2xl text-slate-900 leading-tight"
@@ -90,7 +122,6 @@ export default function DigestBanner() {
                     </p>
                   </div>
 
-                  {/* METRICS */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: 'Leads', value: '5' },
@@ -117,7 +148,6 @@ export default function DigestBanner() {
                     ))}
                   </div>
 
-                  {/* REVENUE */}
                   <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-4 flex justify-between items-center">
                     <div>
                       <p
@@ -142,7 +172,6 @@ export default function DigestBanner() {
                     </p>
                   </div>
 
-                  {/* ALERTS */}
                   <div className="space-y-3">
                     <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
                       <p
@@ -163,7 +192,6 @@ export default function DigestBanner() {
                     </div>
                   </div>
 
-                  {/* CTA */}
                   <button
                     className="w-full py-4 rounded-2xl bg-sky-600 text-white flex items-center justify-center gap-2"
                     style={{ fontFamily: font, fontWeight: 900 }}
@@ -173,7 +201,6 @@ export default function DigestBanner() {
                   </button>
                 </div>
 
-                {/* FOOTER */}
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-center">
                   <p
                     className="text-[11px] text-slate-400"
@@ -186,43 +213,6 @@ export default function DigestBanner() {
               </div>
             </motion.div>
           </motion.div>
-
-          {/* RIGHT COPY */}
-          <div className="text-center lg:text-left">
-            <h3
-              className="text-4xl sm:text-5xl text-white leading-tight mb-6"
-              style={{ fontFamily: font, fontWeight: 900 }}
-            >
-              Your Business,
-              <br />
-              <span className="text-sky-400">Delivered Every Morning</span>
-            </h3>
-
-            <p
-              className="text-slate-400 text-lg mb-8"
-              style={{ fontFamily: font, fontWeight: 700 }}
-            >
-       Every morning at 6:00 AM, Lead2Project sends a branded operational digest showing jobs, stale quotes, overdue invoices, and daily priorities—customized to your company.
-
-            </p>
-
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-              {[
-                'New Leads',
-                'Schedule',
-                'Revenue',
-                'Follow-ups',
-              ].map((t) => (
-                <div
-                  key={t}
-                  className="px-4 py-2 rounded-full bg-slate-800 text-slate-200 text-sm"
-                  style={{ fontFamily: font, fontWeight: 800 }}
-                >
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
 
         </div>
       </div>
