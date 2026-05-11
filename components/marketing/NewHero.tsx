@@ -67,7 +67,7 @@ export default function ArchitectHero() {
                 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-bold"
                 style={{ fontFamily: font }}
               >
-                Custom Forms • Pipelines • One-Click Emails • AI Assist • CSV Export • Daily Digest
+                Custom Forms • Pipelines • One-Click Emails • CSV Export • Daily Digest
               </p>
 
               {/* CTA */}
@@ -118,7 +118,7 @@ export default function ArchitectHero() {
                 }}
               >
                 <Image
-                  src="/images/heroimagefull.webp"
+                  src="/images/hero-image.webp"
                   alt="Lead2Project Dashboard"
                   width={1600}
                   height={1200}

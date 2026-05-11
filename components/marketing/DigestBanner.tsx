@@ -1,153 +1,228 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Mail, Clock, TrendingUp, Users, AlertCircle, CheckCircle2, ChevronRight, DollarSign } from 'lucide-react';
+import {
+  Clock,
+  Users,
+  AlertCircle,
+  DollarSign,
+  ExternalLink,
+  Mail,
+} from 'lucide-react';
+import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
 
 export default function DigestBanner() {
   return (
-    <section className="relative overflow-hidden py-12 sm:py-20 bg-slate-900 selection:bg-amber-500/30">
-      {/* Background Pattern */}
-      <div 
-        className="absolute inset-0 opacity-[0.05]" 
-        style={{ 
-          backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', 
-          backgroundSize: '24px 24px' 
-        }} 
+    <section className="relative overflow-hidden py-14 sm:py-20 bg-slate-900">
+      {/* subtle background */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
       />
-      
-      {/* Glow Effect */}
-      <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-amber-500/10 blur-[120px] rounded-full" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          
-          {/* Left — Interactive Digest Preview */}
+      <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+
+          {/* LEFT — CLEAN EMAIL */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="order-2 lg:order-1"
           >
-            <motion.div 
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="bg-white rounded-2xl sm:rounded-[2rem] border-[3px] border-slate-800 overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] max-w-sm mx-auto lg:max-w-none"
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 5, repeat: Infinity }}
+              className="max-w-xl mx-auto"
             >
-              {/* Email header */}
-              <div className="bg-slate-950 px-4 py-4 flex items-center justify-between border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                    <Mail size={18} className="text-white" />
+
+              {/* EMAIL CARD */}
+              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+
+                {/* HEADER (BRAND ONLY) */}
+                <div className="px-6 py-5 bg-slate-900 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+                    <Image
+                      src="/images/rapid-flow-logo.webp"
+                      alt="Rapid Flow"
+                      width={34}
+                      height={34}
+                    />
                   </div>
+
                   <div>
-                    <p className="text-[11px] text-white font-black tracking-tight leading-tight" style={{ fontFamily: font }}>Daily Strategy Digest</p>
-                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider" style={{ fontFamily: font }}>6:00 AM • Automated Report</p>
+                    <p
+                      className="text-white text-sm"
+                      style={{ fontFamily: font, fontWeight: 900 }}
+                    >
+                      Rapid Flow Plumbing
+                    </p>
+                    <p
+                      className="text-slate-400 text-[11px] uppercase tracking-[0.2em]"
+                      style={{ fontFamily: font, fontWeight: 800 }}
+                    >
+                      Daily Digest · 6:00 AM
+                    </p>
                   </div>
                 </div>
-                <span className="text-[9px] text-amber-400 font-black px-2 py-1 bg-amber-500/10 rounded border border-amber-500/20" style={{ fontFamily: font }}>
-                  PRO
-                </span>
-              </div>
 
-              {/* Digest content */}
-              <div className="p-4 sm:p-6 space-y-4">
-                
-                {/* TOP STATS ROW */}
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'New Leads', val: '7', color: 'text-slate-900' },
-                    { label: 'Scheduled', val: '3', color: 'text-emerald-500' },
-                    { label: 'Pending', val: '2', color: 'text-amber-500' },
-                  ].map((stat, i) => (
-                    <div key={i} className="bg-slate-50 rounded-xl p-2.5 text-center border border-slate-100 shadow-sm">
-                      <p className={`text-lg font-black ${stat.color}`} style={{ fontFamily: font }}>{stat.val}</p>
-                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-tighter" style={{ fontFamily: font }}>{stat.label}</p>
+                {/* BODY */}
+                <div className="p-6 sm:p-7 space-y-6">
+
+                  {/* TITLE */}
+                  <div>
+                    <h3
+                      className="text-xl sm:text-2xl text-slate-900 leading-tight"
+                      style={{ fontFamily: font, fontWeight: 900 }}
+                    >
+                      Good morning — here’s your day
+                    </h3>
+
+                    <p
+                      className="text-sm text-slate-500 mt-2"
+                      style={{ fontFamily: font, fontWeight: 700 }}
+                    >
+                      9 items need attention
+                    </p>
+                  </div>
+
+                  {/* METRICS */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Leads', value: '5' },
+                      { label: 'Scheduled', value: '4' },
+                      { label: 'Pending', value: '3' },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center"
+                      >
+                        <p
+                          className="text-lg text-slate-900"
+                          style={{ fontFamily: font, fontWeight: 900 }}
+                        >
+                          {item.value}
+                        </p>
+                        <p
+                          className="text-[9px] uppercase tracking-widest text-slate-500"
+                          style={{ fontFamily: font, fontWeight: 800 }}
+                        >
+                          {item.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* REVENUE */}
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-4 flex justify-between items-center">
+                    <div>
+                      <p
+                        className="text-[10px] uppercase tracking-widest text-emerald-800"
+                        style={{ fontFamily: font, fontWeight: 800 }}
+                      >
+                        Active Revenue
+                      </p>
+                      <p
+                        className="text-xs text-emerald-600"
+                        style={{ fontFamily: font, fontWeight: 700 }}
+                      >
+                        Open jobs & invoices
+                      </p>
                     </div>
-                  ))}
-                </div>
 
-                {/* REVENUE BAR - NEW ADDITION */}
-                <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100 flex items-center justify-between">
-                   <div className="flex items-center gap-2">
-                     <div className="w-6 h-6 bg-emerald-500 rounded-md flex items-center justify-center">
-                        <TrendingUp size={12} className="text-white" />
-                     </div>
-                     <p className="text-[10px] font-black text-emerald-900 uppercase" style={{ fontFamily: font }}>Active Revenue</p>
-                   </div>
-                   <p className="text-sm font-black text-emerald-600" style={{ fontFamily: font }}>$21,450.00</p>
-                </div>
-
-                {/* Action items */}
-                <div className="space-y-2">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1" style={{ fontFamily: font }}>Critical Follow-ups</p>
-                  <div className="flex items-start gap-3 p-3 bg-red-50/50 rounded-xl border border-red-100">
-                    <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-red-900 font-bold leading-snug" style={{ fontFamily: font }}>
-                      <span className="font-black">Kevin White</span> — Quote sent 3 days ago, no response.
+                    <p
+                      className="text-xl text-emerald-600"
+                      style={{ fontFamily: font, fontWeight: 900 }}
+                    >
+                      $18,720
                     </p>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                    <Clock size={14} className="text-blue-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-blue-900 font-bold leading-snug" style={{ fontFamily: font }}>
-                      <span className="font-black">Sarah Johnson</span> — Scheduled today at 10:00 AM.
-                    </p>
+
+                  {/* ALERTS */}
+                  <div className="space-y-3">
+                    <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+                      <p
+                        className="text-sm text-red-900"
+                        style={{ fontFamily: font, fontWeight: 800 }}
+                      >
+                        Kevin White — quote sent 3 days ago, no response
+                      </p>
+                    </div>
+
+                    <div className="bg-sky-50 border border-sky-100 rounded-2xl p-4">
+                      <p
+                        className="text-sm text-sky-900"
+                        style={{ fontFamily: font, fontWeight: 800 }}
+                      >
+                        Sarah Johnson — scheduled today at 10:00 AM
+                      </p>
+                    </div>
                   </div>
+
+                  {/* CTA */}
+                  <button
+                    className="w-full py-4 rounded-2xl bg-sky-600 text-white flex items-center justify-center gap-2"
+                    style={{ fontFamily: font, fontWeight: 900 }}
+                  >
+                    Open Dashboard
+                    <ExternalLink size={14} />
+                  </button>
                 </div>
 
-                {/* Bottom CTA Mockup */}
-                <div className="pt-2 flex justify-center">
-                  <div className="w-full py-2 bg-slate-900 rounded-lg flex items-center justify-center gap-2">
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest" style={{ fontFamily: font }}>View Full Board</span>
-                    <ChevronRight size={12} className="text-amber-400" />
-                  </div>
+                {/* FOOTER */}
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-center">
+                  <p
+                    className="text-[11px] text-slate-400"
+                    style={{ fontFamily: font, fontWeight: 700 }}
+                  >
+                    Daily Digest · Rapid Flow Plumbing
+                  </p>
                 </div>
+
               </div>
             </motion.div>
           </motion.div>
 
-          {/* Right — Value text */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="text-center lg:text-left order-1 lg:order-2"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 rounded-full border border-amber-500/20 mb-6">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest" style={{ fontFamily: font }}>Exclusive to Pro Plan</span>
-            </div>
-
-            <h3 className="text-3xl sm:text-4xl md:text-5xl text-white mb-6 font-black leading-[1.1] tracking-tight" style={{ fontFamily: font }}>
-              Wake Up Knowing
+          {/* RIGHT COPY */}
+          <div className="text-center lg:text-left">
+            <h3
+              className="text-4xl sm:text-5xl text-white leading-tight mb-6"
+              style={{ fontFamily: font, fontWeight: 900 }}
+            >
+              Your Business,
               <br />
-              <span className="text-amber-400">Exactly What to Do.</span>
+              <span className="text-sky-400">Delivered Every Morning</span>
             </h3>
 
-            <p className="text-base sm:text-lg text-slate-400 font-bold leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0" style={{ fontFamily: font }}>
-              Your "command center" arrives in your inbox at 6:00 AM. Review new leads, see your projected revenue, and organize your day before you even finish your first coffee.
+            <p
+              className="text-slate-400 text-lg mb-8"
+              style={{ fontFamily: font, fontWeight: 700 }}
+            >
+       Every morning at 6:00 AM, Lead2Project sends a branded operational digest showing jobs, stale quotes, overdue invoices, and daily priorities—customized to your company.
+
             </p>
 
-            <div className="grid grid-cols-2 gap-3 mb-8">
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
               {[
-                { label: 'New Leads', icon: Users },
-                { label: 'Schedule', icon: Clock },
-                { label: 'Overdue tasks', icon: AlertCircle },
-                { label: 'Revenue Tracking', icon: DollarSign }
-              ].map(item => (
+                'New Leads',
+                'Schedule',
+                'Revenue',
+                'Follow-ups',
+              ].map((t) => (
                 <div
-                  key={item.label}
-                  className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 backdrop-blur-sm rounded-xl text-xs font-black text-slate-200 border border-slate-700/50"
-                  style={{ fontFamily: font }}
+                  key={t}
+                  className="px-4 py-2 rounded-full bg-slate-800 text-slate-200 text-sm"
+                  style={{ fontFamily: font, fontWeight: 800 }}
                 >
-                  <item.icon size={14} className="text-amber-400" />
-                  {item.label}
+                  {t}
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>
