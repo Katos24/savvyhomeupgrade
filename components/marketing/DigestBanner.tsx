@@ -192,13 +192,7 @@ export default function DigestBanner() {
                     </div>
                   </div>
 
-                  <button
-                    className="w-full py-4 rounded-2xl bg-sky-600 text-white flex items-center justify-center gap-2"
-                    style={{ fontFamily: font, fontWeight: 900 }}
-                  >
-                    Open Dashboard
-                    <ExternalLink size={14} />
-                  </button>
+              
                 </div>
 
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-center">

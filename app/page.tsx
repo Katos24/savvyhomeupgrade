@@ -3,6 +3,7 @@
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
+
 import BuildFormSection from '@/components/marketing/BuildFormSection';
 import LeadLandingSection from '@/components/marketing/LeadLandingSection';
 import DigestBanner from '@/components/marketing/DigestBanner';
@@ -13,6 +14,7 @@ import Pricing from '@/components/marketing/Pricing';
 import Comparison from '@/components/marketing/Comparison';
 import FinalCTA from '@/components/marketing/FinalCTA';
 import Footer from '@/components/marketing/Footer';
+import HeroDashboardDemo from '@/components/marketing/NewHeroDashboardDemo';
 
 /* Smooth gradient transitions between sections */
 function DarkFadeIn() {
@@ -50,11 +52,42 @@ export default function NewHome() {
 
       {/* white → dark */}
 
+<section className="relative bg-white pt-6 sm:pt-10 pb-14 sm:pb-24 overflow-hidden">
+  {/* subtle background continuation */}
+  <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
+    style={{
+      backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)',
+      backgroundSize: '26px 26px',
+    }}
+  />
+
+  <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6">
+
+    {/* Small bridge headline */}
+    <div className="text-center mb-6 sm:mb-10">
+      <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400">
+        From QR Scan to Live Dashboard
+      </p>
+
+      <h2 className="text-xl sm:text-3xl font-black text-slate-900 mt-3 leading-tight">
+        Watch a lead move instantly into your pipeline
+      </h2>
+
+      <p className="text-sm sm:text-base text-slate-500 mt-3 max-w-xl mx-auto font-medium">
+        No refresh. No delay. No lost leads. Everything updates in real time.
+      </p>
+    </div>
+
+    {/* Demo */}
+    <div className="scale-[0.92] sm:scale-100 origin-top">
+      <HeroDashboardDemo />
+    </div>
+
+  </div>
+</section>
       
 
-            <BuildFormSection />
 
-            <div className="h-16 sm:h-24 bg-gradient-to-b from-white to-slate-900" />
 
 
 
@@ -63,20 +96,17 @@ export default function NewHome() {
 
 
 
-      {/* dark → amber */}
-      <DarkToAmber />
+ 
 
       {/* 3. LEAD LANDING — amber-50 */}
       <LeadLandingSection />
 
-      {/* amber → dark */}
-      <AmberToDark />
+   
 
       {/* 4. DIGEST BANNER — dark (slate-900) */}
       <DigestBanner />
 
-      {/* dark → white */}
-      <DarkToWhite />
+
 
       {/* 5. EFFICIENCY SHOWCASE — white */}
       <EfficiencyShowcase />

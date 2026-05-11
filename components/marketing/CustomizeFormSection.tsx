@@ -134,6 +134,7 @@ export default function CustomizeFormSection() {
             <motion.span animate={{ color: current.color }} transition={{ duration: 0.5 }}>
               Everything.
             </motion.span>
+            
           </motion.h2>
         </div>
 
@@ -281,6 +282,10 @@ export default function CustomizeFormSection() {
           <div className="text-center lg:text-left">
             <div className="hidden lg:block mb-8">
               <h2 className="text-3xl lg:text-4xl text-white" style={{ fontFamily: font, fontWeight: 900 }}>
+                Create{' '}
+                <span style={{ color: current.color }}>Form.</span>
+              </h2>
+               <h2 className="text-3xl lg:text-4xl text-white" style={{ fontFamily: font, fontWeight: 900 }}>
                 Customize{' '}
                 <span style={{ color: current.color }}>Everything.</span>
               </h2>
