@@ -50,23 +50,25 @@ export default function ArchitectHero() {
               <span className="text-emerald-600">Run Work.</span>
             </h1>
 
-            {/* 2. MOBILE IMAGE (Visible only on mobile, order 2) */}
-            <div className="lg:hidden relative w-full pt-4">
-              <Image
-                src="/images/hero-image-laptop.webp"
-                alt="Dashboard"
-                width={1200}
-                height={900}
-                priority
-                className="w-full h-auto object-contain rounded-2xl shadow-2xl border border-slate-100"
-              />
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-8 bg-slate-900/10 blur-2xl rounded-full" />
-            </div>
+           {/* 2. MOBILE IMAGE */}
+<div className="lg:hidden relative w-full pt-4">
+  <div className="relative rounded-2xl overflow-hidden bg-slate-50/50"> {/* Added a soft inner bg */}
+    <Image
+      src="/images/hero-image-laptop.webp"
+      alt="Dashboard"
+      width={1200}
+      height={900}
+      priority
+      className="w-full h-auto object-contain mix-blend-multiply" 
+    />
+  </div>
+  {/* The shadow needs to be tighter on mobile */}
+  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[70%] h-4 bg-slate-900/10 blur-xl rounded-full" />
+</div>
 
             {/* 3. SUBHEAD */}
             <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Put your link on trucks, yard signs, cards — anywhere. 
-              Leads hit your dashboard ready to quote, schedule, and close.
+              Put your link on trucks, yard signs, cards — anywhere. Customers fill out your branded form with photos and details. Leads hit your dashboard ready to quote, schedule, and close.
             </p>
 
             {/* 4. CTA */}
