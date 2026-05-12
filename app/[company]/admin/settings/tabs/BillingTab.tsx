@@ -170,8 +170,11 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           </div>
           <div className="text-center md:text-left flex-1">
             <p className="font-black text-lg">Free Trial Active</p>
-            <p className="text-slate-400 text-sm">Ends {new Date(company.trial_ends_at).toLocaleDateString()}. You can upgrade to Pro anytime.</p>
-          </div>
+<p className="text-slate-400 text-sm">
+              Ends {new Date(company.trial_ends_at).toLocaleDateString()}.
+              {activePlan === 'pro' ? ' You\'re on the top plan.' : ' You can upgrade anytime.'}
+            </p>
+                      </div>
         </motion.div>
       )}
 
@@ -188,6 +191,36 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           </motion.div>
         )}
       </AnimatePresence>
+
+     {/* ── PENDING DOWNGRADE BANNER ── */}
+      {pendingDowngrade && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="p-5 rounded-[2.5rem] bg-amber-50 border border-amber-100 flex items-center gap-4"
+        >
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-black text-amber-900">Plan change scheduled</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Your plan switches to Basic on{' '}
+              <strong>
+                {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', {
+                  month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </strong>
+              . You keep full Pro access until then.
+            </p>
+          </div>
+          <button
+            onClick={handleManageSubscription}
+            className="px-4 py-2 bg-white text-amber-900 rounded-xl border border-amber-200 text-[10px] font-black uppercase tracking-widest shrink-0"
+          >
+            Undo
+          </button>
+        </motion.div>
+      )}
 
       {/* ── PLAN SELECTION ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
@@ -232,7 +265,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
               <button
                 onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
-disabled={changingPlan || isCurrent}
+disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro') || (isTrialing && planKey !== 'pro' && activePlan === 'pro')}
                 className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
   isCurrent 
     ? 'bg-indigo-100 text-indigo-600 cursor-default' 
@@ -243,8 +276,16 @@ disabled={changingPlan || isCurrent}
         : 'bg-slate-900 text-white'
 }`}
               >
-{isCurrent ? 'Current Plan' : changingPlan ? '...' : activePlan === 'free' ? `Upgrade to ${config.label}` : `Select ${config.label}`}
-              </button>
+{isCurrent
+  ? 'Current Plan'
+  : changingPlan
+    ? '...'
+    : pendingDowngrade && planKey !== 'pro'
+      ? `Switching ${new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+      : activePlan === 'free'
+        ? `Upgrade to ${config.label}`
+        : `Select ${config.label}`
+}              </button>
             </motion.div>
           );
         })}

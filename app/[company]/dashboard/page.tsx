@@ -29,6 +29,7 @@ interface Company {
   custom_questions?: any[];
   form_field_config?: any;
   onboarding_completed?: boolean;
+  onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
 }
@@ -66,7 +67,7 @@ async function getCompany(slug: string): Promise<Company | null> {
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,
       form_field_config,
-      onboarding_completed, cancel_at_period_end, subscription_cancel_at
+      onboarding_completed, onboarding_steps, cancel_at_period_end, subscription_cancel_at
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1

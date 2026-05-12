@@ -9,6 +9,13 @@ type TrialBannerProps = {
   companySlug: string;
   cancelAtPeriodEnd?: boolean;
   subscriptionCancelAt?: string | null;
+  planTier?: string;
+};
+
+const PLAN_LABELS: Record<string, string> = {
+  free: 'Free',
+  basic: 'Basic',
+  pro: 'Pro',
 };
 
 export default function TrialBanner({
@@ -17,10 +24,12 @@ export default function TrialBanner({
   companySlug,
   cancelAtPeriodEnd,
   subscriptionCancelAt,
+  planTier = 'basic',
 }: TrialBannerProps) {
   const router = useRouter();
+  const go = () => router.push(`/${companySlug}/admin/settings`);
 
- const go = () => router.push(`/${companySlug}/admin/settings`);
+  const planLabel = PLAN_LABELS[planTier] || planTier;
 
   // Free plan — no trial banner
   if (subscriptionStatus === 'free' || (!subscriptionStatus && !trialEndsAt)) return null;
@@ -36,7 +45,7 @@ export default function TrialBanner({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              Subscription cancelled — full access until <strong className="text-amber-200 ml-1">{until}</strong>
+              {planLabel} subscription cancelled — full access until <strong className="text-amber-200 ml-1">{until}</strong>
             </div>
             <button onClick={go}
               className="bg-amber-500/20 border border-amber-500/30 text-amber-200 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-amber-500/30 transition">
@@ -61,7 +70,7 @@ export default function TrialBanner({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <XCircle className="w-4 h-4 flex-shrink-0" />
-              Trial expired — subscribe to continue
+              {planLabel} trial expired — subscribe to continue
             </div>
             <button onClick={go}
               className="bg-white text-red-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-red-50 transition">
@@ -81,7 +90,7 @@ export default function TrialBanner({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <Clock className="w-4 h-4 flex-shrink-0" />
-              Trial ends in <strong className="mx-1">{daysLeft}</strong> day{daysLeft !== 1 ? 's' : ''}
+              {planLabel} trial ends in <strong className="mx-1">{daysLeft}</strong> day{daysLeft !== 1 ? 's' : ''}
             </div>
             <button onClick={go}
               className="bg-white text-orange-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-orange-50 transition">
@@ -95,15 +104,16 @@ export default function TrialBanner({
 
   // Normal trial
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 border-b border-blue-700 text-white">
-      <div className="max-w-7xl mx-auto px-4 py-2">
+    <div className="bg-blue-600 border-b border-blue-700 text-white">
+            <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
             <Sparkles className="w-4 h-4 flex-shrink-0" />
-            Free Trial — <strong className="mx-1">{daysLeft}</strong> days left
+            {planLabel} Trial — <strong className="mx-1">{daysLeft}</strong> days left
           </div>
           <button onClick={go}
-className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-blue-600 transition">            Manage Billing
+            className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-blue-600 transition">
+            Manage Billing
           </button>
         </div>
       </div>

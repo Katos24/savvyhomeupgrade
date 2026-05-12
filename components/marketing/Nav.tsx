@@ -71,7 +71,7 @@ scrolled ? 'text-slate-900' : 'text-slate-900'
           {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
             <Link
-              href="#how-it-works"
+href="/#how-it-works"
               className={`text-sm font-bold transition-colors ${
 scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -209,7 +209,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-sl
         {/* Links */}
         <div className="flex flex-col px-4 gap-1 flex-1 overflow-y-auto">
           <Link
-            href="#how-it-works"
+href="/#how-it-works"
             onClick={() => setMobileOpen(false)}
             className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
           >

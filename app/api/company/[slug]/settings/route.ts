@@ -117,7 +117,7 @@ export async function POST(
               email = ${data.email},
               phone = ${data.phone || null},
               website = ${data.website || null},
-              business_type = ${data.business_type || 'general'},
+business_type = COALESCE(${data.business_type || null}, business_type),
               logo_url = ${data.logo_url || null},
               email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
               email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'}

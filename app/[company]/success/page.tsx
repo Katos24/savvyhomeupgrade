@@ -180,7 +180,7 @@ export default async function SuccessPage({ params }: PageProps) {
         }
 
         .subtext {
-          font-size: 0.9375rem; color: #6b7280; line-height: 1.6;
+          font-size: 0.9375rem; color: #2c2f35ff; line-height: 1.6;
           margin-bottom: 32px;
           animation: fadein 0.4s 0.25s ease both;
         }
@@ -191,7 +191,7 @@ export default async function SuccessPage({ params }: PageProps) {
         .step { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: #f9fafb; border-radius: 12px; border: 1px solid #f0f0f0; }
         .step-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: linear-gradient(135deg, color-mix(in srgb, var(--brand1) 12%, white), color-mix(in srgb, var(--brand2) 12%, white)); }
         .step-text strong { display: block; font-size: 0.8125rem; font-weight: 600; color: #111; margin-bottom: 1px; }
-        .step-text span { font-size: 0.75rem; color: #9ca3af; }
+        .step-text span { font-size: 0.75rem; color: #2f353cff; }
 
         .cta-btn {
           display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -206,7 +206,7 @@ export default async function SuccessPage({ params }: PageProps) {
         .cta-arrow { transition: transform 0.2s; }
         .cta-btn:hover .cta-arrow { transform: translateX(3px); }
 
-        .footer-note { margin-top: 24px; font-size: 0.75rem; color: #d1d5db; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; animation: fadein 0.4s 0.4s ease both; }
+        .footer-note { margin-top: 24px; font-size: 0.75rem; color: #141618ff; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; animation: fadein 0.4s 0.4s ease both; }
 
         @media (max-width: 480px) { .card { padding: 32px 20px 28px; border-radius: 20px; } }
       `}</style>
@@ -247,16 +247,26 @@ export default async function SuccessPage({ params }: PageProps) {
           <h1 className="headline">{headline}</h1>
           <p className="subtext">{subtext}</p>
 
-          <div className="steps">
+         <div className="steps">
             <div className="step">
-              <div className="step-icon">📬</div>
+              <div className="step-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M22 4L12 13 2 4" />
+                </svg>
+              </div>
               <div className="step-text">
                 <strong>Check your email</strong>
                 <span>Confirmation sent to your inbox</span>
               </div>
             </div>
             <div className="step">
-              <div className="step-icon">⏳</div>
+              <div className="step-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
               <div className="step-text">
                 <strong>We'll reach out shortly</strong>
                 <span>Our team reviews every request</span>

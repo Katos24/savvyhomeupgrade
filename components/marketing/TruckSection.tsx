@@ -28,8 +28,7 @@ const FEATURES = [
 
 export default function TruckSection() {
   return (
-    <section className="relative bg-slate-950 py-14 sm:py-24 lg:py-32 overflow-hidden">
-
+<section id="how-it-works" className="relative bg-slate-950 py-14 sm:py-24 lg:py-32 overflow-hidden">
       {/* Grid bg */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"

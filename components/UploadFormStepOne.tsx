@@ -56,14 +56,14 @@ export default function UploadFormStepOne({
   headerSubtitle,
   logoUrl,
   companyName,
-  brandColor1 = '#6366f1',
-  brandColor2 = '#8b5cf6',
+  brandColor1 = '#0B3C6D',
+brandColor2 = '#5CCB3A',
   showHeader = false,
   hasStep2 = true,
   businessType = 'general',
 }: StepOneProps) {
-  const color1 = brandColor1 || '#6366f1';
-  const color2 = brandColor2 || '#8b5cf6';
+  const color1 = brandColor1 || '#0B3C6D';
+const color2 = brandColor2 || '#5CCB3A';
 
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [descFocused, setDescFocused] = useState(false);

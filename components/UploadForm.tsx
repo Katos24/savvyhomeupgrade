@@ -108,8 +108,8 @@ export default function UploadForm({
       enabled: company?.address_enabled ?? (ADDRESS_CONFIG[businessType]?.show ?? false),
       required: company?.address_required ?? false,
     },
-    preferred_date: { enabled: true },
-    preferred_time: { enabled: true },
+    preferred_date: { enabled: false },
+    preferred_time: { enabled: false },
     lead_source: { enabled: true },
     file_upload: { enabled: true },
   };
@@ -203,8 +203,15 @@ export default function UploadForm({
   const removeFile = (i: number) => { setFiles(f => f.filter((_, idx) => idx !== i)); };
 
   // Redirect to /success after any successful submission
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const handleSuccess = () => {
-    router.push(`/${finalCompanySlug}/success`);
+    setShowSuccess(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Redirect after a short delay so they see the confirmation instantly
+    setTimeout(() => {
+      router.push(`/${finalCompanySlug}/success`);
+    }, 1500);
   };
 
   // Step 1 submit
@@ -312,6 +319,22 @@ export default function UploadForm({
   };
 
   const handleSkip = () => handleSuccess();
+
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9] px-4">
+        <div className="text-center animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Request Received!</h1>
+          <p className="text-slate-500 text-sm">Check your inbox for a confirmation email.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

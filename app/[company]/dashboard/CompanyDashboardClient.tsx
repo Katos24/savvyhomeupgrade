@@ -36,6 +36,7 @@ type Company = {
   logo_url?: string | null;
   phone?: string | null;
   website?: string | null;
+    email?: string;
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
   status_options?: StatusOption[];
@@ -46,6 +47,7 @@ type Company = {
   trial_ends_at?: string | null;
   plan_tier?: string;
   onboarding_completed?: boolean;
+  onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
 };
@@ -479,12 +481,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
       {/* Banners */}
       <div className="relative z-10">
-        <TrialBanner
+       <TrialBanner
           subscriptionStatus={company.subscription_status || 'inactive'}
           trialEndsAt={company.trial_ends_at || null}
           companySlug={company.slug}
           cancelAtPeriodEnd={company.cancel_at_period_end}
           subscriptionCancelAt={company.subscription_cancel_at}
+          planTier={company.plan_tier || 'free'}
         />
         <PaymentReminderBanner
           slug={company.slug}
@@ -498,12 +501,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
          {/* Free Plan Banner + Checklist */}
  <FreePlanBanner
-  company={company}
-  isDark={isDark}
-  onStartTour={() => setTourActive(true)}
-  onCreateLead={() => setIsCreateModalOpen(true)}
-  leadCount={allLeads.length}
-/>
+          company={company}
+          isDark={isDark}
+          onStartTour={() => setTourActive(true)}
+          onCreateLead={() => setIsCreateModalOpen(true)}
+          leadCount={allLeads.length}
+          allLeads={allLeads}
+        />
 
         {/* Top Nav Bar */}
         <header className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 mb-8 transition-all ${

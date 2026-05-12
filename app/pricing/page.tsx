@@ -1,11 +1,11 @@
 // app/pricing/page.tsx
 
-import { Check, X, Sparkles, Zap } from 'lucide-react';
+import { Check, X, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata = {
   title: 'Pricing | Lead2Project',
-  description: 'Simple, transparent pricing. Choose the plan that fits your business.',
+  description: 'Simple, transparent pricing. Start free, upgrade when you\'re ready.',
 };
 
 export default function PricingPage() {
@@ -19,9 +19,9 @@ export default function PricingPage() {
 
       {/* Nav */}
       <nav className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto">
-        <span className="text-white font-bold text-lg tracking-tight">
+        <Link href="/" className="text-white font-bold text-lg tracking-tight">
           Lead2Project
-        </span>
+        </Link>
         <Link
           href="/login"
           className="text-sm text-slate-400 hover:text-white transition font-medium"
@@ -40,7 +40,7 @@ export default function PricingPage() {
             color: '#5CCB3A',
           }}
         >
-          <Sparkles className="w-3 h-3" /> Now with AI Assistant
+          <Sparkles className="w-3 h-3" /> Start free. No credit card required.
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5 tracking-tight leading-tight">
@@ -48,8 +48,7 @@ export default function PricingPage() {
           <br />
           <span
             style={{
-              background:
-                'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
+              background: 'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -62,59 +61,58 @@ export default function PricingPage() {
           Stop losing leads to disorganization. Start running your business like a pro.
         </p>
         <p className="text-sm text-slate-500">
-          14-day free trial · 2 Min Set Up· Cancel anytime
+          Sign up in minutes · No demo needed · Cancel anytime
         </p>
       </section>
 
       {/* Pricing Cards */}
       <section className="pb-24 px-4">
-<div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
 
-  {/* Starter */}
-<div
-  className="border border-slate-700 p-8 flex flex-col"
-  style={{ background: '#1e293b' }}
->
-  <div className="flex items-center gap-2 mb-1">
-    <Zap className="w-4 h-4 text-slate-500" />
-    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-      Starter
-    </span>
-  </div>
+          {/* Free */}
+          <div
+            className="border border-slate-700 p-8 flex flex-col"
+            style={{ background: '#1e293b' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="w-4 h-4 text-slate-500" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Free
+              </span>
+            </div>
 
-  <div className="flex items-baseline gap-2 mb-2">
-    <span className="text-5xl font-extrabold text-white">$29</span>
-    <span className="text-slate-400 text-sm">/month</span>
-  </div>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-5xl font-extrabold text-white">$0</span>
+              <span className="text-slate-400 text-sm">/forever</span>
+            </div>
 
-  <p className="text-slate-400 text-sm mb-8">
-    Lead capture machine for solo contractors
-  </p>
+            <p className="text-slate-400 text-sm mb-8">
+              See your leads come in. Upgrade when you're ready.
+            </p>
 
-  <Link
-    href="/signup?plan=starter"
-    className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
-    style={{ background: '#475569' }}
-  >
-    Start Free Trial
-  </Link>
+            <Link
+              href="/signup"
+              className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
+              style={{ background: '#475569' }}
+            >
+              Get Started Free
+            </Link>
 
-  <div className="space-y-3 flex-1">
-    {[
-      'Custom QR code & booking form',
-      'Lead board (kanban view)',
-      'Photo & doc uploads on cards',
-      'Payment status tracking',
-      'Unlimited team members',
-      'Form branding (logo & colors)',
-    ].map(f => (
-      <div key={f} className="flex items-center gap-3">
-        <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
-        <span className="text-slate-300 text-sm">{f}</span>
-      </div>
-    ))}
-  </div>
-</div>
+            <div className="space-y-3 flex-1">
+              {[
+                'Booking link & QR code',
+                'Basic form (name, email, phone)',
+                'Lead dashboard (card view)',
+                'View lead details',
+                'Create leads manually',
+              ].map(f => (
+                <div key={f} className="flex items-center gap-3">
+                  <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
+                  <span className="text-slate-300 text-sm">{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Basic */}
           <div
@@ -129,34 +127,36 @@ export default function PricingPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-2">
-<span className="text-5xl font-extrabold text-white">$49.99</span>
+              <span className="text-5xl font-extrabold text-white">$49.99</span>
               <span className="text-slate-400 text-sm">/month</span>
             </div>
 
-           <p className="text-slate-400 text-sm mb-8">
-  Full job management for growing crews
-</p>
+            <p className="text-slate-400 text-sm mb-8">
+              Full job management for growing crews
+            </p>
 
             <Link
-              href="/signup?plan=basic"
+              href="/signup"
               className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
-              style={{
-                background: '#5CCB3A',
-              }}
+              style={{ background: '#5CCB3A' }}
             >
-              Start Free Trial
+              Start 14-Day Free Trial
             </Link>
 
             <div className="space-y-3 flex-1">
               {[
-               'Everything in Starter',
-'Custom pipeline stages',
-'Job categories, tasks & quote templates',
-'Job scheduling',
-'Quote builder',
-'Customer photo & video uploads on form',
-'CSV export for bookkeeping',
-'Role-based permissions',
+                'Everything in Free',
+                'Custom booking form & branding',
+                'Table & calendar views',
+                'Photo & doc uploads on cards',
+                'Payment status tracking',
+                'Custom pipeline stages',
+                'Job categories, tasks & quote templates',
+                'Job scheduling & quote builder',
+                'Customer photo & video uploads',
+                'CSV export for bookkeeping',
+                'Unlimited team members',
+                'Role-based permissions',
               ].map(f => (
                 <div key={f} className="flex items-center gap-3">
                   <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
@@ -166,10 +166,10 @@ export default function PricingPage() {
 
               <div className="pt-4 border-t border-slate-700 space-y-3">
                 {[
-                  'AI Brief on every job',
-                  'AI Assistant chat',
-                  'Projects, quotes & payments',
-                  'Repeat customer detection',
+                  'One-click emails',
+                  'AI Brief & Assistant',
+                  'Custom email templates',
+                  'Daily digest email',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3 opacity-40">
                     <X className="w-4 h-4 text-slate-500 flex-shrink-0" />
@@ -192,11 +192,10 @@ export default function PricingPage() {
               <span
                 className="px-3 py-1 text-xs font-bold text-white"
                 style={{
-                  background:
-                    'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
+                  background: 'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
                 }}
               >
-                ⭐ MOST POPULAR
+                MOST POPULAR
               </span>
             </div>
 
@@ -213,18 +212,17 @@ export default function PricingPage() {
             </div>
 
             <p className="text-slate-400 text-sm mb-8">
-              Full job management + AI
+              Automation + AI for serious contractors
             </p>
 
             <Link
-              href="/signup?plan=pro"
+              href="/signup"
               className="block w-full py-3 text-center text-sm font-bold text-white transition mb-8"
               style={{
-                background:
-                  'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
+                background: 'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
               }}
             >
-              Start Free Trial
+              Start 14-Day Free Trial
             </Link>
 
             <div className="space-y-3 flex-1">
@@ -236,11 +234,9 @@ export default function PricingPage() {
               </div>
 
               {[
-                'Convert leads to projects',
-                'Quotes & payment tracking',
-                'Tasks & scheduling',
-                'Docs & photo management',
-                'Repeat customer detection',
+                'One-click emails (quote, schedule, reminder)',
+                'Email outbox — full sent history',
+                'Custom email templates',
               ].map(f => (
                 <div key={f} className="flex items-center gap-3">
                   <Check className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
@@ -259,8 +255,11 @@ export default function PricingPage() {
                 </p>
 
                 {[
-                  'AI Brief on every job card',
+                  'AI Brief on every lead',
+                  'AI quote generator',
                   'AI Assistant — knows your whole business',
+                  'AI photo & text analysis',
+                  'Daily digest email',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3">
                     <Sparkles className="w-4 h-4 text-[#5CCB3A] flex-shrink-0" />
@@ -275,11 +274,11 @@ export default function PricingPage() {
         </div>
 
         {/* Stats */}
-<div className="max-w-5xl mx-auto mt-6 grid grid-cols-3 gap-4 text-center">
+        <div className="max-w-5xl mx-auto mt-6 grid grid-cols-3 gap-4 text-center">
           {[
             { stat: '$60K', label: 'Lost yearly from missed leads' },
             { stat: '1 job', label: 'Pays for an entire year' },
-            { stat: '30 sec', label: 'AI brief on any job' },
+            { stat: '2 min', label: 'To set up — no demo needed' },
           ].map(({ stat, label }) => (
             <div
               key={stat}
@@ -309,19 +308,19 @@ export default function PricingPage() {
           </h2>
 
           <p className="text-slate-400 mb-8">
-            Start your free trial today. 2 Min Set Up · Cancel anytime.
+            Sign up free in 2 minutes. No credit card required. Upgrade when you're ready.
           </p>
 
           <div className="flex gap-3 justify-center">
             <Link
-              href="/signup?plan=pro"
-              className="px-8 py-3 text-sm font-bold text-white transition"
+              href="/signup"
+              className="px-8 py-3 text-sm font-bold text-white transition inline-flex items-center gap-2"
               style={{
-                background:
-                  'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
+                background: 'linear-gradient(135deg, #1F5F8F, #5CCB3A)',
               }}
             >
-              Start Free Trial
+              Get Started Free
+              <ArrowRight className="w-4 h-4" />
             </Link>
 
             <Link
