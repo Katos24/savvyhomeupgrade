@@ -25,8 +25,8 @@ export const COLOR_OPTIONS = [
 ];
 
 export const COLOR_PRESETS = [
-  { name: 'Purple', c1: '#667eea', c2: '#764ba2' },
   { name: 'Blue', c1: '#2196F3', c2: '#1976D2' },
+  { name: 'Navy', c1: '#0B3C6D', c2: '#1F5F8F' },
   { name: 'Green', c1: '#10b981', c2: '#059669' },
   { name: 'Orange', c1: '#f97316', c2: '#ea580c' },
   { name: 'Pink', c1: '#ec4899', c2: '#db2777' },

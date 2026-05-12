@@ -112,7 +112,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
   const statusInfo = {
     active: { icon: CheckCircle, text: 'Active', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
     past_due: { icon: AlertCircle, text: 'Past Due', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
  }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || (
     company.plan_tier === 'free' 
@@ -164,8 +164,8 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
           className="p-6 rounded-[2.5rem] bg-slate-950 text-white flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 blur-[80px]" />
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/40">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[80px]" />
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/40">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <div className="text-center md:text-left flex-1">
@@ -234,18 +234,18 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
               key={planKey}
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
               className={`relative p-8 rounded-[3rem] border-2 transition-all duration-300 flex flex-col ${
-                isCurrent ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 bg-white'
+                isCurrent ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 bg-white'
 } ${isTrialing && !isCurrent && planKey !== 'pro' ? 'opacity-60 grayscale-[0.3]' : ''}`}
             >
               {isPro && (
-                <div className="absolute -top-3 right-10 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
+                <div className="absolute -top-3 right-10 bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
                   PRO FEATURES
                 </div>
               )}
 
               <div className="flex justify-between items-start mb-6">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPro ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                  {isPro ? <Sparkles className="w-7 h-7 text-indigo-600" /> : <Zap className="w-7 h-7 text-slate-600" />}
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPro ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                  {isPro ? <Sparkles className="w-7 h-7 text-blue-600" /> : <Zap className="w-7 h-7 text-slate-600" />}
                 </div>
                 <div className="text-right">
                   <p className="text-4xl font-black text-slate-900">${config.price}</p>
@@ -257,7 +257,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
               <ul className="space-y-4 mb-10 flex-1">
                 {config.features.map((f) => (
                   <li key={f} className="flex items-start gap-3 text-sm text-slate-600 font-bold leading-tight">
-                    <CheckCircle className={`w-5 h-5 shrink-0 ${isPro ? 'text-indigo-500' : 'text-slate-400'}`} />
+                    <CheckCircle className={`w-5 h-5 shrink-0 ${isPro ? 'text-blue-500' : 'text-slate-400'}`} />
                     {f}
                   </li>
                 ))}
@@ -268,11 +268,11 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro') || (isTrialing && planKey !== 'pro' && activePlan === 'pro')}
                 className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
   isCurrent 
-    ? 'bg-indigo-100 text-indigo-600 cursor-default' 
+    ? 'bg-blue-100 text-blue-600 cursor-default' 
     : isTrialing && planKey !== 'pro'
       ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
       : isPro 
-        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200' 
+        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' 
         : 'bg-slate-900 text-white'
 }`}
               >
@@ -305,8 +305,8 @@ disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro')
                 initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl pointer-events-auto border border-slate-100"
               >
-                <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center ${confirmModal.plan === 'pro' ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                  {confirmModal.plan === 'pro' ? <TrendingUp className="w-8 h-8 text-indigo-600" /> : <Clock className="w-8 h-8 text-slate-600" />}
+                <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center ${confirmModal.plan === 'pro' ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                  {confirmModal.plan === 'pro' ? <TrendingUp className="w-8 h-8 text-blue-600" /> : <Clock className="w-8 h-8 text-slate-600" />}
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-2">Confirm Change</h3>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
@@ -315,7 +315,7 @@ disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro')
                     : `Switching to Basic ($49.99/mo). Your features will change at the end of the current cycle.`}
                 </p>
                 <div className="space-y-3">
-                  <button onClick={executePlanChange} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100">
+                  <button onClick={executePlanChange} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100">
                     Confirm Change
                   </button>
                   <button onClick={() => setConfirmModal({ isOpen: false, plan: null })} className="w-full py-4 text-slate-400 font-black text-sm">
