@@ -808,7 +808,7 @@ export async function sendWelcomeEmail({
   companySlug,
   dashboardUrl,
   formUrl,
-  plan = 'starter',
+  plan = 'basic',
 }: {
   userEmail: string;
   userName: string;
@@ -816,15 +816,10 @@ export async function sendWelcomeEmail({
   companySlug: string;
   dashboardUrl: string;
   formUrl: string;
-  plan?: 'starter' | 'basic' | 'pro';
+  plan?: 'basic' | 'pro';
 }) {
   const planDetails = {
-    starter: {
-      label: 'Starter',
-      price: '$29.99/mo',
-      features: ['Custom booking form', 'Lead board', 'Payment tracking', 'Unlimited team members'],
-      color: '#3b82f6', // Clean Blue
-    },
+
     basic: {
       label: 'Basic',
       price: '$49.99/mo',
@@ -1617,10 +1612,10 @@ export async function sendPlanChangedEmail({
   periodEnd?:   string;
   dashboardUrl: string;
 }) {
-  const PLAN_ORDER = ['starter', 'basic', 'pro'];
+  const PLAN_ORDER = ['free', 'basic', 'pro'];
   const isUpgrade = PLAN_ORDER.indexOf(newPlan) > PLAN_ORDER.indexOf(previousPlan);
   const planLabel = (p: string) =>
-    ({ starter: 'Starter', basic: 'Basic', pro: 'Pro' }[p] || p);
+    ({ free: 'Free', basic: 'Basic', pro: 'Pro' }[p] || p);
 
   const subject = isUpgrade
     ? `Plan upgraded to ${planLabel(newPlan)} — Lead2Project`
@@ -1631,8 +1626,8 @@ export async function sendPlanChangedEmail({
     : `Your plan will change from <strong>${planLabel(previousPlan)}</strong> to <strong>${planLabel(newPlan)}</strong> on <strong>${periodEnd}</strong>. You keep full ${planLabel(previousPlan)} access until then.`;
 
   const featuresByPlan: Record<string, string[]> = {
-    starter: ['Custom booking form', 'Lead board', 'Payment tracking', 'Unlimited team members'],
-    basic:   ['Everything in Starter', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
+    free:    ['Booking link & QR code', 'Basic form', 'Lead dashboard', 'Create leads manually'],
+    basic:   ['Everything in Free', 'Custom form & branding', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
     pro:     ['Everything in Basic', 'One-click emails (quote, schedule, reminder)', 'AI quote generator and brief', 'Daily digest email', 'Email outbox'],
   };
 

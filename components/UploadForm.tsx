@@ -101,7 +101,7 @@ export default function UploadForm({
   const finalCompanyId = company?.id || companyId;
   const customQuestions = company?.custom_questions || [];
 
-  const isStarterPlan = company?.plan_tier === 'starter';
+  const isStarterPlan = company?.plan_tier === 'free';
 
   const baseFieldConfig: FieldConfig = company?.form_field_config || {
     address: {

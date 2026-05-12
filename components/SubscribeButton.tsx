@@ -11,12 +11,11 @@ type SubscribeButtonProps = {
   subscriptionStatus?: string;
   trialEndsAt?: string | null;
   variant?: 'primary' | 'banner' | 'cta';
-  plan?: 'starter' | 'basic' | 'pro';
+  plan?: 'basic' | 'pro';
   currentPlanTier?: string;
 };
 
 const PLAN_META: Record<string, { label: string; price: string }> = {
-  starter: { label: 'Starter', price: '$29/month'    },
   basic:   { label: 'Basic',   price: '$49.99/month' },
   pro:     { label: 'Pro',     price: '$79.99/month' },
 };
@@ -28,13 +27,13 @@ export default function SubscribeButton({
   subscriptionStatus,
   trialEndsAt,
   variant = 'primary',
-  plan = 'starter',
+  plan = 'basic',
   currentPlanTier,
 }: SubscribeButtonProps) {
   const [loading, setLoading]       = useState(false);
   const [showModal, setShowModal]   = useState(false);
 
-  const meta = PLAN_META[plan] ?? PLAN_META.starter;
+  const meta = PLAN_META[plan] ?? PLAN_META.basic;
 
   const handleSubscribe = async () => {
     setLoading(true);

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const companyId = session.metadata?.companyId;
-      const plan = (session.metadata?.plan || 'starter') as 'starter' | 'basic' | 'pro';
+const plan = (session.metadata?.plan || 'basic') as 'free' | 'basic' | 'pro';
 
       if (!companyId) {
         console.error('No companyId in session metadata');
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             companySlug: company[0].slug,
             dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
             formUrl:      `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}`,
-            plan,
+            plan: plan === 'free' ? 'basic' : plan,
           });
           console.log('✅ Welcome email sent after payment for:', company[0].email);
         }
@@ -94,12 +94,12 @@ export async function POST(req: NextRequest) {
       const priceId = subscription.items?.data?.[0]?.price?.id;
       let planTier: string | null = null;
 
-      if (priceId === process.env.STRIPE_STARTER_PRICE_ID) planTier = 'starter';
+if (priceId === process.env.STRIPE_STARTER_PRICE_ID) planTier = 'free';
       if (priceId === process.env.STRIPE_BASIC_PRICE_ID)   planTier = 'basic';
       if (priceId === process.env.STRIPE_PRO_PRICE_ID)     planTier = 'pro';
 
       const hasActiveSchedule = !!subscription.schedule;
-      if (hasActiveSchedule && (planTier === 'basic' || planTier === 'starter')) {
+      if (hasActiveSchedule && planTier === 'basic') {
         planTier = null;
       }
 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         try {
           const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
           const previousPlan =
-            previousPriceId === process.env.STRIPE_STARTER_PRICE_ID ? 'starter' :
+            previousPriceId === process.env.STRIPE_STARTER_PRICE_ID ? 'free' :
             previousPriceId === process.env.STRIPE_BASIC_PRICE_ID   ? 'basic'   :
             previousPriceId === process.env.STRIPE_PRO_PRICE_ID     ? 'pro'     : null;
 
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
         UPDATE companies 
         SET 
           subscription_status = 'canceled',
-          plan_tier = 'starter',
+plan_tier = 'free',
           cancel_at_period_end = false,
           subscription_cancel_at = NULL
         WHERE stripe_customer_id = ${subscription.customer as string}
@@ -279,7 +279,7 @@ export async function POST(req: NextRequest) {
       break;
     }
 
-// Send payment receipt email on successful payment (including trial end when amount is $0)
+// Send payment receipt 
 
     case 'invoice.paid': {
       const invoice = event.data.object;

@@ -13,7 +13,7 @@ const PLAN_PRICE_IDS: Record<string, string> = {
   pro:     process.env.STRIPE_PRO_PRICE_ID || '',
 };
 
-const PLAN_ORDER = [ 'basic', 'pro'];
+const PLAN_ORDER = ['free', 'basic', 'pro'];
 
 export async function POST(req: NextRequest) {
   try {

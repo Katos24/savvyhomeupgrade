@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!);
     const companies = await sql`
-      SELECT slug, name FROM companies WHERE id = ${companyId}
+      SELECT slug, name, stripe_customer_id FROM companies WHERE id = ${companyId}
     `;
 
     if (companies.length === 0) {
@@ -55,7 +55,9 @@ export async function POST(req: NextRequest) {
       cancel_url:  `${baseUrl}/subscribe?subscription=cancelled`,
 
       client_reference_id: companyId.toString(),
-      customer_email: companyEmail,
+    ...(companies[0].stripe_customer_id
+      ? { customer: companies[0].stripe_customer_id }
+      : { customer_email: companyEmail }),
 
       // ── Trial + metadata ──
       subscription_data: {
