@@ -136,16 +136,16 @@ export const PLAN_CONFIG = {
     features: [
       'Everything in Free',
       'Custom booking form & branding',
+      'Build professional quote templates',
+      'Job categories & task templates',
       'Table & calendar views',
       'Photo & doc uploads on cards',
       'Payment status tracking',
       'Custom pipeline stages',
-      'Job categories, tasks & quote templates',
       'Job scheduling & quote builder',
       'Customer photo & video uploads on form',
       'CSV export for bookkeeping',
       'Unlimited team members',
-      'Role-based permissions',
     ],
   },
   pro: {
