@@ -95,15 +95,15 @@ export default function ArchitectHero() {
 
           {/* RIGHT CONTENT (Desktop Only Tilt & Fade) */}
           <motion.div
-            initial={{ opacity: 0, x: 80 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="hidden lg:block relative"
           >
-            <div 
-              className="relative w-[125%] origin-left"
-              style={{ perspective: '2000px' }}
-            >
+           <div 
+                className="relative w-[125%] origin-left -ml-32"
+                style={{ perspective: '2000px' }}
+              >
               <motion.div
                 animate={{ rotateY: -18, rotateX: 4, rotateZ: 1 }}
                 transition={{ duration: 1.5, ease: "easeOut" }}
