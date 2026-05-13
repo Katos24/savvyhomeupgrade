@@ -366,7 +366,7 @@ const hasMore = allOutboxEmails.length < tabTotal
 }
 
   return (
-    <div className="min-h-screen text-[#e8eaf0] selection:bg-indigo-500/30" style={{ background: '#06080F', colorScheme: 'dark' }}>
+    <div className="min-h-screen text-[#e8eaf0] selection:bg-blue-500/30" style={{ background: '#06080F', colorScheme: 'dark' }}>
 
       {/* Top bar */}
       <div className="sticky top-0 z-50 border-b border-white/[0.03] px-4 sm:px-6 flex items-center h-14 justify-between" style={{ background: 'rgba(6,8,15,0.9)', backdropFilter: 'blur(12px)' }}>
@@ -388,7 +388,7 @@ const hasMore = allOutboxEmails.length < tabTotal
         {/* Header */}
         <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-indigo-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Communications Audit</p>
+            <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2">Communications Audit</p>
             <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-white">Transmission Log.</h2>
             <p className="text-gray-600 text-sm mt-1">All customer-facing emails across every project</p>
           </div>
@@ -438,7 +438,7 @@ const hasMore = allOutboxEmails.length < tabTotal
             {tabs.map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); setExpandedIdx(null); }}
                 className={`px-4 sm:px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap flex-1 sm:flex-none ${
-                  tab === t.key ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-500 hover:text-gray-300'
+                  tab === t.key ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'
                 }`}>
                 {t.label}
                 <span className="ml-1.5 opacity-40 font-mono text-[9px]">{t.count}</span>
@@ -476,7 +476,7 @@ const hasMore = allOutboxEmails.length < tabTotal
         {/* Count */}
         <div className="text-xs text-gray-600 font-bold mb-4">
           Showing <span className="text-white font-black">{filtered.length}</span> of <span className="text-white font-black">{allEmails.length}</span> transmissions
-          {hasActiveFilters && <span className="text-indigo-400 ml-2">· filtered</span>}
+          {hasActiveFilters && <span className="text-blue-400 ml-2">· filtered</span>}
         </div>
 
         {/* Email feed */}
@@ -487,7 +487,7 @@ const hasMore = allOutboxEmails.length < tabTotal
               <Mail className="w-12 h-12 text-gray-800 mx-auto mb-4" />
               <p className="text-gray-500 font-black uppercase tracking-[.2em] text-xs mb-2">No matching transmissions</p>
               {hasActiveFilters && (
-                <button onClick={clearFilters} className="text-indigo-400 text-xs font-bold hover:text-indigo-300 underline mt-2">
+                <button onClick={clearFilters} className="text-blue-400 text-xs font-bold hover:text-blue-300 underline mt-2">
                   Clear filters
                 </button>
               )}

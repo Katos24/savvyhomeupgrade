@@ -496,168 +496,194 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         />
       </div>
 
-     {/* MAIN */}
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10 relative z-10">
 
 
+  {/* MAIN */}
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
 
-        {/* Top Nav Bar */}
-        <header className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 mb-8 transition-all ${
+        {/* Top Nav Bar - Ultra Modern & Mobile Responsive */}
+        <header className={`sticky top-4 z-50 rounded-[1.5rem] sm:rounded-[2rem] px-4 py-3 sm:px-8 sm:py-5 mb-8 transition-all backdrop-blur-xl ${
           isDark
-            ? 'bg-[#0A0C14] border border-white/10 shadow-2xl'
-            : 'bg-white border border-slate-200 shadow-sm'
+            ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.3)]'
+            : 'bg-white/90 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.04)]'
         }`}>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+              {/* Sidebar Toggle - Larger touch target for mobile */}
               <button
                 data-tour="sidebar-toggle"
                 onClick={() => setSidebarOpen(true)}
-                className={`p-2.5 rounded-xl transition-colors ${
+                className={`p-3 rounded-2xl transition-all active:scale-90 shrink-0 ${
                   isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
                 }`}
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-6 h-6" />
               </button>
-              <div className="flex items-center gap-3 min-w-0 border-l border-slate-200/20 pl-4">
+              
+              {/* Logo & Company Name Area */}
+              <div className="flex items-center gap-4 sm:gap-5 min-w-0 border-l border-slate-200/30 pl-3 sm:pl-6">
                 {company.logo_url ? (
-                  <img src={company.logo_url} alt="Logo" className="h-8 w-auto object-contain shrink-0" />
+                  <img 
+                    src={company.logo_url} 
+                    alt="Logo" 
+                    className="h-10 sm:h-16 w-auto object-contain shrink-0 hover:scale-105 transition-transform" 
+                  />
                 ) : (
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-lg shadow-blue-500/20">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shrink-0 shadow-xl shadow-blue-500/20 text-lg">
                     {company.name.charAt(0)}
                   </div>
                 )}
+                
+                {/* Company Name - Always shown, slightly smaller on mobile to prevent overflow */}
                 <div className="min-w-0">
-                  <h1 className={`text-sm sm:text-lg font-black tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <h1 className={`text-sm sm:text-xl font-bold tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {company.name}
                   </h1>
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-500">Dashboard</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold text-slate-400 truncate">Live Dashboard</p>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Action Button - Simplified icon-only on very small screens */}
             <div className="flex items-center gap-2 shrink-0">
-              {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+              {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500 hidden xs:block" />}
               {can(planTier, 'create_lead_manual') ? (
                 <button
                   data-tour="create-lead"
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-3 sm:px-6 sm:py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all shadow-[0_10px_20px_rgba(37,99,235,0.2)] active:scale-95"
                 >
-                  <Plus className="w-4 h-4 stroke-[3px]" />
+                  <Plus className="w-5 h-5 stroke-[3px]" />
                   <span className="hidden sm:inline">New Lead</span>
-                  <span className="sm:hidden">Add</span>
                 </button>
               ) : (
                 <button
                   onClick={() => setLockedDashboardModal('create_lead')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white rounded-xl font-bold text-sm transition-all active:scale-95"
+                  className={`inline-flex items-center gap-2 px-4 py-3 sm:px-6 sm:py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                    isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'
+                  }`}
                 >
                   <Lock className="w-4 h-4" />
                   <span className="hidden sm:inline">New Lead</span>
-                  <span className="sm:hidden">Add</span>
                 </button>
               )}
             </div>
           </div>
         </header>
 
-        {/* Stats */}
-        <section className="grid grid-cols-4 gap-2 sm:gap-3 mb-8 w-full">
+        {/* Stats Grid - Optimized for single column on tiny screens, 2 on mobile, 4 on desktop */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12 w-full">
           {stats.map((s, i) => (
             <div
               key={i}
-              className={`rounded-xl border px-3 py-3 sm:px-5 sm:py-4 transition-all ${isDark ? s.dark : `${s.light} shadow-sm`}`}
+              className={`rounded-[1.25rem] sm:rounded-[1.5rem] p-4 sm:p-7 transition-all hover:-translate-y-1 ${
+                isDark 
+                  ? 'bg-white/[0.03] border border-white/5' 
+                  : 'bg-white border border-slate-50 shadow-[0_8px_30px_rgb(0,0,0,0.02)]'
+              }`}
             >
-              <p className={`text-[9px] font-bold uppercase tracking-widest truncate mb-1.5 ${isDark ? s.labelDark : s.labelLight}`}>
-                {s.label}
-              </p>
-              <p
-                className={`font-black tracking-tight tabular-nums leading-none ${isDark ? s.valueDark : s.valueLight}`}
-                style={{ fontSize: String(s.value).length > 7 ? '11px' : String(s.value).length > 5 ? '13px' : '17px' }}
-              >
-                {s.value}
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.1em] ${isDark ? s.labelDark : s.labelLight}`}>
+                  {s.label}
+                </p>
+                <p
+                  className={`font-black tracking-tight tabular-nums ${isDark ? s.valueDark : s.valueLight}`}
+                  style={{ fontSize: 'clamp(1.1rem, 4vw, 1.75rem)' }}
+                >
+                  {s.value}
+                </p>
+              </div>
             </div>
           ))}
         </section>
 
-        {/* Free Plan Banner + Checklist */}
-        <FreePlanBanner
-          company={company}
-          isDark={isDark}
-          onStartTour={() => setTourActive(true)}
-          onCreateLead={() => setIsCreateModalOpen(true)}
-          leadCount={allLeads.length}
-          allLeads={allLeads}
-        />
+        {/* Free Plan Banner */}
+        <div className="mb-8 sm:mb-12">
+          <FreePlanBanner
+            company={company}
+            isDark={isDark}
+            onStartTour={() => setTourActive(true)}
+            onCreateLead={() => setIsCreateModalOpen(true)}
+            leadCount={allLeads.length}
+            allLeads={allLeads}
+          />
+        </div>
 
-
-        {/* Error */}
+        {/* Error Notification */}
         {loadError && (
-          <div className="mb-8 p-4 bg-red-500/5 border border-red-500/20 rounded-xl text-red-400 text-sm font-bold flex items-center justify-between">
-            <span>{loadError}</span>
-            <button onClick={() => fetchLeads(1)} className="uppercase tracking-widest text-[10px] hover:underline">Retry System</button>
+          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span>{loadError}</span>
+            </div>
+            <button onClick={() => fetchLeads(1)} className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors">Retry</button>
           </div>
         )}
 
-        {/* Filters */}
-        <DashboardFilters
-          searchQuery={searchQuery} filterStatus={filterStatus} timeFilter={timeFilter}
-          filterCategory={filterCategory} filterAssignee={filterAssignee}
-          filterPayment={filterPayment} startDate={startDate} endDate={endDate}
-          currentView={currentView} isDark={isDark} planTier={planTier}
-          isSearching={isSearching} hasActiveFilters={hasActiveFilters}
-          serverStatusCounts={serverStatusCounts}
-          statusOptions={statusOptions} teamMembers={teamMembers} categories={categories}
-          setSearchQuery={setSearchQuery} setFilterStatus={setFilterStatus}
-          setTimeFilter={setTimeFilter} setFilterCategory={setFilterCategory}
-          setFilterAssignee={setFilterAssignee} setFilterPayment={setFilterPayment}
-          setStartDate={setStartDate} setEndDate={setEndDate}
-          setCurrentView={setCurrentView} setIsDark={setIsDark} setIsSearching={setIsSearching}
-          fetchLeads={fetchLeads} clearFilters={clearFilters}
-          onLockedFeature={setLockedDashboardModal}
-        />
+        {/* Filters - Assumed to handle its own mobile responsiveness */}
+        <div className="mb-8 sm:mb-10">
+          <DashboardFilters
+            searchQuery={searchQuery} filterStatus={filterStatus} timeFilter={timeFilter}
+            filterCategory={filterCategory} filterAssignee={filterAssignee}
+            filterPayment={filterPayment} startDate={startDate} endDate={endDate}
+            currentView={currentView} isDark={isDark} planTier={planTier}
+            isSearching={isSearching} hasActiveFilters={hasActiveFilters}
+            serverStatusCounts={serverStatusCounts}
+            statusOptions={statusOptions} teamMembers={teamMembers} categories={categories}
+            setSearchQuery={setSearchQuery} setFilterStatus={setFilterStatus}
+            setTimeFilter={setTimeFilter} setFilterCategory={setFilterCategory}
+            setFilterAssignee={setFilterAssignee} setFilterPayment={setFilterPayment}
+            setStartDate={setStartDate} setEndDate={setEndDate}
+            setCurrentView={setCurrentView} setIsDark={setIsDark} setIsSearching={setIsSearching}
+            fetchLeads={fetchLeads} clearFilters={clearFilters}
+            onLockedFeature={setLockedDashboardModal}
+          />
+        </div>
 
         {/* Leads Display */}
         <section aria-label="Leads" aria-live="polite" className="relative">
           {filteredLeads.length === 0 ? (
-            <div className={`rounded-[3rem] p-16 sm:p-32 text-center border-2 border-dashed transition-all ${
-              isDark ? 'bg-white/[0.01] border-white/5' : 'bg-slate-50 border-slate-200'
+            <div className={`rounded-[2.5rem] sm:rounded-[3.5rem] p-12 sm:p-40 text-center border-2 border-dashed transition-all ${
+              isDark ? 'bg-white/[0.01] border-white/10' : 'bg-slate-50/50 border-slate-200'
             }`}>
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-500/15 mb-6" aria-hidden>
-                <Inbox className="w-10 h-10 text-blue-500/40" />
+              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-[1.5rem] sm:rounded-[2rem] bg-blue-500/10 mb-6 sm:mb-8" aria-hidden>
+                <Inbox className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500/30" />
               </div>
-              <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No leads found</h2>
-              <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">
-                {hasActiveFilters ? 'No leads match your filters.' : 'Create your first lead to get started.'}
+              <h2 className={`text-xl sm:text-3xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Clean slate</h2>
+              <p className="text-slate-500 text-sm sm:text-base max-w-xs mx-auto font-medium leading-relaxed">
+                {hasActiveFilters ? "We couldn't find any leads matching those filters." : "Ready to grow? Create your first lead to get started."}
               </p>
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="mt-8 px-6 py-3 rounded-xl bg-blue-500 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all"
+                  className="mt-8 sm:mt-10 px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-slate-900 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
                 >
-                  Clear filters
+                  Reset Filters
                 </button>
               )}
             </div>
           ) : currentView === 'calendar' ? (
-            <div className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="animate-in fade-in zoom-in-95 duration-500">
               <CalendarView leads={allLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions} isDark={isDark} />
             </div>
           ) : currentView === 'cards' ? (
-            <div className="space-y-16">
+            <div className="space-y-12 sm:space-y-20">
               {groups.map(({ title, leads }) => leads.length > 0 && (
                 <section key={title} aria-label={`${title} leads`} className="relative">
-                  <div className="flex items-center gap-4 mb-8 sticky top-0 z-10 py-2">
+                  <div className="flex items-center gap-4 sm:gap-6 mb-8 sm:mb-10 sticky top-24 z-10 py-4 backdrop-blur-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <h2 className={`text-[11px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <h2 className={`text-[10px] sm:text-[12px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
                         {title}
                       </h2>
                     </div>
-                    <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} aria-hidden />
+                    <div className={`h-[1px] flex-1 ${isDark ? 'bg-white/5' : 'bg-slate-100'}`} aria-hidden />
                     {title !== 'Older' && (
-                      <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
-                        isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
+                      <span className={`text-[9px] sm:text-[11px] font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full ${
+                        isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'
                       }`}>
                         {leads.length}
                       </span>
@@ -668,21 +694,21 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               ))}
             </div>
           ) : (
-            <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+            <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
                 <div>
-                  <h2 className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                    All Leads
+                  <h2 className={`text-[11px] sm:text-[12px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    Database
                   </h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                    {filteredLeads.length} records
+                  <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1 sm:mt-2">
+                    {filteredLeads.length} total records
                   </p>
                 </div>
                 {can(planTier, 'csv_export') ? (
                   <a
                     href={`/api/company/${company.slug}/export-csv`}
-                    className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all border ${
-                      isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
+                    className={`inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all border ${
+                      isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-black' : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800 shadow-lg'
                     }`}
                   >
                     Export CSV
@@ -690,15 +716,16 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 ) : (
                   <button
                     onClick={() => setLockedDashboardModal('csv_export')}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 transition-all active:scale-95"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 bg-slate-50 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-100 transition-all active:scale-95"
                   >
                     <Lock className="w-3.5 h-3.5" />
                     Export (PRO)
                   </button>
                 )}
               </div>
-              <div className={`rounded-[2rem] overflow-hidden border shadow-2xl transition-all ${
-                isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200'
+              {/* Table Wrapper - handles internal scroll for mobile */}
+              <div className={`rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden border shadow-2xl transition-all ${
+                isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.02)]'
               }`}>
                 <TableView
                   leads={filteredLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions}
@@ -711,29 +738,27 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           )}
         </section>
 
-        {/* Load More */}
+        {/* Load More Section */}
         {pagination.page < pagination.pages && (
-          <div className="flex justify-center pt-16 pb-12">
+          <div className="flex flex-col items-center justify-center pt-16 sm:pt-24 pb-12 sm:pb-16 gap-4">
             <button
               onClick={() => fetchLeads(pagination.page + 1, false)}
-              className="group flex flex-col items-center gap-3 transition-all active:scale-95"
-            >
-              <div className={`px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] border-2 transition-all ${
+              className={`group px-8 py-4 sm:px-12 sm:py-5 rounded-[2rem] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all active:scale-95 ${
                 isDark
-                  ? 'bg-transparent border-white/10 text-white hover:bg-white hover:text-black hover:border-white'
-                  : 'bg-white border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'
-              }`}>
-                Load Next Batch
-              </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                {pagination.total - allLeads.length} records remaining
-              </span>
+                  ? 'bg-white text-black hover:bg-slate-200'
+                  : 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
+              }`}
+            >
+              Load Next Batch
             </button>
+            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {pagination.total - allLeads.length} records remaining
+            </span>
           </div>
         )}
       </main>
 
-      {/* Modals */}
+      {/* Modals & AI Components */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead} onClose={() => setSelectedLead(null)}
@@ -752,7 +777,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         company={company}
       />
 
-      {/* AI Chat */}
       <AiChatWidget
         planTier={planTier}
         allLeads={allLeads}
@@ -761,15 +785,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         onLockedFeature={setLockedDashboardModal}
       />
 
-      {/* Locked Feature Modal */}
       <LockedFeatureModal
         featureKey={lockedDashboardModal}
         companySlug={company.slug}
         onClose={() => setLockedDashboardModal(null)}
       />
 
-      {/* Dashboard Tour */}
-     {console.log('tourActive:', tourActive)}
       {tourActive && (
         <DashboardTour
           companyName={company.name} companySlug={company.slug}
