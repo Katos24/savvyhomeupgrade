@@ -80,7 +80,7 @@ export default function Pricing() {
 
           {/* Free tier banner */}
           <div className="max-w-4xl mx-auto mb-8 sm:mb-10">
-            <Link href="/signup?plan=free">
+            <Link href="/signup">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

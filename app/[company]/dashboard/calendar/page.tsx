@@ -17,8 +17,9 @@ type Company = {
   logo_url: string | null;
   created_at: string;
   business_type: string;
+  plan_tier?: string;
   status_options: any[] | null;
-form_categories?: any[] | null;
+  form_categories?: any[] | null;
   address_enabled: boolean | null;
   address_required: boolean;
 };
@@ -35,8 +36,9 @@ async function getCompany(slug: string): Promise<Company | null> {
       logo_url,
       created_at,
       business_type,
-      status_options,
+     status_options,
       form_categories,
+      plan_tier,
       address_enabled,
       address_required
     FROM companies 
@@ -100,11 +102,12 @@ export default async function CalendarPage({ params }: PageProps) {
 
 // Transform company to match CalendarClient's expected type
 const companyData = {
-  ...company,
-  status_options: Array.isArray(company.status_options) && company.status_options.length > 0
-    ? company.status_options 
-    : [], // Empty array will trigger fallback to DEFAULT_STATUSES
-  form_categories: company.form_categories || [], // ← ADD THIS LINE
+...company,
+status_options: Array.isArray(company.status_options) && company.status_options.length > 0
+? company.status_options 
+: [],
+form_categories: company.form_categories || [],
+plan_tier: company.plan_tier || 'free',
 };
 
 return <CalendarClient company={companyData} />;} 

@@ -237,29 +237,91 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
     return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
   };
 
+  // Render a tab without lock check
+  const renderUnlockedTab = (tab: Tab, data: any) => {
+    switch (tab) {
+      case 'form':            return <FormTab company={data} currentUser={currentUser} />;
+      case 'pipeline':        return <PipelineTab company={data} currentUser={currentUser} />;
+      case 'email-templates': return <EmailTemplatesTab company={data} currentUser={currentUser} />;
+      case 'categories':      return <CategoriesTab company={data} currentUser={currentUser} />;
+      case 'team':            return <TeamTab company={data} currentUser={currentUser} />;
+      case 'billing':         return <BillingTab company={data} currentUser={currentUser} />;
+      default:                return null;
+    }
+  };
+
+  // Sample data so locked tabs have something to show
+  const getSampleData = (tab: Tab) => {
+    switch (tab) {
+      case 'categories':
+        return {
+          form_categories: [
+            { value: 'roof_repair', label: 'Roof Repair' },
+            { value: 'inspection', label: 'Inspection' },
+            { value: 'new_installation', label: 'New Installation' },
+            { value: 'gutter_cleaning', label: 'Gutter Cleaning' },
+          ],
+        };
+      case 'form':
+        return {
+          form_field_config: {
+            address: { enabled: true, required: true },
+            file_upload: { enabled: true },
+            lead_source: { enabled: true },
+            preferred_date: { enabled: true },
+            preferred_time: { enabled: false },
+          },
+          custom_questions: [
+            { id: '1', label: 'What is your budget range?', type: 'select', required: false, options: ['Under $1,000', '$1,000-$5,000', '$5,000+'] },
+            { id: '2', label: 'Do you have pets on site?', type: 'checkbox', required: false },
+          ],
+        };
+      case 'pipeline':
+        return {
+          status_options: [
+            { value: 'new', label: 'New', color: 'blue' },
+            { value: 'contacted', label: 'Contacted', color: 'yellow' },
+            { value: 'quoted', label: 'Quoted', color: 'purple' },
+            { value: 'scheduled', label: 'Scheduled', color: 'blue' },
+            { value: 'in-progress', label: 'In Progress', color: 'orange' },
+            { value: 'completed', label: 'Completed', color: 'green' },
+          ],
+        };
+      case 'email-templates':
+        return {};
+      case 'team':
+        return {};
+      default:
+        return {};
+    }
+  };
+
   // ── Tab content renderer with lock check ─────────────────────
   const renderTabContent = (tab: Tab) => {
     const featureKey = TAB_FEATURE_MAP[tab];
 
-    // Check if locked
+  // Check if locked — show real tab blurred with upgrade overlay
     if (featureKey && !can(planTier, featureKey)) {
+      const sampleData = { ...companyData, ...getSampleData(tab) };
       return (
-        <UpgradeOverlay
-          feature={featureKey}
-          companySlug={company.slug}
-        />
+        <div className="relative">
+          {/* Real tab content — blurred and non-interactive */}
+          <div className="blur-[3px] pointer-events-none select-none opacity-60" aria-hidden>
+            {renderUnlockedTab(tab, sampleData)}
+          </div>
+          {/* Upgrade overlay on top */}
+          <div className="absolute inset-0 flex items-start justify-center pt-24 z-10">
+            <UpgradeOverlay
+              feature={featureKey}
+              companySlug={company.slug}
+            />
+          </div>
+        </div>
       );
     }
 
-    // Unlocked — render normally
-    switch (tab) {
-    case 'form':            return <FormTab company={companyData} currentUser={currentUser} />;
-      case 'pipeline':        return <PipelineTab company={companyData} currentUser={currentUser} />;
-      case 'email-templates': return <EmailTemplatesTab company={companyData} currentUser={currentUser} />;
-      case 'categories':      return <CategoriesTab company={companyData} currentUser={currentUser} />;
-      case 'team':            return <TeamTab company={companyData} currentUser={currentUser} />;
-      case 'billing':         return <BillingTab company={companyData} currentUser={currentUser} />;
-    }
+   // Unlocked — render normally
+    return renderUnlockedTab(tab, companyData);
   };
 
 // UI//

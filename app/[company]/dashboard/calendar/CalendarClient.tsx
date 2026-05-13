@@ -12,6 +12,7 @@ type Company = {
   logo_url?: string | null;
   status_options?: any[];
   form_categories?: any[];
+  plan_tier?: string;
 };
 
 export default function CalendarClient({ company }: { company: Company }) {
@@ -167,7 +168,7 @@ export default function CalendarClient({ company }: { company: Company }) {
 
       {/* LEAD MODAL */}
       {selectedLead && (
-        <LeadModal
+      <LeadModal
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus}
@@ -176,9 +177,9 @@ export default function CalendarClient({ company }: { company: Company }) {
           onRefresh={refreshModalLead}
           currentUser={currentUser}
           statusOptions={statusOptions}
-            categories={company.form_categories || []}  // ← ADD THIS LINE
-            companySlug={company.slug}
-
+          categories={company.form_categories || []}
+          companySlug={company.slug}
+          company={company}
         />
       )}
     </div>
