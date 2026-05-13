@@ -640,27 +640,29 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
         {/* Leads Display */}
         <section aria-label="Leads" aria-live="polite" className="relative">
-          {filteredLeads.length === 0 ? (
-            <div className={`rounded-[2.5rem] sm:rounded-[3.5rem] p-12 sm:p-40 text-center border-2 border-dashed transition-all ${
-              isDark ? 'bg-white/[0.01] border-white/10' : 'bg-slate-50/50 border-slate-200'
-            }`}>
-              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-[1.5rem] sm:rounded-[2rem] bg-blue-500/10 mb-6 sm:mb-8" aria-hidden>
-                <Inbox className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500/30" />
-              </div>
-              <h2 className={`text-xl sm:text-3xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Clean slate</h2>
-              <p className="text-slate-500 text-sm sm:text-base max-w-xs mx-auto font-medium leading-relaxed">
-                {hasActiveFilters ? "We couldn't find any leads matching those filters." : "Ready to grow? Create your first lead to get started."}
-              </p>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="mt-8 sm:mt-10 px-6 py-3 sm:px-8 sm:py-4 rounded-2xl bg-slate-900 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
-                >
-                  Reset Filters
-                </button>
-              )}
-            </div>
-          ) : currentView === 'calendar' ? (
+  {filteredLeads.length === 0 ? (
+  <div className={`rounded-2xl px-6 py-14 sm:py-24 text-center border border-dashed transition-all ${
+    isDark ? 'bg-white/[0.01] border-white/[0.06]' : 'bg-slate-50/30 border-slate-200'
+  }`}>
+    <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-500/10 mb-5" aria-hidden>
+      <Inbox className="w-7 h-7 sm:w-8 sm:h-8 text-blue-500/30" />
+    </div>
+    <h2 className={`text-lg sm:text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+      No leads yet
+    </h2>
+    <p className="text-slate-400 text-sm max-w-xs mx-auto leading-relaxed">
+      {hasActiveFilters ? "No leads match your current filters." : "Create your first lead to get started."}
+    </p>
+    {hasActiveFilters && (
+      <button
+        onClick={clearFilters}
+        className="mt-6 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500 transition-all"
+      >
+        Clear filters
+      </button>
+    )}
+  </div>
+) : currentView === 'calendar' ? (
             <div className="animate-in fade-in zoom-in-95 duration-500">
               <CalendarView leads={allLeads} onSelectLead={setSelectedLead} statusOptions={statusOptions} isDark={isDark} />
             </div>
@@ -733,23 +735,23 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         </section>
 
         {/* Load More */}
-        {pagination.page < pagination.pages && (
-          <div className="flex flex-col items-center justify-center pt-16 sm:pt-24 pb-12 sm:pb-16 gap-4">
-            <button
-              onClick={() => fetchLeads(pagination.page + 1, false)}
-              className={`group px-8 py-4 sm:px-12 sm:py-5 rounded-[2rem] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all active:scale-95 ${
-                isDark
-                  ? 'bg-white text-black hover:bg-slate-200'
-                  : 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
-              }`}
-            >
-              Load Next Batch
-            </button>
-            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {pagination.total - allLeads.length} records remaining
-            </span>
-          </div>
-        )}
+      {pagination.page < pagination.pages && (
+  <div className="flex flex-col items-center pt-10 sm:pt-14 pb-8 sm:pb-10 gap-2">
+    <button
+      onClick={() => fetchLeads(pagination.page + 1, false)}
+      className={`w-full sm:w-auto px-8 py-3 rounded-lg text-xs font-medium border transition-all active:scale-[0.97] ${
+        isDark
+          ? 'border-white/10 text-white/70 hover:bg-white/[0.06]'
+          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      Load more
+    </button>
+    <span className="text-[11px] text-slate-400">
+      {pagination.total - allLeads.length} remaining
+    </span>
+  </div>
+)}
       </main>
 
       {/* Modals & Components */}
