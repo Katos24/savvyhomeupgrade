@@ -527,14 +527,7 @@ el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6), 0 0 20px rgba(59,130,246,0
     }
   }, [step, onToggleTheme, onToggleView, onOpenSidebar, measureTarget]);
 
-  // Check if already completed
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(`tour-completed-${companySlug}`) === 'true') {
-        setActive(false);
-      }
-    } catch {}
-  }, [companySlug]);
+
 
   if (!active) return null;
 

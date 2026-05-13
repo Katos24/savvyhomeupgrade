@@ -499,15 +499,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
      {/* MAIN */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10 relative z-10">
 
-         {/* Free Plan Banner + Checklist */}
- <FreePlanBanner
-          company={company}
-          isDark={isDark}
-          onStartTour={() => setTourActive(true)}
-          onCreateLead={() => setIsCreateModalOpen(true)}
-          leadCount={allLeads.length}
-          allLeads={allLeads}
-        />
+
 
         {/* Top Nav Bar */}
         <header className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 mb-8 transition-all ${
@@ -587,6 +579,17 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
           ))}
         </section>
+
+        {/* Free Plan Banner + Checklist */}
+        <FreePlanBanner
+          company={company}
+          isDark={isDark}
+          onStartTour={() => setTourActive(true)}
+          onCreateLead={() => setIsCreateModalOpen(true)}
+          leadCount={allLeads.length}
+          allLeads={allLeads}
+        />
+
 
         {/* Error */}
         {loadError && (
@@ -766,6 +769,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       />
 
       {/* Dashboard Tour */}
+     {console.log('tourActive:', tourActive)}
       {tourActive && (
         <DashboardTour
           companyName={company.name} companySlug={company.slug}

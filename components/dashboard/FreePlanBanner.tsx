@@ -46,10 +46,9 @@ export default function FreePlanBanner({
   company, isDark, onStartTour, onCreateLead, leadCount, allLeads,
 }: FreePlanBannerProps) {
   const [dismissed, setDismissed] = useState(false);
-  const [checklistOpen, setChecklistOpen] = useState(true);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [steps, setSteps] = useState<Record<string, boolean>>(company.onboarding_steps || {});
 
-  // Persist dismissal per company
   useEffect(() => {
     try {
       if (localStorage.getItem(`free-banner-dismissed-${company.slug}`) === 'true') {
@@ -63,9 +62,8 @@ export default function FreePlanBanner({
     try { localStorage.setItem(`free-banner-dismissed-${company.slug}`, 'true'); } catch {}
   };
 
-  // Save a step to the database
   const markStep = useCallback(async (step: string) => {
-    if (steps[step]) return; // already done
+    if (steps[step]) return;
     const updated = { ...steps, [step]: true };
     setSteps(updated);
     try {
@@ -81,9 +79,7 @@ export default function FreePlanBanner({
 
   // Auto-detect completed steps
   useEffect(() => {
-    const hasLogo = !!company.logo_url;
-    const hasPhone = !!company.phone;
-    if (hasLogo && hasPhone && !steps.company_setup) {
+    if (!!company.logo_url && !!company.phone && !steps.company_setup) {
       markStep('company_setup');
     }
   }, [company.logo_url, company.phone, steps.company_setup, markStep]);
@@ -94,7 +90,6 @@ export default function FreePlanBanner({
     }
   }, [leadCount, steps.first_lead_created, markStep]);
 
-  // Detect self-test: a lead where email matches company email AND created_by is 'customer'
   useEffect(() => {
     if (steps.form_tested) return;
     const companyEmail = company.email?.toLowerCase();
@@ -104,15 +99,13 @@ export default function FreePlanBanner({
     );
     if (selfTest) {
       markStep('form_tested');
-      markStep('email_verified'); // if they tested the form, they'll see the email
+      markStep('email_verified');
     }
   }, [allLeads, company.email, steps.form_tested, markStep]);
 
-  // Don't show for paid users
   if (company.plan_tier !== 'free') return null;
   if (dismissed) return null;
 
-  // Build checklist
   const hasCompanyInfo = !!company.logo_url && !!company.phone;
 
   const freeChecklist: ChecklistItem[] = [
@@ -154,7 +147,6 @@ export default function FreePlanBanner({
     },
   ];
 
-  // Upgrade teaser items — locked for free users
   const upgradeChecklist: ChecklistItem[] = [
     {
       id: 'customize_form',
@@ -189,120 +181,84 @@ export default function FreePlanBanner({
   const progress = Math.round((completedCount / freeChecklist.length) * 100);
 
   return (
-    <div className="mb-6 space-y-3">
-      {/* ── Main Banner ── */}
-      <div className={`relative overflow-hidden rounded-2xl border transition-all ${
-        isDark
-          ? 'bg-gradient-to-r from-blue-950/80 via-[#0A0C14] to-blue-950/60 border-blue-500/20'
-          : 'bg-gradient-to-r from-blue-50 via-white to-blue-50 border-blue-200'
-      }`}>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none" />
-
-        <div className="relative px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              isDark ? 'bg-blue-500/15' : 'bg-blue-100'
-            }`}>
-              <Zap className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+    <div className="mb-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Banner row */}
+        <div className="px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-blue-600" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <p className={`text-sm font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <p className="text-sm font-black text-slate-900 tracking-tight">
                   Free Plan
                 </p>
-                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                  isDark ? 'bg-blue-500/15 text-blue-400' : 'bg-blue-100 text-blue-600'
-                }`}>
-                  {completedCount}/{freeChecklist.length} done
+                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  {completedCount}/{freeChecklist.length}
                 </span>
               </div>
-              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className="text-xs text-slate-600 mt-0.5">
                 {completedCount === freeChecklist.length
-                  ? 'You\'re all set! Upgrade to unlock the full toolkit.'
+                  ? 'All set! Upgrade to unlock the full toolkit.'
                   : 'Set up your business. Upgrade when you\'re ready.'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={onStartTour}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                isDark
-                  ? 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700'
-              }`}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
             >
               <Eye className="w-3 h-3" />
               Tour
             </button>
             <a
               href={`/${company.slug}/admin/settings#billing`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white transition-all"
             >
               <Crown className="w-3 h-3" />
               <span className="hidden sm:inline">Upgrade</span>
-              <span className="sm:hidden">Pro</span>
             </a>
             <button
-              onClick={handleDismiss}
-              className={`p-1.5 rounded-lg transition-all ${
-                isDark ? 'text-slate-600 hover:text-slate-400 hover:bg-white/5' : 'text-slate-300 hover:text-slate-500'
-              }`}
+              onClick={() => setChecklistOpen(v => !v)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-all"
             >
-              <X className="w-3.5 h-3.5" />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${checklistOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="p-1.5 rounded-lg text-slate-300 hover:text-slate-500 transition-all"
+            >
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className={`h-0.5 ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
+        <div className="h-0.5 bg-slate-100">
           <div
             className="h-full bg-blue-500 transition-all duration-700 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-      </div>
 
-      {/* ── Checklist ── */}
-      <div className={`rounded-2xl border overflow-hidden transition-all ${
-        isDark
-          ? 'bg-[#0A0C14] border-white/5'
-          : 'bg-white border-slate-200 shadow-sm'
-      }`}>
-        <button
-          onClick={() => setChecklistOpen(v => !v)}
-          className={`w-full px-5 py-3 flex items-center justify-between transition-all ${
-            isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'
-          }`}
-        >
-          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-            isDark ? 'text-slate-500' : 'text-slate-400'
-          }`}>
-            Getting Started
-          </span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${
-            checklistOpen ? 'rotate-180' : ''
-          } ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-        </button>
-
+        {/* Checklist (collapsed by default) */}
         {checklistOpen && (
-          <div className={`border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+          <div className="border-t border-slate-100">
             {/* Free steps */}
             {freeChecklist.map((item, i) => (
               <ChecklistRow
                 key={item.id}
                 item={item}
-                isDark={isDark}
-                isLast={false}
+                isLast={i === freeChecklist.length - 1 && upgradeChecklist.length === 0}
               />
             ))}
 
             {/* Divider */}
-            <div className={`px-5 py-2.5 ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
-              <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${
-                isDark ? 'text-slate-600' : 'text-slate-400'
-              }`}>
+            <div className="px-4 py-2 bg-slate-50">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
                 Unlock with upgrade
               </p>
             </div>
@@ -312,7 +268,6 @@ export default function FreePlanBanner({
               <ChecklistRow
                 key={item.id}
                 item={item}
-                isDark={isDark}
                 isLast={i === upgradeChecklist.length - 1}
                 companySlug={company.slug}
               />
@@ -327,10 +282,9 @@ export default function FreePlanBanner({
 // ── Checklist Row Component ──
 
 function ChecklistRow({
-  item, isDark, isLast, companySlug,
+  item, isLast, companySlug,
 }: {
   item: ChecklistItem;
-  isDark: boolean;
   isLast: boolean;
   companySlug?: string;
 }) {
@@ -340,26 +294,22 @@ function ChecklistRow({
     return (
       <a
         href={companySlug ? `/${companySlug}/admin/settings#billing` : '#'}
-        className={`flex items-center gap-4 px-5 py-3.5 transition-all group cursor-pointer ${
-          isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'
-        } ${!isLast ? (isDark ? 'border-b border-white/[0.03]' : 'border-b border-slate-50') : ''}`}
+        className={`flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all group cursor-pointer ${
+          !isLast ? 'border-b border-slate-100' : ''
+        }`}
       >
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-          isDark ? 'bg-white/5 text-slate-700' : 'bg-slate-100 text-slate-300'
-        }`}>
-          <Lock className="w-3 h-3" />
+        <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+          <Lock className="w-3 h-3 text-slate-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-bold leading-tight ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          <p className="text-xs font-bold text-slate-400 leading-tight">
             {item.label}
           </p>
-          <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-700' : 'text-slate-400'}`}>
+          <p className="text-[10px] text-slate-400 mt-0.5">
             {item.description}
           </p>
         </div>
-        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0 ${
-          isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-500'
-        }`}>
+        <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-50 text-blue-600 shrink-0">
           {item.lockedLabel}
         </span>
       </a>
@@ -379,43 +329,37 @@ function ChecklistRow({
   return (
     <Wrapper
       {...(wrapperProps as any)}
-      className={`flex items-center gap-4 px-5 py-3.5 transition-all group ${
+      className={`flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all group w-full text-left ${
         item.href || item.action ? 'cursor-pointer' : ''
-      } ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'} ${
-        !isLast ? (isDark ? 'border-b border-white/[0.03]' : 'border-b border-slate-50') : ''
-      }`}
+      } ${!isLast ? 'border-b border-slate-100' : ''}`}
     >
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
         item.done
-          ? 'bg-emerald-500/15 text-emerald-500'
-          : isDark ? 'bg-white/5 text-slate-600' : 'bg-slate-100 text-slate-300'
+          ? 'bg-emerald-100 text-emerald-600'
+          : 'bg-slate-100 text-slate-400'
       }`}>
         {item.done
-          ? <Check className="w-3.5 h-3.5 stroke-[3px]" />
-          : <Icon className="w-3.5 h-3.5" />
+          ? <Check className="w-3 h-3 stroke-[3px]" />
+          : <Icon className="w-3 h-3" />
         }
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-bold leading-tight ${
-          item.done
-            ? isDark ? 'text-slate-500 line-through' : 'text-slate-400 line-through'
-            : isDark ? 'text-white' : 'text-slate-900'
+        <p className={`text-xs font-bold leading-tight ${
+          item.done ? 'text-slate-400 line-through' : 'text-slate-800'
         }`}>
           {item.label}
         </p>
-        <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+        <p className={`text-[10px] mt-0.5 ${item.done ? 'text-slate-400' : 'text-slate-500'}`}>
           {item.description}
         </p>
       </div>
 
       {item.href && !item.done && (
-        <ArrowRight className={`w-3.5 h-3.5 shrink-0 transition-all group-hover:translate-x-0.5 ${
-          isDark ? 'text-slate-700 group-hover:text-blue-400' : 'text-slate-300 group-hover:text-blue-500'
-        }`} />
+        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0" />
       )}
       {item.external && !item.done && (
-        <ExternalLink className={`w-3 h-3 shrink-0 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
+        <ExternalLink className="w-3 h-3 text-slate-300 shrink-0" />
       )}
     </Wrapper>
   );
