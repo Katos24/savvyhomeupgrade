@@ -114,8 +114,8 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
     email: company.email || '',
     phone: company.phone || '',
     website: company.website || '',
-    color1: company.email_brand_color_1 || '#6366f1',
-    color2: company.email_brand_color_2 || '#4f46e5',
+   color1: company.email_brand_color_1 || '#0B3C6D',
+    color2: company.email_brand_color_2 || '#1F5F8F',
   });
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -418,8 +418,9 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         }
         <div className="flex items-center gap-2 mt-1.5">
           <span
-            className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-white"
-            style={{ background: `linear-gradient(135deg, ${formData.color1}, ${formData.color2})` }}
+            className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-white ${
+              planTier === 'pro' ? 'bg-blue-600' : planTier === 'basic' ? 'bg-slate-800' : 'bg-emerald-600'
+            }`}
           >
             {planTier} plan
           </span>

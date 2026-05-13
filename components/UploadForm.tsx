@@ -205,13 +205,8 @@ export default function UploadForm({
   // Redirect to /success after any successful submission
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleSuccess = () => {
-    setShowSuccess(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Redirect after a short delay so they see the confirmation instantly
-    setTimeout(() => {
-      router.push(`/${finalCompanySlug}/success`);
-    }, 1500);
+ const handleSuccess = () => {
+    router.push(`/${finalCompanySlug}/success`);
   };
 
   // Step 1 submit

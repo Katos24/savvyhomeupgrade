@@ -41,10 +41,10 @@ export default function Nav() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-4 sm:px-6 ${
+       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-4 sm:px-6 ${
           scrolled
             ? 'py-3 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-lg'
-            : 'py-4 bg-transparent'
+            : 'py-4 bg-slate-900'
         }`}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -55,12 +55,12 @@ export default function Nav() {
               src="/Lead2ProjectLogo.png"
               alt="Lead2Project"
               className={`h-7 transition-all group-hover:scale-105 ${
-''
+scrolled ? '' : 'brightness-0 invert'
               }`}
             />
             <span
-              className={`text-lg sm:text-xl font-black transition-colors ${
-scrolled ? 'text-slate-900' : 'text-slate-900'
+             className={`text-lg sm:text-xl font-black transition-colors ${
+scrolled ? 'text-slate-900' : 'text-white'
               }`}
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -73,7 +73,7 @@ scrolled ? 'text-slate-900' : 'text-slate-900'
             <Link
 href="/#how-it-works"
               className={`text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-slate-900'
+scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               How it works
@@ -85,7 +85,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-sl
                 onClick={() => setFeaturesOpen(!featuresOpen)}
                 onMouseEnter={() => setFeaturesOpen(true)}
                 className={`flex items-center gap-1 text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-slate-900'
+scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
                 }`}
               >
                 Features
@@ -124,7 +124,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-sl
             <Link
               href="#pricing"
               className={`text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-slate-900'
+scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               Pricing
@@ -136,7 +136,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-sl
             <Link
               href="/login"
               className={`text-sm font-bold px-4 py-2 transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-slate-900'
+scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               Log in
@@ -163,7 +163,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-slate-600 hover:text-sl
 
             <button
               onClick={() => setMobileOpen(true)}
-              className={`p-2 ${scrolled ? 'text-slate-700' : 'text-slate-700'}`}
+              className={`p-2 ${scrolled ? 'text-slate-700' : 'text-white'}`}
               aria-label="Open menu"
             >
               <Menu size={24} strokeWidth={2.5} />
