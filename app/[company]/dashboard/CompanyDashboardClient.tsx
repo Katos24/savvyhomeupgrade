@@ -497,11 +497,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       </div>
 
 
-
-  {/* MAIN */}
+{/* MAIN */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
 
-        {/* Top Nav Bar - Ultra Modern & Mobile Responsive */}
+        {/* Top Nav Bar - Modern Glassmorphism */}
         <header className={`sticky top-4 z-50 rounded-[1.5rem] sm:rounded-[2rem] px-4 py-3 sm:px-8 sm:py-5 mb-8 transition-all backdrop-blur-xl ${
           isDark
             ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.3)]'
@@ -509,7 +508,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         }`}>
           <div className="flex items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-              {/* Sidebar Toggle - Larger touch target for mobile */}
               <button
                 data-tour="sidebar-toggle"
                 onClick={() => setSidebarOpen(true)}
@@ -520,8 +518,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 <Menu className="w-6 h-6" />
               </button>
               
-              {/* Logo & Company Name Area */}
-              <div className="flex items-center gap-4 sm:gap-5 min-w-0 border-l border-slate-200/30 pl-3 sm:pl-6">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0 border-l border-slate-200/30 pl-3 sm:pl-6">
                 {company.logo_url ? (
                   <img 
                     src={company.logo_url} 
@@ -529,14 +526,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     className="h-10 sm:h-16 w-auto object-contain shrink-0 hover:scale-105 transition-transform" 
                   />
                 ) : (
-                  <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shrink-0 shadow-xl shadow-blue-500/20 text-lg">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white font-black shrink-0 shadow-xl shadow-blue-500/20 text-lg">
                     {company.name.charAt(0)}
                   </div>
                 )}
                 
-                {/* Company Name - Always shown, slightly smaller on mobile to prevent overflow */}
                 <div className="min-w-0">
-                  <h1 className={`text-sm sm:text-xl font-bold tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <h1 className={`text-sm sm:text-xl font-black tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {company.name}
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -547,7 +543,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               </div>
             </div>
 
-            {/* Action Button - Simplified icon-only on very small screens */}
             <div className="flex items-center gap-2 shrink-0">
               {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-blue-500 hidden xs:block" />}
               {can(planTier, 'create_lead_manual') ? (
@@ -574,12 +569,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </header>
 
-        {/* Stats Grid - Optimized for single column on tiny screens, 2 on mobile, 4 on desktop */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12 w-full">
+        {/* Stats - Horizontal Swipe on Mobile, Grid on Desktop */}
+        <section className="flex sm:grid sm:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12 w-full overflow-x-auto pb-4 sm:pb-0 no-scrollbar snap-x snap-mandatory">
           {stats.map((s, i) => (
             <div
               key={i}
-              className={`rounded-[1.25rem] sm:rounded-[1.5rem] p-4 sm:p-7 transition-all hover:-translate-y-1 ${
+              className={`min-w-[150px] flex-1 snap-start rounded-[1.25rem] sm:rounded-[1.5rem] p-4 sm:p-7 transition-all ${
                 isDark 
                   ? 'bg-white/[0.03] border border-white/5' 
                   : 'bg-white border border-slate-50 shadow-[0_8px_30px_rgb(0,0,0,0.02)]'
@@ -623,7 +618,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         )}
 
-        {/* Filters - Assumed to handle its own mobile responsiveness */}
+        {/* Filters */}
         <div className="mb-8 sm:mb-10">
           <DashboardFilters
             searchQuery={searchQuery} filterStatus={filterStatus} timeFilter={timeFilter}
@@ -723,7 +718,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   </button>
                 )}
               </div>
-              {/* Table Wrapper - handles internal scroll for mobile */}
               <div className={`rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden border shadow-2xl transition-all ${
                 isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.02)]'
               }`}>
@@ -738,7 +732,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           )}
         </section>
 
-        {/* Load More Section */}
+        {/* Load More */}
         {pagination.page < pagination.pages && (
           <div className="flex flex-col items-center justify-center pt-16 sm:pt-24 pb-12 sm:pb-16 gap-4">
             <button
@@ -758,7 +752,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         )}
       </main>
 
-      {/* Modals & AI Components */}
+      {/* Modals & Components */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead} onClose={() => setSelectedLead(null)}
