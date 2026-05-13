@@ -55,10 +55,9 @@ export async function GET(request: Request, { params }: Props) {
     const endDate    = url.searchParams.get('endDate')?.trim()    || '';
 
     // ── Scheduled Today special case ──────────────────────────
-    // Filter by p.scheduled_date instead of l.created_at
     const isScheduledToday = timeFilter === 'today' && status === 'scheduled';
-const today = new Date();
-const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const today = new Date();
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // ── Build created_at time boundary (standard filters) ─────
     let timeFrom: Date | null = null;
@@ -138,7 +137,10 @@ const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${category} = '' OR l.category = ${category})
+          AND (${category} = '' 
+  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+)
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -198,7 +200,10 @@ const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${category} = '' OR l.category = ${category})
+          AND (${category} = '' 
+  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+)
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -224,7 +229,10 @@ const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
             l.description ILIKE ${'%' + search + '%'}
           ))
           AND (${status} = ''   OR l.status = ${status})
-          AND (${category} = '' OR l.category = ${category})
+          AND (${category} = '' 
+  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+)
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -285,7 +293,10 @@ const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
             l.description ILIKE ${'%' + search + '%'}
           ))
           AND (${status} = ''   OR l.status = ${status})
-          AND (${category} = '' OR l.category = ${category})
+          AND (${category} = '' 
+  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+)
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR

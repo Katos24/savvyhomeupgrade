@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import {
   Search, X, Filter, ChevronDown, LayoutGrid, List,
-  Calendar, Lock, Sun, Moon, Sparkles, Clock, DollarSign, Loader2,
+  Calendar, Lock, Sun, Moon, Clock, DollarSign, Loader2, User, Tag
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -12,7 +12,6 @@ type ViewMode = 'cards' | 'table' | 'calendar';
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
 type DashboardFiltersProps = {
-  // State values
   searchQuery: string;
   filterStatus: string;
   timeFilter: TimeFilter;
@@ -27,13 +26,9 @@ type DashboardFiltersProps = {
   isSearching: boolean;
   hasActiveFilters: boolean;
   serverStatusCounts: Record<string, number>;
-
-  // Data
   statusOptions: StatusOption[];
   teamMembers: any[];
   categories: string[];
-
-  // Setters
   setSearchQuery: (v: string) => void;
   setFilterStatus: (v: string) => void;
   setTimeFilter: (v: TimeFilter) => void;
@@ -45,8 +40,6 @@ type DashboardFiltersProps = {
   setCurrentView: (v: ViewMode) => void;
   setIsDark: (fn: (v: boolean) => boolean) => void;
   setIsSearching: (v: boolean) => void;
-
-  // Actions
   fetchLeads: (page: number, silent: boolean, overrides?: Record<string, string>) => Promise<void>;
   clearFilters: () => void;
   onLockedFeature: (feature: string) => void;
@@ -65,198 +58,173 @@ export default function DashboardFilters({
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isScheduledTodayActive = timeFilter === 'today' && filterStatus === 'scheduled';
+
   return (
-    <section aria-label="Search and filter leads" className="mb-8 flex flex-col gap-2">
-      {/* Row 1: Search + View Switcher + Theme */}
+    <section aria-label="Search and filter leads" className="mb-6 flex flex-col gap-4">
+
+      {/* ROW 1: PRIMARY ACTIONS */}
       <div className="flex items-center gap-2">
-        {/* Expandable Search */}
-        <div className="flex items-center flex-1 min-w-0">
-          {searchQuery ? (
-            <div className="relative flex-1">
-              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
-              <input
-                autoFocus
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={e => {
-                  const val = e.target.value;
-                  setSearchQuery(val);
-                  if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-                  if (val.trim().length >= 2) {
-                    setIsSearching(true);
-                    searchTimeoutRef.current = setTimeout(async () => {
-                      await fetchLeads(1, true, { search: val.trim() });
-                      setIsSearching(false);
-                    }, 400);
-                  } else if (val.trim() === '') {
-                    fetchLeads(1, true, { search: '' });
-                  }
-                }}
-                className={`w-full pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold outline-none border transition-all ${
-                  isDark ? 'bg-[#0A0C14] border-white/10 text-white placeholder-white/20' : 'bg-white border-slate-200 text-slate-900 shadow-sm'
-                }`}
-              />
-              <button onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-400">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
+        {/* Search Bar */}
+        <div className="relative flex-1 group">
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${
+            isDark ? 'text-white/20 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-500'
+          }`} />
+          <input
+            type="search"
+            placeholder="Search leads..."
+            value={searchQuery === ' ' ? '' : searchQuery}
+            onChange={e => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+              setIsSearching(true);
+              searchTimeoutRef.current = setTimeout(async () => {
+                await fetchLeads(1, true, { search: val.trim() });
+                setIsSearching(false);
+              }, 400);
+            }}
+            className={`w-full pl-11 pr-10 py-3 rounded-2xl text-sm font-bold outline-none border transition-all ${
+              isDark
+                ? 'bg-[#0A0C14] border-white/10 text-white placeholder-white/20 focus:border-blue-500/40'
+                : 'bg-white border-slate-200 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5'
+            }`}
+          />
+          {isSearching && (
+            <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-blue-500" />
+          )}
+          {searchQuery.trim() !== '' && (
             <button
-              onClick={() => setSearchQuery(' ')}
-              className={`p-2.5 rounded-xl border transition-all shrink-0 ${
-                isDark ? 'bg-[#0A0C14] border-white/5 text-white/40 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'
-              }`}
+              onClick={() => { setSearchQuery(''); fetchLeads(1, true, { search: '' }); }}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
             >
-              {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Search className="w-4 h-4" />}
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {/* View Switcher */}
-        <div
-          data-tour="view-switcher"
-          className={`flex p-1 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}
-        >
+        <div className={`flex p-1 rounded-2xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
           {[
             { id: 'cards', icon: LayoutGrid, feature: null },
-            { id: 'table', icon: List, feature: 'table_view' as const },
-            { id: 'calendar', icon: Calendar, feature: 'calendar_view' as const },
+            { id: 'table', icon: List, feature: 'table_view' },
+            { id: 'calendar', icon: Calendar, feature: 'calendar_view' },
           ].map((v) => {
-            const locked = v.feature && !can(planTier, v.feature);
+            const locked = v.feature && !can(planTier, v.feature as any);
+            const active = currentView === v.id;
             return (
               <button
                 key={v.id}
                 onClick={() => locked ? onLockedFeature(v.feature!) : setCurrentView(v.id as ViewMode)}
-                className={`p-2 rounded-lg transition-all relative ${
-                  locked
-                    ? 'text-slate-600 cursor-not-allowed opacity-40'
-                    : currentView === v.id
-                      ? 'bg-blue-500 text-white shadow-lg'
-                      : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
+                className={`p-2 rounded-xl transition-all relative ${
+                  active
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : isDark ? 'text-white/30 hover:text-white' : 'text-slate-400 hover:text-slate-900'
                 }`}
               >
                 <v.icon className="w-4 h-4" />
-                {locked && <Lock className="w-2 h-2 absolute -top-0.5 -right-0.5 text-slate-500" />}
+                {locked && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-1 text-amber-500" />}
               </button>
             );
           })}
         </div>
 
-        {/* Theme Toggle */}
+        {/* Theme */}
         <button
-          data-tour="theme-toggle"
           onClick={() => setIsDark(v => !v)}
-          className={`p-2.5 rounded-xl border transition-all active:scale-95 shrink-0 ${
-            isDark ? 'bg-[#0A0C14] border-white/5 text-amber-400' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+          className={`p-2.5 rounded-2xl border transition-all shrink-0 ${
+            isDark ? 'bg-[#0A0C14] border-white/10 text-amber-400' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
           }`}
         >
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Row 2: Filter Pills */}
-      <div
-        data-tour="filters"
-        className="flex items-center gap-2 overflow-x-auto no-scrollbar"
-      >
-        {/* Advanced Filter Launcher */}
+      {/* ROW 2: QUICK FILTERS */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        {/* Advanced Filters Toggle */}
         <button
-          onClick={() => setShowAdvancedFilters(v => !v)}
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
             showAdvancedFilters || hasActiveFilters
-              ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20'
-              : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : isDark ? 'bg-[#0A0C14] border-white/10 text-white/50' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
           }`}
         >
-          <Filter className="w-3.5 h-3.5 stroke-[3px]" />
+          <Filter className="w-3.5 h-3.5" />
           Filters
           <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
         </button>
 
-        <div className={`w-px h-4 mx-1 shrink-0 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+        <div className={`w-px h-5 mx-1 shrink-0 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 
-        {/* Today */}
+        {/* Scheduled Today */}
         <button
           onClick={() => {
-            const isActive = timeFilter === 'today' && filterStatus === 'scheduled';
-            setTimeFilter(isActive ? 'all' : 'today');
-            setFilterStatus(isActive ? 'all' : 'scheduled');
+            if (isScheduledTodayActive) {
+              setTimeFilter('all');
+              setFilterStatus('all');
+            } else {
+              setTimeFilter('today');
+              setFilterStatus('scheduled');
+            }
           }}
           className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-            timeFilter === 'today' && filterStatus === 'scheduled'
-              ? 'bg-emerald-600 text-white border-emerald-600'
-              : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+            isScheduledTodayActive
+              ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/20'
+              : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
-          Today
+          <span className="hidden sm:inline">Scheduled Today</span>
+          <span className="sm:hidden">Today</span>
         </button>
 
         {/* Unpaid */}
         <button
           onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
-          className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+          className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
             filterPayment === 'unpaid'
               ? 'bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-500/20'
-              : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
+              : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
           }`}
         >
           <DollarSign className="w-3.5 h-3.5" />
           Unpaid
         </button>
 
-        {/* New */}
-        <button
-          onClick={() => setFilterStatus(filterStatus === 'new' ? 'all' : 'new')}
-          className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-            filterStatus === 'new'
-              ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
-              : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          New {(serverStatusCounts['new'] || 0) > 0 && <span className="opacity-70">({serverStatusCounts['new']})</span>}
-        </button>
-
+        {/* Clear All */}
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
             className="shrink-0 p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
           >
-            <X className="w-4 h-4 stroke-[3px]" />
+            <X className="w-3.5 h-3.5 stroke-[3px]" />
           </button>
         )}
       </div>
 
-      {/* Advanced Filter Dropdown */}
-      <div className="relative">
-        {showAdvancedFilters && (
-          <div>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setShowAdvancedFilters(false)}
-            />
+      {/* ADVANCED FILTERS */}
+      {showAdvancedFilters && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setShowAdvancedFilters(false)} />
 
-            {/* Desktop Dropdown */}
-            <div
-              className="hidden sm:block absolute top-full left-0 mt-2 z-[200] w-[380px] rounded-2xl border shadow-2xl p-5"
-              style={{
-                background: isDark ? '#0D0F17' : '#ffffff',
-                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-              }}
-            >
-              <div className="grid grid-cols-2 gap-6 mb-6">
+          {/* Desktop Dropdown */}
+          <div className="relative z-[100] hidden sm:block">
+            <div className={`absolute top-0 left-0 w-[400px] p-6 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 ${
+              isDark ? 'bg-[#0D0F17] border-white/10' : 'bg-white border-slate-200'
+            }`}>
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Assignee</label>
+                  <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-500">
+                    <User className="w-3 h-3" /> Assignee
+                  </label>
                   <select
                     value={filterAssignee}
                     onChange={e => setFilterAssignee(e.target.value)}
-                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-                      isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold border outline-none appearance-none cursor-pointer ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
                     <option value="all">Everyone</option>
@@ -265,58 +233,58 @@ export default function DashboardFilters({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Category</label>
+                  <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-500">
+                    <Tag className="w-3 h-3" /> Category
+                  </label>
                   <select
                     value={filterCategory}
                     onChange={e => setFilterCategory(e.target.value)}
-                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all appearance-none cursor-pointer ${
-                      isDark ? 'bg-white/5 border-white/10 text-white hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold border outline-none appearance-none cursor-pointer ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
-                    <option value="all">All Sectors</option>
-                    {categories.map(c => (
-                      <option key={c} value={c}>{String(c).replace(/_/g, ' ').toUpperCase()}</option>
-                    ))}
+                    <option value="all">All Categories</option>
+                    {categories.map(c => <option key={c} value={c}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Start Date</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-blue-500">From</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all ${
-                      isDark ? 'bg-white/5 border-white/10 text-white invert-calendar' : 'bg-slate-50 border-slate-200'
+                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">End Date</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-blue-500">To</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border transition-all ${
-                      isDark ? 'bg-white/5 border-white/10 text-white invert-calendar' : 'bg-slate-50 border-slate-200'
+                    className={`w-full rounded-xl px-4 py-3 text-xs font-bold outline-none border ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   />
                 </div>
               </div>
 
-              <div className="mb-8 space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Lifecycle Status</label>
+              <div className="space-y-3 mb-6">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-blue-500">Status</label>
                 <div className="flex flex-wrap gap-2">
                   {statusOptions.map(s => (
                     <button
                       key={s.value}
                       onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                      className={`px-3 py-2 rounded-lg text-[10px] font-bold border transition-all ${
                         filterStatus === s.value
-                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30'
-                          : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-600'
                       }`}
                     >
                       {s.label}
@@ -325,80 +293,134 @@ export default function DashboardFilters({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+              <div className={`flex gap-3 pt-5 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
                 <button
                   onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-                  className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all"
+                  className="flex-1 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-red-400 bg-red-400/5 hover:bg-red-400/10 transition-all"
                 >
-                  Reset Engine
+                  Clear All
                 </button>
                 <button
                   onClick={() => setShowAdvancedFilters(false)}
-                  className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] bg-blue-600 text-white hover:bg-blue-500 shadow-xl shadow-blue-600/20 transition-all"
+                  className="flex-1 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-500 transition-all"
                 >
-                  Apply Changes
+                  Apply
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Mobile Drawer */}
-            <div className="sm:hidden fixed inset-0 z-[300] flex flex-col justify-end">
-              <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={() => setShowAdvancedFilters(false)}
-              />
-              <div className={`relative rounded-t-[3rem] p-8 pb-12 max-h-[90vh] overflow-y-auto shadow-[0_-24px_48px_rgba(0,0,0,0.6)] ${
-                isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
-              }`}>
-                <div className="w-16 h-1.5 bg-blue-500/20 rounded-full mx-auto mb-10" />
+          {/* Mobile Bottom Drawer */}
+          <div className="sm:hidden fixed inset-0 z-[300] flex flex-col justify-end">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowAdvancedFilters(false)}
+            />
+            <div className={`relative rounded-t-3xl px-6 pt-6 pb-10 max-h-[85vh] overflow-y-auto ${
+              isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
+            }`}>
+              {/* Drag Handle */}
+              <div className="w-12 h-1 bg-slate-300/30 rounded-full mx-auto mb-6" />
 
-                <div className="space-y-10">
-                  <div className="space-y-4">
-                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Target Segment</label>
-                    <div className="grid grid-cols-1 gap-3">
-                      <select
-                        value={filterAssignee}
-                        onChange={e => setFilterAssignee(e.target.value)}
-                        className={`w-full rounded-2xl px-5 py-4 text-base font-bold border outline-none appearance-none ${
-                          isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+              <div className="space-y-6">
+                {/* Assignee */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-blue-500">
+                    <User className="w-3 h-3" /> Assignee
+                  </label>
+                  <select
+                    value={filterAssignee}
+                    onChange={e => setFilterAssignee(e.target.value)}
+                    className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none appearance-none ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <option value="all">Everyone</option>
+                    <option value="unassigned">Unassigned</option>
+                    {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                  </select>
+                </div>
+
+                {/* Category */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-blue-500">
+                    <Tag className="w-3 h-3" /> Category
+                  </label>
+                  <select
+                    value={filterCategory}
+                    onChange={e => setFilterCategory(e.target.value)}
+                    className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none appearance-none ${
+                      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map(c => <option key={c} value={c}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                  </select>
+                </div>
+
+                {/* Date Range */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-500">Date Range</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
+                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
+                    />
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
+                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-500">Status</label>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOptions.map(s => (
+                      <button
+                        key={s.value}
+                        onClick={() => setFilterStatus(filterStatus === s.value ? 'all' : s.value)}
+                        className={`px-3.5 py-2.5 rounded-lg text-xs font-bold border transition-all ${
+                          filterStatus === s.value
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-slate-100 border-slate-200 text-slate-600'
                         }`}
                       >
-                        <option value="all">Everyone</option>
-                        {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500">Timeline</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                        className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                        className={`w-full rounded-2xl px-5 py-4 text-sm font-bold border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                    </div>
+                        {s.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 gap-3 mt-12">
-                  <button
-                    onClick={() => setShowAdvancedFilters(false)}
-                    className="w-full py-5 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] bg-blue-500 text-white shadow-2xl shadow-blue-600/40"
-                  >
-                    Apply Filters
-                  </button>
-                  <button
-                    onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-                    className="w-full py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-500"
-                  >
-                    Reset All
-                  </button>
-                </div>
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3 mt-8">
+                <button
+                  onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
+                  className="py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest text-red-400 bg-red-400/5 hover:bg-red-400/10 transition-all"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowAdvancedFilters(false)}
+                  className="py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-500 transition-all"
+                >
+                  Apply
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </section>
   );
 }
