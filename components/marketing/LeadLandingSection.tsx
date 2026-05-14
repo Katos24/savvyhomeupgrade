@@ -8,7 +8,7 @@ import {
   FileText,
   CreditCard,
   CheckSquare,
-  Image,
+  Image as LucideImage,
   MessageCircle,
   Send,
   Zap,
@@ -23,7 +23,7 @@ const LEAD_TABS = [
   { id: 'quote', label: 'Quote', icon: FileText },
   { id: 'payment', label: 'Payment', icon: CreditCard },
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-  { id: 'media', label: 'Media', icon: Image },
+  { id: 'media', label: 'Media', icon: LucideImage },
   { id: 'activity', label: 'Activity', icon: MessageCircle },
 ];
 
@@ -126,7 +126,7 @@ export default function LeadLandingSection() {
   const currentValue = TAB_VALUE[activeTab];
 
   return (
-    <section className="bg-amber-50 py-12 sm:py-20 lg:py-28 overflow-hidden relative">
+    <section className="bg-amber-50 py-12 sm:py-20 lg:pt-28 lg:pb-32 overflow-hidden relative">
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -160,21 +160,9 @@ export default function LeadLandingSection() {
             Run the entire job <br className="hidden sm:block" />
             <span className="text-blue-600">from one card.</span>
           </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-sm sm:text-lg text-black-500 max-w-2xl mx-auto font-bold"
-            style={{ fontFamily: font }}
-          >
-            Quote, schedule, collect payment, track tasks, send emails —
-            all without leaving the lead card. No extra tools. No chaos.
-          </motion.p>
         </div>
 
-        {/* PILL TABS — always on top */}
+        {/* PILL TABS */}
         <div className="max-w-6xl mx-auto mb-5 sm:mb-8">
           <PillTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
@@ -182,7 +170,7 @@ export default function LeadLandingSection() {
         {/* SPLIT LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 lg:gap-12 items-start max-w-6xl mx-auto">
 
-          {/* VALUE COPY — below card on mobile, left on desktop */}
+          {/* LEFT COLUMN: VALUE COPY & SMALL IMAGE */}
           <div className="order-2 lg:order-1 lg:sticky lg:top-32">
             <AnimatePresence mode="wait">
               <motion.div
@@ -195,37 +183,40 @@ export default function LeadLandingSection() {
               >
                 <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-3 py-1.5">
                   <Zap size={12} className="text-blue-600" fill="currentColor" />
-                  <span
-                    className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-blue-700"
-                    style={{ fontFamily: font }}
-                  >
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-blue-700" style={{ fontFamily: font }}>
                     {currentValue.highlight}
                   </span>
                 </div>
 
-                <h3
-                  className="text-lg sm:text-2xl lg:text-3xl text-slate-900 leading-tight"
-                  style={{ fontFamily: font, fontWeight: 900 }}
-                >
+                <h3 className="text-lg sm:text-2xl lg:text-3xl text-slate-900 leading-tight" style={{ fontFamily: font, fontWeight: 900 }}>
                   {currentValue.headline}
                 </h3>
 
-                <p
-                  className="text-sm sm:text-base text-slate-600 leading-relaxed font-semibold"
-                  style={{ fontFamily: font }}
-                >
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-semibold" style={{ fontFamily: font }}>
                   {currentValue.body}
                 </p>
-
-                <div className="hidden lg:flex items-center gap-2 text-blue-600 text-sm font-black pt-1">
-                  <ArrowRight size={14} strokeWidth={3} />
-                  <span>Click the tabs above to explore</span>
-                </div>
               </motion.div>
             </AnimatePresence>
+
+            {/* SMALL FLOATING IMAGE */}
+            <motion.div
+              initial={{ opacity: 0, x: -20, rotate: -2 }}
+              whileInView={{ opacity: 1, x: 0, rotate: -2 }}
+              viewport={{ once: true }}
+              className="mt-12 hidden lg:block w-94"
+            >
+              <div className="bg-white p-1.5 rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
+                <img
+                  src="/images/marketing-quote.webp"
+                  alt="Dashboard Preview"
+                  className="w-full h-auto rounded-lg   transition-all duration-500"
+                />
+              </div>
+             
+            </motion.div>
           </div>
 
-          {/* CARD — first on mobile */}
+          {/* RIGHT COLUMN: LEAD CARD */}
           <div className="order-1 lg:order-2">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -265,7 +256,7 @@ export default function LeadLandingSection() {
                 </div>
 
                 {/* CONTENT AREA */}
-                <div className="p-4 sm:p-8 bg-white min-h-[200px] sm:min-h-[280px]">
+                <div className="p-4 sm:p-8 bg-white min-h-[220px] sm:min-h-[280px]">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeTab}
@@ -326,9 +317,6 @@ export default function LeadLandingSection() {
                             <Send size={13} />
                             Send Schedule Confirmation
                           </button>
-                          <p className="text-center text-[10px] text-slate-400 font-bold">
-                            Branded email sent instantly · Tracked in outbox
-                          </p>
                         </div>
                       )}
 
@@ -363,9 +351,6 @@ export default function LeadLandingSection() {
                             <Send size={13} />
                             Send Quote to Customer
                           </button>
-                          <p className="text-center text-[10px] text-slate-400 font-bold">
-                            Customer receives email with Accept / Decline buttons
-                          </p>
                         </div>
                       )}
 
@@ -387,9 +372,6 @@ export default function LeadLandingSection() {
                             <Send size={13} />
                             Send Payment Reminder
                           </button>
-                          <p className="text-center text-[10px] text-slate-400 font-bold">
-                            No awkward phone calls · Professional branded email
-                          </p>
                         </div>
                       )}
 
@@ -463,9 +445,6 @@ export default function LeadLandingSection() {
                               <span className="text-[9px] font-black uppercase">Add More</span>
                             </div>
                           </div>
-                          <p className="text-[10px] text-slate-400 font-bold mt-3 text-center">
-                            Photos, documents, and short videos — all attached to the lead
-                          </p>
                         </div>
                       )}
 
@@ -490,9 +469,6 @@ export default function LeadLandingSection() {
                               </div>
                             </div>
                           ))}
-                          <p className="text-[10px] text-slate-400 font-bold mt-2 text-center">
-                            Every email tracked · Full history in the outbox
-                          </p>
                         </div>
                       )}
 
@@ -504,6 +480,18 @@ export default function LeadLandingSection() {
           </div>
 
         </div>
+
+        {/* MOBILE-ONLY SMALL IMAGE */}
+        <div className="mt-8 lg:hidden flex justify-center">
+          <div className="w-64 bg-white p-1.5 rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
+            <img
+              src="/images/marketing-quote.webp"
+              alt="Dashboard Preview"
+              className="w-full h-auto rounded-lg"
+            />
+          </div>
+        </div>
+
       </div>
 
       <style jsx global>{`

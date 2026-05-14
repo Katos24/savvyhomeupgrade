@@ -2,154 +2,151 @@
 
 import { motion } from 'framer-motion';
 import { X, ArrowRight, Check } from 'lucide-react';
+import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
 
 const PAIN_POINTS = [
   {
-    pain: 'You drove 45 minutes for a job that was never gonna close.',
-    painSub: 'No photos. No budget. No details. Just "can you come take a look?"',
-    fix: 'See the job site, damage photos, and budget before you start the truck.',
+    pain: 'Driving 45 mins for dead-end leads',
+    fix: 'See photos and budget before starting the truck.',
     accent: '#f97316',
   },
   {
-    pain: 'Your competitor sent a branded quote in 30 seconds. You\'re still typing yours.',
-    painSub: 'Writing emails from scratch while they already closed the deal.',
-    fix: 'Pre-built quote templates. Branded emails. One click to send.',
+    pain: 'Writing quotes from scratch every time',
+    fix: 'One-click branded templates that close faster.',
     accent: '#10b981',
   },
   {
-    pain: 'A lead came in last Tuesday. You forgot to follow up.',
-    painSub: 'It\'s sitting in your texts somewhere between a parts order and your kid\'s soccer schedule.',
-    fix: 'Every lead on a board with status, dates, and automatic daily reminders.',
+    pain: 'Forgetting to follow up on last week’s leads',
+    fix: 'Automatic reminders on a visual status board.',
     accent: '#3b82f6',
   },
 ];
 
 export default function ValueSection() {
   return (
-    <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32 bg-slate-950">
+    <section className="relative overflow-hidden py-20 sm:py-24 lg:py-32 bg-slate-950">
+      {/* Background Decor */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
+          backgroundSize: '32px 32px',
         }}
       />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16"
-        >
-          <p
-            className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3"
-            style={{ fontFamily: font }}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-20">
+          
+          {/* ── LEFT: IMAGE FRAME ── */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="relative order-2 lg:order-1"
           >
-            Sound familiar?
-          </p>
-          <h2
-            className="text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
-            style={{ fontFamily: font, fontWeight: 900 }}
-          >
-            Time is money.{' '}
-            <br className="hidden sm:block" />
-            <span className="text-yellow-400">You&apos;re losing both.</span>
-          </h2>
-        </motion.div>
+            <div className="relative z-10 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl shadow-emerald-500/10">
+              <Image
+                src="/images/get-paid.webp"
+                alt="Contractor shaking hands with happy customer"
+                width={800}
+                height={1000}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+            {/* Decorative element behind image */}
+            <div className="absolute -bottom-6 -right-6 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full z-0" />
+            <div className="absolute -top-6 -left-6 w-32 h-32 border-t-4 border-l-4 border-white/5 rounded-tl-[3rem] z-0" />
+          </motion.div>
 
-        {/* Job site photo */}
-        <div className="mb-10 sm:mb-14">
-          <img
-            src="/images/marketing-quote.webp"
-            alt="Send quotes from the job site"
-            className="w-full h-auto rounded-2xl sm:rounded-3xl border border-white/10"
-          />
+          {/* ── RIGHT: HEADER & INTRO ── */}
+          <div className="order-1 lg:order-2">
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4"
+              style={{ fontFamily: font }}
+            >
+              The Cost of Chaos
+            </motion.p>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl sm:text-5xl lg:text-7xl text-white leading-[1.1] mb-8"
+              style={{ fontFamily: font, fontWeight: 900 }}
+            >
+              Time is money. <br />
+              <span className="text-yellow-400">You&apos;re losing both.</span>
+            </motion.h2>
+            <p className="text-lg text-slate-400 font-semibold max-w-lg leading-relaxed" style={{ fontFamily: font }}>
+              Every minute spent on "can you come take a look" for a bad-fit lead is a minute you aren&apos;t closing profitable jobs. 
+              Stop the bleeding with a system built for the field.
+            </p>
+          </div>
         </div>
 
-        {/* Cards */}
-        <div className="space-y-4 sm:space-y-5">
+        {/* ── BOTTOM: THE SOLUTIONS GRID ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PAIN_POINTS.map((item, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="group"
+              transition={{ delay: i * 0.1 }}
+              className="group relative bg-white/[0.03] border border-white/[0.08] p-8 rounded-[2rem] hover:bg-white/[0.06] transition-all duration-300"
             >
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:bg-white/[0.05] transition-colors">
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-stretch">
-
-                  {/* Pain side */}
-                  <div className="p-5 sm:p-7 flex gap-3.5 items-start">
-                    <div
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ backgroundColor: `${item.accent}15` }}
-                    >
-                      <X size={14} className="sm:w-4 sm:h-4" style={{ color: item.accent }} strokeWidth={3} />
-                    </div>
-                    <div>
-                      <p
-                        className="text-white text-sm sm:text-base leading-snug mb-1.5"
-                        style={{ fontFamily: font, fontWeight: 900 }}
-                      >
-                        {item.pain}
-                      </p>
-                      <p
-                        className="text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed"
-                        style={{ fontFamily: font }}
-                      >
-                        {item.painSub}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="hidden sm:flex items-center px-1">
-                    <div className="w-px h-[60%] bg-white/[0.08]" />
-                  </div>
-                  <div className="sm:hidden mx-5">
-                    <div className="h-px bg-white/[0.06]" />
-                  </div>
-
-                  {/* Fix side */}
-                  <div className="p-5 sm:p-7 flex gap-3.5 items-start">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check size={14} className="text-emerald-400 sm:w-4 sm:h-4" strokeWidth={3} />
-                    </div>
-                    <p
-                      className="text-slate-300 text-sm sm:text-base font-bold leading-snug"
-                      style={{ fontFamily: font }}
-                    >
-                      {item.fix}
-                    </p>
-                  </div>
-
+              {/* Pain Indicator */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-red-500/10 text-red-500 border border-red-500/20">
+                  <X size={16} strokeWidth={3} />
                 </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500" style={{ fontFamily: font }}>
+                  The Problem
+                </span>
+              </div>
+              
+              <h3 className="text-white text-lg font-black leading-snug mb-6" style={{ fontFamily: font }}>
+                {item.pain}
+              </h3>
+
+              <div className="pt-6 border-t border-white/5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500" style={{ fontFamily: font }}>
+                    The Fix
+                  </span>
+                </div>
+                <p className="text-slate-300 text-sm font-bold leading-relaxed" style={{ fontFamily: font }}>
+                  {item.fix}
+                </p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Bottom line */}
+        {/* Bottom CTA Area */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="mt-10 sm:mt-14 text-center"
+          className="mt-20 py-12 border-t border-white/5 flex flex-col items-center text-center"
         >
-          <p
-            className="text-slate-500 text-sm sm:text-base font-semibold mb-6"
-            style={{ fontFamily: font }}
-          >
-            Every minute you spend on admin is a minute you&apos;re not on a roof, under a sink, or closing a deal.
+          <p className="text-slate-500 font-bold mb-8 max-w-2xl text-sm sm:text-base" style={{ fontFamily: font }}>
+            Stop chasing dead ends. Start closing deals before the truck even leaves your driveway.
           </p>
+          <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest">
+            <Check size={14} strokeWidth={3} />
+            Built for serious trades
+          </div>
         </motion.div>
+
       </div>
     </section>
   );
