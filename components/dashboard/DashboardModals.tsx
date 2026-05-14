@@ -374,7 +374,7 @@ const FEATURE_INFO: Record<string, { icon: React.ElementType; title: string; des
     title: 'Calendar View',
     desc: 'See every scheduled job on a calendar at a glance. Never double-book or miss a window.',
     plan: 'Basic',
-    bullets: ['Visual day/week/month layout', 'Drag to reschedule', 'Color-coded by status'],
+    bullets: ['Visual day/week/month layout', 'Know exactly who\'s going where and when.', 'Color-coded by status'],
   },
   csv_export: {
     icon: Download,
@@ -457,7 +457,7 @@ export function LockedFeatureModal({ featureKey, companySlug, onClose }: LockedF
             Maybe Later
           </button>
           <a
-            href={`/${companySlug}/admin/settings#billing`}
+            href={`/${companySlug}/admin/settings`}
             className="py-4 text-white font-black text-sm rounded-xl transition text-center shadow-lg active:scale-[0.97]"
             style={{
               background: 'linear-gradient(135deg, #3b82f6, #6366f1)',

@@ -160,7 +160,7 @@ Best regards,
      )}
       <div className="mb-6">
         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Email templates</h2>
-        <p className="text-sm text-gray-400 mt-1">Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
+        <p className="text-sm text-black mt-1">Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
       </div>
 
       {/* Alerts */}

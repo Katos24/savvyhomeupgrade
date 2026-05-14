@@ -111,15 +111,7 @@ export default function TruckSection() {
                   </div>
 
                   {/* Bottom quote */}
-                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6">
-                    <p
-                      className="text-white text-sm sm:text-base font-bold leading-snug"
-                      style={{ fontFamily: font }}
-                    >
-                      &ldquo;I check my pipeline before I even grab coffee.
-                      Every lead, every job — right from the truck.&rdquo;
-                    </p>
-                  </div>
+              \
                 </div>
 
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-6 bg-emerald-500/10 blur-2xl rounded-full" />

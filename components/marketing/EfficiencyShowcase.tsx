@@ -48,7 +48,7 @@ const FEATURES: {
     icon: Calendar,
     accent: '#f43f5e',
     headline: 'See your week before it happens.',
-    body: 'Every scheduled job on a real calendar — day, week, or month. Drag to reschedule. Click to open the lead card. Know exactly who\'s going where and when.',
+    body: 'Every scheduled job on a real calendar — day, week, or month. Click to open the lead card. Know exactly who\'s going where and when.',
   },
   {
     id: 'outbox',

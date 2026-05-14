@@ -123,7 +123,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
       {/* ── PAGE HEADER ── */}
       <div className="mb-8">
         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Pipeline stages</h2>
-        <p className="text-sm text-gray-400 mt-1">Define the stages every job moves through — from first contact to completed.</p>
+        <p className="text-sm text-black mt-1">Define the stages every job moves through — from first contact to completed.</p>
       </div>
 
       {/* ── ALERTS ── */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, Zap } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react'; // Removed Zap as it's no longer used
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -9,7 +9,8 @@ const font = "'Nunito', sans-serif";
 
 export default function ArchitectHero() {
   return (
-    <section className="relative bg-white pt-20 lg:pt-36 pb-14 lg:pb-28 overflow-hidden">
+    // INCREASED pt-20 to pt-32 for mobile to give the Nav more room
+    <section className="relative bg-white pt-32 lg:pt-36 pb-14 lg:pb-28 overflow-hidden">
 
       {/* Subtle Background Grid */}
       <div
@@ -26,23 +27,11 @@ export default function ArchitectHero() {
           {/* LEFT CONTENT */}
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
             
-            {/* 0. KICKER */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5">
-                <Zap size={13} className="text-emerald-600" fill="currentColor" />
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] text-emerald-700" style={{ fontFamily: font }}>
-                  No demo calls. No contracts.
-                </span>
-              </div>
-            </motion.div>
+            {/* 0. KICKER REMOVED */}
 
-            {/* 1. HEADLINE */}
+            {/* 1. HEADLINE - Adjusted leading slightly for better readability */}
             <h1
-              className="text-slate-900 font-black tracking-tighter leading-[0.95] text-5xl sm:text-7xl lg:text-[7.5rem]"
+              className="text-slate-900 font-black tracking-tighter leading-[1.05] lg:leading-[0.95] text-5xl sm:text-7xl lg:text-[7.5rem]"
               style={{ fontFamily: font }}
             >
               Capture. <br />
@@ -51,27 +40,26 @@ export default function ArchitectHero() {
             </h1>
 
            {/* 2. MOBILE IMAGE */}
-<div className="lg:hidden relative w-full pt-4">
-  <div className="relative rounded-2xl overflow-hidden bg-slate-50/50"> {/* Added a soft inner bg */}
-    <Image
-      src="/images/hero-image-laptop.webp"
-      alt="Dashboard"
-      width={1200}
-      height={900}
-      priority
-      className="w-full h-auto object-contain mix-blend-multiply" 
-    />
-  </div>
-  {/* The shadow needs to be tighter on mobile */}
-  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[70%] h-4 bg-slate-900/10 blur-xl rounded-full" />
-</div>
+            <div className="lg:hidden relative w-full pt-4">
+              <div className="relative rounded-2xl overflow-hidden bg-slate-50/50">
+                <Image
+                  src="/images/hero-image-laptop.webp"
+                  alt="Dashboard"
+                  width={1200}
+                  height={900}
+                  priority
+                  className="w-full h-auto object-contain mix-blend-multiply" 
+                />
+              </div>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[70%] h-4 bg-slate-900/10 blur-xl rounded-full" />
+            </div>
 
-           {/* 3. SUBHEAD — Focus on the Result */}
-<p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-  Stop playing phone tag and chasing dead ends. 
-  Build a professional, lead-generating machine that 
-  captures every job opportunity while you're busy in the field.
-</p>
+           {/* 3. SUBHEAD */}
+            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+              Stop playing phone tag and chasing dead ends. 
+              Build a professional, lead-generating machine that 
+              captures every job opportunity while you're busy in the field.
+            </p>
 
             {/* 4. CTA */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-2">
@@ -93,7 +81,7 @@ export default function ArchitectHero() {
             </div>
           </div>
 
-          {/* RIGHT CONTENT (Desktop Only Tilt & Fade) */}
+          {/* RIGHT CONTENT (Desktop Only) */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -122,8 +110,6 @@ export default function ArchitectHero() {
                   className="w-full h-auto object-cover"
                 />
               </motion.div>
-
-            
             </div>
           </motion.div>
 

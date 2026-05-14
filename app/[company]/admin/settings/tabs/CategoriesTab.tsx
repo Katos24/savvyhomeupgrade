@@ -237,7 +237,7 @@ useEffect(() => {
   <div className="flex items-start justify-between gap-4 mb-4">
     <div>
       <h2 className="text-2xl font-black text-gray-900 tracking-tight">Service Categories</h2>
-      <p className="text-sm text-gray-400 mt-1">Auto-load tasks and pricing when a project category is selected.</p>
+      <p className="text-sm text-black mt-1">Auto-load tasks and pricing when a project category is selected.</p>
     </div>
   </div>
   <div className="flex items-center gap-3">
