@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Check } from 'lucide-react'; // Removed Zap as it's no longer used
+import { ArrowRight, Check, Play } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -9,7 +9,10 @@ const font = "'Nunito', sans-serif";
 
 export default function ArchitectHero() {
   return (
-    // INCREASED pt-20 to pt-32 for mobile to give the Nav more room
+    /* 
+       pt-32 (Mobile) and lg:pt-36 (Desktop) 
+       This provides the necessary clearance for your navigation bar.
+    */
     <section className="relative bg-white pt-32 lg:pt-36 pb-14 lg:pb-28 overflow-hidden">
 
       {/* Subtle Background Grid */}
@@ -27,9 +30,7 @@ export default function ArchitectHero() {
           {/* LEFT CONTENT */}
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
             
-            {/* 0. KICKER REMOVED */}
-
-            {/* 1. HEADLINE - Adjusted leading slightly for better readability */}
+            {/* 1. HEADLINE */}
             <h1
               className="text-slate-900 font-black tracking-tighter leading-[1.05] lg:leading-[0.95] text-5xl sm:text-7xl lg:text-[7.5rem]"
               style={{ fontFamily: font }}
@@ -61,18 +62,33 @@ export default function ArchitectHero() {
               captures every job opportunity while you're busy in the field.
             </p>
 
-            {/* 4. CTA */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-2">
-              <Link href="/signup">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-wide shadow-xl transition-all cursor-pointer"
-                >
-                  Get Started Free
-                  <ArrowRight size={20} strokeWidth={3} />
-                </motion.div>
-              </Link>
+            {/* 4. CTA SECTION - Updated with Demo Link */}
+            <div className="flex flex-col space-y-6 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                {/* Primary CTA */}
+                <Link href="/signup">
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-wide shadow-xl transition-all cursor-pointer text-center"
+                  >
+                    Get Started Free
+                    <ArrowRight size={20} strokeWidth={3} />
+                  </motion.div>
+                </Link>
+
+                {/* Secondary CTA (Demo) */}
+                <Link href="/demo">
+                  <motion.div
+                    whileHover={{ scale: 1.03, backgroundColor: '#f8fafc' }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center justify-center gap-3 bg-white border-2 border-slate-200 text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-wide transition-all cursor-pointer text-center"
+                  >
+                    <Play size={18} fill="currentColor" className="text-emerald-600" />
+                    Watch Demo
+                  </motion.div>
+                </Link>
+              </div>
 
               <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
                 <Check size={18} className="text-emerald-600" strokeWidth={3} />

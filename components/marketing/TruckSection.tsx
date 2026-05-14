@@ -28,8 +28,8 @@ const FEATURES = [
 
 export default function TruckSection() {
   return (
-<section id="how-it-works" className="relative bg-slate-950 py-14 sm:py-24 lg:py-32 overflow-hidden">
-      {/* Grid bg */}
+    <section id="how-it-works" className="relative bg-slate-950 py-14 sm:py-24 lg:py-32 overflow-hidden">
+      {/* Grid background */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -38,26 +38,26 @@ export default function TruckSection() {
         }}
       />
 
-      {/* Glow */}
+      {/* Aesthetic Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-
+        
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10 sm:mb-16"
+          className="text-center mb-12 sm:mb-20"
         >
           <p
-            className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3"
+            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3"
             style={{ fontFamily: font }}
           >
             Built for the truck, not the office
           </p>
           <h2
-            className="text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
+            className="text-3xl sm:text-4xl lg:text-5xl text-white leading-[1.1] px-2"
             style={{ fontFamily: font, fontWeight: 900 }}
           >
             While you&apos;re on the road,{' '}
@@ -65,7 +65,7 @@ export default function TruckSection() {
             <span className="text-emerald-400">leads are rolling in.</span>
           </h2>
           <p
-            className="text-sm sm:text-base text-white mt-4 max-w-xl mx-auto font-semibold"
+            className="text-sm sm:text-base text-slate-300 mt-6 max-w-xl mx-auto font-medium leading-relaxed"
             style={{ fontFamily: font }}
           >
             Your customers scan, fill out your branded form, and the lead
@@ -74,75 +74,65 @@ export default function TruckSection() {
         </motion.div>
 
         {/* MAIN LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-14 items-start max-w-6xl mx-auto">
-
-          {/* LEFT — Photo + features */}
-          <div className="order-1 space-y-8 sm:space-y-10">
-
-            {/* Contractor photo */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-16 items-start max-w-6xl mx-auto">
+          
+          {/* LEFT COLUMN: Image + Features */}
+          {/* Use 'order-2 lg:order-1' to push this below the form on mobile */}
+          <div className="order-2 lg:order-1 space-y-10 sm:space-y-12">
+            
+            {/* Contractor Photo - Constrained width */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              className="relative max-w-2xl mx-auto lg:mx-0"
             >
-              <div className="relative">
-                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white/10 shadow-2xl">
-                  <Image
-                    src="/images/morning-brief.webp"
-                    alt="Contractor checking phone from truck"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-cover"
-                  />
+              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl aspect-[4/3] sm:aspect-video lg:aspect-auto lg:h-[400px]">
+                <Image
+                  src="/images/qr-scan-2.webp"
+                  alt="Contractor checking phone from truck"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  priority
+                />
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-                  {/* Time badge */}
-                  <div className="absolute top-3 left-3 sm:top-5 sm:left-5 flex items-center gap-2 bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5">
-                    <Clock size={12} className="text-emerald-400" />
-                    <span
-                      className="text-[10px] sm:text-[11px] font-black text-white uppercase tracking-wider"
-                      style={{ fontFamily: font }}
-                    >
-                      6:14 AM · Between jobs
-                    </span>
-                  </div>
-
-                  {/* Bottom quote */}
-              \
+                {/* Time badge */}
+                <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 z-20">
+                  <Clock size={12} className="text-emerald-400" />
+                  <span
+                    className="text-[10px] font-black text-white uppercase tracking-wider"
+                    style={{ fontFamily: font }}
+                  >
+                    6:14 AM · Between jobs
+                  </span>
                 </div>
-
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-6 bg-emerald-500/10 blur-2xl rounded-full" />
               </div>
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-6 bg-emerald-500/10 blur-2xl rounded-full" />
             </motion.div>
 
-            {/* Feature pills — horizontal on desktop, stack on mobile */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* Feature Cards - Mobile Friendly Stack */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {FEATURES.map((feature, i) => (
                 <motion.div
                   key={feature.title}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.1 * (i + 1) }}
-                  className="flex sm:flex-col items-start sm:items-center gap-3 sm:gap-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 sm:p-5 sm:text-center"
+                  transition={{ delay: i * 0.1 }}
+                  className="flex sm:flex-col items-center sm:items-center gap-4 sm:gap-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 sm:py-6 sm:text-center hover:bg-white/[0.05] transition-colors"
                 >
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <feature.icon size={16} className="text-emerald-400" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <feature.icon size={18} className="text-emerald-400" />
                   </div>
                   <div>
-                    <h4
-                      className="text-white text-xs sm:text-sm font-black mb-0.5"
-                      style={{ fontFamily: font }}
-                    >
+                    <h4 className="text-white text-sm font-bold mb-1" style={{ fontFamily: font }}>
                       {feature.title}
                     </h4>
-                    <p
-                      className="text-slate-500 text-[11px] sm:text-xs font-semibold leading-snug"
-                      style={{ fontFamily: font }}
-                    >
+                    <p className="text-slate-500 text-[11px] sm:text-xs leading-snug font-medium" style={{ fontFamily: font }}>
                       {feature.desc}
                     </p>
                   </div>
@@ -150,67 +140,60 @@ export default function TruckSection() {
               ))}
             </div>
 
-            {/* CTA — desktop only (mobile CTA is below the form) */}
-            <div className="hidden lg:block pt-2">
+            {/* Desktop CTA */}
+            <div className="hidden lg:block">
               <Link href="/signup">
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-4 rounded-2xl font-black uppercase tracking-wide text-sm transition-colors cursor-pointer shadow-lg shadow-emerald-500/20"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="inline-flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-4 rounded-2xl font-black uppercase tracking-wide text-sm transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
                   style={{ fontFamily: font }}
                 >
-                  Start Free — Takes 2 Minutes
-                  <ArrowRight size={16} strokeWidth={3} />
+                  Start Free — 2 Min Setup
+                  <ArrowRight size={18} strokeWidth={3} />
                 </motion.div>
               </Link>
             </div>
           </div>
 
-          {/* RIGHT — Animated form */}
+          {/* RIGHT COLUMN: The Interactive Form */}
+          {/* Use 'order-1 lg:order-2' to make this the first thing seen on mobile */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="order-2 flex flex-col items-center"
+            className="order-1 lg:order-2 flex flex-col items-center"
           >
-            {/* Label above phone */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <p
-                className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-slate-500"
-                style={{ fontFamily: font }}
-              >
-                What your customer sees
+            {/* Animated Status Label */}
+            <div className="flex items-center gap-2 mb-6">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: font }}>
+                Live Customer View
               </p>
             </div>
 
-            {/* Phone */}
-            <div className="relative">
-              {/* Glow behind phone */}
-              <div className="absolute inset-0 blur-3xl opacity-15 rounded-[3rem] bg-orange-500 scale-90" />
-              <FastDemoForm autoPlay />
+            {/* Phone Container */}
+            <div className="relative group scale-90 sm:scale-100 transition-transform">
+              <div className="absolute inset-0 blur-3xl opacity-20 rounded-[3rem] bg-emerald-500 scale-75 group-hover:scale-90 transition-transform" />
+              <div className="relative z-10">
+                <FastDemoForm autoPlay />
+              </div>
             </div>
 
-            {/* Caption below */}
-            <p
-              className="text-[10px] text-slate-600 font-bold text-center mt-4 max-w-[240px]"
-              style={{ fontFamily: font }}
-            >
-              Customers scan your QR code or tap your link — branded form, photo upload, instant submission.
+            <p className="text-[10px] sm:text-xs text-slate-500 font-bold text-center mt-6 max-w-[260px] leading-relaxed" style={{ fontFamily: font }}>
+              Customers scan your QR code — branded form, photo upload, instant lead.
             </p>
 
-            {/* Mobile CTA */}
-            <div className="lg:hidden mt-6">
+            {/* Mobile CTA - Visible only on small screens */}
+            <div className="lg:hidden mt-8 w-full px-4">
               <Link href="/signup">
-                <motion.div
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-3 bg-emerald-500 text-slate-950 px-6 py-3 rounded-2xl font-black uppercase tracking-wide text-xs transition-colors cursor-pointer shadow-lg shadow-emerald-500/20"
-                  style={{ fontFamily: font }}
-                >
-                  Start Free — Takes 2 Minutes
-                  <ArrowRight size={14} strokeWidth={3} />
-                </motion.div>
+                <div className="flex items-center justify-center gap-3 bg-emerald-500 text-slate-950 w-full py-4 rounded-2xl font-black uppercase tracking-wide text-xs shadow-lg shadow-emerald-500/20">
+                  Start Free — 2 Min Setup
+                  <ArrowRight size={16} strokeWidth={3} />
+                </div>
               </Link>
             </div>
           </motion.div>

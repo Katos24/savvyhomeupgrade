@@ -35,6 +35,8 @@ export default function NewHome() {
       {/* 5. THE LOGIC: Why Section (Light) */}
       <NewWhySection />
 
+       <DigestBanner />
+
       {/* 6. THE PROOF: Efficiency Showcase (White) 
           Moving this here keeps the 'White/Light' flow going before the next dark block.
       */}
@@ -43,7 +45,7 @@ export default function NewHome() {
       {/* 7. THE IMPACT: Digest Banner (Dark) 
           Short, punchy high-contrast section.
       */}
-      <DigestBanner />
+     
 
       {/* 8. THE TRANSFORMATION: Value Section (Dark) 
           Deep dive into the 'After' state of the customer.
