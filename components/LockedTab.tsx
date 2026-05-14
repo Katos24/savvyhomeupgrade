@@ -95,16 +95,16 @@ function UpgradeCard({ title, description, planLabel, priceLabel, features, comp
   companySlug: string;
 }) {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 shadow-xl p-6">
+    <div className="w-full max-w-md rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50 shadow-xl p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
           <LockIcon className="w-5 h-5 text-white" />
         </div>
         <div>
-          <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-600 text-white mb-1">
+          <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-600 text-white mb-1">
             {planLabel} plan
           </span>
-          <h3 className="text-base font-semibold leading-tight text-indigo-900">{title}</h3>
+          <h3 className="text-base font-semibold leading-tight text-blue-900">{title}</h3>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ function UpgradeCard({ title, description, planLabel, priceLabel, features, comp
       <a
         href={`/${companySlug}/admin/settings`}
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
-        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:opacity-90 transition"
+        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:opacity-90 transition"
       >
         Upgrade to {planLabel}
         <span className="opacity-75 font-normal">— {priceLabel}</span>
@@ -147,18 +147,18 @@ export function InlineLockBanner({ title, description, planLabel, priceLabel, co
   companySlug: string;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50">
-      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-        <LockIcon className="w-4 h-4 text-indigo-500" />
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50">
+      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+        <LockIcon className="w-4 h-4 text-blue-500" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-indigo-900">{title}</p>
-        <p className="text-xs text-indigo-600 mt-0.5">{description}</p>
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="text-xs text-white mt-0.5">{description}</p>
       </div>
       <a
         href={`/${companySlug}/admin/settings`}
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
-        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition whitespace-nowrap"
+        className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition whitespace-nowrap"
       >
         Upgrade to {planLabel}
       </a>

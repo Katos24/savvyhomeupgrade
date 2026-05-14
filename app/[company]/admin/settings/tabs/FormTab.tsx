@@ -228,6 +228,23 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
   )}
 </AnimatePresence>
 
+{/* ── PUBLIC URL BANNER ── */}
+ <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-6">
+  <div className="flex-1 min-w-0">
+    <p className="text-[11px] font-medium text-gray-400 mb-0.5">Your booking link</p>
+    <span className="text-sm font-medium text-gray-700 break-all block">{publicUrl}</span>
+  </div>
+  <button
+    onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
+    className={`shrink-0 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all ${
+      urlCopied
+        ? 'bg-emerald-500 text-white'
+        : 'bg-gray-900 hover:bg-gray-800 text-white'
+    }`}
+  >
+    {urlCopied ? 'Copied' : 'Copy'}
+  </button>
+</div>
 
       {/* ── MOBILE TAB BAR ── */}
       <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
