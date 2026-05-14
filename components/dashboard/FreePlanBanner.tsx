@@ -106,13 +106,13 @@ export default function FreePlanBanner({
   if (company.plan_tier !== 'free') return null;
   if (dismissed) return null;
 
-  const hasCompanyInfo = !!company.logo_url && !!company.phone;
+const hasCompanyInfo = !!company.logo_url;
 
   const freeChecklist: ChecklistItem[] = [
     {
       id: 'company_setup',
       label: 'Set up your company',
-      description: hasCompanyInfo ? 'Logo and contact info added' : 'Add your logo, phone number, and business details',
+description: hasCompanyInfo ? 'Logo and info added' : 'Add your logo and business details',
       icon: Building2,
       done: !!steps.company_setup,
       href: `/${company.slug}/admin/settings`,

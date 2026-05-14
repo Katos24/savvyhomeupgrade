@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, CheckSquare, Trash2, Calculator, Save, AlertTriangle, Layers, DollarSign, AlertCircle, Info } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
+import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -221,6 +223,16 @@ useEffect(() => {
     <div className="max-w-4xl mx-auto pb-32 px-3 space-y-5">
 
       {/* ── HEADER WITH TOP SAVE ─────────────────────────────────────────── */}
+
+       {(company.plan_tier === 'free') && (
+       <SettingsUpgradeBanner
+         planLabel="Basic"
+         price="$49.99/mo"
+         message="configure your categories now, then upgrade to auto-load tasks and pricing on new projects."
+         companySlug={company.slug}
+       />
+     )}
+   
 <div className="pt-2">
   <div className="flex items-start justify-between gap-4 mb-4">
     <div>

@@ -12,6 +12,8 @@ import {
 import { can, type PlanTier } from '@/lib/permissions';
 import { InlineLockBanner } from '@/components/LockedTab';
 import type { Transition } from 'framer-motion';
+import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+
 
 
 type CustomQuestion = {
@@ -180,6 +182,14 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 
   return (
     <div className="max-w-7xl mx-auto pb-20">
+       {(company.plan_tier === 'free') && (
+       <SettingsUpgradeBanner
+         planLabel="Basic"
+         price="$49.99/mo"
+         message="your booking form is live! Upgrade to add custom branding, photo uploads, and custom questions."
+         companySlug={company.slug}
+       />
+     )}
 
      {/* ── TOP BAR ── */}
 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
@@ -218,23 +228,6 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
   )}
 </AnimatePresence>
 
-{/* ── PUBLIC URL BANNER ── */}
- <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl mb-6">
-  <div className="flex-1 min-w-0">
-    <p className="text-[11px] font-medium text-gray-400 mb-0.5">Your booking link</p>
-    <span className="text-sm font-medium text-gray-700 break-all block">{publicUrl}</span>
-  </div>
-  <button
-    onClick={() => { navigator.clipboard.writeText(publicUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-    className={`shrink-0 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all ${
-      urlCopied
-        ? 'bg-emerald-500 text-white'
-        : 'bg-gray-900 hover:bg-gray-800 text-white'
-    }`}
-  >
-    {urlCopied ? 'Copied' : 'Copy'}
-  </button>
-</div>
 
       {/* ── MOBILE TAB BAR ── */}
       <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
@@ -252,8 +245,8 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
           onClick={() => setMobileTab('preview')}
          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
             mobileTab === 'preview'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-indigo-400 hover:text-indigo-600'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-blue-400 hover:text-blue-600'
           }`}
         >
           Preview
@@ -334,7 +327,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             <a
               href={publicUrl}
               target="_blank"
-              className="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600 text-gray-400 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-400 rounded-xl text-xs font-bold transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5" /> Open real form
             </a>
@@ -342,28 +335,27 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
         </div>
 
       {/* ── RIGHT: CONFIG ── */}
-        <div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'}`}>
+<div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'} bg-[#0F172A] rounded-2xl p-4 border border-white/10`}>
 
           {/* STEP 1 — subtle, locked, collapsed */}
-          <div className="rounded-xl border border-gray-150 bg-gray-50 px-4 py-3">
+<div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
   <div className="flex items-center gap-2 mb-1.5">
-    <Lock className="w-3.5 h-3.5 text-gray-300" />
-    <span className="text-xs font-medium text-gray-400">Step 1 — always collected</span>
+<Lock className="w-3.5 h-3.5 text-slate-600" />
+<span className="text-xs font-medium text-white">Step 1 — always collected</span>
   </div>
   <div className="flex flex-wrap gap-x-2 gap-y-1">
     {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
-      <span key={f} className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-md border border-gray-100">{f}</span>
-    ))}
+<span key={f} className="text-xs text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">{f}</span>    ))}
   </div>
 </div>
 
           {/* STEP 2 — Optional fields */}
           <Section
-            icon={<Settings2 className="w-4 h-4 text-indigo-500" />}
+            icon={<Settings2 className="w-4 h-4 text-blue-500" />}
             title="Step 2 — extra details"
             subtitle="Toggle the fields customers see after submitting step 1. None of these block submission."
             badge="You control these"
-            badgeColor="indigo"
+            badgeColor="blue"
           >
 <div className="pt-1">
               <FieldToggle
@@ -388,7 +380,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
                 onToggle={() => toggleField('preferred_time')}
               />
               <FieldToggle
-                icon={Megaphone} iconColor="text-violet-500"
+                icon={Megaphone} iconColor="text-blue-500"
                 label="How did you hear about us?"
                 description="Google, Referral, Social Media, etc."
                 enabled={fieldConfig.lead_source.enabled}
@@ -423,7 +415,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowAddQuestion(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-all"
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-all"
               >
                 <Plus className="w-3.5 h-3.5" /> Add question
               </motion.button>
@@ -478,7 +470,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
   <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
     <button
       onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
-      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
     >
       <Edit2 className="w-3.5 h-3.5" />
     </button>
@@ -514,12 +506,12 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
   value={ctaSuccessMessage}
   onChange={e => setCtaSuccessMessage(e.target.value)}
   rows={2}
-  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none resize-none text-sm text-gray-800 placeholder-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-medium"
+className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl outline-none resize-none text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all font-medium"
               placeholder='e.g. "Thanks! We will review your request and reach out within 24 hours."'
             />
-            <div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <Mail className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-indigo-600 leading-relaxed">
+<div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+<p className="text-[11px] text-blue-400 leading-relaxed">
                 A confirmation email is automatically sent to the customer on submit. This message only shows on screen.
               </p>
             </div>
@@ -529,7 +521,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
         <button
   onClick={handleSaveAll}
   disabled={loading}
-  className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2"
+className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2"
 >
           {loading
             ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -551,31 +543,31 @@ function Section({ icon, title, subtitle, badge, badgeColor, action, children }:
   title: string;
   subtitle?: string;
   badge?: string;
-  badgeColor?: 'indigo' | 'gray';
+  badgeColor?: 'blue' | 'gray';
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-<div className="px-4 py-3.5 border-b border-gray-100 flex items-center gap-2.5">
+<div className="bg-[#0F172A] rounded-2xl border border-white/10 overflow-hidden">
+<div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-2.5">
   <div className="shrink-0">{icon}</div>
   <div className="flex-1 min-w-0">
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-sm font-semibold text-gray-900">{title}</span>
+<span className="text-sm font-semibold text-white">{title}</span>
       {badge && (
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
-          badgeColor === 'indigo' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-400'
+badgeColor === 'blue' ? 'bg-blue-500/10 text-blue-400' : 'bg-white/5 text-slate-500'
         }`}>
           {badge}
         </span>
       )}
     </div>
-    {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+{subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
   </div>
   {action}
 </div>
-     <div className="px-4 py-3">
-  {children}
+<div className="px-4 py-3 text-white">
+    {children}
 </div>
     </div>
   );
@@ -589,15 +581,15 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
   return (
     <motion.div
       layout
-      className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 cursor-pointer group"
+className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 cursor-pointer group"
       onClick={onToggle}
     >
       <div className="flex-1 min-w-0 pr-4">
-        <p className={`text-sm font-semibold transition-colors ${enabled ? 'text-gray-900' : 'text-gray-400'}`}>{label}</p>
-        <p className={`text-[11px] transition-colors ${enabled ? 'text-gray-400' : 'text-gray-300'}`}>{description}</p>
+<p className={`text-sm font-semibold transition-colors ${enabled ? 'text-white' : 'text-slate-500'}`}>{label}</p>
+<p className={`text-[11px] transition-colors ${enabled ? 'text-slate-400' : 'text-slate-600'}`}>{description}</p>
       </div>
       <div className="shrink-0" onClick={e => { e.stopPropagation(); onToggle(); }}>
-        <div className={`w-9 h-[22px] rounded-full relative transition-colors duration-200 ${enabled ? 'bg-gray-900' : 'bg-gray-200'}`}>
+<div className={`w-9 h-[22px] rounded-full relative transition-colors duration-200 ${enabled ? 'bg-blue-500' : 'bg-slate-700'}`}>
   <div
     className="absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
     style={{ transform: enabled ? 'translateX(14px)' : 'translateX(0)' }}
@@ -614,19 +606,19 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
   onSave: () => void; onCancel: () => void;
 }) {
   return (
-    <div className="bg-indigo-50/60 rounded-xl p-5 border border-indigo-100 space-y-4 mt-1">
+    <div className="bg-blue-50/60 rounded-xl p-5 border border-blue-100 space-y-4 mt-1">
       <div>
-        <label className="block text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Question label</label>
+        <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Question label</label>
         <input
           type="text" value={question.label}
           onChange={e => onChange({ ...question, label: e.target.value })}
-          className="w-full px-4 py-2.5 rounded-xl border border-indigo-100 bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition text-sm font-medium"
+          className="w-full px-4 py-2.5 rounded-xl border border-blue-100 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition text-sm font-medium"
           placeholder='e.g. "What is your budget range?"'
           autoFocus
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1.5">Input type</label>
+        <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Input type</label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { val: 'text', label: 'Text', desc: 'Open answer' },
@@ -638,12 +630,12 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
               onClick={() => onChange({ ...question, type: t.val as any, options: t.val === 'select' ? question.options : [] })}
               className={`py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
                 question.type === t.val
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-200'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
+                  : 'bg-white border-gray-200 text-gray-500 hover:border-blue-200'
               }`}
             >
               {t.label}
-              <span className={`text-[9px] font-medium ${question.type === t.val ? 'text-indigo-200' : 'text-gray-400'}`}>{t.desc}</span>
+              <span className={`text-[9px] font-medium ${question.type === t.val ? 'text-blue-200' : 'text-gray-400'}`}>{t.desc}</span>
             </button>
           ))}
         </div>
@@ -651,7 +643,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
 
       {question.type === 'select' && (
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-indigo-500 uppercase tracking-widest">Options</label>
+          <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest">Options</label>
           <AnimatePresence>
             {question.options?.map((opt, i) => (
               <motion.div
@@ -670,7 +662,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             <input
               type="text" value={newOption}
               onChange={e => onOptionChange(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white outline-none focus:border-indigo-400 transition"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white outline-none focus:border-blue-400 transition"
               placeholder="Add option..."
               onKeyDown={e => {
                 if (e.key === 'Enter' && newOption) {
@@ -693,7 +685,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={onSave}
-          className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-sm"
+          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition shadow-sm"
         >
           {isEditing ? 'Update question' : 'Add question'}
         </motion.button>

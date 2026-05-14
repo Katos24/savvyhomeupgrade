@@ -88,11 +88,12 @@ export const FEATURE_PLAN_MAP = {
   // ── Settings tabs ──────────────────────────────────────────
   settings_company:         'free',    // can view company info
   settings_billing:         'free',    // can upgrade from here
-  settings_form:            'basic',
+       settings_form:            'free',
+
   settings_team:            'basic',
   settings_pipeline:        'basic',
-  settings_categories:      'basic',
-  settings_email_templates: 'pro',
+  settings_categories:      'free',
+  settings_email_templates: 'free',
   settings_notifications:   'pro',
 
   // ── Lead management actions ────────────────────────────────

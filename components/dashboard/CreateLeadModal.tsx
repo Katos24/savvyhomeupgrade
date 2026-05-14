@@ -92,10 +92,11 @@ export default function CreateLeadModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const rawPhone = formData.phone.replace(/\D/g, '');
-    if (rawPhone.length !== 10) {
+    if (rawPhone.length > 0 && rawPhone.length !== 10) {
       toast.error('Please enter a full 10-digit phone number');
       return;
     }
+    
     setLoading(true);
     try {
       const res = await fetch('/api/upload', {
@@ -181,7 +182,7 @@ export default function CreateLeadModal({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
                 <div className="relative group">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                  <input required type="tel" inputMode="tel" placeholder="(555) 000-0000" value={formData.phone}
+                  <input type="tel" inputMode="tel" placeholder="(555) 000-0000" value={formData.phone}
                     onChange={handlePhoneChange}
                     className={`${inputClass} pl-12 font-mono`} />
                 </div>

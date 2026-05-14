@@ -7,6 +7,8 @@ import {
   Mail, Copy, RotateCcw, Eye, Check, Sparkles,
   Save, AlertCircle, Calendar, CreditCard, FileText
 } from 'lucide-react';
+import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
 
@@ -148,6 +150,14 @@ Best regards,
     <div className="pb-8">
 
       {/* Header */}
+       {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
+       <SettingsUpgradeBanner
+         planLabel="Pro"
+         price="$79.99/mo"
+         message="customize your email templates now, then upgrade to send quotes, schedules, and payment reminders."
+         companySlug={company.slug}
+       />
+     )}
       <div className="mb-6">
         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Email templates</h2>
         <p className="text-sm text-gray-400 mt-1">Customize what customers receive when you send a quote, schedule, or payment reminder.</p>
