@@ -85,7 +85,7 @@ export default function ArchitectHero() {
                     className="flex items-center justify-center gap-3 bg-white border-2 border-slate-200 text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-wide transition-all cursor-pointer text-center"
                   >
                     <Play size={18} fill="currentColor" className="text-emerald-600" />
-                    Watch Demo
+                    Try Demo
                   </motion.div>
                 </Link>
               </div>
