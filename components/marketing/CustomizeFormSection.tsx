@@ -180,7 +180,8 @@ export default function CustomizeFormSection() {
             <motion.div
               animate={{ borderColor: current.color }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl sm:rounded-3xl border-4 overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] max-w-lg mx-auto lg:max-w-none"
+              /* UPDATED: Changed max-w-lg to max-w-[340px] for a tighter mobile form */
+              className="bg-white rounded-2xl sm:rounded-3xl border-4 overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] max-w-[340px] sm:max-w-lg mx-auto lg:max-w-none"
             >
 
               {/* Form header */}
