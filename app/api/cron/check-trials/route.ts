@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
             companyEmail: company.email,
             companyName: company.name,
             daysRemaining,
-            subscribeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`
+billingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
           });
 
           results.reminders_sent++;

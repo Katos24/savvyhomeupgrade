@@ -564,12 +564,12 @@ export async function sendTrialEndingReminderEmail({
   companyEmail,
   companyName,
   daysRemaining,
-  subscribeUrl,
+  billingUrl,
 }: {
   companyEmail: string;
   companyName: string;
   daysRemaining: number;
-  subscribeUrl: string;
+  billingUrl: string;
 }) {
   try {
     const emailHtml = `
@@ -615,8 +615,8 @@ export async function sendTrialEndingReminderEmail({
             <p><strong>Your card will be automatically charged on your trial end date.</strong> No action needed!</p>
             
             <center>
-              <a href="${subscribeUrl}" class="button">View Billing Details →</a>
-            </center>
+  <a href="${billingUrl}" class="button">View Billing Details →</a>
+</center>
             
             <p style="font-size: 14px; color: #666; margin-top: 24px; text-align: center;">
               Want to cancel? You can do so anytime from your billing settings.

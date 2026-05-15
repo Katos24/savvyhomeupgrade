@@ -452,13 +452,13 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
   key={q.id}
   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
   transition={{ delay: i * 0.04 }}
-  className="group flex items-center justify-between py-3 border-b border-gray-50 last:border-0 gap-3"
+  className="group flex items-center justify-between py-3 border-b border-slate-700 last:border-0 gap-3"
 >
   <div className="flex-1 min-w-0">
-    <p className="text-sm font-semibold text-gray-800 truncate">{q.label}</p>
+    <p className="text-sm font-semibold text-white truncate">{q.label}</p>
     <div className="flex items-center gap-2 mt-0.5">
       <span className="text-[10px] font-black px-2 py-0.5 rounded-lg"
-        style={{ background: '#eef2ff', color: '#6366f1' }}>
+        style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
         {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
       </span>
       {q.type === 'select' && q.options?.length ? (
@@ -606,19 +606,19 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
   onSave: () => void; onCancel: () => void;
 }) {
   return (
-    <div className="bg-blue-50/60 rounded-xl p-5 border border-blue-100 space-y-4 mt-1">
+    <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-700 space-y-4 mt-1">
       <div>
-        <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Question label</label>
+        <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Question label</label>
         <input
           type="text" value={question.label}
           onChange={e => onChange({ ...question, label: e.target.value })}
-          className="w-full px-4 py-2.5 rounded-xl border border-blue-100 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition text-sm font-medium"
+          className="w-full px-4 py-2.5 rounded-xl border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-sm font-medium"
           placeholder='e.g. "What is your budget range?"'
           autoFocus
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Input type</label>
+        <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Input type</label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { val: 'text', label: 'Text', desc: 'Open answer' },
@@ -630,12 +630,12 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
               onClick={() => onChange({ ...question, type: t.val as any, options: t.val === 'select' ? question.options : [] })}
               className={`py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
                 question.type === t.val
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-blue-200'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-900/30'
+                  : 'bg-slate-900 border-slate-600 text-slate-300 hover:border-blue-400'
               }`}
             >
               {t.label}
-              <span className={`text-[9px] font-medium ${question.type === t.val ? 'text-blue-200' : 'text-gray-400'}`}>{t.desc}</span>
+              <span className={`text-[9px] font-medium ${question.type === t.val ? 'text-blue-200' : 'text-slate-500'}`}>{t.desc}</span>
             </button>
           ))}
         </div>
@@ -643,16 +643,16 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
 
       {question.type === 'select' && (
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest">Options</label>
+          <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest">Options</label>
           <AnimatePresence>
             {question.options?.map((opt, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }}
-                className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-100"
+                className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg border border-slate-700"
               >
-                <span className="text-sm text-gray-700">{opt}</span>
-                <button onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })} className="text-gray-300 hover:text-red-400 transition-colors">
+                <span className="text-sm text-slate-200">{opt}</span>
+                <button onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })} className="text-slate-500 hover:text-red-400 transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </motion.div>
@@ -662,7 +662,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             <input
               type="text" value={newOption}
               onChange={e => onOptionChange(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white outline-none focus:border-blue-400 transition"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 outline-none focus:border-blue-400 transition"
               placeholder="Add option..."
               onKeyDown={e => {
                 if (e.key === 'Enter' && newOption) {
@@ -673,7 +673,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             />
             <button
               onClick={() => { if (newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
-              className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition"
+              className="px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-sm font-bold text-slate-300 hover:bg-slate-700 transition"
             >
               Add
             </button>
@@ -689,7 +689,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
         >
           {isEditing ? 'Update question' : 'Add question'}
         </motion.button>
-        <button onClick={onCancel} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition">
+        <button onClick={onCancel} className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-sm font-bold transition">
           Cancel
         </button>
       </div>
