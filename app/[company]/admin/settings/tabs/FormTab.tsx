@@ -446,44 +446,49 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
                 ) : (
                   <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     {customQuestions.length > 0 ? (
-                      <div className="space-y-2 pt-1">
-                        {customQuestions.map((q, i) => (
-                          <motion.div
-  key={q.id}
-  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: i * 0.04 }}
-  className="group flex items-center justify-between py-3 border-b border-slate-700 last:border-0 gap-3"
->
-  <div className="flex-1 min-w-0">
-    <p className="text-sm font-semibold text-white truncate">{q.label}</p>
-    <div className="flex items-center gap-2 mt-0.5">
-      <span className="text-[10px] font-black px-2 py-0.5 rounded-lg"
-        style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
-        {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
-      </span>
-      {q.type === 'select' && q.options?.length ? (
-        <span className="text-[10px] text-gray-400 font-medium">{q.options.length} options</span>
-      ) : null}
-    </div>
-  </div>
-  {/* Always visible on mobile, hover on desktop */}
-  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
-    <button
-      onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
-      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+  {customQuestions.map((q, i) => (
+    <motion.div
+      key={q.id}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.04 }}
+      className="group relative bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 transition-all"
     >
-      <Edit2 className="w-3.5 h-3.5" />
-    </button>
-    <button
-      onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
-      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-    >
-      <Trash2 className="w-3.5 h-3.5" />
-    </button>
-  </div>
-</motion.div>
-                        ))}
-                      </div>
+      {/* Edit/Delete — top right */}
+      <div className="absolute top-3 right-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+        <button
+          onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
+          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
+          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Question label */}
+      <p className="text-sm font-bold text-slate-900 pr-16 truncate">{q.label}</p>
+
+      {/* Type badge */}
+      <div className="flex items-center gap-2 mt-2">
+        <span
+          className="text-[10px] font-black px-2 py-0.5 rounded-lg"
+          style={{ background: 'rgba(59,130,246,0.1)', color: '#2563eb' }}
+        >
+          {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
+        </span>
+        {q.type === 'select' && q.options?.length ? (
+          <span className="text-[10px] text-slate-400 font-medium">{q.options.length} options</span>
+        ) : null}
+      </div>
+    </motion.div>
+  ))}
+</div>
                     ) : (
                       <div className="py-8 text-center">
   <p className="text-sm text-gray-400 font-semibold">No custom questions yet</p>
