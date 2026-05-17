@@ -21,6 +21,8 @@ import DashboardTour from '@/components/dashboard/DashboardTour';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import { AiChatWidget, LockedFeatureModal } from '@/components/dashboard/DashboardModals';
 import FreePlanBanner from '@/components/dashboard/FreePlanBanner';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 
 // ---------------------------------------------------------------------------
@@ -101,7 +103,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [globalStats, setGlobalStats] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState('');
+const [loadError, setLoadError] = useState('');
+const [newLeadCount, setNewLeadCount] = useState(0);
 
   // UI state
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -233,7 +236,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     fetchLeads(1, true);
   }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, fetchLeads]);
 
-  // Deep-link to lead from URL
+ // Deep-link to lead from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const leadId = params.get('lead');
@@ -255,6 +258,31 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       })
       .catch(() => {});
   }, [allLeads, isInitialLoad]);
+
+  // Poll for new leads every 10 seconds
+  useEffect(() => {
+    if (isInitialLoad) return;
+    const knownCount = globalStats?.total_leads ?? 0;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/company/${company.slug}/leads/count`, {
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.count > knownCount) {
+          setNewLeadCount(data.count - knownCount);
+        } else {
+          setNewLeadCount(0);
+        }
+      } catch {
+        // Silently fail — don't interrupt the dashboard
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isInitialLoad, globalStats?.total_leads, company.slug]);
 
   // -------------------------------------------------------------------------
   // Actions
@@ -638,6 +666,36 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             onLockedFeature={setLockedDashboardModal}
           />
         </div>
+
+     {/* New leads notification */}
+        <AnimatePresence>
+          {newLeadCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`mb-6 rounded-2xl px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all ${
+                isDark
+                  ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15'
+                  : 'bg-blue-50 border border-blue-100 hover:bg-blue-100'
+              }`}
+              onClick={() => {
+                setNewLeadCount(0);
+                fetchLeads(1);
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <p className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                  {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} came in
+                </p>
+              </div>
+              <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                Tap to refresh
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Leads Display */}
         <section aria-label="Leads" aria-live="polite" className="relative">
