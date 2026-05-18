@@ -261,30 +261,39 @@ const initialLeadCount = useRef<number | null>(null);
   }, [allLeads, isInitialLoad]);
 
 // Poll for new leads
- // Poll for new leads
+// Poll for new leads
+  const lastPollCount = useRef<number | null>(null);
+  
   useEffect(() => {
     if (isInitialLoad) return;
-    if (globalStats?.total_leads == null) return;
-    if (initialLeadCount.current === null) {
-      initialLeadCount.current = globalStats.total_leads;
-    }
 
     const interval = setInterval(async () => {
-      if (document.hidden) return;
-      try {
+    if (document.hidden) return;
+    try {
         const res = await fetch(`/api/company/${company.slug}/leads/count`, {
-          cache: 'no-store',
+            cache: 'no-store',
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.success && data.count > initialLeadCount.current!) {
-          setNewLeadCount(data.count - initialLeadCount.current!);
+        if (!data.success) return;
+        
+        console.log('POLL:', { count: data.count, lastPollCount: lastPollCount.current });
+        
+        if (lastPollCount.current === null) {
+            lastPollCount.current = data.count;
+            console.log('SET BASELINE:', data.count);
+            return;
         }
-      } catch {}
-    }, 5000);
+        
+        if (data.count > lastPollCount.current) {
+            console.log('NEW LEADS:', data.count - lastPollCount.current);
+            setNewLeadCount(data.count - lastPollCount.current);
+        }
+    } catch {}
+}, 5000);
 
     return () => clearInterval(interval);
-  }, [isInitialLoad, globalStats?.total_leads, company.slug]);
+  }, [isInitialLoad, company.slug]);
 
   // -------------------------------------------------------------------------
   // Actions
@@ -683,7 +692,7 @@ const initialLeadCount = useRef<number | null>(null);
               }`}
               onClick={() => {
     setNewLeadCount(0);
-    initialLeadCount.current = null;
+    lastPollCount.current = null;
     fetchLeads(1);
 }}
             >
