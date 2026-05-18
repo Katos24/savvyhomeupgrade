@@ -110,6 +110,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [isRefreshing, setIsRefreshing] = useState(false);
 const [loadError, setLoadError] = useState('');
 const [newLeadCount, setNewLeadCount] = useState(0);
+const initialLeadCount = useRef<number | null>(null);
 
   // UI state
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -266,31 +267,35 @@ const [newLeadCount, setNewLeadCount] = useState(0);
 
 // Poll for new leads
 // Poll for new leads
+  const lastPollCount = useRef<number | null>(null);
   
-// Poll for new leads
   useEffect(() => {
     if (isInitialLoad) return;
 
     const interval = setInterval(async () => {
-      if (document.hidden) return;
-      try {
+    if (document.hidden) return;
+    try {
         const res = await fetch(`/api/company/${company.slug}/leads/count`, {
-          cache: 'no-store',
+            cache: 'no-store',
         });
         if (!res.ok) return;
         const data = await res.json();
         if (!data.success) return;
-
-        if (lastPollCount === null) {
-          lastPollCount = data.count;
-          return;
+        
+        console.log('POLL:', { count: data.count, lastPollCount: lastPollCount.current });
+        
+        if (lastPollCount.current === null) {
+            lastPollCount.current = data.count;
+            console.log('SET BASELINE:', data.count);
+            return;
         }
-
-        if (data.count > lastPollCount) {
-          setNewLeadCount(data.count - lastPollCount);
+        
+        if (data.count > lastPollCount.current) {
+            console.log('NEW LEADS:', data.count - lastPollCount.current);
+            setNewLeadCount(data.count - lastPollCount.current);
         }
-      } catch {}
-    }, 5000);
+    } catch {}
+}, 5000);
 
     return () => clearInterval(interval);
   }, [isInitialLoad, company.slug]);
@@ -692,7 +697,7 @@ const [newLeadCount, setNewLeadCount] = useState(0);
               }`}
               onClick={() => {
     setNewLeadCount(0);
-    lastPollCount = null;
+    lastPollCount.current = null;
     fetchLeads(1);
 }}
             >
