@@ -265,6 +265,7 @@ const [newLeadCount, setNewLeadCount] = useState(0);
     const knownCount = globalStats?.total_leads ?? 0;
 
     const interval = setInterval(async () => {
+      if (document.hidden) return;
       try {
         const res = await fetch(`/api/company/${company.slug}/leads/count`, {
           cache: 'no-store',
@@ -279,7 +280,7 @@ const [newLeadCount, setNewLeadCount] = useState(0);
       } catch {
         // Silently fail — don't interrupt the dashboard
       }
-    }, 10000);
+}, 30000);
 
     return () => clearInterval(interval);
   }, [isInitialLoad, globalStats?.total_leads, company.slug]);

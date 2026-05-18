@@ -12,6 +12,15 @@ import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
 
+const formatPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return phone;
+};
+
+
 export default function EmailTemplatesTab({ company, currentUser }: { company: any; currentUser: any }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -120,7 +129,7 @@ Best regards,
     let body = template.body;
     const replacements: Record<string, string> = {
       '{{company_name}}': company.name,
-      '{{company_phone}}': company.phone || '(555) 123-4567',
+      '{{company_phone}}': formatPhone(company.phone || '5551234567'),
       '{{customer_name}}': 'John Smith',
       '{{customer_address}}': '123 Main St, Anytown, USA',
       '{{quote_total}}': '2,500',
@@ -143,7 +152,7 @@ Best regards,
   const templateConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
     quote:    { icon: <FileText className="w-3.5 h-3.5" />,   label: 'Quote',    color: 'text-emerald-500' },
     schedule: { icon: <Calendar className="w-3.5 h-3.5" />,   label: 'Schedule', color: 'text-blue-500'    },
-    payment:  { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'Payment',  color: 'text-violet-500'  },
+    payment:  { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'Payment',  color: 'text-amber-500'   },
   };
 
   return (
@@ -207,11 +216,11 @@ Best regards,
         <div className="space-y-4">
 
           {/* Variables */}
-          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-2">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <p className="text-xs font-bold text-gray-700">Available variables</p>
-              <p className="text-[10px] text-gray-400 ml-auto">Click to copy</p>
+              <p className="text-xs font-bold text-white">Available variables</p>
+              <p className="text-[10px] text-slate-500 ml-auto">Click to copy</p>
             </div>
             <div className="px-4 py-3 flex flex-wrap gap-1.5">
               <AnimatePresence mode="popLayout">
@@ -223,8 +232,8 @@ Best regards,
                     onClick={() => handleCopyVariable(variable)}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-all border ${
                       copiedVar === variable
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-400'
                     }`}
                   >
                     {variable}
@@ -242,7 +251,7 @@ Best regards,
           <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-indigo-500" />
+                <Mail className="w-3.5 h-3.5 text-blue-500" />
                 <p className="text-xs font-bold text-gray-700">Edit template</p>
               </div>
               <motion.button
@@ -262,7 +271,7 @@ Best regards,
                   type="text"
                   value={templates[activeTemplate].subject}
                   onChange={e => handleUpdateTemplate(activeTemplate, 'subject', e.target.value)}
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition placeholder-gray-300"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition placeholder-gray-300"
                 />
               </div>
 
@@ -273,7 +282,7 @@ Best regards,
                   value={templates[activeTemplate].body}
                   onChange={e => handleUpdateTemplate(activeTemplate, 'body', e.target.value)}
                   rows={12}
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition resize-none leading-relaxed"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition resize-none leading-relaxed"
                 />
               </div>
             </div>
@@ -300,7 +309,7 @@ Best regards,
           <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Eye className="w-3.5 h-3.5 text-violet-500" />
+                <Eye className="w-3.5 h-3.5 text-blue-500" />
                 <p className="text-xs font-bold text-gray-700">Live preview</p>
               </div>
               <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Sample data</span>
@@ -313,13 +322,12 @@ Best regards,
                 {/* Branded header */}
                 <div
                   className="px-5 py-6 text-center"
-                  style={{ background: `linear-gradient(135deg, ${company.email_brand_color_1 || '#6366f1'}, ${company.email_brand_color_2 || '#4f46e5'})` }}
+                  style={{ background: `linear-gradient(135deg, ${company.email_brand_color_1 || '#2563eb'}, ${company.email_brand_color_2 || '#1d4ed8'})` }}
                 >
                   {company.logo_url && (
                     <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain mx-auto mb-3" />
                   )}
                   <p className="text-white font-black text-base">{company.name}</p>
-                  {company.phone && <p className="text-white/70 text-xs mt-1">{company.phone}</p>}
                 </div>
 
                 {/* Meta */}
@@ -348,7 +356,7 @@ Best regards,
                 {/* Line items note for quote */}
                 {activeTemplate === 'quote' && (
                   <div className="px-4 py-3 border-t border-gray-100 bg-blue-50/50">
-                    <p className="text-[10px] font-bold text-blue-500 flex items-center gap-1.5">
+                    <p className="text-[12px] font-bold text-blue-500 flex items-center gap-1.5">
                       <FileText className="w-3 h-3" />
                       Itemized quote breakdown and accept/decline buttons are automatically included when sent.
                     </p>
