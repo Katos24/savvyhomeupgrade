@@ -280,7 +280,7 @@ const [newLeadCount, setNewLeadCount] = useState(0);
       } catch {
         // Silently fail — don't interrupt the dashboard
       }
-}, 30000);
+}, 5000);
 
     return () => clearInterval(interval);
   }, [isInitialLoad, globalStats?.total_leads, company.slug]);
