@@ -270,35 +270,40 @@ const initialLeadCount = useRef<number | null>(null);
   const lastPollCount = useRef<number | null>(null);
   
   useEffect(() => {
-    if (isInitialLoad) return;
+  if (isInitialLoad) return;
 
-    const interval = setInterval(async () => {
+  const interval = setInterval(async () => {
     if (document.hidden) return;
-    try {
-        const res = await fetch(`/api/company/${company.slug}/leads/count`, {
-            cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.success) return;
-        
-        console.log('POLL:', { count: data.count, lastPollCount: lastPollCount.current });
-        
-        if (lastPollCount.current === null) {
-            lastPollCount.current = data.count;
-            console.log('SET BASELINE:', data.count);
-            return;
-        }
-        
-        if (data.count > lastPollCount.current) {
-            console.log('NEW LEADS:', data.count - lastPollCount.current);
-            setNewLeadCount(data.count - lastPollCount.current);
-        }
-    } catch {}
-}, 5000);
 
-    return () => clearInterval(interval);
-  }, [isInitialLoad, company.slug]);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/leads/count`, {
+        cache: 'no-store',
+      });
+
+      const data = await res.json();
+      if (!data?.success) return;
+
+      const current = data.count;
+
+      if (lastPollCount.current === null) {
+        lastPollCount.current = current;
+        return;
+      }
+
+      const diff = current - lastPollCount.current;
+
+      if (diff > 0) {
+        setNewLeadCount(diff);
+      }
+
+      lastPollCount.current = current; // 🔥 IMPORTANT FIX
+    } catch (e) {
+      console.error('poll error', e);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [isInitialLoad, company.slug]);
 
   // -------------------------------------------------------------------------
   // Actions
