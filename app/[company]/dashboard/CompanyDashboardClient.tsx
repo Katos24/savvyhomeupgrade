@@ -105,6 +105,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [isRefreshing, setIsRefreshing] = useState(false);
 const [loadError, setLoadError] = useState('');
 const [newLeadCount, setNewLeadCount] = useState(0);
+const initialLeadCount = useRef<number | null>(null);
 
   // UI state
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -259,10 +260,14 @@ const [newLeadCount, setNewLeadCount] = useState(0);
       .catch(() => {});
   }, [allLeads, isInitialLoad]);
 
-  // Poll for new leads every 10 seconds
+// Poll for new leads
+ // Poll for new leads
   useEffect(() => {
     if (isInitialLoad) return;
-    const knownCount = globalStats?.total_leads ?? 0;
+    if (globalStats?.total_leads == null) return;
+    if (initialLeadCount.current === null) {
+      initialLeadCount.current = globalStats.total_leads;
+    }
 
     const interval = setInterval(async () => {
       if (document.hidden) return;
@@ -272,15 +277,11 @@ const [newLeadCount, setNewLeadCount] = useState(0);
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.success && data.count > knownCount) {
-          setNewLeadCount(data.count - knownCount);
-        } else {
-          setNewLeadCount(0);
+        if (data.success && data.count > initialLeadCount.current!) {
+          setNewLeadCount(data.count - initialLeadCount.current!);
         }
-      } catch {
-        // Silently fail — don't interrupt the dashboard
-      }
-}, 5000);
+      } catch {}
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [isInitialLoad, globalStats?.total_leads, company.slug]);
@@ -681,9 +682,10 @@ const [newLeadCount, setNewLeadCount] = useState(0);
                   : 'bg-blue-50 border border-blue-100 hover:bg-blue-100'
               }`}
               onClick={() => {
-                setNewLeadCount(0);
-                fetchLeads(1);
-              }}
+    setNewLeadCount(0);
+    initialLeadCount.current = null;
+    fetchLeads(1);
+}}
             >
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
