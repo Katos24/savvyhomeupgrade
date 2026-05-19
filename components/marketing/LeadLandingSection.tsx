@@ -207,7 +207,7 @@ export default function LeadLandingSection() {
             >
               <div className="bg-white p-1.5 rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
                 <img
-                  src="/images/marketing-quote.webp"
+                  src="/images/marketing-quote2.webp"
                   alt="Dashboard Preview"
                   className="w-full h-auto rounded-lg   transition-all duration-500"
                 />
@@ -485,7 +485,7 @@ export default function LeadLandingSection() {
         <div className="mt-8 lg:hidden flex justify-center">
           <div className="w-64 bg-white p-1.5 rounded-xl border-[3px] border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] overflow-hidden">
             <img
-              src="/images/marketing-quote.webp"
+              src="/images/marketing-quote2.webp"
               alt="Dashboard Preview"
               className="w-full h-auto rounded-lg"
             />
