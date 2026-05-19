@@ -9,11 +9,7 @@ const font = "'Nunito', sans-serif";
 
 export default function ArchitectHero() {
   return (
-    /* 
-       pt-32 (Mobile) and lg:pt-36 (Desktop) 
-       This provides the necessary clearance for your navigation bar.
-    */
-    <section className="relative bg-white pt-32 lg:pt-36 pb-14 lg:pb-28 overflow-hidden">
+    <section className="relative bg-slate-50 pt-32 lg:pt-36 pb-14 lg:pb-28 overflow-hidden">
 
       {/* Subtle Background Grid */}
       <div
@@ -49,6 +45,8 @@ export default function ArchitectHero() {
                   width={1200}
                   height={900}
                   priority
+                  placeholder="blur"
+                  blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwMCIgaGVpZ2h0PSIxMzAwIiB4bWxucz0iaHR0cDovL3d3dy5zdmcub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMWUyOTNiIi8+PC9zdmc+"
                   className="w-full h-auto object-contain mix-blend-multiply" 
                 />
               </div>
@@ -57,12 +55,10 @@ export default function ArchitectHero() {
 
            {/* 3. SUBHEAD */}
             <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Stop playing phone tag and chasing dead ends. 
-              Build a professional, lead-generating machine that 
-              captures every job opportunity while you're busy in the field.
+              Capture leads with custom forms. Track every job in one place. Send quotes before your competitor even calls back.
             </p>
 
-            {/* 4. CTA SECTION - Updated with Demo Link */}
+            {/* 4. CTA SECTION */}
             <div className="flex flex-col space-y-6 pt-2">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 {/* Primary CTA */}
@@ -123,6 +119,8 @@ export default function ArchitectHero() {
                   width={1800}
                   height={1300}
                   priority
+                  placeholder="blur"
+                  blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwMCIgaGVpZ2h0PSIxMzAwIiB4bWxucz0iaHR0cDovL3d3dy5zdmcub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMWUyOTNiIi8+PC9zdmc+"
                   className="w-full h-auto object-cover"
                 />
               </motion.div>
