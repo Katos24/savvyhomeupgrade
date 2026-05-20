@@ -286,7 +286,8 @@ function TourTooltip({
       <h3 className="text-white font-black text-lg leading-tight mb-2">
         {step.title}
       </h3>
-      <p className="text-white/50 text-sm leading-relaxed mb-6">
+    
+      <p className="text-white text-sm leading-relaxed mb-6">
         {step.description}
       </p>
 

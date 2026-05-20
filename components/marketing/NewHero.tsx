@@ -55,7 +55,7 @@ export default function ArchitectHero() {
 
            {/* 3. SUBHEAD */}
             <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Capture leads with custom forms. Track every job in one place. Send quotes before your competitor even calls back.
+  Your leads are buried in your inbox. Lead2Project puts them all in one place.
             </p>
 
             {/* 4. CTA SECTION */}

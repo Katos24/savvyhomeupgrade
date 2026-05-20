@@ -2,6 +2,7 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import DemoVideoSection from '@/components/marketing/DemoVideoSection';
 import TruckSection from '@/components/marketing/TruckSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
 import LeadLandingSection from '@/components/marketing/LeadLandingSection';
@@ -23,6 +24,8 @@ export default function NewHome() {
       {/* 1. THE HOOK: Hero (White) */}
       <NewHero />
 
+
+<DemoVideoSection />
       {/* 2. THE MOMENTUM: Truck Section (Dark) */}
       <TruckSection />
 
@@ -37,14 +40,10 @@ export default function NewHome() {
 
        <DigestBanner />
 
-      {/* 6. THE PROOF: Efficiency Showcase (White) 
-          Moving this here keeps the 'White/Light' flow going before the next dark block.
-      */}
+  
       <EfficiencyShowcase />
 
-      {/* 7. THE IMPACT: Digest Banner (Dark) 
-          Short, punchy high-contrast section.
-      */}
+      
      
 
       {/* 8. THE TRANSFORMATION: Value Section (Dark) 

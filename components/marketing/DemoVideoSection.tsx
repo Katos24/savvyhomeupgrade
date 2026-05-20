@@ -1,55 +1,60 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 
 const font = "'Nunito', sans-serif";
 
 export default function DemoVideoSection() {
-  return (
-    <section className="relative py-6 sm:py-10 bg-slate-50 overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-      <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-6">
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 3;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  return (
+    <section className="relative bg-slate-950 py-14 sm:py-24 overflow-hidden">
+      <div className="relative z-10 max-w-md mx-auto px-4 sm:px-6 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex justify-center"
         >
-          <div className="w-[280px] sm:w-[320px]">
-            {/* Phone frame */}
-            <div className="bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] p-2 sm:p-2.5 border-4 border-slate-800 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)]">
-              {/* Notch */}
-              <div className="flex justify-center mb-1">
-                <div className="w-20 h-4 bg-slate-800 rounded-full" />
-              </div>
+          <p
+            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3"
+            style={{ fontFamily: font }}
+          >
+            See it in action
+          </p>
+          <h2
+            className="text-3xl sm:text-4xl text-white leading-[1.1] mb-10"
+            style={{ fontFamily: font, fontWeight: 900 }}
+          >
+            From scan to lead{' '}
+            <span className="text-emerald-400">in seconds.</span>
+          </h2>
+        </motion.div>
 
-              {/* Video */}
-              <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-black aspect-[9/19]">
-                <video
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                >
-                  <source src="/videos/Lead2ProjectDemo.mp4" type="video/mp4" />
-                </video>
-              </div>
-
-              {/* Home bar */}
-              <div className="flex justify-center mt-2">
-                <div className="w-24 h-1 bg-slate-700 rounded-full" />
-              </div>
-            </div>
-
-            {/* Caption */}
-            <p
-              className="text-center mt-4 text-[9px] text-slate-400 uppercase tracking-[0.2em]"
-              style={{ fontFamily: font, fontWeight: 800 }}
-            >
-              Real product · No editing · 49 seconds
-            </p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative"
+        >
+          <div className="absolute inset-0 blur-3xl opacity-20 rounded-3xl bg-emerald-500 scale-90" />
+          <div className="relative z-10 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            <video
+              ref={videoRef}
+              src="/videos/Lead2ProjectDemo.mp4"
+              muted
+              loop
+              playsInline
+              controls
+              className="w-full h-auto"
+            />
           </div>
         </motion.div>
       </div>
