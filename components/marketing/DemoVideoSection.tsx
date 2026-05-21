@@ -16,7 +16,7 @@ export default function DemoVideoSection() {
   }, []);
 
   return (
-    <section className="relative bg-slate-950 py-14 sm:py-24 overflow-hidden">
+    <section id="how-it-works" className="relative bg-slate-950 py-14 sm:py-24 overflow-hidden">
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 

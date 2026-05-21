@@ -9,7 +9,6 @@ import LeadLandingSection from '@/components/marketing/LeadLandingSection';
 import DigestBanner from '@/components/marketing/DigestBanner';
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
 import ValueSection from '@/components/marketing/ValueSection';
-import NewWhySection from '@/components/marketing/NewWhySection';
 import Pricing from '@/components/marketing/Pricing';
 import Comparison from '@/components/marketing/Comparison';
 import FinalCTA from '@/components/marketing/FinalCTA';
@@ -38,6 +37,7 @@ export default function NewHome() {
        <DigestBanner />
 
       {/* 4. THE POWER: Customize Form (Dark) */}
+
       <CustomizeFormSection />
 
 

@@ -131,7 +131,7 @@ export default function DigestBanner() {
               className="text-lg text-slate-200 leading-relaxed mb-10 max-w-lg font-medium"
               style={{ fontFamily: font }}
             >
-              Every morning before you start the truck, a branded digest lands in your inbox — today&apos;s jobs, stale quotes, overdue payments, and revenue totals.
+              Every morning before you start the truck, a branded digest lands in your inbox.
             </p>
 
             {/* Feature List */}

@@ -100,9 +100,7 @@ export default function Pricing() {
                     >
                       Start Free
                     </p>
-                    <p className="text-slate-400 text-xs sm:text-sm" style={{ fontFamily: font, fontWeight: 600 }}>
-                      QR codes, lead dashboard & booking link — $0
-                    </p>
+                   
                   </div>
                 </div>
                 <span

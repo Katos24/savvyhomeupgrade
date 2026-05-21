@@ -84,7 +84,7 @@ export default function TruckSection() {
           >
             <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
               <Image
-                src="/images/qrbranded2.webp"
+                src="/images/qrbranded2.png"
                 alt="Branded QR code on truck, yard sign, and social media"
                 width={1400}
                 height={900}

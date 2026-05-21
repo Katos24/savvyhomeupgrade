@@ -86,10 +86,7 @@ export default function ArchitectHero() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
-                <Check size={18} className="text-emerald-600" strokeWidth={3} />
-                No credit card required
-              </div>
+            
             </div>
           </div>
 
