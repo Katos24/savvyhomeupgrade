@@ -295,7 +295,7 @@ const initialLeadCount = useRef<number | null>(null);
             setNewLeadCount(data.count - lastPollCount.current);
         }
     } catch {}
-}, 5000);
+}, 30000);
 
     return () => clearInterval(interval);
   }, [isInitialLoad, company.slug]);

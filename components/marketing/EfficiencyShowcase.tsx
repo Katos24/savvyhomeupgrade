@@ -1,100 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   List,
   Calendar,
-  Mail,
   Send,
+  SlidersHorizontal,
   Sparkles,
   Download,
-  SlidersHorizontal,
-  ArrowRight,
-  Check,
   Filter,
   ArrowUpDown,
-  Eye,
   Pencil,
 } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
 /* ─────────────────────────────────────
-   FEATURE DATA
-   ───────────────────────────────────── */
-
-type FeatureId = 'table' | 'calendar' | 'outbox' | 'pipeline' | 'ai' | 'export';
-
-const FEATURES: {
-  id: FeatureId;
-  label: string;
-  icon: any;
-  accent: string;
-  headline: string;
-  body: string;
-}[] = [
-  {
-    id: 'table',
-    label: 'Table View',
-    icon: List,
-    accent: '#0ea5e9',
-    headline: 'Every lead. One table. Total control.',
-    body: 'Filter by status, date, assigned crew, or payment. Sort any column. Bulk edit 50 leads at once. This is your command center when the board view isn\'t enough.',
-  },
-  {
-    id: 'calendar',
-    label: 'Calendar',
-    icon: Calendar,
-    accent: '#f43f5e',
-    headline: 'See your week before it happens.',
-    body: 'Every scheduled job on a real calendar — day, week, or month. Click to open the lead card. Know exactly who\'s going where and when.',
-  },
-  {
-    id: 'outbox',
-    label: 'Outbox',
-    icon: Send,
-    accent: '#8b5cf6',
-    headline: 'Every email you\'ve ever sent. Tracked.',
-    body: 'Quotes, schedule confirmations, payment reminders — every email lives in your outbox with timestamps, recipient, and status. When a customer says "I never got it," you\'ll know.',
-  },
-  {
-    id: 'pipeline',
-    label: 'Custom Pipeline',
-    icon: SlidersHorizontal,
-    accent: '#f97316',
-    headline: 'Your workflow. Your stages. Your rules.',
-    body: 'Rename pipeline stages, reorder them, add new ones. "New → Contacted → Quoted → Scheduled → Complete → Paid" or whatever fits how you actually work.',
-  },
-  {
-    id: 'ai',
-    label: 'AI Tools',
-    icon: Sparkles,
-    accent: '#10b981',
-    headline: 'AI that helps, not replaces.',
-    body: 'Get an instant brief on any lead, chat with AI about your pipeline, or generate a starting quote. It\'s not perfect — but it saves you 10 minutes on every new lead.',
-  },
-  {
-    id: 'export',
-    label: 'Export Data',
-    icon: Download,
-    accent: '#64748b',
-    headline: 'Your data. Take it anywhere.',
-    body: 'Download your entire lead database as a CSV anytime. Use it for taxes, reporting, marketing lists, or just peace of mind that your data isn\'t locked in.',
-  },
-];
-
-/* ─────────────────────────────────────
-   PREVIEW COMPONENTS
+   PREVIEW COMPONENTS (unchanged)
    ───────────────────────────────────── */
 
 function TablePreview() {
   const leads = [
-    { name: 'John Smith', status: 'Scheduled', category: 'Roof Repair', amount: '$5,750', date: 'May 20', assigned: 'Frank' },
-    { name: 'Sarah Kim', status: 'Quoted', category: 'Leak Detection', amount: '$1,200', date: 'May 18', assigned: 'Jorge' },
-    { name: 'Mike Davis', status: 'New', category: 'Inspection', amount: '—', date: 'Today', assigned: '—' },
-    { name: 'Lisa Chen', status: 'Paid', category: 'Gutter Work', amount: '$2,400', date: 'May 12', assigned: 'Kevin' },
-    { name: 'David R.', status: 'In Progress', category: 'Roof Replace', amount: '$12,005', date: 'May 14', assigned: 'Jack' },
+    { name: 'John Smith', status: 'Scheduled', category: 'Roof Repair', amount: '$5,750', assigned: 'Frank' },
+    { name: 'Sarah Kim', status: 'Quoted', category: 'Leak Detection', amount: '$1,200', assigned: 'Jorge' },
+    { name: 'Mike Davis', status: 'New', category: 'Inspection', amount: '—', assigned: '—' },
+    { name: 'Lisa Chen', status: 'Paid', category: 'Gutter Work', amount: '$2,400', assigned: 'Kevin' },
+    { name: 'David R.', status: 'In Progress', category: 'Roof Replace', amount: '$12,005', assigned: 'Jack' },
   ];
 
   const statusColors: Record<string, string> = {
@@ -107,7 +38,6 @@ function TablePreview() {
 
   return (
     <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-500">
           <Filter size={9} /> Filters
@@ -120,21 +50,15 @@ function TablePreview() {
           <Pencil size={9} /> Bulk Edit
         </div>
       </div>
-
-      {/* Header row */}
       <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr] px-3 py-2 bg-slate-50 border-b border-slate-100">
         {['Customer', 'Status', 'Category', 'Amount'].map((h) => (
           <p key={h} className="text-[8px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>{h}</p>
         ))}
       </div>
-
-      {/* Rows */}
       {leads.map((lead, i) => (
         <div
           key={lead.name}
-          className={`grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr] px-3 py-2 items-center ${
-            i < leads.length - 1 ? 'border-b border-slate-50' : ''
-          } hover:bg-blue-50/30 transition-colors`}
+          className={`grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr] px-3 py-2 items-center ${i < leads.length - 1 ? 'border-b border-slate-50' : ''} hover:bg-blue-50/30 transition-colors`}
         >
           <div>
             <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>{lead.name}</p>
@@ -168,16 +92,10 @@ function CalendarPreview() {
         <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>May 2026</p>
         <div className="flex gap-1">
           {['Day', 'Week', 'Month'].map((v) => (
-            <span
-              key={v}
-              className={`text-[8px] font-bold px-2 py-0.5 rounded-md ${v === 'Week' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}
-            >
-              {v}
-            </span>
+            <span key={v} className={`text-[8px] font-bold px-2 py-0.5 rounded-md ${v === 'Week' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}>{v}</span>
           ))}
         </div>
       </div>
-
       <div className="grid grid-cols-5 divide-x divide-slate-100">
         {days.map((d) => (
           <div key={d.day} className="min-h-[100px] p-1.5">
@@ -230,9 +148,7 @@ function OutboxPreview() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
               <p className="text-[10px] font-black text-slate-800 truncate" style={{ fontFamily: font }}>{email.to}</p>
-              <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${typeColors[email.type] || 'bg-slate-100 text-slate-500'}`}>
-                {email.type}
-              </span>
+              <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${typeColors[email.type] || 'bg-slate-100 text-slate-500'}`}>{email.type}</span>
             </div>
             <p className="text-[9px] text-slate-500 font-semibold truncate">{email.subject}</p>
           </div>
@@ -262,7 +178,7 @@ function PipelinePreview() {
         <p className="text-[9px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>Pipeline Stages</p>
         <span className="text-[8px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-bold">Drag to reorder</span>
       </div>
-      {stages.map((stage, i) => (
+      {stages.map((stage) => (
         <div key={stage.name} className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg border border-slate-100">
           <div className="flex items-center gap-1 text-slate-300">
             <div className="w-1 h-3 bg-slate-300 rounded-full" />
@@ -324,24 +240,73 @@ function ExportPreview() {
   );
 }
 
-const PREVIEWS: Record<FeatureId, React.FC> = {
-  table: TablePreview,
-  calendar: CalendarPreview,
-  outbox: OutboxPreview,
-  pipeline: PipelinePreview,
-  ai: AIPreview,
-  export: ExportPreview,
-};
+/* ─────────────────────────────────────
+   FEATURE ROW DATA
+   ───────────────────────────────────── */
+
+const FEATURES: {
+  id: string;
+  icon: any;
+  accent: string;
+  headline: string;
+  body: string;
+  Preview: React.FC;
+}[] = [
+  {
+    id: 'table',
+    icon: List,
+    accent: '#0ea5e9',
+    headline: 'Every lead. One table. Total control.',
+    body: 'Filter by status, date, assigned crew, or payment. Sort any column. Bulk edit 50 leads at once. This is your command center when the board view isn\'t enough.',
+    Preview: TablePreview,
+  },
+  {
+    id: 'calendar',
+    icon: Calendar,
+    accent: '#f43f5e',
+    headline: 'See your week before it happens.',
+    body: 'Every scheduled job on a real calendar — day, week, or month. Click to open the lead card. Know exactly who\'s going where and when.',
+    Preview: CalendarPreview,
+  },
+  {
+    id: 'outbox',
+    icon: Send,
+    accent: '#8b5cf6',
+    headline: 'Every email you\'ve ever sent. Tracked.',
+    body: 'Quotes, schedule confirmations, payment reminders — every email lives in your outbox with timestamps, recipient, and status. When a customer says "I never got it," you\'ll know.',
+    Preview: OutboxPreview,
+  },
+  {
+    id: 'pipeline',
+    icon: SlidersHorizontal,
+    accent: '#f97316',
+    headline: 'Your workflow. Your stages. Your rules.',
+    body: 'Rename pipeline stages, reorder them, add new ones. "New → Contacted → Quoted → Scheduled → Complete → Paid" or whatever fits how you actually work.',
+    Preview: PipelinePreview,
+  },
+  {
+    id: 'ai',
+    icon: Sparkles,
+    accent: '#10b981',
+    headline: 'AI that helps, not replaces.',
+    body: 'Get an instant brief on any lead, chat with AI about your pipeline, or generate a starting quote. It\'s not perfect — but it saves you 10 minutes on every new lead.',
+    Preview: AIPreview,
+  },
+  {
+    id: 'export',
+    icon: Download,
+    accent: '#64748b',
+    headline: 'Your data. Take it anywhere.',
+    body: 'Download your entire lead database as a CSV anytime. Use it for taxes, reporting, marketing lists, or just peace of mind that your data isn\'t locked in.',
+    Preview: ExportPreview,
+  },
+];
 
 /* ─────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────── */
 
 export default function EfficiencyShowcase() {
-  const [activeId, setActiveId] = useState<FeatureId>('table');
-  const active = FEATURES.find((f) => f.id === activeId)!;
-  const Preview = PREVIEWS[activeId];
-
   return (
     <section className="py-16 sm:py-24 lg:py-32 bg-white relative overflow-hidden">
       <div
@@ -355,7 +320,7 @@ export default function EfficiencyShowcase() {
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
 
         {/* HEADER */}
-        <div className="text-center mb-10 sm:mb-14">
+        <div className="text-center mb-14 sm:mb-20">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -379,99 +344,57 @@ export default function EfficiencyShowcase() {
           </motion.h2>
         </div>
 
-        {/* PILL SELECTOR */}
-        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 mb-8 sm:mb-12 scrollbar-hide snap-x snap-mandatory"
-          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {FEATURES.map((f) => {
-            const Icon = f.icon;
-            const isActive = activeId === f.id;
+        {/* FEATURE ROWS */}
+        <div className="space-y-16 sm:space-y-24">
+          {FEATURES.map((feature, i) => {
+            const isEven = i % 2 === 0;
+            const Icon = feature.icon;
+            const Preview = feature.Preview;
 
             return (
-              <button
-                key={f.id}
-                onClick={() => setActiveId(f.id)}
-                className={`
-                  flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5
-                  rounded-full whitespace-nowrap transition-all duration-200 snap-start
-                  border-2 flex-shrink-0 text-[11px] sm:text-xs
-                  ${isActive
-                    ? 'text-white border-transparent shadow-lg'
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
-                  }
-                `}
-                style={{
-                  fontFamily: font,
-                  fontWeight: isActive ? 900 : 700,
-                  ...(isActive ? { backgroundColor: f.accent, boxShadow: `0 8px 20px ${f.accent}30` } : {}),
-                }}
+              <motion.div
+                key={feature.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.4 }}
+                className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center ${
+                  isEven ? '' : 'lg:[direction:rtl]'
+                }`}
               >
-                <Icon size={13} />
-                {f.label}
-              </button>
+                {/* Preview */}
+                <div className={`transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 rounded-xl ${isEven ? '' : 'lg:[direction:ltr]'}`}>
+                  <Preview />
+                </div>
+
+                {/* Copy */}
+                <div className={`space-y-4 ${isEven ? '' : 'lg:[direction:ltr]'}`}>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
+                  >
+                    <Icon size={18} style={{ color: feature.accent }} />
+                  </div>
+
+                  <h3
+                    className="text-xl sm:text-2xl lg:text-3xl text-slate-900 leading-tight"
+                    style={{ fontFamily: font, fontWeight: 900 }}
+                  >
+                    {feature.headline}
+                  </h3>
+
+                  <p
+                    className="text-sm sm:text-base text-slate-500 leading-relaxed font-semibold max-w-md"
+                    style={{ fontFamily: font }}
+                  >
+                    {feature.body}
+                  </p>
+                </div>
+              </motion.div>
             );
           })}
         </div>
-
-        {/* CONTENT: Preview left, copy right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 lg:gap-12 items-start">
-
-          {/* PREVIEW */}
-          <div className="order-1">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeId}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                <Preview />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* COPY */}
-          <div className="order-2 lg:sticky lg:top-32">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeId}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-4"
-              >
-                {/* Accent bar */}
-                <div
-                  className="w-10 h-1 rounded-full"
-                  style={{ backgroundColor: active.accent }}
-                />
-
-                <h3
-                  className="text-lg sm:text-2xl lg:text-3xl text-slate-900 leading-tight"
-                  style={{ fontFamily: font, fontWeight: 900 }}
-                >
-                  {active.headline}
-                </h3>
-
-                <p
-                  className="text-sm sm:text-base text-slate-500 leading-relaxed font-semibold"
-                  style={{ fontFamily: font }}
-                >
-                  {active.body}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-        </div>
       </div>
-
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </section>
   );
 }

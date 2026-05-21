@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Clock, Mail, BarChart3, ArrowRight } from 'lucide-react';
+import { QrCode, Link2, Zap, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -9,19 +9,19 @@ const font = "'Nunito', sans-serif";
 
 const FEATURES = [
   {
-    icon: Mail,
-    title: 'One-click emails',
-    desc: 'Quotes, confirmations, payment reminders — all branded, all tracked.',
+    icon: QrCode,
+    title: 'Branded QR code',
+    desc: 'Your logo, your colors. Put it on trucks, yard signs, business cards, anywhere.',
   },
   {
-    icon: BarChart3,
-    title: 'Full pipeline',
-    desc: 'Every lead, every status, every dollar — one dashboard.',
+    icon: Link2,
+    title: 'One link for everything',
+    desc: 'Share it on Facebook, text it to customers, add it to your website. One link, one form.',
   },
   {
-    icon: Clock,
-    title: '6 AM digest',
-    desc: "Know your entire day before you start the truck.",
+    icon: Zap,
+    title: 'Leads land instantly',
+    desc: 'Every submission hits your dashboard with photos, details, and contact info. No email, no manual entry.',
   },
 ];
 
@@ -50,53 +50,48 @@ export default function TruckSection() {
           className="text-center mb-12 sm:mb-20"
         >
           <p
-            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3"
+            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-3"
             style={{ fontFamily: font }}
           >
-            Built for the truck, not the office
+            One link, everywhere
           </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl text-white leading-[1.1] px-2"
             style={{ fontFamily: font, fontWeight: 900 }}
           >
-            While you&apos;re on the road,{' '}
+            Yard signs. Trucks. Social media.{' '}
             <br className="hidden sm:block" />
-            <span className="text-emerald-400">leads are rolling in.</span>
+            <span className="text-emerald-400">One form. Every lead.</span>
           </h2>
           <p
-            className="text-sm sm:text-base text-slate-300 mt-6 max-w-xl mx-auto font-medium leading-relaxed"
+            className="text-sm sm:text-base text-white mt-6 max-w-xl mx-auto font-medium leading-relaxed"
             style={{ fontFamily: font }}
           >
-            Your customers scan, fill out your branded form, and the lead
-            lands on your dashboard — before you finish your coffee.
+            You get a branded link and QR code. Put it anywhere. Every scan
+            and click goes to your custom form and every lead lands on your dashboard.
           </p>
         </motion.div>
 
         {/* MAIN LAYOUT */}
         <div className="flex flex-col items-center max-w-6xl mx-auto space-y-10 sm:space-y-12">
           
-          {/* Contractor Photo */}
+          {/* Branded QR Image */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative w-full max-w-2xl"
+            className="relative w-full max-w-3xl"
           >
-            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl aspect-[4/3] sm:aspect-video">
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
               <Image
-                src="/images/og-image.webp"
-                alt="Contractor checking leads on phone at job site"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 800px"
+                src="/images/qrbranded2.webp"
+                alt="Branded QR code on truck, yard sign, and social media"
+                width={1400}
+                height={900}
+                className="w-full h-auto object-cover"
+                sizes="(max-width: 768px) 100vw, 900px"
                 priority
               />
-
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-
-              {/* Time badge */}
-               
             </div>
             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-6 bg-emerald-500/10 blur-2xl rounded-full" />
           </motion.div>
@@ -119,7 +114,7 @@ export default function TruckSection() {
                   <h4 className="text-white text-sm font-bold mb-1" style={{ fontFamily: font }}>
                     {feature.title}
                   </h4>
-                  <p className="text-slate-500 text-[11px] sm:text-xs leading-snug font-medium" style={{ fontFamily: font }}>
+                  <p className="text-slate-400 text-[11px] sm:text-xs leading-snug font-medium" style={{ fontFamily: font }}>
                     {feature.desc}
                   </p>
                 </div>

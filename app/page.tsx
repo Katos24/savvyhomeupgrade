@@ -32,13 +32,15 @@ export default function NewHome() {
       {/* 3. THE SOLUTION: Lead Landing (Amber-50) */}
       <LeadLandingSection />
 
+            {/* 5. THE LOGIC: Why Section (Light) */}
+
+
+       <DigestBanner />
+
       {/* 4. THE POWER: Customize Form (Dark) */}
       <CustomizeFormSection />
 
-      {/* 5. THE LOGIC: Why Section (Light) */}
-      <NewWhySection />
 
-       <DigestBanner />
 
   
       <EfficiencyShowcase />

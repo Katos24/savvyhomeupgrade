@@ -1,26 +1,23 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, ArrowRight, Check } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
 
 const PAIN_POINTS = [
   {
-    pain: 'Driving 45 mins for dead-end leads',
-    fix: 'See photos and budget before starting the truck.',
-    accent: '#f97316',
+    pain: 'Leads buried in your email inbox',
+    fix: 'Every lead lands on a visual dashboard with photos, details, and contact info. Nothing gets lost.',
   },
   {
-    pain: 'Writing quotes from scratch every time',
-    fix: 'One-click branded templates that close faster.',
-    accent: '#10b981',
+    pain: 'No way to track what was quoted or paid',
+    fix: 'Every card tracks status, quote amount, scheduled date, and payment. One glance tells you everything.',
   },
   {
-    pain: 'Forgetting to follow up on last week’s leads',
-    fix: 'Automatic reminders on a visual status board.',
-    accent: '#3b82f6',
+    pain: 'Following up means digging through old emails',
+    fix: 'One click to send a branded quote, schedule confirmation, or payment reminder. All tracked in your outbox.',
   },
 ];
 
@@ -40,7 +37,7 @@ export default function ValueSection() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-20">
           
-          {/* ── LEFT: IMAGE FRAME ── */}
+          {/* LEFT: IMAGE FRAME */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -56,21 +53,20 @@ export default function ValueSection() {
                 className="w-full h-auto object-cover"
               />
             </div>
-            {/* Decorative element behind image */}
             <div className="absolute -bottom-6 -right-6 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full z-0" />
             <div className="absolute -top-6 -left-6 w-32 h-32 border-t-4 border-l-4 border-white/5 rounded-tl-[3rem] z-0" />
           </motion.div>
 
-          {/* ── RIGHT: HEADER & INTRO ── */}
+          {/* RIGHT: HEADER */}
           <div className="order-1 lg:order-2">
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4"
+              className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4"
               style={{ fontFamily: font }}
             >
-              The Cost of Chaos
+              Sound familiar?
             </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -79,17 +75,17 @@ export default function ValueSection() {
               className="text-4xl sm:text-5xl lg:text-7xl text-white leading-[1.1] mb-8"
               style={{ fontFamily: font, fontWeight: 900 }}
             >
-              Time is money. <br />
-              <span className="text-yellow-400">You&apos;re losing both.</span>
+              Your inbox is not{' '}
+              <span className="text-yellow-400">a CRM.</span>
             </motion.h2>
-            <p className="text-lg text-slate-400 font-semibold max-w-lg leading-relaxed" style={{ fontFamily: font }}>
-              Every minute spent on "can you come take a look" for a bad-fit lead is a minute you aren&apos;t closing profitable jobs. 
-              Stop the bleeding with a system built for the field.
+            <p className="text-lg text-white font-semibold max-w-lg leading-relaxed" style={{ fontFamily: font }}>
+              You are running your business out of email, texts, and memory. 
+              It works until it doesn't. Lead2Project gives you one place for all of it.
             </p>
           </div>
         </div>
 
-        {/* ── BOTTOM: THE SOLUTIONS GRID ── */}
+        {/* BOTTOM: PAIN/FIX GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PAIN_POINTS.map((item, i) => (
             <motion.div
@@ -100,7 +96,7 @@ export default function ValueSection() {
               transition={{ delay: i * 0.1 }}
               className="group relative bg-white/[0.03] border border-white/[0.08] p-8 rounded-[2rem] hover:bg-white/[0.06] transition-all duration-300"
             >
-              {/* Pain Indicator */}
+              {/* Pain */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center bg-red-500/10 text-red-500 border border-red-500/20">
                   <X size={16} strokeWidth={3} />
@@ -114,6 +110,7 @@ export default function ValueSection() {
                 {item.pain}
               </h3>
 
+              {/* Fix */}
               <div className="pt-6 border-t border-white/5">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -123,7 +120,7 @@ export default function ValueSection() {
                     The Fix
                   </span>
                 </div>
-                <p className="text-slate-300 text-sm font-bold leading-relaxed" style={{ fontFamily: font }}>
+                <p className="text-white text-sm font-bold leading-relaxed" style={{ fontFamily: font }}>
                   {item.fix}
                 </p>
               </div>
@@ -131,19 +128,19 @@ export default function ValueSection() {
           ))}
         </div>
 
-        {/* Bottom CTA Area */}
+        {/* Bottom CTA */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           className="mt-20 py-12 border-t border-white/5 flex flex-col items-center text-center"
         >
-          <p className="text-slate-500 font-bold mb-8 max-w-2xl text-sm sm:text-base" style={{ fontFamily: font }}>
-            Stop chasing dead ends. Start closing deals before the truck even leaves your driveway.
+          <p className="text-white font-bold mb-8 max-w-2xl text-sm sm:text-base" style={{ fontFamily: font }}>
+            Keep your current payment system. Keep your accounting software. Lead2Project just organizes the front end of your business so nothing falls through the cracks.
           </p>
           <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest">
             <Check size={14} strokeWidth={3} />
-            Built for serious trades
+            Works alongside what you already use
           </div>
         </motion.div>
 
