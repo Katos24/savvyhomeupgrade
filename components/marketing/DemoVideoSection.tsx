@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRef, useEffect } from 'react';
+import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
 
@@ -18,7 +19,9 @@ export default function DemoVideoSection() {
   return (
     <section id="how-it-works" className="relative bg-slate-950 py-14 sm:py-24 overflow-hidden">
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+        {/* TOP — Text + Image side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
 
           {/* LEFT — Text */}
           <motion.div
@@ -28,37 +31,67 @@ export default function DemoVideoSection() {
             className="text-center lg:text-left"
           >
             <p
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-3"
+              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-emerald-400 mb-3"
               style={{ fontFamily: font }}
             >
-              See the difference
+              The fix
             </p>
             <h2
               className="text-3xl sm:text-4xl text-white leading-[1.1]"
               style={{ fontFamily: font, fontWeight: 900 }}
             >
-              Customer fills out your form.{' '}
-              <span className="text-emerald-400">You get this, not an email.</span>
+              This one goes to{' '}
+              <span className="text-emerald-400">your dashboard.</span>
             </h2>
-            <p
-              className="text-sm sm:text-base text-white mt-5 font-medium leading-relaxed max-w-md mx-auto lg:mx-0"
-              style={{ fontFamily: font }}
-            >
-              Watch a real lead come in with photos, details, and customer
-              message straight to your dashboard. No inbox digging required.
-            </p>
           </motion.div>
 
-          {/* RIGHT — Phone-sized Video */}
+          {/* RIGHT — Hero Image */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative flex justify-center lg:justify-end"
+            className="relative"
           >
-            <div className="relative w-[260px] sm:w-[280px]">
-              <div className="absolute -inset-4 blur-3xl opacity-15 rounded-3xl bg-emerald-500" />
-              <div className="relative z-10 rounded-[2rem] overflow-hidden border-[6px] border-slate-700 shadow-2xl bg-black">
+            <div className="relative rounded-2xl overflow-hidden">
+              <Image
+                src="/images/heroimagefull.webp"
+                alt="Lead2Project dashboard and branded form on phone"
+                width={1100}
+                height={1100}
+                className="w-full h-auto object-contain"
+                sizes="(max-width: 768px) 100vw, 600px"
+                priority
+              />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* BOTTOM — Video centered with flare */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-16 sm:mt-24 flex flex-col items-center"
+        >
+          <p
+            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-6 sm:mb-8"
+            style={{ fontFamily: font }}
+          >
+            Watch it in action
+          </p>
+
+          <div className="relative">
+            {/* Glow behind phone */}
+            <div className="absolute -inset-8 sm:-inset-12 blur-3xl opacity-20 rounded-full bg-emerald-500" />
+            <div className="absolute -inset-16 sm:-inset-24 blur-[80px] opacity-10 rounded-full bg-blue-500" />
+
+            {/* Decorative rings */}
+            <div className="absolute -inset-12 sm:-inset-16 border border-white/[0.03] rounded-full" />
+            <div className="absolute -inset-20 sm:-inset-28 border border-white/[0.02] rounded-full" />
+
+            {/* Phone */}
+            <div className="relative z-10 w-[240px] sm:w-[280px]">
+              <div className="rounded-[2rem] overflow-hidden border-[6px] border-slate-700 shadow-2xl bg-black">
                 <video
                   ref={videoRef}
                   src="/videos/Lead2ProjectDemo.mp4"
@@ -69,12 +102,12 @@ export default function DemoVideoSection() {
                   className="w-full h-auto"
                 />
               </div>
-              {/* Phone notch detail */}
+              {/* Phone notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 w-24 h-5 bg-slate-700 rounded-b-2xl" />
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-        </div>
       </div>
     </section>
   );

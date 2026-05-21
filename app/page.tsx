@@ -2,6 +2,7 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import ProblemSection from '@/components/marketing/ProblemSection';
 import DemoVideoSection from '@/components/marketing/DemoVideoSection';
 import TruckSection from '@/components/marketing/TruckSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
@@ -10,7 +11,6 @@ import DigestBanner from '@/components/marketing/DigestBanner';
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
 import ValueSection from '@/components/marketing/ValueSection';
 import Pricing from '@/components/marketing/Pricing';
-import Comparison from '@/components/marketing/Comparison';
 import FinalCTA from '@/components/marketing/FinalCTA';
 import Footer from '@/components/marketing/Footer';
 import SelfServeBanner from '@/components/marketing/SelfServeBanner';
@@ -23,28 +23,36 @@ export default function NewHome() {
       {/* 1. THE HOOK: Hero (White) */}
       <NewHero />
 
+       <ProblemSection />
+
 
 <DemoVideoSection />
-      {/* 2. THE MOMENTUM: Truck Section (Dark) */}
-      <TruckSection />
+    
+
+        
+
 
       {/* 3. THE SOLUTION: Lead Landing (Amber-50) */}
       <LeadLandingSection />
 
-            {/* 5. THE LOGIC: Why Section (Light) */}
 
 
        <DigestBanner />
-
-      {/* 4. THE POWER: Customize Form (Dark) */}
+            {/* 4. THE POWER: Customize Form (Dark) */}
 
       <CustomizeFormSection />
+
+ {/* 2. THE MOMENTUM: Truck Section (Dark) */}
+      <TruckSection />
 
 
 
   
       <EfficiencyShowcase />
 
+
+            {/* 5. THE LOGIC: Why Section (Light) */}
+ 
       
      
 
@@ -66,7 +74,6 @@ export default function NewHome() {
           Now that they've seen the price, show them why your competitors 
           are a headache compared to your self-serve model.
       */}
-      <Comparison />
 
       {/* 12. THE CLOSE: Final CTA (Dark) */}
       <FinalCTA />
