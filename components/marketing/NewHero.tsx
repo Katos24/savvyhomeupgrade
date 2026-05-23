@@ -7,55 +7,40 @@ import Link from 'next/link';
 const font = "'Nunito', sans-serif";
 
 /* ───────────────────────────────────────────
-   MOBILE-OPTIMIZED SCRAPBOOK COLLAGE 
-   (Hides secondary cards to keep mobile ultra-clean)
+   EXPANDED SCRAPBOOK COLLAGE ON A WOOD DESK
    ─────────────────────────────────────────── */
 function ScrapbookCollage() {
   return (
-    <div className="relative w-full min-h-none lg:h-[600px] bg-slate-100/70 rounded-3xl border border-slate-200/60 p-4 sm:p-6 overflow-hidden backdrop-blur-sm flex flex-col sm:grid sm:grid-cols-2 lg:block gap-4 sm:gap-6 lg:gap-0">
+    <div className="relative w-full max-w-[620px] h-[440px] sm:h-[500px] lg:h-[540px] rounded-2xl p-6 overflow-hidden border border-amber-950/20 shadow-2xl mx-auto lg:ml-auto lg:mr-0 group bg-cover bg-center">
       
-      {/* Background structural lines — Desktop only */}
-      <div className="hidden lg:block absolute inset-y-0 left-1/3 w-px bg-slate-200/50 pointer-events-none" />
-      <div className="hidden lg:block absolute inset-x-0 top-1/2 h-px bg-slate-200/50 pointer-events-none" />
+      {/* Premium Rich Walnut Wood Grain Background Effect */}
+      <div 
+        className="absolute inset-0 z-0 bg-[#2C1A10] mix-blend-normal opacity-95 transition-transform duration-700 ease-out group-hover:scale-105"
+        style={{
+          backgroundImage: `
+            linear-gradient(90deg, rgba(30,16,8,0.15) 0%, rgba(65,39,22,0.15) 50%, rgba(30,16,8,0.15) 100%),
+            repeating-linear-gradient(0deg, rgba(20,10,5,0.04) 0px, rgba(20,10,5,0.04) 2px, transparent 2px, transparent 4px),
+            linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)
+          `
+        }}
+      />
 
-      {/* 1. Contact form — VISIBLE EVERYWHERE (Core Problem) */}
+      {/* Dynamic Ambient Job-Site Lighting Highlight overlay */}
+      <div className="absolute -top-[20%] -left-[20%] w-[80%] h-[80%] rounded-full bg-amber-100/10 blur-[80px] pointer-events-none z-10" />
+      <div className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-emerald-500/5 blur-[100px] pointer-events-none z-10" />
+
+      {/* 1. Inbox Window (Left Top Layer) */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="w-full sm:w-auto lg:absolute lg:top-[8%] lg:right-[6%] lg:w-[210px] z-10 lg:rotate-[2deg]"
+        className="absolute top-[8%] left-[5%] w-[200px] sm:w-[230px] z-20 -rotate-[3deg]"
       >
-        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
-          <div className="text-[11px] font-black uppercase tracking-wider text-slate-800 mb-3">Old Contact Form</div>
-          <div className="space-y-2">
-            <div className="h-7 bg-slate-50 rounded-lg border border-slate-100 flex items-center px-2">
-              <span className="text-[10px] font-bold text-slate-400">Full Name</span>
-            </div>
-            <div className="h-7 bg-slate-50 rounded-lg border border-slate-100 flex items-center px-2">
-              <span className="text-[10px] font-bold text-slate-400">Email Address</span>
-            </div>
-            <div className="h-12 bg-slate-50 rounded-lg border border-slate-100 flex items-start p-2">
-              <span className="text-[10px] font-bold text-slate-400">Job Details...</span>
-            </div>
-            <div className="h-7 bg-rose-500 rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-[10px] text-white font-black uppercase tracking-wide">Lost in Inbox</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 2. Email inbox simulation — HIDDEN ON MOBILE (Desktop Only) */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="hidden lg:block lg:absolute lg:top-[4%] lg:left-[4%] lg:w-[220px] z-20 lg:rotate-[-3deg]"
-      >
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-[0_25px_60px_rgba(15,23,42,0.08)]">
+        <div className="bg-white/95 border border-slate-200/80 rounded-xl p-4 shadow-[0_15px_35px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2.5">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-500" />
-              <div className="text-[10px] font-black text-slate-900 tracking-tight">Inbox (47)</div>
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <div className="text-[11px] font-black text-slate-900">Inbox (47)</div>
             </div>
             <span className="text-[9px] font-bold text-slate-400">Primary</span>
           </div>
@@ -66,7 +51,7 @@ function ScrapbookCollage() {
               { text: 'New lead - Sarah L.', bold: true, tag: 'Solar' },
             ].map((item, i) => (
               <div key={i} className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-1.5 truncate">
                   <div className={`w-1 h-1 rounded-full flex-shrink-0 ${item.bold ? 'bg-blue-500' : 'bg-slate-300'}`} />
                   <div className={`text-[10px] truncate ${item.bold ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}`}>{item.text}</div>
                 </div>
@@ -79,104 +64,120 @@ function ScrapbookCollage() {
         </div>
       </motion.div>
 
-      {/* 3. Linen Sticky Note — HIDDEN ON MOBILE (Desktop Only) */}
+      {/* 2. Old Contact Form Window (Right Top Layer) */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="absolute top-[12%] right-[5%] w-[190px] sm:w-[215px] z-10 rotate-[4deg]"
+      >
+        <div className="bg-white/95 border border-slate-200/80 rounded-xl p-4 shadow-[0_15px_35px_rgba(0,0,0,0.25)] backdrop-blur-md">
+          <div className="text-[10px] font-black uppercase tracking-wider text-slate-800 mb-2.5">Old Contact Form</div>
+          <div className="space-y-2">
+            <div className="h-6.5 bg-slate-50 rounded-md border border-slate-100 flex items-center px-2">
+              <span className="text-[10px] font-bold text-slate-400">Full Name</span>
+            </div>
+            <div className="h-6.5 bg-slate-50 rounded-md border border-slate-100 flex items-center px-2">
+              <span className="text-[10px] font-bold text-slate-400">Email Address</span>
+            </div>
+            <div className="h-10 bg-slate-50 rounded-md border border-slate-100 flex items-start p-1.5">
+              <span className="text-[10px] font-bold text-slate-400">Job Details...</span>
+            </div>
+            <div className="h-6.5 bg-rose-500 rounded-md flex items-center justify-center shadow-sm">
+              <span className="text-[10px] text-white font-black uppercase tracking-wide">Lost in Inbox</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 3. Linen Sticky Note (Left Middle Layer) */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4 }}
-        className="hidden lg:block lg:absolute lg:top-[44%] lg:left-[4%] z-40 lg:rotate-[6deg]"
+        className="absolute top-[46%] left-[7%] z-30 rotate-[8deg]"
       >
         <div
-          className="w-[130px] h-[105px] rounded-sm p-3 border border-amber-200/60 flex flex-col justify-between"
-          style={{ 
-            backgroundColor: '#FFFDF0', 
-            boxShadow: '3px 6px 18px rgba(180, 150, 100, 0.1)',
-            fontFamily: 'monospace'
-          }}
+          className="w-[115px] h-[100px] rounded-sm p-3 border border-amber-200/40 flex flex-col justify-between shadow-[3px_6px_16px_rgba(0,0,0,0.3)]"
+          style={{ backgroundColor: '#FFFDF2', fontFamily: 'monospace' }}
         >
-          <div className="text-[11px] text-amber-900 font-bold tracking-tight leading-tight">
+          <div className="text-[10px] text-amber-900 font-bold tracking-tight leading-tight">
             // CALL BACK<br />
             John - leak info<br />
             555-0142
           </div>
-          <div className="text-[9px] text-amber-600/80 font-bold text-right border-t border-amber-200/40 pt-1">
+          <div className="text-[8px] text-amber-700/80 font-bold text-right border-t border-amber-200/20 pt-1">
             Tuesday?
           </div>
         </div>
       </motion.div>
 
-      {/* 4. Muted Rose Sticky Note — HIDDEN ON MOBILE (Desktop Only) */}
+      {/* 4. Live Text Thread (Center Window) */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="absolute top-[42%] left-[40%] w-[155px] sm:w-[175px] z-40 -rotate-[1deg]"
+      >
+        <div className="bg-white/95 border border-slate-200/80 rounded-xl p-3 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-md">
+          <div className="space-y-1.5">
+            <div className="flex justify-end">
+              <div className="bg-slate-900 rounded-lg rounded-tr-none px-2.5 py-1">
+                <span className="text-[10px] text-white font-medium">I can come Thursday</span>
+              </div>
+            </div>
+            <div className="flex justify-start">
+              <div className="bg-slate-100 rounded-lg rounded-tl-none px-2.5 py-1">
+                <span className="text-[10px] text-slate-800 font-medium">ok how much?</span>
+              </div>
+            </div>
+            <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Read 3:42 PM</div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 5. Muted Rose Sticky Note (Right Middle Layer) */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className="hidden lg:block lg:absolute lg:top-[53%] lg:right-[6%] z-40 lg:rotate-[-4deg]"
+        transition={{ delay: 0.6 }}
+        className="absolute top-[54%] right-[6%] z-30 -rotate-[5deg]"
       >
         <div
-          className="w-[130px] h-[105px] rounded-sm p-3 border border-rose-200/60 flex flex-col justify-between"
-          style={{ 
-            backgroundColor: '#FFF1F2', 
-            boxShadow: '-3px 6px 18px rgba(180, 100, 120, 0.08)',
-            fontFamily: 'monospace'
-          }}
+          className="w-[120px] h-[100px] rounded-sm p-3 border border-rose-200/40 flex flex-col justify-between shadow-[-3px_6px_16px_rgba(0,0,0,0.3)]"
+          style={{ backgroundColor: '#FFF0F2', fontFamily: 'monospace' }}
         >
-          <div className="text-[11px] text-rose-950 font-bold tracking-tight leading-tight">
+          <div className="text-[10px] text-rose-950 font-bold tracking-tight leading-tight">
             CRITICAL:<br />
             Did I dispatch <br />
             the quote??
           </div>
-          <div className="text-[8px] text-rose-500 font-bold uppercase tracking-wider">
+          <div className="text-[8px] text-rose-600 font-bold uppercase tracking-wider">
             check email
           </div>
         </div>
       </motion.div>
 
-      {/* 5. Live Text Thread — HIDDEN ON MOBILE (Desktop Only) */}
+      {/* 6. Dashboard Tracker Grid (Bottom Center Layer Layout) */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="hidden lg:block lg:absolute lg:top-[34%] lg:left-[32%] lg:w-[170px] z-30 lg:rotate-[1deg]"
+        transition={{ delay: 0.7 }}
+        className="absolute bottom-[6%] left-[8%] right-[8%] sm:left-[12%] sm:right-[12%] z-20 -rotate-[2deg]"
       >
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
-          <div className="space-y-1.5">
-            <div className="flex justify-end">
-              <div className="bg-slate-900 rounded-xl rounded-tr-none px-2.5 py-1">
-                <span className="text-[10px] text-white font-medium">I can come Thursday</span>
-              </div>
-            </div>
-            <div className="flex justify-start">
-              <div className="bg-slate-100 rounded-xl rounded-tl-none px-2.5 py-1">
-                <span className="text-[10px] text-slate-800 font-medium">ok how much?</span>
-              </div>
-            </div>
-            <div className="flex justify-start pt-0.5">
-              <span className="text-[8px] font-bold text-slate-400 tracking-wider uppercase">Read 3:42 PM</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 6. Dashboard Tracker Grid — VISIBLE EVERYWHERE (Core Solution) */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="w-full sm:w-auto sm:col-span-1 lg:absolute lg:bottom-[4%] lg:left-[6%] lg:w-[220px] z-10 lg:rotate-[-2deg]"
-      >
-        <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
-          <div className="grid grid-cols-3 text-[9px] text-slate-700">
-            <div className="border-b border-r border-slate-100 bg-slate-50 px-2 py-1.5 font-black uppercase tracking-wider text-slate-400 scale-90 origin-left">Client</div>
-            <div className="border-b border-r border-slate-100 bg-slate-50 px-2 py-1.5 font-black uppercase tracking-wider text-slate-400 scale-90 origin-left">Status</div>
-            <div className="border-b border-slate-100 bg-slate-50 px-2 py-1.5 font-black uppercase tracking-wider text-slate-400 scale-90 origin-left">Invoice</div>
+        <div className="bg-white/95 border border-slate-200/90 rounded-xl overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.35)] backdrop-blur-md">
+          <div className="grid grid-cols-3 text-[9px] sm:text-[10px] text-slate-700">
+            <div className="border-b border-r border-slate-100 bg-slate-50/80 px-2.5 py-2 font-black uppercase tracking-wider text-slate-400 scale-95 origin-left">Client</div>
+            <div className="border-b border-r border-slate-100 bg-slate-50/80 px-2.5 py-2 font-black uppercase tracking-wider text-slate-400 scale-95 origin-left">Status</div>
+            <div className="border-b border-slate-100 bg-slate-50/80 px-2.5 py-2 font-black uppercase tracking-wider text-slate-400 scale-95 origin-left">Invoice</div>
             
-            <div className="border-b border-r border-slate-100 px-2 py-1.5 font-bold text-slate-900">John S</div>
-            <div className="border-b border-r border-slate-100 px-2 py-1.5 text-amber-600 font-bold bg-amber-50/40">Pending</div>
-            <div className="border-b border-slate-100 px-2 py-1.5 text-slate-400 font-medium">unsent</div>
+            <div className="border-b border-r border-slate-100 px-2.5 py-2 font-bold text-slate-900">John S</div>
+            <div className="border-b border-r border-slate-100 px-2.5 py-2 text-amber-600 font-bold bg-amber-50/50">Pending</div>
+            <div className="border-b border-slate-100 px-2.5 py-2 text-slate-400 font-medium">unsent</div>
             
-            <div className="border-r border-slate-100 px-2 py-1.5 font-bold text-slate-900">Mike D</div>
-            <div className="border-r border-slate-100 px-2 py-1.5 text-emerald-600 font-bold bg-emerald-50/40">Active</div>
-            <div className="px-2 py-1.5 text-emerald-600 font-bold">Paid</div>
+            <div className="border-r border-slate-100 px-2.5 py-2 font-bold text-slate-900">Mike D</div>
+            <div className="border-r border-slate-100 px-2.5 py-2 text-emerald-600 font-bold bg-emerald-50/50">Active</div>
+            <div className="px-2.5 py-2 text-emerald-600 font-bold">Paid</div>
           </div>
         </div>
       </motion.div>
@@ -190,11 +191,11 @@ function ScrapbookCollage() {
    ─────────────────────────────────────────── */
 export default function ArchitectHero() {
   return (
-    <section className="relative bg-white pt-28 sm:pt-36 lg:pt-44 pb-16 lg:pb-24 overflow-hidden border-b border-slate-100">
+    <section className="relative bg-white pt-24 sm:pt-32 lg:pt-40 pb-16 lg:pb-24 overflow-hidden border-b border-slate-100">
 
       {/* Light-mode micro grid matrix layer */}
       <div
-        className="absolute inset-0 opacity-[0.4] pointer-events-none"
+        className="absolute inset-0 opacity-[0.35] pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
           backgroundSize: '40px 40px',
@@ -203,15 +204,13 @@ export default function ArchitectHero() {
       
       <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:pr-12 lg:pl-16">
-
-        <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-10 lg:gap-12 items-center">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-8 items-center">
 
           {/* LEFT CONTENT COLUMN */}
-          <div className="flex flex-col space-y-6 relative z-20">
-
+          <div className="flex flex-col space-y-6 lg:max-w-xl text-left">
             <h1
-              className="text-slate-900 font-black tracking-tighter leading-[1.05] sm:leading-[1.02] lg:leading-[0.92] text-4xl sm:text-6xl lg:text-[6.2rem]"
+              className="text-slate-900 font-black tracking-tighter leading-[1.05] sm:leading-[1.02] lg:leading-[0.92] text-4xl sm:text-6xl lg:text-[5.4rem]"
               style={{ fontFamily: font }}
             >
               Stop <br />
@@ -220,12 +219,7 @@ export default function ArchitectHero() {
               <span className="text-emerald-600">Your Inbox.</span>
             </h1>
 
-            {/* Mobile scrapbook renders natively inline here beneath the title */}
-            <div className="block lg:hidden my-2">
-              <ScrapbookCollage />
-            </div>
-
-            <p className="text-slate-600 font-bold leading-relaxed text-base sm:text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-4 sm:pl-5" style={{ fontFamily: font }}>
+            <p className="text-slate-600 font-bold leading-relaxed text-base sm:text-lg lg:text-xl border-l-4 border-emerald-500 pl-4" style={{ fontFamily: font }}>
               Lead2Project replaces your contact form with one branded link that captures photos, details, and job info — all on one dashboard.
             </p>
 
@@ -279,8 +273,8 @@ export default function ArchitectHero() {
             </div>
           </div>
 
-          {/* RIGHT CONTENT COLUMN (Desktop Layout Only) */}
-          <div className="hidden lg:block w-full">
+          {/* RIGHT CONTENT COLUMN — Bigger layout, wood grain contrast background */}
+          <div className="w-full relative z-10 lg:pl-6">
             <ScrapbookCollage />
           </div>
 
