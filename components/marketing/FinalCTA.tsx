@@ -1,58 +1,84 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const font = "'Nunito', sans-serif";
 
 export default function FinalCTA() {
   return (
-    <section className="relative py-20 sm:py-28 px-5 sm:px-6 text-center overflow-hidden bg-slate-950">
-      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-      <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl opacity-10" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-400 rounded-full blur-3xl opacity-10" />
+    <section className="relative py-28 sm:py-36 px-6 sm:px-8 text-center overflow-hidden bg-slate-950">
+      
+      {/* Structural Subtle Canvas Pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]" 
+        style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} 
+      />
+      
+      {/* Deep Luxury Ambient Glows */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] opacity-60 pointer-events-none" />
+      <div className="absolute -bottom-20 left-1/4 w-72 h-72 bg-sky-500/5 rounded-full blur-[100px] opacity-40 pointer-events-none" />
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
         className="relative z-10 max-w-2xl mx-auto"
       >
+        {/* Upper Micro Label */}
+        <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-white/[0.03] rounded-full border border-white/[0.08]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400" style={{ fontFamily: font }}>
+            Instant Workspace Deployment
+          </span>
+        </div>
+
         <h2
-          className="text-3xl sm:text-4xl lg:text-5xl text-white mb-5 leading-tight"
-          style={{ fontFamily: font, fontWeight: 900 }}
+          className="text-4xl sm:text-5xl lg:text-6xl text-white font-black mb-6 leading-[1.05] tracking-tight"
+          style={{ fontFamily: font }}
         >
-          Stop Bleeding Leads.
-          <br />
-          <span className="text-yellow-400">One Win Pays for the Year.</span>
+          Control your pipeline. <br />
+          <span className="text-emerald-400 drop-shadow-[0_0_30px_rgba(52,211,153,0.15)]">Secure your sanity.</span>
         </h2>
 
         <p
-          className="text-white text-base sm:text-lg mb-10 leading-relaxed max-w-lg mx-auto"
-          style={{ fontFamily: font, fontWeight: 700 }}
+          className="text-slate-400 text-sm sm:text-base mb-10 leading-relaxed max-w-md mx-auto font-medium"
+          style={{ fontFamily: font }}
         >
-          Your competitor down the street is still texting quotes from his personal number. You don't have to be.
+          Your competitors are still writing line items on loose paper and texting quotes from personal devices. Run a tier above.
         </p>
 
-        <Link href="/signup">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-3 bg-yellow-400 text-slate-900 px-10 py-5 rounded-2xl text-lg group border-4 border-slate-900 shadow-[5px_5px_0px_0px_rgba(0,0,0,0.3)]"
-            style={{ fontFamily: font, fontWeight: 900 }}
-          >
-            Start Free Trial
-            <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
-          </motion.div>
-        </Link>
+        {/* Primary Action Button */}
+        <div className="flex flex-col items-center gap-4">
+          <Link href="/signup" className="w-full sm:w-auto">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-4 rounded-xl text-sm font-black uppercase tracking-wider transition-colors cursor-pointer w-full sm:w-auto shadow-lg shadow-emerald-500/10 group"
+              style={{ fontFamily: font }}
+            >
+              Start Building Free
+              <ArrowRight size={14} strokeWidth={3} className="group-hover:translate-x-0.5 transition-transform" />
+            </motion.div>
+          </Link>
+        </div>
 
-        <p
-          className="mt-6 text-sm text-white/60 uppercase tracking-wider"
-          style={{ fontFamily: font, fontWeight: 800 }}
-        >
-          14-day free trial · Cancel anytime · 2 min setup
-        </p>
+        {/* Micro Footer Trust Points */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-slate-500 text-[11px] font-bold">
+          <div className="flex items-center gap-1">
+            <CheckCircle2 size={12} className="text-slate-700" /> No Card Obligation
+          </div>
+          <span className="text-slate-800 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1">
+            <CheckCircle2 size={12} className="text-slate-700" /> Cancel Online Anytime
+          </div>
+          <span className="text-slate-800 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1">
+            <CheckCircle2 size={12} className="text-slate-700" /> 2-Minute Onboarding
+          </div>
+        </div>
+        
       </motion.div>
     </section>
   );

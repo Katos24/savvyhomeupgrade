@@ -10,101 +10,125 @@ import {
   Download,
   Filter,
   ArrowUpDown,
-  Pencil,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  User,
+  ExternalLink
 } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
 /* ─────────────────────────────────────
-   PREVIEW COMPONENTS (unchanged)
+   1. DATA-DENSE DATA TABLE PREVIEW
    ───────────────────────────────────── */
-
 function TablePreview() {
   const leads = [
-    { name: 'John Smith', status: 'Scheduled', category: 'Roof Repair', amount: '$5,750', assigned: 'Frank' },
-    { name: 'Sarah Kim', status: 'Quoted', category: 'Leak Detection', amount: '$1,200', assigned: 'Jorge' },
-    { name: 'Mike Davis', status: 'New', category: 'Inspection', amount: '—', assigned: '—' },
-    { name: 'Lisa Chen', status: 'Paid', category: 'Gutter Work', amount: '$2,400', assigned: 'Kevin' },
-    { name: 'David R.', status: 'In Progress', category: 'Roof Replace', amount: '$12,005', assigned: 'Jack' },
+    { name: 'John Smith', status: 'Scheduled', category: 'Roof Repair', amount: '$5,750', time: '8:30 AM' },
+    { name: 'Sarah Kim', status: 'Quoted', category: 'Leak Detect', amount: '$1,200', time: '2:15 PM' },
+    { name: 'Mike Davis', status: 'New Lead', category: 'Inspection', amount: '$450', time: 'Just now' },
+    { name: 'Alex Cooper', status: 'In Progress', category: 'Siding Fix', amount: '$3,800', time: 'Yesterday' }
   ];
 
   const statusColors: Record<string, string> = {
-    New: 'bg-emerald-100 text-emerald-700',
-    Quoted: 'bg-amber-100 text-amber-700',
-    Scheduled: 'bg-blue-100 text-blue-700',
-    'In Progress': 'bg-orange-100 text-orange-700',
-    Paid: 'bg-slate-100 text-slate-500',
+    'New Lead': 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+    Quoted: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+    Scheduled: 'bg-sky-500/10 text-sky-500 border-sky-500/20',
+    'In Progress': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
   };
 
   return (
-    <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-500">
-          <Filter size={9} /> Filters
+    <div className="bg-slate-950 rounded-xl border border-white/[0.08] overflow-hidden shadow-inner w-full">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.05] bg-white/[0.02]">
+        <div className="flex gap-1.5">
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-md text-[9px] font-bold text-slate-400">
+            <Filter size={8} /> Filter
+          </div>
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-white/[0.04] border border-white/[0.06] rounded-md text-[9px] font-bold text-slate-400">
+            <ArrowUpDown size={8} /> Sort
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-500">
-          <ArrowUpDown size={9} /> Sort
-        </div>
-        <div className="flex-1" />
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500 rounded-lg text-[9px] font-bold text-white">
-          <Pencil size={9} /> Bulk Edit
-        </div>
+        <span className="text-[8px] font-mono text-slate-500">Active Database View</span>
       </div>
-      <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr] px-3 py-2 bg-slate-50 border-b border-slate-100">
-        {['Customer', 'Status', 'Category', 'Amount'].map((h) => (
-          <p key={h} className="text-[8px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>{h}</p>
+      <div className="p-2 space-y-1.5 bg-slate-900/40">
+        {leads.map((lead) => (
+          <div key={lead.name} className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-white/[0.03] hover:border-white/[0.08] transition-colors">
+            <div>
+              <p className="text-[10px] font-black text-white" style={{ fontFamily: font }}>{lead.name}</p>
+              <p className="text-[8px] text-slate-400 font-bold flex items-center gap-1">
+                <span>{lead.category}</span>
+                <span className="text-slate-600">•</span>
+                <span>{lead.time}</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border ${statusColors[lead.status]}`}>
+                {lead.status}
+              </span>
+              <p className="text-[10px] font-mono font-black text-slate-300">{lead.amount}</p>
+            </div>
+          </div>
         ))}
       </div>
-      {leads.map((lead, i) => (
-        <div
-          key={lead.name}
-          className={`grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr] px-3 py-2 items-center ${i < leads.length - 1 ? 'border-b border-slate-50' : ''} hover:bg-blue-50/30 transition-colors`}
-        >
-          <div>
-            <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>{lead.name}</p>
-            <p className="text-[8px] text-slate-400 font-semibold">{lead.assigned}</p>
-          </div>
-          <div>
-            <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${statusColors[lead.status] || 'bg-slate-100 text-slate-500'}`}>
-              {lead.status}
-            </span>
-          </div>
-          <p className="text-[9px] text-slate-500 font-semibold">{lead.category}</p>
-          <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>{lead.amount}</p>
-        </div>
-      ))}
     </div>
   );
 }
 
+/* ─────────────────────────────────────
+   2. RICH MASTER DISPATCH CALENDAR PREVIEW
+   ───────────────────────────────────── */
 function CalendarPreview() {
-  const days = [
-    { day: 'Mon 19', jobs: [] },
-    { day: 'Tue 20', jobs: [{ name: 'J. Smith', time: '8:30 AM', color: 'bg-blue-500' }, { name: 'S. Kim', time: '2:00 PM', color: 'bg-amber-500' }] },
-    { day: 'Wed 21', jobs: [{ name: 'M. Davis', time: '10:00 AM', color: 'bg-emerald-500' }] },
-    { day: 'Thu 22', jobs: [{ name: 'L. Chen', time: '9:00 AM', color: 'bg-violet-500' }, { name: 'D. Reyes', time: '1:00 PM', color: 'bg-orange-500' }] },
-    { day: 'Fri 23', jobs: [{ name: 'T. Rodriguez', time: '11:00 AM', color: 'bg-blue-500' }] },
+  const scheduleDays = [
+    {
+      date: 'TUE 20',
+      slots: [
+        { client: 'J. Smith', time: '8:30 AM', tech: 'Crew A', bg: 'bg-sky-500/10 border-sky-500/30 text-sky-400' },
+        { client: 'R. Garcia', time: '1:00 PM', tech: 'Crew B', bg: 'bg-purple-500/10 border-purple-500/30 text-purple-400' }
+      ]
+    },
+    {
+      date: 'WED 21',
+      slots: [
+        { client: 'M. Davis', time: '10:00 AM', tech: 'Crew A', bg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' },
+        { client: 'P. Huber', time: '3:30 PM', tech: 'Crew C', bg: 'bg-amber-500/10 border-amber-500/30 text-amber-400' }
+      ]
+    },
+    {
+      date: 'THU 22',
+      slots: [
+        { client: 'D. Reyes', time: '11:15 AM', tech: 'Crew B', bg: 'bg-sky-500/10 border-sky-500/30 text-sky-400' },
+        { client: 'L. Evans', time: '4:00 PM', tech: 'Crew A', bg: 'bg-rose-500/10 border-rose-500/30 text-rose-400' }
+      ]
+    }
   ];
 
   return (
-    <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-        <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>May 2026</p>
-        <div className="flex gap-1">
-          {['Day', 'Week', 'Month'].map((v) => (
-            <span key={v} className={`text-[8px] font-bold px-2 py-0.5 rounded-md ${v === 'Week' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}>{v}</span>
-          ))}
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm w-full">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-slate-50">
+        <span className="text-[10px] font-black text-slate-900" style={{ fontFamily: font }}>May 2026</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[8px] font-bold text-slate-400 px-1.5 py-0.5">Day</span>
+          <span className="text-[8px] bg-slate-950 text-white font-black px-1.5 py-0.5 rounded shadow-sm">Week</span>
+          <span className="text-[8px] font-bold text-slate-400 px-1.5 py-0.5">Month</span>
         </div>
       </div>
-      <div className="grid grid-cols-5 divide-x divide-slate-100">
-        {days.map((d) => (
-          <div key={d.day} className="min-h-[100px] p-1.5">
-            <p className="text-[8px] font-bold text-slate-400 mb-1.5" style={{ fontFamily: font }}>{d.day}</p>
+      <div className="grid grid-cols-3 divide-x divide-slate-100 bg-white">
+        {scheduleDays.map((col) => (
+          <div key={col.date} className="p-1.5 min-h-[145px] space-y-1.5">
+            <p className="text-[8px] font-black text-slate-400 text-center tracking-wider pb-1 border-b border-slate-50" style={{ fontFamily: font }}>
+              {col.date}
+            </p>
             <div className="space-y-1">
-              {d.jobs.map((job) => (
-                <div key={job.name} className={`${job.color} rounded-md px-1.5 py-1 text-white`}>
-                  <p className="text-[7px] font-black leading-tight">{job.name}</p>
-                  <p className="text-[6px] opacity-80">{job.time}</p>
+              {col.slots.map((slot, i) => (
+                <div key={i} className={`p-1.5 rounded-lg border flex flex-col justify-between ${slot.bg}`}>
+                  <div className="flex justify-between items-start gap-1">
+                    <p className="text-[9px] font-black tracking-tight truncate leading-none">{slot.client}</p>
+                    <span className="text-[6px] font-mono opacity-80 shrink-0 leading-none">{slot.time}</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1 text-[6px] opacity-90 font-bold border-t border-current/10 pt-1">
+                    <User size={6} />
+                    <span>{slot.tech}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -115,125 +139,42 @@ function CalendarPreview() {
   );
 }
 
+/* ─────────────────────────────────────
+   3. VERIFIED OUTBOX ROUTING LOG PREVIEW
+   ───────────────────────────────────── */
 function OutboxPreview() {
-  const emails = [
-    { to: 'John Smith', type: 'Quote', subject: 'Roof Repair Estimate — $5,750', time: '2 hrs ago', status: 'Delivered' },
-    { to: 'Sarah Kim', type: 'Schedule', subject: 'Appointment Confirmed — May 18', time: '5 hrs ago', status: 'Delivered' },
-    { to: 'Mike Davis', type: 'Payment', subject: 'Payment Reminder — $2,400 due', time: '1 day ago', status: 'Opened' },
-    { to: 'Lisa Chen', type: 'Quote', subject: 'Gutter Cleaning Estimate — $800', time: '2 days ago', status: 'Declined' },
+  const logs = [
+    { user: 'John Smith', action: 'Quote Estimate Shared', status: 'Delivered', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', time: '12m ago' },
+    { user: 'Sarah Kim', action: 'Appointment Confirmed', status: 'Opened', color: 'text-blue-600 bg-blue-50 border-blue-100', time: '1h ago' },
+    { user: 'Mike Davis', action: 'Retainer Balance Request', status: 'Delivered', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', time: '3h ago' },
+    { user: 'Tom Harris', action: 'Review Follow-up Sent', status: 'Processing', color: 'text-slate-500 bg-slate-50 border-slate-100', time: 'Just now' }
   ];
 
-  const typeColors: Record<string, string> = {
-    Quote: 'bg-emerald-100 text-emerald-700',
-    Schedule: 'bg-blue-100 text-blue-700',
-    Payment: 'bg-amber-100 text-amber-700',
-  };
-
-  const statusDot: Record<string, string> = {
-    Delivered: 'bg-emerald-500',
-    Opened: 'bg-blue-500',
-    Declined: 'bg-red-500',
-  };
-
   return (
-    <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-        <Send size={10} className="text-slate-400" />
-        <p className="text-[10px] font-black text-slate-700" style={{ fontFamily: font }}>Outbox</p>
-        <span className="text-[8px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-bold ml-auto">47 sent</span>
+    <div className="bg-white rounded-xl border border-slate-200 p-2.5 space-y-1.5 w-full shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div className="flex items-center gap-1.5">
+          <Send size={10} className="text-slate-500" />
+          <span className="text-[9px] font-black text-slate-800 tracking-tight" style={{ fontFamily: font }}>Live Outbox Ledger</span>
+        </div>
+        <div className="flex items-center gap-1 text-[8px] text-slate-400 font-bold">
+          <Clock size={8} /> Real-time
+        </div>
       </div>
-      {emails.map((email, i) => (
-        <div key={email.to} className={`px-3 py-2.5 flex items-start gap-2.5 ${i < emails.length - 1 ? 'border-b border-slate-50' : ''}`}>
-          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${statusDot[email.status] || 'bg-slate-300'}`} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-[10px] font-black text-slate-800 truncate" style={{ fontFamily: font }}>{email.to}</p>
-              <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${typeColors[email.type] || 'bg-slate-100 text-slate-500'}`}>{email.type}</span>
+      <div className="space-y-1 max-h-[140px] overflow-hidden">
+        {logs.map((log, index) => (
+          <div key={index} className="bg-slate-50 p-2 rounded-xl flex items-center justify-between border border-slate-100 hover:border-slate-200 transition-colors">
+            <div className="truncate pr-2">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[9px] font-black text-slate-900 truncate" style={{ fontFamily: font }}>{log.user}</p>
+                <span className="text-[7px] text-slate-400 font-bold">{log.time}</span>
+              </div>
+              <p className="text-[8px] text-slate-500 font-medium truncate mt-0.5">{log.action}</p>
             </div>
-            <p className="text-[9px] text-slate-500 font-semibold truncate">{email.subject}</p>
+            <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded border flex-shrink-0 tracking-wider ${log.color}`}>
+              {log.status}
+            </span>
           </div>
-          <div className="text-right flex-shrink-0">
-            <p className="text-[8px] text-slate-400 font-semibold">{email.time}</p>
-            <p className="text-[7px] text-slate-400 font-bold">{email.status}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PipelinePreview() {
-  const stages = [
-    { name: 'New', count: 5, color: 'bg-emerald-500' },
-    { name: 'Contacted', count: 3, color: 'bg-yellow-500' },
-    { name: 'Quoted', count: 4, color: 'bg-blue-500' },
-    { name: 'Scheduled', count: 2, color: 'bg-orange-500' },
-    { name: 'Complete', count: 6, color: 'bg-slate-500' },
-    { name: 'Paid', count: 8, color: 'bg-emerald-600' },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl border-2 border-slate-200 p-3 space-y-2">
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>Pipeline Stages</p>
-        <span className="text-[8px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-bold">Drag to reorder</span>
-      </div>
-      {stages.map((stage) => (
-        <div key={stage.name} className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg border border-slate-100">
-          <div className="flex items-center gap-1 text-slate-300">
-            <div className="w-1 h-3 bg-slate-300 rounded-full" />
-            <div className="w-1 h-3 bg-slate-300 rounded-full" />
-          </div>
-          <div className={`w-2.5 h-2.5 rounded-full ${stage.color} flex-shrink-0`} />
-          <p className="text-[10px] font-bold text-slate-700 flex-1" style={{ fontFamily: font }}>{stage.name}</p>
-          <span className="text-[8px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">{stage.count}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AIPreview() {
-  return (
-    <div className="bg-slate-950 rounded-xl border-2 border-slate-800 overflow-hidden">
-      <div className="px-3 py-2 border-b border-slate-800 flex items-center gap-2">
-        <Sparkles size={10} className="text-emerald-400" />
-        <p className="text-[10px] font-black text-white" style={{ fontFamily: font }}>AI Brief — John Smith</p>
-      </div>
-      <div className="p-3 space-y-2">
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5">
-          <p className="text-[9px] text-emerald-300 font-semibold leading-relaxed" style={{ fontFamily: font }}>
-            Homeowner reporting storm damage on north-facing slope. Missing shingles visible in uploaded photos. Roof is 15+ years old — likely full replacement candidate. Customer mentioned insurance claim in progress. Recommend scheduling inspection ASAP and preparing both repair and replacement quotes.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1 bg-slate-800 rounded-lg p-2 text-center">
-            <p className="text-[8px] text-slate-500 font-bold" style={{ fontFamily: font }}>Suggested quote</p>
-            <p className="text-[11px] text-emerald-400 font-black" style={{ fontFamily: font }}>$5,200 – $8,400</p>
-          </div>
-          <div className="flex-1 bg-slate-800 rounded-lg p-2 text-center">
-            <p className="text-[8px] text-slate-500 font-bold" style={{ fontFamily: font }}>Priority</p>
-            <p className="text-[11px] text-amber-400 font-black" style={{ fontFamily: font }}>High</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ExportPreview() {
-  return (
-    <div className="bg-white rounded-xl border-2 border-slate-200 p-4 text-center space-y-3">
-      <div className="w-12 h-12 bg-slate-100 rounded-xl mx-auto flex items-center justify-center">
-        <Download size={20} className="text-slate-500" />
-      </div>
-      <div>
-        <p className="text-[10px] font-black text-slate-800" style={{ fontFamily: font }}>leads_export_may2026.csv</p>
-        <p className="text-[9px] text-slate-400 font-semibold" style={{ fontFamily: font }}>247 leads · 18 columns · 1.2 MB</p>
-      </div>
-      <div className="flex flex-wrap gap-1 justify-center">
-        {['Name', 'Email', 'Phone', 'Status', 'Category', 'Quote', 'Payment', 'Date'].map((col) => (
-          <span key={col} className="text-[7px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">{col}</span>
         ))}
       </div>
     </div>
@@ -241,159 +182,227 @@ function ExportPreview() {
 }
 
 /* ─────────────────────────────────────
-   FEATURE ROW DATA
+   4. CONTEXTUAL AI INGEST PIPELINE PREVIEW
    ───────────────────────────────────── */
-
-const FEATURES: {
-  id: string;
-  icon: any;
-  accent: string;
-  headline: string;
-  body: string;
-  Preview: React.FC;
-}[] = [
-  {
-    id: 'table',
-    icon: List,
-    accent: '#0ea5e9',
-    headline: 'Every lead. One table. Total control.',
-    body: 'Filter by status, date, assigned crew, or payment. Sort any column. Bulk edit 50 leads at once. This is your command center when the board view isn\'t enough.',
-    Preview: TablePreview,
-  },
-  {
-    id: 'calendar',
-    icon: Calendar,
-    accent: '#f43f5e',
-    headline: 'See your week before it happens.',
-    body: 'Every scheduled job on a real calendar — day, week, or month. Click to open the lead card. Know exactly who\'s going where and when.',
-    Preview: CalendarPreview,
-  },
-  {
-    id: 'outbox',
-    icon: Send,
-    accent: '#8b5cf6',
-    headline: 'Every email you\'ve ever sent. Tracked.',
-    body: 'Quotes, schedule confirmations, payment reminders — every email lives in your outbox with timestamps, recipient, and status. When a customer says "I never got it," you\'ll know.',
-    Preview: OutboxPreview,
-  },
-  {
-    id: 'pipeline',
-    icon: SlidersHorizontal,
-    accent: '#f97316',
-    headline: 'Your workflow. Your stages. Your rules.',
-    body: 'Rename pipeline stages, reorder them, add new ones. "New → Contacted → Quoted → Scheduled → Complete → Paid" or whatever fits how you actually work.',
-    Preview: PipelinePreview,
-  },
-  {
-    id: 'ai',
-    icon: Sparkles,
-    accent: '#10b981',
-    headline: 'AI that helps, not replaces.',
-    body: 'Get an instant brief on any lead, chat with AI about your pipeline, or generate a starting quote. It\'s not perfect — but it saves you 10 minutes on every new lead.',
-    Preview: AIPreview,
-  },
-  {
-    id: 'export',
-    icon: Download,
-    accent: '#64748b',
-    headline: 'Your data. Take it anywhere.',
-    body: 'Download your entire lead database as a CSV anytime. Use it for taxes, reporting, marketing lists, or just peace of mind that your data isn\'t locked in.',
-    Preview: ExportPreview,
-  },
-];
+function AIPreview() {
+  return (
+    <div className="bg-slate-950 rounded-xl border border-white/[0.08] p-3 space-y-2.5 w-full shadow-xl">
+      <div className="flex items-center justify-between border-b border-white/[0.05] pb-2">
+        <div className="flex items-center gap-1.5 text-emerald-400 font-black">
+          <Sparkles size={11} className="animate-pulse" />
+          <span className="text-[9px] uppercase tracking-wider" style={{ fontFamily: font }}>AI Intake Assistant</span>
+        </div>
+        <span className="text-[7px] font-mono text-slate-500 bg-white/[0.02] border border-white/[0.05] px-1 rounded">Model 4.0</span>
+      </div>
+      <div className="bg-emerald-500/[0.03] border border-emerald-500/20 rounded-lg p-2.5">
+        <p className="text-[9px] text-emerald-400/90 font-bold leading-relaxed">
+          &ldquo;Homeowner uploaded 3 photos showing clear asphalt shingle decay on north valley slope. House age matches 2011 builder standard. Insurance project open. Action item: Dispatch replacement quote packet.&rdquo;
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="bg-white/[0.02] border border-white/[0.04] p-1.5 rounded-md">
+          <span className="text-[7px] font-black text-slate-500 block uppercase">Confidence</span>
+          <span className="text-[9px] font-black text-white">98.4%</span>
+        </div>
+        <div className="bg-white/[0.02] border border-white/[0.04] p-1.5 rounded-md">
+          <span className="text-[7px] font-black text-slate-500 block uppercase">Flag Target</span>
+          <span className="text-[9px] font-black text-amber-400">High-Value Replace</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────── */
-
-export default function EfficiencyShowcase() {
+export default function OperationsShowcase() {
   return (
-    <section className="py-16 sm:py-24 lg:py-32 bg-white relative overflow-hidden">
+    <section id="showcase" className="py-24 sm:py-28 lg:py-36 bg-slate-50 relative overflow-hidden">
+      
+      {/* Structural Micro Matrix Canvas Grid Background */}
       <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        className="absolute inset-0 opacity-[0.3] pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)',
-          backgroundSize: '24px 24px',
+          backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
         }}
       />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
 
-        {/* HEADER */}
-        <div className="text-center mb-14 sm:mb-20">
+        {/* INTELLECTUAL VALUE HEADER */}
+        <div className="max-w-2xl mb-16 sm:mb-24">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-3"
+            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-4"
             style={{ fontFamily: font }}
           >
-            Beyond the board
+            Beyond the board view
           </motion.p>
-
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-2xl sm:text-4xl lg:text-5xl text-slate-900 leading-tight"
-            style={{ fontFamily: font, fontWeight: 900 }}
+            className="text-4xl sm:text-5xl text-slate-900 font-black leading-[1.05] tracking-tight"
+            style={{ fontFamily: font }}
           >
-            Everything else you didn&apos;t know{' '}
-            <br className="hidden sm:block" />
-            <span className="text-blue-600">you needed.</span>
+            The rest of your office <br />
+            <span className="text-emerald-600">operations. Solved.</span>
           </motion.h2>
         </div>
 
-        {/* FEATURE ROWS */}
-        <div className="space-y-16 sm:space-y-24">
-          {FEATURES.map((feature, i) => {
-            const isEven = i % 2 === 0;
-            const Icon = feature.icon;
-            const Preview = feature.Preview;
+        {/* HIGH-FIDELITY BENTO GRID MATRIX */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          
+          {/* CARD 1: DATABASE */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div className="mb-6">
+              <div className="w-9 h-9 bg-sky-50 rounded-xl flex items-center justify-center mb-4 border border-sky-100">
+                <List size={16} className="text-sky-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Complete Data Tables
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                Filter by status, project value, or assigned technician. Bulk edit 50 distinct requests in a single select window.
+              </p>
+            </div>
+            <TablePreview />
+          </motion.div>
 
-            return (
-              <motion.div
-                key={feature.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.4 }}
-                className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center ${
-                  isEven ? '' : 'lg:[direction:rtl]'
-                }`}
-              >
-                {/* Preview */}
-                <div className={`transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 rounded-xl ${isEven ? '' : 'lg:[direction:ltr]'}`}>
-                  <Preview />
-                </div>
+          {/* CARD 2: DISPATCH CALENDAR */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.05 }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div className="mb-6">
+              <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center mb-4 border border-rose-100">
+                <Calendar size={16} className="text-rose-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Master Dispatch Calendar
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                Map your field schedule cleanly across standard day, week, or monthly tracks. Know precisely which crew is allocated where.
+              </p>
+            </div>
+            <CalendarPreview />
+          </motion.div>
 
-                {/* Copy */}
-                <div className={`space-y-4 ${isEven ? '' : 'lg:[direction:ltr]'}`}>
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
-                  >
-                    <Icon size={18} style={{ color: feature.accent }} />
-                  </div>
+          {/* CARD 3: COMMUNICATIONS LOG */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div className="mb-6">
+              <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center mb-4 border border-violet-100">
+                <Send size={16} className="text-violet-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Verified Email Outbox
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                Track every line-item quote, text response, and confirmation alert with permanent timestamps and precise receipt statuses.
+              </p>
+            </div>
+            <OutboxPreview />
+          </motion.div>
 
-                  <h3
-                    className="text-xl sm:text-2xl lg:text-3xl text-slate-900 leading-tight"
-                    style={{ fontFamily: font, fontWeight: 900 }}
-                  >
-                    {feature.headline}
-                  </h3>
+          {/* CARD 4: PIPELINE ARCHITECTURE */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center mb-4 border border-amber-100">
+                <SlidersHorizontal size={16} className="text-amber-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Custom Pipelines
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed mb-4" style={{ fontFamily: font }}>
+                Rearrange, alter, or inject step milestones into your dashboard engine to match exactly how your back office prefers to operate.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-xl text-[9px] font-black text-slate-700">
+                <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                <span>Custom Intake Milestones Applied</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 line-through">
+                <AlertCircle size={12} className="text-slate-300 shrink-0" />
+                <span>Generic CRM Presets</span>
+              </div>
+            </div>
+          </motion.div>
 
-                  <p
-                    className="text-sm sm:text-base text-slate-500 leading-relaxed font-semibold max-w-md"
-                    style={{ fontFamily: font }}
-                  >
-                    {feature.body}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+          {/* CARD 5: ASSIST ENGINES */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.05 }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div className="mb-4">
+              <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 border border-emerald-100">
+                <Sparkles size={16} className="text-emerald-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Contextual AI Briefs
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                Synthesize messy paragraphs and text dumps from client uploads into clean, structured operational intelligence profiles instantly.
+              </p>
+            </div>
+            <AIPreview />
+          </motion.div>
+
+          {/* CARD 6: EXPORT CONTROL */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center mb-4 border border-slate-200/60">
+                <Download size={16} className="text-slate-600" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                Clean CSV Portability
+              </h3>
+              <p className="text-xs text-slate-500 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                Your data is yours. Download your historical customer databases instantly at any time for bookkeeping, text lists, or external audits.
+              </p>
+            </div>
+            <div className="border border-dashed border-slate-200 bg-slate-50/50 p-4 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center">
+              <p className="text-[10px] text-slate-700 font-black">leads_export_2026.csv</p>
+              <span className="text-[8px] bg-slate-200/80 text-slate-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                Download Available 24/7 <ExternalLink size={8} />
+              </span>
+            </div>
+          </motion.div>
+
         </div>
+
       </div>
     </section>
   );

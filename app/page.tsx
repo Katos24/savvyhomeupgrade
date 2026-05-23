@@ -3,83 +3,61 @@
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
 import ProblemSection from '@/components/marketing/ProblemSection';
-import DemoVideoSection from '@/components/marketing/DemoVideoSection';
+import TheFixSection from '@/components/marketing/FixSection';
 import TruckSection from '@/components/marketing/TruckSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
 import LeadLandingSection from '@/components/marketing/LeadLandingSection';
 import DigestBanner from '@/components/marketing/DigestBanner';
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
-import ValueSection from '@/components/marketing/ValueSection';
 import Pricing from '@/components/marketing/Pricing';
 import FinalCTA from '@/components/marketing/FinalCTA';
 import Footer from '@/components/marketing/Footer';
 import SelfServeBanner from '@/components/marketing/SelfServeBanner';
+import ArchitectHero from '@/components/marketing/NewHero';
 
 export default function NewHome() {
   return (
     <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white">
-      <Nav />
+<Nav />
 
-      {/* 1. THE HOOK: Hero (White) */}
-      <NewHero />
+{/* 1. HOOK — pain + scrapbook collage */}
+<NewHero />
 
-       <ProblemSection />
+{/* 2. DEEPEN THE PAIN — 1-2-3-4 steps */}
+<ProblemSection />
 
+{/* 3. THE FIX — "This one goes to your dashboard" + tilted laptop */}
+<TheFixSection />
 
-<DemoVideoSection />
-    
+{/* 4. THE ENTRY POINT — "Your Form, Your Brand" */}
+<CustomizeFormSection />
 
-        
+{/* 5. ONE LINK EVERYWHERE — QR code, trucks, yard signs, social */}
+<TruckSection />
 
+{/* 6. ONCE IT LANDS — "Run the entire job from one card" */}
+<LeadLandingSection />
 
-      {/* 3. THE SOLUTION: Lead Landing (Amber-50) */}
-      <LeadLandingSection />
-
-
-
-       <DigestBanner />
-            {/* 4. THE POWER: Customize Form (Dark) */}
-
-      <CustomizeFormSection />
-
- {/* 2. THE MOMENTUM: Truck Section (Dark) */}
-      <TruckSection />
+{/* 8. YOUR BUSINESS AT 6AM — daily digest */}
+<DigestBanner />
 
 
+{/* 7. ONE CLICK EMAILS + OUTBOX — send quote/schedule/payment, all tracked */}
+<EfficiencyShowcase />
 
-  
-      <EfficiencyShowcase />
 
 
-            {/* 5. THE LOGIC: Why Section (Light) */}
- 
-      
-     
+{/* 10. NO DEMOS, JUST BUILD — self serve */}
+<SelfServeBanner />
 
-      {/* 8. THE TRANSFORMATION: Value Section (Dark) 
-          Deep dive into the 'After' state of the customer.
-      */}
-      <ValueSection />
+{/* 11. PRICING */}
+<Pricing />
 
-      {/* 9. THE "EASY" BUTTON: SelfServeBanner (White/Apple Smooth) 
-          This acts as a 'Visual Palette Cleanser' after two back-to-back dark sections.
-          It tells the user: "You've seen the value, now see how easy it is to start."
-      */}
-      <SelfServeBanner />
+{/* 12. FINAL CTA */}
+<FinalCTA />
 
-      {/* 10. THE COMMITMENT: Pricing (Dark) */}
-      <Pricing />
-
-      {/* 11. THE REASSURANCE: Comparison (White) 
-          Now that they've seen the price, show them why your competitors 
-          are a headache compared to your self-serve model.
-      */}
-
-      {/* 12. THE CLOSE: Final CTA (Dark) */}
-      <FinalCTA />
-
-      {/* 13. FOOTER */}
-      <Footer />
+{/* 13. FOOTER */}
+<Footer />
     </div>
   );
 }
