@@ -13,7 +13,7 @@ const STEPS = [
 
 export default function ProblemSection() {
   return (
-    <section className="relative bg-slate-950 pt-24 pb-16 sm:pt-32 sm:pb-20 lg:pt-40 lg:pb-24 overflow-hidden">
+    <section className="relative bg-slate-950 pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24 overflow-hidden">
       {/* Grid Pattern */}
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -27,12 +27,16 @@ export default function ProblemSection() {
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-40 bg-gradient-to-t from-emerald-500/[0.03] to-transparent blur-2xl pointer-events-none" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-8">
-        <p
-          className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-red-500 mb-8 sm:mb-12 text-center sm:text-left"
-          style={{ fontFamily: font }}
-        >
-          The problem
-        </p>
+        
+        {/* SHIFTED & ULTRA VISIBLE SLANTED HEADER - FIXED FOR ALL VIEWPORTS */}
+        <div className="w-full text-left mb-10 sm:mb-14 -rotate-[4deg] origin-top-left">
+          <h2 
+            className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-red-500 drop-shadow-[0_2px_15px_rgba(239,68,68,0.25)] inline-block"
+            style={{ fontFamily: font }}
+          >
+            THE PROBLEM
+          </h2>
+        </div>
 
         <div className="max-w-3xl mx-auto sm:mx-0 space-y-6 sm:space-y-8">
           {STEPS.map((step, i) => (

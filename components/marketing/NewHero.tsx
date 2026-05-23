@@ -209,15 +209,15 @@ export default function ArchitectHero() {
 
           {/* LEFT CONTENT COLUMN */}
           <div className="flex flex-col space-y-6 lg:max-w-xl text-left">
-            <h1
-              className="text-slate-900 font-black tracking-tighter leading-[1.05] sm:leading-[1.02] lg:leading-[0.92] text-4xl sm:text-6xl lg:text-[5.4rem]"
-              style={{ fontFamily: font }}
-            >
-              Stop <br />
-              Losing <br />
-              Leads to <br />
-              <span className="text-emerald-600">Your Inbox.</span>
-            </h1>
+           <h1
+  className="text-slate-900 font-black tracking-tighter leading-[1.05] sm:leading-[1.02] lg:leading-[0.92] text-4xl sm:text-6xl lg:text-[5.4rem]"
+  style={{ fontFamily: font }}
+>
+  Stop <br className="lg:hidden" />
+  Losing <br className="hidden lg:block" />
+  Jobs in <br className="lg:hidden" />
+  <span className="text-emerald-600 block lg:inline">Your Inbox.</span>
+</h1>
 
             <p className="text-slate-600 font-bold leading-relaxed text-base sm:text-lg lg:text-xl border-l-4 border-emerald-500 pl-4" style={{ fontFamily: font }}>
               Lead2Project replaces your contact form with one branded link that captures photos, details, and job info — all on one dashboard.
