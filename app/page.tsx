@@ -4,60 +4,55 @@ import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
 import ProblemSection from '@/components/marketing/ProblemSection';
 import TheFixSection from '@/components/marketing/FixSection';
-import TruckSection from '@/components/marketing/TruckSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
-import LeadLandingSection from '@/components/marketing/LeadLandingSection';
-import DigestBanner from '@/components/marketing/DigestBanner';
+import TruckSection from '@/components/marketing/TruckSection'; // Your Distribution Section
+import LeadLandingSection from '@/components/marketing/LeadLandingSection'; // Your Workflow Section
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
+import DigestBanner from '@/components/marketing/DigestBanner';
+import SelfServeBanner from '@/components/marketing/SelfServeBanner';
 import Pricing from '@/components/marketing/Pricing';
 import FinalCTA from '@/components/marketing/FinalCTA';
 import Footer from '@/components/marketing/Footer';
-import SelfServeBanner from '@/components/marketing/SelfServeBanner';
-import ArchitectHero from '@/components/marketing/NewHero';
 
 export default function NewHome() {
   return (
-    <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white">
-<Nav />
+    <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white text-slate-900">
+      <Nav />
 
-{/* 1. HOOK — pain + scrapbook collage */}
-<NewHero />
+      {/* 1. THE HOOK: The current state of chaos vs. order */}
+      <NewHero />
 
-{/* 2. DEEPEN THE PAIN — 1-2-3-4 steps */}
-<ProblemSection />
+      {/* 2. THE PROBLEM: Why the current way (threads/folders) is failing them */}
+      <ProblemSection />
 
-{/* 3. THE FIX — "This one goes to your dashboard" + tilted laptop */}
-<TheFixSection />
+      {/* 3. THE SOLUTION: The "Lead2Project" Concept (The Fix) */}
+      <TheFixSection />
 
-{/* 4. THE ENTRY POINT — "Your Form, Your Brand" */}
-<CustomizeFormSection />
+      {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
+      <CustomizeFormSection />
 
-{/* 5. ONE LINK EVERYWHERE — QR code, trucks, yard signs, social */}
-<TruckSection />
+      {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) */}
+      <TruckSection />
 
-{/* 6. ONCE IT LANDS — "Run the entire job from one card" */}
-<LeadLandingSection />
+      {/* 6. THE HEART: Running the job from one card */}
+      <LeadLandingSection />
 
-{/* 8. YOUR BUSINESS AT 6AM — daily digest */}
-<DigestBanner />
+      {/* 7. THE SPEED: One-click emails & Outbox tracking */}
+      <EfficiencyShowcase />
 
+      {/* 8. THE PEACE OF MIND: Daily Digest */}
+      <DigestBanner />
 
-{/* 7. ONE CLICK EMAILS + OUTBOX — send quote/schedule/payment, all tracked */}
-<EfficiencyShowcase />
+      {/* 9. THE BARRIER REMOVAL: Self-serve sign up */}
+      <SelfServeBanner />
 
+      {/* 10. PRICING */}
+      <Pricing />
 
+      {/* 11. FINAL CTA */}
+      <FinalCTA />
 
-{/* 10. NO DEMOS, JUST BUILD — self serve */}
-<SelfServeBanner />
-
-{/* 11. PRICING */}
-<Pricing />
-
-{/* 12. FINAL CTA */}
-<FinalCTA />
-
-{/* 13. FOOTER */}
-<Footer />
+      <Footer />
     </div>
   );
 }
