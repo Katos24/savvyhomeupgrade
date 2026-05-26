@@ -115,7 +115,7 @@ function FacebookDM() {
       whileInView={{ opacity: 1, rotate: 3, x: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-[33%] right-[2%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20 hidden md:block"
+      className="absolute top-[48%] right-[2%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20 hidden md:block"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded-full bg-[#1877f2] flex items-center justify-center">
@@ -146,7 +146,7 @@ function Voicemail() {
       whileInView={{ opacity: 1, rotate: -2, x: 0, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute bottom-[5%] left-[15%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10 hidden md:block"
+      className="absolute bottom-[5%] left-[15%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-40 hidden md:block"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -207,57 +207,73 @@ function DashboardMockup() {
     >
       <div className="bg-slate-900 rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/5 overflow-hidden">
         {/* Browser chrome */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/80 border-b border-white/5">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-800/80 border-b border-white/5">
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500/60" />
+            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-500/60" />
+            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500/60" />
           </div>
-          <div className="flex-1 bg-slate-700/50 rounded-lg px-3 py-1 mx-8">
-            <p className="text-slate-400 text-[10px] text-center font-mono">lead2project.com/dashboard</p>
+          <div className="flex-1 bg-slate-700/50 rounded-lg px-3 py-1 mx-4 sm:mx-8">
+            <p className="text-slate-400 text-[9px] sm:text-[10px] text-center font-mono">lead2project.com/dashboard</p>
           </div>
         </div>
         
         {/* Dashboard content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div>
-              <p className="text-white text-sm font-black">Your Company</p>
-              <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">Dashboard</p>
+              <p className="text-white text-xs sm:text-sm font-black">Your Company</p>
+              <p className="text-emerald-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">Dashboard</p>
             </div>
-            <div className="bg-emerald-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg">+ New Lead</div>
+            <div className="bg-emerald-600 text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1.5 rounded-lg">+ New Lead</div>
           </div>
           
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
+          {/* Stats row — 2 cols on mobile, 4 on desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
             {[
               { label: 'Leads', value: '12', color: 'bg-slate-800' },
               { label: 'Active', value: '8', color: 'bg-slate-800' },
               { label: 'Quoted', value: '5', color: 'bg-emerald-900/40' },
               { label: 'Scheduled', value: '3', color: 'bg-emerald-900/40' },
             ].map((stat, i) => (
-              <div key={i} className={`${stat.color} rounded-xl p-3 border border-white/5`}>
-                <p className="text-slate-500 text-[9px] font-bold uppercase">{stat.label}</p>
-                <p className="text-white text-xl font-black">{stat.value}</p>
+              <div key={i} className={`${stat.color} rounded-xl p-2.5 sm:p-3 border border-white/5`}>
+                <p className="text-slate-500 text-[8px] sm:text-[9px] font-bold uppercase">{stat.label}</p>
+                <p className="text-white text-lg sm:text-xl font-black">{stat.value}</p>
               </div>
             ))}
           </div>
           
-          {/* Lead cards */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Leads — rows on mobile, cards on desktop */}
+          <div className="hidden sm:grid grid-cols-3 gap-3">
             {[
-              { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500', photos: true },
-              { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500', photos: true },
-              { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-purple-500', photos: false },
+              { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500' },
+              { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500' },
+              { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500' },
             ].map((lead, i) => (
               <div key={i} className="bg-slate-800 rounded-xl p-3.5 border border-white/5">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`${lead.statusColor} text-white text-[8px] font-black px-2 py-0.5 rounded-full`}>{lead.status}</span>
-                  {lead.photos && <span className="text-slate-500 text-[9px]">📷 3</span>}
                 </div>
                 <p className="text-white text-sm font-black">{lead.name}</p>
                 <p className="text-slate-400 text-[10px] font-bold">{lead.type}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile rows */}
+          <div className="sm:hidden space-y-2">
+            {[
+              { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500' },
+              { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500' },
+              { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500' },
+            ].map((lead, i) => (
+              <div key={i} className="bg-slate-800 rounded-xl px-3.5 py-3 border border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-white text-xs font-black">{lead.name}</p>
+                  <p className="text-slate-400 text-[10px] font-bold">{lead.type}</p>
+                </div>
+                <span className={`${lead.statusColor} text-white text-[8px] font-black px-2 py-0.5 rounded-full`}>{lead.status}</span>
               </div>
             ))}
           </div>
@@ -318,7 +334,7 @@ export default function LeadAcquisitionSection() {
             This is how it <span className="text-emerald-500">should</span> work.
           </h3>
           <p className="text-slate-400 font-bold text-lg max-w-lg text-center">
-            One link. Every lead lands here with their name, details, and photos. Nothing gets lost.
+            Every lead lands here with their name, details, and photos. Nothing gets lost.
           </p>
         </div>
 
