@@ -151,7 +151,7 @@ export default function CustomizeFormSection() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-4"
+              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-white mb-4"
               style={{ fontFamily: font }}
             >
               Your form, your brand
@@ -165,14 +165,14 @@ export default function CustomizeFormSection() {
               className="text-4xl sm:text-5xl text-white font-black leading-[1.05] tracking-tight mb-5"
               style={{ fontFamily: font }}
             >
-              Not a boring <br />
-              contact form.{' '}
+             Custom forms <br />
+              that win jobs.{' '}
               <motion.span 
                 animate={{ color: current.color }} 
                 transition={{ duration: 0.5 }}
                 className="block pt-1"
               >
-                A branded intake.
+                Built by you.
               </motion.span>
             </motion.h2>
 

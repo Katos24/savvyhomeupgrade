@@ -27,12 +27,12 @@ export default function ArchitectHero() {
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
 
             {/* HEADLINE */}
-         <h1
+      <h1
   className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
   style={{ fontFamily: font }}
 >
-  They Found You Online.{' '}
-  <span className="text-emerald-600">Now What?</span>
+  They found you on Google.<br />
+  <span className="text-emerald-600">Now, capture them.</span>
 </h1>
 
             {/* MOBILE IMAGE — right after headline */}
@@ -53,9 +53,9 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Lead2Project catches every job before it slips through. One link. One dashboard. Quote, schedule, track.
-            </p>
+          <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+  Stop losing leads because you didn't answer the phone. Turn your Google profile into a 24/7 booking engine. One link. One dashboard.
+</p>
 
             {/* CTAs */}
             <div className="flex flex-col space-y-6 pt-2">

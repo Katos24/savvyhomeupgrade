@@ -255,14 +255,20 @@ export default function OperationsShowcase() {
         </div>
 
         {/* HIGH-FIDELITY BENTO GRID MATRIX */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div 
+          className="flex md:grid flex-nowrap md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch overflow-x-auto md:overflow-visible pb-6 md:pb-0 snap-x snap-mandatory scrollbar-hide"
+          style={{
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           
           {/* CARD 1: DATABASE */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div className="mb-6">
               <div className="w-9 h-9 bg-sky-50 rounded-xl flex items-center justify-center mb-4 border border-sky-100">
@@ -284,7 +290,7 @@ export default function OperationsShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div className="mb-6">
               <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center mb-4 border border-rose-100">
@@ -306,7 +312,7 @@ export default function OperationsShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div className="mb-6">
               <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center mb-4 border border-violet-100">
@@ -327,7 +333,7 @@ export default function OperationsShowcase() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div>
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center mb-4 border border-amber-100">
@@ -358,7 +364,7 @@ export default function OperationsShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div className="mb-4">
               <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 border border-emerald-100">
@@ -380,7 +386,7 @@ export default function OperationsShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+            className="min-w-[85vw] md:min-w-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between snap-center"
           >
             <div>
               <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center mb-4 border border-slate-200/60">

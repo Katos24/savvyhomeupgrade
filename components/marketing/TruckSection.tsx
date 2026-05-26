@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Globe, QrCode, Share2, Truck, CreditCard, Users, ArrowRight } from 'lucide-react';
+import { Globe, QrCode, Share2, Truck, CreditCard, Users, ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -20,90 +20,104 @@ export default function DistributionSection() {
   return (
     <section id="distribution" className="relative bg-slate-50 py-16 sm:py-24 lg:py-36 overflow-hidden">
       
-      {/* Structural Minimal Canvas Grid */}
       <div className="absolute inset-0 opacity-[0.3] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
 
-        {/* TOP LAYOUT: Split Header + Asset Mockup */}
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center mb-20">
-
-          {/* LEFT: Messaging */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }} 
-            whileInView={{ opacity: 1, y: 0 }} 
-            viewport={{ once: true }} 
-            className="w-full lg:w-1/2"
-          >
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-600 mb-4" style={{ fontFamily: font }}>
-              One link, everywhere
-            </p>
-            {/* Punchy, mobile-optimized typography */}
-            <h2 className="text-[40px] sm:text-5xl text-slate-900 font-black leading-[0.95] tracking-tight mb-6" style={{ fontFamily: font }}>
-              Where do I <br />
-              <span className="text-slate-500">put it?</span>
-            </h2>
-            <p className="text-slate-600 font-bold text-base sm:text-lg leading-relaxed max-w-md" style={{ fontFamily: font }}>
-              Everywhere your business already exists. Convert passive traffic into structured, detail-rich dashboard entries instantly.
-            </p>
-          </motion.div>
-
-          {/* RIGHT: Image */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            whileInView={{ opacity: 1, scale: 1 }} 
-            viewport={{ once: true }} 
-            className="w-full lg:w-1/2"
-          >
-            <div className="rounded-2xl border border-slate-200 shadow-[0_20px_50px_rgba(15,23,42,0.06)] bg-white p-2 w-full">
-              <div className="rounded-xl overflow-hidden border border-slate-100">
-                <Image
-                  src="/images/qrbranded2.png"
-                  alt="Branded QR code on truck, yard sign, and social media"
-                  width={800}
-                  height={520}
-                  className="w-full h-auto object-cover"
-                />
-              </div>
+        {/* GOOGLE FOCUSED TOP SECTION */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
+          
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black text-[10px] uppercase tracking-widest mb-6">
+              <Star size={12} className="fill-blue-500" /> The Google Growth Hack
             </div>
+            
+            <h2 className="text-[40px] sm:text-6xl text-slate-900 font-black leading-[0.95] tracking-tight mb-8" style={{ fontFamily: font }}>
+              Own the <span className="text-blue-600">Google Search</span> result.
+            </h2>
+            
+            <p className="text-slate-600 font-bold text-lg leading-relaxed mb-8" style={{ fontFamily: font }}>
+              When a customer searches for you, they shouldn't find a dead-end. Add your Lead2Project link to your <strong>Google Business Profile</strong> as your primary "Booking" or "Quote" link. 
+            </p>
+
+            <ul className="space-y-4 mb-8">
+              {['Capture leads while you’re on another job', 'Professional "Request Quote" button', 'Automatic photo/site condition data'].map((point, i) => (
+                <li key={i} className="flex items-center gap-3 text-slate-700 font-bold">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px]">✓</div>
+                  {point}
+                </li>
+              ))}
+            </ul>
           </motion.div>
+
+        {/* GOOGLE MOCKUP - Realistic View */}
+<motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
+  <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 w-full max-w-sm mx-auto">
+    {/* Simulated Google Listing Card */}
+    <div className="flex justify-between items-start mb-4">
+      <div className="flex gap-3">
+        <div className="w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <img src="/images/arctic-air-logo.webp" alt="Artic Air" className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h3 className="font-black text-lg text-slate-900">Artic Air HVAC</h3>
+          <div className="flex items-center gap-1 text-yellow-500 text-xs">★★★★★ <span className="text-slate-400">4.9 (124)</span></div>
+          <p className="text-slate-500 text-[10px]">HVAC Contractor</p>
+        </div>
+      </div>
+    </div>
+    
+  {/* THE "REAL" LOOK: Dual Action Links with Pulse Animation */}
+    <div className="border-t border-b border-slate-100 py-3 my-3 space-y-3">
+       {/* Request Quote - Pulsing */}
+       <div className="flex items-center justify-between group">
+          <span className="text-xs font-bold text-slate-700">Quote</span>
+          <div className="relative flex items-center gap-2">
+             <div className="absolute -left-4 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+             <span className="text-xs font-black text-emerald-600 underline cursor-pointer">Request a Quote →</span>
+          </div>
+       </div>
+
+       {/* Book Appointment */}
+       <div className="flex items-center justify-between group">
+          <span className="text-xs font-bold text-slate-700">Book</span>
+          <span className="text-xs font-black text-blue-600 underline cursor-pointer">Schedule Job →</span>
+       </div>
+    </div>
+
+    {/* Standard Google Buttons */}
+    <div className="flex gap-2 mt-4">
+      <div className="flex-1 py-2 rounded-full border border-slate-300 text-center text-xs font-bold text-slate-700">Website</div>
+      <div className="flex-1 py-2 rounded-full border border-slate-300 text-center text-xs font-bold text-slate-700">Directions</div>
+      <div className="flex-1 py-2 rounded-full border border-slate-300 text-center text-xs font-bold text-slate-700">Call</div>
+    </div>
+    
+    <p className="mt-4 text-[9px] text-center text-slate-400 font-bold uppercase tracking-wider">
+      Visible to all your Google searches
+    </p>
+  </div>
+</motion.div>
         </div>
 
-        {/* USE CASE GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-20">
-          {USE_CASES.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"
-            >
-              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
-                <item.icon size={18} className="text-emerald-600" />
+        {/* USE CASES - Kept for secondary distribution */}
+        <div className="mb-20">
+          <h3 className="text-2xl font-black text-slate-900 mb-10 text-center" style={{ fontFamily: font }}>And everywhere else...</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {USE_CASES.map((item, i) => (
+              <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <item.icon size={18} className="text-emerald-600 mb-3" />
+                <h4 className="text-sm font-black text-slate-900 mb-1">{item.title}</h4>
               </div>
-              <h3 className="text-slate-900 font-black mb-1.5" style={{ fontFamily: font }}>{item.title}</h3>
-              <p className="text-slate-500 text-sm font-bold leading-relaxed" style={{ fontFamily: font }}>{item.desc}</p>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* ACTION ZONE */}
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          whileInView={{ opacity: 1 }} 
-          viewport={{ once: true }} 
-          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 justify-center border-t border-slate-200 pt-12"
-        >
-          <div className="flex items-center justify-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm w-full sm:w-auto">
-            <span className="text-sm text-slate-400 font-mono truncate">
-              lead2project.com/<span className="text-emerald-600 font-black">your-company</span>
-            </span>
-          </div>
-          <Link href="/signup" className="flex items-center justify-center gap-2 bg-slate-950 text-white px-7 py-3 rounded-xl font-black uppercase text-xs hover:bg-slate-900 transition-all w-full sm:w-auto">
-            Get Your Link <ArrowRight size={14} />
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-t border-slate-200 pt-12">
+          <Link href="/signup" className="flex items-center justify-center gap-2 bg-slate-950 text-white px-8 py-4 rounded-xl font-black uppercase text-sm hover:bg-slate-900 transition-all w-full sm:w-auto">
+            Get Your Google-Ready Link <ArrowRight size={16} />
           </Link>
-        </motion.div>
+        </div>
 
       </div>
     </section>

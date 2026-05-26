@@ -6,7 +6,7 @@ import { ArrowDown } from 'lucide-react';
 const font = "'Nunito', sans-serif";
 
 /* ------------------------------------------------------------------ */
-/*  CSS-only scrapbook pieces — the chaos of how leads arrive today   */
+/* CSS-only scrapbook pieces — the chaos of how leads arrive today   */
 /* ------------------------------------------------------------------ */
 
 function MissedCall() {
@@ -16,7 +16,7 @@ function MissedCall() {
       whileInView={{ opacity: 1, rotate: -3, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="absolute top-[2%] left-[2%] w-[220px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
+      className="absolute top-[2%] left-[5%] w-[220px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -43,7 +43,7 @@ function TextMessage() {
       whileInView={{ opacity: 1, rotate: 2, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="absolute top-[8%] right-[3%] w-[240px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
+      className="absolute top-[8%] right-[5%] w-[240px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -71,7 +71,7 @@ function EmailInbox() {
       whileInView={{ opacity: 1, rotate: -1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="absolute top-[38%] left-[5%] w-[260px] bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 z-30"
+      className="absolute top-[38%] left-[10%] w-[260px] bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 z-30"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center">
@@ -115,7 +115,7 @@ function FacebookDM() {
       whileInView={{ opacity: 1, rotate: 3, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.4 }}
-      className="absolute top-[42%] right-[2%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
+      className="absolute top-[42%] right-[10%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded-full bg-[#1877f2] flex items-center justify-center">
@@ -146,7 +146,7 @@ function Voicemail() {
       whileInView={{ opacity: 1, rotate: -2, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.5 }}
-      className="absolute bottom-[8%] left-[15%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
+      className="absolute bottom-[8%] left-[20%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -177,8 +177,9 @@ function StickyNote() {
       whileInView={{ opacity: 1, rotate: 5, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.55 }}
-      className="absolute bottom-[12%] right-[8%] w-[160px] z-10"
+      className="absolute bottom-[12%] right-[15%] w-[160px] z-10"
     >
+      {/* Updated font-family here to match the CSS import */}
       <div className="bg-yellow-300 p-4 shadow-lg" style={{ fontFamily: "'Caveat', cursive" }}>
         <p className="text-yellow-900 text-sm font-bold leading-tight">
           Call back<br />
@@ -193,7 +194,7 @@ function StickyNote() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  The clean Lead2Project dashboard mockup                           */
+/* The clean Lead2Project dashboard mockup                           */
 /* ------------------------------------------------------------------ */
 
 function DashboardMockup() {
@@ -269,7 +270,7 @@ function DashboardMockup() {
 
 
 /* ------------------------------------------------------------------ */
-/*  MAIN SECTION                                                      */
+/* MAIN SECTION                                                      */
 /* ------------------------------------------------------------------ */
 
 export default function LeadAcquisitionSection() {
@@ -287,8 +288,8 @@ export default function LeadAcquisitionSection() {
           </h2>
         </div>
 
-        {/* Scrapbook collage area */}
-        <div className="relative w-full h-[600px] md:h-[650px] lg:h-[700px] mb-16">
+        {/* Scrapbook collage area - WRAPPED AND CENTERED */}
+        <div className="relative w-full max-w-4xl h-[600px] md:h-[650px] lg:h-[700px] mb-16 mx-auto">
           <MissedCall />
           <TextMessage />
           <EmailInbox />

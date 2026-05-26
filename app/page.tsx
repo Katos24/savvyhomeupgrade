@@ -37,11 +37,13 @@ export default function NewHome() {
       {/* 6. THE HEART: Running the job from one card */}
       <LeadLandingSection />
 
+        {/* 8. THE PEACE OF MIND: Daily Digest */}
+      <DigestBanner />
+
       {/* 7. THE SPEED: One-click emails & Outbox tracking */}
       <EfficiencyShowcase />
 
-      {/* 8. THE PEACE OF MIND: Daily Digest */}
-      <DigestBanner />
+    
 
       {/* 9. THE BARRIER REMOVAL: Self-serve sign up */}
       <SelfServeBanner />
