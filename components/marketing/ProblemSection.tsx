@@ -6,17 +6,17 @@ import { ArrowDown } from 'lucide-react';
 const font = "'Nunito', sans-serif";
 
 /* ------------------------------------------------------------------ */
-/* CSS-only scrapbook pieces — the chaos of how leads arrive today   */
+/*  CSS-only scrapbook pieces — the chaos of how leads arrive today   */
 /* ------------------------------------------------------------------ */
 
 function MissedCall() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: -3, y: 20 }}
-      whileInView={{ opacity: 1, rotate: -3, y: 0 }}
+      initial={{ opacity: 0, rotate: -3, x: -60, y: -40 }}
+      whileInView={{ opacity: 1, rotate: -3, x: 0, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="absolute top-[2%] left-[5%] w-[220px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
+      transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-[2%] left-[2%] w-[220px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -39,11 +39,11 @@ function MissedCall() {
 function TextMessage() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: 2, y: 20 }}
-      whileInView={{ opacity: 1, rotate: 2, y: 0 }}
+      initial={{ opacity: 0, rotate: 2, x: 70 }}
+      whileInView={{ opacity: 1, rotate: 2, x: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="absolute top-[8%] right-[5%] w-[240px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
+      transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-[8%] right-[3%] w-[240px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -67,11 +67,11 @@ function TextMessage() {
 function EmailInbox() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: -1, y: 20 }}
-      whileInView={{ opacity: 1, rotate: -1, y: 0 }}
+      initial={{ opacity: 0, rotate: -1, x: -70 }}
+      whileInView={{ opacity: 1, rotate: -1, x: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="absolute top-[38%] left-[10%] w-[260px] bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 z-30"
+      transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-[28%] left-[5%] w-[260px] bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 z-30"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center">
@@ -111,11 +111,11 @@ function EmailInbox() {
 function FacebookDM() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: 3, y: 20 }}
-      whileInView={{ opacity: 1, rotate: 3, y: 0 }}
+      initial={{ opacity: 0, rotate: 3, x: 60 }}
+      whileInView={{ opacity: 1, rotate: 3, x: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.4 }}
-      className="absolute top-[42%] right-[10%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20"
+      transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-[33%] right-[2%] w-[220px] bg-[#242526] rounded-2xl p-4 shadow-2xl border border-white/10 z-20 hidden md:block"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded-full bg-[#1877f2] flex items-center justify-center">
@@ -142,11 +142,11 @@ function FacebookDM() {
 function Voicemail() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: -2, y: 20 }}
-      whileInView={{ opacity: 1, rotate: -2, y: 0 }}
+      initial={{ opacity: 0, rotate: -2, x: -50, y: 50 }}
+      whileInView={{ opacity: 1, rotate: -2, x: 0, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.5 }}
-      className="absolute bottom-[8%] left-[20%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10"
+      transition={{ duration: 0.6, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute bottom-[5%] left-[15%] w-[200px] bg-[#1c1c1e] rounded-2xl p-4 shadow-2xl border border-white/10 z-10 hidden md:block"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
@@ -173,19 +173,18 @@ function Voicemail() {
 function StickyNote() {
   return (
     <motion.div
-      initial={{ opacity: 0, rotate: 5, y: 20 }}
-      whileInView={{ opacity: 1, rotate: 5, y: 0 }}
+      initial={{ opacity: 0, rotate: 5, x: 50, y: 40, scale: 0.8 }}
+      whileInView={{ opacity: 1, rotate: 5, x: 0, y: 0, scale: 1 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.55 }}
-      className="absolute bottom-[12%] right-[15%] w-[160px] z-10"
+      transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute bottom-[5%] right-[8%] w-[160px] z-10"
     >
-      {/* Updated font-family here to match the CSS import */}
       <div className="bg-yellow-300 p-4 shadow-lg" style={{ fontFamily: "'Caveat', cursive" }}>
         <p className="text-yellow-900 text-sm font-bold leading-tight">
           Call back<br />
           Tom - deck job<br />
           631-555-0199<br />
-          <span className="text-yellow-700 text-xs">← forgot to call</span>
+          <span className="text-yellow-700 text-xs">← forgot to call 😬</span>
         </p>
       </div>
       <div className="w-full h-2 bg-yellow-400/50 blur-sm" />
@@ -194,7 +193,7 @@ function StickyNote() {
 }
 
 /* ------------------------------------------------------------------ */
-/* The clean Lead2Project dashboard mockup                           */
+/*  The clean Lead2Project dashboard mockup                           */
 /* ------------------------------------------------------------------ */
 
 function DashboardMockup() {
@@ -270,7 +269,7 @@ function DashboardMockup() {
 
 
 /* ------------------------------------------------------------------ */
-/* MAIN SECTION                                                      */
+/*  MAIN SECTION                                                      */
 /* ------------------------------------------------------------------ */
 
 export default function LeadAcquisitionSection() {
@@ -288,14 +287,20 @@ export default function LeadAcquisitionSection() {
           </h2>
         </div>
 
-        {/* Scrapbook collage area - WRAPPED AND CENTERED */}
-        <div className="relative w-full max-w-4xl h-[600px] md:h-[650px] lg:h-[700px] mb-16 mx-auto">
-          <MissedCall />
-          <TextMessage />
-          <EmailInbox />
-          <FacebookDM />
-          <Voicemail />
-          <StickyNote />
+        {/* Scrapbook collage area */}
+        <div className="relative w-full max-w-3xl h-[600px] md:h-[550px] lg:h-[560px] mx-auto bg-slate-900/30 rounded-3xl border border-white/5 backdrop-blur-sm p-4 overflow-hidden mb-16">
+          {/* Subtle grid overlay for texture */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} 
+          />
+          <div className="relative w-full h-full">
+            <MissedCall />
+            <TextMessage />
+            <EmailInbox />
+            <FacebookDM />
+            <Voicemail />
+            <StickyNote />
+          </div>
         </div>
 
         {/* Transition arrow */}
@@ -310,10 +315,10 @@ export default function LeadAcquisitionSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight text-center"
             style={{ fontFamily: font }}
           >
-            This is how it <span className="text-emerald-500">should</span> look.
+            This is how it <span className="text-emerald-500">should</span> work.
           </h3>
           <p className="text-slate-400 font-bold text-lg max-w-lg text-center">
-            One dashboard. Every lead lands here with their name, details, and photos. Nothing gets lost.
+            One link. Every lead lands here with their name, details, and photos. Nothing gets lost.
           </p>
         </div>
 

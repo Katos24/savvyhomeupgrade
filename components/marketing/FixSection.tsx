@@ -28,7 +28,7 @@ export default function TheFixSection() {
   className="text-4xl sm:text-5xl lg:text-6xl text-slate-900 leading-[0.95] tracking-tight mb-4"
   style={{ fontFamily: font, fontWeight: 900 }}
 >
-  One link. One dashboard. <br />
+  One dashboard. <br />
   <span className="text-emerald-600">Every job.</span>
 </h3>
 <p
