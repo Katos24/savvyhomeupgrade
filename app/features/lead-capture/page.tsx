@@ -56,7 +56,7 @@ export default function LeadCapturePage() {
 
               <p className="text-base sm:text-lg text-slate-300 font-bold leading-relaxed mb-8 max-w-lg">
                 Your yard sign gets 200 looks and 3 calls. The rest drive by and forget your number.
-                Lead2Project fixes that with one link and QR code that captures leads{' '}
+                Lead2Project fixes that with a booking link and QR code that captures leads{' '}
                 <span className="text-white underline decoration-emerald-500 decoration-3 underline-offset-4">while you're on the job.</span>
               </p>
 

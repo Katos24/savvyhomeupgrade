@@ -18,7 +18,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm text-slate-400 font-bold leading-relaxed max-w-[200px]">
-              Job management built for small and mid-size businesses. One link. Every lead.
+Job management built for small and mid-size businesses. Your link. Every lead.
             </p>
           </div>
 

@@ -15,7 +15,7 @@ const plans = [
     cta: 'Start 14-Day Free Trial',
     href: '/signup',
     features: [
-      'Custom Booking Link',
+      'Custom Booking Form',
       'Branded QR Codes',
       'Unlimited Lead Capture',
       'Visual Lead Board',
@@ -206,14 +206,7 @@ export default function Pricing() {
 
           {/* Trust Matrix Badges */}
           <div className="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-slate-500">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={14} className="text-slate-600" />
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ fontFamily: font }}>256-bit Secure Gateway</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap size={14} className="text-slate-600" />
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ fontFamily: font }}>Instant Provisioning</span>
-            </div>
+          
           </div>
         </motion.div>
       </div>

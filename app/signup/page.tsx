@@ -192,7 +192,7 @@ const [formData, setFormData] = useState({
       {plan === 'free' ? 'Free Account' : 'Step 1 of 2'}
     </p>
     <p className="text-sm text-slate-300 font-bold">
-      {plan === 'free' ? 'Create your account and start receiving leads.' : 'Create your administrative account to get started.'}
+      {plan === 'free' ? 'Create your account and start getting more jobs.' : 'Create your administrative account to get started.'}
     </p>
   </div>
 </div>

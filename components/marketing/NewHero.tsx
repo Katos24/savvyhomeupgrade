@@ -53,8 +53,8 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-          <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-  Stop losing leads because you didn't answer the phone. Turn your Google profile into a 24/7 booking engine. One link. One dashboard.
+         <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+  Look more professional with a branded booking page. Capture more leads. Close more jobs.
 </p>
 
             {/* CTAs */}

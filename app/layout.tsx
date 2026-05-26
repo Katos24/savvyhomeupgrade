@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     siteName: "Lead2Project",
     title: "Lead2Project | Manage your empire from the couch.",
     description:
-      "One link. One QR code. No more text thread madness. Quote, schedule, and track your jobs right from your phone.",
+      "Two links. One to capture. One to run it all. No more text thread madness. Quote, schedule, and track your jobs right from your phone.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project Dashboard Preview" }],
   },
   twitter: {
@@ -64,6 +64,8 @@ export const metadata: Metadata = {
     },
   },
 };
+
+
 
 export default function RootLayout({
   children,
