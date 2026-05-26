@@ -133,7 +133,7 @@ export default function DigestBanner() {
               className="text-slate-300 font-bold text-base sm:text-lg leading-relaxed mb-8 max-w-md"
               style={{ fontFamily: font }}
             >
-              Because Lead2Project automatically structures your intake and tracks updates on your dashboard, your business compiles itself while you sleep. Review everything before you ever turn the key.
+Every morning at 6AM, you get a digest email — new leads, upcoming jobs, unpaid invoices. Review everything before you ever turn the key.
             </p>
 
             {/* Structured Feature Highlights */}

@@ -185,7 +185,7 @@ function StickyNote() {
           Call back<br />
           Tom - deck job<br />
           631-555-0199<br />
-          <span className="text-yellow-700 text-xs">← forgot to call 😬</span>
+          <span className="text-yellow-700 text-xs">← forgot to call</span>
         </p>
       </div>
       <div className="w-full h-2 bg-yellow-400/50 blur-sm" />
@@ -310,10 +310,10 @@ export default function LeadAcquisitionSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight text-center"
             style={{ fontFamily: font }}
           >
-            This is how it <span className="text-emerald-500">should</span> work.
+            This is how it <span className="text-emerald-500">should</span> look.
           </h3>
           <p className="text-slate-400 font-bold text-lg max-w-lg text-center">
-            One link. Every lead lands here with their name, details, and photos. Nothing gets lost.
+            One dashboard. Every lead lands here with their name, details, and photos. Nothing gets lost.
           </p>
         </div>
 

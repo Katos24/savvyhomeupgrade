@@ -146,7 +146,7 @@ export default function CustomizeFormSection() {
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
 
           {/* LEFT — Typography & Matrix Links */}
-<div className="order-2 lg:order-last flex flex-col justify-center">
+<div className="order-1 lg:order-last flex flex-col justify-center">
               <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -180,7 +180,7 @@ export default function CustomizeFormSection() {
               className="text-slate-400 font-bold text-base sm:text-lg mb-8 max-w-sm leading-relaxed"
               style={{ fontFamily: font }}
             >
-              Your logo. Your questions. Complete site status photos captured automatically before your team ever shows up.
+              Build a form that feels like your business and gives customers confidence that you know your stuff.
             </p>
 
             {/* Premium Pill Badges */}
@@ -193,8 +193,8 @@ export default function CustomizeFormSection() {
           </div>
 
           {/* RIGHT — Interactive Card Preview */}
-<div className="order-1 lg:order-first flex flex-col items-center w-full">
-  
+<div className="order-2 lg:order-first flex flex-col items-center w-full">
+
             {/* SELECTION TABS */}
             <div className="flex gap-1.5 p-1 bg-white/[0.02] border border-white/[0.06] rounded-xl mb-8 flex-wrap justify-center backdrop-blur-sm">
               {EXAMPLES.map((example, i) => (

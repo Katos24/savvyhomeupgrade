@@ -37,7 +37,7 @@ export default function DistributionSection() {
             </h2>
             
             <p className="text-slate-600 font-bold text-lg leading-relaxed mb-8" style={{ fontFamily: font }}>
-              When a customer searches for you, they shouldn't find a dead-end. Add your Lead2Project link to your <strong>Google Business Profile</strong> as your primary "Booking" or "Quote" link. 
+              Add your Lead2Project link to your <strong>Google Business Profile</strong> as your primary "Booking" or "Quote" link. 
             </p>
 
             <ul className="space-y-4 mb-8">
