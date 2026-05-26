@@ -25,23 +25,29 @@ export default function NewHome() {
       {/* 2. THE PROBLEM: Why the current way (threads/folders) is failing them */}
       <ProblemSection />
 
+
+      {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) Google section */}
+      <TruckSection />
+
+  {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
+      <CustomizeFormSection />
+
       {/* 3. THE SOLUTION: The "Lead2Project" Concept (The Fix) */}
       <TheFixSection />
 
-      {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
-      <CustomizeFormSection />
+    
 
-      {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) */}
-      <TruckSection />
 
       {/* 6. THE HEART: Running the job from one card */}
       <LeadLandingSection />
 
-        {/* 8. THE PEACE OF MIND: Daily Digest */}
-      <DigestBanner />
+  
 
       {/* 7. THE SPEED: One-click emails & Outbox tracking */}
       <EfficiencyShowcase />
+
+            {/* 8. THE PEACE OF MIND: Daily Digest */}
+      <DigestBanner />
 
     
 

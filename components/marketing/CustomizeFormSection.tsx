@@ -146,8 +146,8 @@ export default function CustomizeFormSection() {
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
 
           {/* LEFT — Typography & Matrix Links */}
-          <div className="order-1 flex flex-col justify-center">
-            <motion.p
+<div className="order-2 lg:order-last flex flex-col justify-center">
+              <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -193,8 +193,8 @@ export default function CustomizeFormSection() {
           </div>
 
           {/* RIGHT — Interactive Card Preview */}
-          <div className="order-2 flex flex-col items-center w-full">
-
+<div className="order-1 lg:order-first flex flex-col items-center w-full">
+  
             {/* SELECTION TABS */}
             <div className="flex gap-1.5 p-1 bg-white/[0.02] border border-white/[0.06] rounded-xl mb-8 flex-wrap justify-center backdrop-blur-sm">
               {EXAMPLES.map((example, i) => (
