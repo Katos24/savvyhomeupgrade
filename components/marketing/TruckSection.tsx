@@ -100,33 +100,13 @@ export default function DistributionSection() {
         {/* GOOGLE FOCUSED TOP SECTION */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
           
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black text-[10px] uppercase tracking-widest mb-6">
-              <Star size={12} className="fill-blue-500" /> The Google Growth Hack
-            </div>
-            
-            <h2 className="text-[40px] sm:text-6xl text-slate-900 font-black leading-[0.95] tracking-tight mb-8" style={{ fontFamily: font }}>
-              Own the <span className="text-blue-600">Google Search</span> result.
-            </h2>
-            
-            <p className="text-slate-600 font-bold text-lg leading-relaxed mb-8" style={{ fontFamily: font }}>
-              Add your Lead2Project link to your <strong>Google Business Profile</strong> as your primary &ldquo;Booking&rdquo; or &ldquo;Quote&rdquo; link. 
-            </p>
-
-            <ul className="space-y-4 mb-8">
-              {["Capture leads while you're on another job", 'Professional "Request Quote" button', 'Collect photos & short videos'].map((point, i) => (
-                <li key={i} className="flex items-center gap-3 text-slate-700 font-bold">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px]">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* GOOGLE MOCKUP with clickable form preview */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
+          {/* GOOGLE MOCKUP — first on mobile, right on desktop */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            whileInView={{ opacity: 1, scale: 1 }} 
+            viewport={{ once: true }}
+            className="order-1 lg:order-2"
+          >
             <div className="relative">
               <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 w-full max-w-sm mx-auto">
                 {/* Google Listing Card */}
@@ -192,6 +172,38 @@ export default function DistributionSection() {
               </AnimatePresence>
             </div>
           </motion.div>
+
+          {/* COPY — second on mobile, left on desktop */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            whileInView={{ opacity: 1, y: 0 }} 
+            viewport={{ once: true }}
+            className="order-2 lg:order-1"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black text-[10px] uppercase tracking-widest mb-6">
+              <Star size={12} className="fill-blue-500" /> The Google Growth Hack
+            </div>
+            
+            <h2 className="text-[40px] sm:text-6xl text-slate-900 font-black leading-[0.95] tracking-tight mb-8" style={{ fontFamily: font }}>
+              Own the <span className="text-blue-600">Google Search</span> result.
+            </h2>
+            
+            <p className="text-slate-600 font-bold text-lg leading-relaxed mb-8" style={{ fontFamily: font }}>
+              Add your Lead2Project link to your <strong>Google Business Profile</strong> as your primary &ldquo;Booking&rdquo; or &ldquo;Quote&rdquo; link. 
+            </p>
+
+            <ul className="space-y-4 mb-8">
+              {["Capture leads while you're on another job", 'Professional "Request Quote" button', 'Collect photos'].map((point, i) => (
+                <li key={i} className="flex items-center gap-3 text-slate-700 font-bold">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px]">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
         </div>
 
         {/* USE CASES */}
