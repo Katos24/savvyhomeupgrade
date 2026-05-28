@@ -59,7 +59,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="sm:hidden space-y-2 px-1"
+        className="sm:hidden space-y-3 px-1"
       >
         {leads.map((lead) => {
           const statusConfig = getStatusConfig(lead.status);
@@ -78,7 +78,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
               key={lead.id}
               variants={cardVariants}
               onClick={() => onSelectLead(lead)}
-              className={`relative cursor-pointer rounded-xl overflow-hidden border transition-all active:scale-[0.98] ${
+              className={`relative cursor-pointer rounded-2xl overflow-hidden border transition-all active:scale-[0.98] ${
                 isDark
                   ? 'bg-white/[0.03] border-white/[0.08] active:bg-white/[0.06]'
                   : 'bg-white border-slate-200 active:bg-slate-50 shadow-sm'
@@ -86,52 +86,25 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
             >
               {/* Status accent left bar */}
               <div 
-                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
                 style={{ backgroundColor: statusHex }}
               />
 
-              <div className="flex items-center gap-3 pl-4 pr-3 py-3">
-                {/* Left: Name + category */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className={`text-sm font-black truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <div className="pl-5 pr-4 py-4">
+                {/* Top: Name + status */}
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className={`text-base font-black truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {lead.name}
                     </h3>
                     {lead.follow_up_date && (
-                      <div className="w-4 h-4 bg-red-500 rounded flex items-center justify-center flex-shrink-0">
-                        <Bell className="w-2.5 h-2.5 text-white fill-white" />
+                      <div className="w-5 h-5 bg-red-500 rounded-md flex items-center justify-center flex-shrink-0">
+                        <Bell className="w-3 h-3 text-white fill-white" />
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                      {lead.category?.replace(/_/g, ' ') || 'General'}
-                    </p>
-                    {hasPhotos && (
-                      <span className="text-[9px] font-bold text-pink-400 flex items-center gap-0.5">
-                        <Camera className="w-3 h-3" />{lead.file_urls.length}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right: Status + meta */}
-                <div className="flex items-center gap-2.5 flex-shrink-0">
-                  <div className="text-right">
-                    {displayDate && (
-                      <p className={`text-[10px] font-bold mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {displayDate}
-                      </p>
-                    )}
-                    {lead.quote_total && parseFloat(lead.quote_total) > 0 && (
-                      <p className={`text-[10px] font-black ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                        ${parseFloat(lead.quote_total).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-
                   <div
-                    className="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border"
+                    className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border flex-shrink-0"
                     style={{
                       backgroundColor: `${statusHex}15`,
                       color: statusHex,
@@ -140,8 +113,33 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                   >
                     {statusConfig.label}
                   </div>
+                </div>
 
-                  <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                {/* Bottom: Category + meta */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      {lead.category?.replace(/_/g, ' ') || 'General'}
+                    </p>
+                    {hasPhotos && (
+                      <span className="text-[10px] font-bold text-pink-400 flex items-center gap-0.5">
+                        <Camera className="w-3 h-3" />{lead.file_urls.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {displayDate && (
+                      <p className={`text-[11px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {displayDate}
+                      </p>
+                    )}
+                    {lead.quote_total && parseFloat(lead.quote_total) > 0 && (
+                      <p className={`text-[11px] font-black ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                        ${parseFloat(lead.quote_total).toLocaleString()}
+                      </p>
+                    )}
+                    <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                  </div>
                 </div>
               </div>
             </motion.div>
