@@ -28,10 +28,6 @@ export default function WorkspaceConfirmModal({
 
   if (!isOpen || !slug) return null;
 
-  /**
-   * DYNAMIC FONT SIZING LOGIC
-   * Scales down based on slug length to keep it on one line.
-   */
   const getSlugFontSize = (text: string) => {
     const len = text.length;
     if (len > 20) return 'text-xl';
@@ -81,8 +77,7 @@ export default function WorkspaceConfirmModal({
               <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-3">
                 Unique Workspace Name
               </p>
-              {/* Dynamic size applied here + forced single line */}
-              <div className={`font-mono font-bold text-white tracking-tighter whitespace-nowrap leading-none transition-all duration-200 ${getSlugFontSize(slug)}`}>
+              <div className={`font-mono font-black text-white tracking-tight leading-tight transition-all duration-200 break-all sm:whitespace-nowrap ${getSlugFontSize(slug)}`}>
                 {slug}
               </div>
             </div>
@@ -106,8 +101,8 @@ export default function WorkspaceConfirmModal({
                 <Globe className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-emerald-700 uppercase">Client Access</p>
-<p className="font-mono text-[13px] sm:text-sm text-emerald-950 break-all">
+                <p className="text-[10px] font-bold text-emerald-700 uppercase">Client Form</p>
+                <p className="font-mono text-xs sm:text-sm font-semibold text-emerald-950 break-words leading-relaxed">
                   lead2project.com/<span className="font-bold underline decoration-emerald-300">{slug}</span>
                 </p>
               </div>
@@ -118,8 +113,8 @@ export default function WorkspaceConfirmModal({
                 <Lock className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-blue-700 uppercase">Private Admin</p>
-<p className="font-mono text-[13px] sm:text-sm text-blue-950 break-all">
+                <p className="text-[10px] font-bold text-blue-700 uppercase">Private Dashboard</p>
+                <p className="font-mono text-xs sm:text-sm font-semibold text-blue-950 break-words leading-relaxed">
                   lead2project.com/{slug}/<span className="font-bold">dashboard</span>
                 </p>
               </div>

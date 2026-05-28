@@ -541,7 +541,7 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         <Globe className="w-4 h-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Your Booking Link</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Customer Booking Link</p>
         <p className="text-sm font-mono font-bold text-slate-700 truncate">
           lead2project.com/<span style={{ color: formData.color1 }}>{publicLink?.split('/').pop() || 'your-company'}</span>
         </p>

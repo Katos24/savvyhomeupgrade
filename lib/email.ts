@@ -15,6 +15,9 @@ async function getCompanyDetails(companyId: number) {
 }
 
 // 🎯 Send new lead alert to contractor
+// Updated sendNewLeadAlertEmail — drop this into your existing email file
+// Replace the current sendNewLeadAlertEmail function with this one
+
 export async function sendNewLeadAlertEmail({
   contractorEmail,
   customerName,
@@ -25,7 +28,15 @@ export async function sendNewLeadAlertEmail({
   dashboardUrl,
   address,
   city,
+  zipCode,
+  addressLine2,
   photosCount,
+  fileUrls,
+  customAnswers,
+  customQuestions,
+  preferredDate,
+  preferredTime,
+  leadSource,
 }: {
   contractorEmail: string;
   customerName: string;
@@ -36,70 +47,197 @@ export async function sendNewLeadAlertEmail({
   dashboardUrl: string;
   address?: string;
   city?: string;
+  zipCode?: string;
+  addressLine2?: string;
   photosCount?: number;
+  fileUrls?: { url: string; name: string; size: number; type?: string }[];
+  customAnswers?: Record<string, string>;
+  customQuestions?: { id: string; label: string; type: string; options?: string[] }[];
+  preferredDate?: string;
+  preferredTime?: string;
+  leadSource?: string;
 }) {
   try {
+    // Build full address string
+    const fullAddress = [address, addressLine2, city, zipCode].filter(Boolean).join(', ');
+
+    // Map custom answers to readable labels
+    const formattedAnswers: { label: string; value: string }[] = [];
+    if (customAnswers && Object.keys(customAnswers).length > 0 && customQuestions) {
+      for (const [qId, answer] of Object.entries(customAnswers)) {
+        if (!answer) continue;
+        const question = customQuestions.find(q => q.id === qId);
+        formattedAnswers.push({
+          label: question?.label || qId,
+          value: String(answer),
+        });
+      }
+    }
+
+    // Count files by type
+    const imageCount = fileUrls?.filter(f => f.type?.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|webp|heic|gif)$/i)).length || 0;
+    const videoCount = fileUrls?.filter(f => f.type?.startsWith('video/') || f.name.match(/\.(mov|mp4|avi|webm)$/i)).length || 0;
+    const totalFiles = fileUrls?.length || photosCount || 0;
+
+    // Build attachment summary
+    let attachmentText = '';
+    if (totalFiles > 0) {
+      const parts = [];
+      if (imageCount > 0) parts.push(`${imageCount} photo${imageCount > 1 ? 's' : ''}`);
+      if (videoCount > 0) parts.push(`${videoCount} video${videoCount > 1 ? 's' : ''}`);
+      if (parts.length === 0) parts.push(`${totalFiles} file${totalFiles > 1 ? 's' : ''}`);
+      attachmentText = parts.join(' and ');
+    }
+
+    // Format category for display
+    const displayCategory = category
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
-            .info-box { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin: 24px 0; }
-            .label { color: #6b7280; font-size: 12px; font-weight: bold; text-transform: uppercase; margin: 16px 0 4px 0; }
-            .value { color: #333; font-size: 16px; margin: 0 0 16px 0; }
-            .highlight { background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; margin: 16px 0; border-radius: 4px; }
-            .button { background-color: #10b981; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+            .container { background-color: #ffffff; margin: 40px auto; max-width: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+            .header { background-color: #0f172a; padding: 28px 32px; }
+            .header h1 { color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 4px 0; }
+            .header p { color: #94a3b8; font-size: 13px; margin: 0; }
+            .body { padding: 28px 32px; }
+            .section { margin-bottom: 24px; }
+            .section-label { color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px 0; }
+            .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { color: #64748b; font-size: 13px; font-weight: 600; width: 140px; flex-shrink: 0; }
+            .info-value { color: #1e293b; font-size: 13px; font-weight: 600; }
+            .info-value a { color: #3b82f6; text-decoration: none; }
+            .description-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 8px; }
+            .description-box p { color: #334155; font-size: 14px; line-height: 1.6; margin: 0; }
+            .custom-answer { background-color: #f8fafc; border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+            .custom-answer .q-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 2px 0; }
+            .custom-answer .q-value { color: #1e293b; font-size: 14px; font-weight: 600; margin: 0; }
+            .attachment-banner { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+            .attachment-banner .icon { font-size: 16px; }
+            .attachment-banner .text { color: #1e40af; font-size: 13px; font-weight: 600; }
+            .attachment-banner .sub { color: #60a5fa; font-size: 11px; font-weight: 500; }
+            .map-link { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-top: 8px; }
+            .map-link a { color: #16a34a; font-size: 13px; font-weight: 700; text-decoration: none; }
+            .cta { text-align: center; padding: 8px 0 0 0; }
+            .cta a { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; }
+            .footer { text-align: center; padding: 20px 32px; border-top: 1px solid #f1f5f9; }
+            .footer p { color: #94a3b8; font-size: 11px; margin: 0; }
+            @media (max-width: 600px) {
+              .container { margin: 0; border-radius: 0; }
+              .header, .body { padding: 20px 20px; }
+              .info-row { flex-direction: column; gap: 2px; }
+              .info-label { width: auto; }
+            }
           </style>
         </head>
         <body>
           <div class="container">
-            <h1>New Lead Received!</h1>
-            <p>You have a new lead from <strong>${customerName}</strong></p>
             
-            <div class="info-box">
-              <div class="label">Category:</div>
-              <div class="value">${category}</div>
-              
-              <div class="label">Email:</div>
-              <div class="value"><a href="mailto:${customerEmail}">${customerEmail}</a></div>
-              
-             ${customerPhone ? `<div class="label">Phone:</div><div class="value"><a href="tel:${customerPhone}">${customerPhone}</a></div>` : ''}
-              
-              ${address ? `
-                <div class="label">Service Address:</div>
-                <div class="value">${address}${city ? `, ${city}` : ''}</div>
-              ` : ''}
-              
-              ${photosCount && photosCount > 0 ? `
-                <div class="label">Photos Uploaded:</div>
-                <div class="value">${photosCount} photo${photosCount > 1 ? 's' : ''} attached</div>
-              ` : ''}
-              
-              ${description ? `
-                <div class="label">Description:</div>
-                <div class="value">${description}</div>
-              ` : ''}
+            <!-- Header -->
+            <div class="header">
+              <h1>New Lead: ${customerName}</h1>
+              <p>${displayCategory}</p>
             </div>
             
-            ${address ? `
-              <div class="highlight">
-                <strong>Quick Actions:</strong><br>
-                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + (city ? ', ' + city : ''))}" style="color: #3b82f6; text-decoration: none;">
-                  View on Google Maps →
+            <div class="body">
+              
+              <!-- Contact Info -->
+              <div class="section">
+                <p class="section-label">Contact Information</p>
+                <div class="info-row">
+                  <span class="info-label">Name</span>
+                  <span class="info-value">${customerName}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Phone</span>
+                  <span class="info-value"><a href="tel:${customerPhone}">${customerPhone}</a></span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Email</span>
+                  <span class="info-value"><a href="mailto:${customerEmail}">${customerEmail}</a></span>
+                </div>
+                ${fullAddress ? `
+                <div class="info-row">
+                  <span class="info-label">Address</span>
+                  <span class="info-value">${fullAddress}</span>
+                </div>
+                ` : ''}
+                ${preferredDate || preferredTime ? `
+                <div class="info-row">
+                  <span class="info-label">Preferred</span>
+                  <span class="info-value">${[preferredDate, preferredTime].filter(Boolean).join(' at ')}</span>
+                </div>
+                ` : ''}
+                ${leadSource ? `
+                <div class="info-row">
+                  <span class="info-label">Found via</span>
+                  <span class="info-value">${leadSource}</span>
+                </div>
+                ` : ''}
+              </div>
+              
+              <!-- Description -->
+              ${description ? `
+              <div class="section">
+                <p class="section-label">Customer&rsquo;s Message</p>
+                <div class="description-box">
+                  <p>${description}</p>
+                </div>
+              </div>
+              ` : ''}
+              
+              <!-- Custom Answers -->
+              ${formattedAnswers.length > 0 ? `
+              <div class="section">
+                <p class="section-label">Form Responses</p>
+                ${formattedAnswers.map(a => `
+                  <div class="custom-answer">
+                    <p class="q-label">${a.label}</p>
+                    <p class="q-value">${a.value}</p>
+                  </div>
+                `).join('')}
+              </div>
+              ` : ''}
+              
+              <!-- Attachments -->
+              ${totalFiles > 0 ? `
+              <div class="section">
+                <div class="attachment-banner">
+                  <span class="icon">📎</span>
+                  <div>
+                    <p class="text">${attachmentText} attached</p>
+                    <p class="sub">View in dashboard</p>
+                  </div>
+                </div>
+              </div>
+              ` : ''}
+              
+              <!-- Map Link -->
+              ${fullAddress ? `
+              <div class="map-link">
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}">
+                  View on Google Maps &rarr;
                 </a>
               </div>
-            ` : ''}
+              ` : ''}
+              
+              <!-- CTA -->
+              <div class="cta" style="margin-top: 24px;">
+                <a href="${dashboardUrl}">View in Dashboard</a>
+              </div>
+              
+            </div>
             
-            <center>
-              <a href="${dashboardUrl}" class="button">View in Dashboard</a>
-            </center>
-            
-            <div class="footer">Lead2Project</div>
+            <div class="footer">
+              <p>Lead2Project</p>
+            </div>
           </div>
         </body>
       </html>
@@ -108,13 +246,13 @@ export async function sendNewLeadAlertEmail({
     await resend.emails.send({
       from: 'Lead2Project <hello@lead2project.com>',
       to: contractorEmail,
-      subject: `New Lead: ${customerName} — ${category}`,
+      subject: `New Lead: ${customerName} — ${displayCategory}`,
       html: emailHtml,
     });
 
-    console.log('✅ New lead alert sent to contractor');
+    console.log('New lead alert sent to contractor');
   } catch (error) {
-    console.error('❌ Failed to send lead alert:', error);
+    console.error('Failed to send lead alert:', error);
   }
 }
 
@@ -126,13 +264,17 @@ export async function sendLeadConfirmationEmail({
   companyName,
   companyId,
   description,
+  address,
+  city,
 }: {
   customerEmail: string;
   customerName: string;
   category: string;
   companyName: string;
   companyId: number;
-  description?: string;
+description?: string;
+address?: string;
+city?: string;
 }) {
   try {
     console.log('🔥 sendLeadConfirmationEmail called');
@@ -147,6 +289,7 @@ Here's a summary of what you submitted:
 
 Service: ${category}
 ${description ? `Details: ${description}` : ''}
+${address ? `Address: ${address}${city ? `, ${city}` : ''}` : ''}
 
 If you have any questions in the meantime, feel free to reply to this email.
 

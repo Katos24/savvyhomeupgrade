@@ -91,35 +91,45 @@ created_by = body.created_by || 'customer';
 
     // Send email notification to contractor
     if (companySlug) {
-      const company = await sql`SELECT email, name FROM companies WHERE slug = ${companySlug}`;
+const company = await sql`SELECT email, name, custom_questions FROM companies WHERE slug = ${companySlug}`;
       if (company.length > 0 && company[0].email) {
         const contractorEmail = company[0].email;
         const companyName = company[0].name;
         const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${companySlug}/dashboard`;
 
         if (notify_owner) sendNewLeadAlertEmail({
-          contractorEmail,
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
-          category: formatCategory(category),
-          description: description || 'No description provided',
-          dashboardUrl,
-          address: address_line_1 || undefined,
-          city: city || undefined,
-          photosCount: fileUrls.length || 0,
-        }).catch(err => {
-          console.error('Failed to send contractor email alert:', err);
-        });
+  contractorEmail,
+  customerName: name,
+  customerEmail: email,
+  customerPhone: phone,
+  category: formatCategory(category),
+  description: description || 'No description provided',
+  dashboardUrl,
+  address: address_line_1 || undefined,
+  addressLine2: address_line_2 || undefined,
+  city: city || undefined,
+  zipCode: zip_code || undefined,
+  photosCount: fileUrls.length || 0,
+  fileUrls: fileUrls.length > 0 ? fileUrls : undefined,
+  customAnswers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
+  customQuestions: company[0].custom_questions || undefined,
+  preferredDate: preferred_date || undefined,
+  preferredTime: preferred_time || undefined,
+  leadSource: lead_source || undefined,
+}).catch(err => {
+  console.error('Failed to send contractor email alert:', err);
+});
 
        if (notify_customer && email) sendLeadConfirmationEmail({
-          customerEmail: email,
-          customerName: name,
-          category: formatCategory(category),
-          companyName,
-          companyId,
-          description: description || undefined,
-        }).catch(err => {
+  customerEmail: email,
+  customerName: name,
+  category: formatCategory(category),
+  companyName,
+  companyId,
+  description: description || undefined,
+  address: address_line_1 || undefined,
+  city: city || undefined,
+}).catch(err => {
           console.error('Failed to send customer confirmation:', err);
         });
       }
