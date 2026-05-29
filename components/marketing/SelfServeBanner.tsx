@@ -1,18 +1,13 @@
 'use client';
-
 import { motion } from 'framer-motion';
-import { ArrowRight, Check } from 'lucide-react';
-import Link from 'next/link';
-
+import { Check } from 'lucide-react';
+import Image from 'next/image';
 const font = "'Nunito', sans-serif";
-
 export default function SelfServeBanner() {
   return (
     <section className="relative bg-white py-20 sm:py-28 overflow-hidden border-b border-slate-100">
-
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-8">
-
-        <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-center">
+        <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
 
           {/* LEFT: The message */}
           <motion.div
@@ -41,42 +36,39 @@ export default function SelfServeBanner() {
             </p>
           </motion.div>
 
-          {/* RIGHT: CTA card */}
+          {/* RIGHT: Image with checklist top-right */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-slate-900 rounded-2xl p-6 sm:p-8"
+            className="relative"
           >
-            <div className="space-y-3.5 mb-6">
-              {[
-                'Full access immediately',
-                'No credit card on free plan',
-                'No waiting for approval',
-                'Set up your form and go',
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Check size={14} className="text-emerald-400 flex-shrink-0" />
-                  <span className="text-sm font-bold text-slate-300" style={{ fontFamily: font }}>{item}</span>
+            <div className="relative rounded-2xl overflow-hidden w-full">
+              <Image
+                src="/images/marketing-quote2.png"
+                alt="Contractor sending quotes from the job site"
+                width={1080}
+                height={1080}
+                className="w-full h-auto object-contain"
+              />
+
+              {/* Checklist — top right, stays in upper portion away from face */}
+              <div className="absolute top-4 right-4 bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 shadow-2xl max-w-[180px]">
+                <div className="space-y-2.5">
+                  {[
+                    'Full access immediately',
+                    'No credit card on free plan',
+                    'No waiting for approval',
+                    'Set up your form and go',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Check size={11} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-[11px] font-bold text-slate-300 leading-tight" style={{ fontFamily: font }}>{item}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-
-            <Link href="/signup">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center justify-center gap-2 w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
-                style={{ fontFamily: font }}
-              >
-                Get Started Free
-                <ArrowRight size={14} strokeWidth={3} />
-              </motion.div>
-            </Link>
-
-            <p className="text-[10px] text-slate-500 font-bold text-center mt-3">
-              No credit card · Cancel anytime
-            </p>
           </motion.div>
 
         </div>
