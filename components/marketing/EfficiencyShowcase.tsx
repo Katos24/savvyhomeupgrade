@@ -73,19 +73,16 @@ function CategoriesPreview() {
       name: 'Roof Repair',
       color: '#f97316',
       templates: 'Quote template + 4 tasks',
-      pipeline: 'Inspect > Quote > Approve > Schedule',
     },
     {
       name: 'Leak Detection',
       color: '#3b82f6',
       templates: 'Quote template + 2 tasks',
-      pipeline: 'Diagnose > Quote > Repair',
     },
     {
       name: 'Full Replacement',
       color: '#10b981',
       templates: 'Quote template + 7 tasks',
-      pipeline: 'Measure > Quote > Materials > Install',
     },
   ];
 
@@ -110,9 +107,7 @@ function CategoriesPreview() {
               <span className="text-[8px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                 <FileText size={7} /> {cat.templates}
               </span>
-              <span className="text-[8px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                <ListChecks size={7} /> {cat.pipeline}
-              </span>
+             
             </div>
           </div>
         ))}

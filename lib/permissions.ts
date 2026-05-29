@@ -273,10 +273,15 @@ export const UPGRADE_PROMPTS: Record<string, {
   },
 
   // ── basic → pro ────────────────────────────────────────────
-  send_quote_email: {
-    title: 'One-click emails',
-    description: 'Send quotes, schedules, and payment reminders in one click — tracked in your outbox.',
-  },
+  // Instead of just "One-click emails"
+send_quote_email: {
+  title: 'Stop typing the same emails',
+  description: 'Send professional quotes and updates in a single click. Save 5+ hours a week on repetitive office work.',
+},
+outbox: {
+  title: 'Never lose track of a conversation',
+  description: 'See every email you’ve ever sent to a client in one organized outbox.',
+},
   send_schedule_email: {
     title: 'One-click schedule email',
     description: 'Send schedule confirmations to customers in one click.',
@@ -284,10 +289,6 @@ export const UPGRADE_PROMPTS: Record<string, {
   send_payment_reminder: {
     title: 'One-click payment reminder',
     description: 'Send payment reminders to customers in one click.',
-  },
-  outbox: {
-    title: 'Email outbox',
-    description: 'Review every email sent to customers in one place.',
   },
   email_templates: {
     title: 'Custom email templates',
