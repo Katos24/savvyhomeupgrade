@@ -331,7 +331,7 @@ export default function LeadAcquisitionSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight text-center"
             style={{ fontFamily: font }}
           >
-            This is how it <span className="text-emerald-500">should</span> work.
+            This is how it <span className="text-emerald-500">should</span> look.
           </h3>
           <p className="text-slate-400 font-bold text-lg max-w-lg text-center">
             Every lead lands here with their name, details, and photos. Nothing gets lost.

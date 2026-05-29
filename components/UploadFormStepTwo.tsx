@@ -70,7 +70,7 @@ interface StepTwoProps {
   onSkip: () => void;
 }
 
-const labelClass = 'text-xs font-black text-gray-500 uppercase tracking-[0.12em] ml-1';
+const labelClass = 'text-xs font-black text-black uppercase tracking-[0.12em] ml-1';
 
 const inputClass =
   'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50';
@@ -117,7 +117,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
   const color2 = brandColor2 || '#3b82f6';
 
   return (
-<div className="w-full max-w-2xl mx-auto px-4 py-6">
+<div className="w-full max-w-2xl mx-auto px-4 py-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
       <div className="w-full bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
 
         {/* Header */}
@@ -349,7 +349,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
           {showFileUpload && (
             <div>
               <label className={labelClass}>
-                Photos or Videos
+            Photos, Short Videos, or Documents
                 <span className="ml-2 text-[10px] font-bold text-gray-400 normal-case tracking-normal">
                   helps us quote faster
                 </span>
@@ -369,7 +369,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
                   type="file"
                   id="step2-file-upload"
                   multiple
-                  accept="image/*,video/*"
+accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
                   onChange={onFileChange}
                   className="hidden"
                   disabled={disabled}
@@ -386,7 +386,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
                     </div>
                   )}
                   <p className="font-semibold text-gray-700 text-sm">
-                    {compressing ? 'Processing...' : 'Click or drag photos/videos here'}
+                    {compressing ? 'Processing...' : 'Click or drag files here'}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">Max 50MB per file</p>
                 </label>
@@ -396,13 +396,18 @@ const inputRef = useRef<HTMLInputElement | null>(null);
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {files.map((file, i) => (
                     <div key={i} className="relative rounded-lg overflow-hidden shadow group">
-                      {file.type.startsWith('image/') ? (
-                        <img src={filePreviews[i]} alt={file.name} className="w-full h-28 object-cover" />
-                      ) : (
-                        <div className="w-full h-28 bg-purple-100 flex items-center justify-center">
-                          <Video className="w-8 h-8 text-purple-500" />
-                        </div>
-                      )}
+                     {file.type.startsWith('image/') ? (
+  <img src={filePreviews[i]} alt={file.name} className="w-full h-28 object-cover" />
+) : file.type.startsWith('video/') ? (
+  <div className="w-full h-28 bg-purple-100 flex items-center justify-center">
+    <Video className="w-8 h-8 text-purple-500" />
+  </div>
+) : (
+  <div className="w-full h-28 bg-blue-50 flex flex-col items-center justify-center">
+    <Upload className="w-6 h-6 text-blue-500 mb-1" />
+    <p className="text-[10px] font-bold text-blue-500 uppercase">{file.name.split('.').pop()}</p>
+  </div>
+)}
                       <button
                         type="button"
                         onClick={() => onRemoveFile(i)}

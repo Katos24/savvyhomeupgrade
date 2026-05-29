@@ -76,7 +76,7 @@ const color2 = brandColor2 || '#5CCB3A';
   const descCount = formData.description.length;
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 py-6 space-y-5">
+<div className="w-full max-w-lg mx-auto px-4 py-6 space-y-5" style={{ fontFamily: "'Nunito', sans-serif" }}>
 
       {/* Optional standalone header */}
       {showHeader && (

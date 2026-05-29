@@ -16,7 +16,22 @@ export async function POST(request: Request): Promise<NextResponse> {
         // For example, check file type, size limits, etc.
         
         return {
-          allowedContentTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime'],
+allowedContentTypes: [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/heic',
+  'video/mp4',
+  'video/quicktime',
+  'video/x-msvideo',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv'
+],
           tokenPayload: JSON.stringify({
             // Optional: Add metadata that will be attached to the blob
           }),

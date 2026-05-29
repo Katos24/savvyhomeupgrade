@@ -8,9 +8,6 @@ import {
 } from 'lucide-react';
 import PhotoUpload from '../PhotoUpload';
 
-// Re-export Lightbox or import it from a shared location.
-// For now we inline a minimal version here so MediaSection
-// is self-contained when it needs to show customer photos.
 import {
   X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
@@ -180,6 +177,37 @@ function Lightbox({
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isImageFile(f: any): boolean {
+  const name = (typeof f === 'string' ? f : f?.name || f?.url || '').toLowerCase();
+  if (f?.type?.startsWith('image/')) return true;
+  return !!name.match(/\.(jpg|jpeg|png|gif|webp|heic)(\?|$)/i);
+}
+
+function isVideoFile(f: any): boolean {
+  const name = (typeof f === 'string' ? f : f?.name || f?.url || '').toLowerCase();
+  if (f?.type?.startsWith('video/')) return true;
+  return !!name.match(/\.(mp4|mov|avi|webm|quicktime)(\?|$)/i);
+}
+
+function isDocFile(f: any): boolean {
+  return !isImageFile(f) && !isVideoFile(f);
+}
+
+function getFileUrl(f: any): string {
+  if (typeof f === 'string') return f;
+  return f?.url || f?.path || '';
+}
+
+function getFileName(f: any): string {
+  if (typeof f === 'string') {
+    const parts = f.split('/');
+    return parts[parts.length - 1]?.split('?')[0] || 'File';
+  }
+  return f?.name || 'Document';
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type MediaSectionProps = {
@@ -208,11 +236,28 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
 
   const beforePhotos = parseJson(lead?.before_photos);
   const afterPhotos = parseJson(lead?.after_photos);
-  const customerPhotos: string[] = Array.isArray(lead?.file_urls)
-    ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
-    : [];
+
+  // Split customer uploads into photos vs documents
+  const customerFiles = Array.isArray(lead?.file_urls) ? lead.file_urls : [];
+
+  const customerPhotos: string[] = customerFiles
+    .filter((f: any) => isImageFile(f))
+    .map((f: any) => getFileUrl(f))
+    .filter(Boolean);
+
+  const customerVideos: any[] = customerFiles
+    .filter((f: any) => isVideoFile(f))
+    .map((f: any) => ({ url: getFileUrl(f), name: getFileName(f) }))
+    .filter((f: any) => f.url);
+
+  const customerDocs: any[] = customerFiles
+    .filter((f: any) => isDocFile(f))
+    .map((f: any) => ({ url: getFileUrl(f), name: getFileName(f) }))
+    .filter((f: any) => f.url);
+
   const photoCount = beforePhotos.length + afterPhotos.length;
   const documents = parseJson(lead?.documents);
+  const allDocs = [...documents, ...customerDocs];
 
   const MAX_SIZE = 15 * 1024 * 1024;
 
@@ -271,7 +316,8 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
     switch (ext) {
       case 'pdf': return <FileText className="w-5 h-5 text-rose-500" />;
       case 'xls':
-      case 'xlsx': return <FileSpreadsheet className="w-5 h-5 text-emerald-500" />;
+      case 'xlsx':
+      case 'csv': return <FileSpreadsheet className="w-5 h-5 text-emerald-500" />;
       case 'doc':
       case 'docx': return <FileCode className="w-5 h-5 text-blue-500" />;
       default: return <File className="w-5 h-5 text-slate-400" />;
@@ -302,11 +348,11 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               <div className="flex items-center gap-2">
                 <Camera className="w-3.5 h-3.5" />
                 Photos
-                {(photoCount + customerPhotos.length) > 0 && (
+                {(photoCount + customerPhotos.length + customerVideos.length) > 0 && (
                   <span className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] ${
                     activeTab === 'photos' ? 'bg-pink-100 text-pink-700' : 'bg-slate-200 text-slate-500'
                   }`}>
-                    {photoCount + customerPhotos.length}
+                    {photoCount + customerPhotos.length + customerVideos.length}
                   </span>
                 )}
               </div>
@@ -322,11 +368,11 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               <div className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5" />
                 Documents
-                {documents.length > 0 && (
+                {allDocs.length > 0 && (
                   <span className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] ${
                     activeTab === 'docs' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'
                   }`}>
-                    {documents.length}
+                    {allDocs.length}
                   </span>
                 )}
               </div>
@@ -339,7 +385,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
               <input
                 ref={inputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.txt,.xlsx,.xls"
+                accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv"
                 multiple
                 onChange={handleUpload}
                 disabled={uploading}
@@ -370,7 +416,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
         <div className="min-h-[400px]">
           {activeTab === 'photos' ? (
             <div className="p-4 sm:p-6 space-y-6">
-              {/* ── Customer Photos with Lightbox ── */}
+              {/* Customer Photos with Lightbox */}
               {customerPhotos.length > 0 && (
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -395,6 +441,32 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                 </div>
               )}
 
+              {/* Customer Videos */}
+              {customerVideos.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Camera className="w-3.5 h-3.5 text-blue-400" />
+                    Videos from Customer ({customerVideos.length})
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {customerVideos.map((vid: any, i: number) => (
+                      <a
+                        key={i}
+                        href={vid.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <Camera className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 truncate">{vid.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <PhotoUpload
                 leadId={lead.id}
                 currentUser={currentUser}
@@ -402,41 +474,85 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                 beforePhotos={beforePhotos}
                 afterPhotos={afterPhotos}
                 hasProject={hasProject}
-                // Don't pass customerPhotos here — already rendered above with lightbox
               />
             </div>
           ) : (
             <div className="p-4 sm:p-6">
-              {documents.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {documents.map((doc: any, i: number) => (
-                    <div
-                      key={i}
-                      className="group relative flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-4 min-w-0 flex-1"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
-                          {getDocIcon(doc.name)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-black text-slate-800 truncate pr-4">
-                            {doc.name}
-                          </p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
-                            {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
-                          </p>
-                        </div>
-                      </a>
-                      <div className="flex items-center gap-2 ml-2 shrink-0">
-                        <Download className="w-4 h-4 text-slate-300" />
+              {allDocs.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Customer-submitted docs */}
+                  {customerDocs.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5 text-blue-400" />
+                        From Customer ({customerDocs.length})
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {customerDocs.map((doc: any, i: number) => (
+                          <a
+                            key={`cust-${i}`}
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                          >
+                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
+                                {getDocIcon(doc.name)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-black text-slate-800 truncate pr-4">
+                                  {doc.name}
+                                </p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                                  Submitted by customer
+                                </p>
+                              </div>
+                            </div>
+                            <Download className="w-4 h-4 text-slate-300 shrink-0" />
+                          </a>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Team-uploaded docs */}
+                  {documents.length > 0 && (
+                    <div>
+                      {customerDocs.length > 0 && (
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          Team Documents ({documents.length})
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {documents.map((doc: any, i: number) => (
+                          <a
+                            key={`team-${i}`}
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                          >
+                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
+                                {getDocIcon(doc.name)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-black text-slate-800 truncate pr-4">
+                                  {doc.name}
+                                </p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                                  {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
+                                </p>
+                              </div>
+                            </div>
+                            <Download className="w-4 h-4 text-slate-300 shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
