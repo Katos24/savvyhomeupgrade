@@ -9,7 +9,7 @@ import { can, type PlanTier } from '@/lib/permissions';
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
 type ViewMode = 'cards' | 'table' | 'calendar';
-type TimeFilter = 'today' | 'week' | 'month' | 'all';
+type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
 type DashboardFiltersProps = {
   searchQuery: string;
@@ -58,7 +58,7 @@ export default function DashboardFilters({
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const isScheduledTodayActive = timeFilter === 'today' && filterStatus === 'scheduled';
+  const isScheduledTodayActive = timeFilter === 'scheduled_today';
 
   return (
     <section aria-label="Search and filter leads" className="mb-6 flex flex-col gap-4">
@@ -163,10 +163,8 @@ export default function DashboardFilters({
           onClick={() => {
             if (isScheduledTodayActive) {
               setTimeFilter('all');
-              setFilterStatus('all');
             } else {
-              setTimeFilter('today');
-              setFilterStatus('scheduled');
+              setTimeFilter('scheduled_today');
             }
           }}
           className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${

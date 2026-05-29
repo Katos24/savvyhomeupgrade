@@ -57,7 +57,7 @@ type Company = {
 };
 
 type ViewMode = 'cards' | 'table' | 'calendar';
-type TimeFilter = 'today' | 'week' | 'month' | 'all';
+type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
 // ---------------------------------------------------------------------------
 // Constants

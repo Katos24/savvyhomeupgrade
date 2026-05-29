@@ -55,7 +55,7 @@ export async function GET(request: Request, { params }: Props) {
     const endDate    = url.searchParams.get('endDate')?.trim()    || '';
 
     // ── Scheduled Today special case ──────────────────────────
-    const isScheduledToday = timeFilter === 'today' && status === 'scheduled';
+const isScheduledToday = timeFilter === 'scheduled_today';
     const today = new Date();
     const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -129,8 +129,8 @@ export async function GET(request: Request, { params }: Props) {
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
           AND l.deleted = false
-          AND l.status = 'scheduled'
-          AND p.scheduled_date = ${todayDateStr}
+         AND p.scheduled_date IS NOT NULL
+          AND CAST(p.scheduled_date AS date) = CAST(${todayDateStr} AS date)
           AND (${search} = '' OR (
             l.name        ILIKE ${'%' + search + '%'} OR
             l.email       ILIKE ${'%' + search + '%'} OR
@@ -192,8 +192,8 @@ export async function GET(request: Request, { params }: Props) {
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
           AND l.deleted = false
-          AND l.status = 'scheduled'
-          AND p.scheduled_date = ${todayDateStr}
+          AND p.scheduled_date IS NOT NULL
+          AND CAST(p.scheduled_date AS date) = CAST(${todayDateStr} AS date)
           AND (${search} = '' OR (
             l.name        ILIKE ${'%' + search + '%'} OR
             l.email       ILIKE ${'%' + search + '%'} OR
