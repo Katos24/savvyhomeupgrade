@@ -66,7 +66,7 @@ export default function ArchitectHero() {
                     whileTap={{ scale: 0.97 }}
                     className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-wide shadow-xl transition-all cursor-pointer text-center"
                   >
-                    Get Started Free
+                    Start Free
                     <ArrowRight size={20} strokeWidth={3} />
                   </motion.div>
                 </Link>
