@@ -27,13 +27,13 @@ export default function ArchitectHero() {
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
 
             {/* HEADLINE */}
-      <h1
-  className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
-  style={{ fontFamily: font }}
->
-  They found you on Google.<br />
-  <span className="text-emerald-600">Now, capture them.</span>
-</h1>
+            <h1
+              className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: font }}
+            >
+              They found you.<br />
+              <span className="text-emerald-600">Now don't lose them.</span>
+            </h1>
 
             {/* MOBILE IMAGE — right after headline */}
             <div className="lg:hidden relative w-full">
@@ -53,9 +53,9 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-         <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-  Look more professional with a branded booking page. Capture more leads. Close more jobs.
-</p>
+            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+              Look more professional with a branded booking page. Capture more leads. Close more jobs.
+            </p>
 
             {/* CTAs */}
             <div className="flex flex-col space-y-6 pt-2">
