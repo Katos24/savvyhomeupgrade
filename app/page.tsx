@@ -2,6 +2,7 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import HowItWorksSection from '@/components/marketing/HowItWorksSection';
 import ProblemSection from '@/components/marketing/ProblemSection';
 import TheFixSection from '@/components/marketing/FixSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
@@ -21,6 +22,9 @@ export default function NewHome() {
 
       {/* 1. THE HOOK: The current state of chaos vs. order */}
       <NewHero />
+
+      <HowItWorksSection />
+
 
       {/* 2. THE PROBLEM: Why the current way (threads/folders) is failing them */}
       <ProblemSection />
