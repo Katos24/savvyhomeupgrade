@@ -5,10 +5,6 @@ import { ArrowDown } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
-/* ------------------------------------------------------------------ */
-/*  CSS-only scrapbook pieces — the chaos of how leads arrive today   */
-/* ------------------------------------------------------------------ */
-
 function MissedCall() {
   return (
     <motion.div
@@ -192,9 +188,16 @@ function StickyNote() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  The clean Lead2Project dashboard mockup                           */
-/* ------------------------------------------------------------------ */
+const ALL_LEADS = [
+  { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500', rev: '$1,200' },
+  { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500', rev: '$4,800' },
+  { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500', rev: '$3,400' },
+  { name: 'Lisa P.', type: 'Duct Repair', status: 'IN PROGRESS', statusColor: 'bg-violet-500', rev: '$890' },
+  { name: 'James H.', type: 'Leak Repair', status: 'NEW', statusColor: 'bg-emerald-500', rev: '$550' },
+  { name: 'Ray C.', type: 'AC Repair', status: 'QUOTED', statusColor: 'bg-blue-500', rev: '$2,100' },
+];
+
+const MOBILE_LEADS = ALL_LEADS.slice(0, 3);
 
 function DashboardMockup() {
   return (
@@ -203,96 +206,90 @@ function DashboardMockup() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.7, delay: 0.2 }}
-      className="w-full max-w-4xl mx-auto"
+      className="w-full max-w-2xl mx-auto"
     >
       <div className="bg-slate-900 rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/5 overflow-hidden">
+
         {/* Browser chrome */}
-        <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-800/80 border-b border-white/5">
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-800/80 border-b border-white/5">
           <div className="flex gap-1.5">
-            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500/60" />
-            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-500/60" />
-            <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500/60" />
+            <div className="w-2 h-2 rounded-full bg-red-500/60" />
+            <div className="w-2 h-2 rounded-full bg-yellow-500/60" />
+            <div className="w-2 h-2 rounded-full bg-green-500/60" />
           </div>
-          <div className="flex-1 bg-slate-700/50 rounded-lg px-3 py-1 mx-4 sm:mx-8">
-            <p className="text-slate-400 text-[9px] sm:text-[10px] text-center font-mono">lead2project.com/dashboard</p>
+          <div className="flex-1 bg-slate-700/50 rounded-lg px-3 py-1 mx-6">
+            <p className="text-slate-400 text-[9px] text-center font-mono">lead2project.com/dashboard</p>
           </div>
         </div>
-        
-        {/* Dashboard content */}
-        <div className="p-4 sm:p-6">
+
+        {/* Content */}
+        <div className="p-4 sm:p-5">
+
           {/* Header */}
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white text-xs sm:text-sm font-black">Your Company</p>
-              <p className="text-emerald-500 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">Dashboard</p>
+              <p className="text-white text-xs font-black">Your Company</p>
+              <p className="text-emerald-500 text-[9px] font-bold uppercase tracking-widest">Dashboard</p>
             </div>
-            <div className="bg-emerald-600 text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1.5 rounded-lg">+ New Lead</div>
+            <div className="bg-emerald-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg">+ New Lead</div>
           </div>
-          
-          {/* Stats row — 2 cols on mobile, 4 on desktop */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
             {[
-              { label: 'Leads', value: '12', color: 'bg-slate-800' },
-              { label: 'Active', value: '8', color: 'bg-slate-800' },
-              { label: 'Quoted', value: '5', color: 'bg-emerald-900/40' },
-              { label: 'Scheduled', value: '3', color: 'bg-emerald-900/40' },
+              { label: 'Leads', value: '12' },
+              { label: 'Active', value: '8' },
+              { label: 'Quoted', value: '5' },
+              { label: 'Scheduled', value: '3' },
             ].map((stat, i) => (
-              <div key={i} className={`${stat.color} rounded-xl p-2.5 sm:p-3 border border-white/5`}>
-                <p className="text-slate-500 text-[8px] sm:text-[9px] font-bold uppercase">{stat.label}</p>
-                <p className="text-white text-lg sm:text-xl font-black">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-          
-          {/* Leads — rows on mobile, cards on desktop */}
-          <div className="hidden sm:grid grid-cols-3 gap-3">
-            {[
-              { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500' },
-              { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500' },
-              { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500' },
-            ].map((lead, i) => (
-              <div key={i} className="bg-slate-800 rounded-xl p-3.5 border border-white/5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`${lead.statusColor} text-white text-[8px] font-black px-2 py-0.5 rounded-full`}>{lead.status}</span>
-                </div>
-                <p className="text-white text-sm font-black">{lead.name}</p>
-                <p className="text-slate-400 text-[10px] font-bold">{lead.type}</p>
+              <div key={i} className="bg-slate-800 rounded-xl p-2.5 border border-white/5">
+                <p className="text-slate-500 text-[8px] font-bold uppercase">{stat.label}</p>
+                <p className="text-white text-base font-black">{stat.value}</p>
               </div>
             ))}
           </div>
 
-          {/* Mobile rows */}
-          <div className="sm:hidden space-y-2">
-            {[
-              { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500' },
-              { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500' },
-              { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500' },
-            ].map((lead, i) => (
-              <div key={i} className="bg-slate-800 rounded-xl px-3.5 py-3 border border-white/5 flex items-center justify-between">
-                <div>
-                  <p className="text-white text-xs font-black">{lead.name}</p>
-                  <p className="text-slate-400 text-[10px] font-bold">{lead.type}</p>
+          {/* Desktop — 6 cards, 3 cols x 2 rows */}
+          <div className="hidden sm:grid grid-cols-3 gap-2">
+            {ALL_LEADS.map((lead, i) => (
+              <div key={i} className="bg-slate-800 rounded-xl p-3 border border-white/5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`${lead.statusColor} text-white text-[7px] font-black px-1.5 py-0.5 rounded-full`}>{lead.status}</span>
+                  <span className="text-slate-500 text-[8px] font-bold">{lead.rev}</span>
                 </div>
-                <span className={`${lead.statusColor} text-white text-[8px] font-black px-2 py-0.5 rounded-full`}>{lead.status}</span>
+                <p className="text-white text-xs font-black">{lead.name}</p>
+                <p className="text-slate-400 text-[9px] font-bold">{lead.type}</p>
               </div>
             ))}
           </div>
+
+          {/* Mobile — 3 rows */}
+          <div className="sm:hidden space-y-2">
+            {MOBILE_LEADS.map((lead, i) => (
+              <div key={i} className="bg-slate-800 rounded-xl px-3 py-2.5 border border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-white text-xs font-black">{lead.name}</p>
+                  <p className="text-slate-400 text-[9px] font-bold">{lead.type}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`${lead.statusColor} text-white text-[7px] font-black px-1.5 py-0.5 rounded-full`}>{lead.status}</span>
+                  <span className="text-slate-500 text-[8px] font-bold">{lead.rev}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </motion.div>
   );
 }
 
-
-/* ------------------------------------------------------------------ */
-/*  MAIN SECTION                                                      */
-/* ------------------------------------------------------------------ */
-
 export default function LeadAcquisitionSection() {
   return (
     <section className="bg-slate-950 py-24 lg:py-32 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        
+
         {/* SCRAPBOOK — The Chaos */}
         <div className="text-center mb-8">
           <h2
@@ -303,11 +300,9 @@ export default function LeadAcquisitionSection() {
           </h2>
         </div>
 
-        {/* Scrapbook collage area */}
         <div className="relative w-full max-w-3xl h-[600px] md:h-[550px] lg:h-[560px] mx-auto bg-slate-900/30 rounded-3xl border border-white/5 backdrop-blur-sm p-4 overflow-hidden mb-16">
-          {/* Subtle grid overlay for texture */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} 
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }}
           />
           <div className="relative w-full h-full">
             <MissedCall />
@@ -319,12 +314,9 @@ export default function LeadAcquisitionSection() {
           </div>
         </div>
 
-        {/* Transition arrow */}
+        {/* Transition */}
         <div className="flex flex-col items-center gap-4 mb-16">
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
             <ArrowDown className="text-emerald-500" size={32} />
           </motion.div>
           <h3
@@ -338,7 +330,6 @@ export default function LeadAcquisitionSection() {
           </p>
         </div>
 
-        {/* THE ANSWER — Clean Dashboard */}
         <DashboardMockup />
 
       </div>

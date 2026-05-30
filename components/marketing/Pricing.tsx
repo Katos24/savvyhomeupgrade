@@ -41,8 +41,7 @@ const plans = [
   {
     name: 'Pro',
     price: 79.99,
-    desc: 'The complete AI-powered office engine built for teams ready to scale operational velocity.',
-    highlight: true,
+desc: 'AI tools on top of everything in Basic. One-click emails, daily briefings, and smart quotes — less office work, more jobs closed.',    highlight: true,
     cta: 'Go Pro | 14 Days Free',
     href: '/signup',
     borderStyle: '',
