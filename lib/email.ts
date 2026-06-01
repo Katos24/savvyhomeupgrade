@@ -1,23 +1,36 @@
 import { Resend } from 'resend';
 import { getCompanyEmailTemplates, renderEmailTemplate, textToHtml } from './emailTemplates';
 import { neon } from '@neondatabase/serverless';
+import {
+  buildEmail,
+  buildEmailRow,
+  buildEmailTable,
+  buildEmailSection,
+  buildCustomAnswers,
+  buildAttachmentSummary,
+} from '@/lib/emailBase';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sql = neon(process.env.DATABASE_URL!);
 
-// Helper function to get company details
 async function getCompanyDetails(companyId: number) {
   const companies = await sql`
-    SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2 
+    SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2
     FROM companies WHERE id = ${companyId} LIMIT 1
   `;
   return companies[0];
 }
 
-// 🎯 Send new lead alert to contractor
-// Updated sendNewLeadAlertEmail — drop this into your existing email file
-// Replace the current sendNewLeadAlertEmail function with this one
+function formatCategory(category: string): string {
+  return category
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
 
+// ─────────────────────────────────────────────────────────────
+// sendNewLeadAlertEmail
+// Sends a new lead notification to the contractor.
+// ─────────────────────────────────────────────────────────────
 export async function sendNewLeadAlertEmail({
   contractorEmail,
   customerName,
@@ -27,9 +40,9 @@ export async function sendNewLeadAlertEmail({
   description,
   dashboardUrl,
   address,
+  addressLine2,
   city,
   zipCode,
-  addressLine2,
   photosCount,
   fileUrls,
   customAnswers,
@@ -46,9 +59,9 @@ export async function sendNewLeadAlertEmail({
   description: string;
   dashboardUrl: string;
   address?: string;
+  addressLine2?: string;
   city?: string;
   zipCode?: string;
-  addressLine2?: string;
   photosCount?: number;
   fileUrls?: { url: string; name: string; size: number; type?: string }[];
   customAnswers?: Record<string, string>;
@@ -58,196 +71,100 @@ export async function sendNewLeadAlertEmail({
   leadSource?: string;
 }) {
   try {
-    // Build full address string
+    const displayCategory = formatCategory(category);
     const fullAddress = [address, addressLine2, city, zipCode].filter(Boolean).join(', ');
+    const attachmentText = buildAttachmentSummary(fileUrls) || (photosCount ? `${photosCount} file${photosCount > 1 ? 's' : ''}` : '');
 
-    // Map custom answers to readable labels
-    const formattedAnswers: { label: string; value: string }[] = [];
-    if (customAnswers && Object.keys(customAnswers).length > 0 && customQuestions) {
-      for (const [qId, answer] of Object.entries(customAnswers)) {
-        if (!answer) continue;
+    // Contact info table
+    const contactTable = buildEmailTable([
+      buildEmailRow('Name', customerName),
+      buildEmailRow('Phone', `<a href="tel:${customerPhone}" style="color: #3b82f6; text-decoration: none;">${customerPhone}</a>`),
+      buildEmailRow('Email', `<a href="mailto:${customerEmail}" style="color: #3b82f6; text-decoration: none;">${customerEmail}</a>`),
+      buildEmailRow('Address', fullAddress),
+      preferredDate || preferredTime
+        ? buildEmailRow('Preferred', [preferredDate, preferredTime].filter(Boolean).join(' at '))
+        : '',
+      buildEmailRow('Found via', leadSource || ''),
+    ]);
+
+    // Description box
+    const descriptionHtml = description
+      ? `
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+          <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">${description}</p>
+        </div>
+      `
+      : '';
+
+    // Custom answers
+    const customAnswerHtml = (() => {
+      if (!customAnswers || !customQuestions) return '';
+      const entries = Object.entries(customAnswers).filter(([, v]) => v);
+      if (!entries.length) return '';
+      const cards = entries.map(([qId, answer]) => {
         const question = customQuestions.find(q => q.id === qId);
-        formattedAnswers.push({
-          label: question?.label || qId,
-          value: String(answer),
-        });
-      }
-    }
-
-    // Count files by type
-    const imageCount = fileUrls?.filter(f => f.type?.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|webp|heic|gif)$/i)).length || 0;
-    const videoCount = fileUrls?.filter(f => f.type?.startsWith('video/') || f.name.match(/\.(mov|mp4|avi|webm)$/i)).length || 0;
-    const totalFiles = fileUrls?.length || photosCount || 0;
-
-    // Build attachment summary
-    let attachmentText = '';
-    if (totalFiles > 0) {
-      const parts = [];
-      if (imageCount > 0) parts.push(`${imageCount} photo${imageCount > 1 ? 's' : ''}`);
-      if (videoCount > 0) parts.push(`${videoCount} video${videoCount > 1 ? 's' : ''}`);
-      if (parts.length === 0) parts.push(`${totalFiles} file${totalFiles > 1 ? 's' : ''}`);
-      attachmentText = parts.join(' and ');
-    }
-
-    // Format category for display
-    const displayCategory = category
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
-
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
-            .container { background-color: #ffffff; margin: 40px auto; max-width: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-            .header { background-color: #0f172a; padding: 28px 32px; }
-            .header h1 { color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 4px 0; }
-            .header p { color: #94a3b8; font-size: 13px; margin: 0; }
-            .body { padding: 28px 32px; }
-            .section { margin-bottom: 24px; }
-            .section-label { color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px 0; }
-            .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-            .info-row:last-child { border-bottom: none; }
-            .info-label { color: #64748b; font-size: 13px; font-weight: 600; width: 140px; flex-shrink: 0; }
-            .info-value { color: #1e293b; font-size: 13px; font-weight: 600; }
-            .info-value a { color: #3b82f6; text-decoration: none; }
-            .description-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 8px; }
-            .description-box p { color: #334155; font-size: 14px; line-height: 1.6; margin: 0; }
-            .custom-answer { background-color: #f8fafc; border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
-            .custom-answer .q-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 2px 0; }
-            .custom-answer .q-value { color: #1e293b; font-size: 14px; font-weight: 600; margin: 0; }
-            .attachment-banner { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
-            .attachment-banner .icon { font-size: 16px; }
-            .attachment-banner .text { color: #1e40af; font-size: 13px; font-weight: 600; }
-            .attachment-banner .sub { color: #60a5fa; font-size: 11px; font-weight: 500; }
-            .map-link { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-top: 8px; }
-            .map-link a { color: #16a34a; font-size: 13px; font-weight: 700; text-decoration: none; }
-            .cta { text-align: center; padding: 8px 0 0 0; }
-            .cta a { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; }
-            .footer { text-align: center; padding: 20px 32px; border-top: 1px solid #f1f5f9; }
-            .footer p { color: #94a3b8; font-size: 11px; margin: 0; }
-            @media (max-width: 600px) {
-              .container { margin: 0; border-radius: 0; }
-              .header, .body { padding: 20px 20px; }
-              .info-row { flex-direction: column; gap: 2px; }
-              .info-label { width: auto; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            
-            <!-- Header -->
-            <div class="header">
-              <h1>New Lead: ${customerName}</h1>
-              <p>${displayCategory}</p>
-            </div>
-            
-            <div class="body">
-              
-              <!-- Contact Info -->
-              <div class="section">
-                <p class="section-label">Contact Information</p>
-                <div class="info-row">
-                  <span class="info-label">Name</span>
-                  <span class="info-value">${customerName}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Phone</span>
-                  <span class="info-value"><a href="tel:${customerPhone}">${customerPhone}</a></span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Email</span>
-                  <span class="info-value"><a href="mailto:${customerEmail}">${customerEmail}</a></span>
-                </div>
-                ${fullAddress ? `
-                <div class="info-row">
-                  <span class="info-label">Address</span>
-                  <span class="info-value">${fullAddress}</span>
-                </div>
-                ` : ''}
-                ${preferredDate || preferredTime ? `
-                <div class="info-row">
-                  <span class="info-label">Preferred</span>
-                  <span class="info-value">${[preferredDate, preferredTime].filter(Boolean).join(' at ')}</span>
-                </div>
-                ` : ''}
-                ${leadSource ? `
-                <div class="info-row">
-                  <span class="info-label">Found via</span>
-                  <span class="info-value">${leadSource}</span>
-                </div>
-                ` : ''}
-              </div>
-              
-              <!-- Description -->
-              ${description ? `
-              <div class="section">
-                <p class="section-label">Customer&rsquo;s Message</p>
-                <div class="description-box">
-                  <p>${description}</p>
-                </div>
-              </div>
-              ` : ''}
-              
-              <!-- Custom Answers -->
-              ${formattedAnswers.length > 0 ? `
-              <div class="section">
-                <p class="section-label">Form Responses</p>
-                ${formattedAnswers.map(a => `
-                  <div class="custom-answer">
-                    <p class="q-label">${a.label}</p>
-                    <p class="q-value">${a.value}</p>
-                  </div>
-                `).join('')}
-              </div>
-              ` : ''}
-              
-              <!-- Attachments -->
-              ${totalFiles > 0 ? `
-              <div class="section">
-                <div class="attachment-banner">
-                  <span class="icon">📎</span>
-                  <div>
-                    <p class="text">${attachmentText} attached</p>
-                    <p class="sub">View in dashboard</p>
-                  </div>
-                </div>
-              </div>
-              ` : ''}
-              
-              <!-- Map Link -->
-              ${fullAddress ? `
-              <div class="map-link">
-                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}">
-                  View on Google Maps &rarr;
-                </a>
-              </div>
-              ` : ''}
-              
-              <!-- CTA -->
-              <div class="cta" style="margin-top: 24px;">
-                <a href="${dashboardUrl}">View in Dashboard</a>
-              </div>
-              
-            </div>
-            
-            <div class="footer">
-              <p>Lead2Project</p>
-            </div>
+        return `
+          <div style="border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 8px; background-color: #f8fafc;">
+            <p style="margin: 0 0 2px 0; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${question?.label || qId}</p>
+            <p style="margin: 0; color: #1e293b; font-size: 14px; font-weight: 600;">${answer}</p>
           </div>
-        </body>
-      </html>
+        `;
+      }).join('');
+      return buildEmailSection('Form Responses', cards);
+    })();
+
+    // Attachment banner
+    const attachmentHtml = attachmentText
+      ? `
+        <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">
+          <p style="margin: 0; color: #1e40af; font-size: 13px; font-weight: 600;">${attachmentText} attached</p>
+          <p style="margin: 4px 0 0 0; color: #60a5fa; font-size: 11px; font-weight: 500;">View in dashboard</p>
+        </div>
+      `
+      : '';
+
+    // Map link
+    const mapLinkHtml = fullAddress
+      ? `
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-top: 8px;">
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}"
+            style="color: #16a34a; font-size: 13px; font-weight: 700; text-decoration: none;">
+            View on Google Maps &rarr;
+          </a>
+        </div>
+      `
+      : '';
+
+    const bodyHtml = `
+      <div style="margin-bottom: 24px;">
+        <span style="display: inline-block; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 50px; padding: 6px 16px; color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+          New Lead
+        </span>
+        <span style="margin-left: 8px; color: #64748b; font-size: 14px; font-weight: 600;">${displayCategory}</span>
+      </div>
+
+      ${buildEmailSection('Contact Information', contactTable)}
+      ${descriptionHtml ? buildEmailSection("Customer's Message", descriptionHtml) : ''}
+      ${customAnswerHtml}
+      ${attachmentText ? buildEmailSection('Attachments', attachmentHtml) : ''}
+      ${mapLinkHtml}
     `;
+
+    const html = buildEmail({
+      companyName: 'Lead2Project',
+      brandColor: '#0f172a',
+      brandColor2: '#1e293b',
+      bodyHtml,
+      ctaText: 'View in Dashboard',
+      ctaUrl: dashboardUrl,
+      preheader: `New lead from ${customerName} — ${displayCategory}`,
+    });
 
     await resend.emails.send({
       from: 'Lead2Project <hello@lead2project.com>',
       to: contractorEmail,
       subject: `New Lead: ${customerName} — ${displayCategory}`,
-      html: emailHtml,
+      html,
     });
 
     console.log('New lead alert sent to contractor');
@@ -256,7 +173,10 @@ export async function sendNewLeadAlertEmail({
   }
 }
 
-// 📧 Send confirmation to customer
+// ─────────────────────────────────────────────────────────────
+// sendLeadConfirmationEmail
+// Sends a branded confirmation to the customer after submission.
+// ─────────────────────────────────────────────────────────────
 export async function sendLeadConfirmationEmail({
   customerEmail,
   customerName,
@@ -265,63 +185,129 @@ export async function sendLeadConfirmationEmail({
   companyId,
   description,
   address,
+  addressLine2,
   city,
+  zipCode,
+  preferredDate,
+  preferredTime,
+  customAnswers,
+  customQuestions,
+  fileUrls,
 }: {
   customerEmail: string;
   customerName: string;
   category: string;
   companyName: string;
   companyId: number;
-description?: string;
-address?: string;
-city?: string;
+  description?: string;
+  address?: string;
+  addressLine2?: string;
+  city?: string;
+  zipCode?: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  customAnswers?: Record<string, string>;
+  customQuestions?: { id: string; label: string; type: string; options?: string[] }[];
+  fileUrls?: { url: string; name: string; size: number; type?: string }[];
 }) {
   try {
-    console.log('🔥 sendLeadConfirmationEmail called');
-
     const company = await getCompanyDetails(companyId);
+    const brandColor = company.email_brand_color_1 || '#667eea';
+    const displayCategory = formatCategory(category);
+    const fullAddress = [address, addressLine2, city, zipCode].filter(Boolean).join(', ');
+    const attachmentText = buildAttachmentSummary(fileUrls);
 
-    const body = `Hi ${customerName},
+    const summaryTable = buildEmailTable([
+      buildEmailRow('Service', displayCategory),
+      buildEmailRow('Address', fullAddress),
+      preferredDate || preferredTime
+        ? buildEmailRow('Preferred', [preferredDate, preferredTime].filter(Boolean).join(' at '))
+        : '',
+      buildEmailRow('Details', description || ''),
+      buildEmailRow('Attached', attachmentText),
+    ]);
 
-Thanks for reaching out to ${company.name || companyName}! We've received your request and someone will be in touch with you shortly.
+    const customAnswerHtml = buildCustomAnswers(customAnswers, customQuestions, brandColor);
 
-Here's a summary of what you submitted:
+    const nextStepsHtml = `
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        ${['We review your request and confirm availability.',
+           'A team member contacts you to discuss the details.',
+           'We get the job done.',
+          ].map((step, i) => `
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top;">
+              <table cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="width: 28px; vertical-align: top; padding-top: 1px;">
+                    <div style="width: 22px; height: 22px; border-radius: 50%; background-color: ${brandColor}; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; line-height: 22px;">
+                      ${i + 1}
+                    </div>
+                  </td>
+                  <td style="padding-left: 12px; color: #334155; font-size: 14px; font-weight: 500; line-height: 1.55;">
+                    ${step}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        `).join('')}
+      </table>
+    `;
 
-Service: ${category}
-${description ? `Details: ${description}` : ''}
-${address ? `Address: ${address}${city ? `, ${city}` : ''}` : ''}
+    const bodyHtml = `
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="display: inline-block; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 50px; padding: 9px 20px;">
+          <span style="color: #16a34a; font-size: 13px; font-weight: 700;">Request received successfully</span>
+        </div>
+      </div>
 
-If you have any questions in the meantime, feel free to reply to this email.
+      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        Hi ${customerName}, thanks for reaching out to <strong>${company.name || companyName}</strong>.
+        We have received your request and someone will be in touch with you shortly.
+      </p>
 
-We look forward to working with you.
+      ${buildEmailSection('Your Request Summary', summaryTable)}
+      ${customAnswerHtml}
+      ${buildEmailSection('What Happens Next', nextStepsHtml)}
 
-${company.name || companyName}`;
+      <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
+        If you have any questions in the meantime, simply reply to this email and we will get back to you.
+      </p>
+    `;
 
-    const emailHtml = textToHtml(
-      body,
-      company.name || companyName,
-      company.logo_url || undefined,
-      company.phone || undefined,
-      company.website || undefined,
-      company.email_brand_color_1 || undefined,
-      company.email_brand_color_2 || undefined,
-    );
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml,
+      phone: company.phone,
+      website: company.website,
+      preheader: `We received your request for ${displayCategory}. Here is a summary.`,
+    });
 
     await resend.emails.send({
       from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
       subject: `We received your request — ${company.name || companyName}`,
-      html: emailHtml,
+      html,
     });
 
-    console.log('✅ Confirmation email sent to customer:', customerEmail);
+    console.log('Confirmation email sent to customer:', customerEmail);
   } catch (error) {
-    console.error('❌ Failed to send confirmation email:', error);
+    console.error('Failed to send confirmation email:', error);
   }
 }
 
-// 🔒 Send password reset email
+
+
+
+// ─────────────────────────────────────────────────────────────
+// sendPasswordResetEmail
+// Sends a password reset link to the user.
+// ─────────────────────────────────────────────────────────────
 export async function sendPasswordResetEmail({
   userEmail,
   userName,
@@ -334,65 +320,56 @@ export async function sendPasswordResetEmail({
   companyName: string;
 }) {
   try {
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 20px; }
-            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
-            .button { background-color: #5469d4; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
-            .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Reset your password — Lead2Project</h1>
-            
-            <p>Hi ${userName},</p>
-            
-            <p>We received a request to reset your password. Click the button below to create a new password:</p>
-            
-            <center>
-              <a href="${resetLink}" class="button">Reset Password</a>
-            </center>
-            
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #5469d4;">${resetLink}</p>
-            
-            <div class="warning">
-              <strong>Security Notice:</strong><br>
-              This link will expire in 1 hour. If you didn't request this reset, you can safely ignore this email.
-            </div>
-            
-            <div class="footer">
-              Lead2Project<br>
-              This is an automated email, please do not reply.
-            </div>
-          </div>
-        </body>
-      </html>
+    const bodyHtml = `
+      <p style="margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        Hi ${userName}, we received a request to reset your password. Click the button below to create a new one.
+      </p>
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <a href="${resetLink}"
+          style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          Reset Password
+        </a>
+      </div>
+
+      <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+        Or copy and paste this link into your browser:
+      </p>
+      <p style="margin: 0 0 24px 0; word-break: break-all; color: #3b82f6; font-size: 13px;">${resetLink}</p>
+
+      <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 16px;">
+        <p style="margin: 0; color: #92400e; font-size: 13px; font-weight: 600; line-height: 1.6;">
+          This link expires in 1 hour. If you did not request a password reset you can safely ignore this email.
+        </p>
+      </div>
     `;
+
+    const html = buildEmail({
+      companyName: 'Lead2Project',
+      brandColor: '#0f172a',
+      brandColor2: '#1e293b',
+      bodyHtml,
+      preheader: 'Reset your Lead2Project password.',
+    });
 
     await resend.emails.send({
       from: `${companyName} <hello@lead2project.com>`,
       to: userEmail,
       subject: 'Reset Your Password',
-      html: emailHtml,
+      html,
     });
 
-    console.log('✅ Password reset email sent to:', userEmail);
+    console.log('Password reset email sent to:', userEmail);
   } catch (error) {
-    console.error('❌ Failed to send password reset email:', error);
+    console.error('Failed to send password reset email:', error);
     throw error;
   }
 }
 
-// 👥 Send team member invitation email
+// ─────────────────────────────────────────────────────────────
+// sendTeamInviteEmail
+// Sends a team invitation email to a new member.
+// ─────────────────────────────────────────────────────────────
 export async function sendTeamInviteEmail({
   inviteeEmail,
   inviterName,
@@ -407,73 +384,73 @@ export async function sendTeamInviteEmail({
   role: string;
 }) {
   try {
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0; }
-            .container { background-color: #ffffff; margin: 40px auto; padding: 40px; max-width: 600px; border-radius: 8px; }
-            h1 { color: #333; font-size: 24px; margin-bottom: 20px; text-align: center; }
-            p { color: #555; font-size: 16px; line-height: 24px; margin: 16px 0; }
-            .button { background-color: #10b981; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; margin: 24px 0; font-weight: bold; }
-            .info-box { background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 4px; }
-            .footer { color: #8898aa; font-size: 14px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e6ebf1; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>You've Been Invited!</h1>
-            
-            <p>Hi there!</p>
-            
-            <p><strong>${inviterName}</strong> has invited you to join their team at <strong>${companyName}</strong>.</p>
-            
-            <div class="info-box">
-              <strong>Your Role:</strong> ${role === 'admin' ? 'Admin' : 'Member'}<br>
-              ${role === 'admin' 
-                ? 'You\'ll be able to manage leads, team members, and settings.' 
-                : 'You\'ll be able to view and manage leads.'}
-            </div>
-            
-            <p>Click the button below to accept the invitation and set up your account:</p>
-            
-            <center>
-              <a href="${inviteLink}" class="button">Accept Invitation →</a>
-            </center>
-            
-            <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #3b82f6; font-size: 14px;">${inviteLink}</p>
-            
-            <p style="font-size: 14px; color: #999; margin-top: 32px;">
-              This invitation will expire in 24 hours.
-            </p>
-            
-            <div class="footer">
-              Lead2Project<br>
-              This is an automated email, please do not reply.
-            </div>
-          </div>
-        </body>
-      </html>
+    const isAdmin = role === 'admin';
+    const roleLabel = isAdmin ? 'Admin' : 'Member';
+    const roleDescription = isAdmin
+      ? 'You will be able to manage leads, team members, and settings.'
+      : 'You will be able to view and manage leads.';
+
+    const bodyHtml = `
+      <p style="margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        <strong>${inviterName}</strong> has invited you to join their team at <strong>${companyName}</strong>.
+      </p>
+
+      ${buildEmailSection('Your Role', buildEmailTable([
+        buildEmailRow('Role', roleLabel),
+        buildEmailRow('Access', roleDescription),
+      ]))}
+
+      <p style="margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        Click the button below to accept the invitation and set up your account.
+      </p>
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <a href="${inviteLink}"
+          style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          Accept Invitation
+        </a>
+      </div>
+
+      <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+        Or copy and paste this link into your browser:
+      </p>
+      <p style="margin: 0 0 24px 0; word-break: break-all; color: #3b82f6; font-size: 13px;">${inviteLink}</p>
+
+      <div style="background-color: #f1f5f9; border-radius: 8px; padding: 14px 16px;">
+        <p style="margin: 0; color: #64748b; font-size: 13px; font-weight: 600;">
+          This invitation expires in 24 hours.
+        </p>
+      </div>
     `;
+
+    const html = buildEmail({
+      companyName: 'Lead2Project',
+      brandColor: '#0f172a',
+      brandColor2: '#1e293b',
+      bodyHtml,
+      preheader: `${inviterName} invited you to join ${companyName} on Lead2Project.`,
+    });
 
     await resend.emails.send({
       from: 'Lead2Project <hello@lead2project.com>',
       to: inviteeEmail,
-      subject: `You've been invited to join ${companyName}`,
-      html: emailHtml,
+      subject: `You have been invited to join ${companyName}`,
+      html,
     });
 
-    console.log('✅ Team invite email sent to:', inviteeEmail);
+    console.log('Team invite email sent to:', inviteeEmail);
   } catch (error) {
-    console.error('❌ Failed to send team invite email:', error);
+    console.error('Failed to send team invite email:', error);
     throw error;
   }
 }
 
-// 💰 Send quote to customer (NOW USES CUSTOM TEMPLATES WITH BRANDING!)
+
+// ─────────────────────────────────────────────────────────────
+// sendQuoteToCustomer
+// Sends a branded quote email to the customer with line items
+// and accept/decline buttons.
+// ─────────────────────────────────────────────────────────────
 export async function sendQuoteToCustomer({
   customerEmail,
   customerName,
@@ -484,7 +461,7 @@ export async function sendQuoteToCustomer({
   quoteItems,
   projectDescription,
   quoteToken,
-  contractorEmail, 
+  contractorEmail,
 }: {
   customerEmail: string;
   customerName: string;
@@ -496,10 +473,8 @@ export async function sendQuoteToCustomer({
   projectDescription?: string;
   quoteToken?: string;
   contractorEmail?: string;
-}){
+}) {
   try {
-    console.log('🔥 sendQuoteToCustomer called');
-
     const company = await getCompanyDetails(companyId);
     const templates = await getCompanyEmailTemplates(companyId);
     const quoteTemplate = templates.quote;
@@ -508,50 +483,35 @@ export async function sendQuoteToCustomer({
       new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
     const accentColor = company.email_brand_color_1 || '#667eea';
-const acceptDeclineHtml = quoteToken ? `
-  <div style="margin: 40px 0; text-align: center; padding-top: 32px; border-top: 1px solid #f1f5f9;">
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-      <tr>
-        <td align="center">
-          <table cellpadding="0" cellspacing="0" role="presentation">
-            <tr>
-              <td style="padding: 0 8px;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=accept"
-                  style="display: inline-block; background-color: ${accentColor}; color: #ffffff; font-family: sans-serif; font-size: 15px; font-weight: 800; line-height: 52px; text-align: center; text-decoration: none; padding: 0 32px; border-radius: 12px;">
-                  Accept Quote
-                </a>
-              </td>
-              <td style="padding: 0 8px;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=decline"
-                  style="display: inline-block; background-color: #ffffff; color: #94a3b8; font-family: sans-serif; font-size: 15px; font-weight: 700; line-height: 50px; text-align: center; text-decoration: none; padding: 0 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                  Decline
-                </a>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </div>
-` : '';
+    const accentColor2 = company.email_brand_color_2 || accentColor;
 
-const lineItemsHtml = quoteItems.length > 0 ? `
-      <div style="margin: 28px 0;">
-        <h3 style="margin: 0 0 12px 0; color: ${accentColor}; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">
+    // Line items table
+    const lineItemsHtml = quoteItems.length > 0 ? `
+      <div style="margin-bottom: 32px;">
+        <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">
           Quote Breakdown
-        </h3>
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; font-size: 14px;">
           <thead>
-            <tr style="background: #f8fafc;">
-              <th style="padding: 10px 14px; text-align: left; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0;">Description</th>
-              <th style="padding: 10px 14px; text-align: center; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 50px;">Qty</th>
-              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">Unit</th>
-              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">Amount</th>
+            <tr style="background-color: #f8fafc;">
+              <th style="padding: 10px 14px; text-align: left; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0;">
+                Description
+              </th>
+              <th style="padding: 10px 14px; text-align: center; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 50px;">
+                Qty
+              </th>
+              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">
+                Unit
+              </th>
+              <th style="padding: 10px 14px; text-align: right; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 90px;">
+                Amount
+              </th>
             </tr>
           </thead>
           <tbody>
             ${quoteItems.map((item, i) => `
-              <tr style="border-bottom: 1px solid #f1f5f9; background: ${i % 2 === 0 ? '#ffffff' : '#fafafa'};">
+              <tr style="background-color: ${i % 2 === 0 ? '#ffffff' : '#fafafa'}; border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 12px 14px; color: #334155; font-size: 14px;">${item.description}</td>
                 <td style="padding: 12px 14px; text-align: center; color: #64748b; font-size: 14px;">${item.quantity ?? 1}</td>
                 <td style="padding: 12px 14px; text-align: right; color: #64748b; font-size: 14px;">${item.unitPrice ? fmt(item.unitPrice) : '—'}</td>
@@ -560,18 +520,51 @@ const lineItemsHtml = quoteItems.length > 0 ? `
             `).join('')}
           </tbody>
           <tfoot>
-            <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
-              <td colspan="3" style="padding: 14px; text-align: right; color: #475569; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Total</td>
-              <td style="padding: 14px; text-align: right; color: ${accentColor}; font-weight: 800; font-size: 20px;">${fmt(quoteTotal)}</td>
+            <tr style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">
+              <td colspan="3" style="padding: 14px; text-align: right; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Total
+              </td>
+              <td style="padding: 14px; text-align: right; color: ${accentColor}; font-weight: 800; font-size: 20px;">
+                ${fmt(quoteTotal)}
+              </td>
             </tr>
           </tfoot>
         </table>
       </div>
     ` : '';
 
+    // Accept / Decline buttons
+    const acceptDeclineHtml = quoteToken ? `
+      <div style="margin: 36px 0; padding: 28px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
+        <p style="margin: 0 0 6px 0; color: #1e293b; font-size: 15px; font-weight: 700;">
+          Ready to move forward?
+        </p>
+        <p style="margin: 0 0 24px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+          Review the quote above and let us know your decision.
+        </p>
+        <table cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 auto;">
+          <tr>
+            <td style="padding: 0 8px;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=accept"
+                style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; letter-spacing: 0.01em; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">
+                Accept Quote
+              </a>
+            </td>
+            <td style="padding: 0 8px;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/quotes/respond?token=${quoteToken}&action=decline"
+                style="display: inline-block; background-color: #ffffff; color: #94a3b8; text-decoration: none; padding: 13px 24px; border-radius: 10px; font-weight: 700; font-size: 14px; border: 1.5px solid #e2e8f0;">
+                Decline
+              </a>
+            </td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
+
+    // Render custom email template body
     const variables = {
       company_name: company.name || companyName,
-company_phone: company.phone || companyPhone || null,
+      company_phone: company.phone || companyPhone || null,
       customer_name: customerName,
       quote_total: fmt(quoteTotal),
       project_description: projectDescription || 'Your project',
@@ -579,37 +572,40 @@ company_phone: company.phone || companyPhone || null,
 
     const rendered = renderEmailTemplate(quoteTemplate, variables);
 
- const emailHtml = textToHtml(
-  rendered.body,
-  company.name || companyName,
-  company.logo_url || undefined,
-  company.phone || companyPhone || undefined,
-  company.website || undefined,                              // ← companyWebsite (not used)
-  company.email_brand_color_1 || undefined,
-  company.email_brand_color_2 || undefined,
-  lineItemsHtml + acceptDeclineHtml,
-);
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">${rendered.body.replace(/\n/g, '<br>')}</p>
+        ${lineItemsHtml}
+        ${acceptDeclineHtml}
+      `,
+      phone: company.phone || companyPhone,
+      website: company.website,
+      preheader: `Your quote from ${company.name || companyName} — ${fmt(quoteTotal)}`,
+    });
 
     const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <hello@lead2project.com>`,
-  to: customerEmail,
-  replyTo: company.email || undefined,  // ← ADD THIS
-  subject: rendered.subject,
-  html: emailHtml,
-});
+      from: `${company.name || companyName} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject: rendered.subject,
+      html,
+    });
 
-    console.log('✅ Quote email sent to customer:', customerEmail);
-    return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
+    console.log('Quote email sent to customer:', customerEmail);
+    return { subject: rendered.subject, html, resendId: emailResult?.data?.id };
 
   } catch (error) {
-    console.error('❌ Failed to send quote email:', error);
+    console.error('Failed to send quote email:', error);
     throw error;
   }
 }
 
 
 
-// 📅 Send schedule confirmation to customer (NOW USES CUSTOM TEMPLATES WITH BRANDING!)
 export async function sendScheduleConfirmation({
   customerEmail,
   customerName,
@@ -620,7 +616,7 @@ export async function sendScheduleConfirmation({
   scheduledTime,
   serviceAddress,
   assignedTo,
-  contractorEmail, 
+  contractorEmail,
 }: {
   customerEmail: string;
   customerName: string;
@@ -634,25 +630,15 @@ export async function sendScheduleConfirmation({
   contractorEmail?: string;
 }) {
   try {
-    console.log('🔥 sendScheduleConfirmation called');
-
-    // Get company details for logo
     const company = await getCompanyDetails(companyId);
-
-    // Get company's custom email template
     const templates = await getCompanyEmailTemplates(companyId);
     const scheduleTemplate = templates.schedule;
-    
-    // Format the date nicely
+
     const dateObj = new Date(scheduledDate);
     const formattedDate = dateObj.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     });
 
-    // Format time if provided
     let formattedTime = scheduledTime || 'TBD';
     if (scheduledTime) {
       const [hours, minutes] = scheduledTime.split(':');
@@ -661,43 +647,51 @@ export async function sendScheduleConfirmation({
       const hour12 = hour % 12 || 12;
       formattedTime = `${hour12}:${minutes} ${ampm}`;
     }
-    
-    // Prepare variables
+
     const variables = {
       company_name: company.name || companyName,
-company_phone: company.phone || companyPhone || null,
+      company_phone: company.phone || companyPhone || null,
       customer_name: customerName,
       scheduled_date: formattedDate,
       scheduled_time: formattedTime,
-customer_address: serviceAddress || null,
+      customer_address: serviceAddress || null,
     };
-    
-    // Render the template
+
     const rendered = renderEmailTemplate(scheduleTemplate, variables);
-    
-    // Convert to branded HTML with logo
-  const emailHtml = textToHtml(
-  rendered.body,
-  company.name || companyName,
-  company.logo_url || undefined,
-  company.phone || companyPhone || undefined,
-  company.website || undefined,           // ← was undefined before
-  company.email_brand_color_1 || undefined,
-  company.email_brand_color_2 || undefined,
-);
+
+    const scheduleCard = buildEmailTable([
+      buildEmailRow('Date', formattedDate),
+      buildEmailRow('Time', formattedTime),
+      buildEmailRow('Address', serviceAddress || ''),
+      buildEmailRow('Assigned To', assignedTo || ''),
+    ]);
+
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">${rendered.body.replace(/\n/g, '<br>')}</p>
+        ${buildEmailSection('Appointment Details', scheduleCard)}
+      `,
+      phone: company.phone || companyPhone,
+      website: company.website,
+      preheader: `Your appointment is confirmed for ${formattedDate}.`,
+    });
 
     const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <hello@lead2project.com>`,
-  to: customerEmail,
-  replyTo: company.email || undefined,  // ← ADD THIS
-  subject: rendered.subject,
-  html: emailHtml,
-});
+      from: `${company.name || companyName} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject: rendered.subject,
+      html,
+    });
 
-    console.log('✅ Schedule confirmation email sent to customer:', customerEmail);
-    return { subject: rendered.subject, html: emailHtml, resendId: emailResult?.data?.id };
+    console.log('Schedule confirmation email sent to customer:', customerEmail);
+    return { subject: rendered.subject, html, resendId: emailResult?.data?.id };
   } catch (error) {
-    console.error('❌ Failed to send schedule confirmation:', error);
+    console.error('Failed to send schedule confirmation:', error);
     throw error;
   }
 }

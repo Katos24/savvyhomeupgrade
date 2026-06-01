@@ -120,7 +120,7 @@ const company = await sql`SELECT email, name, custom_questions FROM companies WH
   console.error('Failed to send contractor email alert:', err);
 });
 
-       if (notify_customer && email) sendLeadConfirmationEmail({
+      if (notify_customer && email) sendLeadConfirmationEmail({
   customerEmail: email,
   customerName: name,
   category: formatCategory(category),
@@ -128,10 +128,17 @@ const company = await sql`SELECT email, name, custom_questions FROM companies WH
   companyId,
   description: description || undefined,
   address: address_line_1 || undefined,
+  addressLine2: address_line_2 || undefined,
   city: city || undefined,
+  zipCode: zip_code || undefined,
+  preferredDate: preferred_date || undefined,
+  preferredTime: preferred_time || undefined,
+  customAnswers: Object.keys(customAnswers).length > 0 ? customAnswers : undefined,
+  customQuestions: company[0].custom_questions || undefined,
+  fileUrls: fileUrls.length > 0 ? fileUrls : undefined,
 }).catch(err => {
-          console.error('Failed to send customer confirmation:', err);
-        });
+  console.error('Failed to send customer confirmation:', err);
+});
       }
     }
 
