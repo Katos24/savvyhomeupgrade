@@ -161,7 +161,6 @@ function QuoteMockup() {
           </div>
         </div>
       </div>
-      {/* Modal */}
       <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-2xl">
         <div className="bg-white rounded-2xl p-5 w-[80%] max-w-[300px] shadow-2xl border border-slate-100">
           <div className="flex items-center gap-3 mb-4">
@@ -323,6 +322,7 @@ const STEPS = [
     id: 'overview',
     icon: Eye,
     title: 'Every Detail, Already There',
+    mobileLabel: 'Overview',
     accent: '#3b82f6',
     mockup: OverviewMockup,
   },
@@ -330,6 +330,7 @@ const STEPS = [
     id: 'quote',
     icon: FileText,
     title: 'Build and Send Quotes',
+    mobileLabel: 'Quote',
     accent: '#10b981',
     mockup: QuoteMockup,
   },
@@ -337,6 +338,7 @@ const STEPS = [
     id: 'schedule',
     icon: Calendar,
     title: 'Lock In the Schedule',
+    mobileLabel: 'Schedule',
     accent: '#3b82f6',
     mockup: ScheduleMockup,
   },
@@ -344,6 +346,7 @@ const STEPS = [
     id: 'payment',
     icon: DollarSign,
     title: 'Track Every Dollar',
+    mobileLabel: 'Payment',
     accent: '#10b981',
     mockup: PaymentMockup,
   },
@@ -352,12 +355,16 @@ const STEPS = [
 export default function WorkflowCardSection() {
   const [activeTab, setActiveTab] = useState(0);
 
+  // Auto-cycle only on desktop (lg+), stop on mobile once user taps
+  const [userTapped, setUserTapped] = useState(false);
+
   useEffect(() => {
+    if (userTapped) return;
     const interval = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % STEPS.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userTapped]);
 
   const currentStep = STEPS[activeTab];
   const MockupComponent = currentStep.mockup;
@@ -368,12 +375,85 @@ export default function WorkflowCardSection() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
 
-        <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-8 lg:gap-16 items-start">
+        {/* Section header — always visible */}
+        <div className="mb-8 lg:hidden">
+          <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3" style={{ fontFamily: font }}>
+            Inside the pipeline
+          </p>
+          <h2 className="text-4xl sm:text-5xl text-white font-black leading-[1.05] tracking-tight mb-4" style={{ fontFamily: font }}>
+            Run the entire job <br />
+            <span className="text-emerald-500">from one card.</span>
+          </h2>
+          <p className="text-white font-bold text-sm sm:text-base leading-relaxed" style={{ fontFamily: font }}>
+            Overview. Quote. Schedule. Payment. Every tab lives on the same lead card — no jumping between apps.
+          </p>
+        </div>
 
-          {/* LEFT: headline + subhead + accordion tight together */}
-          <div className="order-2 lg:order-1">
+        {/* ── MOBILE LAYOUT (hidden on lg+) ── */}
+        <div className="lg:hidden">
+          {/* 4 badge pills in a row */}
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {STEPS.map((step, idx) => {
+              const Icon = step.icon;
+              const isActive = activeTab === idx;
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => {
+                    setActiveTab(idx);
+                    setUserTapped(true);
+                  }}
+                  className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl border transition-all duration-200"
+                  style={{
+                    backgroundColor: isActive ? `${step.accent}18` : 'rgba(255,255,255,0.03)',
+                    borderColor: isActive ? `${step.accent}50` : 'rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors duration-200"
+                    style={{
+                      backgroundColor: isActive ? `${step.accent}25` : 'rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    <Icon size={15} style={{ color: isActive ? step.accent : '#64748b' }} />
+                  </div>
+                  <span
+                    className="text-[10px] font-black tracking-tight leading-none"
+                    style={{ color: isActive ? '#fff' : '#64748b', fontFamily: font }}
+                  >
+                    {step.mobileLabel}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="mobileDot"
+                      className="w-1 h-1 rounded-full"
+                      style={{ backgroundColor: step.accent }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Header — no bottom margin, flows directly into accordion */}
+          {/* Mockup revealed below badges */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <MockupComponent />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* ── DESKTOP LAYOUT (hidden on mobile) ── */}
+        <div className="hidden lg:grid grid-cols-[38%_62%] gap-8 lg:gap-16 items-start">
+
+          {/* LEFT: headline + accordion */}
+          <div>
             <div className="mb-8">
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-3" style={{ fontFamily: font }}>
                 Inside the pipeline
@@ -387,7 +467,6 @@ export default function WorkflowCardSection() {
               </p>
             </div>
 
-            {/* Accordion — immediately below subhead */}
             <div className="space-y-2">
               {STEPS.map((step, idx) => {
                 const Icon = step.icon;
@@ -395,7 +474,10 @@ export default function WorkflowCardSection() {
                 return (
                   <div
                     key={step.id}
-                    onClick={() => setActiveTab(idx)}
+                    onClick={() => {
+                      setActiveTab(idx);
+                      setUserTapped(true);
+                    }}
                     className={`relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
                       isSelected
                         ? 'bg-white/[0.04] border-white/[0.1]'
@@ -426,8 +508,6 @@ export default function WorkflowCardSection() {
                         >
                           {step.title}
                         </h3>
-                        <div className={`grid transition-all duration-300 ease-in-out ${isSelected ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -436,8 +516,8 @@ export default function WorkflowCardSection() {
             </div>
           </div>
 
-          {/* RIGHT: Big mockup, sticky on desktop */}
-          <div className="order-1 lg:order-2 lg:sticky lg:top-24 w-full relative">
+          {/* RIGHT: sticky mockup */}
+          <div className="lg:sticky lg:top-24 w-full relative">
             <motion.div
               animate={{ backgroundColor: currentStep.accent }}
               transition={{ duration: 0.8 }}
