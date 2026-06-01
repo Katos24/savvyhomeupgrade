@@ -125,7 +125,6 @@ export default function CustomizeFormSection() {
   return (
     <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-slate-950">
       
-      {/* Background Matrix Sync */}
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
@@ -134,7 +133,6 @@ export default function CustomizeFormSection() {
         }}
       />
       
-      {/* Subtle Color Aura Bleed */}
       <motion.div 
         animate={{ backgroundColor: `${current.color}10` }}
         transition={{ duration: 0.8 }}
@@ -145,9 +143,9 @@ export default function CustomizeFormSection() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
 
-          {/* LEFT — Typography & Matrix Links */}
-<div className="order-1 lg:order-last flex flex-col justify-center">
-              <motion.p
+          {/* LEFT — headline always first on mobile, full copy on desktop */}
+          <div className="order-1 lg:order-last flex flex-col justify-center">
+            <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -162,13 +160,13 @@ export default function CustomizeFormSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-4xl sm:text-5xl text-white font-black leading-[1.05] tracking-tight mb-5"
+              className="text-4xl sm:text-5xl text-white font-black leading-[1.05] tracking-tight mb-0 lg:mb-5"
               style={{ fontFamily: font }}
             >
-             Custom forms <br />
+              Custom forms <br />
               that win jobs.{' '}
-              <motion.span 
-                animate={{ color: current.color }} 
+              <motion.span
+                animate={{ color: current.color }}
                 transition={{ duration: 0.5 }}
                 className="block pt-1"
               >
@@ -176,24 +174,25 @@ export default function CustomizeFormSection() {
               </motion.span>
             </motion.h2>
 
-            <p
-              className="text-slate-400 font-bold text-base sm:text-lg mb-8 max-w-sm leading-relaxed"
-              style={{ fontFamily: font }}
-            >
-              Build a form that feels like your business and gives customers confidence that you know your stuff.
-            </p>
-
-            {/* Premium Pill Badges */}
-            <div className="flex flex-wrap gap-2.5 max-w-md">
-              <CalloutTag icon={Palette} text="Your colors & logo" />
-              <CalloutTag icon={ListChecks} text="Custom question logic" />
-              <CalloutTag icon={Camera} text="Photo & video attachment" />
-              <CalloutTag icon={MapPin} text="Clean address capture" />
+            {/* Subtext + badges — desktop only */}
+            <div className="hidden lg:block">
+              <p
+                className="text-slate-400 font-bold text-base sm:text-lg mb-8 mt-5 max-w-sm leading-relaxed"
+                style={{ fontFamily: font }}
+              >
+                Build a form that feels like your business and gives customers confidence that you know your stuff.
+              </p>
+              <div className="flex flex-wrap gap-2.5 max-w-md">
+                <CalloutTag icon={Palette} text="Your colors & logo" />
+                <CalloutTag icon={ListChecks} text="Custom question logic" />
+                <CalloutTag icon={Camera} text="Photo & video attachment" />
+                <CalloutTag icon={MapPin} text="Clean address capture" />
+              </div>
             </div>
           </div>
 
           {/* RIGHT — Interactive Card Preview */}
-<div className="order-2 lg:order-first flex flex-col items-center w-full">
+          <div className="order-2 lg:order-first flex flex-col items-center w-full">
 
             {/* SELECTION TABS */}
             <div className="flex gap-1.5 p-1 bg-white/[0.02] border border-white/[0.06] rounded-xl mb-8 flex-wrap justify-center backdrop-blur-sm">
@@ -216,10 +215,9 @@ export default function CustomizeFormSection() {
               ))}
             </div>
 
-            {/* LIVING APPLICATION WINDOW */}
+            {/* FORM PREVIEW */}
             <div className="w-full max-w-[370px] relative group">
               
-              {/* Soft Outer Halo Shadow */}
               <motion.div 
                 animate={{ backgroundColor: current.color }}
                 transition={{ duration: 0.6 }}
@@ -231,7 +229,6 @@ export default function CustomizeFormSection() {
                 transition={{ duration: 0.5 }}
                 className="relative bg-white rounded-2xl border-2 overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.4)] w-full"
               >
-                {/* Custom Branded Top Navigation Header */}
                 <div className="relative h-14 flex items-center px-4 gap-3 overflow-hidden">
                   <motion.div
                     className="absolute inset-0 z-0"
@@ -251,9 +248,7 @@ export default function CustomizeFormSection() {
                   </div>
                 </div>
 
-                {/* Simulated Lead User Inputs Fields */}
                 <div className="p-4 space-y-4">
-
                   <div className="grid grid-cols-3 gap-1.5">
                     <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1">
                       <User size={10} className="text-slate-400 flex-shrink-0" /> John Smith
@@ -270,7 +265,6 @@ export default function CustomizeFormSection() {
                     <MapPin size={10} className="text-slate-400 flex-shrink-0" /> 123 Main St, Anytown NY
                   </div>
 
-                  {/* Dynamic Custom Rules Display */}
                   <div className="min-h-[105px]">
                     <AnimatePresence mode="wait">
                       <motion.div
@@ -310,7 +304,6 @@ export default function CustomizeFormSection() {
                     </AnimatePresence>
                   </div>
 
-                  {/* Attachment Management Section */}
                   <div>
                     <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
                       Site Conditions / Photos
@@ -331,7 +324,6 @@ export default function CustomizeFormSection() {
                     )}
                   </div>
 
-                  {/* Submission Action Anchor */}
                   <motion.button
                     animate={{ backgroundColor: current.color }}
                     transition={{ duration: 0.5 }}
@@ -342,6 +334,23 @@ export default function CustomizeFormSection() {
                 </div>
               </motion.div>
             </div>
+
+            {/* Subtext + badges — mobile only, below form */}
+            <div className="block lg:hidden w-full mt-8">
+              <p
+                className="text-slate-400 font-bold text-base leading-relaxed mb-6"
+                style={{ fontFamily: font }}
+              >
+                Build a form that feels like your business and gives customers confidence that you know your stuff.
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                <CalloutTag icon={Palette} text="Your colors & logo" />
+                <CalloutTag icon={ListChecks} text="Custom question logic" />
+                <CalloutTag icon={Camera} text="Photo & video attachment" />
+                <CalloutTag icon={MapPin} text="Clean address capture" />
+              </div>
+            </div>
+
           </div>
 
         </div>
