@@ -9,7 +9,7 @@ const font = "'Nunito', sans-serif";
 
 export default function ArchitectHero() {
   return (
-    <section className="relative bg-slate-50 pt-20 lg:pt-24 pb-14 lg:pb-28 overflow-hidden">
+    <section className="relative bg-slate-50 pt-28 lg:pt-32 pb-14 lg:pb-28 overflow-hidden">
 
       {/* Subtle Background Grid */}
       <div
