@@ -42,16 +42,14 @@ export const BUSINESS_TYPES: BusinessType[] = [
   { value: 'hvac', label: 'HVAC', icon: Flame },
   { value: 'electrical', label: 'Electrical', icon: Zap },
   { value: 'plumbing', label: 'Plumbing', icon: Wrench },
-
-  // ✅ ADDED
   { value: 'roofing', label: 'Roofing', icon: Home },
-
   { value: 'construction', label: 'Construction', icon: Hammer },
   { value: 'home_services', label: 'Home Services', icon: Home },
   { value: 'cleaning_services', label: 'Cleaning Services', icon: Brush },
   { value: 'auto_services', label: 'Auto Services', icon: Car },
   { value: 'tech_services', label: 'Tech Services', icon: Laptop },
   { value: 'general', label: 'General Services', icon: FileText },
+  { value: 'other', label: 'Other', icon: PlusCircle },
 ];
 
 export const DEFAULT_STATUSES: StatusOption[] = [
@@ -79,16 +77,14 @@ export const ADDRESS_CONFIG: Record<string, { show: boolean; required: boolean }
   hvac: { show: true, required: true },
   electrical: { show: true, required: true },
   plumbing: { show: true, required: true },
-
-  // ✅ ADDED
   roofing: { show: true, required: true },
-
   construction: { show: true, required: true },
   home_services: { show: true, required: true },
   cleaning_services: { show: true, required: true },
   auto_services: { show: true, required: false },
   tech_services: { show: false, required: false },
   general: { show: false, required: false },
+  other: { show: false, required: false },
 };
 
 /**
@@ -116,8 +112,6 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'pipe_repair', label: 'Pipe Repair' },
     { value: 'other', label: 'Other' },
   ],
-
-  // ✅ ADDED ROOFING
   roofing: [
     { value: 'roof_repair', label: 'Roof Repair' },
     { value: 'roof_replacement', label: 'Roof Replacement' },
@@ -126,7 +120,6 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'gutter_work', label: 'Gutter Work' },
     { value: 'other', label: 'Other' },
   ],
-
   construction: [
     { value: 'renovation', label: 'Renovation' },
     { value: 'new_build', label: 'New Construction' },
@@ -163,6 +156,9 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'repair', label: 'General Repair' },
     { value: 'other', label: 'Other' },
   ],
+  other: [
+    { value: 'other', label: 'Other' },
+  ],
 };
 
 export const DESCRIPTION_PLACEHOLDERS: Record<string, string> = {
@@ -176,4 +172,5 @@ export const DESCRIPTION_PLACEHOLDERS: Record<string, string> = {
   auto_services: "e.g. 2018 Honda Accord brake issue...",
   tech_services: "e.g. Laptop won't turn on...",
   general: "e.g. Describe what you need done...",
+  other: "e.g. Describe what you need done...",
 };
