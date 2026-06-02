@@ -10,7 +10,6 @@ const font = "'Nunito', sans-serif";
 export default function ArchitectHero() {
   return (
     <section className="relative bg-slate-50 pt-28 lg:pt-32 pb-14 lg:pb-28 overflow-hidden">
-
       {/* Subtle Background Grid */}
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
@@ -22,20 +21,19 @@ export default function ArchitectHero() {
 
       <div className="relative z-10 max-w-[1440px] mx-auto px-6 lg:pr-0 lg:pl-12">
         <div className="grid grid-cols-1 lg:grid-cols-[42%_58%] gap-12 items-center">
-
+          
           {/* LEFT CONTENT */}
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
-
             {/* HEADLINE */}
             <h1
               className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
               style={{ fontFamily: font }}
             >
-              They found you.<br />
-              <span className="text-emerald-600">Now don't lose them.</span>
+              Your Google profile<br />
+              <span className="text-emerald-600">is losing leads.</span>
             </h1>
 
-            {/* MOBILE IMAGE — right after headline */}
+            {/* MOBILE IMAGE */}
             <div className="lg:hidden relative w-full">
               <div className="relative rounded-2xl overflow-hidden bg-slate-50/50">
                 <Image
@@ -54,7 +52,7 @@ export default function ArchitectHero() {
 
             {/* SUBHEAD */}
             <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Look more professional with a branded booking page. Capture more leads. Close more jobs.
+              Add a "Book Now" link to your Google Business profile in 2 minutes. Stop losing jobs to missed calls and disorganized texts.
             </p>
 
             {/* CTAs */}
@@ -66,7 +64,7 @@ export default function ArchitectHero() {
                     whileTap={{ scale: 0.97 }}
                     className="flex items-center justify-center gap-3 bg-slate-950 hover:bg-slate-800 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-wide shadow-xl transition-all cursor-pointer text-center"
                   >
-                    Start Free
+                    Get Booking Link Now
                     <ArrowRight size={20} strokeWidth={3} />
                   </motion.div>
                 </Link>
@@ -111,7 +109,7 @@ export default function ArchitectHero() {
               >
                 <Image
                   src="/images/hero-image-laptop.webp"
-                  alt="Lead2Project Dashboard — every job on one board"
+                  alt="Lead2Project Dashboard"
                   width={1800}
                   height={1300}
                   priority
@@ -122,7 +120,6 @@ export default function ArchitectHero() {
               </motion.div>
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
