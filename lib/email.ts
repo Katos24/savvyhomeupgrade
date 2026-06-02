@@ -960,7 +960,7 @@ export async function sendWelcomeEmail({
     basic: {
       label: 'Basic',
       price: '$49.99/mo',
-      features: ['Everything in Starter', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
+      features: ['Everything in Free', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
       color: '#2563eb', // Deeper Blue
     },
     pro: {

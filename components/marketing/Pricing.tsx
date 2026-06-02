@@ -8,7 +8,7 @@ const font = "'Nunito', sans-serif";
 
 const plans = [
   {
-    name: 'Starter',
+    name: 'Free',
     price: 0,
     desc: 'Verify the platform tools before committing. No card required.',
     highlight: false,
@@ -31,7 +31,7 @@ const plans = [
     href: '/signup',
     borderStyle: '',
     features: [
-      'Everything in Starter',
+      'Everything in Free',
       'Job Scheduling',
       'Quote Builder',
       'CSV Data Export',
