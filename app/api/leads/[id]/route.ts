@@ -14,10 +14,8 @@ export async function GET(
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ success: false }, { status: 401 });
-
     jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
 
-  // REPLACE WITH:
     const leads = await sql`
       SELECT
         l.*,
@@ -32,9 +30,9 @@ export async function GET(
         p.quote_data,
         p.ai_brief,
         p.quote_total,
-        p.quote_sent_at,
-        p.quote_accepted_at,
-        p.quote_declined_at,
+        p.quote_sent_at as project_quote_sent_at,
+        p.quote_accepted_at as project_quote_accepted_at,
+        p.quote_declined_at as project_quote_declined_at,
         p.schedule_emails,
         p.payment_status,
         p.quote_emails,
@@ -64,7 +62,6 @@ export async function GET(
     `;
 
     if (!leads.length) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
-
     return NextResponse.json({ success: true, lead: leads[0] });
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to fetch lead' }, { status: 500 });

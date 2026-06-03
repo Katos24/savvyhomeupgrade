@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, X, Calendar, Edit2, MoreVertical,
   Trash2, ChevronDown, FileText, CheckSquare, Bell, CreditCard, Image,
-  FileIcon, Clock, MapPin, User, Hash, ArrowLeft, History,
+  FileIcon, Clock, MapPin, User, Hash, ArrowLeft, History, CheckCircle2, Send,
   UserCircle, MessageCircle, Lock, NotebookPen, Sparkles, Activity, AlertTriangle, LayoutGrid,
 } from 'lucide-react';
 import ProjectSection from '@/components/dashboard/ProjectSection';
@@ -748,6 +748,27 @@ className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border 
                   {lead.assigned_to}
                 </div>
               )}
+
+              {!isFreePlan && (lead.project_quote_accepted_at || lead.quote_accepted_at) && (
+  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">
+    <CheckCircle2 className="w-3 h-3" />
+    Quote Accepted
+  </div>
+)}
+
+{!isFreePlan && (lead.project_quote_declined_at || lead.quote_declined_at) && (
+  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold bg-red-500/20 border border-red-500/30 text-red-300">
+    <X className="w-3 h-3" />
+    Quote Declined
+  </div>
+)}
+
+{!isFreePlan && (lead.project_quote_sent_at || lead.quote_sent_at) && !(lead.project_quote_accepted_at || lead.quote_accepted_at) && !(lead.project_quote_declined_at || lead.quote_declined_at) && (
+  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold bg-blue-500/20 border border-blue-500/30 text-blue-300">
+    <Send className="w-3 h-3" />
+    Quote Sent
+  </div>
+)}
 
               {!isFreePlan && lead.quote_total && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-none text-xs font-semibold ${

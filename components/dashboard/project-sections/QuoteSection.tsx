@@ -233,15 +233,15 @@ const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
             </div>
             <div>
               <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-widest leading-none">Quote Sheet</h3>
-             {lead?.quote_accepted_at ? (
+            {(lead?.project_quote_accepted_at || lead?.quote_accepted_at) ? (
   <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-tight mt-0.5">
-    <CheckCircle2 className="w-2.5 h-2.5" /> Accepted
+    <CheckCircle2 className="w-2.5 h-2.5" /> Accepted {new Date(lead.project_quote_accepted_at || lead.quote_accepted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
   </span>
-) : lead?.quote_declined_at ? (
+) : (lead?.project_quote_declined_at || lead?.quote_declined_at) ? (
   <span className="text-[9px] font-black text-red-500 uppercase tracking-tight mt-0.5">✗ Declined</span>
-) : lead?.quote_sent_at ? (
+) : (lead?.project_quote_sent_at || lead?.quote_sent_at) ? (
   <span className="flex items-center gap-1 text-[9px] font-black text-blue-500 uppercase tracking-tight mt-0.5">
-    <Send className="w-2.5 h-2.5" /> Sent {new Date(lead.quote_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+    <Send className="w-2.5 h-2.5" /> Sent {new Date(lead.project_quote_sent_at || lead.quote_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
   </span>
 ) : (
   <p className="text-[9px] font-bold text-slate-400 mt-0.5">Line item breakdown</p>
