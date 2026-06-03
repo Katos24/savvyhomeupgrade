@@ -181,8 +181,7 @@ export default function OperationsShowcase() {
       accentBorder: 'border-sky-500/20 hover:border-sky-500/40',
       accentGlow: 'bg-sky-500',
       title: 'Your Data. Always Yours.',
-      desc: 'CSV export, bulk edits, full data portability. No lock-in.',
-      preview: ExportPreview,
+      desc: 'Export directly to QuickBooks or download a full CSV. Bulk edits, full data portability. No lock-in.',      preview: ExportPreview,
     },
   ];
 

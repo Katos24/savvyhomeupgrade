@@ -14,6 +14,7 @@ export async function GET(
     const timeFilter = searchParams.get('time') || 'all';
     const filterCategory = searchParams.get('category') || 'all';
     const searchQuery = searchParams.get('search') || '';
+    const exportFormat = searchParams.get('format') || 'all';
     
     const sql = neon(process.env.DATABASE_URL!);
 
@@ -57,6 +58,7 @@ export async function GET(
         l.created_at,
         l.project_id,
         l.custom_answers,
+        p.quote_sent_at,
         p.scheduled_date,
         p.scheduled_time,
         p.assigned_to,
@@ -65,10 +67,11 @@ export async function GET(
         p.payment_status,
         p.payment_amount,
         p.payment_due_date,
+        p.payment_date,
         l.lead_source,
-l.preferred_date,
-l.preferred_time,
-CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
+        l.preferred_date,
+        l.preferred_time,
+        CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = $1
@@ -137,78 +140,141 @@ CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
       return `"${str.replace(/"/g, '""')}"`;
     };
 
-    // Build headers — static columns first, then one per custom question
-    const staticHeaders = [
-      'Type',
-      'Name',
-      'Email',
-      'Phone',
-      'Address',
-      'City',
-      'Zip Code',
-      'Category',
-      'Status',
-      'Description',
-      'Scheduled Date',
-      'Scheduled Time',
-      'Assigned To',
-      'Estimated Hours',
-      'Quote Total',
-      'Payment Status',
-      'Payment Amount',
-      'Payment Due Date',
-      'Created Date',
-      'Lead Source',
-      'Preferred Date',
-'Preferred Time',
-    ];
+    let csvRows: string[] = [];
 
-    const customHeaders = customQuestions.map(q => q.label);
-    const headers = [...staticHeaders, ...customHeaders];
-    const csvRows = [headers.join(',')];
-
-    for (const lead of leads) {
-      const answers = lead.custom_answers || {};
-
-      const staticValues = [
-        escape(lead.type),
-        escape(lead.name),
-        escape(lead.email),
-        escape(lead.phone),
-        escape(lead.address_line_1 || ''),
-        escape(lead.city || ''),
-        escape(lead.zip_code || ''),
-        escape(lead.category),
-        escape(lead.status || 'new'),
-        escape(lead.description || ''),
-        escape(lead.scheduled_date ? new Date(lead.scheduled_date).toLocaleDateString() : ''),
-        escape(lead.scheduled_time || ''),
-        escape(lead.assigned_to || ''),
-        escape(lead.estimated_hours || ''),
-        escape(lead.quote_total ? `$${parseFloat(lead.quote_total).toFixed(2)}` : ''),
-        escape(lead.payment_status || ''),
-        escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
-        escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
-
-        escape(new Date(lead.created_at).toLocaleDateString()),
-        escape(lead.lead_source || ''),
-        escape(lead.preferred_date ? new Date(lead.preferred_date).toLocaleDateString() : ''),
-escape(lead.preferred_time || ''),
+    if (exportFormat === 'quickbooks') {
+      // QuickBooks format — only the fields QuickBooks needs with their expected column names
+      const qbHeaders = [
+        'Customer',
+        'First Name',
+        'Last Name',
+        'Email',
+        'Phone',
+        'Invoice Date',
+        'Due Date',
+        'Amount',
+        'Payment Status',
+        'Payment Date',
+        'Payment Method',
+        'Description',
+        'Service Address',
+        'City',
+        'Zip',
       ];
 
-      // Format each custom answer
-      const customValues = customQuestions.map(q => {
-        const raw = answers[q.id];
-        if (raw === null || raw === undefined || raw === '') return escape('');
-        if (q.type === 'checkbox') return escape(raw === true || raw === 'true' ? 'Yes' : 'No');
-        return escape(raw);
-      });
+      csvRows = [qbHeaders.join(',')];
 
-      csvRows.push([...staticValues, ...customValues].join(','));
+      for (const lead of leads) {
+        const nameParts = (lead.name || '').trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+        const qbValues = [
+          escape(lead.name || ''),
+          escape(firstName),
+          escape(lastName),
+          escape(lead.email || ''),
+          escape(lead.phone || ''),
+          escape(lead.quote_sent_at ? new Date(lead.quote_sent_at).toLocaleDateString() : ''),
+          escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
+          escape(lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : ''),
+          escape(lead.payment_status || ''),
+          escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
+          escape(lead.payment_method || ''),
+          escape(lead.category || ''),
+          escape(lead.address_line_1 || ''),
+          escape(lead.city || ''),
+          escape(lead.zip_code || ''),
+        ];
+
+        csvRows.push(qbValues.join(','));
+      }
+
+    } else {
+      // Full export — all fields
+      const staticHeaders = [
+        'Type',
+        'Full Name',
+        'First Name',
+        'Last Name',
+        'Email',
+        'Phone',
+        'Address',
+        'City',
+        'Zip Code',
+        'Category',
+        'Status',
+        'Description',
+        'Invoice Date',
+        'Scheduled Date',
+        'Scheduled Time',
+        'Assigned To',
+        'Estimated Hours',
+        'Quote Total',
+        'Payment Status',
+        'Payment Amount',
+        'Payment Due Date',
+        'Payment Received Date',
+        'Created Date',
+        'Lead Source',
+        'Preferred Date',
+        'Preferred Time',
+      ];
+
+      const customHeaders = customQuestions.map((q: any) => q.label);
+      const headers = [...staticHeaders, ...customHeaders];
+      csvRows = [headers.join(',')];
+
+      for (const lead of leads) {
+        const nameParts = (lead.name || '').trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+        const answers = lead.custom_answers || {};
+
+        const staticValues = [
+          escape(lead.type),
+          escape(lead.name || ''),
+          escape(firstName),
+          escape(lastName),
+          escape(lead.email),
+          escape(lead.phone),
+          escape(lead.address_line_1 || ''),
+          escape(lead.city || ''),
+          escape(lead.zip_code || ''),
+          escape(lead.category),
+          escape(lead.status || 'new'),
+          escape(lead.description || ''),
+          escape(lead.quote_sent_at ? new Date(lead.quote_sent_at).toLocaleDateString() : ''),
+          escape(lead.scheduled_date ? new Date(lead.scheduled_date).toLocaleDateString() : ''),
+          escape(lead.scheduled_time || ''),
+          escape(lead.assigned_to || ''),
+          escape(lead.estimated_hours || ''),
+          escape(lead.quote_total ? `$${parseFloat(lead.quote_total).toFixed(2)}` : ''),
+          escape(lead.payment_status || ''),
+          escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
+          escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
+          escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
+          escape(new Date(lead.created_at).toLocaleDateString()),
+          escape(lead.lead_source || ''),
+          escape(lead.preferred_date ? new Date(lead.preferred_date).toLocaleDateString() : ''),
+          escape(lead.preferred_time || ''),
+        ];
+
+        const customValues = customQuestions.map((q: any) => {
+          const raw = answers[q.id];
+          if (raw === null || raw === undefined || raw === '') return escape('');
+          if (q.type === 'checkbox') return escape(raw === true || raw === 'true' ? 'Yes' : 'No');
+          return escape(raw);
+        });
+
+        csvRows.push([...staticValues, ...customValues].join(','));
+      }
     }
 
     const csv = csvRows.join('\n');
-    const filename = `${slug}_${new Date().toISOString().split('T')[0]}.csv`;
+    const formatSuffix = exportFormat === 'quickbooks' ? '_quickbooks' : '';
+    const filename = `${slug}${formatSuffix}_${new Date().toISOString().split('T')[0]}.csv`;
 
     return new NextResponse(csv, {
       headers: {
