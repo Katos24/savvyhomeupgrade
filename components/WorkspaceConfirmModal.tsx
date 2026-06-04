@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ArrowRight, Globe, Info, Lock, Pencil, X } from 'lucide-react';
 
 interface WorkspaceConfirmModalProps {
   isOpen: boolean;
@@ -16,7 +15,6 @@ export default function WorkspaceConfirmModal({
   onConfirm,
   onEdit,
 }: WorkspaceConfirmModalProps) {
-  
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -28,116 +26,79 @@ export default function WorkspaceConfirmModal({
 
   if (!isOpen || !slug) return null;
 
-  const getSlugFontSize = (text: string) => {
-    const len = text.length;
-    if (len > 20) return 'text-xl';
-    if (len > 15) return 'text-2xl';
-    if (len > 12) return 'text-3xl';
-    return 'text-4xl';
-  };
+  // Replace hyphens with spaces for display, then capitalize the first letter
+  const formattedDisplayName = slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
-      <div
-        onClick={onEdit}
-        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
-      />
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4">
+      <div onClick={onEdit} className="absolute inset-0 bg-black/60" />
 
-      <div className="relative w-full max-w-md bg-white shadow-2xl 
-                      rounded-t-[2rem] sm:rounded-2xl 
-                      animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-4 duration-300 ease-out
-                      flex flex-col max-h-[95vh]">
+      <div className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
         
-        <div className="flex justify-center pt-3 sm:hidden">
-          <div className="h-1.5 w-12 rounded-full bg-gray-300" />
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-950">Confirm your details</h2>
+          <button onClick={onEdit} className="text-sm font-semibold text-gray-600 hover:text-black">
+            Close
+          </button>
         </div>
 
-        <button 
-          onClick={onEdit}
-          className="hidden sm:flex absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="overflow-y-auto px-6 pt-6 sm:pt-8 pb-4">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">
-              Confirm your link
-            </h2>
-            <p className="text-sm text-gray-600 font-medium">
-              This is your permanent address. <br className="hidden sm:block" />
-              <span className="text-red-600 font-bold italic underline decoration-red-200 underline-offset-2">
-                It cannot be changed later.
-              </span>
+        <div className="p-5 space-y-6">
+          {/* Workspace Name Display */}
+          <div>
+            <p className="text-[11px] font-extrabold text-gray-900 uppercase tracking-widest mb-2">
+              Workspace name
+            </p>
+            <div className="text-sm font-bold text-gray-800 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              {formattedDisplayName}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              Note: Hyphens are automatically added to your URL for multi-word names.
             </p>
           </div>
 
-          <div className="mb-6">
-            <div className="rounded-2xl bg-gray-950 p-6 text-center ring-4 ring-gray-100 flex flex-col items-center justify-center min-h-[120px]">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-3">
-                Unique Workspace Name
-              </p>
-              <div className={`font-mono font-black text-white tracking-tight leading-tight transition-all duration-200 break-all sm:whitespace-nowrap ${getSlugFontSize(slug)}`}>
-                {slug}
-              </div>
-            </div>
-            
-            <button
-              onClick={onEdit}
-              className="mt-4 mx-auto flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-full transition-all active:scale-95"
-            >
-              <Pencil className="w-4 h-4" /> 
-              Change Name
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">
-              Live Preview
-            </label>
-            
-            <div className="flex items-center gap-4 rounded-xl bg-emerald-50 border-2 border-emerald-100 p-4">
-              <div className="bg-emerald-500 p-2 rounded-lg shrink-0">
-                <Globe className="w-5 h-5 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-emerald-700 uppercase">Client Form</p>
-                <p className="font-mono text-xs sm:text-sm font-semibold text-emerald-950 break-words leading-relaxed">
-                  lead2project.com/<span className="font-bold underline decoration-emerald-300">{slug}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 rounded-xl bg-blue-50 border-2 border-blue-100 p-4">
-              <div className="bg-blue-500 p-2 rounded-lg shrink-0">
-                <Lock className="w-5 h-5 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-blue-700 uppercase">Private Dashboard</p>
-                <p className="font-mono text-xs sm:text-sm font-semibold text-blue-950 break-words leading-relaxed">
-                  lead2project.com/{slug}/<span className="font-bold">dashboard</span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex items-start gap-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
-            <Info className="w-5 h-5 text-gray-400 shrink-0" />
-            <p className="text-xs font-medium text-gray-500 leading-relaxed">
-              <span className="text-gray-900 font-bold">Pro-tip:</span> Spaces are turned into dashes. &quot;Blue Line&quot; → &quot;blue-line&quot;
+          {/* Customer Link */}
+          <div>
+            <p className="text-[11px] font-extrabold text-gray-900 uppercase tracking-widest mb-2">
+              Customer facing link
             </p>
+            <div className="text-sm font-bold text-gray-900 break-all bg-blue-50 p-4 rounded-lg border border-blue-200">
+              lead2project.com/<span className="text-blue-700 underline decoration-blue-400 decoration-2 underline-offset-4">{slug}</span>
+            </div>
           </div>
+
+          {/* Dashboard Link */}
+          <div>
+            <p className="text-[11px] font-extrabold text-gray-900 uppercase tracking-widest mb-2">
+              Private dashboard link
+            </p>
+            <div className="text-sm font-bold text-gray-900 break-all bg-gray-100 p-4 rounded-lg border border-gray-200">
+              lead2project.com/<span className="underline decoration-gray-400 decoration-2 underline-offset-4">{slug}</span>/dashboard
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-[13px] text-gray-900">
+            <p className="font-bold mb-1">Permanent URL</p>
+            This address cannot be changed once the workspace is created.
+          </div>
+
+          <button
+            onClick={onEdit}
+            className="w-full text-sm font-bold text-gray-700 hover:text-black py-3 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors"
+          >
+            Edit workspace details
+          </button>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50/50 sm:rounded-b-2xl">
+        <div className="p-5 pt-0">
           <button
             onClick={onConfirm}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-base shadow-lg shadow-blue-200 transition-all active:scale-[0.97] touch-manipulation"
+            className="w-full py-4 bg-gray-950 text-white font-bold text-sm rounded-lg hover:bg-gray-800 transition-colors"
           >
-            Confirm & Create Workspace
-            <ArrowRight className="w-5 h-5" />
+            Confirm and create workspace
           </button>
-          <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
         </div>
       </div>
     </div>
