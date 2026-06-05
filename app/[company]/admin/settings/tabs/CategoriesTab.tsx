@@ -347,44 +347,41 @@ useEffect(() => {
         })}
       </div>
 
-      {/* ── SMART MOBILE SAVE BAR ────────────────────────────────────────── */}
-      <AnimatePresence>
-        {isDirty && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 z-[110] bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 pt-4 pb-safe sm:pb-6"
-          >
-            <div className="max-w-4xl mx-auto flex flex-col gap-3">
-              {/* Optional "Unsaved Changes" text for clarity */}
-              <div className="flex items-center justify-center gap-2 text-amber-600">
-                 <AlertCircle className="w-3 h-3 animate-pulse" />
-                 <span className="text-[10px] font-black uppercase tracking-tighter">You have unsaved changes</span>
-              </div>
-              
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-lg shadow-blue-200"
-              >
-                {saving ? (
-                   <div className="flex items-center gap-2">
-                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                     <span>Syncing...</span>
-                   </div>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Save All Categories
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
+     {/* ── SMART MOBILE SAVE BAR ────────────────────────────────────────── */}
+<AnimatePresence>
+  {isDirty && (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      // Responsive classes:
+      // Bottom 4 for mobile (more space), Bottom 6 for desktop
+      // W-full with padding for mobile, w-fit for desktop
+      className="fixed bottom-4 md:bottom-6 left-0 right-0 md:left-1/2 md:-translate-x-1/2 px-4 md:px-0 z-[110] flex justify-center"
+    >
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        // Py-4 for mobile (easier tap), Py-3 for desktop
+        // Min-w ensures it doesn't look tiny on mobile
+        className="flex items-center justify-center gap-2 px-6 py-4 md:py-3 min-w-[200px] md:min-w-0 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base md:text-sm rounded-full shadow-xl shadow-blue-500/20 transition active:scale-95 whitespace-nowrap"
+      >
+        {saving ? (
+          <>
+            <div className="w-4 h-4 md:w-3.5 md:h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Saving...
+          </>
+        ) : (
+          <>
+            <Save className="w-4 h-4 md:w-3.5 md:h-3.5" />
+            Save Changes
+          </>
         )}
-      </AnimatePresence>
+      </button>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* ── SUCCESS TOAST (Floats above everything) ─────────────────────── */}
       <AnimatePresence>

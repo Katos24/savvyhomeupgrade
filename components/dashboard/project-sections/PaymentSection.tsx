@@ -9,18 +9,20 @@ import {
   ChevronDown, ChevronUp, DollarSign, Send, X, Mail, Eye, BellRing, Loader2
 } from 'lucide-react';
 import StickyActionBar from '@/components/dashboard/StickyActionBar';
+import InvoiceSection from './InvoiceSection';
+
 
 
 type PaymentUpdateProps = {
   lead: any;
+  company: any;
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
 };
 
-export default function PaymentUpdate({ lead, currentUser, onRefresh, hasProject, companySlug }: PaymentUpdateProps) {
-  const [saving, setSaving] = useState(false);
+export default function PaymentUpdate({ lead, company, currentUser, onRefresh, hasProject, companySlug }: PaymentUpdateProps) {  const [saving, setSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -155,11 +157,20 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
     }
   };
 
-  return (
+return (
     <>
+      <InvoiceSection
+        lead={lead}
+        company={company}
+        currentUser={currentUser}
+        onRefresh={onRefresh}
+        hasProject={hasProject}
+      />
+
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
+          
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[10000] bg-black/70 flex items-end sm:items-center justify-center"
@@ -339,22 +350,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
     />
   </div>
 
-  <div className="min-w-0 overflow-hidden">
-    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 px-0.5">
-      Due Date
-    </label>
-    <input
-      type="date"
-      value={paymentDueDate}
-      onChange={(e) => setPaymentDueDate(e.target.value)}
-      className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none transition-colors focus:border-blue-300 focus:bg-white"
-      style={{
-        maxWidth: '100%',
-        WebkitAppearance: 'none',
-        fontSize: '13px',
-      }}
-    />
-  </div>
+
    </div> 
 </div>
 

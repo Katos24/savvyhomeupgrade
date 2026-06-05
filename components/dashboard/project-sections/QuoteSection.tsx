@@ -645,7 +645,7 @@ className={`border-b transition-colors group ${
 
 
 {/* Replace the entire total bar + save section with: */}
-<div className="sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
+<div className="sticky bottom-0 z-10 bg-slate-900/80 backdrop-blur-md border-t border-slate-800/60 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
   <div className="px-4 py-2 flex items-center justify-between gap-3">
     <div className="flex items-center gap-2 min-w-0">
       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total</p>

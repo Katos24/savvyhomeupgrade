@@ -31,8 +31,8 @@ export default function ArchitectHero() {
               className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
               style={{ fontFamily: font }}
             >
-              Never let another<br />
-              <span className="text-emerald-600">job go unpaid.</span>
+              The job management tool<br />
+              <span className="text-emerald-600">built for the field.</span>
             </h1>
 
             {/* MOBILE IMAGE */}
@@ -52,9 +52,9 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              Professional booking, project tracking, and one-click payment reminders. Everything you need to stop chasing customers and start closing jobs.
-            </p>
+           <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+  Lead capture, job tracking, quotes, and invoices — without the complexity or cost of Housecall Pro. Set up in 2 minutes.
+</p>
 
             {/* CTAs */}
             <div className="flex flex-col space-y-6 pt-2">

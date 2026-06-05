@@ -46,6 +46,8 @@ export const FEATURE_PLAN_MAP = {
   customize_form:           'basic',   // branding, field toggles
   customer_video_upload:    'basic',   // customer attaches photos/video on form
   custom_form_questions:    'basic',   // add your own questions to form
+  send_invoice_email: 'pro',
+
 
   // ── Lead board ─────────────────────────────────────────────
   lead_board:               'free',    // kanban cards view only
@@ -160,11 +162,11 @@ export const PLAN_CONFIG = {
       'One-click emails (quote, schedule, reminder)',
       'Outbox — full sent email history',
       'Custom email templates',
+       'Daily digest email',
       'AI brief on every lead',
       'AI quote generator',
       'AI assistant chat',
       'AI photo & text analysis',
-      'Daily digest email',
     ],
   },
 } as const;
@@ -310,6 +312,10 @@ outbox: {
     title: 'AI quote generator',
     description: 'Let AI draft a quote based on job details and your templates.',
   },
+  send_invoice_email: {
+  title: 'Send invoices directly to customers',
+  description: 'Email a professional invoice to your customer in one click. Available on Pro.',
+},
   ai_chat: {
     title: 'AI assistant',
     description: 'Ask questions about your leads, get suggestions, draft follow-up messages.',

@@ -16,11 +16,13 @@ type ProjectSectionProps = {
   statusOptions: any[];
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
   companySlug: string;
+  company: any;
   defaultTab?: string;
 };
 
 export default function ProjectSection({
   lead,
+  company,
   currentUser,
   onRefresh,
   statusOptions,
@@ -241,13 +243,14 @@ export default function ProjectSection({
   />
 )}
           {financialsTab === 'payment' && (
-  <PaymentSection 
-    lead={lead} 
-    currentUser={currentUser} 
-    onRefresh={onRefresh} 
-    hasProject={hasProject}
-    companySlug={companySlug}  // 👈 add this
-  />
+  <PaymentSection
+  lead={lead}
+  company={company}
+  currentUser={currentUser}
+  onRefresh={onRefresh}
+  hasProject={hasProject}
+  companySlug={companySlug}
+/>
 )}
           {financialsTab === 'media' && (
             <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />

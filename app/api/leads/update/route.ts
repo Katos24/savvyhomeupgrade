@@ -1,8 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
-import { sendQuoteToCustomer, sendScheduleConfirmation } from '@/lib/email';
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
+import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       follow_up_notes,
       internal_notes,
       payment_due_date, 
+      due_date, 
     } = body;
 
     const sql = neon(process.env.DATABASE_URL!);
@@ -871,7 +872,156 @@ else if (action === 'update_lead_step2') {
   return NextResponse.json({ success: true });
 }
 
+// ==================== SAVE INVOICE ====================
+else if (action === 'save_invoice') {
+  const { invoice_number, invoice_data, invoice_status } = body;
 
+  const projects = await sql`
+    SELECT id FROM projects WHERE lead_id = ${id}
+  `;
+
+  if (projects.length === 0) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  const projectId = projects[0].id;
+
+  await sql`
+  UPDATE projects
+  SET
+    invoice_number = ${invoice_number},
+    invoice_data = ${JSON.stringify(invoice_data)},
+    invoice_status = ${invoice_status || 'draft'},
+    payment_due_date = ${due_date || null},
+    invoice_sent_at = ${invoice_status === 'sent' ? new Date().toISOString() : null},
+    updated_at = NOW()
+  WHERE id = ${projectId}
+`;
+
+  const invoiceEntry = {
+    type: 'invoice_saved',
+    text: `Invoice ${invoice_number} saved`,
+    user_name: user_name,
+    user_email: user_email,
+    timestamp: new Date().toISOString()
+  };
+
+  await addActivityToProject(id, invoiceEntry);
+
+  return NextResponse.json({ success: true });
+}
+
+
+
+// ==================== SEND INVOICE TO CUSTOMER 📧 ====================
+else if (action === 'send_invoice_to_customer') {
+  const leadCheck = await sql`
+    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
+           c.name as company_name, c.phone as company_phone,
+           c.id as company_id, c.plan_tier
+    FROM leads l
+    LEFT JOIN projects p ON l.project_id = p.id
+    LEFT JOIN companies c ON l.company_id = c.id
+    WHERE l.id = ${id}
+  `;
+
+  if (!leadCheck[0]) {
+    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+  }
+
+  const lead = leadCheck[0];
+
+  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_invoice_email')) {
+    return NextResponse.json({
+      success: false,
+      error: 'Sending invoices is available on the Pro plan',
+      upgrade_required: true,
+    }, { status: 403 });
+  }
+
+  if (!lead.project_id) {
+    return NextResponse.json({ success: false, error: 'No project exists.' }, { status: 400 });
+  }
+
+  const invoiceItems = (() => {
+    try {
+      const raw = body.invoice_data || lead.invoice_data || lead.quote_data;
+      if (!raw) return [];
+      return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch { return []; }
+  })();
+
+  if (invoiceItems.length === 0) {
+    return NextResponse.json({ success: false, error: 'No line items found.' }, { status: 400 });
+  }
+
+  const invoiceTotal = invoiceItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const invoiceNumber = body.invoice_number || lead.invoice_number || 'INV-001';
+
+  try {
+    const emailResult = await sendInvoiceToCustomer({
+      customerEmail: lead.email,
+      customerName: lead.name,
+      companyName: lead.company_name || '',
+      companyPhone: lead.company_phone || undefined,
+      companyId: lead.company_id,
+      invoiceNumber,
+      invoiceTotal,
+      invoiceItems,
+      dueDate: body.due_date || undefined,
+      notes: body.notes || undefined,
+      contractorEmail: user_email,
+    });
+
+    // Log to outbox
+    try {
+      await sql`
+        INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, subject, html_body, status, sent_by_email, sent_by_name, metadata)
+        VALUES (
+          ${lead.company_id}, ${lead.project_id}, ${id}, 'invoice',
+          ${lead.email}, ${lead.name},
+          ${emailResult?.subject || 'Invoice'}, ${emailResult?.html || ''},
+          'sent', ${user_email}, ${user_name},
+          ${JSON.stringify({ invoice_number: invoiceNumber, invoice_total: invoiceTotal, resend_id: emailResult?.resendId })}::jsonb
+        )
+      `;
+    } catch (outboxErr) {
+      console.error('⚠️ Failed to log to outbox:', outboxErr);
+    }
+
+    await sql`
+      UPDATE projects
+      SET invoice_status = 'sent',
+          invoice_sent_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ${lead.project_id}
+    `;
+
+    await addActivityToProject(id, {
+      type: 'invoice_sent',
+      text: `Invoice ${invoiceNumber} emailed to customer`,
+      user_name,
+      user_email,
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ success: true, message: 'Invoice sent!' });
+  } catch (emailError: any) {
+    try {
+      await sql`
+        INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, status, error_message, sent_by_email, sent_by_name, metadata)
+        VALUES (
+          ${lead.company_id}, ${lead.project_id}, ${id}, 'invoice',
+          ${lead.email}, ${lead.name},
+          'failed', ${emailError.message || 'Unknown error'},
+          ${user_email}, ${user_name},
+          ${JSON.stringify({ invoice_number: invoiceNumber })}::jsonb
+        )
+      `;
+    } catch {}
+    return NextResponse.json({ success: false, error: 'Failed to send email.' }, { status: 500 });
+  }
+}
 
 // ==================== SAVE AI BRIEF ====================
 else if (action === 'save_ai_brief') {

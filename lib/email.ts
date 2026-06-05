@@ -605,6 +605,146 @@ export async function sendQuoteToCustomer({
 }
 
 
+export async function sendInvoiceToCustomer({
+  customerEmail,
+  customerName,
+  companyName,
+  companyPhone,
+  companyId,
+  invoiceNumber,
+  invoiceTotal,
+  invoiceItems,
+  dueDate,
+  notes,
+  contractorEmail,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyName: string;
+  companyPhone?: string;
+  companyId: number;
+  invoiceNumber: string;
+  invoiceTotal: number;
+  invoiceItems: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
+  dueDate?: string;
+  notes?: string;
+  contractorEmail?: string;
+}) {
+  try {
+    const company = await getCompanyDetails(companyId);
+
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+    const accentColor = company.email_brand_color_1 || '#667eea';
+
+    // ── STEP 1: Generate PDF buffer ───────────────────────
+    const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
+    const pdfBuffer = await generateInvoicePDFBuffer({
+  invoiceNumber,
+  invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+  dueDate,
+  companyName: company.name || companyName,
+  companyPhone: company.phone || companyPhone,
+  companyEmail: company.email || undefined,
+  companyLogoUrl: company.logo_url || undefined,  // 👈 add this
+  customerName,
+  customerEmail,
+  lineItems: invoiceItems,
+  total: invoiceTotal,
+  notes,
+});
+    
+
+    // ── STEP 2: Upload PDF to Vercel Blob ─────────────────
+    const { put } = await import('@vercel/blob');
+    const blob = await put(
+      `invoices/${invoiceNumber}-${Date.now()}.pdf`,
+      Buffer.from(pdfBuffer),
+      { access: 'public', contentType: 'application/pdf' }
+    );
+    const pdfUrl = blob.url;
+
+    // ── STEP 3: Build email HTML sections ─────────────────
+    const downloadButtonHtml = `
+      <div style="margin-bottom: 28px; text-align: center;">
+        <a href="${pdfUrl}"
+          style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          ⬇ Download Invoice PDF
+        </a>
+        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
+          ${invoiceNumber} · ${fmt(invoiceTotal)}
+        </p>
+      </div>
+    `;
+
+    const dueDateHtml = dueDate ? `
+      <div style="margin-bottom: 24px; padding: 16px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 10px; text-align: center;">
+        <p style="margin: 0; color: #92400e; font-size: 13px; font-weight: 700;">
+          Payment Due: ${new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </p>
+      </div>
+    ` : '';
+
+    const notesHtml = notes ? `
+      <div style="margin-bottom: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">Notes</p>
+        <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">${notes}</p>
+      </div>
+    ` : '';
+
+    // ── STEP 4: Build full email ──────────────────────────
+    const subject = `Invoice ${invoiceNumber} from ${company.name || companyName}`;
+
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        ${downloadButtonHtml}
+        <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          Hi ${customerName},
+        </p>
+        <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          Please find your invoice <strong>${invoiceNumber}</strong> from <strong>${company.name || companyName}</strong> below.
+        </p>
+        ${dueDateHtml}
+        ${notesHtml}
+        <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+          If you have any questions, please don't hesitate to reach out.
+        </p>
+      `,
+      phone: company.phone || companyPhone,
+      website: company.website,
+      preheader: `Invoice ${invoiceNumber} from ${company.name || companyName} — ${fmt(invoiceTotal)}`,
+    });
+
+    // ── STEP 5: Send email with PDF attached ──────────────
+    const emailResult = await resend.emails.send({
+      from: `${company.name || companyName} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Invoice-${invoiceNumber}.pdf`,
+          content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+
+    console.log('Invoice email sent to customer:', customerEmail);
+    return { subject, html, resendId: emailResult?.data?.id };
+
+  } catch (error) {
+    console.error('Failed to send invoice email:', error);
+    throw error;
+  }
+}
+
 
 export async function sendScheduleConfirmation({
   customerEmail,

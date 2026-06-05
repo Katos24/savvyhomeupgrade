@@ -502,14 +502,15 @@ const renderProjectTab = () => {
   }
   return (
     <ProjectSection
-      lead={lead}
-      currentUser={currentUser}
-      onRefresh={onRefresh}
-      statusOptions={statusOptions}
-      onUpdateStatus={onUpdateStatus}
-      companySlug={companySlug}
-      defaultTab={activeTab}
-    />
+  lead={lead}
+  company={company}
+  currentUser={currentUser}
+  onRefresh={onRefresh}
+  statusOptions={statusOptions}
+  onUpdateStatus={onUpdateStatus}
+  companySlug={companySlug}
+  defaultTab={activeTab}
+/>
   );
 };
 return (
@@ -1360,11 +1361,11 @@ className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-wh
         </div>
 
         {/* ── FOOTER ── */}
-       <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-t border-gray-100 flex gap-3">
+<div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
   <motion.button
     whileTap={{ scale: 0.97 }}
     onClick={onClose}
-    className="flex-1 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-bold text-gray-600 transition"
+    className="flex-1 py-3 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-600 transition"
   >
     Close
   </motion.button>
