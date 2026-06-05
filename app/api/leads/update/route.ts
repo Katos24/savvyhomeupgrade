@@ -1,15 +1,32 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } from '@/lib/email';
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
-import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
+    // ── Auth check (public actions bypass) ─────────────────
+    const publicActions = ['update_lead_step2'];
+    if (!publicActions.includes(body.action)) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get('auth-token')?.value;
+      if (!token) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
+      try {
+        jwt.verify(token, process.env.JWT_SECRET!);
+      } catch {
+        return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
+      }
+    }
+
     const { 
-      id, 
+      id,
       status, 
       notes, 
       action,
