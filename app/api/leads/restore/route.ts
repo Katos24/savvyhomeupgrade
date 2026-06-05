@@ -1,10 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export async function POST(request: Request) {
   try {
-    const { id } = await request.json();
-    
+const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    const { id } = await request.json();    
     if (!id) {
       return NextResponse.json({ success: false, error: 'Lead ID is required' }, { status: 400 });
     }

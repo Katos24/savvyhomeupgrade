@@ -3,7 +3,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { neon } from '@neondatabase/serverless';
 import { can } from '@/lib/permissions';
 import type { PlanTier } from '@/lib/permissions';
-
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
@@ -13,6 +14,12 @@ export async function POST(request: NextRequest) {
     }
 
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
     const body = await request.json();
 
 const {
