@@ -1,14 +1,21 @@
-// AFTER:
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
 import { neon } from '@neondatabase/serverless';
 import { can, type PlanTier } from '@/lib/permissions';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
     if (!process.env.ANTHROPIC_API_KEY) {
       console.error('ANTHROPIC_API_KEY is not set');
       return NextResponse.json({ 

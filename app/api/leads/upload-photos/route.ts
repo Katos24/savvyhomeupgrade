@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { neon } from '@neondatabase/serverless';
 import sharp from 'sharp';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -23,6 +25,11 @@ async function generateThumbnail(file: File): Promise<Buffer> {
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
     const formData = await request.formData();
     const leadId = formData.get('leadId') as string;
     const uploadType = formData.get('uploadType') as 'photo' | 'document';
