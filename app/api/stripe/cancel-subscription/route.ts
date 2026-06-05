@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { companyId } = await req.json();
-    if (!companyId) return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
+const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    const { companyId } = await req.json();    if (!companyId) return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
 
     const companies = await sql`
       SELECT id, name, email, stripe_subscription_id, subscription_status, trial_ends_at

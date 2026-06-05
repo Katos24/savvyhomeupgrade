@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { neon } from '@neondatabase/serverless';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,6 +19,11 @@ const PLAN_NAMES: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    try { jwt.verify(token, process.env.JWT_SECRET!); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
     const { companyId, companyEmail, plan = 'basic' } = await req.json();
 
     if (!companyId || !companyEmail) {
