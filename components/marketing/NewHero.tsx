@@ -82,9 +82,17 @@ export default function ArchitectHero() {
                 </Link>
               </div>
 
-              <p className="text-xs text-slate-400 font-medium tracking-wide">
-                No credit card · 2 min setup · Cancel anytime
-              </p>
+           <div className="flex flex-wrap items-center gap-3">
+              <img
+    src="/images/quickbooks-export-badge.png"
+    alt="QuickBooks Export"
+    className="h-8 w-auto opacity-70"
+  />
+  <p className="text-xs text-slate-400 font-medium tracking-wide">
+    No credit card · 2 min setup · Cancel anytime
+  </p>
+
+</div>
             </div>
           </div>
 
