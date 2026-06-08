@@ -144,9 +144,7 @@ const amount = paymentAmount === '' ? 0 : parseFloat(paymentAmount.replace(/,/g,
         toast.success('Payment reminder sent!');
         setShowReminderConfirm(false);
         await onRefresh();
-        const res2 = await fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`);
-        const data2 = await res2.json();
-        if (data2.entries) setOutboxLog(data2.entries);
+     
       } else {
         toast.error(data.error || 'Failed to send reminder');
       }

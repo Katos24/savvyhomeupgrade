@@ -183,7 +183,15 @@ export default function ProjectSection({
           )}
 
           {planningTab === 'schedule' && (
-<SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} teamMembers={teamMembers} />          )}
+            <SchedulingSection
+              lead={lead}
+              currentUser={currentUser}
+              onRefresh={onRefresh}
+              hasProject={hasProject}
+              companySlug={companySlug}
+              teamMembers={teamMembers}
+            />
+          )}
           {planningTab === 'tasks' && (
             <TasksSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
@@ -235,24 +243,24 @@ export default function ProjectSection({
           )}
 
           {financialsTab === 'quote' && (
-  <QuoteSection
-    lead={lead}
-    currentUser={currentUser}
-    onRefresh={onRefresh}
-    hasProject={hasProject}
-    companySlug={companySlug}
-  />
-)}
+            <QuoteSection
+              lead={lead}
+              currentUser={currentUser}
+              onRefresh={onRefresh}
+              hasProject={hasProject}
+              companySlug={companySlug}
+            />
+          )}
           {financialsTab === 'payment' && (
-  <PaymentSection
-  lead={lead}
-  company={company}
-  currentUser={currentUser}
-  onRefresh={onRefresh}
-  hasProject={hasProject}
-  companySlug={companySlug}
-/>
-)}
+            <PaymentSection
+              lead={lead}
+              company={company}
+              currentUser={currentUser}
+              onRefresh={onRefresh}
+              hasProject={hasProject}
+              companySlug={companySlug}
+            />
+          )}
           {financialsTab === 'media' && (
             <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}
