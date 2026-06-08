@@ -73,6 +73,7 @@ export async function GET(
         p.assigned_to,
         p.estimated_hours,
         p.invoice_number,
+p.invoice_sent_at,
 p.quote_total,
 p.payment_status,
 p.payment_amount,
@@ -152,57 +153,59 @@ p.payment_date,
 
     let csvRows: string[] = [];
 
-    if (exportFormat === 'quickbooks') {
-      // QuickBooks format — only the fields QuickBooks needs with their expected column names
-      const qbHeaders = [
-        'Invoice #',
-'Customer',
-'First Name',
-        'Last Name',
-        'Email',
-        'Phone',
-        'Invoice Date',
-        'Due Date',
-        'Amount',
-        'Payment Status',
-        'Payment Date',
-        'Payment Method',
-        'Description',
-        'Service Address',
-        'City',
-        'Zip',
-      ];
+   if (exportFormat === 'quickbooks') {
+  const invoicedLeads = leads.filter(l => l.invoice_number && l.project_id);
 
-      csvRows = [qbHeaders.join(',')];
+  if (invoicedLeads.length === 0) {
+    return new NextResponse('No invoiced projects found', { status: 404 });
+  }
 
-      for (const lead of leads) {
-        const nameParts = (lead.name || '').trim().split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  const qbHeaders = [
+    'Invoice No.',
+    'Customer',
+    'Invoice Date',
+    'Due Date',
+    'Item Amount',
+    'Amount Paid',
+    'Payment Status',
+    'Payment Date',
+    'Payment Method',
+    'Item Description',
+    'Service Address',
+    'City',
+    'Zip',
+  ];
 
-        const qbValues = [
-  escape(lead.invoice_number || ''),
-  escape(lead.name || ''),
-  escape(firstName),
-          escape(lastName),
-          escape(lead.email || ''),
-          escape(lead.phone || ''),
-          escape(lead.quote_sent_at ? new Date(lead.quote_sent_at).toLocaleDateString() : ''),
-          escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
-          escape(lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : ''),
-          escape(lead.payment_status || ''),
-          escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
-          escape(lead.payment_method || ''),
-          escape(lead.category || ''),
-          escape(lead.address_line_1 || ''),
-          escape(lead.city || ''),
-          escape(lead.zip_code || ''),
-        ];
+  csvRows = [qbHeaders.join(',')];
 
-        csvRows.push(qbValues.join(','));
-      }
+  for (const lead of invoicedLeads) {
+    const qbValues = [
+      escape(lead.invoice_number || ''),
+      escape(lead.name || ''),
+ escape(
+  lead.invoice_sent_at
+    ? new Date(lead.invoice_sent_at).toLocaleDateString()
+    : lead.payment_date
+    ? new Date(lead.payment_date).toLocaleDateString()
+    : lead.quote_sent_at
+    ? new Date(lead.quote_sent_at).toLocaleDateString()
+    : ''
+),
+      escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
+      escape(lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : ''),
+      escape(lead.payment_amount ? parseFloat(lead.payment_amount).toFixed(2) : ''),
+      escape(lead.payment_status || ''),
+      escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
+      escape(lead.payment_method || ''),
+      escape(lead.category || ''),
+      escape(lead.address_line_1 || ''),
+      escape(lead.city || ''),
+      escape(lead.zip_code || ''),
+    ];
+    csvRows.push(qbValues.join(','));
+  }
 
-    } else {
+} else {
       // Full export — all fields
       const staticHeaders = [
         'Type',
