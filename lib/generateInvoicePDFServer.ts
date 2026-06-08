@@ -22,6 +22,8 @@ type InvoicePDFData = {
   lineItems: LineItem[];
   total: number;
   notes?: string;
+  paymentLinkUrl?: string;
+  paymentLinkType?: string;
 };
 
 const fmt = (n: number) =>
@@ -277,6 +279,60 @@ const margin = 52;
     if (line) {
       page.drawText(line, { x: margin, y, size: 9, font: fontRegular, color: black });
       y -= 13;
+    }
+  }
+
+// ── PAYMENT QR CODE ───────────────────────────────────────
+  if (data.paymentLinkUrl) {
+    try {
+      const QRCode = await import('qrcode');
+      const qrDataUrl = await QRCode.toDataURL(data.paymentLinkUrl, {
+        width: 80,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+      });
+      const qrBase64 = qrDataUrl.split(',')[1];
+      const qrBytes = Buffer.from(qrBase64, 'base64');
+      const qrImage = await doc.embedPng(qrBytes);
+
+      const qrSize = 70;
+      const qrX = margin;
+      const qrY = 45;
+
+      page.drawImage(qrImage, {
+        x: qrX,
+        y: qrY,
+        width: qrSize,
+        height: qrSize,
+      });
+
+      const paymentLabels: Record<string, string> = {
+        venmo: 'Scan to pay with Venmo',
+        zelle: 'Scan to pay with Zelle',
+        cashapp: 'Scan to pay with Cash App',
+        paypal: 'Scan to pay with PayPal',
+        other: 'Scan to pay',
+      };
+
+      const label = paymentLabels[data.paymentLinkType || ''] || 'Scan to pay';
+
+      page.drawText(label, {
+        x: qrX + qrSize + 10,
+        y: qrY + 35,
+        size: 9,
+        font: fontBold,
+        color: black,
+      });
+
+      page.drawText(fmt(data.total) + ' due', {
+        x: qrX + qrSize + 10,
+        y: qrY + 20,
+        size: 9,
+        font: fontRegular,
+        color: gray,
+      });
+    } catch {
+      // QR generation failed silently
     }
   }
 

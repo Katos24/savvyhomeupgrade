@@ -50,6 +50,8 @@ export default function NewHome() {
       {/* 7. THE SPEED: One-click emails & Outbox tracking */}
       <EfficiencyShowcase />
 
+
+
             {/* 8. THE PEACE OF MIND: Daily Digest */}
       <DigestBanner />
 

@@ -311,15 +311,16 @@ export default function InvoiceSection({
                     PDF
                   </button>
 
-                  {canSendInvoice ? (
-                    <button
-                      onClick={() => setShowSendConfirm(true)}
-                      disabled={lineItems.length === 0}
-                      className="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors disabled:opacity-40"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Send
-                    </button>
+                 {canSendInvoice ? (
+    <button
+      onClick={() => setShowSendConfirm(true)}
+      disabled={lineItems.length === 0 || lead?.payment_status === 'paid'}
+      title={lead?.payment_status === 'paid' ? 'Job is already paid in full' : ''}
+      className="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors disabled:opacity-40"
+    >
+      <Send className="w-3.5 h-3.5" />
+      {lead?.payment_status === 'paid' ? 'Paid' : 'Send'}
+    </button>
                   ) : (
                     <button
                       onClick={() => window.location.href = `/${company?.slug}/admin/settings#billing`}
@@ -365,7 +366,14 @@ export default function InvoiceSection({
                   Send <span className="font-bold text-slate-800">{invoiceNumber}</span> to{' '}
                   <span className="font-bold text-slate-800">{lead?.name}</span>
                 </p>
-                <p className="text-sm font-black text-blue-600 mb-8">{fmt(total)}</p>
+<p className="text-sm font-black text-blue-600 mb-4">{fmt(total)}</p>
+{lead?.payment_status === 'partial' && lead?.payment_amount && (
+  <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl mb-6 text-left">
+    <p className="text-xs font-black text-amber-700">
+      Customer has already paid {fmt(parseFloat(lead.payment_amount))}. The invoice will show the full amount of {fmt(total)}.
+    </p>
+  </div>
+)}
                 <div className="flex flex-col gap-3">
                   <motion.button
                     whileTap={{ scale: 0.97 }}

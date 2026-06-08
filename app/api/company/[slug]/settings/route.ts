@@ -123,7 +123,9 @@ export async function POST(
               email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
               email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'},
               google_review_url = ${data.google_review_url || null},
-              google_review_enabled = ${data.google_review_enabled ?? false}
+google_review_enabled = ${data.google_review_enabled ?? false},
+payment_link_type = ${data.payment_link_type || null},
+payment_link_url = ${data.payment_link_url || null}
             WHERE id = ${company.id}
             RETURNING *
           `;

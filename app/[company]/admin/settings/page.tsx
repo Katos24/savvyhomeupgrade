@@ -35,6 +35,8 @@ type CompanyDTO = {
   plan_tier: string;
     form_field_config: any;
   pending_downgrade_at: string | null;
+payment_link_type: string | null;
+payment_link_url: string | null;
 };
 
 export default async function SettingsPage({
@@ -91,7 +93,9 @@ export default async function SettingsPage({
         form_field_config,
 pending_downgrade_at,
 google_review_url,
-google_review_enabled
+google_review_enabled,
+payment_link_type,
+payment_link_url
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
@@ -134,7 +138,10 @@ google_review_enabled
       form_field_config: company.form_field_config,
 pending_downgrade_at: company.pending_downgrade_at ?? null,
 google_review_url: company.google_review_url ?? '',
-google_review_enabled: company.google_review_enabled ?? false,    };
+google_review_enabled: company.google_review_enabled ?? false,
+payment_link_type: company.payment_link_type ?? '',
+payment_link_url: company.payment_link_url ?? '',
+ };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;
   } catch (error) {

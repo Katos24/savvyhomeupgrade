@@ -15,7 +15,8 @@ const sql = neon(process.env.DATABASE_URL!);
 
 async function getCompanyDetails(companyId: number) {
   const companies = await sql`
-    SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2
+    SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2,
+           payment_link_type, payment_link_url
     FROM companies WHERE id = ${companyId} LIMIT 1
   `;
   return companies[0];
@@ -647,12 +648,14 @@ export async function sendInvoiceToCustomer({
   companyName: company.name || companyName,
   companyPhone: company.phone || companyPhone,
   companyEmail: company.email || undefined,
-  companyLogoUrl: company.logo_url || undefined,  // 👈 add this
+  companyLogoUrl: company.logo_url || undefined,
   customerName,
   customerEmail,
   lineItems: invoiceItems,
   total: invoiceTotal,
   notes,
+  paymentLinkUrl: company.payment_link_url || undefined,
+  paymentLinkType: company.payment_link_type || undefined,
 });
     
 
@@ -666,17 +669,35 @@ export async function sendInvoiceToCustomer({
     const pdfUrl = blob.url;
 
     // ── STEP 3: Build email HTML sections ─────────────────
-    const downloadButtonHtml = `
-      <div style="margin-bottom: 28px; text-align: center;">
-        <a href="${pdfUrl}"
-          style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-          ⬇ Download Invoice PDF
-        </a>
-        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
-          ${invoiceNumber} · ${fmt(invoiceTotal)}
-        </p>
-      </div>
-    `;
+   const paymentMethodLabels: Record<string, string> = {
+  venmo: 'Pay with Venmo',
+  zelle: 'Pay with Zelle',
+  cashapp: 'Pay with Cash App',
+  paypal: 'Pay with PayPal',
+  other: 'Pay Now',
+};
+
+const payNowButtonHtml = company.payment_link_url ? `
+  <div style="margin-bottom: 16px; text-align: center;">
+    <a href="${company.payment_link_url}"
+      style="display: inline-block; background-color: ${accentColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+      ${paymentMethodLabels[company.payment_link_type] || 'Pay Now'} — ${fmt(invoiceTotal)}
+    </a>
+  </div>
+` : '';
+
+const downloadButtonHtml = `
+  <div style="margin-bottom: 28px; text-align: center;">
+    ${payNowButtonHtml}
+    <a href="${pdfUrl}"
+      style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+      Download Invoice PDF
+    </a>
+    <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
+      ${invoiceNumber} · ${fmt(invoiceTotal)}
+    </p>
+  </div>
+`;
 
     const dueDateHtml = dueDate ? `
       <div style="margin-bottom: 24px; padding: 16px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 10px; text-align: center;">

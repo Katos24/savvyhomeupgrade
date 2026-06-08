@@ -117,7 +117,9 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
   color1: company.email_brand_color_1 || '#0B3C6D',
   color2: company.email_brand_color_2 || '#1F5F8F',
   google_review_url: company.google_review_url || '',
-  google_review_enabled: company.google_review_enabled ?? false,
+google_review_enabled: company.google_review_enabled ?? false,
+payment_link_type: company.payment_link_type || '',
+payment_link_url: company.payment_link_url || '',
 });
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -220,7 +222,10 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
   action: 'update-general',
-  data: { ...formData, logo_url: finalLogoUrl, email_brand_color_1: formData.color1, email_brand_color_2: formData.color2, google_review_url: formData.google_review_url, google_review_enabled: formData.google_review_enabled }
+  data: { ...formData, logo_url: finalLogoUrl, email_brand_color_1: formData.color1, email_brand_color_2: formData.color2, google_review_url: formData.google_review_url,
+google_review_enabled: formData.google_review_enabled,
+payment_link_type: formData.payment_link_type,
+payment_link_url: formData.payment_link_url }
         }),
       });
       if (res.ok) {
@@ -528,6 +533,48 @@ Google Review Link
       )}
       {formData.google_review_enabled && (
         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Auto-send On</span>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Payment Link */}
+<div className="sm:col-span-2 space-y-1.5">
+  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+    Payment Link
+  </label>
+  {isEditing ? (
+    <div className="flex flex-col gap-2">
+      <select
+        value={formData.payment_link_type}
+        onChange={e => setFormData({ ...formData, payment_link_type: e.target.value })}
+        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition"
+      >
+        <option value="">Select payment method...</option>
+        <option value="venmo">Venmo</option>
+        <option value="zelle">Zelle</option>
+        <option value="cashapp">Cash App</option>
+        <option value="paypal">PayPal</option>
+        <option value="other">Other</option>
+      </select>
+      <input
+        value={formData.payment_link_url}
+        onChange={e => setFormData({ ...formData, payment_link_url: e.target.value })}
+        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition"
+        placeholder="https://venmo.com/your-handle"
+      />
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+      <span className="truncate flex-1">
+        {formData.payment_link_type
+          ? `${formData.payment_link_type.charAt(0).toUpperCase() + formData.payment_link_type.slice(1)} — ${formData.payment_link_url || 'No link set'}`
+          : 'Not set'}
+      </span>
+      {formData.payment_link_url && (
+        <a href={formData.payment_link_url} target="_blank" className="text-blue-500 hover:text-blue-600 shrink-0">
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
       )}
     </div>
   )}
