@@ -226,13 +226,16 @@ const initialLeadCount = useRef<number | null>(null);
     } catch (e) { console.error('fetchCurrentUser:', e); }
   }, []);
 
-  const fetchTeamMembers = useCallback(async () => {
+ const fetchTeamMembers = useCallback(async () => {
     try {
-      const res = await fetch(`/api/company/${company.slug}/team`);
+      const res = await fetch('/api/team/members');
       const data = await res.json();
-      if (data.success) setTeamMembers(data.teamMembers || []);
+      if (data.success) {
+        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
+        setTeamMembers(assigneeList);
+      }
     } catch (e) { console.error('fetchTeamMembers:', e); }
-  }, [company.slug]);
+  }, []);
 
   useEffect(() => {
     fetchLeads(1);
