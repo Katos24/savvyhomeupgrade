@@ -141,13 +141,20 @@ if (action === 'update_status') {
           companyId: proj.company_id,
           jobCategory: proj.category,
         });
-        if (proj.id) {
-          await sql`
-            UPDATE projects
-            SET review_request_sent_at = NOW()
-            WHERE id = ${proj.id}
-          `;
-        }
+       if (proj.id) {
+  await sql`
+    UPDATE projects
+    SET review_request_sent_at = NOW()
+    WHERE id = ${proj.id}
+  `;
+  await addActivityToProject(id, {
+    type: 'review_request_sent',
+    text: `Google review request sent to ${proj.customer_email}`,
+    user_name: 'System',
+    user_email: '',
+    timestamp: new Date().toISOString(),
+  });
+}
       } catch (reviewErr) {
         console.error('Review email failed (non-blocking):', reviewErr);
       }
