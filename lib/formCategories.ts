@@ -53,11 +53,11 @@ export const BUSINESS_TYPES: BusinessType[] = [
 ];
 
 export const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'blue', icon: PlusCircle },
-  { value: 'contacted', label: 'Contacted', color: 'yellow', icon: Phone },
-  { value: 'quoted', label: 'Quoted', color: 'purple', icon: DollarSign },
-  { value: 'in-progress', label: 'In Progress', color: 'orange', icon: Clock },
-  { value: 'completed', label: 'Completed', color: 'green', icon: CheckCircle2 },
+  { value: 'new', label: 'New', color: 'green', icon: PlusCircle },
+{ value: 'contacted', label: 'Contacted', color: 'yellow', icon: Phone },
+{ value: 'quoted', label: 'Quoted', color: 'purple', icon: DollarSign },
+{ value: 'in-progress', label: 'In Progress', color: 'orange', icon: Clock },
+{ value: 'completed', label: 'Completed', color: 'blue', icon: CheckCircle2 },
 ];
 
 export const COLOR_OPTIONS = [

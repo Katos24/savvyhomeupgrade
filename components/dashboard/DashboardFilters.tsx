@@ -356,28 +356,34 @@ export default function DashboardFilters({
                   </select>
                 </div>
 
-                {/* Date Range */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-500">Date Range</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={e => setStartDate(e.target.value)}
-                      className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
-                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                      }`}
-                    />
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                      className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
-                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                      }`}
-                    />
-                  </div>
-                </div>
+              {/* Date Range */}
+<div className="space-y-2">
+  <label className="text-[11px] font-bold uppercase tracking-widest text-blue-500">Date Range</label>
+  <div className="flex flex-col gap-3">
+    <div className="space-y-1">
+      <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-slate-400'}`}>From</span>
+      <input
+        type="date"
+        value={startDate}
+        onChange={e => setStartDate(e.target.value)}
+        className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
+          isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+        }`}
+      />
+    </div>
+    <div className="space-y-1">
+      <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-slate-400'}`}>To</span>
+      <input
+        type="date"
+        value={endDate}
+        onChange={e => setEndDate(e.target.value)}
+        className={`w-full rounded-xl px-4 py-3.5 text-sm font-bold border outline-none ${
+          isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+        }`}
+      />
+    </div>
+  </div>
+</div>
 
                 {/* Status */}
                 <div className="space-y-2">

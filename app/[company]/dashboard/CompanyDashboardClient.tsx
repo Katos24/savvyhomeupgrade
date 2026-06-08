@@ -64,14 +64,14 @@ type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 // ---------------------------------------------------------------------------
 
 const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'blue' },
-  { value: 'contacted', label: 'Contacted', color: 'yellow' },
-  { value: 'quoted', label: 'Quoted', color: 'purple' },
-  { value: 'scheduled', label: 'Scheduled', color: 'blue' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange' },
-  { value: 'completed', label: 'Completed', color: 'green' },
-  { value: 'cancelled', label: 'Cancelled', color: 'red' },
-  { value: 'lost', label: 'Lost', color: 'gray' },
+  { value: 'new', label: 'New', color: 'green' },
+{ value: 'contacted', label: 'Contacted', color: 'yellow' },
+{ value: 'quoted', label: 'Quoted', color: 'purple' },
+{ value: 'scheduled', label: 'Scheduled', color: 'indigo' },
+{ value: 'in-progress', label: 'In Progress', color: 'orange' },
+{ value: 'completed', label: 'Completed', color: 'blue' },
+{ value: 'cancelled', label: 'Cancelled', color: 'red' },
+{ value: 'lost', label: 'Lost', color: 'gray' },
 ];
 
 // ---------------------------------------------------------------------------

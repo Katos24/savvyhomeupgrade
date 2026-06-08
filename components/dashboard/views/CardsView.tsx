@@ -87,10 +87,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
               variants={cardVariants}
               onClick={() => onSelectLead(lead)}
               className={`relative cursor-pointer rounded-2xl overflow-hidden border transition-all active:scale-[0.98] ${
-                isDark
-                  ? 'bg-white/[0.03] border-white/[0.08] active:bg-white/[0.06]'
-                  : 'bg-white border-slate-200 active:bg-slate-50 shadow-sm'
-              } ${isCompleted ? 'opacity-50' : ''}`}
+  isDark
+    ? 'bg-white/[0.06] border-white/[0.12] active:bg-white/[0.09]'
+    : 'bg-white border-slate-300 active:bg-slate-50 shadow-md'
+} ${isCompleted ? 'opacity-50' : ''}`}
             >
               {/* Status accent left bar */}
               <div 
