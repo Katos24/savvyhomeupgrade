@@ -110,13 +110,15 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
 
   // Identity form
   const [formData, setFormData] = useState({
-    name: company.name || '',
-    email: company.email || '',
-    phone: company.phone || '',
-    website: company.website || '',
-   color1: company.email_brand_color_1 || '#0B3C6D',
-    color2: company.email_brand_color_2 || '#1F5F8F',
-  });
+  name: company.name || '',
+  email: company.email || '',
+  phone: company.phone || '',
+  website: company.website || '',
+  color1: company.email_brand_color_1 || '#0B3C6D',
+  color2: company.email_brand_color_2 || '#1F5F8F',
+  google_review_url: company.google_review_url || '',
+  google_review_enabled: company.google_review_enabled ?? false,
+});
   const [logoPreview, setLogoPreview] = useState(company.logo_url || '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [publicLink, setPublicLink] = useState('');
@@ -217,8 +219,8 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'update-general',
-          data: { ...formData, logo_url: finalLogoUrl, email_brand_color_1: formData.color1, email_brand_color_2: formData.color2 }
+  action: 'update-general',
+  data: { ...formData, logo_url: finalLogoUrl, email_brand_color_1: formData.color1, email_brand_color_2: formData.color2, google_review_url: formData.google_review_url, google_review_enabled: formData.google_review_enabled }
         }),
       });
       if (res.ok) {
@@ -490,6 +492,46 @@ const [showDigestInfo, setShowDigestInfo] = useState(false);
         </div>
     }
   </div>
+
+  {/* Google Reviews */}
+<div className="sm:col-span-2 space-y-1.5">
+  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+Google Review Link
+  </label>
+  {isEditing ? (
+    <div className="flex flex-col gap-2">
+      <input
+        value={formData.google_review_url}
+        onChange={e => setFormData({ ...formData, google_review_url: e.target.value })}
+        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ring-blue-500/10 transition"
+        placeholder="https://g.page/r/your-review-link"
+      />
+      <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={formData.google_review_enabled}
+          onChange={e => setFormData({ ...formData, google_review_enabled: e.target.checked })}
+          className="w-4 h-4 accent-blue-600"
+        />
+        <span className="text-xs font-bold text-slate-700">Auto-send review request when job is marked completed</span>
+      </label>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 rounded-xl text-sm font-bold text-slate-700">
+      <span className="truncate flex-1 text-sm">
+        {formData.google_review_url || 'Not set'}
+      </span>
+      {formData.google_review_url && (
+        <a href={formData.google_review_url} target="_blank" className="text-blue-500 hover:text-blue-600 shrink-0">
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+      )}
+      {formData.google_review_enabled && (
+        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Auto-send On</span>
+      )}
+    </div>
+  )}
+</div>
 
   <div className="space-y-1.5">
     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">

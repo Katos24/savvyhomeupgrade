@@ -13,10 +13,16 @@ export async function POST(request: Request) {
       old_status
     } = await request.json();
 
-    if (action === 'update_status') {
-      const lead = await sql`
-        SELECT notes FROM leads WHERE id = ${id}
-      `;
+   if (action === 'update_status') {
+  const lead = await sql`
+    SELECT l.notes, l.email as customer_email, l.name as customer_name,
+           l.category, p.company_id, p.id as project_id,
+           p.review_request_sent_at
+    FROM leads l
+    LEFT JOIN projects p ON l.id = p.lead_id
+    WHERE l.id = ${id}
+    LIMIT 1
+  `;
 
       let existingNotes = [];
       try {
@@ -36,7 +42,7 @@ export async function POST(request: Request) {
 
       existingNotes.push(statusChangeEntry);
 
-      await sql`
+    await sql`
         UPDATE leads
         SET status = ${status},
             notes = ${JSON.stringify(existingNotes)},
@@ -44,7 +50,27 @@ export async function POST(request: Request) {
         WHERE id = ${id}
       `;
 
-      return NextResponse.json({ success: true });
+if (status === 'completed' && old_status !== 'completed') {
+  const leadData = lead[0];
+  if (leadData?.company_id && leadData?.customer_email && !leadData?.review_request_sent_at) {
+    const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
+    await sendGoogleReviewRequestEmail({
+      customerEmail: leadData.customer_email,
+      customerName: leadData.customer_name,
+      companyId: leadData.company_id,
+      jobCategory: leadData.category,
+    });
+    if (leadData.project_id) {
+      await sql`
+        UPDATE projects
+        SET review_request_sent_at = NOW()
+        WHERE id = ${leadData.project_id}
+      `;
+    }
+  }
+}
+
+return NextResponse.json({ success: true });
 
     } else if (action === 'add_note') {
       const lead = await sql`

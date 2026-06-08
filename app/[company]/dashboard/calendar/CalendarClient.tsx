@@ -153,18 +153,14 @@ export default function CalendarClient({ company }: { company: Company }) {
     : DEFAULT_STATUSES;
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' }}>
-      <Toaster position="top-right" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        
-        {/* CALENDAR - has its own back button */}
-       <Calendar
-  companySlug={company.slug}
-  onSelectLead={setSelectedLead}
-  statusOptions={statusOptions}
-  key={calendarRefreshKey}
-/>
-      </div>
+    <div className="min-h-screen">
+  <Toaster position="top-right" />
+  <Calendar
+    companySlug={company.slug}
+    onSelectLead={setSelectedLead}
+    statusOptions={statusOptions}
+    key={calendarRefreshKey}
+  />
 
       {/* LEAD MODAL */}
       {selectedLead && (

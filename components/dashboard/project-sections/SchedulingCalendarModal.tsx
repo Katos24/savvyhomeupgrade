@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, ChevronLeft, ChevronRight, Calendar, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-type SchedulingCalendarModalProps = {
+type Props = {
   isOpen: boolean;
   onClose: () => void;
   onSelectDateTime: (date: string, time: string) => void;
@@ -14,13 +15,23 @@ type SchedulingCalendarModalProps = {
   selectedTeamMember?: string;
 };
 
-type ScheduledJob = {
-  id: number;
-  scheduled_date: string;
-  scheduled_time: string;
-  assigned_to: string;
-  name: string;
-};
+const TIME_SLOTS = [
+  '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00',
+];
+
+function formatTime(time: string) {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}${m === 0 ? '' : ':' + String(m).padStart(2, '0')}${ampm}`;
+}
+
+function formatDateDisplay(date: Date) {
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 export default function SchedulingCalendarModal({
   isOpen,
@@ -29,420 +40,293 @@ export default function SchedulingCalendarModal({
   companySlug,
   currentScheduledDate,
   currentScheduledTime,
-  selectedTeamMember
-}: SchedulingCalendarModalProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  selectedTeamMember,
+}: Props) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [scheduledJobs, setScheduledJobs] = useState<ScheduledJob[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [scheduledJobs, setScheduledJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch all scheduled jobs
   useEffect(() => {
-    if (isOpen) {
-      fetchScheduledJobs();
+    if (!isOpen) return;
+    setLoading(true);
+    fetch(`/api/company/${companySlug}/leads`)
+      .then(r => r.json())
+      .then(data => {
+        const jobs = (data.leads || []).filter((l: any) => l.scheduled_date && !l.deleted);
+        setScheduledJobs(jobs);
+      })
+      .catch(() => toast.error('Failed to load schedule'))
+      .finally(() => setLoading(false));
+
+    // Pre-select current values if they exist
+    if (currentScheduledDate) {
+      const [y, m, d] = currentScheduledDate.split('-').map(Number);
+      setSelectedDate(new Date(y, m - 1, d));
+      setCurrentMonth(new Date(y, m - 1, 1));
     }
-  }, [isOpen, companySlug]);
+    if (currentScheduledTime) setSelectedTime(currentScheduledTime);
+  }, [isOpen]);
 
-  async function fetchScheduledJobs() {
-    
-    try {
-      const response = await fetch(`/api/company/${companySlug}/leads`);
-      const data = await response.json();
-      
-      // The leads endpoint already includes project data via LEFT JOIN
-      // So scheduled_date, scheduled_time, assigned_to are all available
-      const scheduled = (data.leads || []).filter((lead: any) => {
-        return lead.scheduled_date && lead.scheduled_date.trim() !== '' && !lead.deleted;
-      }).map((lead: any) => ({
-        id: lead.id,
-        scheduled_date: lead.scheduled_date,
-        scheduled_time: lead.scheduled_time,
-        assigned_to: lead.assigned_to,
-        name: lead.name
-      }));
-      
-      setScheduledJobs(scheduled);
-    } catch (error) {
-      console.error('Failed to fetch scheduled jobs:', error);
-      toast.error('Failed to load calendar');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const getJobsForDateStr = (dateStr: string) =>
+    scheduledJobs.filter(j => j.scheduled_date?.split('T')[0] === dateStr);
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    return { daysInMonth, startingDayOfWeek };
-  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const getJobsForDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-    return scheduledJobs.filter(job => {
-      const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
-      
-      // If filtering by team member, only show their jobs
-      if (selectedTeamMember) {
-        return jobDate === dateStr && job.assigned_to === selectedTeamMember;
-      }
-      
-      return jobDate === dateStr;
-    });
-  };
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+  const cells = [...Array(startDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
-const isTimeSlotAvailable = (time: string) => {
-  if (!selectedDate) return false;
-
-  const year = selectedDate.getFullYear();
-  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-  const day = String(selectedDate.getDate()).padStart(2, '0');
-  const dateStr = `${year}-${month}-${day}`;
-
-  const toMinutes = (t: string) => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  };
-
-  const slotMinutes = toMinutes(time);
-
-  const conflicting = scheduledJobs.find(job => {
-    const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
-    if (jobDate !== dateStr) return false;
-    if (!job.scheduled_time) return false;
-    if (selectedTeamMember && job.assigned_to !== selectedTeamMember) return false;
-
-    const jobMinutes = toMinutes(job.scheduled_time);
-    return Math.abs(slotMinutes - jobMinutes) < 60;
-  });
-
-  return !conflicting;
-};
-
-  const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedTime('');
-  };
-
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-  };
+  const toDateStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   const handleConfirm = () => {
     if (!selectedDate || !selectedTime) {
-      toast.error('Please select both date and time');
+      toast.error('Pick a date and time');
       return;
     }
-
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-    onSelectDateTime(dateStr, selectedTime);
+    onSelectDateTime(toDateStr(selectedDate), selectedTime);
     onClose();
   };
 
-  const goToPreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    setSelectedDate(null);
-    setSelectedTime('');
-  };
-
-  const goToNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    setSelectedDate(null);
-    setSelectedTime('');
-  };
-
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  // Generate time slots (7 AM to 7 PM in 30-minute intervals)
-  const timeSlots = [];
-  for (let hour = 7; hour <= 19; hour++) {
-    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-    if (hour < 19) {
-      timeSlots.push(`${hour.toString().padStart(2, '0')}:30`);
-    }
-  }
-
   if (!isOpen) return null;
 
-  const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Select Date & Time</h2>
-            {selectedTeamMember && (
-              <p className="text-sm text-gray-600 mt-1">
-                Showing availability for: <span className="font-semibold">{selectedTeamMember}</span>
-              </p>
-            )}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
+        onClick={onClose}
+      >
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+        {/* Modal */}
+        <motion.div
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full sm:max-w-md bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col"
+          style={{ maxHeight: '92vh' }}
+        >
+          {/* Drag handle — mobile only */}
+          <div className="flex justify-center pt-3 pb-1 sm:hidden">
+            <div className="w-10 h-1 rounded-full bg-slate-200" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Calendar - Left side */}
-            <div className="lg:col-span-2">
-              {/* Month navigation */}
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={goToPreviousMonth}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
-                >
-                  ←
-                </button>
-                <span className="text-lg font-bold text-gray-900">
-                  {currentDate.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric'
-                  })}
-                </span>
-                <button
-                  onClick={goToNextMonth}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition text-xl font-bold"
-                >
-                  →
-                </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#0F1F3D] flex items-center justify-center">
+                <Calendar size={14} className="text-white" />
               </div>
-
-              {/* Day names */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center font-bold text-sm text-gray-700 py-2">
-                    {day}
-                  </div>
-                ))}
+              <div>
+                <p className="text-[11px] font-black text-[#0F1F3D] uppercase tracking-widest">Pick Date & Time</p>
+                {selectedTeamMember && (
+                  <p className="text-[9px] text-slate-400 font-bold">{selectedTeamMember}</p>
+                )}
               </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-2">
-                {/* Empty cells before month starts */}
-                {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
-                ))}
+          {/* Scrollable content */}
+          <div className="overflow-y-auto flex-1 px-4 pb-4">
 
-                {/* Days */}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1;
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                  const year = date.getFullYear();
-                  const month = String(date.getMonth() + 1).padStart(2, '0');
-                  const dayStr = String(date.getDate()).padStart(2, '0');
-                  const dateStr = `${year}-${month}-${dayStr}`;
-                  
-                  const isToday = dateStr === today;
-                  const isSelected = selectedDate?.getDate() === day && 
-                                    selectedDate?.getMonth() === currentDate.getMonth() &&
-                                    selectedDate?.getFullYear() === currentDate.getFullYear();
-                  const isPast = date < now && !isToday;
-                  const jobsOnDate = getJobsForDate(date);
-                  const hasJobs = jobsOnDate.length > 0;
+            {/* Month nav */}
+            <div className="flex items-center justify-between py-4">
+              <button
+                onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                <ChevronLeft size={18} className="text-slate-600" />
+              </button>
+              <span className="text-sm font-black text-[#0F1F3D] uppercase tracking-widest">
+                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+              <button
+                onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                <ChevronRight size={18} className="text-slate-600" />
+              </button>
+            </div>
+
+            {/* Day labels */}
+            <div className="grid grid-cols-7 mb-1">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <div key={i} className="text-center text-[9px] font-black text-slate-400 uppercase py-1">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar grid */}
+            {loading ? (
+              <div className="flex items-center justify-center h-40">
+                <div className="w-8 h-8 border-2 border-[#0F1F3D] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {cells.map((day, i) => {
+                  if (!day) return <div key={`e-${i}`} />;
+
+                  const date = new Date(year, month, day);
+                  const dateStr = toDateStr(date);
+                  const isPast = date < today;
+                  const isToday = dateStr === toDateStr(today);
+                  const isSelected = selectedDate ? toDateStr(selectedDate) === dateStr : false;
+                  const jobs = getJobsForDateStr(dateStr);
+                  const hasJobs = jobs.length > 0;
 
                   return (
                     <button
                       key={day}
-                      onClick={() => !isPast && handleDateClick(date)}
                       disabled={isPast}
-                      className={`aspect-square p-2 rounded-lg border-2 transition-all relative ${
+                      onClick={() => {
+                        setSelectedDate(date);
+                        setSelectedTime('');
+                      }}
+                      className={`relative flex flex-col items-center justify-center aspect-square rounded-xl text-sm font-black transition-all active:scale-95 ${
                         isPast
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          ? 'text-slate-200 cursor-not-allowed'
                           : isSelected
-                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          ? 'bg-[#0F1F3D] text-white shadow-lg'
                           : isToday
-                          ? 'border-blue-300 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                          ? 'bg-blue-50 text-blue-600 border-2 border-blue-300'
+                          : 'hover:bg-slate-100 text-[#0F1F3D]'
                       }`}
                     >
-                      <span className={`font-semibold ${
-                        isPast ? 'text-gray-400' : isSelected || isToday ? 'text-blue-600' : 'text-gray-900'
-                      }`}>
-                        {day}
-                      </span>
-                      
-                      {/* Job indicator dots */}
+                      {day}
                       {hasJobs && !isPast && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                          {Array.from({ length: Math.min(jobsOnDate.length, 3) }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-1.5 h-1.5 rounded-full bg-orange-500"
-                            />
-                          ))}
-                        </div>
+                        <div
+                          className={`absolute bottom-1 w-1 h-1 rounded-full ${
+                            isSelected ? 'bg-white/60' : 'bg-orange-400'
+                          }`}
+                        />
                       )}
                     </button>
                   );
                 })}
               </div>
+            )}
 
-              {/* Legend */}
-              <div className="flex gap-4 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded border-2 border-blue-300 bg-blue-50" />
-                  <span className="text-gray-600">Today</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-50" />
-                  <span className="text-gray-600">Selected</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                  <span className="text-gray-600">Has bookings</span>
-                </div>
-              </div>
-            </div>
+            {/* Time slots — appear when date selected */}
+            <AnimatePresence>
+              {selectedDate && (() => {
+                const dateStr = toDateStr(selectedDate);
+                const jobsOnDay = getJobsForDateStr(dateStr);
 
-            {/* Time slots - Right side */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-0">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  {selectedDate ? (
-                    <>Select Time</>
-                  ) : (
-                    <>Select a date first</>
-                  )}
-                </h3>
+                const getConflict = (time: string) => {
+                  const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+                  return jobsOnDay.find(j => j.scheduled_time && Math.abs(toMins(time) - toMins(j.scheduled_time)) < 60) || null;
+                };
 
-                {selectedDate ? (
-                  <>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                      <div className="text-sm text-blue-900 font-semibold">
-                        {selectedDate.toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </div>
+                const selectedConflict = selectedTime ? getConflict(selectedTime) : null;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-px flex-1 bg-slate-100" />
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        {formatDateDisplay(selectedDate)}
+                      </p>
+                      <div className="h-px flex-1 bg-slate-100" />
                     </div>
 
-                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                      {timeSlots.map((time) => {
-                        const available = isTimeSlotAvailable(time);
-                        const isSelectedTime = selectedTime === time;
-                        
+                    {/* Horizontal scrolling time chips */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                      {TIME_SLOTS.map(time => {
+                        const isSelected = selectedTime === time;
+                        const conflict = getConflict(time);
+                        const hasConflict = !!conflict;
+
                         return (
                           <button
                             key={time}
-                            onClick={() => handleTimeSelect(time)}
-                            className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                              isSelectedTime
-                                ? 'border-green-500 bg-green-50 shadow-md'
-                                : available
-                                ? 'border-gray-200 hover:border-green-300 hover:bg-green-50'
-                                : 'border-red-200 bg-red-50 cursor-not-allowed'
+                            onClick={() => setSelectedTime(time)}
+                            className={`shrink-0 px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 relative ${
+                              isSelected
+                                ? hasConflict
+                                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                                  : 'bg-[#1a6645] text-white shadow-lg shadow-[#1a6645]/20'
+                                : hasConflict
+                                ? 'bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
-                            disabled={!available}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className={`font-semibold ${
-                                isSelectedTime ? 'text-green-700' : available ? 'text-gray-900' : 'text-red-600'
-                              }`}>
-                                {formatTime(time)}
-                              </span>
-                              {isSelectedTime ? (
-  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-) : available ? (
-  <div className="text-xs text-green-600 font-semibold">Available</div>
-) : (
-  (() => {
-    // Find the job that's booked at this time
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    
-   const bookedJob = scheduledJobs.find(job => {
-  const jobDate = job.scheduled_date ? job.scheduled_date.split('T')[0] : null;
-  if (jobDate !== dateStr || !job.scheduled_time) return false;
-  const toMinutes = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-  return Math.abs(toMinutes(time) - toMinutes(job.scheduled_time)) < 60;
-});
-    
-    return (
-      <div className="text-xs text-red-600 font-semibold">
-        {bookedJob?.assigned_to ? `${bookedJob.assigned_to}` : 'Booked'}
-      </div>
-    );
-  })()
-)}
-                            </div>
+                            {formatTime(time)}
+                            {hasConflict && (
+                              <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border border-white" />
+                            )}
                           </button>
                         );
                       })}
                     </div>
-                  </>
-                ) : (
-                  <div className="text-center py-12 text-gray-400">
-                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>Select a date to see available times</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t bg-gray-50">
-          <div className="text-sm text-gray-600">
+                    {/* Conflict warning */}
+                    <AnimatePresence>
+                      {selectedConflict && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="mt-3 flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl"
+                        >
+                          <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] font-bold text-amber-700 leading-tight">
+                            {selectedConflict.name
+                              ? `"${selectedConflict.name}" is already scheduled around this time`
+                              : 'A job is already scheduled around this time'}
+                            {selectedConflict.assigned_to ? ` — ${selectedConflict.assigned_to}` : ''}. You can still book it.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-4 border-t border-slate-100 bg-white">
             {selectedDate && selectedTime ? (
-              <div className="font-semibold text-gray-900">
-                Selected: {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {formatTime(selectedTime)}
-              </div>
+              <motion.button
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={handleConfirm}
+                className="w-full py-4 bg-[#0F1F3D] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
+              >
+                <Check size={14} strokeWidth={3} />
+                Confirm — {formatDateDisplay(selectedDate)} at {formatTime(selectedTime)}
+              </motion.button>
             ) : (
-              <div>Please select date and time</div>
+              <div className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl text-[11px] font-black uppercase tracking-widest text-center">
+                {!selectedDate ? 'Select a date' : 'Select a time'}
+              </div>
             )}
           </div>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!selectedDate || !selectedTime}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition shadow-sm"
-            >
-              Confirm Selection
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

@@ -2158,3 +2158,80 @@ export async function sendFreeWelcomeEmail({
     throw error;
   }
 }
+
+
+
+// ─────────────────────────────────────────────────────────────
+// sendGoogleReviewRequestEmail
+// Sends a review request to the customer when job is completed.
+// ─────────────────────────────────────────────────────────────
+export async function sendGoogleReviewRequestEmail({
+  customerEmail,
+  customerName,
+  companyId,
+  jobCategory,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyId: number;
+  jobCategory?: string;
+}) {
+  try {
+    const company = await getCompanyDetails(companyId);
+    
+    const reviewResult = await sql`
+      SELECT google_review_url, google_review_enabled, name
+      FROM companies WHERE id = ${companyId} LIMIT 1
+    `;
+    const reviewData = reviewResult[0];
+    
+    if (!reviewData?.google_review_enabled || !reviewData?.google_review_url) return;
+
+    const brandColor = company.email_brand_color_1 || '#0f172a';
+    const displayCategory = jobCategory ? formatCategory(jobCategory) : 'your recent service';
+
+    const bodyHtml = `
+      <p style="margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        Hi ${customerName}, thank you for choosing <strong>${company.name}</strong>. We hope you are happy with your ${displayCategory}.
+      </p>
+
+      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        If you have a moment, we would really appreciate it if you could leave us a review. It helps us a lot and only takes a minute.
+      </p>
+
+      <div style="text-align: center; margin-bottom: 32px;">
+        <a href="${reviewData.google_review_url}"
+          style="display: inline-block; background-color: ${brandColor}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          Leave a Review
+        </a>
+      </div>
+
+      <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
+        Thank you for your support. We look forward to working with you again.
+      </p>
+    `;
+
+    const html = buildEmail({
+      companyName: company.name,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml,
+      phone: company.phone,
+      website: company.website,
+      preheader: `How did we do? Leave ${company.name} a quick review.`,
+    });
+
+    await resend.emails.send({
+      from: `${company.name} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject: `How did we do? — ${company.name}`,
+      html,
+    });
+
+    console.log('Google review request sent to:', customerEmail);
+  } catch (error) {
+    console.error('Failed to send review request email:', error);
+  }
+}

@@ -32,6 +32,7 @@ type LeadModalProps = {
   categories: any[];
   company?: any;
   companySlug: string;
+  teamMembers?: any[];
 };
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
@@ -139,6 +140,7 @@ export default function LeadModal({
   categories = [],
   company,
   companySlug,
+  teamMembers = [],
 }: LeadModalProps) {
   const [saving, setSaving] = useState(false);
 const [noteInFlight, setNoteInFlight] = useState(false);
@@ -501,7 +503,7 @@ const renderProjectTab = () => {
     );
   }
   return (
-    <ProjectSection
+  <ProjectSection
   lead={lead}
   company={company}
   currentUser={currentUser}
@@ -510,6 +512,7 @@ const renderProjectTab = () => {
   onUpdateStatus={onUpdateStatus}
   companySlug={companySlug}
   defaultTab={activeTab}
+  teamMembers={teamMembers}
 />
   );
 };

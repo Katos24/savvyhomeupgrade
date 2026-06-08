@@ -89,7 +89,9 @@ export default async function SettingsPage({
         trial_ends_at,
         plan_tier,
         form_field_config,
-        pending_downgrade_at
+pending_downgrade_at,
+google_review_url,
+google_review_enabled
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
@@ -130,8 +132,9 @@ export default async function SettingsPage({
       trial_ends_at: company.trial_ends_at,
        plan_tier: company.plan_tier,
       form_field_config: company.form_field_config,
-      pending_downgrade_at: company.pending_downgrade_at ?? null,
-    };
+pending_downgrade_at: company.pending_downgrade_at ?? null,
+google_review_url: company.google_review_url ?? '',
+google_review_enabled: company.google_review_enabled ?? false,    };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;
   } catch (error) {

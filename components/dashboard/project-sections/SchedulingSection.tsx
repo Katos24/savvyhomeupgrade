@@ -19,10 +19,10 @@ type SchedulingSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
+  teamMembers?: any[];
 };
 
-export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug }: SchedulingSectionProps) {
-  const [saving, setSaving] = useState(false);
+export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug, teamMembers = [] }: SchedulingSectionProps) {  const [saving, setSaving] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showHours, setShowHours] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -38,8 +38,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [customAssignee, setCustomAssignee] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [actualHours, setActualHours] = useState('');
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-const [teamLoading, setTeamLoading] = useState(true);
+const teamLoading = false;
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -72,17 +71,7 @@ const [teamLoading, setTeamLoading] = useState(true);
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
 
- useEffect(() => {
-    async function fetchTeam() {
-      try {
-        const res = await fetch('/api/team/members');
-        const data = await res.json();
-        if (data.success) setTeamMembers(data.members);
-      } catch {}
-      finally { setTeamLoading(false); }
-    }
-    fetchTeam();
-  }, []);
+
 
   const fetchOutbox = async () => {
     if (!lead?.id) return;
@@ -124,6 +113,17 @@ const [teamLoading, setTeamLoading] = useState(true);
     setSaving(true);
     try {
       const finalAssignee = overrideAssignee || (showCustomAssignee ? customAssignee : assignedTo);
+      // Auto-save new assignee name to company saved_assignees
+if (finalAssignee) {
+  const knownNames = teamMembers.map((m: any) => m.name);
+  if (!knownNames.includes(finalAssignee)) {
+    fetch('/api/team/save-assignee', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: finalAssignee }),
+    }).catch(() => {}); // fire and forget, non-blocking
+  }
+}
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

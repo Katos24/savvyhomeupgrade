@@ -18,6 +18,7 @@ type ProjectSectionProps = {
   companySlug: string;
   company: any;
   defaultTab?: string;
+  teamMembers?: any[];
 };
 
 export default function ProjectSection({
@@ -29,6 +30,7 @@ export default function ProjectSection({
   onUpdateStatus,
   companySlug,
   defaultTab,
+  teamMembers = [],
 }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
 
@@ -181,8 +183,7 @@ export default function ProjectSection({
           )}
 
           {planningTab === 'schedule' && (
-            <SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} />
-          )}
+<SchedulingSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} companySlug={companySlug} teamMembers={teamMembers} />          )}
           {planningTab === 'tasks' && (
             <TasksSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}

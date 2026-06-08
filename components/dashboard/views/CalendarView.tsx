@@ -18,7 +18,7 @@ const STATUS_HEX: Record<string, string> = {
   green:  '#10b981',
   red:    '#ef4444',
   gray:   '#64748b',
-  indigo: '#6366f1',
+  indigo: '#3b82f6',
   pink:   '#ec4899',
 };
 
@@ -29,11 +29,8 @@ function formatTime12h(timeStr?: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-function formatDateNice(dateStr: string) {
-  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
-  const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
+const DAYS_FULL  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function CalendarView({
   leads,
@@ -43,18 +40,17 @@ export default function CalendarView({
 }: CalendarViewProps) {
   const [calDate, setCalDate] = useState(new Date());
 
-  const year  = calDate.getFullYear();
-  const month = calDate.getMonth();
+  const year        = calDate.getFullYear();
+  const month       = calDate.getMonth();
   const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthName   = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const DAYS        = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const getStatusHex = (lead: any) => {
     const opt = statusOptions.find((s: any) => s.value === lead.status);
-    if (!opt) return '#6366f1';
+    if (!opt) return '#3b82f6';
     if (opt.hex) return opt.hex;
-    return STATUS_HEX[opt.color] || '#6366f1';
+    return STATUS_HEX[opt.color] || '#3b82f6';
   };
 
   const scheduledLeads = leads.filter(l => l.scheduled_date);
@@ -70,53 +66,67 @@ export default function CalendarView({
     today.getMonth() === month &&
     today.getDate() === day;
 
-  const border  = isDark ? 'border-white/[0.06]' : 'border-gray-100';
-  const cellBg  = isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-gray-50';
-const textDay = isDark ? 'text-white' : 'text-gray-400';
+  // Theme tokens
+  const bg        = isDark ? 'bg-[#0a0c14]'          : 'bg-white';
+  const border    = isDark ? 'border-white/[0.06]'   : 'border-slate-100';
+  const headerBg  = isDark ? 'bg-white/[0.02]'       : 'bg-slate-50/80';
+  const cellHover = isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-slate-50';
+  const textMuted = isDark ? 'text-white/30'          : 'text-slate-400';
+  const textMain  = isDark ? 'text-white'             : 'text-slate-900';
 
   return (
-    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-[#0f172a] border-white/[0.08]' : 'bg-white border-gray-200'}`}>
+    <div className={`rounded-[1.5rem] sm:rounded-[2rem] border overflow-hidden ${bg} ${border} shadow-2xl`}>
 
-      {/* Header */}
-      <div className={`flex items-center justify-between px-5 py-4 border-b ${border}`}>
-        <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{monthName}</h3>
+      {/* HEADER */}
+      <div className={`flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b ${border} ${headerBg}`}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center ${isDark ? 'bg-blue-500/20' : 'bg-blue-50'}`}>
+            <Calendar className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+          </div>
+          <h3 className={`text-sm sm:text-base font-black tracking-tight ${textMain}`}>{monthName}</h3>
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCalDate(new Date(year, month - 1, 1))}
-            className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}
+            className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-90 ${isDark ? 'hover:bg-white/10 text-white/40 hover:text-white' : 'hover:bg-slate-100 text-slate-400'}`}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => setCalDate(new Date())}
-            className={`px-3 py-1 rounded-lg text-xs font-black transition ${isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-500'}`}
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${
+              isDark ? 'hover:bg-white/10 text-white/40 hover:text-white' : 'hover:bg-slate-100 text-slate-500'
+            }`}
           >
             Today
           </button>
           <button
             onClick={() => setCalDate(new Date(year, month + 1, 1))}
-            className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}
+            className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-90 ${isDark ? 'hover:bg-white/10 text-white/40 hover:text-white' : 'hover:bg-slate-100 text-slate-400'}`}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Day headers */}
+      {/* DAY HEADERS */}
       <div className={`grid grid-cols-7 border-b ${border}`}>
-        {DAYS.map(d => (
-          <div key={d} className={`py-2 text-center text-[10px] font-black uppercase tracking-widest ${textDay}`}>
-            <span className="hidden sm:inline">{d}</span>
-            <span className="sm:hidden">{d[0]}</span>
+        {DAYS_FULL.map((d, i) => (
+          <div key={d} className={`py-2 sm:py-3 text-center font-black uppercase tracking-widest ${textMuted}`}>
+            <span className="hidden sm:inline text-[10px]">{d}</span>
+            <span className="sm:hidden text-[9px]">{DAYS_SHORT[i]}</span>
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
+      {/* CALENDAR GRID */}
       <div className="grid grid-cols-7">
-        {/* Empty cells before first day */}
+        {/* Empty cells */}
         {Array.from({ length: firstDay }).map((_, i) => (
-          <div key={`empty-${i}`} className={`min-h-[70px] sm:min-h-[100px] border-r border-b ${border}`} />
+          <div
+            key={`empty-${i}`}
+className={`min-h-[52px] sm:min-h-[90px] border-r border-b ${border} ${isDark ? 'bg-white/[0.01]' : 'bg-slate-50/30'}`}
+          />
         ))}
 
         {/* Day cells */}
@@ -125,46 +135,69 @@ const textDay = isDark ? 'text-white' : 'text-gray-400';
           const dayLeads = leadsForDay(day);
           const todayCell = isToday(day);
           const isLastCol = (day + firstDay - 1) % 7 === 6;
+          const hasLeads  = dayLeads.length > 0;
 
           return (
             <div
               key={day}
-              className={`min-h-[52px] sm:min-h-[100px] border-r border-b p-1 sm:p-2 transition ${border} ${cellBg} ${isLastCol ? 'border-r-0' : ''}`}
+className={`min-h-[52px] sm:min-h-[90px] border-b p-1 sm:p-2 transition-colors ${border} ${                isLastCol ? '' : `border-r`
+              } ${cellHover}`}
             >
               {/* Day number */}
-              <div className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full text-[10px] sm:text-xs font-black mb-1 ${
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg text-[10px] sm:text-[11px] font-black mb-1 ${
                 todayCell
-                  ? 'bg-indigo-600 text-white'
-                  : isDark ? 'text-white' : 'text-gray-500'
-
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : textMuted
               }`}>
                 {day}
               </div>
 
-              {/* Lead pills */}
-              <div className="space-y-0.5">
-                {dayLeads.slice(0, 2).map(lead => {
-                  const hex = getStatusHex(lead);
-                  return (
-                    <button
-                      key={lead.id}
-                      onClick={() => onSelectLead(lead)}
-                      className="w-full text-left px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold truncate transition hover:opacity-80"
-style={{ backgroundColor: `${hex}30`, color: isDark ? '#ffffff' : hex }}
-                    >
-                     
-<span className="hidden sm:inline">
-  {lead.scheduled_time ? formatTime12h(lead.scheduled_time) + ' ' : ''}
-  {lead.name.split(' ')[0]}
-</span>
-<span className="sm:hidden">{lead.name[0]}</span>
-                    </button>
-                  );
-                })}
-                {dayLeads.length > 2 && (
-                  <p className={`text-[9px] font-black px-1 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                    +{dayLeads.length - 2} more
-                  </p>
+              {/* Lead pills — desktop: full pill, mobile: tap to open directly */}
+              <div className="flex flex-col gap-0.5">
+                {/* Desktop pills */}
+                <div className="hidden sm:flex flex-col gap-0.5">
+                  {dayLeads.slice(0, 3).map(lead => {
+                    const hex = getStatusHex(lead);
+                    return (
+                      <button
+                        key={lead.id}
+                        onClick={() => onSelectLead(lead)}
+                        className="w-full text-left px-1.5 py-1 rounded-md text-[9px] font-bold truncate transition-all hover:brightness-110 active:scale-95"
+                        style={{ backgroundColor: `${hex}25`, color: hex }}
+                      >
+                        {lead.scheduled_time ? formatTime12h(lead.scheduled_time) + ' · ' : ''}
+                        {lead.name.split(' ')[0]}
+                      </button>
+                    );
+                  })}
+                  {dayLeads.length > 3 && (
+                    <p className={`text-[8px] font-black px-1 ${textMuted}`}>
+                      +{dayLeads.length - 3} more
+                    </p>
+                  )}
+                </div>
+
+                {/* Mobile: colored dot buttons — each opens the lead directly */}
+                {hasLeads && (
+                  <div className="sm:hidden flex flex-wrap gap-1 mt-0.5">
+                    {dayLeads.slice(0, 4).map(lead => {
+                      const hex = getStatusHex(lead);
+                      return (
+                        <button
+                          key={lead.id}
+                          onClick={() => onSelectLead(lead)}
+                          className="w-4 h-4 rounded-full active:scale-90 transition-transform shadow-sm"
+                          style={{ backgroundColor: hex }}
+                          title={lead.name}
+                        />
+                      );
+                    })}
+                    {dayLeads.length > 4 && (
+                      <span className={`text-[8px] font-black ${textMuted} leading-4`}>
+                        +{dayLeads.length - 4}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -172,11 +205,13 @@ style={{ backgroundColor: `${hex}30`, color: isDark ? '#ffffff' : hex }}
         })}
       </div>
 
-     
+      {/* EMPTY STATE */}
       {scheduledLeads.length === 0 && (
         <div className={`px-5 py-10 text-center border-t ${border}`}>
-          <Calendar className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-white/10' : 'text-gray-200'}`} />
-          <p className={`text-sm font-bold ${isDark ? 'text-white/20' : 'text-gray-300'}`}>No scheduled jobs yet</p>
+          <Calendar className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-white/10' : 'text-slate-200'}`} />
+          <p className={`text-sm font-bold ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+            No scheduled jobs yet
+          </p>
         </div>
       )}
     </div>

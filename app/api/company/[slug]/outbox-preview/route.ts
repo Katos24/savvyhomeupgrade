@@ -34,13 +34,13 @@ export async function GET(request: Request, { params }: Props) {
     const leadId = url.searchParams.get('lead_id');
     const type = url.searchParams.get('type');
 
-    if (!leadId || !type) {
-      return NextResponse.json({ error: 'Missing lead_id or type' }, { status: 400 });
-    }
+   if (!leadId) {
+  return NextResponse.json({ error: 'Missing lead_id' }, { status: 400 });
+}
 
-    const entries = await sql`
-      SELECT
-        id, status, error_message,
+const entries = type
+  ? await sql`
+      SELECT id, type, status, error_message,
         sent_by_email, sent_by_name,
         subject, html_body,
         created_at, sent_at
@@ -50,6 +50,17 @@ export async function GET(request: Request, { params }: Props) {
         AND company_id = ${company[0].id}
       ORDER BY created_at DESC
       LIMIT 20
+    `
+  : await sql`
+      SELECT id, type, status, error_message,
+        sent_by_email, sent_by_name,
+        subject, html_body,
+        created_at, sent_at
+      FROM email_outbox
+      WHERE lead_id = ${parseInt(leadId)}
+        AND company_id = ${company[0].id}
+      ORDER BY created_at DESC
+      LIMIT 50
     `;
 
     return NextResponse.json({ entries });

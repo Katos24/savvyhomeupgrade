@@ -23,7 +23,7 @@ const token = cookieStore.get('auth-token')?.value;
     const sql = neon(process.env.DATABASE_URL!);
 
     // Fetch all active users in the company
-    const members = await sql`
+const members = await sql`
       SELECT 
         id,
         name,
@@ -32,20 +32,30 @@ const token = cookieStore.get('auth-token')?.value;
         phone
       FROM users
       WHERE company_id = ${companyId}
-  AND is_active = true
+      AND is_active = true
       ORDER BY name ASC
     `;
 
-    return NextResponse.json({ 
-      success: true, 
-      members: members.map(member => ({
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        role: member.role,
-        phone: member.phone
-      }))
-    });
+const companyResult = await sql`
+  SELECT saved_assignees FROM companies WHERE id = ${companyId} LIMIT 1
+`;
+const savedAssignees: string[] = companyResult[0]?.saved_assignees || [];
+
+// Combine user names + saved assignees, deduplicated
+const userNames = members.map((m: any) => m.name).filter(Boolean);
+const allAssignees = [...new Set([...userNames, ...savedAssignees])].sort();
+
+return NextResponse.json({ 
+  success: true, 
+  members: members.map((member: any) => ({
+    id: member.id,
+    name: member.name,
+    email: member.email,
+    role: member.role,
+    phone: member.phone
+  })),
+  allAssignees,
+});
 
   } catch (error) {
     console.error('Error fetching team members:', error);

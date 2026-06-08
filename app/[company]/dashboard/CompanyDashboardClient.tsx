@@ -837,13 +837,14 @@ const initialLeadCount = useRef<number | null>(null);
       {/* Modals & Components */}
       {selectedLead && (
         <LeadModal
-          lead={selectedLead} onClose={() => setSelectedLead(null)}
-          onUpdateStatus={updateLeadStatus} onAddNote={addNote}
-          onDeleteLead={deleteLead} onRefresh={refreshModalLead}
-          currentUser={currentUser} statusOptions={statusOptions}
-          categories={company.form_categories || []} company={company}
-          companySlug={company.slug}
-        />
+  lead={selectedLead} onClose={() => setSelectedLead(null)}
+  onUpdateStatus={updateLeadStatus} onAddNote={addNote}
+  onDeleteLead={deleteLead} onRefresh={refreshModalLead}
+  currentUser={currentUser} statusOptions={statusOptions}
+  categories={company.form_categories || []} company={company}
+  companySlug={company.slug}
+  teamMembers={teamMembers}
+/>
       )}
 
       <CreateLeadModal

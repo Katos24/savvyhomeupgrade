@@ -108,19 +108,22 @@ export async function POST(
 
 
     switch (action) {
-     case 'update-general':
+    case 'update-general':
+        console.log('update-general data:', JSON.stringify(data));
         try {
-          const result = await sql`
+       const result = await sql`
             UPDATE companies
             SET 
               name = ${data.name},
               email = ${data.email},
               phone = ${data.phone || null},
               website = ${data.website || null},
-business_type = COALESCE(${data.business_type || null}, business_type),
+              business_type = COALESCE(${data.business_type || null}, business_type),
               logo_url = ${data.logo_url || null},
               email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
-              email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'}
+              email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'},
+              google_review_url = ${data.google_review_url || null},
+              google_review_enabled = ${data.google_review_enabled ?? false}
             WHERE id = ${company.id}
             RETURNING *
           `;

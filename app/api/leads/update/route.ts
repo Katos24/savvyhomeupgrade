@@ -102,30 +102,60 @@ export async function POST(request: Request) {
       
     };
 
-    // ==================== UPDATE STATUS ====================
-    if (action === 'update_status') {
-      
-      await sql`
-        UPDATE leads 
-        SET status = ${status},
-            updated_at = NOW()
-        WHERE id = ${id}
-      `;
+   // ==================== UPDATE STATUS ====================
+if (action === 'update_status') {
 
-      const statusChangeEntry = {
-        type: 'status_change',
-        old_status: old_status,
-        new_status: status,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      };
+  await sql`
+    UPDATE leads 
+    SET status = ${status},
+        updated_at = NOW()
+    WHERE id = ${id}
+  `;
 
-      await addActivityToProject(id, statusChangeEntry);
+  const statusChangeEntry = {
+    type: 'status_change',
+    old_status: old_status,
+    new_status: status,
+    user_name: user_name,
+    user_email: user_email,
+    timestamp: new Date().toISOString()
+  };
 
-      return NextResponse.json({ success: true });
-    } 
-    
+  await addActivityToProject(id, statusChangeEntry);
+
+  if (status === 'completed' && old_status !== 'completed') {
+    const projectData = await sql`
+      SELECT p.id, p.review_request_sent_at, l.email as customer_email, l.name as customer_name, l.category, p.company_id
+      FROM leads l
+      LEFT JOIN projects p ON l.id = p.lead_id
+      WHERE l.id = ${id}
+      LIMIT 1
+    `;
+    const proj = projectData[0];
+    if (proj?.company_id && proj?.customer_email && !proj?.review_request_sent_at) {
+      try {
+        const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
+        await sendGoogleReviewRequestEmail({
+          customerEmail: proj.customer_email,
+          customerName: proj.customer_name,
+          companyId: proj.company_id,
+          jobCategory: proj.category,
+        });
+        if (proj.id) {
+          await sql`
+            UPDATE projects
+            SET review_request_sent_at = NOW()
+            WHERE id = ${proj.id}
+          `;
+        }
+      } catch (reviewErr) {
+        console.error('Review email failed (non-blocking):', reviewErr);
+      }
+    }
+  }
+
+  return NextResponse.json({ success: true });
+}
     // ==================== ADD NOTE ====================
     else if (action === 'add_note') {
       
