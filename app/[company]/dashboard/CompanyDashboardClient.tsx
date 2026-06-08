@@ -83,8 +83,9 @@ function getDateBoundaries() {
   const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
   const yesterdayStart = new Date(todayStart.getTime() - 86_400_000);
   const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
+weekStart.setDate(now.getDate() - now.getDay());
+weekStart.setHours(0, 0, 0, 0);
+if (weekStart >= yesterdayStart) weekStart.setTime(yesterdayStart.getTime());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   return { now, todayStart, yesterdayStart, weekStart, monthStart };
 }
