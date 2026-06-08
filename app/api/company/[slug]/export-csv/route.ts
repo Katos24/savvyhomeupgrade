@@ -72,11 +72,12 @@ export async function GET(
         p.scheduled_time,
         p.assigned_to,
         p.estimated_hours,
-        p.quote_total,
-        p.payment_status,
-        p.payment_amount,
-        p.payment_due_date,
-        p.payment_date,
+        p.invoice_number,
+p.quote_total,
+p.payment_status,
+p.payment_amount,
+p.payment_due_date,
+p.payment_date,
         l.lead_source,
         l.preferred_date,
         l.preferred_time,
@@ -154,8 +155,9 @@ export async function GET(
     if (exportFormat === 'quickbooks') {
       // QuickBooks format — only the fields QuickBooks needs with their expected column names
       const qbHeaders = [
-        'Customer',
-        'First Name',
+        'Invoice #',
+'Customer',
+'First Name',
         'Last Name',
         'Email',
         'Phone',
@@ -179,8 +181,9 @@ export async function GET(
         const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
         const qbValues = [
-          escape(lead.name || ''),
-          escape(firstName),
+  escape(lead.invoice_number || ''),
+  escape(lead.name || ''),
+  escape(firstName),
           escape(lastName),
           escape(lead.email || ''),
           escape(lead.phone || ''),
@@ -203,7 +206,8 @@ export async function GET(
       // Full export — all fields
       const staticHeaders = [
         'Type',
-        'Full Name',
+'Invoice #',
+'Full Name',
         'First Name',
         'Last Name',
         'Email',
@@ -242,8 +246,9 @@ export async function GET(
         const answers = lead.custom_answers || {};
 
         const staticValues = [
-          escape(lead.type),
-          escape(lead.name || ''),
+         escape(lead.type),
+escape(lead.invoice_number || ''),
+escape(lead.name || ''),
           escape(firstName),
           escape(lastName),
           escape(lead.email),
