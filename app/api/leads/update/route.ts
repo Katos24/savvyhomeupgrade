@@ -222,7 +222,7 @@ export async function POST(request: Request) {
          ${leadData.category || null},
 'scheduled',
 ${leadData.company_id || null},
-${'INV-' + nextProjectNumber},
+${'INV-' + String(nextProjectNumber).padStart(3, '0')},
           ${JSON.stringify(leadNotes)},
           '[]'::jsonb,
           '[]'::jsonb,
