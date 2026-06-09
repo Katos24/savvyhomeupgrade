@@ -62,9 +62,9 @@ export const industryContent: Record<string, IndustryContent> = {
     },
     stats: [
       { value: '< 60s', label: 'To set up your booking link', note: 'no tech skills needed' },
-      { value: '4x', label: 'More info per lead', note: 'vs. a phone call' },
+{ value: '1 link', label: 'For every lead you capture' },
       { value: '$0', label: 'Extra software needed', note: 'replaces the spreadsheet' },
-      { value: '30s', label: 'AI job brief', note: 'before you even call them back' },
+{ value: 'Free', label: 'To get started, no card required' },
     ],
     formFields: [
       { label: 'Full Name', placeholder: 'Mike Torres', type: 'text' },
@@ -194,9 +194,9 @@ export const industryContent: Record<string, IndustryContent> = {
     },
     stats: [
       { value: '< 60s', label: 'To set up your booking link', note: 'no tech skills needed' },
-      { value: '4x', label: 'More info per call', note: 'vs. a phone call' },
+{ value: '1 link', label: 'For every lead you capture' },
+{ value: 'Free', label: 'To get started, no card required' },
       { value: '$0', label: 'Extra software needed', note: 'replaces the spreadsheet' },
-      { value: '30s', label: 'AI job brief', note: 'before you even call them back' },
     ],
     formFields: [
       { label: 'Full Name', placeholder: 'James Rivera', type: 'text' },
@@ -260,9 +260,9 @@ export const industryContent: Record<string, IndustryContent> = {
     },
     stats: [
       { value: '< 60s', label: 'To set up your booking link', note: 'no tech skills needed' },
-      { value: '4x', label: 'More info per lead', note: 'vs. a phone call' },
+{ value: '1 link', label: 'For every lead you capture' },
+{ value: 'Free', label: 'To get started, no card required' },
       { value: '$0', label: 'Extra software needed', note: 'replaces the notes app' },
-      { value: '30s', label: 'AI job brief', note: 'scope summary before you call back' },
     ],
     formFields: [
       { label: 'Full Name', placeholder: 'Karen White', type: 'text' },
@@ -326,9 +326,9 @@ export const industryContent: Record<string, IndustryContent> = {
     },
     stats: [
       { value: '< 60s', label: 'To set up your booking link', note: 'no tech skills needed' },
-      { value: '4x', label: 'More info per lead', note: 'vs. a phone call' },
+{ value: '1 link', label: 'For every lead you capture' },
+{ value: 'Free', label: 'To get started, no card required' },
       { value: '$0', label: 'Extra software needed', note: 'replaces the sticky notes' },
-      { value: '30s', label: 'AI job brief', note: 'scope summary in one tap' },
     ],
     formFields: [
       { label: 'Full Name', placeholder: 'Robert Kim', type: 'text' },
