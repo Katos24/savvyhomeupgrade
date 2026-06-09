@@ -223,6 +223,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const [activeTab, setActiveTab] = useState<'photos' | 'docs'>('photos');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [docType, setDocType] = useState<'document' | 'receipt' | 'permit' | 'contract'>('document');
   const [lightbox, setLightbox] = useState<{ photos: string[]; index: number; label?: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -258,6 +259,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const photoCount = beforePhotos.length + afterPhotos.length;
   const documents = parseJson(lead?.documents);
   const allDocs = [...documents, ...customerDocs];
+  
 
   const MAX_SIZE = 15 * 1024 * 1024;
 
@@ -279,7 +281,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
     try {
       const formData = new FormData();
       formData.append('leadId', lead.id.toString());
-      formData.append('docType', 'other');
+formData.append('docType', docType);
       formData.append('uploadType', 'document');
       formData.append('userName', currentUser?.name || currentUser?.email || 'System');
       Array.from(files).forEach(file => formData.append('documents', file));
@@ -288,7 +290,7 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
         setUploadProgress((p) => (p >= 90 ? p : p + 5));
       }, 300);
 
-      const res = await fetch(`/api/leads/${lead.id}/upload-docs`, {
+const res = await fetch(`/api/leads/upload-photos`, {
         method: 'POST',
         body: formData,
       });
@@ -392,13 +394,25 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                 className="hidden"
                 id="doc-upload"
               />
-              <label
-                htmlFor="doc-upload"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 shadow-md cursor-pointer transition-all active:scale-95"
-              >
-                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                {uploading ? 'Uploading' : 'Add Document'}
-              </label>
+             <div className="flex items-center gap-2">
+  <select
+    value={docType}
+    onChange={e => setDocType(e.target.value as typeof docType)}
+    className="text-[10px] font-bold uppercase tracking-widest border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600 cursor-pointer"
+  >
+    <option value="document">Document</option>
+    <option value="receipt">Receipt</option>
+    <option value="permit">Permit</option>
+    <option value="contract">Contract</option>
+  </select>
+  <label
+    htmlFor="doc-upload"
+    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 shadow-md cursor-pointer transition-all active:scale-95"
+  >
+    {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+    {uploading ? 'Uploading' : 'Add'}
+  </label>
+</div>
             </div>
           )}
         </div>
@@ -543,8 +557,11 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
                                   {doc.name}
                                 </p>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
-                                  {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
-                                </p>
+  {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
+</p>
+<p className="text-[10px] font-bold uppercase tracking-tight mt-0.5" style={{color: doc.type === 'receipt' ? '#f59e0b' : doc.type === 'permit' ? '#10b981' : doc.type === 'contract' ? '#6366f1' : '#94a3b8'}}>
+  {doc.type || 'document'}
+</p>
                               </div>
                             </div>
                             <Download className="w-4 h-4 text-slate-300 shrink-0" />

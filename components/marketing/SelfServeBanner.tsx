@@ -32,7 +32,10 @@ export default function SelfServeBanner() {
               className="text-slate-500 font-bold text-base sm:text-lg leading-relaxed max-w-md"
               style={{ fontFamily: font }}
             >
-              You don&apos;t need to replace anything you already use. Keep your QuickBooks, keep your payment app. Lead2Project just handles the part you&apos;re missing — catching leads and tracking jobs.
+You don&apos;t need to replace anything you already use. Keep your QuickBooks, keep your payment app. Lead2Project handles the part you&apos;re missing — catching leads and tracking jobs from one place.{' '}
+<a href="/partners" className="text-emerald-600 hover:text-emerald-700 font-black underline underline-offset-2">
+  Bookkeeper or CPA? See our partner program.
+</a>
             </p>
           </motion.div>
 

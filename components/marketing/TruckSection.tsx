@@ -94,9 +94,7 @@ export default function DistributionSection() {
             viewport={{ once: true }}
             className="order-1 lg:order-1"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black text-[10px] uppercase tracking-widest mb-6">
-              <Star size={12} className="fill-blue-500" /> The Google Growth Hack
-            </div>
+          
 
             <h2 className="text-4xl sm:text-5xl text-slate-900 font-black leading-[0.95] tracking-tight mb-0 lg:mb-8" style={{ fontFamily: font }}>
               Own the <span className="text-blue-600">Google Search</span> result.

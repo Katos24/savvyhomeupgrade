@@ -1,307 +1,358 @@
-// components/marketing/IndustryLandingPage.tsx
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import type { IndustryContent } from '@/lib/industry-content';
+import Nav from '@/components/marketing/Nav';
+import Footer from '@/components/marketing/Footer';
 
 export default function IndustryLandingPage({ content }: { content: IndustryContent }) {
-
-  const c = content.color;
-
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: '#0d0d0d', color: '#fff' }}>
+    <>
+      <Nav />
 
-      {/* ── NAV ── */}
-      <nav style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,13,13,0.95)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 15, color: '#fff', textDecoration: 'none', letterSpacing: '-0.02em' }}>
-            Lead2Project
-          </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', border: `1px solid ${c}40`, color: c, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+      <main style={{ fontFamily: 'Inter, sans-serif' }}>
+
+        {/* HERO */}
+        <section className="bg-slate-900 pt-32 pb-20 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <p
+              className="inline-block text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 border"
+              style={{ color: content.color, borderColor: `${content.color}40`, background: `${content.color}15` }}
+            >
               {content.badge}
-            </span>
-            <Link href="/signup" style={{ padding: '8px 18px', background: c, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-              Get Started Free
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* ── HERO ── */}
-      <section style={{ background: 'linear-gradient(180deg, #0d0d0d 0%, #111 100%)', padding: '80px 24px 64px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', border: `1px solid ${c}30`, background: `${c}10`, marginBottom: 28, fontSize: 12, fontWeight: 700, color: c, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            {content.emoji} {content.badge}
-          </div>
-          <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
-            {content.hero.headline}
-          </h1>
-          <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: '0 0 40px', maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
-            {content.hero.sub}
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/signup" style={{ padding: '14px 28px', background: c, color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', display: 'inline-block' }}>
-              {content.hero.cta}
-            </Link>
-            <a href="#how-it-works" style={{ padding: '14px 28px', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
-              {content.hero.demoLabel} →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ── */}
-      <section style={{ background: '#111', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          {content.stats.map((stat, i) => (
-            <div key={i} style={{ padding: '28px 20px', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none', textAlign: 'center' }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, color: c, letterSpacing: '-0.02em' }}>{stat.value}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{stat.label}</div>
-              {stat.note && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontStyle: 'italic' }}>{stat.note}</div>}
+            </p>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight mb-6">
+              {content.hero.headline}
+            </h1>
+            <p className="text-lg text-slate-400 font-bold max-w-2xl mx-auto mb-10 leading-relaxed">
+              {content.hero.sub}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/signup"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl text-white font-black text-sm shadow-xl transition-all active:scale-95 border-2 border-slate-700"
+                style={{ background: content.color }}
+              >
+                {content.hero.cta}
+              </Link>
+              <a
+                href="#how-it-works"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-700 text-white font-black text-sm hover:bg-slate-800 transition-all"
+              >
+                {content.hero.demoLabel}
+              </a>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* ── PAIN POINTS ── */}
-      <section style={{ background: '#f8fafc', padding: '72px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 32, textAlign: 'center' }}>
-            {content.pain.headline}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            {content.pain.points.map((point, i) => (
-              <div key={i} style={{ padding: '20px 24px', background: '#fff', border: '1px solid #e2e8f0', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>😬</span>
-                <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: 0 }}>{point}</p>
+        {/* STATS */}
+        <section className="bg-slate-800 border-y-2 border-slate-700">
+          <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4">
+            {content.stats.map((stat, i) => (
+              <div
+                key={i}
+                className={`py-8 px-6 text-center ${i < content.stats.length - 1 ? 'border-r border-slate-700' : ''}`}
+              >
+                <div
+                  className="text-3xl font-black mb-1 tracking-tight"
+                  style={{ color: content.color }}
+                >
+                  {stat.value}
+                </div>
+                <div className="text-xs font-bold text-slate-300 mb-1">{stat.label}</div>
+                {stat.note && <div className="text-xs text-slate-500 font-bold">{stat.note}</div>}
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <p style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+        </section>
+
+        {/* PAIN POINTS */}
+        <section className="py-20 px-6 bg-slate-50">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight text-center mb-12">
+              {content.pain.headline}
+            </h2>
+            <div className="space-y-4">
+              {content.pain.points.map((point, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 shadow-sm"
+                >
+                  <div className="w-7 h-7 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center shrink-0">
+                    <span className="text-red-400 font-black text-xs">x</span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-700">{point}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-slate-500 font-bold text-sm mt-8">
               Lead2Project fixes all of this. With one link.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── FORM DEMO ── */}
-      <section style={{ background: '#0d0d0d', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>
-              What your customers see
-            </p>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
-              They fill it out. You see it instantly.
-            </h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 24, alignItems: 'center', maxWidth: 900, margin: '0 auto' }}>
-            {/* Form mockup */}
-            <div style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', padding: 28 }}>
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
+        {/* FORM DEMO */}
+        <section className="py-20 px-6 bg-slate-900">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <p
+                className="text-xs font-black uppercase tracking-widest mb-3"
+                style={{ color: content.color }}
+              >
+                What your customers see
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                They fill it out. You see it instantly.
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto items-start">
+              {/* Form mockup */}
+              <div className="bg-slate-800 border-2 border-slate-700 rounded-2xl p-6">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
                   lead2project.com/your-business
+                </p>
+                <p className="text-sm font-black text-white mb-6">New {content.name} Request</p>
+                {content.formFields.map((field, i) => (
+                  <div key={i} className="mb-4">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                      {field.label}
+                    </p>
+                    {field.type === 'textarea' ? (
+                      <div className="bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-xs text-slate-400 min-h-16 leading-relaxed">
+                        {field.placeholder}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-xs text-slate-400">
+                        {field.placeholder}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div
+                  className="w-full py-3 rounded-xl text-center text-xs font-black text-white mt-2"
+                  style={{ background: content.color }}
+                >
+                  Submit Request
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>New {content.name} Request</div>
               </div>
-              {content.formFields.map((field, i) => (
-                <div key={i} style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{field.label}</div>
-                  {field.type === 'textarea' ? (
-                    <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 13, color: 'rgba(255,255,255,0.3)', minHeight: 60, lineHeight: 1.5 }}>
-                      {field.placeholder}
-                    </div>
-                  ) : (
-                    <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
-                      {field.placeholder}
-                    </div>
+
+              {/* Board card mockup */}
+              <div className="bg-slate-800 border-2 rounded-2xl p-6" style={{ borderColor: `${content.color}40` }}>
+                <div className="flex items-center justify-between mb-4">
+                  <span
+                    className="text-xs font-black px-3 py-1 rounded-full border"
+                    style={{ color: content.color, borderColor: `${content.color}40`, background: `${content.color}15` }}
+                  >
+                    NEW LEAD
+                  </span>
+                  <span className="text-xs text-slate-500 font-bold">just now</span>
+                </div>
+                <p className="text-base font-black text-white mb-2">
+                  {content.formFields[0].placeholder}
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                  {content.formFields[content.formFields.length - 1].placeholder.slice(0, 80)}...
+                </p>
+                <div className="border-t border-slate-700 pt-4 flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-bold">{content.name}</span>
+                  <span
+                    className="text-xs font-black px-3 py-1 rounded-lg text-white"
+                    style={{ background: '#7c3aed' }}
+                  >
+                    AI Brief
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section id="how-it-works" className="py-20 px-6 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-14">
+              <p
+                className="text-xs font-black uppercase tracking-widest mb-3"
+                style={{ color: content.color }}
+              >
+                How it works
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Up and running in 3 steps.
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {content.howItWorks.map((step, i) => (
+                <div key={i}>
+                  <p
+                    className="text-4xl font-black mb-4 opacity-30"
+                    style={{ color: content.color }}
+                  >
+                    {step.step}
+                  </p>
+                  <h3 className="text-base font-black text-slate-900 mb-2">{step.title}</h3>
+                  <p className="text-sm text-slate-500 font-bold leading-relaxed">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section className="py-20 px-6 bg-slate-50">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-14">
+              <p
+                className="text-xs font-black uppercase tracking-widest mb-3"
+                style={{ color: content.color }}
+              >
+                Everything included
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Built for how you actually work.
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {content.features.map((feature, i) => (
+                <div
+                  key={i}
+                  className="bg-white border-2 border-slate-200 rounded-2xl p-6 hover:border-emerald-300 transition-all"
+                >
+                  <h3 className="text-sm font-black text-slate-900 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-slate-500 font-bold leading-relaxed">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* EMAIL PREVIEW */}
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <p
+                className="text-xs font-black uppercase tracking-widest mb-3"
+                style={{ color: content.color }}
+              >
+                Branded emails
+              </p>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
+                Customers think you have a whole office.
+              </h2>
+              <p className="text-slate-500 font-bold leading-relaxed">
+                Every submission triggers a professional confirmation email with your business name. No extra setup required.
+              </p>
+            </div>
+            <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6">
+              <p className="text-xs font-bold text-slate-400 mb-4">
+                <span className="text-slate-900 font-black">Subject:</span> {content.emailPreview.subject}
+              </p>
+              <div className="border-t border-slate-200 pt-4 space-y-2">
+                {content.emailPreview.bodyLines.map((line, i) => (
+                  <p key={i} className={`text-sm font-bold leading-relaxed ${i === 0 ? 'text-slate-900' : 'text-slate-500'}`}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PRICING */}
+        <section className="py-20 px-6 bg-slate-50">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <p
+                className="text-xs font-black uppercase tracking-widest mb-3"
+                style={{ color: content.color }}
+              >
+                Pricing
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
+                {content.pricing.headline}
+              </h2>
+              <p className="text-slate-500 font-bold">{content.pricing.sub}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              {[
+                {
+                  name: 'Growth',
+                  price: '$49.99',
+                  desc: 'Full job management for growing crews',
+                  features: ['Booking link and QR code', 'Unlimited leads', 'Job board and calendar', 'Quote builder', 'CSV export for bookkeeping', 'Unlimited team members'],
+                  highlight: false,
+                },
+                {
+                  name: 'Pro',
+                  price: '$79.99',
+                  desc: 'Automation and AI for serious contractors',
+                  features: ['Everything in Growth', 'One-click emails', 'Full email outbox', 'Daily 6AM digest', 'AI job briefs', 'AI quote generator'],
+                  highlight: true,
+                },
+              ].map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`rounded-2xl p-6 border-2 ${plan.highlight ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
+                >
+                  {plan.highlight && (
+                    <p
+                      className="text-xs font-black uppercase tracking-widest mb-3"
+                      style={{ color: content.color }}
+                    >
+                      Most Popular
+                    </p>
                   )}
+                  <p className={`text-sm font-black mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                    {plan.name}
+                  </p>
+                  <p className={`text-3xl font-black tracking-tight mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
+                    {plan.price}<span className={`text-sm font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>/mo</span>
+                  </p>
+                  <p className={`text-xs font-bold mb-6 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {plan.desc}
+                  </p>
+                  <ul className="space-y-2 mb-6">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className={`text-xs font-bold flex items-center gap-2 ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <span className="text-emerald-500">✓</span> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className={`block text-center py-3 rounded-xl text-xs font-black transition-all ${plan.highlight ? 'text-white' : 'text-white'}`}
+                    style={{ background: plan.highlight ? content.color : '#0f172a' }}
+                  >
+                    Start Free
+                  </Link>
                 </div>
               ))}
-              <div style={{ padding: '12px', background: c, textAlign: 'center', fontWeight: 700, fontSize: 13, color: '#fff', marginTop: 8 }}>
-                Submit Request →
-              </div>
-            </div>
-
-            {/* Arrow */}
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 28 }}>→</div>
-
-            {/* Board card mockup */}
-            <div style={{ background: '#1c2a3a', border: `1px solid ${c}40`, padding: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', background: `${c}20`, color: c, border: `1px solid ${c}40`, letterSpacing: '0.06em' }}>NEW LEAD</span>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Mono', monospace" }}>just now</span>
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{content.formFields[0].placeholder.split(' ').slice(0, 2).join(' ')}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 12, lineHeight: 1.5 }}>
-                {content.formFields[content.formFields.length - 1].placeholder.slice(0, 80)}...
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{content.name}</span>
-                <button style={{ padding: '5px 10px', background: '#7c3aed', color: '#fff', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer' }}>✦ Brief</button>
-              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ background: '#fff', padding: '80px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>How it works</p>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Up and running in 3 steps.</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-            {content.howItWorks.map((step, i) => (
-              <div key={i}>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 36, fontWeight: 700, color: c, opacity: 0.3, marginBottom: 12 }}>{step.step}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.02em' }}>{step.title}</h3>
-                <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.7, margin: 0 }}>{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section style={{ background: '#f8fafc', padding: '80px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Everything included</p>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Built for how you actually work.</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-            {content.features.map((feature, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '24px 28px' }}>
-                <div style={{ fontSize: 24, marginBottom: 12 }}>{feature.icon}</div>
-                <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.01em' }}>{feature.title}</h3>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, margin: 0 }}>{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIAL ── */}
-      <section style={{ background: '#0d0d0d', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 24, opacity: 0.4 }}>"</div>
-          <blockquote style={{ fontSize: 'clamp(18px, 3vw, 24px)', fontWeight: 600, lineHeight: 1.5, color: 'rgba(255,255,255,0.9)', margin: '0 0 32px', fontStyle: 'italic' }}>
-            {content.testimonial.quote}
-          </blockquote>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-            <div style={{ width: 44, height: 44, background: `${content.testimonial.color}20`, border: `2px solid ${content.testimonial.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: content.testimonial.color, fontFamily: "'DM Mono', monospace" }}>
-              {content.testimonial.initials}
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{content.testimonial.name}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: "'DM Mono', monospace" }}>{content.testimonial.trade} · {content.testimonial.location}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── EMAIL PREVIEW ── */}
-      <section style={{ background: '#f8fafc', padding: '80px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
-          <div>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Branded emails</p>
-            <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 16 }}>
-              Customers think you have a whole office.
+        {/* FINAL CTA */}
+        <section className="py-20 px-6 bg-slate-900 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+              Ready to stop losing leads?
             </h2>
-            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.7 }}>
-              Every submission triggers a professional confirmation email with your business name. No extra setup required.
+            <p className="text-slate-400 font-bold mb-10 leading-relaxed">
+              Set up your {content.name.toLowerCase()} booking link in 60 seconds. Free to start.
             </p>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-white font-black text-sm shadow-xl transition-all active:scale-95 border-2 border-slate-700"
+              style={{ background: content.color }}
+            >
+              Get Your Free Booking Link
+            </Link>
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: 24, fontFamily: "'DM Mono', monospace" }}>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 16 }}>
-              <span style={{ color: '#0f172a', fontWeight: 700 }}>Subject:</span> {content.emailPreview.subject}
-            </div>
-<div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
-              {content.emailPreview.bodyLines.map((line, i) => (
-                <p key={i} style={{ fontSize: 12, color: i === 0 ? '#0f172a' : '#64748b', margin: '0 0 8px', lineHeight: 1.6 }}>{line}</p>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── PRICING ── */}
-     {/* ── PRICING ── */}
-<section style={{ background: '#fff', padding: '80px 24px', color: '#0f172a' }}>
-  <div style={{ maxWidth: 900, margin: '0 auto' }}>
-    <div style={{ textAlign: 'center', marginBottom: 48 }}>
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: c, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</p>
-      <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 8 }}>{content.pricing.headline}</h2>
-      <p style={{ fontSize: 15, color: '#64748b' }}>{content.pricing.sub}</p>
-    </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 700, margin: '0 auto' }}>
-      {[
-        { name: 'Basic', price: 49.99, features: ['1 booking link', 'Unlimited leads', 'Job board', 'Email notifications', 'Basic analytics'] },
-        { name: 'Pro', price: 79.99, features: ['Everything in Basic', 'AI job briefs', 'Photo analysis', 'Quote builder', 'Priority support'], highlight: true },
-      ].map((plan) => (
-        <div key={plan.name} style={{ border: plan.highlight ? `2px solid ${c}` : '1px solid #e2e8f0', padding: '28px 24px', position: 'relative' }}>
-          {plan.highlight && (
-            <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: c, color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 12px', letterSpacing: '0.08em' }}>
-              MOST POPULAR
-            </div>
-          )}
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{plan.name}</div>
-          <div style={{ marginBottom: 20 }}>
-            <span style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-0.03em' }}>${plan.price}</span>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>/mo</span>
-          </div>
-          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px' }}>
-            {plan.features.map((f, i) => (
-              <li key={i} style={{ fontSize: 13, color: '#475569', padding: '5px 0', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <span style={{ color: '#22c55e', flexShrink: 0 }}>✓</span> {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '12px', background: plan.highlight ? c : '#0f172a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-            Get Started Free
-          </Link>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
+      </main>
 
-      {/* ── FINAL CTA ── */}
-      <section style={{ background: '#0d0d0d', padding: '80px 24px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: 16 }}>
-            Ready to stop losing leads?
-          </h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', marginBottom: 36, lineHeight: 1.6 }}>
-            Set up your {content.name.toLowerCase()} booking link in 60 seconds. Free to start.
-          </p>
-          <Link href="/signup" style={{ padding: '16px 36px', background: c, color: '#fff', fontWeight: 800, fontSize: 16, textDecoration: 'none', display: 'inline-block' }}>
-            Get Your Free Booking Link →
-          </Link>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '40px 24px', color: '#0f172a' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14 }}>Lead2Project</div>
-          <div style={{ display: 'flex', gap: 24, fontSize: 13, color: '#64748b' }}>
-            <Link href="/" style={{ color: '#64748b', textDecoration: 'none' }}>Home</Link>
-            <Link href="/privacy" style={{ color: '#64748b', textDecoration: 'none' }}>Privacy</Link>
-            <Link href="/terms" style={{ color: '#64748b', textDecoration: 'none' }}>Terms</Link>
-          </div>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontFamily: "'DM Mono', monospace" }}>
-            © 2025 Lead2Project
-          </div>
-        </div>
-      </footer>
-
-    </div>
+      <Footer />
+    </>
   );
 }

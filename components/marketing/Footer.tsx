@@ -24,8 +24,7 @@ Job management built for small and mid-size businesses. Your link. Every lead.
 
           {[
             { heading: 'Product',   links: [['Pricing','#pricing'],['Blog','/blog'],['Sign Up','/signup'],['Login','/login']] },
-            { heading: 'Solutions', links: [['Roofing','/solutions/roofing'],['Cleaning','/solutions/cleaning']] },
-            { heading: 'Legal',     links: [['Privacy Policy','/privacy'],['Terms of Service','/terms'],['Contact','mailto:hello@lead2project.com']] },
+{ heading: 'Solutions', links: [['HVAC','/solutions/hvac'],['Plumbing','/solutions/plumbing'],['Electrical','/solutions/electrical'],['Roofing','/solutions/roofing'],['Cleaning','/solutions/cleaning'],['For Bookkeepers','/partners']] },
           ].map(col => (
             <div key={col.heading}>
               <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-4">{col.heading}</p>

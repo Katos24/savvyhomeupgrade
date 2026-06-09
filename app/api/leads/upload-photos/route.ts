@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     // Handle DOCUMENT UPLOAD (Optimized)
     if (uploadType === 'document') {
-      const docType = formData.get('docType') as 'contract' | 'invoice' | 'permit' | 'other';
+const docType = formData.get('docType') as 'contract' | 'invoice' | 'permit' | 'receipt' | 'other';
       const documents = formData.getAll('documents') as File[];
 
       if (documents.length === 0) {

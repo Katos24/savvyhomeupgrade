@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, ArrowRight, ChevronRight, ChevronDown, QrCode, LayoutDashboard, Zap } from 'lucide-react';
+import { Menu, X, ArrowRight, ChevronRight, ChevronDown, QrCode, LayoutDashboard, Zap, BookOpen } from 'lucide-react';
+
+
 
 const FEATURE_LINKS = [
   { label: 'Lead Capture', desc: 'QR codes, forms, photo intake', href: '/features/lead-capture', icon: <QrCode size={18} /> },
@@ -129,7 +131,18 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
             >
               Pricing
             </Link>
+
+            <Link
+  href="/partners"
+  className={`text-sm font-bold transition-colors ${
+scrolled ? 'text-emerald-600 hover:text-emerald-700' : 'text-emerald-400 hover:text-emerald-300'
+  }`}
+>
+  For Bookkeepers
+</Link>
           </div>
+
+          
 
           {/* DESKTOP ACTIONS */}
           <div className="hidden md:flex items-center gap-3">
@@ -255,6 +268,15 @@ href="/#how-it-works"
             Pricing
             <ChevronRight size={18} className="text-white/40" />
           </Link>
+
+          <Link
+  href="/partners"
+  onClick={() => setMobileOpen(false)}
+  className="flex items-center justify-between px-4 py-4 rounded-xl text-emerald-400 font-black hover:bg-white/10 transition-colors"
+>
+  For Bookkeepers
+  <ChevronRight size={18} className="text-emerald-400/40" />
+</Link>
         </div>
 
         {/* Actions */}
