@@ -31,6 +31,8 @@ interface CustomInputProps {
 function SignupForm() {
   const searchParams = useSearchParams();
 const plan = searchParams.get('plan') || 'free';
+const refCode = searchParams.get('ref') || '';
+
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -112,8 +114,7 @@ const [formData, setFormData] = useState({
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, phone: phoneDigits, plan }),
-      });
+body: JSON.stringify({ ...formData, phone: phoneDigits, plan, referred_by_code: refCode || null }),      });
 
       const data = await response.json();
 

@@ -10,15 +10,16 @@ import { isReservedSlug } from '@/lib/reservedSlugs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { 
-      companyName, 
-      slug, 
-      email, 
-      phone, 
-      password, 
+    const {
+      companyName,
+      slug,
+      email,
+      phone,
+      password,
       businessType,
       ownerName,
       plan = 'free',
+      referred_by_code,
     } = await req.json();
 
     if (!companyName || !slug || !email || !password || !ownerName) {
@@ -77,7 +78,7 @@ const defaultFieldConfig = JSON.stringify({
 });
 
     const [newCompany] = await sql`
-      INSERT INTO companies (
+ INSERT INTO companies (
         name,
         slug,
         email,
@@ -90,7 +91,8 @@ const defaultFieldConfig = JSON.stringify({
         address_enabled,
         address_required,
         plan_tier,
-form_field_config
+        form_field_config,
+        referred_by_code
       ) VALUES (
         ${companyName},
         ${slug},
@@ -103,8 +105,9 @@ form_field_config
         true,
         ${addressConfig.show},
         ${addressConfig.required},
-       ${plan},
-${defaultFieldConfig}::jsonb
+        ${plan},
+        ${defaultFieldConfig}::jsonb,
+        ${referred_by_code || null}
       )
       RETURNING id, slug
     `;
