@@ -13,6 +13,7 @@ type CheckItem = {
   label: string;
   passed: boolean;
   warning?: boolean;
+  badge?: string;
 };
 
 export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: CompletionSummaryModalProps) {
@@ -26,6 +27,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
   const documents = lead?.documents
     ? (typeof lead.documents === 'string' ? JSON.parse(lead.documents) : lead.documents)
     : [];
+  const receipts = documents.filter((d: any) => d.type === 'receipt');
   const quoteData = lead?.quote_data || [];
   const tasks = Array.isArray(lead?.tasks) ? lead.tasks : [];
   const incompleteTasks = tasks.filter((t: any) => !t.completed);
@@ -35,6 +37,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
       label: 'Scheduled date set',
       passed: !!lead?.scheduled_date,
       warning: true,
+      badge: lead?.scheduled_date ? 'Done' : 'Missing',
     },
     {
       label: quoteData.length > 0
@@ -42,6 +45,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
         : 'Quote created',
       passed: quoteData.length > 0,
       warning: true,
+      badge: quoteData.length > 0 ? 'Done' : 'Missing',
     },
     {
       label: lead?.payment_amount
@@ -49,31 +53,36 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
         : 'Payment recorded',
       passed: !!lead?.payment_amount,
       warning: false,
+      badge: lead?.payment_amount ? 'Done' : 'Missing',
     },
     {
       label: afterPhotos.length > 0
-        ? `After photos uploaded — ${afterPhotos.length} photo${afterPhotos.length !== 1 ? 's' : ''}`
+        ? `After photos — ${afterPhotos.length} photo${afterPhotos.length !== 1 ? 's' : ''}`
         : 'After photos uploaded',
       passed: afterPhotos.length > 0,
       warning: true,
+      badge: afterPhotos.length > 0 ? 'Done' : 'Missing',
     },
     {
-      label: documents.length > 0
-        ? `Documents attached — ${documents.length} file${documents.length !== 1 ? 's' : ''}`
-        : 'Documents attached',
-      passed: documents.length > 0,
+      label: receipts.length > 0
+        ? `Receipts attached — ${receipts.length} file${receipts.length !== 1 ? 's' : ''}`
+        : 'Receipts attached',
+      passed: receipts.length > 0,
       warning: true,
+      badge: receipts.length > 0 ? 'Done' : 'Missing',
     },
     {
       label: lead?.project_internal_notes ? 'Internal notes added' : 'Internal notes added',
       passed: !!lead?.project_internal_notes,
       warning: true,
+      badge: lead?.project_internal_notes ? 'Done' : 'Missing',
     },
     ...(incompleteTasks.length > 0
       ? [{
           label: `${incompleteTasks.length} task${incompleteTasks.length !== 1 ? 's' : ''} still open`,
           passed: false,
           warning: false,
+          badge: 'Open',
         }]
       : []),
   ];
@@ -82,77 +91,94 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
   const warningMissing = checks.filter(c => !c.passed && c.warning);
   const allPassed = checks.every(c => c.passed);
   const passedCount = checks.filter(c => c.passed).length;
+  const progressPct = Math.round((passedCount / checks.length) * 100);
+
+  const hasReceiptWarning = warningMissing.some(c => c.label.includes('Receipt'));
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4"
       onClick={onCancel}
     >
       <motion.div
         initial={{ y: '100%', opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-white w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden"
+        transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Drag handle — mobile only */}
+        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <div className="w-9 h-1 rounded-full bg-slate-200" />
         </div>
 
         {/* Header */}
-        <div className="px-6 pt-4 sm:pt-6 pb-5 border-b border-slate-100">
-          <div className="flex items-start justify-between gap-4">
+        <div className="px-5 pt-4 pb-5">
+
+          {/* Progress */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              {passedCount} of {checks.length} complete
+            </span>
+            <span className="text-xs font-bold text-slate-400">{progressPct}%</span>
+          </div>
+          <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden mb-5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
+              className={`h-full rounded-full ${allPassed ? 'bg-emerald-500' : progressPct > 50 ? 'bg-blue-500' : 'bg-amber-400'}`}
+            />
+          </div>
+
+          {/* Title */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                allPassed ? 'bg-emerald-500' : criticalMissing.length > 0 ? 'bg-slate-900' : 'bg-amber-500'
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                allPassed ? 'bg-emerald-100' : criticalMissing.length > 0 ? 'bg-slate-100' : 'bg-amber-100'
               }`}>
                 {allPassed
-                  ? <CheckCheck className="w-5 h-5 text-white" strokeWidth={2.5} />
-                  : <AlertTriangle className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  ? <CheckCheck className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
+                  : <AlertTriangle className={`w-4 h-4 ${criticalMissing.length > 0 ? 'text-slate-600' : 'text-amber-500'}`} strokeWidth={2.5} />
                 }
               </div>
               <div>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">
+                <p className="text-sm font-black text-slate-900 tracking-tight">
                   {allPassed ? 'Ready to complete' : 'Review before closing'}
-                </h3>
+                </p>
                 <p className="text-xs text-slate-400 font-medium mt-0.5">
-                  {passedCount} of {checks.length} items complete
+                  {allPassed
+                    ? 'Everything looks good'
+                    : `${warningMissing.length + criticalMissing.length} item${warningMissing.length + criticalMissing.length !== 1 ? 's' : ''} need attention`
+                  }
                 </p>
               </div>
             </div>
             <button
               onClick={onCancel}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition shrink-0"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Progress bar */}
-          <div className="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(passedCount / checks.length) * 100}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-              className={`h-full rounded-full ${allPassed ? 'bg-emerald-500' : 'bg-blue-500'}`}
-            />
-          </div>
         </div>
 
+        {/* Divider */}
+        <div className="h-px bg-slate-100 mx-5" />
+
         {/* Checklist */}
-        <div className="px-6 py-4 space-y-1 max-h-64 overflow-y-auto">
+        <div className="px-5 py-4 space-y-2 max-h-64 overflow-y-auto">
           {checks.map((item, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -6 }}
+              initial={{ opacity: 0, x: -4 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04 }}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+              transition={{ delay: i * 0.03 }}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
                 item.passed
                   ? 'bg-slate-50'
                   : item.warning
@@ -167,36 +193,43 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
               ) : (
                 <XCircle className="w-4 h-4 text-red-500 shrink-0" strokeWidth={2.5} />
               )}
-              <span className={`text-xs font-semibold ${
-                item.passed
-                  ? 'text-slate-600'
-                  : item.warning
-                  ? 'text-amber-700'
-                  : 'text-red-700'
+              <span className={`text-xs font-semibold flex-1 ${
+                item.passed ? 'text-slate-600' : item.warning ? 'text-amber-700' : 'text-red-700'
               }`}>
                 {item.label}
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                item.passed
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : item.warning
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {item.badge}
               </span>
             </motion.div>
           ))}
         </div>
 
-        {/* Summary callout */}
+        {/* Callout */}
         <AnimatePresence>
           {(criticalMissing.length > 0 || warningMissing.length > 0) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden px-6"
+              className="overflow-hidden px-5"
             >
               <div className={`px-4 py-3 rounded-xl text-xs font-bold mb-3 ${
                 criticalMissing.length > 0
                   ? 'bg-red-50 text-red-700 border border-red-100'
                   : 'bg-amber-50 text-amber-700 border border-amber-100'
               }`}>
-                {criticalMissing.length > 0
-                  ? `${criticalMissing.length} required item${criticalMissing.length !== 1 ? 's' : ''} missing — you can still complete but it is recommended to fill these in first`
-                  : `${warningMissing.length} optional item${warningMissing.length !== 1 ? 's' : ''} incomplete — these are not required but help keep your records clean`
+                {hasReceiptWarning
+                  ? 'Receipts missing — your bookkeeper may need these at month end'
+                  : criticalMissing.length > 0
+                  ? `${criticalMissing.length} required item${criticalMissing.length !== 1 ? 's' : ''} missing — recommended to fill in before completing`
+                  : `${warningMissing.length} optional item${warningMissing.length !== 1 ? 's' : ''} incomplete — not required but keeps records clean`
                 }
               </div>
             </motion.div>
@@ -204,7 +237,10 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
         </AnimatePresence>
 
         {/* Actions */}
-        <div className="px-6 pb-6 pt-2 grid grid-cols-2 gap-3" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        <div
+          className="px-5 pb-6 pt-2 grid grid-cols-2 gap-3"
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        >
           <button
             onClick={onCancel}
             className="py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97]"
@@ -213,10 +249,10 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           </button>
           <button
             onClick={onConfirm}
-            className={`py-3.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97] shadow-lg ${
+            className={`py-3.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97] ${
               allPassed
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-100'
-                : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : 'bg-slate-900 hover:bg-slate-800'
             }`}
           >
             {allPassed ? 'Complete Project' : 'Complete Anyway'}

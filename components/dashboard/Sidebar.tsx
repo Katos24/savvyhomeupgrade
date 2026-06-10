@@ -6,7 +6,8 @@ import { useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Settings, LogOut, X,
   User, BarChart3, Mail, Users as UsersIcon,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles,
+  DollarSign
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -42,7 +43,8 @@ export default function Sidebar({
   const navItems = [
     { href: `/${companySlug}/dashboard`,           icon: LayoutGrid, label: 'Dashboard', exactMatch: true,  color: '#818cf8' },
     { href: `/${companySlug}/dashboard/customers`, icon: UsersIcon,  label: 'Customers', exactMatch: false, color: '#fbbf24' },
-    { href: `/${companySlug}/dashboard/analytics`, icon: BarChart3,  label: 'Analytics', exactMatch: false, color: '#a78bfa' },
+{ href: `/${companySlug}/dashboard/analytics`, icon: BarChart3,  label: 'Analytics', exactMatch: false, color: '#a78bfa' },
+{ href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
     { href: `/${companySlug}/dashboard/calendar`,  icon: Calendar,   label: 'Calendar',  exactMatch: false, color: '#34d399' },
     { href: `/${companySlug}/outbox`,              icon: Mail,       label: 'Outbox',    exactMatch: false, color: '#fb923c' },
     { href: `/${companySlug}/admin/settings`,      icon: Settings,   label: 'Settings',  exactMatch: false, color: '#94a3b8' },
