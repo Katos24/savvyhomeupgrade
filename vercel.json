@@ -13,6 +13,7 @@
   "crons": [
     { "path": "/api/cron/check-trials", "schedule": "0 11 * * *" },
     { "path": "/api/cron/daily-digest", "schedule": "0 11 * * *" },
-    { "path": "/api/cron/cleanup-inactive", "schedule": "0 3 * * *" }
+    { "path": "/api/cron/cleanup-inactive", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/classify-quotes", "schedule": "*/30 * * * *" }
   ]
 }

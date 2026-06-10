@@ -441,10 +441,12 @@ if (paid > 0 && newTotal > 0) {
   else newPaymentStatus = 'partial';
 }
 
+
+
 await sql`
   UPDATE projects 
   SET 
-    quote_data = ${JSON.stringify(quote_data)},
+quote_data = ${JSON.stringify(quote_data)},
     quote_total = ${quote_total},
     payment_status = ${newPaymentStatus},
     updated_at = NOW()
