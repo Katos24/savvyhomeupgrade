@@ -217,7 +217,7 @@ for (const lead of invoicedLeads) {
     lineItems = [];
   }
 
-  // If no line items fall back to single row with total
+  // If no line items fall back to single row with totall
   if (!lineItems || lineItems.length === 0) {
     const qbValues = [
   escape(lead.invoice_number || ''),
