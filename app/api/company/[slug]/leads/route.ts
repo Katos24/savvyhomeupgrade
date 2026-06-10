@@ -164,6 +164,7 @@ const isScheduledToday = timeFilter === 'scheduled_today';
           p.quote_data,
           p.ai_brief,
           p.quote_total,
+          p.quote_data,
           p.quote_sent_at,
           p.quote_accepted_at,
           p.quote_declined_at,

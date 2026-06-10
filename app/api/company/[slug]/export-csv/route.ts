@@ -75,6 +75,7 @@ export async function GET(
         p.invoice_number,
 p.invoice_sent_at,
 p.quote_total,
+p.quote_data,
 p.payment_status,
 p.payment_amount,
 p.payment_due_date,
@@ -161,49 +162,109 @@ p.payment_date,
   }
 
   const qbHeaders = [
-    'Invoice No.',
-    'Customer',
-    'Invoice Date',
-    'Due Date',
-    'Item Amount',
-    'Amount Paid',
-    'Payment Status',
-    'Payment Date',
-    'Payment Method',
-    'Item Description',
-    'Service Address',
-    'City',
-    'Zip',
-  ];
+  'Invoice No.',
+  'Customer',
+  'Invoice Date',
+  'Due Date',
+  'Item Description',
+  'Quantity',
+  'Unit Price',
+  'Line Amount',
+  'Total Amount',
+  'Amount Paid',
+  'Payment Status',
+  'Payment Date',
+  'Payment Method',
+  'Service Address',
+  'City',
+  'Zip',
+];
 
-  csvRows = [qbHeaders.join(',')];
+ csvRows = [qbHeaders.join(',')];
 
-  for (const lead of invoicedLeads) {
-    const qbValues = [
-      escape(lead.invoice_number || ''),
-      escape(lead.name || ''),
- escape(
-  lead.invoice_sent_at
+for (const lead of invoicedLeads) {
+  const invoiceDate = lead.invoice_sent_at
     ? new Date(lead.invoice_sent_at).toLocaleDateString()
     : lead.payment_date
     ? new Date(lead.payment_date).toLocaleDateString()
     : lead.quote_sent_at
     ? new Date(lead.quote_sent_at).toLocaleDateString()
-    : ''
-),
-      escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
-      escape(lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : ''),
-      escape(lead.payment_amount ? parseFloat(lead.payment_amount).toFixed(2) : ''),
-      escape(lead.payment_status || ''),
-      escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
-      escape(lead.payment_method || ''),
+    : '';
+
+  const dueDate = lead.payment_due_date
+    ? new Date(lead.payment_due_date).toLocaleDateString()
+    : '';
+
+  const serviceAddress = lead.address_line_1 || '';
+  const city = lead.city || '';
+  const zip = lead.zip_code || '';
+  const paymentStatus = lead.payment_status || '';
+  const paymentDate = lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : '';
+  const paymentMethod = lead.payment_method || '';
+  const amountPaid = lead.payment_amount ? parseFloat(lead.payment_amount).toFixed(2) : '';
+  const totalAmount = lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : '';
+
+  // Parse line items from quote_data
+  let lineItems: any[] = [];
+  try {
+    const raw = lead.quote_data;
+    if (raw) {
+      lineItems = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    }
+  } catch {
+    lineItems = [];
+  }
+
+  // If no line items fall back to single row with total
+  if (!lineItems || lineItems.length === 0) {
+    const qbValues = [
+      escape(lead.invoice_number || ''),
+      escape(lead.name || ''),
+      escape(invoiceDate),
+      escape(dueDate),
       escape(lead.category || ''),
-      escape(lead.address_line_1 || ''),
-      escape(lead.city || ''),
-      escape(lead.zip_code || ''),
+      escape('1'),
+      escape(totalAmount),
+      escape(totalAmount),
+      escape(totalAmount),
+      escape(amountPaid),
+      escape(paymentStatus),
+      escape(paymentDate),
+      escape(paymentMethod),
+      escape(serviceAddress),
+      escape(city),
+      escape(zip),
     ];
     csvRows.push(qbValues.join(','));
+  } else {
+    // One row per line item
+    for (const item of lineItems) {
+      const lineAmount = item.amount ? parseFloat(item.amount).toFixed(2) : '';
+      const unitPrice = item.unitPrice ? parseFloat(item.unitPrice).toFixed(2) : '';
+      const quantity = item.quantity ? item.quantity.toString() : '1';
+
+      const qbValues = [
+        escape(lead.invoice_number || ''),
+        escape(lead.name || ''),
+        escape(invoiceDate),
+        escape(dueDate),
+        escape(item.description || ''),
+        escape(quantity),
+        escape(unitPrice),
+        escape(lineAmount),
+        escape(totalAmount),
+        escape(amountPaid),
+        escape(paymentStatus),
+        escape(paymentDate),
+        escape(paymentMethod),
+        escape(serviceAddress),
+        escape(city),
+        escape(zip),
+      ];
+      csvRows.push(qbValues.join(','));
+    }
   }
+}
 
 } else {
       // Full export — all fields
