@@ -113,6 +113,69 @@ export default function BookkeepersPage() {
           </div>
         </section>
 
+    {/* SAMPLE EXPORT */}
+        <section className="py-20 px-6 bg-slate-900">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3">What you actually get</p>
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+                Every line item. Already mapped.
+              </h2>
+              <p className="text-slate-400 font-bold max-w-2xl mx-auto">
+                Every quote line item is automatically classified and mapped to your QuickBooks Chart of Accounts. Import in 60 seconds — not 60 minutes.
+              </p>
+            </div>
+            <div className="overflow-x-auto rounded-2xl border-2 border-slate-700">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-800 border-b-2 border-slate-700">
+                    {['Invoice No.', 'Customer', 'Item Description', 'Item Type', 'QBO Account', 'Qty', 'Unit Price', 'Line Amount', 'Payment Status'].map((h, i) => (
+                      <th key={i} className="px-4 py-3 text-left font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { inv: 'INV-001', customer: 'John Smith', desc: 'Diagnostic & Trip Fee', type: 'labor', account: 'Services', qty: '1', price: '$109.00', amount: '$109.00', status: 'Paid' },
+                    { inv: 'INV-001', customer: 'John Smith', desc: 'Dual Run Capacitor', type: 'materials', account: 'Job Supplies', qty: '1', price: '$185.00', amount: '$185.00', status: 'Paid' },
+                    { inv: 'INV-001', customer: 'John Smith', desc: 'Standard Labor (Per Hour)', type: 'labor', account: 'Services', qty: '2', price: '$150.00', amount: '$300.00', status: 'Paid' },
+                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Equipment: Condensing Unit', type: 'materials', account: 'Job Supplies', qty: '1', price: '$4,500.00', amount: '$4,500.00', status: 'Partial' },
+                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Labor: System Installation', type: 'labor', account: 'Services', qty: '1', price: '$1,800.00', amount: '$1,800.00', status: 'Partial' },
+                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Permits & HERS Testing Fees', type: 'permit', account: 'REVIEW_REQUIRED', qty: '1', price: '$450.00', amount: '$450.00', status: 'Partial' },
+                  ].map((row, i) => (
+                    <tr key={i} className={`border-b border-slate-700 ${i % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-800/20'}`}>
+                      <td className="px-4 py-3 font-black text-emerald-400 whitespace-nowrap">{row.inv}</td>
+                      <td className="px-4 py-3 font-bold text-white whitespace-nowrap">{row.customer}</td>
+                      <td className="px-4 py-3 font-bold text-slate-300">{row.desc}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-lg text-xs font-black ${row.type === 'labor' ? 'bg-blue-900 text-blue-300' : row.type === 'materials' ? 'bg-amber-900 text-amber-300' : 'bg-slate-700 text-slate-400'}`}>
+                          {row.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-bold whitespace-nowrap">
+                        <span className={row.account === 'REVIEW_REQUIRED' ? 'text-red-400 font-black' : 'text-emerald-400'}>
+                          {row.account}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-300 text-center">{row.qty}</td>
+                      <td className="px-4 py-3 font-bold text-slate-300 whitespace-nowrap">{row.price}</td>
+                      <td className="px-4 py-3 font-black text-white whitespace-nowrap">{row.amount}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-lg text-xs font-black ${row.status === 'Paid' ? 'bg-emerald-900 text-emerald-300' : 'bg-yellow-900 text-yellow-300'}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-center text-slate-500 font-bold text-xs mt-4">
+              Items flagged REVIEW_REQUIRED are highlighted for your attention. Everything else imports directly.
+            </p>
+        </div>
+        </section>
+
         {/* HOW IT WORKS */}
         <section className="py-20 px-6 bg-slate-900">
           <div className="max-w-4xl mx-auto">
