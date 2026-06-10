@@ -163,11 +163,22 @@ export default function FinancialsClient({ company, projects }: Props) {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
+    <div
+  className="min-h-screen"
+  style={{
+    background:
+      "linear-gradient(180deg,#05070c 0%,#0b1020 100%)"
+  }}
+>
 
       {/* Header */}
-      <header style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,10,15,0.98)' }} className="sticky top-0 z-40 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
+<header
+  className="sticky top-0 z-40 backdrop-blur-2xl"
+  style={{
+    background: "rgba(5,7,12,0.92)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)"
+  }}
+>        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
           <Link href={`/${company.slug}/dashboard`} className="p-1.5 rounded-lg text-slate-500 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
