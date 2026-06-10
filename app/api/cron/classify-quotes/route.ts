@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         AND p.quote_data != '[]'::jsonb
         AND p.quote_data::text NOT LIKE '%"type"%'
         AND c.plan_tier IN ('basic', 'pro')
-      LIMIT 5
+      LIMIT 20
     `;
 
     if (projects.length === 0) {
