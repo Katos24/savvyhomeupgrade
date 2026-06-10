@@ -161,12 +161,14 @@ p.payment_date,
     return new NextResponse('No invoiced projects found', { status: 404 });
   }
 
-  const qbHeaders = [
+const qbHeaders = [
   'Invoice No.',
   'Customer',
   'Invoice Date',
   'Due Date',
   'Item Description',
+  'Item Type',
+  'QBO Account',
   'Quantity',
   'Unit Price',
   'Line Amount',
@@ -218,23 +220,25 @@ for (const lead of invoicedLeads) {
   // If no line items fall back to single row with total
   if (!lineItems || lineItems.length === 0) {
     const qbValues = [
-      escape(lead.invoice_number || ''),
-      escape(lead.name || ''),
-      escape(invoiceDate),
-      escape(dueDate),
-      escape(lead.category || ''),
-      escape('1'),
-      escape(totalAmount),
-      escape(totalAmount),
-      escape(totalAmount),
-      escape(amountPaid),
-      escape(paymentStatus),
-      escape(paymentDate),
-      escape(paymentMethod),
-      escape(serviceAddress),
-      escape(city),
-      escape(zip),
-    ];
+  escape(lead.invoice_number || ''),
+  escape(lead.name || ''),
+  escape(invoiceDate),
+  escape(dueDate),
+  escape(lead.category || ''),
+  escape('service'),
+  escape(''),
+  escape('1'),
+  escape(totalAmount),
+  escape(totalAmount),
+  escape(totalAmount),
+  escape(amountPaid),
+  escape(paymentStatus),
+  escape(paymentDate),
+  escape(paymentMethod),
+  escape(serviceAddress),
+  escape(city),
+  escape(zip),
+];
     csvRows.push(qbValues.join(','));
   } else {
     // One row per line item
@@ -243,24 +247,26 @@ for (const lead of invoicedLeads) {
       const unitPrice = item.unitPrice ? parseFloat(item.unitPrice).toFixed(2) : '';
       const quantity = item.quantity ? item.quantity.toString() : '1';
 
-      const qbValues = [
-        escape(lead.invoice_number || ''),
-        escape(lead.name || ''),
-        escape(invoiceDate),
-        escape(dueDate),
-        escape(item.description || ''),
-        escape(quantity),
-        escape(unitPrice),
-        escape(lineAmount),
-        escape(totalAmount),
-        escape(amountPaid),
-        escape(paymentStatus),
-        escape(paymentDate),
-        escape(paymentMethod),
-        escape(serviceAddress),
-        escape(city),
-        escape(zip),
-      ];
+     const qbValues = [
+  escape(lead.invoice_number || ''),
+  escape(lead.name || ''),
+  escape(invoiceDate),
+  escape(dueDate),
+  escape(item.description || ''),
+  escape(item.type || ''),
+  escape(item.qbo_account || ''),
+  escape(quantity),
+  escape(unitPrice),
+  escape(lineAmount),
+  escape(totalAmount),
+  escape(amountPaid),
+  escape(paymentStatus),
+  escape(paymentDate),
+  escape(paymentMethod),
+  escape(serviceAddress),
+  escape(city),
+  escape(zip),
+];
       csvRows.push(qbValues.join(','));
     }
   }

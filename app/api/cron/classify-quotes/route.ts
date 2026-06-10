@@ -60,7 +60,7 @@ LIMIT 50
             max_tokens: 200,
             messages: [{
               role: 'user',
-              content: `Classify each contractor quote line item into one of: labor, materials, service, subcontractor, equipment, permit, other.\n\nRespond with ONLY a JSON object mapping each ID to its category. Example: {"123": "labor", "456": "materials"}\n\nLine items:\n${descriptions}`
+content: `You are a QuickBooks Online expert for contractor businesses. For each quote line item, provide the type and the standard QBO account name.\n\nTypes: labor, materials, service, subcontractor, equipment, permit, other\n\nRespond with ONLY a JSON object mapping each ID to an object with "type" and "qbo_account".\nExample: {"123": {"type": "labor", "qbo_account": "Services"}, "456": {"type": "materials", "qbo_account": "Cost of Goods Sold"}}\n\nLine items:\n${descriptions}`
             }]
           })
         });
@@ -71,10 +71,15 @@ LIMIT 50
         const typeMap = JSON.parse(cleaned);
 
         const classifiedItems = lineItems.map((item: any) => {
-          if (item.type) return item;
-          const type = typeMap[item.id.toString()] || 'other';
-          return { ...item, type };
-        });
+  if (item.type && item.qbo_account) return item;
+  const classification = typeMap[item.id.toString()];
+  if (!classification) return { ...item, type: 'other' };
+  return {
+    ...item,
+    type: classification.type || 'other',
+    qbo_account: classification.qbo_account || '',
+  };
+});
 
         await sql`
           UPDATE projects
