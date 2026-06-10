@@ -19,7 +19,7 @@ WHERE p.quote_data IS NOT NULL
   AND p.quote_data != '[]'::jsonb
   AND p.quote_data::text NOT LIKE '%"type"%'
   AND c.plan_tier IN ('basic', 'pro')
-LIMIT 50
+LIMIT 5
     `;
 
     if (projects.length === 0) {
@@ -58,15 +58,15 @@ LIMIT 50
             max_tokens: 200,
             messages: [{
               role: 'user',
-content: `You are a QuickBooks Online expert for contractor businesses. For each quote line item, provide the type and the standard QBO account name.\n\nTypes: labor, materials, service, subcontractor, equipment, permit, other\n\nRespond with ONLY a JSON object mapping each ID to an object with "type" and "qbo_account".\nExample: {"123": {"type": "labor", "qbo_account": "Services"}, "456": {"type": "materials", "qbo_account": "Cost of Goods Sold"}}\n\nLine items:\n${descriptions}`
+content: `You are a senior QuickBooks bookkeeper. Map these contractor quote line items to QBO Chart of Accounts. Use 'Services' for labor, 'Job Supplies' for materials. If ambiguous use 'REVIEW_REQUIRED'.\n\nRespond with ONLY valid JSON, no markdown.\nFormat: {"id": {"type": "labor", "qbo_account": "Services"}}\n\nLine items:\n${descriptions}`
             }]
           })
         });
 
         const data = await response.json();
         const raw = data.content?.[0]?.text?.trim() || '{}';
-        const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const typeMap = JSON.parse(cleaned);
+const jsonMatch = raw.match(/\{[\s\S]*\}/);
+const typeMap = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
         const classifiedItems = lineItems.map((item: any) => {
   if (item.type && item.qbo_account) return item;
