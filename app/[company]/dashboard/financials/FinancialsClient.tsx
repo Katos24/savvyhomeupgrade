@@ -273,7 +273,10 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-2xl" style={{ background: 'rgba(5,7,12,0.92)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
-          <Link href={`/${company.slug}/dashboard`} className="p-1.5 rounded-lg text-slate-500 hover:text-white transition-colors">
+          <Link
+            href={isBookkeeperView ? '/bookkeeper/dashboard' : `/${company.slug}/dashboard`}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
           </Link>
 

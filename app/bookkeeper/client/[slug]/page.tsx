@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import jwt from 'jsonwebtoken';
+import { neon } from '@neondatabase/serverless';
 import BookkeeperClientView from './BookkeeperClientView';
 
 export default async function BookkeeperClientPage({
@@ -20,19 +21,52 @@ export default async function BookkeeperClientPage({
     redirect('/bookkeeper/login');
   }
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/bookkeeper/clients/${slug}`,
-    { headers: { Cookie: `bookkeeper-auth-token=${token}` }, cache: 'no-store' }
-  );
+  const sql = neon(process.env.DATABASE_URL!);
 
-  if (!res.ok) notFound();
-  const data = await res.json();
-  if (!data.success) notFound();
+  // Verify company belongs to this bookkeeper
+  const companies = await sql`
+    SELECT id, name, slug, logo_url, plan_tier
+    FROM companies
+    WHERE slug = ${slug}
+      AND referred_by_code = ${bookkeeper.partner_code}
+    LIMIT 1
+  `;
+
+  if (!companies.length) notFound();
+
+  const company = companies[0];
+
+  const projects = await sql`
+    SELECT
+      p.id,
+      p.invoice_number,
+      p.quote_total,
+      p.payment_status,
+      p.payment_amount,
+      p.payment_date,
+      p.payment_due_date,
+      p.scheduled_date,
+      p.documents,
+      p.quote_data,
+      p.status,
+      p.created_at,
+      p.payment_method,
+      COALESCE(p.category, l.category) as category,
+      l.name as customer_name,
+      l.id as lead_id
+    FROM projects p
+    JOIN leads l ON p.lead_id = l.id
+    WHERE l.company_id = ${company.id}
+      AND l.deleted = false
+      AND p.quote_total IS NOT NULL
+      AND p.quote_total::numeric > 0
+    ORDER BY p.created_at DESC
+  `;
 
   return (
     <BookkeeperClientView
-      company={data.company}
-      projects={data.projects}
+      company={company}
+      projects={projects}
       bookkeeper={bookkeeper}
     />
   );

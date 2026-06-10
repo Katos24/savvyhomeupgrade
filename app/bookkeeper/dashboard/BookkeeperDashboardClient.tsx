@@ -204,13 +204,23 @@ export default function BookkeeperDashboardClient({ bookkeeper }: Props) {
                           {client.unpaid_count} unpaid
                         </span>
                       )}
-                      <Link
-                        href={`/bookkeeper/client/${client.slug}`}
-                        className="text-xs font-black px-3 py-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                        style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
-                      >
-                        View →
-                      </Link>
+                     {client.plan_tier === 'free' ? (
+                       <span
+                          title="This client is on the free plan. Ask them to upgrade to Basic to see their financial data."
+                          className="text-xs font-black px-3 py-2 rounded-xl cursor-help"
+                          style={{ background: 'rgba(245,158,11,0.08)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.15)' }}
+                        >
+                          Free plan
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/bookkeeper/client/${client.slug}`}
+                          className="text-xs font-black px-3 py-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                          style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
+                        >
+                          View →
+                        </Link>
+                      )}
                     </div>
                   </div>
                 );
