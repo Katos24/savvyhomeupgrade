@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
-
-const sql = neon(process.env.DATABASE_URL!);
+import { adminDb as sql } from '@/lib/db';
 
 export async function GET(request: Request) {
   try {
