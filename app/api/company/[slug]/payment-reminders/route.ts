@@ -7,8 +7,8 @@ import jwt from 'jsonwebtoken';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function GET(_req: Request, { params }: Props) {
-  try {
+export async function GET(req: Request, { params }: Props) {
+    try {
  const { slug } = await params;
 
     const cookieStore = await cookies();
@@ -33,6 +33,9 @@ if (!can((companies[0].plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder
 
 const companyId = companies[0].id;
 
+    const url = new URL(req.url);
+    const showAll = url.searchParams.get('all') === 'true';
+
     const reminders = await sql`
       SELECT
         l.id as lead_id,
@@ -50,10 +53,16 @@ const companyId = companies[0].id;
       JOIN leads l ON p.lead_id = l.id
       WHERE l.company_id = ${companyId}
         AND l.deleted = false
-        AND p.payment_due_date IS NOT NULL
         AND (p.payment_status IS NULL OR p.payment_status NOT IN ('paid'))
-        AND p.payment_due_date <= NOW() + INTERVAL '7 days'
-      ORDER BY p.payment_due_date ASC
+        AND p.quote_total IS NOT NULL
+        AND (
+          ${showAll} = true
+          OR (
+            p.payment_due_date IS NOT NULL
+            AND p.payment_due_date <= NOW() + INTERVAL '7 days'
+          )
+        )
+      ORDER BY p.payment_due_date ASC NULLS LAST
     `;
 
     const now = new Date();

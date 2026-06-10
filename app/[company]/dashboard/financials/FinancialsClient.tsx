@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, ChevronDown, CheckCircle2,
-  XCircle, AlertCircle, BarChart3, Table2
+  XCircle, AlertCircle, BarChart3, Table2,
+  Download, TrendingUp, Users, Star, RefreshCw
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   company: any;
@@ -31,7 +33,15 @@ function getReceiptCount(project: any): number {
 }
 
 function getTaxReady(project: any): boolean {
-  return !!(project.quote_total && parseFloat(project.quote_total) > 0 && project.payment_amount && getReceiptCount(project) > 0);
+  return !!(
+    project.quote_total &&
+    parseFloat(project.quote_total) > 0 &&
+    project.payment_status === 'paid'
+  );
+}
+
+function hasDeductionDocs(project: any): boolean {
+  return getReceiptCount(project) > 0;
 }
 
 function filterByPeriod(projects: any[], period: string): any[] {
@@ -60,6 +70,7 @@ function fmtFull(n: number): string {
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CARD_COLORS = ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#818cf8','#60a5fa','#34d399','#fb923c'];
 
 export default function FinancialsClient({ company, projects }: Props) {
   const [period, setPeriod] = useState('year');
@@ -68,6 +79,11 @@ export default function FinancialsClient({ company, projects }: Props) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [statusOpen, setStatusOpen] = useState(false);
+  const [reminderPanelOpen, setReminderPanelOpen] = useState(false);
+  const [reminders, setReminders] = useState<any[]>([]);
+  const [remindersLoading, setRemindersLoading] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState<number | null>(null);
+  const [reminderResults, setReminderResults] = useState<Record<number, { success: boolean; message: string; sent_at?: string }>>({});
   const [tab, setTab] = useState<'overview' | 'jobs'>('overview');
 
   const periodFiltered = useMemo(() => filterByPeriod(projects, period), [projects, period]);
@@ -85,15 +101,46 @@ export default function FinancialsClient({ company, projects }: Props) {
     });
   }, [periodFiltered, categoryFilter, statusFilter]);
 
+  // Core financials
   const totalRevenue = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.quote_total || '0'), 0), [filtered]);
   const totalCollected = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.payment_amount || '0'), 0), [filtered]);
   const totalOutstanding = totalRevenue - totalCollected;
-  const missingReceipts = filtered.filter(p => getReceiptCount(p) === 0).length;
   const taxReadyCount = filtered.filter(p => getTaxReady(p)).length;
   const taxReadyPct = filtered.length > 0 ? Math.round((taxReadyCount / filtered.length) * 100) : 0;
+  const missingReceipts = filtered.filter(p => getReceiptCount(p) === 0).length;
   const currentPeriodLabel = PERIODS.find(p => p.value === period)?.label || 'This year';
 
-  // Revenue by month chart data
+  // Outstanding breakdown
+  const unpaidJobs = useMemo(() => filtered.filter(p => !p.payment_status || p.payment_status === 'unpaid'), [filtered]);
+  const partialJobs = useMemo(() => filtered.filter(p => p.payment_status === 'partial'), [filtered]);
+
+  // Top customers
+  const topCustomers = useMemo(() => {
+    const map: Record<string, number> = {};
+    filtered.forEach(p => {
+      const name = p.customer_name || 'Unknown';
+      map[name] = (map[name] || 0) + parseFloat(p.quote_total || '0');
+    });
+    return Object.entries(map)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [filtered]);
+
+  // Category leaderboard
+  const revenueByCategory = useMemo(() => {
+    const map: Record<string, number> = {};
+    filtered.forEach(p => {
+      const cat = formatCategory(p.category);
+      map[cat] = (map[cat] || 0) + parseFloat(p.quote_total || '0');
+    });
+    return Object.entries(map)
+      .map(([name, value]) => ({ name, value: Math.round(value) }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [filtered]);
+
+  // Revenue by month
   const revenueByMonth = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -110,20 +157,7 @@ export default function FinancialsClient({ company, projects }: Props) {
     return MONTHS.map((m, i) => ({ month: m, revenue: Math.round(map[i] || 0) }));
   }, [filtered, period]);
 
-  // Revenue by category
-  const revenueByCategory = useMemo(() => {
-    const map: Record<string, number> = {};
-    filtered.forEach(p => {
-      const cat = formatCategory(p.category);
-      map[cat] = (map[cat] || 0) + parseFloat(p.quote_total || '0');
-    });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value: Math.round(value) }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [filtered]);
-
-  // Payment status donut
+  // Payment breakdown donut
   const paymentBreakdown = useMemo(() => {
     const paid = filtered.filter(p => p.payment_status === 'paid').length;
     const partial = filtered.filter(p => p.payment_status === 'partial').length;
@@ -135,7 +169,68 @@ export default function FinancialsClient({ company, projects }: Props) {
     ].filter(d => d.value > 0);
   }, [filtered]);
 
-  const CARD_COLORS = ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#818cf8','#60a5fa','#34d399','#fb923c'];
+  // QBO readiness score
+  const qboScore = useMemo(() => {
+    if (filtered.length === 0) return 0;
+    let score = 0;
+    const weights = { paid: 40, invoice: 30, category: 20, receipt: 10 };
+    const paidPct = filtered.filter(p => p.payment_status === 'paid').length / filtered.length;
+    const invoicePct = filtered.filter(p => p.invoice_number).length / filtered.length;
+    const categoryPct = filtered.filter(p => p.category).length / filtered.length;
+    const receiptPct = filtered.filter(p => getReceiptCount(p) > 0).length / filtered.length;
+    score = Math.round(paidPct * weights.paid + invoicePct * weights.invoice + categoryPct * weights.category + receiptPct * weights.receipt);
+    return score;
+  }, [filtered]);
+
+  const qboScoreColor = qboScore >= 80 ? '#10b981' : qboScore >= 50 ? '#60a5fa' : '#f59e0b';
+
+  const buildExportParams = () => {
+    const params = new URLSearchParams();
+    if (period !== 'all') params.set('time', period);
+    if (categoryFilter !== 'all') params.set('category', categoryFilter);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    return params.toString();
+  };
+
+  const fetchReminders = async () => {
+    setRemindersLoading(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/payment-reminders?all=true`);
+      const data = await res.json();
+      if (data.success) setReminders(data.reminders);
+    } catch (err) {
+      console.error('Failed to fetch reminders:', err);
+    } finally {
+      setRemindersLoading(false);
+    }
+  };
+
+  const sendReminder = async (reminder: any) => {
+    setSendingReminder(reminder.project_id);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/payment-reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: reminder.lead_id, project_id: reminder.project_id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReminderResults(prev => ({ ...prev, [reminder.project_id]: { success: true, message: 'Sent', sent_at: new Date().toISOString() } }));
+        setReminders(prev => prev.map(r => r.project_id === reminder.project_id ? { ...r, reminder_sent_recently: true, reminder_sent_at: new Date().toISOString() } : r));
+      } else {
+        setReminderResults(prev => ({ ...prev, [reminder.project_id]: { success: false, message: data.error || 'Failed' } }));
+      }
+    } catch {
+      setReminderResults(prev => ({ ...prev, [reminder.project_id]: { success: false, message: 'Network error' } }));
+    } finally {
+      setSendingReminder(null);
+    }
+  };
+
+  const openReminderPanel = () => {
+    setReminderPanelOpen(true);
+    fetchReminders();
+  };
 
   const Dropdown = ({ open, onToggle, label, children }: any) => (
     <div className="relative">
@@ -162,26 +257,31 @@ export default function FinancialsClient({ company, projects }: Props) {
     </button>
   );
 
+  const Card = ({ children, className = '' }: any) => (
+    <div className={`rounded-2xl p-5 ${className}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      {children}
+    </div>
+  );
+
+  const router = useRouter();
+
+
   return (
-    <div
-  className="min-h-screen"
-  style={{
-    background:
-      "linear-gradient(180deg,#05070c 0%,#0b1020 100%)"
-  }}
->
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg,#05070c 0%,#0b1020 100%)' }}>
 
       {/* Header */}
-<header
-  className="sticky top-0 z-40 backdrop-blur-2xl"
-  style={{
-    background: "rgba(5,7,12,0.92)",
-    borderBottom: "1px solid rgba(255,255,255,0.06)"
-  }}
->        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
+      <header className="sticky top-0 z-40 backdrop-blur-2xl" style={{ background: 'rgba(5,7,12,0.92)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-3">
           <Link href={`/${company.slug}/dashboard`} className="p-1.5 rounded-lg text-slate-500 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
+
+          <button
+            onClick={() => router.refresh()}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
           {company.logo_url ? (
             <img src={company.logo_url} alt={company.name} className="h-6 w-auto object-contain opacity-80" />
           ) : (
@@ -196,13 +296,12 @@ export default function FinancialsClient({ company, projects }: Props) {
 
       <div className="max-w-6xl mx-auto px-6 py-10">
 
-        {/* Page title */}
+        {/* Page title + filters */}
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Financials</h1>
             <p className="text-slate-500 text-sm mt-1">Tax readiness and job financials</p>
           </div>
-          {/* Filters */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Dropdown open={periodOpen} onToggle={() => { setPeriodOpen(!periodOpen); setCategoryOpen(false); setStatusOpen(false); }} label={currentPeriodLabel}>
               {PERIODS.map(p => <DropItem key={p.value} value={p.value} current={period} onSelect={(v: string) => { setPeriod(v); setPeriodOpen(false); }} label={p.label} />)}
@@ -217,8 +316,8 @@ export default function FinancialsClient({ company, projects }: Props) {
           </div>
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        {/* Top stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {[
             { label: 'Revenue', value: fmt(totalRevenue), color: '#ffffff' },
             { label: 'Collected', value: fmt(totalCollected), color: '#10b981' },
@@ -238,18 +337,224 @@ export default function FinancialsClient({ company, projects }: Props) {
           ))}
         </div>
 
+        {/* Outstanding + QBO Score row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+          {/* Outstanding invoices widget */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-white">Money waiting to be collected</p>
+              <TrendingUp className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="text-3xl font-bold tracking-tight mb-1" style={{ color: '#f59e0b' }}>{fmt(totalOutstanding)}</p>
+            <div className="flex items-center gap-4 mt-3">
+              <div>
+                <p className="text-xs text-slate-600 mb-0.5">Unpaid jobs</p>
+                <p className="text-sm font-bold text-white">{unpaidJobs.length}</p>
+              </div>
+              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div>
+                <p className="text-xs text-slate-600 mb-0.5">Partial payments</p>
+                <p className="text-sm font-bold text-white">{partialJobs.length}</p>
+              </div>
+              <div className="w-px h-8" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div>
+                <p className="text-xs text-slate-600 mb-0.5">Total jobs</p>
+                <p className="text-sm font-bold text-white">{unpaidJobs.length + partialJobs.length}</p>
+              </div>
+            </div>
+            {(unpaidJobs.length > 0 || partialJobs.length > 0) && (
+  <button
+    onClick={openReminderPanel}
+    className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold transition-colors px-3 py-1.5 rounded-lg cursor-pointer"
+    style={{
+      background: 'rgba(245,158,11,0.1)',
+      color: '#f59e0b',
+      border: '1px solid rgba(245,158,11,0.2)'
+    }}
+  >
+    Send reminders →
+  </button>
+)}
+
+          </Card>
+
+          {/* QBO Readiness Score */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-white">QuickBooks readiness score</p>
+              <Star className="w-4 h-4" style={{ color: qboScoreColor }} />
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="relative w-20 h-20 shrink-0">
+                <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
+                  <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+                  <circle cx="40" cy="40" r="32" fill="none" stroke={qboScoreColor} strokeWidth="8"
+                    strokeDasharray={`${(qboScore / 100) * 201} 201`} strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xl font-black text-white">{qboScore}</span>
+                </div>
+              </div>
+              <div className="space-y-2 flex-1">
+                {[
+                  { label: 'Paid invoices', pct: Math.round(filtered.filter(p => p.payment_status === 'paid').length / Math.max(filtered.length, 1) * 100) },
+                  { label: 'Invoice numbers', pct: Math.round(filtered.filter(p => p.invoice_number).length / Math.max(filtered.length, 1) * 100) },
+                  { label: 'Categories set', pct: Math.round(filtered.filter(p => p.category).length / Math.max(filtered.length, 1) * 100) },
+                  { label: 'Receipts attached', pct: Math.round(filtered.filter(p => getReceiptCount(p) > 0).length / Math.max(filtered.length, 1) * 100) },
+                ].map((item, i) => (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs text-slate-500">{item.label}</span>
+                      <span className="text-xs font-bold text-white">{item.pct}%</span>
+                    </div>
+                    <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: item.pct === 100 ? '#10b981' : item.pct > 50 ? '#60a5fa' : '#f59e0b' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+
         {/* Missing receipts notice */}
         {missingReceipts > 0 && (
-          <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 mb-6" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.15)' }}>
-            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: '#f59e0b' }} />
-            <p className="text-sm font-medium" style={{ color: '#fbbf24' }}>
-              {missingReceipts} job{missingReceipts !== 1 ? 's' : ''} missing receipts — your bookkeeper needs these to find every deduction
+          <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 mb-6" style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.15)' }}>
+            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: '#60a5fa' }} />
+            <p className="text-sm font-medium" style={{ color: '#93c5fd' }}>
+              {missingReceipts} job{missingReceipts !== 1 ? 's' : ''} without receipts — attaching them gives your bookkeeper more to work with at tax time
             </p>
           </div>
         )}
 
+             {/* Payment reminders slide-over */}
+        {reminderPanelOpen && (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+              onClick={() => setReminderPanelOpen(false)}
+            />
+            {/* Panel */}
+            <div
+              className="relative w-full max-w-md h-full flex flex-col overflow-hidden"
+              style={{ background: '#0f1117', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <p className="text-sm font-black text-white">Payment Reminders</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{reminders.length} unpaid jobs</p>
+                </div>
+                <button
+                  onClick={() => setReminderPanelOpen(false)}
+                  className="p-2 rounded-lg text-slate-500 hover:text-white transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Panel body */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                {remindersLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <p className="text-slate-600 text-sm">Loading...</p>
+                  </div>
+                ) : reminders.length === 0 ? (
+                  <div className="flex items-center justify-center py-20">
+                    <p className="text-slate-600 text-sm">No outstanding payments</p>
+                  </div>
+                ) : (
+                  reminders.map((reminder) => {
+                    const result = reminderResults[reminder.project_id];
+                    const isSending = sendingReminder === reminder.project_id;
+                    const sentRecently = reminder.reminder_sent_recently || result?.success;
+                    const total = parseFloat(reminder.quote_total || '0');
+                    const paid = parseFloat(reminder.payment_amount || '0');
+                    const due = paid > 0 ? total - paid : total;
+                    const sentAt = reminder.reminder_sent_at || result?.sent_at;
+                    const hoursSince = sentAt
+                      ? Math.floor((Date.now() - new Date(sentAt).getTime()) / 3600000)
+                      : null;
+
+                    return (
+                      <div
+                        key={reminder.project_id}
+                        className="rounded-2xl p-4"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-white truncate">{reminder.customer_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{reminder.customer_email}</p>
+                            <div className="flex items-center gap-3 mt-2">
+                              <span
+                                className="text-xs font-black"
+                                style={{ color: '#f59e0b' }}
+                              >
+                                {fmtFull(due)} due
+                              </span>
+                              {reminder.payment_due_date && (
+                                <span className={`text-xs font-medium ${reminder.is_overdue ? 'text-red-400' : 'text-slate-500'}`}>
+                                  {reminder.is_overdue ? 'Overdue' : 'Due'} {new Date(reminder.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                              <span
+                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                style={{
+                                  background: reminder.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                                  color: reminder.payment_status === 'partial' ? '#f59e0b' : '#f87171',
+                                }}
+                              >
+                                {reminder.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
+                              </span>
+                            </div>
+                            {sentRecently && hoursSince !== null && (
+                              <p className="text-xs text-slate-600 mt-2">
+                                Reminder sent {hoursSince === 0 ? 'just now' : `${hoursSince}h ago`}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => !sentRecently && !isSending && sendReminder(reminder)}
+                            disabled={sentRecently || isSending}
+                            className="shrink-0 px-3 py-2 rounded-xl text-xs font-black transition-all"
+                            style={{
+                              background: sentRecently
+                                ? 'rgba(255,255,255,0.04)'
+                                : isSending
+                                ? 'rgba(16,185,129,0.08)'
+                                : 'rgba(16,185,129,0.12)',
+                              color: sentRecently
+                                ? '#475569'
+                                : '#10b981',
+                              border: `1px solid ${sentRecently ? 'rgba(255,255,255,0.06)' : 'rgba(16,185,129,0.2)'}`,
+                              cursor: sentRecently ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {isSending ? 'Sending...' : sentRecently ? 'Sent' : 'Send'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Panel footer */}
+              <div className="px-6 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-xs text-slate-600 text-center">
+                  Reminders are rate limited to once per 24 hours per job
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0' }}>
+        <div className="flex items-center gap-1 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           {[
             { value: 'overview', label: 'Overview', icon: BarChart3 },
             { value: 'jobs', label: 'Jobs', icon: Table2 },
@@ -274,31 +579,27 @@ export default function FinancialsClient({ company, projects }: Props) {
           <div className="space-y-6">
 
             {/* Revenue by month */}
-            <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <Card>
               <p className="text-sm font-semibold text-white mb-6">Revenue by month</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={revenueByMonth} barSize={24}>
                   <XAxis dataKey="month" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v === 0 ? '' : `$${(v/1000).toFixed(0)}k`} />
-                  <Tooltip
-                    contentStyle={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, color: '#fff', fontSize: 12 }}
-                    formatter={(v: any) => [fmt(v), 'Revenue']}
-                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                  />
+                  <Tooltip contentStyle={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, color: '#fff', fontSize: 12 }} formatter={(v: any) => [fmt(v), 'Revenue']} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                   <Bar dataKey="revenue" radius={[6,6,0,0]}>
-                    {revenueByMonth.map((_, i) => (
-                      <Cell key={i} fill={_ .revenue > 0 ? '#6366f1' : 'rgba(255,255,255,0.05)'} />
+                    {revenueByMonth.map((entry, i) => (
+                      <Cell key={i} fill={entry.revenue > 0 ? '#6366f1' : 'rgba(255,255,255,0.05)'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              {/* Revenue by category */}
-              <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-sm font-semibold text-white mb-6">Revenue by category</p>
+              {/* Category leaderboard */}
+              <Card className="lg:col-span-2">
+                <p className="text-sm font-semibold text-white mb-6">Most profitable services</p>
                 {revenueByCategory.length === 0 ? (
                   <p className="text-slate-600 text-sm">No data</p>
                 ) : (
@@ -309,7 +610,10 @@ export default function FinancialsClient({ company, projects }: Props) {
                       return (
                         <div key={i}>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-medium text-slate-400">{cat.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-600">#{i+1}</span>
+                              <span className="text-xs font-medium text-slate-400">{cat.name}</span>
+                            </div>
                             <span className="text-xs font-bold text-white">{fmt(cat.value)}</span>
                           </div>
                           <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -320,16 +624,16 @@ export default function FinancialsClient({ company, projects }: Props) {
                     })}
                   </div>
                 )}
-              </div>
+              </Card>
 
               {/* Payment breakdown */}
-              <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <Card>
                 <p className="text-sm font-semibold text-white mb-6">Payment status</p>
                 {paymentBreakdown.length === 0 ? (
                   <p className="text-slate-600 text-sm">No data</p>
                 ) : (
-                  <div className="flex items-center gap-8">
-                    <ResponsiveContainer width={120} height={120}>
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={120}>
                       <PieChart>
                         <Pie data={paymentBreakdown} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" paddingAngle={3}>
                           {paymentBreakdown.map((entry, i) => (
@@ -338,7 +642,7 @@ export default function FinancialsClient({ company, projects }: Props) {
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="space-y-3 flex-1">
+                    <div className="space-y-2">
                       {paymentBreakdown.map((entry, i) => (
                         <div key={i} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -351,8 +655,40 @@ export default function FinancialsClient({ company, projects }: Props) {
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
             </div>
+
+            {/* Top customers */}
+            <Card>
+              <div className="flex items-center gap-2 mb-5">
+                <Users className="w-4 h-4 text-slate-400" />
+                <p className="text-sm font-semibold text-white">Top customers</p>
+              </div>
+              {topCustomers.length === 0 ? (
+                <p className="text-slate-600 text-sm">No data</p>
+              ) : (
+                <div className="space-y-3">
+                  {topCustomers.map((customer, i) => {
+                    const maxVal = topCustomers[0].total;
+                    const pct = maxVal > 0 ? (customer.total / maxVal) * 100 : 0;
+                    return (
+                      <div key={i} className="flex items-center gap-4">
+                        <span className="text-xs font-black text-slate-600 w-4 shrink-0">#{i+1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-semibold text-slate-300 truncate">{customer.name}</span>
+                            <span className="text-xs font-bold text-white ml-2 shrink-0">{fmt(customer.total)}</span>
+                          </div>
+                          <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#6366f1' }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
         )}
 
@@ -361,7 +697,18 @@ export default function FinancialsClient({ company, projects }: Props) {
           <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-sm font-semibold text-white">{filtered.length} jobs</p>
-              <p className="text-xs font-medium text-slate-600 uppercase tracking-wider">{currentPeriodLabel}</p>
+              <div className="flex items-center gap-2">
+                <a href={`/api/company/${company.slug}/export-csv?${buildExportParams()}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8' }}>
+                  <Download className="w-3 h-3" />Export CSV
+                </a>
+                <a href={`/api/company/${company.slug}/export-csv?format=quickbooks&${buildExportParams()}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981' }}>
+                  <Download className="w-3 h-3" />QuickBooks
+                </a>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -425,20 +772,28 @@ export default function FinancialsClient({ company, projects }: Props) {
                           </td>
                           <td className="px-6 py-4">
                             {taxReady ? (
-                              <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#10b981' }}>
-                                <CheckCircle2 className="w-3.5 h-3.5" />Ready
-                              </span>
+                              <div className="space-y-1">
+                                <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#10b981' }}>
+                                  <CheckCircle2 className="w-3.5 h-3.5" />Ready
+                                </span>
+                                {hasDeductionDocs(project) && (
+                                  <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#60a5fa' }}>
+                                    + Receipts
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#f59e0b' }}>
-                                <AlertCircle className="w-3.5 h-3.5" />Incomplete
+                                <AlertCircle className="w-3.5 h-3.5" />Unpaid
                               </span>
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <Link href={`/${company.slug}/dashboard?lead=${project.lead_id}`}
+                            <a href={`/${company.slug}/dashboard?lead=${project.lead_id}`}
+                              target="_blank" rel="noopener noreferrer"
                               className="text-xs font-semibold text-slate-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
                               View →
-                            </Link>
+                            </a>
                           </td>
                         </tr>
                       );
@@ -446,10 +801,14 @@ export default function FinancialsClient({ company, projects }: Props) {
                   )}
                 </tbody>
               </table>
+              
             </div>
+       
           </div>
+          
         )}
       </div>
+      
     </div>
   );
 }
