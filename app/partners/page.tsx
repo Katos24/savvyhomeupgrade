@@ -50,9 +50,9 @@ export default function BookkeepersPage() {
             <p className="text-lg text-slate-400 font-bold max-w-2xl mx-auto mb-10 leading-relaxed">
               Stop chasing receipts. Stop reconciling shoeboxes every April. Refer your contractor clients to Lead2Project and get clean, job-level records every month.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="mailto:hello@lead2project.com?subject=Bookkeeper Partner Program"
+                href="/bookkeeper/signup"
                 className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-white font-black text-sm shadow-xl hover:bg-emerald-600 transition-all active:scale-95 border-2 border-slate-700"
               >
                 Become a Partner
@@ -227,17 +227,25 @@ export default function BookkeepersPage() {
               Ready to stop chasing receipts?
             </h2>
             <p className="text-slate-500 font-bold mb-8">
-              Email us to get your partner code and start referring clients today.
+              Create your free partner account in 60 seconds. Get your referral code instantly.
             </p>
-            <Link
-              href="mailto:hello@lead2project.com?subject=Bookkeeper Partner Program"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-white font-black text-sm shadow-xl hover:bg-emerald-600 transition-all active:scale-95 border-2 border-slate-900"
-            >
-              Get Your Partner Code
-              <ArrowRight size={16} strokeWidth={3} />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/bookkeeper/signup"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-white font-black text-sm shadow-xl hover:bg-emerald-600 transition-all active:scale-95 border-2 border-slate-900"
+              >
+                Create Partner Account
+                <ArrowRight size={16} strokeWidth={3} />
+              </Link>
+              <Link
+                href="/bookkeeper/login"
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all"
+              >
+                Sign In
+              </Link>
+            </div>
             <p className="text-xs text-slate-400 font-bold mt-4">
-              Or email us directly at hello@lead2project.com
+              Already a partner? <Link href="/bookkeeper/login" className="text-emerald-600 hover:text-emerald-700">Sign in here</Link>
             </p>
           </div>
         </section>

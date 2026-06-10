@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 type Props = {
   company: any;
   projects: any[];
+  isBookkeeperView?: boolean;
 };
 
 const PERIODS = [
@@ -72,7 +73,7 @@ function fmtFull(n: number): string {
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const CARD_COLORS = ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#818cf8','#60a5fa','#34d399','#fb923c'];
 
-export default function FinancialsClient({ company, projects }: Props) {
+export default function FinancialsClient({ company, projects, isBookkeeperView = false }: Props) {
   const [period, setPeriod] = useState('year');
   const [periodOpen, setPeriodOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
