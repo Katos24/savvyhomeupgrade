@@ -124,7 +124,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
             </div>
 
             <Link
-              href="#pricing"
+              href="/pricing"
               className={`text-sm font-bold transition-colors ${
 scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
@@ -260,14 +260,14 @@ href="/#how-it-works"
             </div>
           )}
 
-          <Link
-            href="#pricing"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
-          >
-            Pricing
-            <ChevronRight size={18} className="text-white/40" />
-          </Link>
+         <Link
+  href="/pricing"
+  onClick={() => setMobileOpen(false)}
+  className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
+>
+  Pricing
+  <ChevronRight size={18} className="text-white/40" />
+</Link>
 
           <Link
   href="/partners"

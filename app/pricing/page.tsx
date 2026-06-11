@@ -12,8 +12,8 @@ const PLANS = ['Free', 'Basic', 'Pro'] as const;
 
 const PLAN_PRICES = {
   Free:  { price: '$0',      period: 'forever',  cta: 'Get Started Free', href: '/signup',           highlight: false },
-  Basic: { price: '$49.99',  period: '/month',    cta: 'Start Free Trial', href: '/signup?plan=basic', highlight: false },
-  Pro:   { price: '$79.99',  period: '/month',    cta: 'Start Free Trial', href: '/signup?plan=pro',   highlight: true  },
+  Basic: { price: '$49.99',  period: '/month',    cta: 'Start Free Trial', href: '/signup', highlight: false },
+  Pro:   { price: '$79.99',  period: '/month',    cta: 'Start Free Trial', href: '/signup',   highlight: true  },
 };
 
 const PLAN_DESCRIPTIONS = {
@@ -342,28 +342,7 @@ export default function PricingPage() {
             ))}
 
             {/* Footer row */}
-            <div
-              className="grid grid-cols-4 bg-slate-900/60"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <div className="px-5 py-5" />
-              {(Object.keys(PLAN_PRICES) as PlanName[]).map(plan => (
-                <div key={plan} className="px-4 py-5 flex items-center justify-center">
-                  <Link
-                    href={PLAN_PRICES[plan].href}
-                    className="text-xs font-black px-4 py-2.5 rounded-xl transition-all active:scale-95 flex items-center gap-1.5"
-                    style={{
-                      background: plan === 'Pro' ? '#10b981' : 'rgba(255,255,255,0.08)',
-                      color: 'white',
-                      border: plan === 'Pro' ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                    }}
-                  >
-                    {PLAN_PRICES[plan].cta}
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              ))}
-            </div>
+      
           </div>
         </div>
       </section>
