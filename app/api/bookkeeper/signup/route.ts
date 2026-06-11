@@ -1,8 +1,6 @@
-import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { adminDb as sql } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-
-const sql = neon(process.env.DATABASE_URL!);
 
 function generatePartnerCode(name: string): string {
   const clean = name.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
@@ -51,6 +49,19 @@ export async function POST(req: Request) {
       VALUES (${name}, ${email.toLowerCase()}, ${password_hash}, ${partner_code})
       RETURNING id, name, email, partner_code
     `;
+
+   // Send welcome email
+    try {
+      const { sendBookkeeperWelcomeEmail } = await import('@/lib/email');
+      await sendBookkeeperWelcomeEmail({
+        name,
+        email: email.toLowerCase(),
+        partnerCode: partner_code,
+      });
+    } catch (emailError) {
+      console.error('Failed to send bookkeeper welcome email:', emailError);
+      // Don't fail signup if email fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -207,7 +207,37 @@ if (plan === 'free') {
       { expiresIn: '7d' }
     );
 
-   if (plan === 'free') {
+// If referred by a bookkeeper, notify them and send contractor the connected email
+    if (referred_by_code) {
+      try {
+        const bookkeeperAccounts = await sql`
+          SELECT name, email FROM bookkeeper_accounts WHERE partner_code = ${referred_by_code}
+        `;
+        if (bookkeeperAccounts.length > 0) {
+          const bk = bookkeeperAccounts[0];
+          const { sendBookkeeperNewClientEmail, sendContractorReferredWelcomeEmail } = await import('@/lib/email');
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lead2project.com';
+          await Promise.all([
+            sendBookkeeperNewClientEmail({
+              bookkeepName: bk.name,
+              bookkeepEmail: bk.email,
+              clientName: companyName,
+              partnerCode: referred_by_code,
+            }),
+            sendContractorReferredWelcomeEmail({
+              contractorName: ownerName,
+              contractorEmail: email,
+              bookkeeperName: bk.name,
+              dashboardUrl: `${baseUrl}/${newCompany.slug}/dashboard`,
+            }),
+          ]);
+        }
+      } catch (referralEmailErr) {
+        console.error('Referral emails failed (non-blocking):', referralEmailErr);
+      }
+    }
+
+  if (plan === 'free' && !referred_by_code) {
       try {
         const { sendFreeWelcomeEmail } = await import('@/lib/email');
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lead2project.com';

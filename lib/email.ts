@@ -2256,3 +2256,160 @@ export async function sendGoogleReviewRequestEmail({
     console.error('Failed to send review request email:', error);
   }
 }
+
+
+
+export async function sendBookkeeperWelcomeEmail({
+  name,
+  email,
+  partnerCode,
+}: {
+  name: string;
+  email: string;
+  partnerCode: string;
+}) {
+  const referralUrl = `https://lead2project.com/signup?ref=${partnerCode}`;
+
+  const bodyHtml = `
+    <p style="font-size:16px;color:#1e293b;margin:0 0 16px;">Hi ${name},</p>
+    <p style="font-size:15px;color:#475569;margin:0 0 24px;line-height:1.6;">
+      Welcome to the Lead2Project Partner Program. Your account is set up and you're ready to start referring contractor clients.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin:0 0 24px;text-align:center;">
+      <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;">Your Partner Code</p>
+      <p style="font-size:36px;font-weight:900;color:#10b981;letter-spacing:0.05em;margin:0 0 16px;">${partnerCode}</p>
+      <p style="font-size:13px;color:#64748b;margin:0 0 6px;">Share this referral link with your contractor clients:</p>
+      <a href="${referralUrl}" style="font-size:13px;color:#10b981;word-break:break-all;">${referralUrl}</a>
+    </div>
+
+    <p style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 12px;">How it works:</p>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+      <tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;color:#10b981;font-size:13px;font-weight:700;width:30px;">1</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;color:#1e293b;font-size:13px;">Share your referral link with HVAC, plumbing, roofing, or electrical contractors</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;color:#10b981;font-size:13px;font-weight:700;">2</td>
+        <td style="padding:10px 16px;border-bottom:1px solid #f1f5f9;color:#1e293b;font-size:13px;">They sign up and get organized — leads, quotes, invoices and receipts all in one place</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;color:#10b981;font-size:13px;font-weight:700;">3</td>
+        <td style="padding:10px 16px;color:#1e293b;font-size:13px;">You get a clean QuickBooks export with AI classified line items every month — no chasing</td>
+      </tr>
+    </table>
+  `;
+
+  const html = buildEmail({
+    companyName: 'Lead2Project',
+    bodyHtml,
+    brandColor: '#10b981',
+    ctaText: 'Go to Your Dashboard',
+    ctaUrl: 'https://lead2project.com/bookkeeper/dashboard',
+    preheader: `Welcome to Lead2Project Partners — your code is ${partnerCode}`,
+  });
+
+  await resend.emails.send({
+    from: 'Lead2Project <hello@lead2project.com>',
+    to: email,
+    subject: `Welcome to Lead2Project Partners — your code is ${partnerCode}`,
+    html,
+  });
+}
+
+
+export async function sendBookkeeperNewClientEmail({
+  bookkeepName,
+  bookkeepEmail,
+  clientName,
+  partnerCode,
+}: {
+  bookkeepName: string;
+  bookkeepEmail: string;
+  clientName: string;
+  partnerCode: string;
+}) {
+  const bodyHtml = `
+    <p style="font-size:16px;color:#1e293b;margin:0 0 16px;">Hi ${bookkeepName},</p>
+    <p style="font-size:15px;color:#475569;margin:0 0 24px;line-height:1.6;">
+      Good news — <strong style="color:#1e293b;">${clientName}</strong> just signed up using your referral code <strong style="color:#10b981;">${partnerCode}</strong>. They're now linked to your partner account.
+    </p>
+    <p style="font-size:14px;color:#64748b;margin:0 0 16px;">
+      Once they start logging jobs and creating invoices on a paid plan, you'll be able to view their financials and pull their QuickBooks export directly from your dashboard.
+    </p>
+  `;
+
+  const html = buildEmail({
+    companyName: 'Lead2Project',
+    bodyHtml,
+    brandColor: '#10b981',
+    ctaText: 'View Your Clients',
+    ctaUrl: 'https://lead2project.com/bookkeeper/dashboard',
+    preheader: `${clientName} just signed up using your referral code`,
+  });
+
+  await resend.emails.send({
+    from: 'Lead2Project <hello@lead2project.com>',
+    to: bookkeepEmail,
+    subject: `New client: ${clientName} signed up with your code`,
+    html,
+  });
+}
+
+
+
+export async function sendContractorReferredWelcomeEmail({
+  contractorName,
+  contractorEmail,
+  bookkeeperName,
+  dashboardUrl,
+}: {
+  contractorName: string;
+  contractorEmail: string;
+  bookkeeperName: string;
+  dashboardUrl: string;
+}) {
+  const bodyHtml = `
+    <p style="font-size:16px;color:#1e293b;margin:0 0 16px;">Hi ${contractorName},</p>
+    <p style="font-size:15px;color:#475569;margin:0 0 16px;line-height:1.6;">
+      Welcome to Lead2Project. Your account is set up and ready to go.
+    </p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:0 0 24px;">
+      <p style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 6px;">Connected to your bookkeeper</p>
+      <p style="font-size:13px;color:#475569;margin:0;">
+        <strong>${bookkeeperName}</strong> referred you and can view your financial data — jobs, invoices, receipts, and QuickBooks exports — directly from their partner dashboard. No more sending files back and forth.
+      </p>
+    </div>
+    <p style="font-size:14px;color:#64748b;margin:0 0 8px;">To get the most out of Lead2Project:</p>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+      <tr>
+        <td style="padding:8px 16px;border-bottom:1px solid #f1f5f9;color:#10b981;font-size:13px;font-weight:700;width:30px;">1</td>
+        <td style="padding:8px 16px;border-bottom:1px solid #f1f5f9;color:#1e293b;font-size:13px;">Add your first job or share your lead capture link</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 16px;border-bottom:1px solid #f1f5f9;color:#10b981;font-size:13px;font-weight:700;">2</td>
+        <td style="padding:8px 16px;border-bottom:1px solid #f1f5f9;color:#1e293b;font-size:13px;">Attach receipts to each job as you go</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 16px;color:#10b981;font-size:13px;font-weight:700;">3</td>
+        <td style="padding:8px 16px;color:#1e293b;font-size:13px;">Your bookkeeper handles the rest</td>
+      </tr>
+    </table>
+  `;
+
+  const html = buildEmail({
+    companyName: 'Lead2Project',
+    bodyHtml,
+    brandColor: '#10b981',
+    ctaText: 'Go to Your Dashboard',
+    ctaUrl: dashboardUrl,
+    preheader: `${bookkeeperName} set you up on Lead2Project`,
+  });
+
+  await resend.emails.send({
+    from: 'Lead2Project <hello@lead2project.com>',
+    to: contractorEmail,
+    subject: `You're set up on Lead2Project — ${bookkeeperName} can now access your financials`,
+    html,
+  });
+}
