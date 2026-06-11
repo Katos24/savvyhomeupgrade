@@ -38,6 +38,7 @@ const PLAN_HIGHLIGHTS = {
     'Payment tracking',
     'Photo and document uploads',
     'CSV and QuickBooks export',
+    'AI classified QuickBooks line items',
     'Unlimited team members',
   ],
   Pro: [
@@ -74,7 +75,7 @@ const FEATURE_TABLE: FeatureGroup[] = [
       { label: 'Branded booking form',               free: false, basic: true,  pro: true  },
       { label: 'Custom form questions',              free: false, basic: true,  pro: true  },
       { label: 'Customer photo and video uploads',   free: false, basic: true,  pro: true  },
-      { label: 'Address field with autocomplete',    free: false, basic: true,  pro: true  },
+      { label: 'Address field on booking form',    free: false, basic: true,  pro: true  },
       { label: 'Google Business Profile link',       free: true,  basic: true,  pro: true  },
     ],
   },
@@ -127,8 +128,8 @@ const FEATURE_TABLE: FeatureGroup[] = [
     rows: [
       { label: 'CSV export',                         free: false, basic: true,  pro: true  },
       { label: 'QuickBooks formatted export',        free: false, basic: true,  pro: true  },
-      { label: 'AI classified line items',           free: false, basic: false, pro: true  },
-      { label: 'QBO account name mapping',           free: false, basic: false, pro: true  },
+      { label: 'AI classified line items',           free: false, basic: true, pro: true  },
+      { label: 'QBO account name mapping',           free: false, basic: true, pro: true  },
       { label: 'Receipt upload per job',             free: false, basic: true,  pro: true  },
       { label: 'Financials and tax readiness page',  free: false, basic: true,  pro: true  },
     ],
