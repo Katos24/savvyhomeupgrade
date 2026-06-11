@@ -362,20 +362,6 @@ const FEATURE_INFO: Record<string, { icon: React.ElementType; title: string; des
     plan: 'Pro',
     bullets: ['"What\'s scheduled this week?"', '"Which jobs are unpaid?"', '"Who are my biggest customers?"'],
   },
-  table_view: {
-    icon: List,
-    title: 'Table View',
-    desc: 'See all your leads in a sortable, filterable spreadsheet. Bulk-select, update, and export with ease.',
-    plan: 'Basic',
-    bullets: ['Sort by any column', 'Bulk update status or assignee', 'Export to CSV for bookkeeping'],
-  },
-  calendar_view: {
-    icon: Calendar,
-    title: 'Calendar View',
-    desc: 'See every scheduled job on a calendar at a glance. Never double-book or miss a window.',
-    plan: 'Basic',
-    bullets: ['Visual day/week/month layout', 'Know exactly who\'s going where and when.', 'Color-coded by status'],
-  },
   csv_export: {
     icon: Download,
     title: 'CSV Export',
@@ -437,11 +423,13 @@ export function LockedFeatureModal({ featureKey, companySlug, onClose }: LockedF
           </div>
         )}
 
-        {/* Plan badge */}
+       {/* Plan badge */}
         <div className="flex justify-center py-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 rounded-none shadow-[3px_3px_0px_#0f172a]">
-            <Sparkles className="w-3 h-3 text-slate-900" />
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{info.plan} Plan</span>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white ${
+            info.plan === 'Pro' ? 'bg-blue-600' : info.plan === 'Basic' ? 'bg-slate-800' : 'bg-emerald-600'
+          }`}>
+            <Sparkles className="w-3 h-3 text-white opacity-70" />
+            <span className="text-[10px] font-black uppercase tracking-widest">{info.plan} Plan</span>
           </div>
         </div>
 

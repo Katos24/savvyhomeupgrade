@@ -799,7 +799,7 @@ const initialLeadCount = useRef<number | null>(null);
     className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 bg-slate-50 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-100 transition-all active:scale-95"
   >
     <Lock className="w-3.5 h-3.5" />
-    Export (PRO)
+  Export (Basic)
   </button>
 )}
               </div>

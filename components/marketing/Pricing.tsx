@@ -23,7 +23,7 @@ const plans = [
     ],
   },
   {
-    name: 'Growth', // Changed from 'Basic' to 'Growth' (Benefit-led)
+    name: 'Basic', // Changed from 'Basic' to 'Growth' (Benefit-led)
     price: 49.99,
     desc: 'Your entire business command center. Track jobs from inquiry to completion.',
     highlight: false,
@@ -47,7 +47,7 @@ const plans = [
     href: '/signup',
     borderStyle: '',
     features: [
-      'Everything in Growth',
+      'Everything in Basic',
       'One-Click Email Sending',
       'Full Email History',
       'Custom Email Branding',

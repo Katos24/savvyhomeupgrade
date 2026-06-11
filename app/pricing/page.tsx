@@ -146,7 +146,6 @@ export default function PricingPage() {
             <div className="space-y-3 flex-1">
               {[
                 'Custom booking form & branding',
-                'Table & calendar views',
                 'Photo & doc uploads on cards',
                 'Payment status tracking',
                 'Custom pipeline stages',

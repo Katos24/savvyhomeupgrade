@@ -276,7 +276,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {[
                 {
-                  name: 'Growth',
+                  name: 'Basic',
                   price: '$49.99',
                   desc: 'Full job management for growing crews',
                   features: ['Booking link and QR code', 'Unlimited leads', 'Job board and calendar', 'Quote builder', 'CSV export for bookkeeping', 'Unlimited team members'],
@@ -286,7 +286,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
                   name: 'Pro',
                   price: '$79.99',
                   desc: 'Automation and AI for serious contractors',
-                  features: ['Everything in Growth', 'One-click emails', 'Full email outbox', 'Daily 6AM digest', 'AI job briefs', 'AI quote generator'],
+                  features: ['Everything in Basic', 'One-click emails', 'Full email outbox', 'Daily 6AM digest', 'AI job briefs', 'AI quote generator'],
                   highlight: true,
                 },
               ].map((plan) => (

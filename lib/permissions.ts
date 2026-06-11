@@ -53,7 +53,7 @@ export const FEATURE_PLAN_MAP = {
   lead_board:               'free',    // kanban cards view only
   view_lead_details:        'free',    // can open and read lead info
   table_view:               'free',   // table view with sorting/filtering
-  calendar_view:            'basic',   // calendar view
+  calendar_view:            'free',   // calendar view
   photos_on_card:           'basic',
   docs_on_card:             'basic',
   payment_tracking:         'basic',   // basic payment status
@@ -142,7 +142,6 @@ export const PLAN_CONFIG = {
       'CSV export for bookkeeping',
       'Build professional quote templates',
       'Job categories & task templates',
-      'Table & calendar views',
       'Photo & doc uploads on cards',
       'Payment status tracking',
       'Custom pipeline stages',
