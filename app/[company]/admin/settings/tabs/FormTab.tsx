@@ -397,9 +397,9 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
               ) : (
                 <InlineLockBanner
                   title="Photo & Video Uploads"
-                  description="Let customers attach job site photos — available on Pro."
-                  planLabel="Pro"
-                  priceLabel="$79.99/mo"
+                  description="Let customers attach job site photos — available on Basic."
+                  planLabel="Basic"
+                  priceLabel="$49.99/mo"
                   companySlug={company.slug}
                 />
               )}
@@ -424,9 +424,9 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             {!canUseCustomQuestions ? (
               <InlineLockBanner
                 title="Custom Questions"
-                description='Ask customers anything — budget range, gate codes, pet info. Available on Pro.'
-                planLabel="Pro"
-                priceLabel="$79.99/mo"
+                description='Ask customers anything — budget range, gate codes, pet info. Available on Basic.'
+                planLabel="Basic"
+                priceLabel="$49.99/mo"
                 companySlug={company.slug}
               />
             ) : (

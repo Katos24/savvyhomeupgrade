@@ -52,7 +52,7 @@ export const FEATURE_PLAN_MAP = {
   // ── Lead board ─────────────────────────────────────────────
   lead_board:               'free',    // kanban cards view only
   view_lead_details:        'free',    // can open and read lead info
-  table_view:               'basic',   // table view with sorting/filtering
+  table_view:               'free',   // table view with sorting/filtering
   calendar_view:            'basic',   // calendar view
   photos_on_card:           'basic',
   docs_on_card:             'basic',
@@ -137,8 +137,9 @@ export const PLAN_CONFIG = {
     description:  'Full job management for growing crews',
     stripePriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
     features: [
-      'Everything in Free',
       'Custom booking form & branding',
+      'Customer photo & video uploads on form',
+      'CSV export for bookkeeping',
       'Build professional quote templates',
       'Job categories & task templates',
       'Table & calendar views',
@@ -146,8 +147,6 @@ export const PLAN_CONFIG = {
       'Payment status tracking',
       'Custom pipeline stages',
       'Job scheduling & quote builder',
-      'Customer photo & video uploads on form',
-      'CSV export for bookkeeping',
       'Unlimited team members',
     ],
   },
