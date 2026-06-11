@@ -584,12 +584,14 @@ return (
                     </div>
                     <h3 className="text-xl font-black text-slate-900 mb-2">{info.title}</h3>
                     <p className="text-sm text-slate-600 leading-relaxed mb-3 max-w-[260px] mx-auto">{info.desc}</p>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 rounded-none shadow-[3px_3px_0px_#0f172a]">
-                      <Sparkles className="w-3 h-3 text-slate-900" />
-                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-                        {info.plan} Plan
-                      </span>
-                    </div>
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white ${
+  info.plan === 'Pro' ? 'bg-blue-600' : 'bg-slate-800'
+}`}>
+  <Sparkles className="w-3 h-3 text-white opacity-70" />
+  <span className="text-[10px] font-black uppercase tracking-widest">
+    {info.plan} Plan
+  </span>
+</div>
                   </div>
                 </div>
                 <div className="px-5 pb-6 pt-4 grid grid-cols-2 gap-3" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>

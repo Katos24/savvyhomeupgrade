@@ -42,7 +42,7 @@ export async function GET(
     if (!can(dbPlanTier, 'csv_export')) {
       return NextResponse.json({
         success: false,
-        error: 'CSV export is available on the Pro plan',
+        error: 'CSV export is available on the basic plan',
         upgrade_required: true,
       }, { status: 403 });
     }
@@ -80,6 +80,7 @@ p.payment_status,
 p.payment_amount,
 p.payment_due_date,
 p.payment_date,
+p.payment_method
         l.lead_source,
         l.preferred_date,
         l.preferred_time,

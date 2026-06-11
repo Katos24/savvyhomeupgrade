@@ -40,7 +40,7 @@ export async function GET(
     if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
       return NextResponse.json({
         success: false,
-        error: 'Quote templates are available on the Pro plan',
+        error: 'Quote templates are available on the Basic plan',
         upgrade_required: true,
       }, { status: 403 });
     }
@@ -115,7 +115,7 @@ export async function POST(
     if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
       return NextResponse.json({
         success: false,
-        error: 'Quote templates are available on the Pro plan',
+        error: 'Quote templates are available on the Basic plan',
         upgrade_required: true,
       }, { status: 403 });
     }
