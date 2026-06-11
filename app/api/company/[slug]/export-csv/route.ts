@@ -80,7 +80,7 @@ p.payment_status,
 p.payment_amount,
 p.payment_due_date,
 p.payment_date,
-p.payment_method
+p.payment_method,
         l.lead_source,
         l.preferred_date,
         l.preferred_time,
