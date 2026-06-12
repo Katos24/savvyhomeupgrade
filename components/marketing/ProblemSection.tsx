@@ -175,7 +175,7 @@ function StickyNote() {
       transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="absolute bottom-[5%] right-[8%] w-[160px] z-10"
     >
-      <div className="bg-yellow-300 p-4 shadow-lg" style={{ fontFamily: "'Caveat', cursive" }}>
+      <div className="bg-yellow-300 p-4 shadow-lg" style={{ fontFamily: "cursive" }}>
         <p className="text-yellow-900 text-sm font-bold leading-tight">
           Call back<br />
           Tom - deck job<br />
