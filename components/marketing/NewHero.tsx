@@ -83,11 +83,13 @@ export default function ArchitectHero() {
               </div>
 
            <div className="flex flex-wrap items-center gap-3">
-              <img
-    src="/images/quickbooks-export-badge.webp"
-    alt="QuickBooks Export"
-    className="h-8 w-auto opacity-70"
-  />
+              <Image
+  src="/images/quickbooks-export-badge.webp"
+  alt="QuickBooks Export"
+  width={112}
+  height={56}
+  className="h-8 w-auto opacity-70"
+/>
   <p className="text-xs text-slate-400 font-medium tracking-wide">
     No credit card · 2 min setup · Cancel anytime
   </p>
