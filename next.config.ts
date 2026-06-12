@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '50mb',
     },
   },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 };
 
 export default withSentryConfig(nextConfig, {
