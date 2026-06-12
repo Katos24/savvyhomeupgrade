@@ -1150,7 +1150,7 @@ export async function sendWelcomeEmail({
                 <tr>
                   <td style="padding:48px 40px 32px;text-align:center;">
                     <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
-                      <img src="https://lead2project.com/Lead2ProjectLogo.png" width="40" height="40" alt="L2P" style="display:block;">
+                      <img src="https://lead2project.com/Lead2ProjectLogo.webp" width="40" height="40" alt="L2P" style="display:block;">
                     </div>
                     <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Subscription Active</p>
                     <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">You're all set, ${userName}!</h1>
@@ -2004,7 +2004,7 @@ export async function sendPaymentReceiptEmail({
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
         <div style="margin-bottom: 32px;">
-          <img src="https://lead2project.com/Lead2ProjectLogo.png" alt="Lead2Project" style="width: 36px; height: 36px;" />
+          <img src="https://lead2project.com/Lead2ProjectLogo.webp" alt="Lead2Project" style="width: 36px; height: 36px;" />
         </div>
 
         <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px;">
@@ -2093,7 +2093,7 @@ export async function sendFreeWelcomeEmail({
                 <tr>
                   <td style="padding:48px 40px 32px;text-align:center;background:#ffffff;">
                     <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
-                      <img src="https://lead2project.com/Lead2ProjectLogo.png" width="40" height="40" alt="L2P" style="display:block;">
+                      <img src="https://lead2project.com/Lead2ProjectLogo.webp" width="40" height="40" alt="L2P" style="display:block;">
                     </div>
                     <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Onboarding Complete</p>
                     <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">Welcome, ${userName}!</h1>

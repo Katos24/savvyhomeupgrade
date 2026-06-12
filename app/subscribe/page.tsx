@@ -271,7 +271,7 @@ function SubscribePageContent() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1">
-              <img src="/Lead2ProjectLogo.png" alt="Lead2Project" className="w-full h-full object-contain" />
+              <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="w-full h-full object-contain" />
             </div>
             <span className="text-lg font-black tracking-tighter text-white">Lead2Project</span>
           </div>

@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
             <div style="margin-bottom: 32px;">
-              <img src="https://lead2project.com/Lead2ProjectLogo.png" alt="Lead2Project" style="width: 36px; height: 36px;" />
+              <img src="https://lead2project.com/Lead2ProjectLogo.webp" alt="Lead2Project" style="width: 36px; height: 36px;" />
             </div>
             <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px;">
               We received your request

@@ -54,7 +54,7 @@ export default function Nav() {
           {/* LOGO */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <img
-              src="/Lead2ProjectLogo.png"
+              src="/Lead2ProjectLogo.webp"
               alt="Lead2Project"
               className={`h-7 transition-all group-hover:scale-105 ${
 scrolled ? '' : 'brightness-0 invert'
@@ -202,7 +202,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
           <div className="flex items-center gap-2">
-            <img src="/Lead2ProjectLogo.png" className="h-6 brightness-0 invert" alt="" />
+            <img src="/Lead2ProjectLogo.webp" className="h-6 brightness-0 invert" alt="" />
             <span 
               className="text-base font-black text-white"
               style={{ fontFamily: 'Inter, sans-serif' }}

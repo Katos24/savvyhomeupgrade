@@ -61,7 +61,7 @@ export default function BookkeeperSignupPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
-            <img src="/Lead2ProjectLogo.png" alt="Lead2Project" className="h-8 w-auto mx-auto mb-4 brightness-0 invert" />
+            <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="h-8 w-auto mx-auto mb-4 brightness-0 invert" />
           </Link>
           <h1 className="text-2xl font-black text-white tracking-tight">Create your partner account</h1>
           <p className="text-slate-500 text-sm mt-2">Get a referral code and access your clients' financials</p>

@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/Lead2ProjectLogo.png" alt="Lead2Project" className="h-8 w-auto object-contain" />
+              <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="h-8 w-auto object-contain" />
               <span 
                 className="font-black text-white text-lg"
                 style={{ fontFamily: 'Inter, sans-serif' }}

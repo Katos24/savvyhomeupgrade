@@ -90,7 +90,7 @@ export default function OperationsPage() {
             {/* Right — Dashboard screenshot */}
             <div className="flex justify-center">
               <img
-                src="/images/dashboard-jason.png"
+                src="/images/dashboard-jason.webp"
                 alt="Lead2Project contractor dashboard with project board"
                 className="w-full max-w-[500px] border-[3px] border-slate-950 shadow-[8px_8px_0px_#10b981] sm:shadow-[12px_12px_0px_#10b981]"
               />

@@ -116,7 +116,7 @@ function CaptureCard() {
   return (
     <div className="relative w-full rounded-none border-[3px] border-slate-950 bg-slate-900 shadow-[8px_8px_0px_#10b981] overflow-hidden">
       <img
-        src="/images/dashboard-jason.png"
+        src="/images/dashboard-jason.webp"
         alt="Lead2Project Dashboard"
         className="w-full h-auto object-contain -mt-4 sm:-mt-8"
       />

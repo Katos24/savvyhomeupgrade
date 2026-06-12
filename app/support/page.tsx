@@ -123,7 +123,7 @@ export default function SupportPage() {
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1">
               <img
-                src="/Lead2ProjectLogo.png"
+                src="/Lead2ProjectLogo.webp"
                 alt="Lead2Project"
                 className="w-full h-full object-contain"
               />

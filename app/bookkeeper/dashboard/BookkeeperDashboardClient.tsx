@@ -77,7 +77,7 @@ export default function BookkeeperDashboardClient({ bookkeeper }: Props) {
       <header className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(10,10,15,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/Lead2ProjectLogo.png" alt="Lead2Project" className="h-6 w-auto brightness-0 invert opacity-80" />
+            <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="h-6 w-auto brightness-0 invert opacity-80" />
             <span className="text-slate-600 text-sm">/</span>
             <span className="text-slate-300 text-sm font-medium">Partner Dashboard</span>
           </div>

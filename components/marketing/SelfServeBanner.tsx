@@ -48,7 +48,7 @@ You don&apos;t need to replace anything you already use. Keep your QuickBooks, k
           >
             <div className="relative rounded-2xl overflow-hidden w-full">
               <Image
-                src="/images/marketing-quote2.png"
+                src="/images/marketing-quote2.webp"
                 alt="Contractor sending quotes from the job site"
                 width={1080}
                 height={1080}

@@ -155,7 +155,7 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan, referred_by_code: 
     >
       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1">
         <img
-          src="/Lead2ProjectLogo.png"
+          src="/Lead2ProjectLogo.webp"
           alt="Lead2Project"
           className="w-full h-full object-contain"
         />
@@ -207,7 +207,7 @@ body: JSON.stringify({ ...formData, phone: phoneDigits, plan, referred_by_code: 
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center p-1">
           <img
-            src="/Lead2ProjectLogo.png"
+            src="/Lead2ProjectLogo.webp"
             alt="Lead2Project"
             className="w-full h-full object-contain"
           />
