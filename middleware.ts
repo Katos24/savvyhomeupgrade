@@ -20,7 +20,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/blob-upload') ||
     pathname.startsWith('/api/get-upload-url') ||
     pathname.startsWith('/api/onboarding') ||
-    pathname.startsWith('/api/leads/update'); // Fixed semicolon and added logic correctly
+    pathname.startsWith('/api/leads/update') ||
+    pathname.startsWith('/api/bookkeeper/');
 
   const isPublicPage =
     pathname === '/' ||
@@ -37,7 +38,19 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/terms') ||
     pathname.startsWith('/contractor-software') ||
     pathname.startsWith('/solutions') ||
-    pathname.startsWith('/onboarding');
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/bookkeeper/login') ||
+    pathname.startsWith('/bookkeeper/signup') ||
+    pathname.startsWith('/partners');
+
+  // Allow bookkeeper routes with bookkeeper token
+  const bookkeeperToken = request.cookies.get('bookkeeper-auth-token');
+  if (pathname.startsWith('/bookkeeper/') && bookkeeperToken) {
+    return NextResponse.next();
+  }
+  if (pathname.startsWith('/bookkeeper/') && !bookkeeperToken) {
+    return NextResponse.redirect(new URL('/bookkeeper/login', request.url));
+  }
 
   const isProtectedRoute =
     pathname.includes('/dashboard') ||
