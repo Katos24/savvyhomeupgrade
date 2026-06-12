@@ -51,6 +51,7 @@ export default async function BookkeeperClientPage({
       p.status,
       p.created_at,
       p.payment_method,
+      p.invoice_pdf_url,
       COALESCE(p.category, l.category) as category,
       l.name as customer_name,
       l.id as lead_id

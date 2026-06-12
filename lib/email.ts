@@ -757,8 +757,8 @@ const downloadButtonHtml = `
       ],
     });
 
-    console.log('Invoice email sent to customer:', customerEmail);
-    return { subject, html, resendId: emailResult?.data?.id };
+   console.log('Invoice email sent to customer:', customerEmail);
+    return { subject, html, resendId: emailResult?.data?.id, pdfUrl };
 
   } catch (error) {
     console.error('Failed to send invoice email:', error);

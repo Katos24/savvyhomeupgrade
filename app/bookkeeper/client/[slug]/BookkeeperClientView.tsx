@@ -171,9 +171,24 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                     <td className="px-4 py-3.5">
                       <p className="text-sm font-bold text-white">{project.customer_name}</p>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-xs font-black text-emerald-400">{project.invoice_number || '—'}</p>
-                    </td>
+                   <td className="px-4 py-3.5">
+  <p className="text-xs font-black text-emerald-400">
+    {project.invoice_number || '—'}
+  </p>
+
+  {project.invoice_number && (
+    <a
+      href={`/api/company/${company.slug}/generate-invoice-pdf?project_id=${project.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition-colors flex items-center gap-1 mt-0.5"
+    >
+      <Download className="w-3 h-3" />
+      PDF
+    </a>
+  )}
+</td>
+
                     <td className="px-4 py-3.5">
                       <p className="text-xs text-slate-400">{formatCategory(project.category)}</p>
                     </td>

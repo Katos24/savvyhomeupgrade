@@ -1047,10 +1047,11 @@ else if (action === 'send_invoice_to_customer') {
       console.error('⚠️ Failed to log to outbox:', outboxErr);
     }
 
-    await sql`
+   await sql`
       UPDATE projects
       SET invoice_status = 'sent',
           invoice_sent_at = NOW(),
+          invoice_pdf_url = ${emailResult?.pdfUrl || null},
           updated_at = NOW()
       WHERE id = ${lead.project_id}
     `;
