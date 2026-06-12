@@ -59,6 +59,12 @@ export default function BookkeepersPage() {
                 <ArrowRight size={16} strokeWidth={3} />
               </Link>
               <Link
+  href="/bookkeeper/login"
+  className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all"
+>
+  Partner Login
+</Link>
+              <Link
                 href="/demo"
                 className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-700 text-white font-black text-sm hover:bg-slate-800 transition-all"
               >

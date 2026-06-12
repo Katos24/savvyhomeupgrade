@@ -98,7 +98,11 @@ const margin = 52;
   });
 
   if (data.companyPhone) {
-    page.drawText(data.companyPhone, {
+    const digits = data.companyPhone.replace(/\D/g, '');
+    const formattedPhone = digits.length === 10
+      ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`
+      : data.companyPhone;
+    page.drawText(formattedPhone, {
       x: margin,
       y: height - 56,
       size: 9,
@@ -330,6 +334,15 @@ const margin = 52;
         size: 9,
         font: fontRegular,
         color: gray,
+      });
+      // Show URL as text too
+      const shortUrl = data.paymentLinkUrl.replace('https://', '').replace('http://', '');
+      page.drawText(shortUrl.length > 35 ? shortUrl.substring(0, 32) + '...' : shortUrl, {
+        x: qrX + qrSize + 10,
+        y: qrY + 5,
+        size: 8,
+        font: fontRegular,
+        color: green,
       });
     } catch {
       // QR generation failed silently
