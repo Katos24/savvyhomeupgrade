@@ -109,30 +109,31 @@ export async function POST(
 
     switch (action) {
     case 'update-general':
-        console.log('update-general data:', JSON.stringify(data));
-        try {
-       const result = await sql`
-            UPDATE companies
-            SET 
-              name = ${data.name},
-              email = ${data.email},
-              phone = ${data.phone || null},
-              website = ${data.website || null},
-              business_type = COALESCE(${data.business_type || null}, business_type),
-              logo_url = ${data.logo_url || null},
-              email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
-              email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'},
-              google_review_url = ${data.google_review_url || null},
-google_review_enabled = ${data.google_review_enabled ?? false},
-payment_link_type = ${data.payment_link_type || null},
-payment_link_url = ${data.payment_link_url || null}
-            WHERE id = ${company.id}
-            RETURNING *
-          `;
-          return NextResponse.json({ success: true, company: result[0] });
-        } catch (updateError) {
-        }
-        break;
+  console.log('update-general data:', JSON.stringify(data));
+  try {
+    const result = await sql`
+      UPDATE companies
+      SET 
+        name = ${data.name},
+        email = ${data.email},
+        phone = ${data.phone || null},
+        website = ${data.website || null},
+        business_type = COALESCE(${data.business_type || null}, business_type),
+        logo_url = ${data.logo_url || null},
+        email_brand_color_1 = ${data.email_brand_color_1 || '#3e57c7ff'},
+        email_brand_color_2 = ${data.email_brand_color_2 || '#4370abff'},
+        google_review_url = ${data.google_review_url || null},
+        google_review_enabled = ${data.google_review_enabled ?? false},
+        payment_link_type = ${data.payment_link_type || null},
+        payment_link_url = ${data.payment_link_url || null}
+      WHERE id = ${company.id}
+      RETURNING *
+    `;
+    return NextResponse.json({ success: true, company: result[0] });
+  } catch (updateError) {
+    console.error('update-general DB error:', updateError); // ADD THIS
+    return NextResponse.json({ success: false, error: String(updateError) }, { status: 500 }); // ADD THIS
+  }
 
       case 'update-pipeline':
         await sql`

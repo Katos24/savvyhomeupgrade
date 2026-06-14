@@ -267,51 +267,57 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
   };
 
   const handleSaveIdentity = async () => {
-    setLoading(true);
-    try {
-      let finalLogoUrl = company.logo_url;
-      if (logoFile) {
-        const fd = new FormData();
-        fd.append('logo', logoFile);
-        fd.append('companySlug', company.slug);
-        const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
-        if (!uploadRes.ok) {
-          console.error('Logo upload failed');
-          setLoading(false);
-          return;
-        }
-        const uploadData = await uploadRes.json();
-        if (uploadData.success && uploadData.logoUrl) {
-          finalLogoUrl = uploadData.logoUrl;
-        } else {
-          console.error('Logo upload returned no URL');
-          setLoading(false);
-          return;
-        }
+  setLoading(true);
+  try {
+    let finalLogoUrl = company.logo_url; // starts as old URL
+
+    if (logoFile) {
+      const fd = new FormData();
+      fd.append('logo', logoFile);
+      fd.append('companySlug', company.slug);
+      const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
+      const uploadData = await uploadRes.json();
+      
+      if (!uploadRes.ok || !uploadData.success || !uploadData.logoUrl) {
+        console.error('Logo upload failed:', uploadData);
+        setLoading(false);
+        return;
       }
-     const res = await fetch(`/api/company/${company.slug}/settings`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    action: 'update-general',
-    data: {
-      ...formData,
-      logo_url: finalLogoUrl,
-      email_brand_color_1: formData.color1,
-      email_brand_color_2: formData.color2,
-    },
-  }),
-});
-if (res.ok) {
-  setLogoPreview(finalLogoUrl || '');
-  setLogoFile(null);
-  setIsEditing(false);
-} else {
-  console.error('Settings save failed:', await res.text());
-}
-    } catch {}
-    finally { setLoading(false); }
-  };
+      
+      finalLogoUrl = uploadData.logoUrl; // now has new URL
+      console.log('New logo URL:', finalLogoUrl); // confirm it's correct
+    }
+
+    const res = await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-general',
+        data: {
+          ...formData,
+          logo_url: finalLogoUrl, // guaranteed to be set
+          email_brand_color_1: formData.color1,
+          email_brand_color_2: formData.color2,
+        },
+      }),
+    });
+
+    const resData = await res.json();
+    console.log('Settings save response:', resData); // confirm success
+
+    if (res.ok && resData.success) {
+      setLogoPreview(finalLogoUrl || '');
+      setLogoFile(null);
+      setIsEditing(false);
+    } else {
+      console.error('Settings save failed:', resData);
+    }
+  } catch (err) {
+    console.error('handleSaveIdentity error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const formatPhone = (v: string) => {
     const d = v.replace(/\D/g, '');
