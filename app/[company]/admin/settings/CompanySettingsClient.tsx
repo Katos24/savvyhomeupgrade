@@ -423,14 +423,18 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                   <label className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition active:scale-95">
                     <Camera className="w-3 h-3" />
                     <input type="file" className="hidden" accept="image/*" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setLogoFile(file);
-                        const reader = new FileReader();
-                        reader.onloadend = () => setLogoPreview(reader.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }} />
+  const file = e.target.files?.[0];
+  if (file) {
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Logo must be under 10MB. Please choose a smaller image.');
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+}} />
                   </label>
                 )}
               </div>
