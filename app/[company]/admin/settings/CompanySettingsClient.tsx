@@ -425,10 +425,10 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                     <input type="file" className="hidden" accept="image/*" onChange={e => {
   const file = e.target.files?.[0];
   if (file) {
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Logo must be under 10MB. Please choose a smaller image.');
-      return;
-    }
+   if (file.size > 4 * 1024 * 1024) {
+  alert('Logo must be under 4MB. Tip: compress your image at tinypng.com first.');
+  return;
+}
     setLogoFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setLogoPreview(reader.result as string);
