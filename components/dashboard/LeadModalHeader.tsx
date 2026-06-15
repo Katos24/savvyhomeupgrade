@@ -92,9 +92,9 @@ export default function LeadModalHeader({
   const paymentSubLabel = paymentStatus === 'paid'
     ? { text: 'Paid in full ✓', color: '#34d399' }
     : paymentStatus === 'partial' && paymentAmount && quoteTotal
-    ? { text: `${fmt(quoteTotal - paymentAmount)} due`, color: '#fbbf24' }
+    ? { text: `${fmt(quoteTotal - paymentAmount)} due`, color: '#f87171' }
     : quoteTotal
-    ? { text: fmt(quoteTotal) + ' due', color: 'rgba(255,255,255,0.25)' }
+    ? { text: fmt(quoteTotal) + ' due', color: '#f87171' }
     : null;
 
   // Snapshot columns — only show if has data
@@ -234,18 +234,17 @@ const tabs: { id: string; label: string; icon: React.ElementType; show: boolean;
 
         {/* ── SNAPSHOT ROW ── */}
         {isProject && snapshotItems.length > 0 && (
-          <div
-            className="flex items-start mb-1"
+         <div
+            className="grid grid-cols-2 sm:flex sm:items-start mb-1 gap-y-3"
             style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)', paddingTop: 12, paddingBottom: 6 }}
           >
             {snapshotItems.map((item, i) => (
               <div
                 key={item.id}
-                className="flex-1 min-w-0"
+                className="min-w-0 sm:flex-1"
                 style={{
-                  paddingLeft: i > 0 ? 12 : 0,
-                  paddingRight: i < snapshotItems.length - 1 ? 12 : 0,
-                  borderLeft: i > 0 ? '0.5px solid rgba(255,255,255,0.08)' : 'none',
+                  paddingLeft: i % 2 !== 0 ? 12 : 0,
+                  borderLeft: i % 2 !== 0 ? '0.5px solid rgba(255,255,255,0.08)' : 'none',
                 }}
               >
                 <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px', whiteSpace: 'nowrap' }}>
