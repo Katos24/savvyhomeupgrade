@@ -229,7 +229,7 @@ export default function BillingSection({
   if (!hasQuote) {
     return (
       <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
-        <p className="text-sm font-bold text-slate-400">Save a quote first to enable billing</p>
+        <p className="text-sm font-bold text-black">Save a quote first to enable billing</p>
       </div>
     );
   }
@@ -295,9 +295,32 @@ export default function BillingSection({
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Invoice</p>
                 <p className="text-xl font-black text-slate-900 leading-none">{invoiceNumber}</p>
-                {lead?.payment_due_date && (
-                  <p className="text-xs text-slate-500 mt-1">Due {fmtDate(lead.payment_due_date)}</p>
-                )}
+                <label className="cursor-pointer block mt-1">
+                  <p className="text-xs text-slate-500 hover:text-blue-500 transition-colors">
+                    {dueDate ? `Due ${fmtDate(dueDate)}` : '+ Set due date'}
+                  </p>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={async (e) => {
+                      setDueDate(e.target.value);
+                      await fetch('/api/leads/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          id: lead.id,
+                          action: 'save_invoice',
+                          invoice_number: invoiceNumber,
+                          due_date: e.target.value || null,
+                          user_name: currentUser?.name || 'Unknown',
+                          user_email: currentUser?.email || '',
+                        }),
+                      });
+                      await onRefresh();
+                    }}
+                    className="sr-only"
+                  />
+                </label>
                 {invoiceSent ? (
                   <p className="text-xs font-bold text-emerald-600 mt-1">
                     ✓ Sent {fmtDate(invoiceLog[0].created_at)}
@@ -503,9 +526,9 @@ export default function BillingSection({
                 </div>
 
                 {isPartial && (
-                  <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl mb-4 text-left">
-                    <p className="text-xs font-bold text-amber-700">
-                      Customer already paid {fmt(paidAmount)}. Invoice will show the full {fmt(total)}.
+                  <div className="px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl mb-4 text-left">
+                    <p className="text-xs font-bold text-emerald-700">
+                      {fmt(paidAmount)} already collected. PDF will show balance due of {fmt(total - paidAmount)}.
                     </p>
                   </div>
                 )}

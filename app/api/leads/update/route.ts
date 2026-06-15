@@ -1054,6 +1054,7 @@ else if (action === 'send_invoice_to_customer') {
       SET invoice_status = 'sent',
           invoice_sent_at = NOW(),
           invoice_pdf_url = ${emailResult?.pdfUrl || null},
+          payment_due_date = ${body.due_date || null},
           updated_at = NOW()
       WHERE id = ${lead.project_id}
     `;
