@@ -182,7 +182,11 @@ const margin = 52;
     y -= 12;
   }
   if (data.customerPhone) {
-    page.drawText(data.customerPhone, { x: margin, y, size: 9, font: fontRegular, color: gray });
+const customerDigits = data.customerPhone.replace(/\D/g, '');
+const formattedCustomerPhone = customerDigits.length === 10
+  ? `(${customerDigits.slice(0,3)}) ${customerDigits.slice(3,6)}-${customerDigits.slice(6)}`
+  : data.customerPhone;
+page.drawText(formattedCustomerPhone, { x: margin, y, size: 9, font: fontRegular, color: gray });
     y -= 12;
   }
   if (data.customerAddress) {
