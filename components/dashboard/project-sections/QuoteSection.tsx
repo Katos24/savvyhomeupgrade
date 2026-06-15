@@ -645,8 +645,8 @@ className={`border-b transition-colors group ${
 
 
 {/* Replace the entire total bar + save section with: */}
-<div className="sticky bottom-0 z-10 bg-slate-900/80 backdrop-blur-md border-t border-slate-800/60 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
-  <div className="px-4 py-2 flex items-center justify-between gap-3">
+{/* ── BOTTOM BAR — sticky mobile, normal desktop ── */}
+<div className="md:relative md:rounded-b-xl sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] md:shadow-none">  <div className="px-4 py-3 flex items-center justify-between gap-3">
     <div className="flex items-center gap-2 min-w-0">
       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total</p>
       <motion.p key={total} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
@@ -659,7 +659,7 @@ className={`border-b transition-colors group ${
         <>
           <motion.button whileTap={{ scale: 0.97 }}
             onClick={() => { setQuoteData(lead?.quote_data || []); setIsEditing(false); }}
-            className="px-3 py-2 rounded-lg border border-slate-600 text-slate-400 text-[10px] font-black uppercase tracking-widest transition hover:border-slate-400"
+            className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-widest transition hover:border-slate-500 hover:text-white"
           >
             Cancel
           </motion.button>
@@ -675,8 +675,7 @@ className={`border-b transition-colors group ${
         <>
           <motion.button whileTap={{ scale: 0.97 }}
             onClick={() => setIsEditing(true)}
-            className="px-3 py-2 rounded-lg border border-slate-600 text-white text-[10px] font-black uppercase tracking-widest transition hover:border-slate-400"
-          >
+className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-widest transition hover:border-slate-500 hover:text-white"          >
             Edit
           </motion.button>
           <motion.button whileTap={{ scale: 0.97 }}

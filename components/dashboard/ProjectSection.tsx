@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, AlertCircle } from 'lucide-react';
 import SchedulingSection from './project-sections/SchedulingSection';
 import QuoteSection from './project-sections/QuoteSection';
-import PaymentSection from './project-sections/PaymentSection';
+import BillingSection from './project-sections/BillingSection';
 import MediaSection from './project-sections/MediaSection';
 import TasksSection from './project-sections/TasksSection';
 import RemindersSection from './project-sections/RemindersSection';
@@ -123,12 +123,12 @@ export default function ProjectSection({
       count: lead?.quote_data?.length || 0,
     },
     {
-      id: 'payment' as const,
-      label: 'Payment',
-      icon: CreditCard,
-      color: '#f59e0b',
-      count: lead?.payment_amount ? 1 : 0,
-    },
+  id: 'payment' as const,
+  label: 'Billing',
+  icon: CreditCard,
+  color: '#f59e0b',
+  count: lead?.payment_amount ? 1 : 0,
+},
     {
       id: 'media' as const,
       label: 'Media',
@@ -252,15 +252,15 @@ export default function ProjectSection({
             />
           )}
           {financialsTab === 'payment' && (
-            <PaymentSection
-              lead={lead}
-              company={company}
-              currentUser={currentUser}
-              onRefresh={onRefresh}
-              hasProject={hasProject}
-              companySlug={companySlug}
-            />
-          )}
+  <BillingSection
+    lead={lead}
+    company={company}
+    currentUser={currentUser}
+    onRefresh={onRefresh}
+    hasProject={hasProject}
+    companySlug={companySlug}
+  />
+)}
           {financialsTab === 'media' && (
             <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}

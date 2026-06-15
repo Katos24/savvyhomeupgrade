@@ -108,6 +108,7 @@ export async function GET(
         amount: item.amount ?? 0,
       })),
       total: parseFloat(project.quote_total || '0'),
+      amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
       paymentLinkUrl: company.payment_link_url || undefined,
       paymentLinkType: company.payment_link_type || undefined,
     });

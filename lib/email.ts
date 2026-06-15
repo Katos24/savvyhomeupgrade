@@ -618,6 +618,7 @@ export async function sendInvoiceToCustomer({
   dueDate,
   notes,
   contractorEmail,
+    amountPaid,
 }: {
   customerEmail: string;
   customerName: string;
@@ -629,7 +630,8 @@ export async function sendInvoiceToCustomer({
   invoiceItems: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
   dueDate?: string;
   notes?: string;
-  contractorEmail?: string;
+contractorEmail?: string;
+  amountPaid?: number;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -652,10 +654,13 @@ export async function sendInvoiceToCustomer({
   customerName,
   customerEmail,
   lineItems: invoiceItems,
-  total: invoiceTotal,
+ total: invoiceTotal,
   notes,
+  amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
   paymentLinkUrl: company.payment_link_url || undefined,
   paymentLinkType: company.payment_link_type || undefined,
+  brandColor1: company.email_brand_color_1 || undefined,
+      brandColor2: company.email_brand_color_2 || undefined,
 });
     
 
@@ -707,6 +712,25 @@ const downloadButtonHtml = `
       </div>
     ` : '';
 
+    const partialPaymentHtml = (amountPaid && amountPaid > 0 && amountPaid < invoiceTotal) ? `
+      <div style="margin-bottom: 24px; padding: 16px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Invoice Total</td>
+            <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(invoiceTotal)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Amount Paid</td>
+            <td style="font-size: 13px; color: #10b981; text-align: right; padding: 4px 0;">− ${fmt(amountPaid)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 8px 0 4px;">Balance Due</td>
+            <td style="font-size: 15px; font-weight: 800; color: #0f172a; text-align: right; padding: 8px 0 4px;">${fmt(invoiceTotal - amountPaid)}</td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
+
     const notesHtml = notes ? `
       <div style="margin-bottom: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
         <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">Notes</p>
@@ -731,6 +755,7 @@ const downloadButtonHtml = `
           Please find your invoice <strong>${invoiceNumber}</strong> from <strong>${company.name || companyName}</strong> below.
         </p>
         ${dueDateHtml}
+        ${partialPaymentHtml}
         ${notesHtml}
         <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
           If you have any questions, please don't hesitate to reach out.

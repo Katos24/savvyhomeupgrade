@@ -974,7 +974,8 @@ else if (action === 'save_invoice') {
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 else if (action === 'send_invoice_to_customer') {
   const leadCheck = await sql`
-    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
+   SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
+           p.payment_amount, p.payment_status,
            c.name as company_name, c.phone as company_phone,
            c.id as company_id, c.plan_tier
     FROM leads l
@@ -1025,6 +1026,7 @@ else if (action === 'send_invoice_to_customer') {
       companyId: lead.company_id,
       invoiceNumber,
       invoiceTotal,
+      amountPaid: lead.payment_amount ? parseFloat(lead.payment_amount) : undefined,
       invoiceItems,
       dueDate: body.due_date || undefined,
       notes: body.notes || undefined,
