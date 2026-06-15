@@ -38,6 +38,15 @@ function formatPhone(phone: string): string {
     ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
     : phone;
 }
+function isColorTooLight(hex: string): boolean {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16) / 255;
+  const g = parseInt(h.substring(2, 4), 16) / 255;
+  const b = parseInt(h.substring(4, 6), 16) / 255;
+  // Perceived luminance formula
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.7;
+}
 
 function hexToRgb(hex: string) {
   const h = hex.replace('#', '');
@@ -60,8 +69,8 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
   // ── BRAND COLORS ─────────────────────────────────────────
-  const accent  = (data.brandColor1 && isValidHex(data.brandColor1)) ? hexToRgb(data.brandColor1) : rgb(0.05, 0.09, 0.16);
-  const accent2 = (data.brandColor2 && isValidHex(data.brandColor2)) ? hexToRgb(data.brandColor2) : rgb(0.02, 0.59, 0.43);
+  const accent  = (data.brandColor1 && isValidHex(data.brandColor1) && !isColorTooLight(data.brandColor1)) ? hexToRgb(data.brandColor1) : rgb(0.05, 0.09, 0.16);
+  const accent2 = (data.brandColor2 && isValidHex(data.brandColor2) && !isColorTooLight(data.brandColor2)) ? hexToRgb(data.brandColor2) : rgb(0.02, 0.59, 0.43);
 
   // ── STATIC COLORS ─────────────────────────────────────────
   const black     = rgb(0.07, 0.07, 0.07);
