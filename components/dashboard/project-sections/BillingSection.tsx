@@ -259,10 +259,7 @@ export default function BillingSection({
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Collected</p>
                 <p className="text-xl font-black" style={{ color: '#34d399' }}>{fmt(paidAmount)}</p>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Total</p>
-                <p className="text-xl font-black text-white">{fmt(total)}</p>
-              </div>
+             
               <div>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Status</p>
                 <span className={`text-[11px] font-black px-2.5 py-1 rounded-full inline-block ${
@@ -322,15 +319,27 @@ export default function BillingSection({
             </div>
 
             <div className="grid grid-cols-2 gap-2 mt-auto pt-3">
-              <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors disabled:opacity-40"
-              >
-                {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                PDF
-              </button>
-
+           <button
+  onClick={handleDownload}
+  disabled={downloading}
+  className="
+    group flex items-center justify-center gap-2
+    px-4 py-2.5
+    bg-white border border-slate-200 
+    hover:border-emerald-300 hover:bg-emerald-50
+    text-slate-700 hover:text-emerald-700
+    font-bold text-xs rounded-xl
+    shadow-sm transition-all duration-200
+    disabled:opacity-50
+  "
+>
+  {downloading ? (
+    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  ) : (
+    <Download className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+  )}
+  PDF
+</button>
               {canSendInvoice ? (
                 <button
                   onClick={() => setShowSendConfirm(true)}
