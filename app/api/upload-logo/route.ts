@@ -12,7 +12,6 @@ export const config = {
   },
 };
 
-
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
@@ -32,12 +31,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upload to Vercel Blob
-    const blob = await put(`logos/${companySlug}-${file.name}`, file, {
+    // Convert any image format (webp, jpg, heic, etc.) to PNG
+    const sharp = await import('sharp');
+    const inputBuffer = Buffer.from(await file.arrayBuffer());
+    const pngBuffer = await sharp.default(inputBuffer).png().toBuffer();
+    // Upload PNG to Vercel Blob
+const blob = await put(`logos/${companySlug}-logo.png`, pngBuffer, {
   access: 'public',
-  allowOverwrite: true, // This tells Vercel: "I know it exists, do it anyway"
+  contentType: 'image/png',
+  allowOverwrite: true,
 });
-
     // Update database with logo URL
     const sql = neon(process.env.DATABASE_URL!);
     await sql`
