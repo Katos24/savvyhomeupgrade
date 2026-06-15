@@ -265,7 +265,7 @@ const tabs: { id: string; label: string; icon: React.ElementType; show: boolean;
         )}
 
       {/* ── TAB BAR — pill segment control ── */}
-        <div className="py-3">
+        {tabs.length > 1 && <div className="py-3">
           <div
             className="flex items-center overflow-x-auto sm:overflow-visible"
             style={{
@@ -306,9 +306,11 @@ const tabs: { id: string; label: string; icon: React.ElementType; show: boolean;
               );
             })}
           </div>
-        </div>
+        </div>}
 
       </div>
     </div>
+    
   );
+  
 }

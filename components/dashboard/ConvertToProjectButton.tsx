@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
@@ -149,20 +150,32 @@ if (lead.project_id) return null;
   return (
     <>
       {/* ── TRIGGER BUTTON (MOBILE FRIENDLY) ── */}
-      <button
-        onClick={() => setShowConfirm(true)}
-        className="
-          w-full sm:w-auto
-          px-4 py-3
-          bg-emerald-500 hover:bg-emerald-400
-          text-white font-black text-sm
-          rounded-xl
-          transition active:scale-95
-          shadow-lg shadow-emerald-500/20
-        "
-      >
-        Convert to Project
-      </button>
+     <button
+  onClick={() => setShowConfirm(true)}
+  disabled={isConverting}
+  className="
+    group flex items-center justify-center gap-2
+    w-full sm:w-auto
+    px-5 py-3
+    bg-gradient-to-r from-emerald-500 to-emerald-600
+    hover:from-emerald-400 hover:to-emerald-500
+    text-white font-bold text-sm tracking-wide
+    rounded-xl
+    shadow-md shadow-emerald-500/20
+    transition-all duration-200 ease-out
+    active:scale-[0.98]
+    disabled:opacity-50 disabled:cursor-not-allowed
+  "
+>
+  {isConverting ? (
+    <span className="animate-pulse">Converting...</span>
+  ) : (
+    <>
+      <Sparkles size={16} className="text-emerald-50 group-hover:rotate-12 transition-transform" />
+      <span>Convert to Project</span>
+    </>
+  )}
+</button>
 
       {/* ── CONFIRM MODAL ── */}
       {showConfirm && (

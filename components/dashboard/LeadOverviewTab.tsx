@@ -181,11 +181,12 @@ export default function LeadOverviewTab({
       {!isProject && can(planTier, 'convert_to_project') && (
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm flex items-center justify-between gap-4"
+className="rounded-2xl p-5 flex items-center justify-between gap-4"
+style={{ background: '#0f172a' }}
         >
           <div>
-            <p className="text-sm font-black text-blue-900">Ready to start this job?</p>
-            <p className="text-xs text-blue-500 mt-0.5">Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
+           <p className="text-sm font-black text-white">Ready to start this job?</p>
+<p className="text-xs mt-0.5" style={{ color: 'rgba(255, 255, 255, 0.81)' }}>Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
           </div>
           <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
         </motion.div>
