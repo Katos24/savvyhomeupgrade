@@ -73,13 +73,13 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       const logoImage = contentType.includes('png')
         ? await doc.embedPng(arrayBuffer)
         : await doc.embedJpg(arrayBuffer);
-      const logoDims = logoImage.scaleToFit(80, 28);
-      page.drawImage(logoImage, {
-        x: margin,
-        y: height - 4 - 14 - logoDims.height,
-        width: logoDims.width,
-        height: logoDims.height,
-      });
+      const logoDims = logoImage.scaleToFit(50, 40);
+page.drawImage(logoImage, {
+  x: width - margin - 90 - logoDims.width - 10,
+  y: height - 4 - 8 - logoDims.height,
+  width: logoDims.width,
+  height: logoDims.height,
+});
     } catch {
       // logo failed silently
     }
