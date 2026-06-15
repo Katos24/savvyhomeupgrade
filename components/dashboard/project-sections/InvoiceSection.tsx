@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronUp, FileText, Download, Loader2, Send, Lock
 } from 'lucide-react';
-import { generateInvoicePDF } from '@/lib/generateInvoicePDF';
 import { can, type PlanTier } from '@/lib/permissions';
 
 type InvoiceSectionProps = {
@@ -103,35 +102,20 @@ const raw = lead?.quote_data;
 
   const handleDownload = async () => {
     if (lineItems.length === 0) { toast.error('No line items — save a quote first'); return; }
+    if (!lead?.project_id) { toast.error('Convert to project first'); return; }
     setDownloading(true);
     try {
-      let address = lead?.address_line_1 || '';
-      if (lead?.address_line_2) address += `, ${lead.address_line_2}`;
-      if (lead?.city) address += `, ${lead.city}`;
-      if (lead?.zip_code) address += ` ${lead.zip_code}`;
-
-      await generateInvoicePDF({
-        invoiceNumber,
-        invoiceDate: new Date().toLocaleDateString('en-US', {
-          month: 'long', day: 'numeric', year: 'numeric',
-        }),
-        dueDate: dueDate
-          ? new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', {
-              month: 'long', day: 'numeric', year: 'numeric',
-            })
-          : undefined,
-        companyName: company?.name || '',
-        companyPhone: company?.phone || undefined,
-        companyEmail: company?.email || undefined,
-        companyLogoUrl: company?.logo_url || undefined,
-        customerName: lead?.name || '',
-        customerEmail: lead?.email || undefined,
-        customerPhone: lead?.phone || undefined,
-        customerAddress: address || undefined,
-        lineItems,
-        total,
-        notes: notes || undefined,
-      });
+      const res = await fetch(
+        `/${company?.slug}/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`
+      );
+      if (!res.ok) throw new Error('Failed to generate PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${invoiceNumber || 'INV'}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
       toast.success('Invoice downloaded');
     } catch (err) {
       console.error(err);
