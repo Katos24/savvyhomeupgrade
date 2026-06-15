@@ -73,10 +73,10 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       const logoImage = contentType.includes('png')
         ? await doc.embedPng(arrayBuffer)
         : await doc.embedJpg(arrayBuffer);
-      const logoDims = logoImage.scaleToFit(50, 40);
+      const logoDims = logoImage.scaleToFit(40, 36);
 page.drawImage(logoImage, {
-  x: width - margin - 90 - logoDims.width - 10,
-  y: height - 4 - 8 - logoDims.height,
+  x: width - margin - 145,
+  y: height - 4 - 52,
   width: logoDims.width,
   height: logoDims.height,
 });
@@ -238,9 +238,9 @@ page.drawImage(logoImage, {
 
   y -= 4;
 
-  // ── SUBTOTAL ROW ──────────────────────────────────────────
+// ── SUBTOTAL ROW ──────────────────────────────────────────
   page.drawRectangle({ x: margin, y, width: contentW, height: 0.5, color: mutedGray });
-  y -= 18;
+  y -= 22;
 
   page.drawText('Subtotal', {
     x: colUnit - 10, y, size: 8.5, font: fontRegular, color: gray,
@@ -248,27 +248,27 @@ page.drawImage(logoImage, {
   page.drawText(fmt(data.total), {
     x: colAmt - 40, y, size: 8.5, font: fontRegular, color: gray,
   });
-  y -= 6;
+  y -= 16;
 
   // ── TOTAL BOX ─────────────────────────────────────────────
   const totalBoxW = 200;
   const totalBoxX = margin + contentW - totalBoxW;
-  const totalBoxH = 32;
+  const totalBoxH = 36;
   page.drawRectangle({ x: totalBoxX, y: y - totalBoxH + 10, width: totalBoxW, height: totalBoxH, color: greenLight });
   page.drawRectangle({ x: totalBoxX, y: y - totalBoxH + 10, width: 3, height: totalBoxH, color: green });
 
   page.drawText('TOTAL DUE', {
-    x: totalBoxX + 12, y: y - 4, size: 8, font: fontBold, color: green,
+    x: totalBoxX + 12, y: y - 2, size: 8, font: fontBold, color: green,
   });
   page.drawText(fmt(data.total), {
     x: totalBoxX + totalBoxW - 12 - (fmt(data.total).length * 7),
-    y: y - 4,
+    y: y - 2,
     size: 13,
     font: fontBold,
     color: navy,
   });
 
-  y -= totalBoxH + 16;
+  y -= totalBoxH + 20;
 
   // ── NOTES ─────────────────────────────────────────────────
   if (data.notes) {
