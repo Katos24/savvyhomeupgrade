@@ -105,9 +105,9 @@ const raw = lead?.quote_data;
     if (!lead?.project_id) { toast.error('Convert to project first'); return; }
     setDownloading(true);
     try {
-      const res = await fetch(
-        `/${company?.slug}/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`
-      );
+     const res = await fetch(
+  `/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`
+);
       if (!res.ok) throw new Error('Failed to generate PDF');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
