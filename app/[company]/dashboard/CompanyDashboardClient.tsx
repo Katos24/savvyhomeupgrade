@@ -621,11 +621,11 @@ const initialLeadCount = useRef<number | null>(null);
 
         {/* Stats - Horizontal Swipe on Mobile, Grid on Desktop */}
    {/* Stats - Horizontal Swipe on Mobile, Grid on Desktop */}
-<section className="flex sm:grid sm:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12 w-full overflow-x-auto pb-4 sm:pb-0 no-scrollbar snap-x snap-mandatory">
+<section className="flex sm:grid sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6 w-full overflow-x-auto pb-2 sm:pb-0 no-scrollbar snap-x snap-mandatory">
   {stats.map((s, i) => (
     <div
       key={i}
-      className={`snap-start w-fit min-w-0 sm:w-full flex-shrink-0 rounded-[1.25rem] sm:rounded-[1.5rem] p-4 sm:p-7 transition-all ${
+      className={`snap-start w-fit min-w-0 sm:w-full flex-shrink-0 rounded-xl p-3 sm:p-4 transition-all ${
         isDark 
           ? 'bg-white/[0.03] border border-white/5' 
           : 'bg-white border border-slate-50 shadow-[0_8px_30px_rgb(0,0,0,0.02)]'
@@ -647,7 +647,7 @@ const initialLeadCount = useRef<number | null>(null);
 </section>
 
         {/* Free Plan Banner */}
-        <div className="mb-8 sm:mb-12">
+        <div className="mb-4 sm:mb-6">
           <FreePlanBanner
             company={company}
             isDark={isDark}
