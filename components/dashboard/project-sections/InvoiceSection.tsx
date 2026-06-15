@@ -48,7 +48,7 @@ export default function InvoiceSection({
   // Pull line items from quote_data silently
   const lineItems = (() => {
     try {
-      const raw = lead?.invoice_data || lead?.quote_data;
+const raw = lead?.quote_data;
       if (!raw) return [];
       return typeof raw === 'string' ? JSON.parse(raw) : raw;
     } catch {
@@ -81,7 +81,6 @@ export default function InvoiceSection({
           id: lead.id,
           action: 'save_invoice',
           invoice_number: invoiceNumber,
-          invoice_data: lineItems,
           invoice_status: 'draft',
            due_date: dueDate || null, 
           user_name: currentUser?.name || 'Unknown',
