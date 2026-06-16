@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Download, Receipt, FileText, ExternalLink,
@@ -24,7 +24,8 @@ const PERIODS = [
   { label: 'All time',     value: 'all'     },
 ];
 
-const TYPE_OPTIONS = ['labor', 'material', 'other'];
+
+const TYPE_OPTIONS = ['labor', 'service', 'material', 'materials', 'other'];
 const QBO_OPTIONS = ['Services', 'Job Supplies', 'Other Income', 'REVIEW_REQUIRED'];
 
 function fmt(n: number) {
@@ -81,6 +82,7 @@ function LineItemsRow({ project, company, onUpdate }: {
   onUpdate: (projectId: number, updatedItems: any[]) => void;
 }) {
   const [items, setItems] = useState<any[]>(getLineItems(project));
+    console.log('line items:', items);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
 
@@ -136,12 +138,13 @@ function LineItemsRow({ project, company, onUpdate }: {
                 value={item.type || ''}
                 onChange={e => handleChange(String(item.id), 'type', e.target.value)}
                 className="text-xs rounded-lg px-2 py-1.5 outline-none transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#94a3b8',
-                }}
+               style={{
+  background: 'rgba(255,255,255,0.06)',
+  border: `1px solid ${!item.type || item.type === '' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
+  color: !item.type || item.type === '' ? '#f87171' : '#94a3b8',
+}}
               >
+                
                 <option value="">— type —</option>
                 {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -150,11 +153,11 @@ function LineItemsRow({ project, company, onUpdate }: {
                 value={item.qbo_account || ''}
                 onChange={e => handleChange(String(item.id), 'qbo_account', e.target.value)}
                 className="text-xs rounded-lg px-2 py-1.5 outline-none transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: item.qbo_account === 'REVIEW_REQUIRED' ? '#f59e0b' : '#94a3b8',
-                }}
+              style={{
+  background: 'rgba(255,255,255,0.06)',
+  border: `1px solid ${!item.qbo_account || item.qbo_account === '' ? 'rgba(239,68,68,0.3)' : item.qbo_account === 'REVIEW_REQUIRED' ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)'}`,
+  color: !item.qbo_account || item.qbo_account === '' ? '#f87171' : item.qbo_account === 'REVIEW_REQUIRED' ? '#f59e0b' : '#94a3b8',
+}}
               >
                 <option value="">— account —</option>
                 {QBO_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
@@ -285,8 +288,8 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                 const hasReviewRequired = lineItems.some(item => item.qbo_account === 'REVIEW_REQUIRED' || !item.qbo_account);
 
                 return (
-                  <>
-                    <tr key={project.id} style={{
+                  <React.Fragment key={project.id}>
+                    <tr style={{
                       borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.04)',
                       background: isExpanded ? 'rgba(16,185,129,0.04)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
                       cursor: lineItems.length > 0 ? 'pointer' : 'default',
@@ -361,7 +364,7 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                         onUpdate={handleUpdate}
                       />
                     )}
-                  </>
+                 </React.Fragment>
                 );
               })}
             </tbody>
