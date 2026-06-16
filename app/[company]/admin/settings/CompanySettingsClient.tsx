@@ -541,7 +541,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                       <option value="paypal">PayPal</option>
                       <option value="other">Other</option>
                     </select>
-                    <input value={formData.payment_link_url} onChange={e => setFormData({ ...formData, payment_link_url: e.target.value })}
+                   <input value={formData.payment_link_url} onChange={e => setFormData({ ...formData, payment_link_url: e.target.value })}
+                      onBlur={e => {
+                        const val = e.target.value.trim();
+                        if (val && !val.startsWith('http')) {
+                          setFormData(prev => ({ ...prev, payment_link_url: `https://${val}` }));
+                        }
+                      }}
                       className="w-full bg-white border border-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 ring-blue-500/10 transition"
                       placeholder="https://venmo.com/your-handle" />
                   </div>
@@ -739,7 +745,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Basic" />
             <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template." color="#8b5cf6" onClick={() => openTab('categories')} locked={!can(planTier, 'settings_categories')} requiredPlan="Basic" />
             <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request." color="#f97316" onClick={() => openTab('form')} locked={!can(planTier, 'settings_form')} requiredPlan="Basic" />
-            <MenuCard icon={Mail} label="Automations" desc="Personalize the emails customers receive — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
+            <MenuCard icon={Mail} label="Email Templates" desc="Personalize the emails customers receive — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
             {planTier !== 'free' && (
               <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />

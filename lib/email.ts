@@ -213,6 +213,8 @@ export async function sendLeadConfirmationEmail({
 }) {
   try {
     const company = await getCompanyDetails(companyId);
+    const emailTemplates = await getCompanyEmailTemplates(companyId);
+    const confirmTemplate = emailTemplates?.lead_confirmation;
     const brandColor = company.email_brand_color_1 || '#667eea';
     const displayCategory = formatCategory(category);
     const fullAddress = [address, addressLine2, city, zipCode].filter(Boolean).join(', ');
@@ -263,9 +265,15 @@ export async function sendLeadConfirmationEmail({
         </div>
       </div>
 
-      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-        Hi ${customerName}, thanks for reaching out to <strong>${company.name || companyName}</strong>.
-        We have received your request and someone will be in touch with you shortly.
+     <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7; white-space: pre-line;">
+        ${confirmTemplate?.body
+          ? renderEmailTemplate(confirmTemplate, {
+              company_name: company.name || companyName,
+              company_phone: company.phone || '',
+              customer_name: customerName,
+            }).body
+          : `Hi ${customerName}, thanks for reaching out to <strong>${company.name || companyName}</strong>. We have received your request and someone will be in touch with you shortly.`
+        }
       </p>
 
       ${buildEmailSection('Your Request Summary', summaryTable)}
@@ -288,11 +296,18 @@ export async function sendLeadConfirmationEmail({
       preheader: `We received your request for ${displayCategory}. Here is a summary.`,
     });
 
+    const confirmSubject = confirmTemplate?.subject
+      ? renderEmailTemplate(confirmTemplate, {
+          company_name: company.name || companyName,
+          customer_name: customerName,
+        }).subject
+      : `We received your request — ${company.name || companyName}`;
+
     await resend.emails.send({
       from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
-      subject: `We received your request — ${company.name || companyName}`,
+      subject: confirmSubject,
       html,
     });
 
@@ -682,14 +697,17 @@ contractorEmail?: string;
   other: 'Pay Now',
 };
 
-const payNowButtonHtml = company.payment_link_url ? `
+const rawPaymentUrl = company.payment_link_url || '';
+const paymentUrl = rawPaymentUrl.startsWith('http') ? rawPaymentUrl : `https://${rawPaymentUrl}`;
+const payNowButtonHtml = rawPaymentUrl ? `
   <div style="margin-bottom: 16px; text-align: center;">
-    <a href="${company.payment_link_url}"
+    <a href="${paymentUrl}"
       style="display: inline-block; background-color: ${accentColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
       ${paymentMethodLabels[company.payment_link_type] || 'Pay Now'} — ${fmt(invoiceTotal)}
     </a>
   </div>
 ` : '';
+
 
 const downloadButtonHtml = `
   <div style="margin-bottom: 28px; text-align: center;">
@@ -737,9 +755,22 @@ const downloadButtonHtml = `
         <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">${notes}</p>
       </div>
     ` : '';
-
-    // ── STEP 4: Build full email ──────────────────────────
-    const subject = `Invoice ${invoiceNumber} from ${company.name || companyName}`;
+// ── STEP 4: Build full email ──────────────────────────
+    const emailTemplates = await getCompanyEmailTemplates(companyId);
+    const invoiceTemplate = emailTemplates?.invoice;
+    const { subject, body: templateBody } = renderEmailTemplate(
+      invoiceTemplate,
+      {
+        company_name: company.name || companyName,
+        company_phone: company.phone || companyPhone || '',
+        customer_name: customerName,
+        invoice_number: invoiceNumber,
+        invoice_total: fmt(invoiceTotal),
+        due_date: dueDate
+          ? new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : '',
+      }
+    );
 
     const html = buildEmail({
       companyName: company.name || companyName,
@@ -748,18 +779,10 @@ const downloadButtonHtml = `
       brandColor2: company.email_brand_color_2,
       bodyHtml: `
         ${downloadButtonHtml}
-        <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-          Hi ${customerName},
-        </p>
-        <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-          Please find your invoice <strong>${invoiceNumber}</strong> from <strong>${company.name || companyName}</strong> below.
-        </p>
+        <p style="white-space: pre-line; margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">${templateBody}</p>
         ${dueDateHtml}
         ${partialPaymentHtml}
         ${notesHtml}
-        <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-          If you have any questions, please don't hesitate to reach out.
-        </p>
       `,
       phone: company.phone || companyPhone,
       website: company.website,
@@ -2223,34 +2246,54 @@ export async function sendGoogleReviewRequestEmail({
   jobCategory?: string;
 }) {
   try {
-    const company = await getCompanyDetails(companyId);
-    
+   const company = await getCompanyDetails(companyId);
+    const emailTemplates = await getCompanyEmailTemplates(companyId);
+    const completionTemplate = emailTemplates?.job_completion;
+
     const reviewResult = await sql`
       SELECT google_review_url, google_review_enabled, name
       FROM companies WHERE id = ${companyId} LIMIT 1
     `;
     const reviewData = reviewResult[0];
-    
+
     if (!reviewData?.google_review_enabled || !reviewData?.google_review_url) return;
 
     const brandColor = company.email_brand_color_1 || '#0f172a';
     const displayCategory = jobCategory ? formatCategory(jobCategory) : 'your recent service';
 
-    const bodyHtml = `
-      <p style="margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-        Hi ${customerName}, thank you for choosing <strong>${company.name}</strong>. We hope you are happy with your ${displayCategory}.
-      </p>
-
-      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-        If you have a moment, we would really appreciate it if you could leave us a review. It helps us a lot and only takes a minute.
-      </p>
-
-      <div style="text-align: center; margin-bottom: 32px;">
-        <a href="${reviewData.google_review_url}"
-          style="display: inline-block; background-color: ${brandColor}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-          Leave a Review
+    const rawReviewUrl = reviewData.google_review_url || '';
+    const reviewUrl = rawReviewUrl.startsWith('http') ? rawReviewUrl : `https://${rawReviewUrl}`;
+    const reviewLinkHtml = `
+      <div style="margin: 16px 0;">
+        <a href="${reviewUrl}" style="display: inline-block; background-color: #ffffff; color: #1a1a1a; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <img src="https://www.google.com/favicon.ico" alt="G" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 10px;" />
+          <span style="vertical-align: middle;">Leave us a Google Review</span>
         </a>
       </div>
+    `;
+
+    const openingText = completionTemplate?.body
+      ? renderEmailTemplate(completionTemplate, {
+          company_name: company.name,
+          company_phone: company.phone || '',
+          customer_name: customerName,
+          google_review_link: reviewLinkHtml,
+        }).body
+      : `Hi ${customerName}, thank you for choosing ${company.name}. We hope you are happy with your ${displayCategory}.\n\nIf you have a moment, we would really appreciate it if you could leave us a review. It helps us a lot and only takes a minute.`;
+
+    const completionSubject = completionTemplate?.subject
+      ? renderEmailTemplate(completionTemplate, {
+          company_name: company.name,
+          customer_name: customerName,
+        }).subject
+      : `How did we do? — ${company.name}`;
+
+    const bodyHtml = `
+      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7; white-space: pre-line;">
+        ${openingText}
+      </p>
+
+      <div style="margin-bottom: 32px;"></div>
 
       <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
         Thank you for your support. We look forward to working with you again.
@@ -2272,10 +2315,10 @@ export async function sendGoogleReviewRequestEmail({
       from: `${company.name} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
-      subject: `How did we do? — ${company.name}`,
+      subject: completionSubject,
       html,
     });
-
+    
     console.log('Google review request sent to:', customerEmail);
   } catch (error) {
     console.error('Failed to send review request email:', error);

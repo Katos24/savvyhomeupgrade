@@ -2,18 +2,10 @@ import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL!);
 
-export async function getCompanyEmailTemplates(companyId: number) {
-  const companies = await sql`
-    SELECT email_templates FROM companies WHERE id = ${companyId} LIMIT 1
-  `;
-
-  const company = companies[0];
-  if (company?.email_templates) return company.email_templates;
-
-  return {
-    quote: {
-      subject: 'Your Quote from {{company_name}}',
-      body: `Hi {{customer_name}},
+const defaultEmailTemplates = {
+  quote: {
+    subject: 'Your Quote from {{company_name}}',
+    body: `Hi {{customer_name}},
 
 Thank you for your inquiry! We've prepared a quote for your project.
 
@@ -24,10 +16,10 @@ Please review the attached quote and let us know if you have any questions.
 Best regards,
 {{company_name}}
 {{company_phone}}`,
-    },
-    schedule: {
-      subject: 'Appointment Scheduled - {{company_name}}',
-      body: `Hi {{customer_name}},
+  },
+  schedule: {
+    subject: 'Appointment Scheduled - {{company_name}}',
+    body: `Hi {{customer_name}},
 
 Your appointment has been scheduled!
 
@@ -39,10 +31,10 @@ We look forward to serving you!
 
 Best regards,
 {{company_name}}`,
-    },
-    payment: {
-      subject: 'Payment Reminder - {{company_name}}',
-      body: `Hi {{customer_name}},
+  },
+  payment: {
+    subject: 'Payment Reminder - {{company_name}}',
+    body: `Hi {{customer_name}},
 
 This is a friendly reminder about your upcoming payment.
 
@@ -54,7 +46,75 @@ Please contact us if you have any questions.
 Best regards,
 {{company_name}}
 {{company_phone}}`,
-    },
+  },
+  invoice: {
+    subject: 'Invoice {{invoice_number}} from {{company_name}}',
+    body: `Hi {{customer_name}},
+
+Please find your invoice attached for recent work completed.
+
+Invoice #: {{invoice_number}}
+Total: {{invoice_total}}{{#due_date}}
+Due Date: {{due_date}}{{/due_date}}
+
+If you have any questions, don't hesitate to reach out.
+
+Best regards,
+{{company_name}}
+{{company_phone}}`,
+  },
+  lead_confirmation: {
+    subject: 'We received your request - {{company_name}}',
+    body: `Hi {{customer_name}},
+
+Thank you for reaching out to {{company_name}}! We've received your request and will be in touch shortly.
+
+We typically respond within 24 hours.
+
+Best regards,
+{{company_name}}
+{{company_phone}}`,
+  },
+  job_completion: {
+    subject: 'Job Complete - Thank you, {{customer_name}}!',
+    body: `Hi {{customer_name}},
+
+We're happy to let you know that your job has been completed!
+
+It was a pleasure working with you. If you're satisfied with our work, we'd love if you left us a review.
+
+{{google_review_link}}
+
+Thank you for choosing {{company_name}}!
+
+Best regards,
+{{company_name}}
+{{company_phone}}`,
+  },
+};
+
+export async function getCompanyEmailTemplates(companyId: number) {
+  const companies = await sql`
+    SELECT email_templates FROM companies WHERE id = ${companyId} LIMIT 1
+  `;
+
+  const company = companies[0];
+
+  // Merge DB templates with defaults so new template types always have a fallback
+  let savedTemplates = {};
+  if (company?.email_templates) {
+    try {
+      savedTemplates = typeof company.email_templates === 'string'
+        ? JSON.parse(company.email_templates)
+        : company.email_templates;
+    } catch {
+      savedTemplates = {};
+    }
+  }
+
+  return {
+    ...defaultEmailTemplates,
+    ...savedTemplates,
   };
 }
 
@@ -66,7 +126,6 @@ export function renderEmailTemplate(
   let body = template.body;
 
   // Handle conditional blocks: {{#key}}content{{/key}}
-  // Renders content only when the variable exists and is non-empty
   body = body.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, key, content) => {
     const value = variables[key];
     return value !== undefined && value !== null && value !== '' ? content : '';
@@ -77,16 +136,14 @@ export function renderEmailTemplate(
     return value !== undefined && value !== null && value !== '' ? content : '';
   });
 
-// Always strip company_phone from body — it's shown in the CTA button already
+  // Always strip company_phone from body — it's shown in the CTA button already
   body = body.replace(/\{\{company_phone\}\}/g, '');
 
   // Replace remaining {{variable}} placeholders
-  // Skip null/undefined/empty — replace with empty string so labels without values get cleaned up
   Object.keys(variables).forEach(key => {
     const raw = variables[key];
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
     if (raw === null || raw === undefined || raw === '') {
-      // Replace placeholder with empty string
       subject = subject.replace(regex, '');
       body = body.replace(regex, '');
       return;
@@ -99,13 +156,13 @@ export function renderEmailTemplate(
     body = body.replace(regex, value);
   });
 
-  // Clean up any remaining unreplaced placeholders (variables not provided)
+  // Clean up any remaining unreplaced placeholders
   subject = subject.replace(/\{\{[\w]+\}\}/g, '');
   body = body.replace(/\{\{[\w]+\}\}/g, '');
 
-  // Clean up lines that are just a label with no value (e.g., "Due Date: " or "Time: ")
+  // Clean up lines that are just a label with no value
   body = body.replace(/^.*:\s*$/gm, '');
-  // Clean up multiple blank lines left behind
+  // Clean up multiple blank lines
   body = body.replace(/\n{3,}/g, '\n\n');
 
   return { subject, body };
@@ -120,7 +177,7 @@ export function formatPhone(phone: string): string {
   if (digits.length === 11 && digits[0] === '1') {
     return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
   }
-  return phone; // return as-is if unexpected format
+  return phone;
 }
 
 function formatLineItems(items: { description: string; amount: number }[]) {
@@ -178,16 +235,10 @@ export function textToHtml(
     return `<p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">${trimmed.replace(/\n/g, '<br>')}</p>`;
   }).join('');
 
-  // Build footer contact details conditionally
-  const footerPhone = companyPhone
-    ? `<p style="margin: 0 0 4px 0; color: #64748b; font-size: 14px;">${companyPhone}</p>`
-    : '';
-
   const footerWebsite = companyWebsite
     ? `<p style="margin: 0 0 12px 0;"><a href="${companyWebsite}" style="color: ${color1}; font-size: 14px; text-decoration: none;">${companyWebsite.replace(/^https?:\/\//, '')}</a></p>`
     : '';
 
-  // CTA call button — only if phone is provided
   const formattedPhone = formatPhone(companyPhone || '');
   const rawDigits = (companyPhone || '').replace(/\D/g, '');
   const callCta = companyPhone
@@ -205,7 +256,6 @@ export function textToHtml(
       </tr>`
     : '';
 
-  // Logo — only if provided
   const logoHtml = companyLogo
     ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 70px; max-width: 220px; display: block; margin: 0 auto 20px auto;">`
     : '';
@@ -223,16 +273,12 @@ export function textToHtml(
           <tr>
             <td align="center">
               <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); overflow: hidden;">
-
-                <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, ${color1} 0%, ${color2} 100%); padding: 40px; text-align: center;">
                     ${logoHtml}
                     <h1 style="margin: 0; color: #fff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">${companyName}</h1>
                   </td>
                 </tr>
-
-                <!-- Body -->
                 <tr>
                   <td style="padding: 48px 40px;">
                     <div style="color: #334155;">
@@ -241,20 +287,14 @@ export function textToHtml(
                     </div>
                   </td>
                 </tr>
-
                 ${callCta}
-
-                <!-- Footer -->
                 <tr>
                   <td style="background: #f8fafc; padding: 28px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
                     ${footerWebsite}
                     <p style="margin: 0; color: #94a3b8; font-size: 12px;">You received this email because you requested a service from us.</p>
                   </td>
                 </tr>
-
               </table>
-
-              <!-- Legal footer -->
               <table width="600" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
                 <tr>
                   <td style="text-align: center; padding: 0 40px;">
@@ -264,7 +304,6 @@ export function textToHtml(
                   </td>
                 </tr>
               </table>
-
             </td>
           </tr>
         </table>
