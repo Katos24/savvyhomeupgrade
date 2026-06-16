@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
       JOIN companies c ON l.company_id = c.id
       WHERE p.quote_data IS NOT NULL
         AND p.quote_data != '[]'::jsonb
-        AND p.quote_data::text NOT LIKE '%"type"%'
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(p.quote_data) item
+          WHERE (item->>'type') IS NULL
+        )
         AND c.plan_tier IN ('basic', 'pro')
       LIMIT 20
     `;
