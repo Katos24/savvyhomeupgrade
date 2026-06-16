@@ -43,8 +43,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/bookkeeper/signup') ||
     pathname.startsWith('/partners');
 
-  // Allow bookkeeper routes with bookkeeper token
+ // Allow bookkeeper routes with bookkeeper token
   const bookkeeperToken = request.cookies.get('bookkeeper-auth-token');
+  const isBookkeeperPublic = pathname.startsWith('/bookkeeper/login') || pathname.startsWith('/bookkeeper/signup');
+  if (isBookkeeperPublic) return NextResponse.next();
   if (pathname.startsWith('/bookkeeper/') && bookkeeperToken) {
     return NextResponse.next();
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Download, CheckCircle2, XCircle, AlertCircle, XCircle as CloseIcon } from 'lucide-react';
 import type { ThemeTokens } from '@/lib/financialsTheme';
 
@@ -128,15 +128,18 @@ function RemindersPanel({
   );
 }
 
+/* ── EXPORTED REF TYPE ── */
+export interface FinancialsTableRef {
+  openReminderPanel: () => void;
+}
+
 /* ── JOBS TABLE ── */
-export default function FinancialsTable({
-  t, company, filtered, buildExportParams,
-}: {
+const FinancialsTable = forwardRef<FinancialsTableRef, {
   t: ThemeTokens;
   company: any;
   filtered: any[];
   buildExportParams: () => string;
-}) {
+}>(function FinancialsTable({ t, company, filtered, buildExportParams }, ref) {
   const [reminderPanelOpen, setReminderPanelOpen] = useState(false);
   const [reminders, setReminders] = useState<any[]>([]);
   const [remindersLoading, setRemindersLoading] = useState(false);
@@ -153,6 +156,13 @@ export default function FinancialsTable({
       if (data.success) setReminders(data.reminders);
     } catch { } finally { setRemindersLoading(false); }
   };
+
+  const openReminderPanel = () => {
+    setReminderPanelOpen(true);
+    fetchReminders();
+  };
+
+  useImperativeHandle(ref, () => ({ openReminderPanel }));
 
   const sendReminder = async (reminder: any) => {
     setSendingReminder(reminder.project_id);
@@ -174,26 +184,22 @@ export default function FinancialsTable({
     } finally { setSendingReminder(null); }
   };
 
-  const openReminderPanel = () => {
-    setReminderPanelOpen(true);
-    fetchReminders();
-  };
-
   return (
     <>
-      {/* Table header */}
       <div className="rounded-2xl overflow-hidden" style={{ background: t.cardBg, border: t.cardBorder }}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 flex-wrap gap-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
           <div className="flex items-center gap-3">
             <p className="text-sm font-semibold" style={{ color: t.text.primary }}>{filtered.length} jobs</p>
             {unpaidCount > 0 && (
-              <button
-                onClick={openReminderPanel}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
-                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}
-              >
-                Send reminders →
-              </button>
+         <button
+  onClick={openReminderPanel}
+  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+  style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}
+  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'; }}
+  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.2)'; }}
+>
+  Send reminders →
+</button>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -371,4 +377,6 @@ export default function FinancialsTable({
       )}
     </>
   );
-}
+});
+
+export default FinancialsTable;

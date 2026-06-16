@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, AlertCircle, BarChart3, Table2, RefreshCw, Sun, Moon } from 'lucide-react';
 import { theme as themeTokens } from '@/lib/financialsTheme';
 import type { FinancialsTheme } from '@/lib/financialsTheme';
 import { StatCards, OutstandingWidget, QBOScore, CategoryLeaderboard, PaymentBreakdown, TopCustomers } from '@/components/dashboard/FinancialsCharts';
-import FinancialsTable from '@/components/dashboard/FinancialsTable';
+import FinancialsTable, { type FinancialsTableRef } from '@/components/dashboard/FinancialsTable';
 
 type Props = { company: any; projects: any[]; isBookkeeperView?: boolean };
 
@@ -44,6 +44,7 @@ function getReceiptCount(project: any): number {
 
 export default function FinancialsClient({ company, projects, isBookkeeperView = false }: Props) {
   const router = useRouter();
+  const tableRef = useRef<FinancialsTableRef>(null);
   const [themeMode, setThemeMode] = useState<FinancialsTheme>('dark');
   const t = themeTokens[themeMode];
 
@@ -112,7 +113,11 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
     return params.toString();
   };
 
-  // Dropdown component
+  const handleSendReminders = () => {
+    setTab('jobs');
+    setTimeout(() => tableRef.current?.openReminderPanel(), 50);
+  };
+
   const Dropdown = ({ open, onToggle, label, children }: any) => (
     <div className="relative">
       <button onClick={onToggle}
@@ -152,20 +157,22 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
             className="p-1.5 rounded-lg transition-colors" style={{ color: t.text.muted }}>
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <button onClick={() => router.refresh()} className="p-1.5 rounded-lg transition-colors" style={{ color: t.text.muted }}>
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <button onClick={() => router.refresh()} className="p-1.5 rounded-lg transition-colors" style={{ color: t.text.muted }}
+  onMouseEnter={e => { e.currentTarget.style.background = t.filterBg; e.currentTarget.style.color = t.text.primary; }}
+  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = t.text.muted; }}
+>
+  <RefreshCw className="w-4 h-4" />
+</button>
           {company.logo_url ? (
             <img src={company.logo_url} alt={company.name} className="h-6 w-auto object-contain opacity-80" />
           ) : (
-            <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black text-xs">
+            <div className="w-6 h-6 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-black text-xs">
               {company.name.charAt(0)}
             </div>
           )}
           <span style={{ color: t.dividerStrong }} className="text-sm">/</span>
           <span className="text-sm font-medium" style={{ color: t.text.secondary }}>Financials</span>
 
-          {/* Light/dark toggle */}
           <button
             onClick={() => setThemeMode(m => m === 'dark' ? 'light' : 'dark')}
             className="ml-auto p-2 rounded-lg transition-colors"
@@ -178,7 +185,6 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
-        {/* Page title + filters */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: t.text.primary }}>Financials</h1>
@@ -204,18 +210,15 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
           </div>
         </div>
 
-        {/* Stat cards */}
         <StatCards t={t} totalRevenue={totalRevenue} totalCollected={totalCollected}
           totalOutstanding={totalOutstanding} taxReadyPct={taxReadyPct} taxReadyCount={taxReadyCount} filtered={filtered} />
 
-        {/* Outstanding + QBO */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <OutstandingWidget t={t} totalOutstanding={totalOutstanding} unpaidJobs={unpaidJobs} partialJobs={partialJobs}
-            onSendReminders={() => setTab('jobs')} />
+            onSendReminders={handleSendReminders} />
           <QBOScore t={t} filtered={filtered} />
         </div>
 
-        {/* Missing receipts notice */}
         {missingReceipts > 0 && (
           <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 mb-6"
             style={{ background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.15)' }}>
@@ -226,7 +229,6 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex items-center gap-1 mb-6" style={{ borderBottom: `1px solid ${t.divider}` }}>
           {[
             { value: 'overview', label: 'Overview', icon: BarChart3 },
@@ -244,7 +246,6 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
           ))}
         </div>
 
-        {/* Overview tab */}
         {tab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -255,9 +256,8 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
           </div>
         )}
 
-        {/* Jobs tab */}
         {tab === 'jobs' && (
-          <FinancialsTable t={t} company={company} filtered={filtered} buildExportParams={buildExportParams} />
+          <FinancialsTable ref={tableRef} t={t} company={company} filtered={filtered} buildExportParams={buildExportParams} />
         )}
       </div>
     </div>

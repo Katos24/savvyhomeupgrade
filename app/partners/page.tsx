@@ -60,7 +60,7 @@ export default function BookkeepersPage() {
               </Link>
               <Link
   href="/bookkeeper/login"
-  className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all"
+  className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-white font-black text-sm hover:bg-black transition-all"
 >
   Partner Login
 </Link>
