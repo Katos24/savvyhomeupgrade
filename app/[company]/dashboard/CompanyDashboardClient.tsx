@@ -625,8 +625,8 @@ const initialLeadCount = useRef<number | null>(null);
   {stats.map((s, i) => (
     <div
       key={i}
-      className={`snap-start w-fit min-w-0 sm:w-full flex-shrink-0 rounded-xl p-3 sm:p-4 transition-all ${
-        isDark 
+className={`snap-start w-[calc(50%-4px)] sm:w-full flex-shrink-0 rounded-xl p-3 sm:p-4 transition-all ${
+          isDark 
           ? 'bg-white/[0.03] border border-white/5' 
           : 'bg-white border border-slate-50 shadow-[0_8px_30px_rgb(0,0,0,0.02)]'
       }`}
