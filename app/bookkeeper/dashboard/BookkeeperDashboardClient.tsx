@@ -143,15 +143,7 @@ export default function BookkeeperDashboardClient({ bookkeeper }: Props) {
           })}
         </div>
 
-        {/* Unpaid jobs alert */}
-        {totalUnpaid > 0 && (
-          <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 mb-6" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.15)' }}>
-            <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-            <p className="text-sm font-medium text-amber-300">
-              {totalUnpaid} unpaid job{totalUnpaid !== 1 ? 's' : ''} across your clients — open their dashboard to send reminders
-            </p>
-          </div>
-        )}
+     
 
         {/* Clients list */}
         <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -199,11 +191,7 @@ export default function BookkeeperDashboardClient({ bookkeeper }: Props) {
                           <p className="text-sm font-bold text-amber-400">{fmt(outstanding)}</p>
                         </div>
                       )}
-                      {client.unpaid_count > 0 && (
-                        <span className="text-xs font-black px-2 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
-                          {client.unpaid_count} unpaid
-                        </span>
-                      )}
+                     
                      {client.plan_tier === 'free' ? (
                        <span
                           title="This client is on the free plan. Ask them to upgrade to Basic to see their financial data."
