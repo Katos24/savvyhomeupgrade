@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         AND p.quote_data != '[]'::jsonb
         AND EXISTS (
           SELECT 1 FROM jsonb_array_elements(p.quote_data) item
-          WHERE (item->>'type') IS NULL
+          WHERE (item->>'type') IS NULL OR (item->>'qbo_account') IS NULL
         )
         AND c.plan_tier IN ('basic', 'pro')
       LIMIT 20
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
         // Only process items missing type AND with valid description
         const unclassified = lineItems.filter((item: any) =>
-          !item.type && item.description && item.description.trim()
+          (!item.type || !item.qbo_account) && item.description && item.description.trim()
         );
 
         if (unclassified.length === 0) continue;
