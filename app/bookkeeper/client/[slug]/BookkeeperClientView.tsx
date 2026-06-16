@@ -4,8 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Download, Receipt, FileText, ExternalLink,
-  CheckCircle2, XCircle, AlertCircle, DollarSign,
-  Clock, ChevronDown
+  CheckCircle2, XCircle, DollarSign, Clock, ChevronDown, ChevronUp,
 } from 'lucide-react';
 
 type Project = Record<string, any>;
@@ -24,6 +23,9 @@ const PERIODS = [
   { label: 'This month',   value: 'month'   },
   { label: 'All time',     value: 'all'     },
 ];
+
+const TYPE_OPTIONS = ['labor', 'material', 'other'];
+const QBO_OPTIONS = ['Services', 'Job Supplies', 'Other Income', 'REVIEW_REQUIRED'];
 
 function fmt(n: number) {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -48,6 +50,15 @@ function getReceipts(project: Project): any[] {
   } catch { return []; }
 }
 
+function getLineItems(project: Project): any[] {
+  try {
+    const items = typeof project.quote_data === 'string'
+      ? JSON.parse(project.quote_data)
+      : project.quote_data || [];
+    return Array.isArray(items) ? items : [];
+  } catch { return []; }
+}
+
 function filterByPeriod(projects: Project[], period: string): Project[] {
   if (period === 'all') return projects;
   const now = new Date();
@@ -63,6 +74,106 @@ function filterByPeriod(projects: Project[], period: string): Project[] {
   });
 }
 
+/* ── LINE ITEMS EXPANDED ROW ── */
+function LineItemsRow({ project, company, onUpdate }: {
+  project: Project;
+  company: Props['company'];
+  onUpdate: (projectId: number, updatedItems: any[]) => void;
+}) {
+  const [items, setItems] = useState<any[]>(getLineItems(project));
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  if (items.length === 0) {
+    return (
+      <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+        <td colSpan={8} className="px-6 py-4 text-xs text-slate-600 italic">No line items found</td>
+      </tr>
+    );
+  }
+
+  const handleChange = async (itemId: string, field: 'type' | 'qbo_account', value: string) => {
+    const updated = items.map(item =>
+      String(item.id) === itemId ? { ...item, [field]: value } : item
+    );
+    setItems(updated);
+    setSavingId(itemId);
+
+    try {
+      await fetch(`/api/bookkeeper/clients/${company.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: project.id, quote_data: updated }),
+      });
+      onUpdate(project.id, updated);
+      setSavedId(itemId);
+      setTimeout(() => setSavedId(null), 1500);
+    } catch {
+      // silently fail for now
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <tr style={{ background: 'rgba(16,185,129,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <td colSpan={8} className="px-6 py-4">
+        <div className="space-y-1">
+          {/* Header */}
+          <div className="grid gap-3 mb-2" style={{ gridTemplateColumns: '1fr 110px 160px 80px' }}>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Description</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Type</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">QBO Account</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Amount</p>
+          </div>
+
+          {items.map(item => (
+            <div key={item.id} className="grid gap-3 items-center py-1.5 rounded-lg px-2"
+              style={{ gridTemplateColumns: '1fr 110px 160px 80px', background: 'rgba(255,255,255,0.02)' }}>
+              <p className="text-xs text-slate-300 truncate">{item.description || '—'}</p>
+
+              <select
+                value={item.type || ''}
+                onChange={e => handleChange(String(item.id), 'type', e.target.value)}
+                className="text-xs rounded-lg px-2 py-1.5 outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#94a3b8',
+                }}
+              >
+                <option value="">— type —</option>
+                {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={item.qbo_account || ''}
+                onChange={e => handleChange(String(item.id), 'qbo_account', e.target.value)}
+                className="text-xs rounded-lg px-2 py-1.5 outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: item.qbo_account === 'REVIEW_REQUIRED' ? '#f59e0b' : '#94a3b8',
+                }}
+              >
+                <option value="">— account —</option>
+                {QBO_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+              </select>
+
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold text-white">{fmt(parseFloat(item.amount || '0'))}</p>
+                {savingId === String(item.id) && <span className="text-[10px] text-slate-500">saving...</span>}
+                {savedId === String(item.id) && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+              </div>
+            </div>
+          ))}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/* ── INVOICES TAB ── */
 function InvoicesTab({ projects, company, period, setPeriod }: {
   projects: Project[];
   company: Props['company'];
@@ -70,13 +181,21 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
   setPeriod: (p: string) => void;
 }) {
   const [periodOpen, setPeriodOpen] = useState(false);
-  const filtered = useMemo(() => filterByPeriod(projects, period), [projects, period]);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [localProjects, setLocalProjects] = useState<Project[]>(projects);
+
+  const filtered = useMemo(() => filterByPeriod(localProjects, period), [localProjects, period]);
 
   const totalInvoiced   = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.quote_total || '0'), 0), [filtered]);
   const totalCollected  = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.payment_amount || '0'), 0), [filtered]);
   const totalOutstanding = totalInvoiced - totalCollected;
-  const unpaidCount     = filtered.filter(p => p.payment_status !== 'paid').length;
   const currentLabel    = PERIODS.find(p => p.value === period)?.label || 'This year';
+
+  const handleUpdate = (projectId: number, updatedItems: any[]) => {
+    setLocalProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, quote_data: updatedItems } : p
+    ));
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -118,12 +237,11 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
           { label: 'Total Invoiced',  value: fmt(totalInvoiced),    icon: DollarSign,  color: '#fff',     bg: 'rgba(255,255,255,0.04)' },
           { label: 'Collected',       value: fmt(totalCollected),   icon: CheckCircle2, color: '#10b981', bg: 'rgba(16,185,129,0.08)'  },
           { label: 'Outstanding',     value: fmt(totalOutstanding), icon: Clock,        color: '#f59e0b', bg: 'rgba(245,158,11,0.08)'  },
-          { label: 'Unpaid Jobs',     value: String(unpaidCount),   icon: AlertCircle,  color: '#f87171', bg: 'rgba(239,68,68,0.08)'   },
         ].map(card => {
           const Icon = card.icon;
           return (
@@ -145,7 +263,7 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}>
-                {['Customer', 'Invoice #', 'Category', 'Date', 'Amount', 'Collected', 'Status', 'Receipts'].map(h => (
+                {['', 'Customer', 'Invoice #', 'Category', 'Date', 'Amount', 'Status', 'Receipts'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">
                     {h}
                   </th>
@@ -161,68 +279,89 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                 </tr>
               ) : filtered.map((project, i) => {
                 const receipts = getReceipts(project);
-                const total     = parseFloat(project.quote_total || '0');
-                const collected = parseFloat(project.payment_amount || '0');
+                const lineItems = getLineItems(project);
+                const total = parseFloat(project.quote_total || '0');
+                const isExpanded = expandedId === project.id;
+                const hasReviewRequired = lineItems.some(item => item.qbo_account === 'REVIEW_REQUIRED' || !item.qbo_account);
+
                 return (
-                  <tr key={project.id} style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                  }}>
-                    <td className="px-4 py-3.5">
-                      <p className="text-sm font-bold text-white">{project.customer_name}</p>
-                    </td>
-                   <td className="px-4 py-3.5">
-  <p className="text-xs font-black text-emerald-400">
-    {project.invoice_number || '—'}
-  </p>
-
-  {project.invoice_number && (
-    <a
-      href={`/api/company/${company.slug}/generate-invoice-pdf?project_id=${project.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition-colors flex items-center gap-1 mt-0.5"
-    >
-      <Download className="w-3 h-3" />
-      PDF
-    </a>
-  )}
-</td>
-
-                    <td className="px-4 py-3.5">
-                      <p className="text-xs text-slate-400">{formatCategory(project.category)}</p>
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      <p className="text-xs text-slate-500">{formatDate(project.created_at)}</p>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-sm font-black text-white">{fmt(total)}</p>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-sm font-bold" style={{ color: collected >= total ? '#10b981' : collected > 0 ? '#f59e0b' : '#64748b' }}>
-                        {collected > 0 ? fmt(collected) : '—'}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full" style={{
-                        background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                        color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#f87171',
-                      }}>
-                        {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {receipts.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-400">
-                          <CheckCircle2 className="w-3 h-3" />{receipts.length}
+                  <>
+                    <tr key={project.id} style={{
+                      borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                      background: isExpanded ? 'rgba(16,185,129,0.04)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                      cursor: lineItems.length > 0 ? 'pointer' : 'default',
+                    }}
+                      onClick={() => lineItems.length > 0 && setExpandedId(isExpanded ? null : project.id)}
+                    >
+                      {/* Expand toggle */}
+                      <td className="px-3 py-3.5 w-8">
+                        {lineItems.length > 0 && (
+                          isExpanded
+                            ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400" />
+                            : <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-sm font-bold text-white">{project.customer_name}</p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-xs font-black text-emerald-400">{project.invoice_number || '—'}</p>
+                        {project.invoice_number && (
+                          <a href={`/api/company/${company.slug}/generate-invoice-pdf?project_id=${project.id}`}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition-colors flex items-center gap-1 mt-0.5">
+                            <Download className="w-3 h-3" />PDF
+                          </a>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs text-slate-400">{formatCategory(project.category)}</p>
+                          {hasReviewRequired && (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                              Review
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <p className="text-xs text-slate-500">{formatDate(project.created_at)}</p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-sm font-black text-white">{fmt(total)}</p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full" style={{
+                          background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                          color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#f87171',
+                        }}>
+                          {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-black text-slate-600">
-                          <XCircle className="w-3 h-3" />None
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {receipts.length > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-400">
+                            <CheckCircle2 className="w-3 h-3" />{receipts.length}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-slate-600">
+                            <XCircle className="w-3 h-3" />None
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {isExpanded && (
+                      <LineItemsRow
+                        key={`expanded-${project.id}`}
+                        project={{ ...project, quote_data: getLineItems(project) }}
+                        company={company}
+                        onUpdate={handleUpdate}
+                      />
+                    )}
+                  </>
                 );
               })}
             </tbody>
@@ -233,6 +372,7 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
   );
 }
 
+/* ── RECEIPTS TAB ── */
 function ReceiptsTab({ projects }: { projects: Project[] }) {
   const jobsWithReceipts = projects
     .map(p => ({ ...(p as any), receipts: getReceipts(p) }))
@@ -317,6 +457,7 @@ function ReceiptsTab({ projects }: { projects: Project[] }) {
   );
 }
 
+/* ── MAIN ── */
 export default function BookkeeperClientView({ company, projects, bookkeeper }: Props) {
   const [tab, setTab] = useState<Tab>('invoices');
   const [period, setPeriod] = useState('year');
@@ -325,7 +466,6 @@ export default function BookkeeperClientView({ company, projects, bookkeeper }: 
 
   return (
     <div style={{ background: '#0a0a0f', minHeight: '100vh' }}>
-      {/* Nav */}
       <div className="sticky top-0 z-50 px-6 py-3 flex items-center justify-between"
         style={{ background: 'rgba(10,10,15,0.95)', borderBottom: '1px solid rgba(16,185,129,0.15)', backdropFilter: 'blur(12px)' }}>
         <div className="flex items-center gap-3">
@@ -341,7 +481,6 @@ export default function BookkeeperClientView({ company, projects, bookkeeper }: 
         <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest hidden sm:block">Bookkeeper View</span>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center px-6 gap-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {([
           { id: 'invoices', label: 'Invoices', icon: FileText },
@@ -360,7 +499,6 @@ export default function BookkeeperClientView({ company, projects, bookkeeper }: 
         })}
       </div>
 
-      {/* Content */}
       {tab === 'invoices'
         ? <InvoicesTab projects={projects} company={company} period={period} setPeriod={setPeriod} />
         : <ReceiptsTab projects={projects} />
