@@ -86,13 +86,11 @@ export function OutstandingWidget({ t, totalOutstanding, unpaidJobs, partialJobs
         </div>
       </div>
       {(unpaidJobs.length > 0 || partialJobs.length > 0) && (
-       <button onClick={onSendReminders}
-  className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
-  style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}
-  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'; }}
-  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.2)'; }}>
-  Send reminders →
-</button>
+        <button onClick={onSendReminders}
+          className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+          style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}>
+          Send reminders →
+        </button>
       )}
     </div>
   );

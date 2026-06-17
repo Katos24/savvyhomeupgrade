@@ -47,7 +47,7 @@ function RemindersPanel({
       <div className="relative w-full max-w-md h-full flex flex-col overflow-hidden" style={{ background: t.panelBg, borderLeft: t.panelBorder }}>
         <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${t.divider}` }}>
           <div>
-            <p className="text-sm font-black" style={{ color: t.text.primary }}>Payment Reminders</p>
+            <p className="text-sm font-semibold" style={{ color: t.text.primary }}>Payment reminders</p>
             <p className="text-xs mt-0.5" style={{ color: t.text.muted }}>{reminders.length} unpaid jobs</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg transition-colors" style={{ color: t.text.muted }}>
@@ -81,16 +81,16 @@ function RemindersPanel({
                     <p className="text-sm font-semibold truncate" style={{ color: t.text.primary }}>{reminder.customer_name}</p>
                     <p className="text-xs mt-0.5" style={{ color: t.text.muted }}>{reminder.customer_email}</p>
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      <span className="text-xs font-black" style={{ color: '#f59e0b' }}>{fmtFull(due)} due</span>
+                      <span className="text-xs font-medium" style={{ color: '#f59e0b' }}>{fmtFull(due)} due</span>
                       {reminder.payment_due_date && (
-                        <span className={`text-xs font-medium ${reminder.is_overdue ? 'text-red-400' : ''}`} style={!reminder.is_overdue ? { color: t.text.muted } : {}}>
+                        <span className={`text-xs font-medium ${reminder.is_overdue ? 'text-red-500' : ''}`} style={!reminder.is_overdue ? { color: t.text.muted } : {}}>
                           {reminder.is_overdue ? 'Overdue' : 'Due'} {new Date(reminder.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       )}
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full"
                         style={{
                           background: reminder.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                          color: reminder.payment_status === 'partial' ? '#f59e0b' : '#f87171',
+                          color: reminder.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
                         }}>
                         {reminder.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
                       </span>
@@ -104,7 +104,7 @@ function RemindersPanel({
                   <button
                     onClick={() => !sentRecently && !isSending && onSend(reminder)}
                     disabled={sentRecently || isSending}
-                    className="shrink-0 px-3 py-2 rounded-xl text-xs font-black transition-all"
+                    className="shrink-0 px-3 py-2 rounded-xl text-xs font-medium transition-all"
                     style={{
                       background: sentRecently ? t.cardBg : 'rgba(16,185,129,0.12)',
                       color: sentRecently ? t.text.muted : '#10b981',
@@ -189,11 +189,11 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
       <div className="rounded-2xl overflow-hidden" style={{ background: t.cardBg, border: t.cardBorder }}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 flex-wrap gap-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
           <div className="flex items-center gap-3">
-            <p className="text-sm font-semibold" style={{ color: t.text.primary }}>{filtered.length} jobs</p>
+            <p className="text-sm font-medium" style={{ color: t.text.primary }}>{filtered.length} jobs</p>
             {unpaidCount > 0 && (
          <button
   onClick={openReminderPanel}
-  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+  className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
   style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}
   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'; }}
   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.2)'; }}
@@ -204,12 +204,12 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
           </div>
           <div className="flex items-center gap-2">
             <a href={`/api/company/${company.slug}/export-csv?${buildExportParams()}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
               style={{ background: t.filterBg, border: t.filterBorder, color: t.text.secondary }}>
               <Download className="w-3 h-3" /> Export CSV
             </a>
             <a href={`/api/company/${company.slug}/export-csv?format=quickbooks&${buildExportParams()}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
               style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981' }}>
               <Download className="w-3 h-3" /> QuickBooks
             </a>
@@ -222,7 +222,7 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
             <thead>
               <tr style={{ borderBottom: `1px solid ${t.rowBorder}` }}>
                 {['Customer', 'Invoice', 'Category', 'Total', 'Payment', 'Receipts', 'Tax Ready', ''].map((h, i) => (
-                  <th key={i} className={`px-6 py-3 text-xs font-medium uppercase tracking-wider ${i === 3 ? 'text-right' : 'text-left'}`}
+                  <th key={i} className={`px-6 py-3 text-xs font-medium ${i === 3 ? 'text-right' : 'text-left'}`}
                     style={{ color: t.text.muted }}>{h}</th>
                 ))}
               </tr>
@@ -249,44 +249,44 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-bold" style={{ color: '#10b981' }}>{project.invoice_number || '—'}</span>
+                      <span className="text-xs font-medium" style={{ color: '#10b981' }}>{project.invoice_number || '—'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm" style={{ color: t.text.secondary }}>{formatCategory(project.category)}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <p className="text-sm font-bold" style={{ color: t.text.primary }}>{fmtFull(total)}</p>
+                      <p className="text-sm font-medium" style={{ color: t.text.primary }}>{fmtFull(total)}</p>
                       {collected > 0 && collected < total && (
                         <p className="text-xs mt-0.5" style={{ color: '#f59e0b' }}>{fmtFull(collected)} paid</p>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
                         style={{
                           background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                          color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#f87171',
+                          color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
                         }}>
                         {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       {receiptCount > 0 ? (
-                        <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#10b981' }}>
+                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#10b981' }}>
                           <CheckCircle2 className="w-3.5 h-3.5" />{receiptCount}
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#f87171' }}>
+                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#ef4444' }}>
                           <XCircle className="w-3.5 h-3.5" />None
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       {taxReady ? (
-                        <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#10b981' }}>
+                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#10b981' }}>
                           <CheckCircle2 className="w-3.5 h-3.5" />Ready
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#f59e0b' }}>
+                        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#f59e0b' }}>
                           <AlertCircle className="w-3.5 h-3.5" />Unpaid
                         </span>
                       )}
@@ -294,7 +294,7 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                     <td className="px-6 py-4">
                       <a href={`/${company.slug}/dashboard?lead=${project.lead_id}`}
                         target="_blank" rel="noopener noreferrer"
-                        className="text-xs font-semibold transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-xs font-medium transition-colors opacity-0 group-hover:opacity-100"
                         style={{ color: t.text.muted }}>
                         View →
                       </a>
@@ -324,26 +324,26 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                       {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{
                       background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#f87171',
+                      color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
                     }}>
                     {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: t.text.secondary }}>{formatCategory(project.category)}</span>
-                  <span className="text-sm font-bold" style={{ color: t.text.primary }}>{fmtFull(total)}</span>
+                  <span className="text-sm font-medium" style={{ color: t.text.primary }}>{fmtFull(total)}</span>
                 </div>
                 {collected > 0 && collected < total && (
                   <p className="text-xs" style={{ color: '#f59e0b' }}>{fmtFull(collected)} paid · {fmtFull(total - collected)} remaining</p>
                 )}
                 <div className="flex items-center gap-4">
                   {project.invoice_number && (
-                    <span className="text-xs font-bold" style={{ color: '#10b981' }}>{project.invoice_number}</span>
+                    <span className="text-xs font-medium" style={{ color: '#10b981' }}>{project.invoice_number}</span>
                   )}
-                  <span className="flex items-center gap-1 text-xs" style={{ color: receiptCount > 0 ? '#10b981' : '#f87171' }}>
+                  <span className="flex items-center gap-1 text-xs" style={{ color: receiptCount > 0 ? '#10b981' : '#ef4444' }}>
                     {receiptCount > 0 ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                     {receiptCount > 0 ? `${receiptCount} receipt${receiptCount > 1 ? 's' : ''}` : 'No receipts'}
                   </span>
@@ -354,7 +354,7 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                 </div>
                 <a href={`/${company.slug}/dashboard?lead=${project.lead_id}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-xs font-semibold" style={{ color: '#6366f1' }}>
+                  className="text-xs font-medium" style={{ color: '#3b82f6' }}>
                   View job →
                 </a>
               </div>

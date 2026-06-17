@@ -185,7 +185,7 @@ className="rounded-2xl p-5 flex items-center justify-between gap-4"
 style={{ background: '#0f172a' }}
         >
           <div>
-           <p className="text-sm font-black text-white">Ready to start this job?</p>
+           <p className="text-sm font-semibold text-white">Ready to start this job?</p>
 <p className="text-xs mt-0.5" style={{ color: 'rgba(255, 255, 255, 0.81)' }}>Convert to a project to unlock scheduling, quotes, tasks, and more.</p>
           </div>
           <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
@@ -199,16 +199,16 @@ style={{ background: '#0f172a' }}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+          <h3 className="text-xs font-medium text-gray-400 flex items-center gap-2">
             <span className="w-5 h-5 rounded-lg bg-blue-50 flex items-center justify-center">
               <UserCircle className="w-3 h-3 text-blue-400" />
             </span>
-            Client Info
+            Client info
             {relatedLeads.length > 0 && (
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onShowHistory}
-                className="flex items-center gap-1 px-2 py-0.5 text-xs font-bold transition hover:opacity-80"
+                className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium transition hover:opacity-80"
                 style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#f59e0b', borderRadius: 4 }}
               >
                 <History className="w-3 h-3" />
@@ -219,7 +219,7 @@ style={{ background: '#0f172a' }}
           <div className="relative">
             <button
               onClick={() => setShowClientActions(!showClientActions)}
-              className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+              className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
             >
               Actions ▾
             </button>
@@ -242,7 +242,7 @@ style={{ background: '#0f172a' }}
                   <div className="border-t border-gray-100 my-1" />
                   <button onClick={() => { setIsEditingDetails(true); setShowClientActions(false); }}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                    <Edit2 className="w-4 h-4 text-gray-400" /> Edit Details
+                    <Edit2 className="w-4 h-4 text-gray-400" /> Edit details
                   </button>
                 </motion.div>
               </>
@@ -256,46 +256,46 @@ style={{ background: '#0f172a' }}
             <motion.div key="editing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Name</label>
+                  <label className="text-xs font-medium text-gray-400 mb-1 block">Name</label>
                   <input type="text" value={editedDetails.name}
                     onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Phone</label>
+                  <label className="text-xs font-medium text-gray-400 mb-1 block">Phone</label>
                   <input type="tel" value={editedDetails.phone}
                     onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" maxLength={14} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Email</label>
+                <label className="text-xs font-medium text-gray-400 mb-1 block">Email</label>
                 <input type="email" value={editedDetails.email}
                   onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Address</label>
+                <label className="text-xs font-medium text-gray-400 mb-1 block">Address</label>
                 <input type="text" value={editedDetails.address_line_1}
                   onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Apt/Suite</label>
+                  <label className="text-xs font-medium text-gray-400 mb-1 block">Apt/Suite</label>
                   <input type="text" value={editedDetails.address_line_2}
                     onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">City</label>
+                  <label className="text-xs font-medium text-gray-400 mb-1 block">City</label>
                   <input type="text" value={editedDetails.city}
                     onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 block">Category</label>
+                <label className="text-xs font-medium text-gray-400 mb-1 block">Category</label>
                 <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
                   {categories.map((cat: any) => (
@@ -305,12 +305,12 @@ style={{ background: '#0f172a' }}
               </div>
               <div className="flex gap-2 pt-1">
                 <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveDetails} disabled={saving}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition text-sm">
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl transition text-sm">
+                  {saving ? 'Saving...' : 'Save changes'}
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => { setEditedDetails({ name: lead.name || '', email: lead.email || '', phone: lead.phone || '', address_line_1: lead.address_line_1 || '', address_line_2: lead.address_line_2 || '', city: lead.city || '' }); setSelectedCategory(lead.category || ''); setIsEditingDetails(false); }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition text-sm">
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition text-sm">
                   Cancel
                 </motion.button>
               </div>
@@ -320,9 +320,9 @@ style={{ background: '#0f172a' }}
               {/* Mobile */}
               <div className="sm:hidden px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-gray-900 truncate">{lead.name}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p>
                   {lead.category && (
-                    <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full text-[10px] font-bold text-blue-600 shrink-0 ml-2">
+                    <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full text-[11px] font-medium text-blue-600 shrink-0 ml-2">
                       {formatCategory(lead.category)}
                     </span>
                   )}
@@ -339,7 +339,7 @@ style={{ background: '#0f172a' }}
                     <motion.button key={btn.label} whileTap={{ scale: 0.95 }} onClick={btn.action}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-all">
                       <span style={{ color: btn.color }}>{btn.icon}</span>
-                      <span className="text-[10px] font-semibold text-gray-500">{btn.label}</span>
+                      <span className="text-[11px] font-medium text-gray-500">{btn.label}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -347,16 +347,16 @@ style={{ background: '#0f172a' }}
               {/* Desktop */}
               <div className="hidden sm:block">
                 <div className="p-5 grid grid-cols-3 gap-4">
-                  <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Name</p><p className="text-sm font-semibold text-gray-900">{lead.name}</p></div>
-                  <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Email</p><p className="text-sm font-semibold text-blue-600">{lead.email}</p></div>
-                  <div><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Phone</p><p className="text-sm font-semibold text-gray-900">{formatPhoneNumber(lead.phone)}</p></div>
+                  <div><p className="text-xs font-medium text-gray-400 mb-1.5">Name</p><p className="text-sm font-medium text-gray-900">{lead.name}</p></div>
+                  <div><p className="text-xs font-medium text-gray-400 mb-1.5">Email</p><p className="text-sm font-medium text-blue-600">{lead.email}</p></div>
+                  <div><p className="text-xs font-medium text-gray-400 mb-1.5">Phone</p><p className="text-sm font-medium text-gray-900">{formatPhoneNumber(lead.phone)}</p></div>
                   {lead.address_line_1 && (
-                    <div className="col-span-2"><p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Address</p><p className="text-sm font-semibold text-gray-900">{fullAddress}</p></div>
+                    <div className="col-span-2"><p className="text-xs font-medium text-gray-400 mb-1.5">Address</p><p className="text-sm font-medium text-gray-900">{fullAddress}</p></div>
                   )}
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Category</p>
+                    <p className="text-xs font-medium text-gray-400 mb-1.5">Category</p>
                     {lead.category
-                      ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-xs font-bold text-blue-600">{formatCategory(lead.category)}</span>
+                      ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-xs font-medium text-blue-600">{formatCategory(lead.category)}</span>
                       : <span className="text-gray-400 text-xs italic">None</span>}
                   </div>
                 </div>
@@ -368,7 +368,7 @@ style={{ background: '#0f172a' }}
                       onClick={btn.action}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-all group">
                       <span style={{ color: btn.color }}>{btn.icon}</span>
-                      <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-600">{btn.label}</span>
+                      <span className="text-xs font-medium text-gray-600 group-hover:text-blue-600">{btn.label}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -387,9 +387,9 @@ style={{ background: '#0f172a' }}
           className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden"
         >
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+            <h3 className="text-xs font-medium text-gray-400 flex items-center gap-2">
               <span className="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center"><MessageCircle className="w-3 h-3 text-emerald-400" /></span>
-              Customer's Message
+              Customer's message
             </h3>
           </div>
           <div className="p-5">
@@ -402,7 +402,7 @@ style={{ background: '#0f172a' }}
                 {lead.preferred_date && (
                   <div className="flex items-center gap-1.5 text-xs text-gray-600">
                     <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                    <span className="font-semibold text-gray-400 uppercase tracking-wide mr-1">Preferred:</span>
+                    <span className="font-medium text-gray-400 mr-1">Preferred:</span>
                     {(() => { const d = new Date(lead.preferred_date); return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); })()}
                   </div>
                 )}
@@ -419,8 +419,8 @@ style={{ background: '#0f172a' }}
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Image className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em]">
-                    {customerPhotos.length} Photo{customerPhotos.length > 1 ? 's' : ''} Submitted
+                  <span className="text-xs font-medium text-gray-400">
+                    {customerPhotos.length} photo{customerPhotos.length > 1 ? 's' : ''} submitted
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -437,7 +437,7 @@ style={{ background: '#0f172a' }}
                     <motion.button whileTap={{ scale: 0.95 }}
                       onClick={() => setLightbox({ photos: customerPhotos, index: 6 })}
                       className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-center flex-shrink-0 transition">
-                      <span className="text-xs font-bold text-gray-400">+{customerPhotos.length - 6}</span>
+                      <span className="text-xs font-medium text-gray-400">+{customerPhotos.length - 6}</span>
                     </motion.button>
                   )}
                 </div>
@@ -447,7 +447,7 @@ style={{ background: '#0f172a' }}
             {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
-                  className="text-xs font-bold text-blue-600 flex items-center gap-1">
+                  className="text-xs font-medium text-blue-600 flex items-center gap-1">
                   {showCustomQuestions ? '▼' : '▶'} Additional ({Object.keys(lead.custom_answers).length})
                 </button>
                 <AnimatePresence>
@@ -481,9 +481,9 @@ style={{ background: '#0f172a' }}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden"
           >
             <div className="px-5 py-4 border-b border-gray-50">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] flex items-center gap-2">
+              <h3 className="text-xs font-medium text-gray-400 flex items-center gap-2">
                 <span className="w-5 h-5 rounded-lg bg-amber-50 flex items-center justify-center"><Lock className="w-3 h-3 text-amber-400" /></span>
-                Internal Notes
+                Internal notes
               </h3>
             </div>
             <div className="p-5">
@@ -495,12 +495,12 @@ style={{ background: '#0f172a' }}
                       className="w-full px-3 py-2.5 border-2 border-blue-200 rounded-xl text-sm resize-none focus:outline-none focus:border-blue-400" />
                     <div className="flex gap-2">
                       <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveInternalNotes} disabled={saving}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2 rounded-xl text-xs transition">
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 rounded-xl text-xs transition">
                         {saving ? 'Saving...' : 'Save'}
                       </motion.button>
                       <motion.button whileTap={{ scale: 0.97 }}
                         onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-xl text-xs transition">
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-xl text-xs transition">
                         Cancel
                       </motion.button>
                     </div>
@@ -508,14 +508,14 @@ style={{ background: '#0f172a' }}
                 ) : lead.project_internal_notes ? (
                   <motion.div key="has-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <p className="text-sm text-gray-600 mb-3">{lead.project_internal_notes}</p>
-                    <button onClick={() => setIsEditingNotes(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700">Edit Notes</button>
+                    <button onClick={() => setIsEditingNotes(true)} className="text-xs font-medium text-blue-600 hover:text-blue-700">Edit notes</button>
                   </motion.div>
                 ) : (
                   <motion.button key="empty-notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     whileTap={{ scale: 0.98 }} onClick={() => setIsEditingNotes(true)}
                     className="w-full py-8 border-2 border-dashed border-gray-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50/30 transition flex flex-col items-center gap-2">
                     <NotebookPen className="w-6 h-6 text-gray-300" />
-                    <span className="text-xs font-semibold text-gray-400 hover:text-blue-500">Add internal notes</span>
+                    <span className="text-xs font-medium text-gray-400 hover:text-blue-500">Add internal notes</span>
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -532,15 +532,15 @@ style={{ background: '#0f172a' }}
             <motion.div initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl text-center">
-              <h3 className="text-xl font-black text-gray-900 mb-2">Update Quote Too?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Update quote too?</h3>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                <span className="font-bold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
+                <span className="font-medium text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <motion.button whileTap={{ scale: 0.97 }}
                   onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
-                  className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition text-sm">
-                  Keep Current
+                  className="py-4 bg-gray-100 text-gray-700 font-medium rounded-2xl hover:bg-gray-200 transition text-sm">
+                  Keep current
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.97 }}
                   onClick={async () => {
@@ -548,8 +548,8 @@ style={{ background: '#0f172a' }}
                     setPendingCategoryChange(null);
                     await executeSaveDetails(items);
                   }}
-                  className="py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 transition text-sm">
-                  Use Template
+                  className="py-4 bg-blue-600 text-white font-medium rounded-2xl transition text-sm">
+                  Use template
                 </motion.button>
               </div>
             </motion.div>

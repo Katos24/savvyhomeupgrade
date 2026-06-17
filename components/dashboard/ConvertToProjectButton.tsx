@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
 
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
@@ -33,24 +32,23 @@ if (lead.project_id) return null;
     const requiredPlan = FEATURE_PLAN_MAP['convert_to_project'];
     const config = PLAN_CONFIG[requiredPlan as keyof typeof PLAN_CONFIG];
    return (
-      <div className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
+      <div className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl">
         <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
           <Lock className="w-4 h-4 text-blue-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-black text-slate-900">Upgrade to create projects</p>
-          <p className="text-[10px] text-slate-500">Unlock quotes, scheduling, tasks & payment tracking</p>
+          <p className="text-xs font-semibold text-slate-900">Upgrade to create projects</p>
+          <p className="text-[11px] text-slate-500">Unlock quotes, scheduling, tasks & payment tracking</p>
       </div>
         
-        {/* FIXED THE TAG BELOW */}
         <a 
           href={`/${companySlug}/admin/settings#billing`}
-          className="inline-flex items-center gap-1.5 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-200"
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 transition active:scale-95"
         >
-          Upgrade Plan
+          Upgrade plan
         </a>
         
-        <p className="text-[10px] text-slate-400 mt-1 font-bold">Starting at $49.99/mo</p>
+        <p className="text-[11px] text-slate-400 mt-1">Starting at $49.99/mo</p>
       </div>
     );
   }
@@ -149,35 +147,27 @@ if (lead.project_id) return null;
 
   return (
     <>
-      {/* ── TRIGGER BUTTON (MOBILE FRIENDLY) ── */}
+      {/* Trigger button */}
      <button
   onClick={() => setShowConfirm(true)}
   disabled={isConverting}
   className="
-    group flex items-center justify-center gap-2
+    flex items-center justify-center gap-2
     w-full sm:w-auto
     px-5 py-3
-    bg-gradient-to-r from-emerald-500 to-emerald-600
-    hover:from-emerald-400 hover:to-emerald-500
-    text-white font-bold text-sm tracking-wide
+    bg-emerald-600
+    hover:bg-emerald-700
+    text-white font-medium text-sm
     rounded-xl
-    shadow-md shadow-emerald-500/20
     transition-all duration-200 ease-out
     active:scale-[0.98]
     disabled:opacity-50 disabled:cursor-not-allowed
   "
 >
-  {isConverting ? (
-    <span className="animate-pulse">Converting...</span>
-  ) : (
-    <>
-      <Sparkles size={16} className="text-emerald-50 group-hover:rotate-12 transition-transform" />
-      <span>Convert to Project</span>
-    </>
-  )}
+  {isConverting ? 'Converting...' : 'Convert to project'}
 </button>
 
-      {/* ── CONFIRM MODAL ── */}
+      {/* Confirm modal */}
       {showConfirm && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
@@ -187,24 +177,24 @@ if (lead.project_id) return null;
             className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* HEADER */}
+            {/* Header */}
             <div className="px-6 pt-8 pb-5 text-center">
-              <h3 className="text-lg font-black text-gray-900">
-                Create Project
+              <h3 className="text-lg font-semibold text-gray-900">
+                Create project
               </h3>
 
               <p className="text-sm text-gray-500 mt-2">
-                For <span className="font-semibold text-gray-800">{lead.name}</span>
+                For <span className="font-medium text-gray-800">{lead.name}</span>
               </p>
 
               {categoryDisplay && (
-                <div className="mt-4 inline-block px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-700">
+                <div className="mt-4 inline-block px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-medium text-gray-700">
                   {categoryDisplay}
                 </div>
               )}
             </div>
 
-            {/* ACTIONS */}
+            {/* Actions */}
             <div className="px-5 pb-6 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
@@ -212,7 +202,7 @@ if (lead.project_id) return null;
                 className="
                   py-3
                   bg-gray-100 hover:bg-gray-200
-                  text-gray-700 font-bold text-sm
+                  text-gray-700 font-medium text-sm
                   rounded-xl
                   transition
                   disabled:opacity-50
@@ -227,7 +217,7 @@ if (lead.project_id) return null;
                 className="
                   py-3
                   bg-blue-600 hover:bg-blue-700
-                  text-white font-black text-sm
+                  text-white font-medium text-sm
                   rounded-xl
                   transition
                   disabled:opacity-50
