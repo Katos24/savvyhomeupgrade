@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, ChevronUp, ChevronDown, AlertCircle,
   AlertTriangle, Workflow, Lock, Palette,
-  Save, Check, Info, GripVertical
+  Save, Check
 } from 'lucide-react';
 
 type StatusOption = {
@@ -118,56 +118,51 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
   };
 
   return (
-<div className="pb-24 pt-4 min-w-0">
+    <div className="pb-24 pt-4 min-w-0">
 
       {/* ── PAGE HEADER ── */}
       <div className="mb-8">
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Pipeline stages</h2>
-        <p className="text-sm text-black mt-1">Define the stages every job moves through — from first contact to completed.</p>
+        <h2 className="text-lg font-semibold text-gray-900">Pipeline stages</h2>
+        <p className="text-sm text-gray-500 mt-1">Define the stages every job moves through — from first contact to completed.</p>
       </div>
 
       {/* ── ALERTS ── */}
       <AnimatePresence>
         {success && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-bold flex items-center gap-2">
+            className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-medium flex items-center gap-2">
             <Check className="w-4 h-4" /> {success}
           </motion.div>
         )}
         {error && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold flex items-center gap-2">
+            className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4" /> {error}
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── MAIN GRID — stages left, preview right ── */}
-<div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-8 items-start">
         {/* LEFT — PIPELINE EDITOR */}
         <div className="space-y-3">
 
-          {/* Stage list */}
           <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
 
-            {/* Header */}
             <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                  <Workflow className="w-3.5 h-3.5 text-indigo-500" />
-                </div>
+                <Workflow className="w-4 h-4 text-gray-400" />
                 <div>
-                  <p className="text-sm font-bold text-gray-800">Stages</p>
-                  <p className="text-[10px] text-gray-400">{statuses.length} stages configured</p>
+                  <p className="text-sm font-medium text-gray-800">Stages</p>
+                  <p className="text-[11px] text-gray-400">{statuses.length} stages configured</p>
                 </div>
               </div>
-              <motion.button
-                whileTap={{ scale: 0.96 }}
+              <button
                 onClick={() => { setShowAddForm(true); setActiveColorPicker(null); }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition"
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-medium transition"
               >
                 <Plus className="w-3.5 h-3.5" /> Add stage
-              </motion.button>
+              </button>
             </div>
 
             {/* Add form */}
@@ -180,7 +175,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                 >
                   <div className="p-5 bg-indigo-50/40 space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">New stage</p>
+                      <p className="text-[11px] font-medium text-indigo-500">New stage</p>
                       <button onClick={() => setShowAddForm(false)} className="p-1 text-gray-400 hover:text-gray-600 transition">
                         <X className="w-4 h-4" />
                       </button>
@@ -194,9 +189,8 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                       className="w-full px-4 py-3 bg-white border border-indigo-100 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition placeholder-gray-300"
                       autoFocus
                     />
-                    {/* Color picker */}
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Color</p>
+                      <p className="text-[11px] font-medium text-gray-400 mb-2">Color</p>
                       <div className="flex gap-2 flex-wrap">
                         {COLOR_OPTIONS.map(c => (
                           <button
@@ -208,13 +202,12 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                         ))}
                       </div>
                     </div>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
+                    <button
                       onClick={handleAddStatus}
-                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-sm"
+                      className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition"
                     >
                       Add stage
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -235,16 +228,14 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                       transition={spring}
                       className={`relative flex items-center gap-3 px-4 py-3.5 group transition-colors ${locked ? 'bg-gray-50/50' : 'hover:bg-gray-50/60'}`}
                     >
-                      {/* Color swatch / picker trigger */}
                       <button
                         onClick={() => !locked && setActiveColorPicker(activeColorPicker === index ? null : index)}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all ${!locked ? 'hover:scale-105 active:scale-95' : 'cursor-default'}`}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${!locked ? 'hover:scale-105 active:scale-95' : 'cursor-default'}`}
                         style={{ backgroundColor: getColorHex(status.color) }}
                       >
                         {!locked && <Palette className="w-3.5 h-3.5 text-white/80 opacity-0 group-hover:opacity-100 transition-opacity" />}
                       </button>
 
-                      {/* Label */}
                       <div className="flex-1 min-w-0">
                         <input
                           type="text"
@@ -255,7 +246,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                             updated[index].label = e.target.value;
                             setStatuses(updated);
                           }}
-                          className={`w-full bg-transparent text-sm font-bold outline-none transition-all ${
+                          className={`w-full bg-transparent text-sm font-medium outline-none transition-all ${
                             locked
                               ? 'text-gray-400 cursor-default'
                               : 'text-gray-900 border-b border-transparent focus:border-indigo-300'
@@ -263,13 +254,12 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                         />
                         <div className="flex items-center gap-1 mt-0.5">
                           {locked && <Lock className="w-2.5 h-2.5 text-gray-300" />}
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">
+                          <span className="text-[10px] font-medium text-gray-300">
                             {locked ? 'System required' : 'Custom stage'}
                           </span>
                         </div>
                       </div>
 
-                      {/* Move buttons */}
                       <div className="flex items-center gap-0.5 shrink-0">
                         <button
                           disabled={!canMoveUp}
@@ -295,7 +285,6 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                         )}
                       </div>
 
-                      {/* Inline color picker overlay */}
                       <AnimatePresence>
                         {activeColorPicker === index && (
                           <motion.div
@@ -308,7 +297,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                                 <button
                                   key={c.value}
                                   onClick={() => updateStatusColor(index, c.value)}
-                                  className={`w-8 h-8 rounded-full border-2 border-white shadow-md transition-all hover:scale-110 active:scale-95 ${status.color === c.value ? 'ring-2 ring-offset-1 ring-indigo-400' : ''}`}
+                                  className={`w-8 h-8 rounded-full border-2 border-white transition-all hover:scale-110 active:scale-95 ${status.color === c.value ? 'ring-2 ring-offset-1 ring-indigo-400' : ''}`}
                                   style={{ backgroundColor: c.hex }}
                                 />
                               ))}
@@ -326,12 +315,10 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
             </div>
           </div>
 
-          {/* Save button */}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={handleSave}
             disabled={loading}
-            className="w-full py-4 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white rounded-xl font-medium text-sm transition flex items-center justify-center gap-2"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -339,15 +326,14 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
               <Save className="w-4 h-4" />
             )}
             {loading ? 'Saving...' : 'Save pipeline'}
-          </motion.button>
+          </button>
         </div>
 
         {/* RIGHT — REFERENCE IMAGES */}
-<div className="hidden lg:block lg:sticky lg:top-6 space-y-4">
+        <div className="hidden lg:block lg:sticky lg:top-6 space-y-4">
           <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">How stages appear</p>
+            <p className="text-[11px] font-medium text-gray-400 mb-3">How stages appear</p>
 
-            {/* Image 1 */}
             <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-3">
               <img
                 src="/images/pipelineimage.webp"
@@ -355,24 +341,22 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                 className="w-full h-auto object-cover"
               />
               <div className="px-4 py-3 border-t border-gray-50">
-                <p className="text-xs font-bold text-gray-700">Card badges</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Each lead card shows its current stage as a colored badge.</p>
+                <p className="text-sm font-medium text-gray-700">Card badges</p>
+                <p className="text-[12px] text-gray-400 mt-0.5">Each lead card shows its current stage as a colored badge.</p>
               </div>
             </div>
-
-      
           </div>
 
           {/* Live stage preview */}
           <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Your current stages</p>
+            <p className="text-[11px] font-medium text-gray-400 mb-3">Your current stages</p>
             <div className="flex flex-wrap gap-1.5">
               {statuses.map(s => (
                 <motion.span
                   key={s.value}
                   layout
                   transition={spring}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-white"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-white"
                   style={{ backgroundColor: getColorHex(s.color) }}
                 >
                   {s.label}
@@ -388,28 +372,28 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
         {deleteConfirm && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
-              initial={{ scale: 0.94, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 12 }}
+              initial={{ scale: 0.96, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 10 }}
               transition={spring}
-              className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl text-center"
+              className="bg-white rounded-2xl w-full max-w-sm p-7 shadow-2xl text-center"
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                <AlertTriangle className="w-7 h-7 text-red-500" />
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">Remove stage?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove stage?</h3>
               <p className="text-sm text-gray-500 mb-2 leading-relaxed">
-                This will permanently remove <span className="font-bold text-gray-900">"{deleteConfirm.label}"</span>.
+                This will permanently remove <span className="font-medium text-gray-900">"{deleteConfirm.label}"</span>.
               </p>
-              <p className="text-xs text-amber-600 font-bold mb-8">
+              <p className="text-xs text-amber-600 mb-6">
                 Any leads in this stage will need to be reassigned manually.
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setDeleteConfirm(null)} className="py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition">Keep it</button>
-                <button onClick={confirmRemove} className="py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 transition">Remove</button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button onClick={() => setDeleteConfirm(null)} className="py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-xl transition">Keep it</button>
+                <button onClick={confirmRemove} className="py-3 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-xl active:scale-95 transition">Remove</button>
               </div>
             </motion.div>
           </motion.div>

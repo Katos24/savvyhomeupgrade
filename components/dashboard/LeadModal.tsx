@@ -163,13 +163,13 @@ export default function LeadModal({
       const info = lockedInfo[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Basic' };
       return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-blue-500" />
+          <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-5 h-5 text-blue-500" />
           </div>
-          <h3 className="text-base font-bold text-gray-900 mb-2">{info.title}</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-2">{info.title}</h3>
           <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">{info.description}</p>
           <a href={`/${companySlug}/admin/settings#billing`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
             Upgrade to {info.plan} — $49.99/mo
           </a>
         </div>
@@ -219,31 +219,31 @@ export default function LeadModal({
               onClick={() => setLockedFeatureModal(null)}
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
                 className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="p-8 text-center" style={{ background: '#0f172a' }}>
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <Lock className="w-8 h-8 text-white" />
+                <div className="p-7 text-center bg-gray-50 border-b border-gray-100">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 bg-white border border-gray-100">
+                    <Lock className="w-6 h-6 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-black text-white mb-2">{info.title}</h3>
-                  <p className="text-sm leading-relaxed mb-3 max-w-[260px] mx-auto" style={{ color: 'rgba(255,255,255,0.6)' }}>{info.desc}</p>
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white ${info.plan === 'Pro' ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{info.title}</h3>
+                  <p className="text-sm leading-relaxed mb-3 max-w-[260px] mx-auto text-gray-500">{info.desc}</p>
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white ${info.plan === 'Pro' ? 'bg-blue-600' : 'bg-gray-700'}`}>
                     <Sparkles className="w-3 h-3 opacity-70" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{info.plan} Plan</span>
+                    <span className="text-[11px] font-medium">{info.plan} plan</span>
                   </div>
                 </div>
                 <div className="px-5 pb-6 pt-4 grid grid-cols-2 gap-3">
                   <button onClick={() => setLockedFeatureModal(null)}
-                    className="py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition">
-                    Maybe Later
+                    className="py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-xl transition">
+                    Maybe later
                   </button>
                   <a href={`/${companySlug}/admin/settings#billing`}
-                    className="py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-xl transition text-center">
-                    View Plans
+                    className="py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm rounded-xl transition text-center">
+                    View plans
                   </a>
                 </div>
               </motion.div>
@@ -292,17 +292,17 @@ export default function LeadModal({
                 {!showDeleteConfirm ? (
                   <button onClick={() => setShowDeleteConfirm(true)}
                     className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition">
-                    <Trash2 className="w-4 h-4" /> Delete Lead
+                    <Trash2 className="w-4 h-4" /> Delete lead
                   </button>
                 ) : (
                   <div className="p-3">
-                    <p className="text-xs font-bold text-gray-700 mb-2">Confirm delete?</p>
+                    <p className="text-xs font-medium text-gray-700 mb-2">Confirm delete?</p>
                     <button onClick={handleDelete} disabled={saving}
-                      className="w-full bg-red-600 text-white text-xs font-bold py-2 rounded-lg mb-1.5 disabled:opacity-50">
-                      {saving ? 'Deleting...' : 'Yes, Delete'}
+                      className="w-full bg-red-600 text-white text-xs font-medium py-2 rounded-lg mb-1.5 disabled:opacity-50">
+                      {saving ? 'Deleting...' : 'Yes, delete'}
                     </button>
                     <button onClick={() => { setShowDeleteConfirm(false); setShowMoreMenu(false); }}
-                      className="w-full bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-lg">
+                      className="w-full bg-gray-100 text-gray-700 text-xs font-medium py-2 rounded-lg">
                       Cancel
                     </button>
                   </div>
@@ -313,7 +313,7 @@ export default function LeadModal({
         </AnimatePresence>
 
         {/* ── BODY ── */}
-        <div className="flex-1 overflow-y-auto" style={{ background: '#f6f6fa' }}>
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -365,15 +365,15 @@ export default function LeadModal({
                   />
                 ) : (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-6 h-6 text-blue-500" />
+                    <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                      <Sparkles className="w-5 h-5 text-blue-500" />
                     </div>
-                    <h3 className="text-base font-bold text-gray-900 mb-2">AI Brief</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-2">AI brief</h3>
                     <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
                       Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
                     </p>
                     <a href={`/${companySlug}/admin/settings`}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
                       Upgrade to Pro — $79.99/mo
                     </a>
                   </div>
@@ -388,13 +388,12 @@ export default function LeadModal({
 
         {/* ── FOOTER ── */}
         <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
+          <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-600 transition"
+            className="w-full py-3 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-600 transition"
           >
             Close
-          </motion.button>
+          </button>
         </div>
       </motion.div>
 
@@ -411,20 +410,19 @@ export default function LeadModal({
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="w-full sm:w-96 bg-white shadow-2xl flex flex-col h-full border-l border-gray-200"
             >
-              <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 flex items-center gap-3" style={{ background: '#0f172a' }}>
-                <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowHistoryDrawer(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  <X className="w-4 h-4 text-white/70" />
-                </motion.button>
+              <div className="flex-shrink-0 px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
+                <button onClick={() => setShowHistoryDrawer(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200">
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
                 <div>
-                  <p className="text-xs font-semibold text-white/50">Repeat Customer</p>
-                  <p className="text-sm font-bold text-white">{lead.name}</p>
+                  <p className="text-xs text-gray-400">Repeat customer</p>
+                  <p className="text-sm font-semibold text-gray-900">{lead.name}</p>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">
-                  {relatedLeads.length} Previous Job{relatedLeads.length > 1 ? 's' : ''}
+                <p className="text-xs font-medium text-gray-400 mb-3">
+                  {relatedLeads.length} previous job{relatedLeads.length > 1 ? 's' : ''}
                 </p>
                 {relatedLeads.map((rl: any, i: number) => (
                   <motion.div key={rl.id}
@@ -433,18 +431,18 @@ export default function LeadModal({
                     className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{rl.category || 'No category'}</p>
+                        <p className="text-sm font-medium text-gray-900">{rl.category || 'No category'}</p>
                         <p className="text-xs text-gray-400">{new Date(rl.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-lg ${
                         rl.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
                         : rl.status === 'cancelled' ? 'bg-red-100 text-red-600'
                         : 'bg-blue-100 text-blue-700'}`}>{rl.status}</span>
                     </div>
                     {rl.description && <p className="text-xs text-gray-500 leading-relaxed">{rl.description}</p>}
                     <div className="flex items-center gap-3 text-xs text-gray-500">
-                      {rl.quote_total && <span className="font-semibold text-gray-700">${parseFloat(rl.quote_total).toLocaleString()}</span>}
-                      {rl.payment_status === 'paid' && <span className="text-emerald-600 font-semibold">Paid</span>}
+                      {rl.quote_total && <span className="font-medium text-gray-700">${parseFloat(rl.quote_total).toLocaleString()}</span>}
+                      {rl.payment_status === 'paid' && <span className="text-emerald-600 font-medium">Paid</span>}
                       {rl.scheduled_date && <span>{new Date(rl.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
                     </div>
                   </motion.div>

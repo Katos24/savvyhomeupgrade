@@ -103,6 +103,7 @@ export async function POST(request: Request) {
     };
 
    // ==================== UPDATE STATUS ====================
+// ==================== UPDATE STATUS ====================
 if (action === 'update_status') {
 
   await sql`
@@ -110,6 +111,15 @@ if (action === 'update_status') {
     SET status = ${status},
         updated_at = NOW()
     WHERE id = ${id}
+  `;
+
+  // Keep projects.status in sync with leads.status for converted leads.
+  // No-op if this lead has no project yet (WHERE clause matches zero rows).
+  await sql`
+    UPDATE projects
+    SET status = ${status},
+        updated_at = NOW()
+    WHERE lead_id = ${id}
   `;
 
   const statusChangeEntry = {
@@ -303,13 +313,12 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
 
       // Update lead with project_id
       await sql`
-        UPDATE leads 
-        SET 
-          project_id = ${projectId},
-          status = 'scheduled',
-          updated_at = NOW()
-        WHERE id = ${id}
-      `;
+  UPDATE leads 
+  SET 
+    project_id = ${projectId},
+    updated_at = NOW()
+  WHERE id = ${id}
+`;
 
       // Add creation note to project
       const projectNotes = [...leadNotes, {

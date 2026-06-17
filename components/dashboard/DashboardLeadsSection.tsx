@@ -63,7 +63,7 @@ export default function DashboardLeadsSection({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className={`mb-6 rounded-2xl px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all ${
+            className={`mb-6 rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all ${
               isDark
                 ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15'
                 : 'bg-blue-50 border border-blue-100 hover:bg-blue-100'
@@ -71,12 +71,12 @@ export default function DashboardLeadsSection({
             onClick={onDismissNewLeads}
           >
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <p className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <p className={`text-sm font-medium ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                 {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} came in
               </p>
             </div>
-            <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+            <span className={`text-xs font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
               Tap to refresh
             </span>
           </motion.div>
@@ -112,19 +112,19 @@ export default function DashboardLeadsSection({
             <CalendarView leads={allLeads} onSelectLead={onSelectLead} statusOptions={statusOptions} isDark={isDark} />
           </div>
         ) : currentView === 'cards' ? (
-          <div className="space-y-12 sm:space-y-20">
+          <div className="space-y-7 sm:space-y-9">
             {groups.map(({ title, leads }) => leads.length > 0 && (
               <section key={title} aria-label={`${title} leads`} className="relative">
-                <div className="flex items-center gap-4 sm:gap-6 mb-8 sm:mb-10 sticky top-24 z-10 py-4 backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                    <h2 className={`text-[10px] sm:text-[12px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 sticky top-24 z-10 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <h2 className={`text-[11px] sm:text-xs font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {title}
                     </h2>
                   </div>
                   <div className={`h-[1px] flex-1 ${isDark ? 'bg-white/5' : 'bg-slate-100'}`} aria-hidden />
                   {title !== 'Older' && (
-                    <span className={`text-[9px] sm:text-[11px] font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full ${
+                    <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
                       isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {leads.length}
@@ -137,20 +137,20 @@ export default function DashboardLeadsSection({
           </div>
         ) : (
           <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
               <div>
-                <h2 className={`text-[11px] sm:text-[12px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                <h2 className={`text-sm font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                   Database
                 </h2>
-                <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1 sm:mt-2">
+                <p className="text-[11px] font-medium text-slate-400 mt-1">
                   {filteredLeads.length} total records
                 </p>
               </div>
               {can(planTier, 'csv_export') ? (
                 <button
                   onClick={onShowExportModal}
-                  className={`inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all border ${
-                    isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-black' : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800 shadow-lg'
+                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-medium rounded-xl transition-all border ${
+                    isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-black' : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
                   }`}
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -159,15 +159,15 @@ export default function DashboardLeadsSection({
               ) : (
                 <button
                   onClick={() => onLockedFeature('csv_export')}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 bg-slate-50 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-100 transition-all active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-50 text-slate-400 text-xs font-medium rounded-xl border border-slate-100 transition-all active:scale-95"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   Export (Basic)
                 </button>
               )}
             </div>
-            <div className={`rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden border shadow-2xl transition-all ${
-              isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.02)]'
+            <div className={`rounded-2xl overflow-hidden border transition-all ${
+              isDark ? 'bg-[#0A0C14] border-white/5' : 'bg-white border-slate-100 shadow-sm'
             }`}>
               <TableView
                 leads={filteredLeads} onSelectLead={onSelectLead} statusOptions={statusOptions}
@@ -182,7 +182,7 @@ export default function DashboardLeadsSection({
 
       {/* Load More */}
       {pagination.page < pagination.pages && (
-        <div className="flex flex-col items-center pt-10 sm:pt-14 pb-8 sm:pb-10 gap-2">
+        <div className="flex flex-col items-center pt-8 sm:pt-10 pb-8 sm:pb-10 gap-2">
           <button
             onClick={onLoadMore}
             className={`w-full sm:w-auto px-8 py-3 rounded-lg text-xs font-medium border transition-all active:scale-[0.97] ${
