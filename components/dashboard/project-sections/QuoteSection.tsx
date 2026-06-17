@@ -187,7 +187,15 @@ export default function QuoteSection({
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
     const updated = [...quoteData, newItem];
     setQuoteData(updated);
-    // Defer ref assignment to next render via state — handled in render with data-new attribute
+    return newItem;
+  };
+
+  const handleAddRowMobile = () => {
+    const newItem = handleAddRow();
+    // Open the bottom sheet directly from the click handler — not from a ref
+    // callback, since ref callbacks can re-fire on every re-render and reset
+    // editingItem while the user is mid-type.
+    setEditingItem(newItem);
   };
 
   const handleDoneEditing = () => {
@@ -446,7 +454,7 @@ export default function QuoteSection({
         <div className="md:hidden">
           {quoteData.length === 0 ? (
             <button
-              onClick={() => { handleAddRow(); }}
+              onClick={handleAddRowMobile}
               className="w-full py-14 flex flex-col items-center justify-center gap-3 group"
             >
               <div className="w-11 h-11 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all group-hover:scale-105">
@@ -461,7 +469,7 @@ export default function QuoteSection({
                 return (
                   <div
                     key={item.id}
-                    ref={isNew ? (el) => { newRowRef.current = el; if (el) setEditingItem(item); } : undefined}
+                    ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
                     onClick={() => setEditingItem(item)}
                     className="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer active:scale-[0.98] active:bg-gray-50 transition-all"
                   >
@@ -504,7 +512,7 @@ export default function QuoteSection({
                 );
               })}
               <button
-                onClick={handleAddRow}
+                onClick={handleAddRowMobile}
                 className="w-full border-2 border-dashed border-blue-200 rounded-2xl py-3 flex items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/40 transition-all group"
               >
                 <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-blue-400 flex items-center justify-center transition-colors">
@@ -565,13 +573,14 @@ export default function QuoteSection({
                 <div className="px-5 py-4 flex flex-col gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Description</label>
-                   <input
-  type="text"
-  value={editingItem.description}
-  onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-  placeholder="Item name or description…"
-  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-/>
+                    <input
+                      type="text"
+                      value={editingItem.description}
+                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                      placeholder="Item name or description…"
+                      autoFocus
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
                   </div>
 
                   <div className="flex gap-3">
