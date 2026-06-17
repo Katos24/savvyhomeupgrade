@@ -565,14 +565,13 @@ export default function QuoteSection({
                 <div className="px-5 py-4 flex flex-col gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Description</label>
-                    <input
-                      type="text"
-                      value={editingItem.description}
-                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                      placeholder="Item name or description…"
-                      autoFocus
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
+                   <input
+  type="text"
+  value={editingItem.description}
+  onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+  placeholder="Item name or description…"
+  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+/>
                   </div>
 
                   <div className="flex gap-3">
