@@ -548,26 +548,25 @@ export default function BillingSection({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── RECORD PAYMENT MODAL ── */}
+{/* ── RECORD PAYMENT MODAL ── */}
       <AnimatePresence>
         {showRecordPayment && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4">
-            <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !savingPayment && setShowRecordPayment(false)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl max-h-[90dvh] overflow-y-auto">
-              <div className="flex justify-center mb-5 sm:hidden">
-                <div className="w-12 h-1.5 rounded-full bg-slate-200" />
+            <motion.div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !savingPayment && setShowRecordPayment(false)} />
+            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+              className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:w-[380px] p-5 shadow-2xl max-h-[85dvh] overflow-y-auto">
+              <div className="flex justify-center mb-4 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-slate-200" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-5">
-                {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+              <h3 className="text-base font-semibold text-slate-900 mb-4">
+                {isPaid ? 'Edit payment' : isPartial ? 'Update payment' : 'Record payment'}
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">Amount</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Amount</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -585,7 +584,7 @@ export default function BillingSection({
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-lg font-black text-slate-900 focus:bg-white outline-none focus:border-blue-300 transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:bg-white outline-none focus:border-blue-300 transition-colors"
                   />
 
                   {/* Mark paid in full toggle */}
@@ -603,7 +602,7 @@ export default function BillingSection({
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }
                       }}
-                      className={`mt-3 w-full p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      className={`mt-2.5 w-full p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                         rawAmount === total.toString() ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
                       }`}
                     >
@@ -613,20 +612,20 @@ export default function BillingSection({
                         }`}>
                           {rawAmount === total.toString() && <CheckCircle className="w-3 h-3 text-white" />}
                         </div>
-                        <span className="text-sm font-bold text-slate-700">Mark as Paid in Full</span>
+                        <span className="text-[13px] font-medium text-slate-700">Mark as paid in full</span>
                       </div>
-                      <span className="text-sm font-black text-slate-500">{fmt(total)}</span>
+                      <span className="text-[13px] font-medium text-slate-500">{fmt(total)}</span>
                     </motion.div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">Method</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Method</label>
                   <div className="relative">
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none appearance-none focus:border-blue-300 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white outline-none appearance-none focus:border-blue-300 transition-colors"
                     >
                       <option value="">Select method...</option>
                       <option value="cash">Cash</option>
@@ -637,37 +636,37 @@ export default function BillingSection({
                       <option value="stripe">Stripe</option>
                       <option value="other">Other</option>
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">Date Received</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Date received</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-300 focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-300 focus:bg-white transition-colors"
                     style={{ fontSize: '14px', WebkitAppearance: 'none' }}
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 mt-6">
-                <motion.button whileTap={{ scale: 0.97 }} onClick={handleSavePayment} disabled={savingPayment}
-                  className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition disabled:opacity-60">
-                  {savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Payment'}
-                </motion.button>
+              <div className="flex items-center gap-2 mt-5">
                 <button onClick={() => setShowRecordPayment(false)} disabled={savingPayment}
-                  className="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition">
+                  className="flex-1 py-2.5 text-slate-500 font-medium text-sm rounded-xl border border-slate-200 hover:bg-slate-50 transition">
                   Cancel
+                </button>
+                <button onClick={handleSavePayment} disabled={savingPayment}
+                  className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition disabled:opacity-60">
+                  {savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save payment'}
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
+      
       {/* ── REMINDER MODAL ── */}
       <AnimatePresence>
         {showReminderConfirm && (

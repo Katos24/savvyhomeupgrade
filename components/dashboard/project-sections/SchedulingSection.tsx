@@ -4,10 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Mail, Calendar, Clock, User,
-  ChevronRight, X, Eye, Loader2, Send,
+  Calendar, User,
+  X, Eye,
   ChevronDown, ChevronUp, Hash, CheckCircle2,
-  Sparkles, History
+  History
 } from 'lucide-react';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
@@ -22,11 +22,11 @@ type SchedulingSectionProps = {
   teamMembers?: any[];
 };
 
-export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug, teamMembers = [] }: SchedulingSectionProps) {  const [saving, setSaving] = useState(false);
+export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug, teamMembers = [] }: SchedulingSectionProps) {
+  const [saving, setSaving] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showHours, setShowHours] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [showHistory, setShowHistory] = useState<boolean>(false);
 
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -38,12 +38,11 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [customAssignee, setCustomAssignee] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [actualHours, setActualHours] = useState('');
-const teamLoading = false;
+  const teamLoading = false;
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
-  // ── Derived from lead.schedule_emails (restored from original) ──
   const scheduleEmailLog = useMemo(() => {
     try {
       const raw = lead?.schedule_emails;
@@ -70,8 +69,6 @@ const teamLoading = false;
     else if (ampm === 'AM' && hour24 === 12) hour24 = 0;
     return `${hour24.toString().padStart(2, '0')}:${minute}`;
   };
-
-
 
   const fetchOutbox = async () => {
     if (!lead?.id) return;
@@ -108,22 +105,20 @@ const teamLoading = false;
     setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
   }, [timeHour, timeMinute, timeAmPm]);
 
-  // ── handleSave with mobile fix (re-apply assignee after refresh) ──
   const handleSave = async (overrideAssignee?: string) => {
     setSaving(true);
     try {
       const finalAssignee = overrideAssignee || (showCustomAssignee ? customAssignee : assignedTo);
-      // Auto-save new assignee name to company saved_assignees
-if (finalAssignee) {
-  const knownNames = teamMembers.map((m: any) => m.name);
-  if (!knownNames.includes(finalAssignee)) {
-    fetch('/api/team/save-assignee', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: finalAssignee }),
-    }).catch(() => {}); // fire and forget, non-blocking
-  }
-}
+      if (finalAssignee) {
+        const knownNames = teamMembers.map((m: any) => m.name);
+        if (!knownNames.includes(finalAssignee)) {
+          fetch('/api/team/save-assignee', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: finalAssignee }),
+          }).catch(() => {});
+        }
+      }
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +138,7 @@ if (finalAssignee) {
         setShowCustomAssignee(false);
         setCustomAssignee('');
         await onRefresh();
-        if (finalAssignee) setAssignedTo(finalAssignee); // re-apply after refresh overwrites
+        if (finalAssignee) setAssignedTo(finalAssignee);
       } else {
         toast.error('Failed to save');
       }
@@ -163,21 +158,21 @@ if (finalAssignee) {
         {previewHtml && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-[#0F1F3D]/90 backdrop-blur-md"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-900/85 backdrop-blur-sm"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-white/20"
+              initial={{ scale: 0.97, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 12 }}
+              className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl"
               style={{ height: '85vh' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600"><Eye size={14} /></div>
-                  <p className="text-xs font-black text-[#0F1F3D] uppercase tracking-widest">Email Preview</p>
+                  <Eye size={14} className="text-slate-400" />
+                  <p className="text-xs font-medium text-slate-700">Email preview</p>
                 </div>
-                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-200 rounded-full transition"><X size={18} /></button>
+                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
               </div>
               <div className="flex-1 p-3">
                 <iframe
@@ -192,31 +187,26 @@ if (finalAssignee) {
         )}
       </AnimatePresence>
 
-      <div className="bg-white rounded-2xl border border-[#D1C9BD]/50 shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
 
-        {/* HEADER — compact single row */}
-        <div className="px-4 py-3 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#0F1F3D] flex items-center justify-center text-white shadow-md">
-              <Sparkles size={14} className="text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-[10px] font-black text-[#0F1F3D] uppercase tracking-[0.2em]">Schedule</h3>
-              {lastEmailSentAt && (
-                <div className="flex items-center gap-1">
-                  <CheckCircle2 size={10} className="text-emerald-500" />
-                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tight">
-                    Sent on {new Date(lastEmailSentAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </div>
+        {/* HEADER */}
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Schedule</h3>
+            {lastEmailSentAt && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <CheckCircle2 size={11} className="text-emerald-500" />
+                <p className="text-[11px] text-emerald-600">
+                  Sent {new Date(lastEmailSentAt).toLocaleDateString()}
+                </p>
+              </div>
+            )}
           </div>
           <button
             onClick={() => setShowCalendarModal(true)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#D1C9BD] text-[#0F1F3D] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:bg-[#0F1F3D] hover:text-white shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-all hover:bg-slate-50"
           >
-            <Calendar size={12} className="group-hover:scale-110 transition-transform" /> Calendar
+            <Calendar size={13} /> Calendar
           </button>
         </div>
 
@@ -224,24 +214,24 @@ if (finalAssignee) {
 
           {/* ASSIGNED TO */}
           <div>
-            <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">
-              <User size={10} className="text-blue-500" /> Assigned To
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1.5">
+              <User size={11} /> Assigned to
             </label>
             {!showCustomAssignee ? (
               <div className="relative">
                 <select
-  value={assignedTo}
-  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
-  disabled={teamLoading}
-  className={`w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-[#0F1F3D] outline-none appearance-none cursor-pointer ${teamLoading ? 'opacity-50' : ''}`}
->
-  <option value="">{teamLoading ? 'Loading team...' : 'Choose team member...'}</option>
-  {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
-    <option value={assignedTo}>{assignedTo}</option>
-  )}
-  {!teamLoading && <option value="__custom__">+ Add Custom Name</option>}
-</select>
+                  value={assignedTo}
+                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
+                  disabled={teamLoading}
+                  className={`w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none appearance-none cursor-pointer ${teamLoading ? 'opacity-50' : ''}`}
+                >
+                  <option value="">{teamLoading ? 'Loading team...' : 'Choose team member...'}</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
+                    <option value={assignedTo}>{assignedTo}</option>
+                  )}
+                  {!teamLoading && <option value="__custom__">+ Add custom name</option>}
+                </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             ) : (
@@ -251,9 +241,9 @@ if (finalAssignee) {
                   value={customAssignee}
                   onChange={(e) => setCustomAssignee(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCustomName()}
-                  className="flex-1 px-4 py-2.5 bg-white border-2 border-blue-500 rounded-xl text-sm font-black text-[#0F1F3D] outline-none"
+                  className="flex-1 px-3 py-2.5 bg-white border-2 border-blue-400 rounded-xl text-sm font-medium text-slate-900 outline-none"
                 />
-                <button onClick={handleAddCustomName} className="px-4 bg-[#0F1F3D] text-white rounded-xl text-[10px] font-black uppercase tracking-wide">Add</button>
+                <button onClick={handleAddCustomName} className="px-4 bg-slate-900 text-white rounded-xl text-xs font-medium">Add</button>
                 <button onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }} className="p-2.5 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors">
                   <X size={16} />
                 </button>
@@ -261,30 +251,30 @@ if (finalAssignee) {
             )}
           </div>
 
-          {/* DATE & TIME — single row */}
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="min-w-0 overflow-hidden">
-  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Date</label>
-  <input
-    type="date" value={scheduledDate}
-    onChange={(e) => setScheduledDate(e.target.value)}
-    className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[#0F1F3D] outline-none focus:border-blue-500 focus:bg-white transition-all"
-    style={{ maxWidth: '100%', WebkitAppearance: 'none', fontSize: '13px' }}
-  />
-</div>
+          {/* DATE & TIME */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="min-w-0 overflow-hidden">
+              <label className="text-[11px] font-medium text-slate-400 mb-1.5 block">Date</label>
+              <input
+                type="date" value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full min-w-0 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                style={{ maxWidth: '100%', WebkitAppearance: 'none', fontSize: '13px' }}
+              />
+            </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1.5 block">Time</label>
-              <div className="flex items-center px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-1 focus-within:border-blue-500 focus-within:bg-white transition-all">
-                <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer min-w-0">
+              <label className="text-[11px] font-medium text-slate-400 mb-1.5 block">Time</label>
+              <div className="flex items-center px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all">
+                <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
                   <option value="">HH</option>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
-                <span className="text-slate-300 font-black text-xs">:</span>
-                <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-xs font-black outline-none flex-1 cursor-pointer min-w-0">
+                <span className="text-slate-300 text-xs">:</span>
+                <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
                   <option value="">MM</option>
                   {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
-                <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg text-[9px] font-black text-blue-600 outline-none">
+                <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg text-[11px] font-medium text-blue-600 outline-none">
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
                 </select>
@@ -292,29 +282,28 @@ if (finalAssignee) {
             </div>
           </div>
 
-          {/* ACTION BUTTONS — side by side */}
-     <StickyActionBar
-  summary={
-    scheduledDate
-      ? `${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${assignedTo ? ` · ${assignedTo}` : ''}`
-      : 'Not scheduled'
-  }
-  primaryLabel="Save Schedule"
-  primaryLoading={saving}
-  onPrimary={() => handleSave()}
-  secondaryLabel="Send Schedule"
-  secondaryDisabled={!hasProject || !scheduledDate || saving}
-  onSecondary={() => setShowEmailModal(true)}
-/>
+          <StickyActionBar
+            summary={
+              scheduledDate
+                ? `${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${assignedTo ? ` · ${assignedTo}` : ''}`
+                : 'Not scheduled'
+            }
+            primaryLabel="Save Schedule"
+            primaryLoading={saving}
+            onPrimary={() => handleSave()}
+            secondaryLabel="Send Schedule"
+            secondaryDisabled={!hasProject || !scheduledDate || saving}
+            onSecondary={() => setShowEmailModal(true)}
+          />
 
-          {/* JOB HOURS — collapsible */}
+          {/* JOB HOURS */}
           <div className="pt-2 border-t border-slate-100">
             <button onClick={() => setShowHours(v => !v)} className="flex items-center justify-between w-full py-1">
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                <Hash size={10} className="text-blue-400" /> Job Hours
+              <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                <Hash size={11} /> Job hours
               </span>
               <div className="text-slate-400">
-                {showHours ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {showHours ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </div>
             </button>
             <AnimatePresence>
@@ -325,59 +314,60 @@ if (finalAssignee) {
                 >
                   <div className="mt-2 grid grid-cols-2 gap-2 pb-1">
                     <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1 block">Estimated</label>
-                      <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none" />
+                      <label className="text-[11px] font-medium text-slate-400 mb-1 block">Estimated</label>
+                      <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-0.5 mb-1 block">Actual</label>
-                      <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0F1F3D] outline-none" />
+                      <label className="text-[11px] font-medium text-slate-400 mb-1 block">Actual</label>
+                      <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none" />
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-{/* SENT HISTORY — Permanent Small Card List */}
+
+          {/* SENT HISTORY */}
           {outboxLog.length > 0 && (
-            <div className="pt-3 border-t border-slate-100 bg-slate-50/50 -mx-4 px-4 pb-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <History size={10} className="text-blue-500" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
-                  Sent History ({outboxLog.length})
+            <div className="pt-3 border-t border-slate-100 -mx-4 px-4 pb-1">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <History size={11} className="text-slate-400" />
+                <span className="text-[11px] font-medium text-slate-400">
+                  Sent history ({outboxLog.length})
                 </span>
               </div>
 
-              <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+              <div className="max-h-[160px] overflow-y-auto pr-1 space-y-1.5">
                 {outboxLog.map((entry: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200/60 shadow-sm group transition-all hover:border-blue-200">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 transition-all hover:border-slate-200">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500' : 'bg-emerald-500'}`} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
                             {entry.status}
                           </span>
-                          <p className="text-[9px] font-black text-[#0F1F3D]">
+                          <p className="text-[11px] font-medium text-slate-700">
                             {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </p>
-                          <span className="text-[8px] text-slate-400 font-medium">
+                          <span className="text-[10px] text-slate-400">
                             {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                         {entry.sent_by_email && (
-                          <p className="text-[9px] text-slate-400 truncate mt-0.5 leading-tight">{entry.sent_by_email}</p>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{entry.sent_by_email}</p>
                         )}
                         {entry.status === 'failed' && entry.error_message && (
-                          <p className="text-[9px] text-red-500 font-bold mt-0.5 leading-tight">{entry.error_message}</p>
+                          <p className="text-[10px] text-red-500 mt-0.5">{entry.error_message}</p>
                         )}
                       </div>
                     </div>
                     {entry.html_body && (
                       <button
                         onClick={() => setPreviewHtml(entry.html_body)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[8px] font-black text-blue-600 uppercase hover:bg-blue-50 hover:border-blue-400 transition-all shadow-sm shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all shrink-0"
                       >
-                        <Eye size={10} /> Preview
+                        <Eye size={11} /> Preview
                       </button>
                     )}
                   </div>

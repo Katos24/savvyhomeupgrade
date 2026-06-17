@@ -44,10 +44,9 @@ export default function InvoiceSection({
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const canSendInvoice = can(planTier, 'send_invoice_email');
 
-  // Pull line items from quote_data silently
   const lineItems = (() => {
     try {
-const raw = lead?.quote_data;
+      const raw = lead?.quote_data;
       if (!raw) return [];
       return typeof raw === 'string' ? JSON.parse(raw) : raw;
     } catch {
@@ -81,7 +80,7 @@ const raw = lead?.quote_data;
           action: 'save_invoice',
           invoice_number: invoiceNumber,
           invoice_status: 'draft',
-           due_date: dueDate || null, 
+          due_date: dueDate || null,
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
         }),
@@ -105,9 +104,9 @@ const raw = lead?.quote_data;
     if (!lead?.project_id) { toast.error('Convert to project first'); return; }
     setDownloading(true);
     try {
-     const res = await fetch(
-  `/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`
-);
+      const res = await fetch(
+        `/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`
+      );
       if (!res.ok) throw new Error('Failed to generate PDF');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -161,27 +160,25 @@ const raw = lead?.quote_data;
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-4">
 
         {/* HEADER */}
         <button
           onClick={() => setOpen((v) => !v)}
-          className="w-full px-4 py-3 flex items-center justify-between bg-slate-50/50 border-b border-slate-100 hover:bg-slate-50 transition-colors"
+          className="w-full px-4 py-3 flex items-center justify-between border-b border-slate-100 hover:bg-slate-50/60 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shrink-0">
-              <FileText className="w-4 h-4" />
-            </div>
+            <FileText className="w-4 h-4 text-slate-400" />
             <div className="text-left">
-              <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest leading-none">
+              <h3 className="text-sm font-semibold text-slate-800 leading-none">
                 Invoice
               </h3>
               {hasExistingInvoice ? (
-                <p className="text-[9px] font-bold text-emerald-600 mt-0.5">
+                <p className="text-[11px] text-emerald-600 mt-1">
                   {lead.invoice_number} · {lead.invoice_status || 'draft'}
                 </p>
               ) : (
-                <p className="text-[9px] font-bold text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-400 mt-1">
                   {total > 0 ? fmt(total) : 'Not generated yet'}
                 </p>
               )}
@@ -189,7 +186,7 @@ const raw = lead?.quote_data;
           </div>
           <div className="flex items-center gap-2">
             {total > 0 && (
-              <span className="text-sm font-black text-slate-900">{fmt(total)}</span>
+              <span className="text-sm font-semibold text-slate-900">{fmt(total)}</span>
             )}
             {open ? (
               <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -211,22 +208,21 @@ const raw = lead?.quote_data;
             >
               <div className="p-4 space-y-3">
 
-                {/* Invoice # and Due Date */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
                       Invoice #
                     </label>
                     <input
                       type="text"
                       value={invoiceNumber}
                       onChange={(e) => setInvoiceNumber(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white outline-none focus:border-blue-300 transition-colors"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white outline-none focus:border-blue-300 transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                      Due Date
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
+                      Due date
                     </label>
                     <input
                       type="date"
@@ -238,27 +234,25 @@ const raw = lead?.quote_data;
                   </div>
                 </div>
 
-                {/* Line items summary — read only */}
                 {lineItems.length > 0 && (
-                  <div className="flex items-center justify-between px-3 py-2.5 bg-slate-900 rounded-xl">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <div className="flex items-center justify-between px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+                    <span className="text-[11px] text-slate-500">
                       {lineItems.length} line item{lineItems.length !== 1 ? 's' : ''} from quote
                     </span>
-                    <span className="text-sm font-black text-white">{fmt(total)}</span>
+                    <span className="text-sm font-semibold text-slate-900">{fmt(total)}</span>
                   </div>
                 )}
 
                 {lineItems.length === 0 && (
                   <div className="px-3 py-3 bg-amber-50 border border-amber-100 rounded-xl">
-                    <p className="text-xs font-bold text-amber-700">
+                    <p className="text-xs text-amber-700">
                       No quote saved yet — save a quote first to generate an invoice
                     </p>
                   </div>
                 )}
 
-                {/* Notes */}
                 <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
                     Notes (optional)
                   </label>
                   <textarea
@@ -270,12 +264,11 @@ const raw = lead?.quote_data;
                   />
                 </div>
 
-                {/* Action Buttons */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   <button
                     onClick={handleSave}
                     disabled={saving || lineItems.length === 0}
-                    className="flex items-center justify-center gap-1.5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors disabled:opacity-40"
+                    className="flex items-center justify-center gap-1.5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-colors disabled:opacity-40"
                   >
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                     Save
@@ -284,7 +277,7 @@ const raw = lead?.quote_data;
                   <button
                     onClick={handleDownload}
                     disabled={downloading || lineItems.length === 0}
-                    className="flex items-center justify-center gap-1.5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors disabled:opacity-40"
+                    className="flex items-center justify-center gap-1.5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl transition-colors disabled:opacity-40"
                   >
                     {downloading ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -294,20 +287,20 @@ const raw = lead?.quote_data;
                     PDF
                   </button>
 
-                 {canSendInvoice ? (
-    <button
-      onClick={() => setShowSendConfirm(true)}
-      disabled={lineItems.length === 0 || lead?.payment_status === 'paid'}
-      title={lead?.payment_status === 'paid' ? 'Job is already paid in full' : ''}
-      className="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-colors disabled:opacity-40"
-    >
-      <Send className="w-3.5 h-3.5" />
-      {lead?.payment_status === 'paid' ? 'Paid' : 'Send'}
-    </button>
+                  {canSendInvoice ? (
+                    <button
+                      onClick={() => setShowSendConfirm(true)}
+                      disabled={lineItems.length === 0 || lead?.payment_status === 'paid'}
+                      title={lead?.payment_status === 'paid' ? 'Job is already paid in full' : ''}
+                      className="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl transition-colors disabled:opacity-40"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      {lead?.payment_status === 'paid' ? 'Paid' : 'Send'}
+                    </button>
                   ) : (
                     <button
                       onClick={() => window.location.href = `/${company?.slug}/admin/settings#billing`}
-                      className="flex items-center justify-center gap-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-colors"
+                      className="flex items-center justify-center gap-1 py-3 bg-slate-700 text-white font-medium text-xs rounded-xl transition-colors hover:bg-slate-800"
                     >
                       <Lock className="w-3 h-3" />
                       Pro
@@ -335,45 +328,44 @@ const raw = lead?.quote_data;
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl"
+              className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-7 shadow-2xl"
             >
-              <div className="flex justify-center mb-6 sm:hidden">
-                <div className="w-12 h-1.5 rounded-full bg-slate-200" />
+              <div className="flex justify-center mb-5 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-slate-200" />
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-5">
-                  <Send className="w-8 h-8 text-blue-500" />
+                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Send className="w-6 h-6 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mb-2">Send Invoice?</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Send invoice?</h3>
                 <p className="text-sm text-slate-500 mb-2 leading-relaxed">
-                  Send <span className="font-bold text-slate-800">{invoiceNumber}</span> to{' '}
-                  <span className="font-bold text-slate-800">{lead?.name}</span>
+                  Send <span className="font-medium text-slate-800">{invoiceNumber}</span> to{' '}
+                  <span className="font-medium text-slate-800">{lead?.name}</span>
                 </p>
-<p className="text-sm font-black text-blue-600 mb-4">{fmt(total)}</p>
-{lead?.payment_status === 'partial' && lead?.payment_amount && (
-  <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl mb-6 text-left">
-    <p className="text-xs font-black text-amber-700">
-      Customer has already paid {fmt(parseFloat(lead.payment_amount))}. The invoice will show the full amount of {fmt(total)}.
-    </p>
-  </div>
-)}
-                <div className="flex flex-col gap-3">
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
+                <p className="text-sm font-semibold text-blue-600 mb-4">{fmt(total)}</p>
+                {lead?.payment_status === 'partial' && lead?.payment_amount && (
+                  <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl mb-5 text-left">
+                    <p className="text-xs text-amber-700">
+                      Customer has already paid {fmt(parseFloat(lead.payment_amount))}. The invoice will show the full amount of {fmt(total)}.
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2.5">
+                  <button
                     onClick={handleSendInvoice}
                     disabled={sending}
-                    className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition shadow-xl shadow-blue-100 disabled:opacity-60"
+                    className="w-full py-3.5 bg-blue-600 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-60"
                   >
                     {sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <><Send className="w-3.5 h-3.5" /> Send Now</>
+                      <><Send className="w-3.5 h-3.5" /> Send now</>
                     )}
-                  </motion.button>
+                  </button>
                   <button
                     onClick={() => setShowSendConfirm(false)}
                     disabled={sending}
-                    className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600 transition"
+                    className="w-full py-3.5 text-slate-400 font-medium text-sm hover:text-slate-600 transition"
                   >
                     Cancel
                   </button>

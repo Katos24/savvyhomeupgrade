@@ -4,17 +4,15 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, AlertCircle, Check, Edit2, X,
-  Settings2, Eye, Layout, Save, ChevronRight,
-  User, Mail, Phone, Building, FileText, MapPin, Calendar,
+  Settings2, ChevronRight,
+  User, Mail, Phone, MapPin, Calendar,
   Clock, HelpCircle, Image as ImageIcon, Megaphone, Lock,
-  ToggleLeft, ToggleRight, ExternalLink, Link2, Sparkles,
+  ExternalLink, Sparkles,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { InlineLockBanner } from '@/components/LockedTab';
 import type { Transition } from 'framer-motion';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
-
-
 
 type CustomQuestion = {
   id: string;
@@ -46,8 +44,8 @@ const DEFAULT_FIELD_CONFIG: FieldConfig = {
   file_upload: { enabled: false },
 };
 
-
-const spring: Transition = { type: 'spring', damping: 28, stiffness: 320 };const fadeUp = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -6 } };
+const spring: Transition = { type: 'spring', damping: 28, stiffness: 320 };
+const fadeUp = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -6 } };
 
 export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
@@ -86,21 +84,20 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   });
 
   const getCtaHeading = () => {
-  if (company.cta_heading) return company.cta_heading;
-  switch (company.business_type) {
-    case 'restaurant': return 'Order Your Custom Meal';
-    case 'salon': return 'Book Your Appointment';
-    case 'photography': return 'Request a Photo Session';
-    default: return 'Submit Your Request';
-  }
-};
+    if (company.cta_heading) return company.cta_heading;
+    switch (company.business_type) {
+      case 'restaurant': return 'Order Your Custom Meal';
+      case 'salon': return 'Book Your Appointment';
+      case 'photography': return 'Request a Photo Session';
+      default: return 'Submit Your Request';
+    }
+  };
 
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
-  const [urlCopied, setUrlCopied] = useState(false);
-const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
+  const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 
   const publicUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/${company.slug}`
@@ -147,7 +144,6 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
       try {
         await attempt();
       } catch (firstErr) {
-        // Wait 1.5s then retry once
         await new Promise(r => setTimeout(r, 1500));
         await attempt();
       }
@@ -182,70 +178,68 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 
   return (
     <div className="max-w-7xl mx-auto pb-20">
-       {(company.plan_tier === 'free') && (
-       <SettingsUpgradeBanner
-         planLabel="Basic"
-         price="$49.99/mo"
-         message="your booking form is live! Upgrade to add custom branding, photo uploads, and custom questions."
-         companySlug={company.slug}
-       />
-     )}
+      {(company.plan_tier === 'free') && (
+        <SettingsUpgradeBanner
+          planLabel="Basic"
+          price="$49.99/mo"
+          message="your booking form is live! Upgrade to add custom branding, photo uploads, and custom questions."
+          companySlug={company.slug}
+        />
+      )}
 
-     {/* ── TOP BAR ── */}
-<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
-  <div className="min-w-0">
-    <h1 className="text-xl font-bold text-gray-900 tracking-tight">Booking Form</h1>
-    <p className="text-sm text-black mt-0.5 leading-snug">Customize what your customers see when they visit your booking link.</p>
-  </div>
-  <motion.button
-    whileTap={{ scale: 0.97 }}
-    onClick={handleSaveAll}
-    disabled={loading}
-    className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shrink-0"
-  >
-    {loading
-      ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      : <Save className="w-3.5 h-3.5" />
-    }
-    Save Changes
-  </motion.button>
-</div>
+      {/* ── TOP BAR ── */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">Booking form</h1>
+          <p className="text-sm text-gray-500 mt-0.5 leading-snug">Customize what your customers see when they visit your booking link.</p>
+        </div>
+        <button
+          onClick={handleSaveAll}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all shrink-0"
+        >
+          {loading
+            ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : null
+          }
+          Save changes
+        </button>
+      </div>
 
-{/* ── STATUS TOAST ── */}
-<AnimatePresence>
-  {status.type && (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-      className={`flex items-center gap-2 px-4 py-3 rounded-xl border mb-4 text-sm font-semibold ${
-        status.type === 'success'
-          ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-          : 'bg-red-50 border-red-100 text-red-700'
-      }`}
-    >
-      {status.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
-      {status.message}
-    </motion.div>
-  )}
-</AnimatePresence>
-
+      {/* ── STATUS TOAST ── */}
+      <AnimatePresence>
+        {status.type && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border mb-4 text-sm font-medium ${
+              status.type === 'success'
+                ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                : 'bg-red-50 border-red-100 text-red-700'
+            }`}
+          >
+            {status.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            {status.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── MOBILE TAB BAR ── */}
-      <div className="flex lg:hidden bg-gray-100 rounded-2xl p-1 mb-6">
+      <div className="flex lg:hidden bg-gray-100 rounded-xl p-1 mb-6">
         <button
           onClick={() => setMobileTab('edit')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
             mobileTab === 'edit'
-              ? 'bg-white text-gray-900 shadow-sm'
+              ? 'bg-white text-gray-900'
               : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           Edit
         </button>
-          <button
+        <button
           onClick={() => setMobileTab('preview')}
-         className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
             mobileTab === 'preview'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-blue-600 text-white'
               : 'text-blue-400 hover:text-blue-600'
           }`}
         >
@@ -256,98 +250,97 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
       {/* ── MAIN GRID ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-    {/* ── LEFT: PHONE PREVIEW ── */}
+        {/* ── LEFT: PHONE PREVIEW ── */}
         <div className={`lg:col-span-5 order-2 lg:order-1 ${mobileTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
           <div className="sticky top-6 space-y-3">
 
-            {/* Step pills */}
             <div className="flex items-center gap-1.5">
               {([1, 2, 3] as const).map((step) => (
                 <button
-  key={step}
-  onClick={() => setPreviewStep(step)}
-  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-    previewStep === step
-      ? 'bg-gray-900 text-white'
-      : 'bg-gray-100 text-gray-400 hover:text-gray-600'
-  }`}
->
-  {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Done'}
-</button>
+                  key={step}
+                  onClick={() => setPreviewStep(step)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    previewStep === step
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  {step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : 'Done'}
+                </button>
               ))}
-<span className="ml-auto text-[10px] text-gray-300 font-medium tracking-wide">Customer view</span>            </div>
+              <span className="ml-auto text-[11px] text-gray-400">Customer view</span>
+            </div>
 
-           {/* Preview card — clean, no fake device chrome */}
-<div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-h-[680px]">
-  <div className="overflow-y-auto h-full" style={{ scrollbarWidth: 'none' }}>
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={previewStep}
-        initial={{ opacity: 0, x: 12 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -12 }}
-        transition={spring}
-        className="h-full"
-                    >
-                      {previewStep === 1 && (
-                       <PreviewStep1
-  heading={getCtaHeading()}
-                          categories={categories}
-                          brandColor1={brandColor1}
-                          brandColor2={brandColor2}
-                          logoUrl={company.logo_url}
-                          companyName={company.name}
-                        />
-                      )}
-                      {previewStep === 2 && (
-                        <PreviewStep2
-                          fieldConfig={fieldConfig}
-                          customQuestions={canUseCustomQuestions ? customQuestions : []}
-                          brandColor1={brandColor1}
-                          brandColor2={brandColor2}
-                          companyName={company.name}
-                          canUsePhotoUpload={canUsePhotoUpload}
-                        />
-                      )}
-                      {previewStep === 3 && (
-                        <PreviewStep3
-                          message={ctaSuccessMessage}
-                          brandColor1={brandColor1}
-                          brandColor2={brandColor2}
-                          companyName={company.name}
-                          logoUrl={company.logo_url}
-                        />
-                      )}
-                    </motion.div>
-    </AnimatePresence>
-  </div>
-</div>
+            <div className="relative rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-h-[680px]">
+              <div className="overflow-y-auto h-full" style={{ scrollbarWidth: 'none' }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={previewStep}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={spring}
+                    className="h-full"
+                  >
+                    {previewStep === 1 && (
+                      <PreviewStep1
+                        heading={getCtaHeading()}
+                        categories={categories}
+                        brandColor1={brandColor1}
+                        brandColor2={brandColor2}
+                        logoUrl={company.logo_url}
+                        companyName={company.name}
+                      />
+                    )}
+                    {previewStep === 2 && (
+                      <PreviewStep2
+                        fieldConfig={fieldConfig}
+                        customQuestions={canUseCustomQuestions ? customQuestions : []}
+                        brandColor1={brandColor1}
+                        brandColor2={brandColor2}
+                        companyName={company.name}
+                        canUsePhotoUpload={canUsePhotoUpload}
+                      />
+                    )}
+                    {previewStep === 3 && (
+                      <PreviewStep3
+                        message={ctaSuccessMessage}
+                        brandColor1={brandColor1}
+                        brandColor2={brandColor2}
+                        companyName={company.name}
+                        logoUrl={company.logo_url}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
 
-            {/* Open real form */}
             <a
               href={publicUrl}
               target="_blank"
-              className="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-400 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-400 rounded-xl text-xs font-medium transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5" /> Open real form
             </a>
           </div>
         </div>
 
-      {/* ── RIGHT: CONFIG ── */}
-<div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'} bg-[#0F172A] rounded-2xl p-4 border border-white/10`}>
+        {/* ── RIGHT: CONFIG — light surface, no dark navy panel ── */}
+        <div className={`lg:col-span-7 space-y-4 order-1 lg:order-2 ${mobileTab === 'edit' ? 'block' : 'hidden lg:block'}`}>
 
-          {/* STEP 1 — subtle, locked, collapsed */}
-<div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-  <div className="flex items-center gap-2 mb-1.5">
-<Lock className="w-3.5 h-3.5 text-slate-600" />
-<span className="text-xs font-medium text-white">Step 1 — always collected</span>
-  </div>
-  <div className="flex flex-wrap gap-x-2 gap-y-1">
-    {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
-<span key={f} className="text-xs text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">{f}</span>    ))}
-  </div>
-</div>
+          {/* STEP 1 — always collected */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Lock className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-700">Step 1 — always collected</span>
+            </div>
+            <div className="flex flex-wrap gap-x-2 gap-y-1">
+              {['Full name', 'Email', 'Phone', 'Service category', 'Project description'].map(f => (
+                <span key={f} className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">{f}</span>
+              ))}
+            </div>
+          </div>
 
           {/* STEP 2 — Optional fields */}
           <Section
@@ -357,7 +350,7 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             badge="You control these"
             badgeColor="blue"
           >
-<div className="pt-1">
+            <div className="pt-1">
               <FieldToggle
                 icon={MapPin} iconColor="text-rose-500"
                 label="Service address"
@@ -412,13 +405,12 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             title="Your own questions"
             subtitle="Add custom questions that appear on step 2 — text, dropdown, or yes/no."
             action={canUseCustomQuestions && !showAddQuestion ? (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => setShowAddQuestion(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-all"
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-medium transition-all"
               >
                 <Plus className="w-3.5 h-3.5" /> Add question
-              </motion.button>
+              </button>
             ) : null}
           >
             {!canUseCustomQuestions ? (
@@ -446,54 +438,48 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
                 ) : (
                   <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     {customQuestions.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-  {customQuestions.map((q, i) => (
-    <motion.div
-      key={q.id}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: i * 0.04 }}
-      className="group relative bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 transition-all"
-    >
-      {/* Edit/Delete — top right */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-        <button
-          onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
-          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          <Edit2 className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
-          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        {customQuestions.map((q, i) => (
+                          <motion.div
+                            key={q.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                            className="group relative bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-all"
+                          >
+                            <div className="absolute top-3 right-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                              <button
+                                onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
 
-      {/* Question label */}
-      <p className="text-sm font-bold text-slate-900 pr-16 truncate">{q.label}</p>
+                            <p className="text-sm font-medium text-gray-900 pr-16 truncate">{q.label}</p>
 
-      {/* Type badge */}
-      <div className="flex items-center gap-2 mt-2">
-        <span
-          className="text-[10px] font-black px-2 py-0.5 rounded-lg"
-          style={{ background: 'rgba(59,130,246,0.1)', color: '#2563eb' }}
-        >
-          {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
-        </span>
-        {q.type === 'select' && q.options?.length ? (
-          <span className="text-[10px] text-slate-400 font-medium">{q.options.length} options</span>
-        ) : null}
-      </div>
-    </motion.div>
-  ))}
-</div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-blue-50 text-blue-600">
+                                {q.type === 'select' ? 'Dropdown' : q.type === 'checkbox' ? 'Yes / No' : 'Text'}
+                              </span>
+                              {q.type === 'select' && q.options?.length ? (
+                                <span className="text-[11px] text-gray-400">{q.options.length} options</span>
+                              ) : null}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
                     ) : (
                       <div className="py-8 text-center">
-  <p className="text-sm text-gray-400 font-semibold">No custom questions yet</p>
-  <p className="text-xs text-gray-300 mt-1 leading-relaxed">e.g. "Budget range?", "Gate code?", "Pet on site?"</p>
-</div>
+                        <p className="text-sm text-gray-400">No custom questions yet</p>
+                        <p className="text-xs text-gray-300 mt-1 leading-relaxed">e.g. "Budget range?", "Gate code?", "Pet on site?"</p>
+                      </div>
                     )}
                   </motion.div>
                 )}
@@ -507,42 +493,41 @@ const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
             title="Confirmation message"
             subtitle="What customers see on screen after they hit submit."
           >
-             <textarea
-  value={ctaSuccessMessage}
-  onChange={e => setCtaSuccessMessage(e.target.value)}
-  rows={2}
-className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl outline-none resize-none text-sm text-white placeholder-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all font-medium"
+            <textarea
+              value={ctaSuccessMessage}
+              onChange={e => setCtaSuccessMessage(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none resize-none text-sm text-gray-900 placeholder-gray-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all"
               placeholder='e.g. "Thanks! We will review your request and reach out within 24 hours."'
             />
-<div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-              <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-<p className="text-[11px] text-blue-400 leading-relaxed">
+            <div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl">
+              <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-blue-600 leading-relaxed">
                 A confirmation email is automatically sent to the customer on submit. This message only shows on screen.
               </p>
             </div>
-</Section>
+          </Section>
 
-        {/* Save button */}
-        <button
-  onClick={handleSaveAll}
-  disabled={loading}
-className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2"
->
-          {loading
-            ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            : <Save className="w-3.5 h-3.5" />
-          }
-          {loading ? 'Saving...' : 'Save changes'}
-</button>
+          <button
+            onClick={handleSaveAll}
+            disabled={loading}
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-medium text-sm transition flex items-center justify-center gap-2"
+          >
+            {loading
+              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : null
+            }
+            {loading ? 'Saving...' : 'Save changes'}
+          </button>
 
+        </div>
       </div>
-    </div>
 
     </div>
   );
 }
 
-/* ─────────────────── SECTION WRAPPER ─────────────────── */
+/* ─────────────────── SECTION WRAPPER — light surface ─────────────────── */
 function Section({ icon, title, subtitle, badge, badgeColor, action, children }: {
   icon: React.ReactNode;
   title: string;
@@ -553,27 +538,27 @@ function Section({ icon, title, subtitle, badge, badgeColor, action, children }:
   children: React.ReactNode;
 }) {
   return (
-<div className="bg-[#0F172A] rounded-2xl border border-white/10 overflow-hidden">
-<div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-2.5">
-  <div className="shrink-0">{icon}</div>
-  <div className="flex-1 min-w-0">
-    <div className="flex items-center gap-2 flex-wrap">
-<span className="text-sm font-semibold text-white">{title}</span>
-      {badge && (
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
-badgeColor === 'blue' ? 'bg-blue-500/10 text-blue-400' : 'bg-white/5 text-slate-500'
-        }`}>
-          {badge}
-        </span>
-      )}
-    </div>
-{subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
-  </div>
-  {action}
-</div>
-<div className="px-4 py-3 text-white">
-    {children}
-</div>
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="px-4 py-3.5 border-b border-gray-100 flex items-center gap-2.5">
+        <div className="shrink-0">{icon}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-900">{title}</span>
+            {badge && (
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                badgeColor === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
+              }`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+        {action}
+      </div>
+      <div className="px-4 py-3">
+        {children}
+      </div>
     </div>
   );
 }
@@ -586,24 +571,25 @@ function FieldToggle({ icon: Icon, iconColor, label, description, enabled, onTog
   return (
     <motion.div
       layout
-className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 cursor-pointer group"
+      className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 cursor-pointer group"
       onClick={onToggle}
     >
       <div className="flex-1 min-w-0 pr-4">
-<p className={`text-sm font-semibold transition-colors ${enabled ? 'text-white' : 'text-slate-500'}`}>{label}</p>
-<p className={`text-[11px] transition-colors ${enabled ? 'text-slate-400' : 'text-slate-600'}`}>{description}</p>
+        <p className={`text-sm font-medium transition-colors ${enabled ? 'text-gray-900' : 'text-gray-400'}`}>{label}</p>
+        <p className={`text-[11px] transition-colors ${enabled ? 'text-gray-500' : 'text-gray-300'}`}>{description}</p>
       </div>
       <div className="shrink-0" onClick={e => { e.stopPropagation(); onToggle(); }}>
-<div className={`w-9 h-[22px] rounded-full relative transition-colors duration-200 ${enabled ? 'bg-blue-500' : 'bg-slate-700'}`}>
-  <div
-    className="absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-    style={{ transform: enabled ? 'translateX(14px)' : 'translateX(0)' }}
-  />
-</div>
+        <div className={`w-9 h-[22px] rounded-full relative transition-colors duration-200 ${enabled ? 'bg-blue-500' : 'bg-gray-200'}`}>
+          <div
+            className="absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
+            style={{ transform: enabled ? 'translateX(14px)' : 'translateX(0)' }}
+          />
+        </div>
       </div>
     </motion.div>
   );
 }
+
 /* ─────────────────── QUESTION EDITOR ─────────────────── */
 function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChange, onSave, onCancel }: {
   question: CustomQuestion; newOption: string; isEditing: boolean;
@@ -611,19 +597,19 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
   onSave: () => void; onCancel: () => void;
 }) {
   return (
-    <div className="bg-slate-800/60 rounded-xl p-5 border border-slate-700 space-y-4 mt-1">
+    <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 space-y-4 mt-1">
       <div>
-        <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Question label</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">Question label</label>
         <input
           type="text" value={question.label}
           onChange={e => onChange({ ...question, label: e.target.value })}
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-600 bg-slate-900 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-sm font-medium"
+          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-100 outline-none transition text-sm font-medium"
           placeholder='e.g. "What is your budget range?"'
           autoFocus
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Input type</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">Input type</label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { val: 'text', label: 'Text', desc: 'Open answer' },
@@ -633,14 +619,14 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             <button
               key={t.val}
               onClick={() => onChange({ ...question, type: t.val as any, options: t.val === 'select' ? question.options : [] })}
-              className={`py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5 ${
+              className={`py-3 rounded-xl border text-xs font-medium transition-all flex flex-col items-center gap-0.5 ${
                 question.type === t.val
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-900/30'
-                  : 'bg-slate-900 border-slate-600 text-slate-300 hover:border-blue-400'
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
               }`}
             >
               {t.label}
-              <span className={`text-[9px] font-medium ${question.type === t.val ? 'text-blue-200' : 'text-slate-500'}`}>{t.desc}</span>
+              <span className={`text-[10px] ${question.type === t.val ? 'text-blue-100' : 'text-gray-400'}`}>{t.desc}</span>
             </button>
           ))}
         </div>
@@ -648,16 +634,16 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
 
       {question.type === 'select' && (
         <div className="space-y-2">
-          <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest">Options</label>
+          <label className="block text-xs font-medium text-gray-500">Options</label>
           <AnimatePresence>
             {question.options?.map((opt, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }}
-                className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg border border-slate-700"
+                className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-200"
               >
-                <span className="text-sm text-slate-200">{opt}</span>
-                <button onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })} className="text-slate-500 hover:text-red-400 transition-colors">
+                <span className="text-sm text-gray-700">{opt}</span>
+                <button onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })} className="text-gray-400 hover:text-red-500 transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </motion.div>
@@ -667,7 +653,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             <input
               type="text" value={newOption}
               onChange={e => onOptionChange(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-900 text-white placeholder-slate-500 outline-none focus:border-blue-400 transition"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-900 placeholder-gray-400 outline-none focus:border-blue-300 transition"
               placeholder="Add option..."
               onKeyDown={e => {
                 if (e.key === 'Enter' && newOption) {
@@ -678,7 +664,7 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
             />
             <button
               onClick={() => { if (newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
-              className="px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-sm font-bold text-slate-300 hover:bg-slate-700 transition"
+              className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
             >
               Add
             </button>
@@ -687,14 +673,13 @@ function QuestionEditor({ question, newOption, isEditing, onChange, onOptionChan
       )}
 
       <div className="flex gap-2 pt-1">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
+        <button
           onClick={onSave}
-          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition shadow-sm"
+          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition"
         >
           {isEditing ? 'Update question' : 'Add question'}
-        </motion.button>
-        <button onClick={onCancel} className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-sm font-bold transition">
+        </button>
+        <button onClick={onCancel} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-medium transition">
           Cancel
         </button>
       </div>
@@ -710,55 +695,53 @@ function PreviewStep1({heading, categories, brandColor1, brandColor2, logoUrl, c
   const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-2xl px-3 text-gray-300 text-[10px] flex items-center gap-2";
 
   return (
-<div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      {/* Header */}
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
         <div className="w-6 h-0.5 bg-white/20 rounded-full mx-auto mb-3" />
         {logoUrl && <img src={logoUrl} alt="" className="h-6 w-auto object-contain mb-2" />}
-        <h3 className="text-xs font-black leading-tight">{heading || 'Request a Free Quote'}</h3>
+        <h3 className="text-xs font-semibold leading-tight">{heading || 'Request a Free Quote'}</h3>
         <div className="flex items-center gap-2 mt-2.5 text-[9px]">
           <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}>
-            <span className="font-black text-[7px]">1</span>
+            <span className="font-semibold text-[7px]">1</span>
           </div>
-          <span className="text-white font-black uppercase tracking-widest text-[8px]">Your Info</span>
+          <span className="text-white font-medium text-[8px]">Your Info</span>
           <div className="flex-1 h-px bg-white/20" />
           <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
-            <span className="font-black text-[7px]">2</span>
+            <span className="font-semibold text-[7px]">2</span>
           </div>
-          <span className="text-white/50 font-black uppercase tracking-widest text-[8px]">Details</span>
+          <span className="text-white/50 font-medium text-[8px]">Details</span>
         </div>
       </div>
 
-      {/* Fields */}
       <div className="p-4 space-y-2">
         <div>
-          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Full Name</p>
+          <p className="text-[9px] font-medium text-gray-400 ml-1 mb-1">Full Name</p>
           <div className={inputClass}>
             <User className="w-2.5 h-2.5 text-gray-300 shrink-0" />
             <span>John Smith</span>
           </div>
         </div>
         <div>
-          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Email</p>
+          <p className="text-[9px] font-medium text-gray-400 ml-1 mb-1">Email</p>
           <div className={inputClass}>
             <Mail className="w-2.5 h-2.5 text-gray-300 shrink-0" />
             <span>john@example.com</span>
           </div>
         </div>
         <div>
-          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Phone</p>
+          <p className="text-[9px] font-medium text-gray-400 ml-1 mb-1">Phone</p>
           <div className={inputClass}>
             <Phone className="w-2.5 h-2.5 text-gray-300 shrink-0" />
             <span>(555) 123-4567</span>
           </div>
         </div>
         <div>
-          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Service Needed</p>
+          <p className="text-[9px] font-medium text-gray-400 ml-1 mb-1">Service Needed</p>
           <div className="flex flex-wrap gap-1">
             {categories.slice(0, 3).map((cat, i) => (
               <div
                 key={i}
-                className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                className={`px-2 py-1 rounded-lg text-[8px] font-medium border ${
                   i === 0
                     ? 'text-white border-transparent'
                     : 'bg-gray-50 text-gray-400 border-gray-200'
@@ -769,20 +752,20 @@ function PreviewStep1({heading, categories, brandColor1, brandColor2, logoUrl, c
               </div>
             ))}
             {categories.length > 3 && (
-              <div className="px-2 py-1 rounded-lg text-[8px] font-bold border bg-gray-50 text-gray-300 border-gray-200">
+              <div className="px-2 py-1 rounded-lg text-[8px] font-medium border bg-gray-50 text-gray-300 border-gray-200">
                 +{categories.length - 3}
               </div>
             )}
           </div>
         </div>
         <div>
-          <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1">Tell Us About Your Project</p>
+          <p className="text-[9px] font-medium text-gray-400 ml-1 mb-1">Tell Us About Your Project</p>
           <div className="w-full h-14 bg-gray-50 border border-gray-200 rounded-2xl px-3 pt-2 text-gray-300 text-[10px]">
             Describe what you need done...
           </div>
         </div>
         <button
-          className="w-full py-2 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-sm mt-1"
+          className="w-full py-2 text-white rounded-2xl font-medium text-[10px] shadow-sm mt-1"
           style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
         >
           Continue
@@ -799,36 +782,34 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
   companyName?: string; canUsePhotoUpload: boolean;
 }) {
   const inputClass = "w-full h-9 bg-gray-50 border border-gray-200 rounded-2xl px-3 text-gray-300 text-[10px] flex items-center gap-2";
-  const labelClass = "text-[8px] font-black text-gray-500 uppercase tracking-[0.12em] ml-1 mb-1";
+  const labelClass = "text-[9px] font-medium text-gray-400 ml-1 mb-1";
 
   const hasAnything = fieldConfig.address.enabled || fieldConfig.preferred_date.enabled ||
     fieldConfig.preferred_time.enabled || fieldConfig.lead_source.enabled ||
     (canUsePhotoUpload && fieldConfig.file_upload.enabled) || customQuestions.length > 0;
 
   return (
-<div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      {/* Header */}
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
         <div className="flex items-center gap-1.5 text-[8px] mb-2">
           <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
-            <span className="font-black text-[7px]">1</span>
+            <span className="font-semibold text-[7px]">1</span>
           </div>
           <ChevronRight className="w-2 h-2 opacity-40" />
           <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center" style={{ color: brandColor1 }}>
-            <span className="font-black text-[7px]">2</span>
+            <span className="font-semibold text-[7px]">2</span>
           </div>
         </div>
-        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/50 mb-0.5">Step 2 of 2</p>
-        <h3 className="text-xs font-black">Your request is saved.</h3>
-        <p className="text-white/60 text-[9px] mt-0.5 font-medium">A few more details — all optional.</p>
+        <p className="text-[9px] text-white/50 mb-0.5">Step 2 of 2</p>
+        <h3 className="text-xs font-semibold">Your request is saved.</h3>
+        <p className="text-white/60 text-[9px] mt-0.5">A few more details — all optional.</p>
       </div>
 
-      {/* Fields */}
       <div className="p-4 space-y-2.5">
         {!hasAnything && (
           <div className="py-8 text-center">
-            <p className="text-[10px] text-gray-300 font-medium">No optional fields enabled</p>
-            <p className="text-[9px] text-gray-200 mt-1">Toggle fields on to see them here</p>
+            <p className="text-[11px] text-gray-300">No optional fields enabled</p>
+            <p className="text-[10px] text-gray-200 mt-1">Toggle fields on to see them here</p>
           </div>
         )}
 
@@ -891,7 +872,7 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
                 {q.options?.slice(0, 3).map((opt, i) => (
                   <div
                     key={i}
-                    className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                    className={`px-2 py-1 rounded-lg text-[8px] font-medium border ${
                       i === 0 ? 'text-white border-transparent' : 'bg-gray-50 text-gray-400 border-gray-200'
                     }`}
                     style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
@@ -921,7 +902,7 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
               {['Google', 'Referral', 'Yard Sign', 'Other'].map((s, i) => (
                 <div
                   key={i}
-                  className={`px-2 py-1 rounded-lg text-[8px] font-bold border ${
+                  className={`px-2 py-1 rounded-lg text-[8px] font-medium border ${
                     i === 0 ? 'text-white border-transparent' : 'bg-gray-50 text-gray-400 border-gray-200'
                   }`}
                   style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
@@ -938,90 +919,72 @@ function PreviewStep2({ fieldConfig, customQuestions, brandColor1, brandColor2, 
             <p className={labelClass}>Photos or Videos</p>
             <div className="border-2 border-dashed border-gray-200 rounded-2xl p-3 text-center bg-gray-50">
               <ImageIcon className="w-4 h-4 text-gray-300 mx-auto mb-1" />
-              <p className="text-[9px] text-gray-300 font-medium">Click or drag photos here</p>
+              <p className="text-[10px] text-gray-300">Click or drag photos here</p>
             </div>
           </div>
         )}
 
         {hasAnything && (
           <button
-            className="w-full py-2 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-sm"
+            className="w-full py-2 text-white rounded-2xl font-medium text-[10px] shadow-sm"
             style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
           >
             Submit Details
           </button>
         )}
-
-     
       </div>
     </div>
   );
 }
 
+/* ─────────────────── PREVIEW STEP 3 — flat icon, no gradient ring ─────────────────── */
 function PreviewStep3({ message, brandColor1, brandColor2, companyName, logoUrl }: {
   message: string; brandColor1: string; brandColor2: string; companyName?: string; logoUrl?: string | null;
 }) {
   return (
     <div className="min-h-full flex items-center justify-center p-4 bg-gray-50 rounded-3xl">
-      <div className="w-full bg-white rounded-3xl p-5 text-center shadow-md border border-gray-200">
+      <div className="w-full bg-white rounded-3xl p-5 text-center shadow-sm border border-gray-200">
 
-        {/* Logo hero — matches success page */}
         {logoUrl ? (
-          <div
-            className="relative w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center border border-black/5"
-            style={{
-              background: 'white',
-              boxShadow: `0 4px 12px color-mix(in srgb, ${brandColor1} 15%, transparent)`,
-            }}
-          >
-            {/* Soft brand ring behind */}
-            <div
-              className="absolute -inset-1.5 rounded-[18px] opacity-10 -z-10"
-              style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-            />
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-gray-50 border border-gray-100">
             <img
               src={logoUrl}
               alt=""
-              className="w-10 h-10 object-contain"
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.08))' }}
+              className="w-9 h-9 object-contain"
             />
           </div>
         ) : (
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+            className="w-11 h-11 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: brandColor1 }}
           >
-            <Check className="w-5 h-5 text-white" strokeWidth={3} />
+            <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
         )}
 
-        <h3 className="text-sm font-black text-gray-900 mb-1.5">Request received!</h3>
-        <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1.5">Request received!</h3>
+        <p className="text-[11px] text-gray-400 leading-relaxed">
           {message || "We've got your request and will be in touch soon."}
         </p>
 
-        {/* Steps */}
         <div className="mt-4 space-y-2 text-left">
           {[
             { label: 'Check your email', sub: 'Confirmation sent to your inbox' },
             { label: "We'll reach out shortly", sub: 'Our team reviews every request' },
           ].map((s, i) => (
             <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-xl border border-gray-100">
-              <div
-                className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-[10px]"
-                style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${brandColor1} 12%, white), color-mix(in srgb, ${brandColor2} 12%, white))` }}
-              >
+              <div className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-[10px] bg-white border border-gray-100">
                 {i === 0 ? '✉' : '⏳'}
               </div>
               <div>
-                <p className="text-[9px] font-black text-gray-800">{s.label}</p>
-                <p className="text-[8px] text-gray-400 font-medium">{s.sub}</p>
+                <p className="text-[10px] font-medium text-gray-700">{s.label}</p>
+                <p className="text-[9px] text-gray-400">{s.sub}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="text-[8px] text-gray-300 mt-4 uppercase tracking-widest font-black">Powered by Lead2Project</p>
+        <p className="text-[9px] text-gray-300 mt-4">Powered by Lead2Project</p>
       </div>
     </div>
   );

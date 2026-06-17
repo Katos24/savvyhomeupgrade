@@ -94,7 +94,6 @@ export default function LeadModalHeader({
     ? { text: fmt(quoteTotal) + ' due', color: '#f87171' }
     : null;
 
-  // All snapshot items
   const allSnapshotItems = [
     { id: 'quote', label: 'Quote', value: quoteTotal ? fmt(quoteTotal) : null, sub: quoteSubLabel?.text, subColor: quoteSubLabel?.color, hasData: !!quoteTotal },
     { id: 'payment', label: 'Payment', value: paymentAmount ? fmt(paymentAmount) + ' paid' : quoteTotal ? 'Unpaid' : null, sub: paymentSubLabel?.text, subColor: paymentSubLabel?.color, hasData: !!(quoteTotal || paymentAmount) },
@@ -103,9 +102,7 @@ export default function LeadModalHeader({
     { id: 'sent', label: 'Sent', value: quoteSent ? 'Quote ✓' : 'Quote —', valueColor: quoteSent ? '#34d399' : 'rgba(255,255,255,0.2)', sub: invoiceSent ? 'Invoice ✓' : 'Invoice —', subColor: invoiceSent ? '#60a5fa' : 'rgba(255,255,255,0.2)', hasData: true },
   ].filter(i => i.hasData);
 
-  // Mobile: only first 2, desktop: all
   const mobileItems = allSnapshotItems.slice(0, 2);
-  const desktopOnlyItems = allSnapshotItems.slice(2);
 
   const tabs: { id: string; label: string; icon: React.ElementType; show: boolean; locked: boolean }[] = [
     { id: 'overview',  label: 'Overview',  icon: User,          show: true, locked: false },
@@ -123,24 +120,22 @@ export default function LeadModalHeader({
     <div className="flex-shrink-0 relative" style={{ background: '#0f172a' }}>
       <div className="px-4 pt-3 pb-0">
 
-        {/* ── TOP ROW: close · name + status · more · close ── */}
+        {/* ── TOP ROW ── */}
         <div className="flex items-center gap-2 mb-2">
           <button onClick={onClose}
             className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <ArrowLeft className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
           </button>
 
-          {/* Name + status inline */}
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <h2 className="text-base font-extrabold text-white leading-tight truncate">{lead.name}</h2>
-            {/* Status pill inline on mobile */}
+            <h2 className="text-base font-semibold text-white leading-tight truncate">{lead.name}</h2>
             <div className="relative flex-shrink-0">
               <button
                 onClick={() => setShowStatusMenu(v => !v)}
                 disabled={isUpdatingStatus}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
-                style={{ background: `${statusHex}20`, border: `1px solid ${statusHex}40`, color: statusHex }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+                style={{ background: `${statusHex}1a`, border: `1px solid ${statusHex}35`, color: statusHex }}
               >
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusHex }} />
                 <span className="hidden sm:inline">{isUpdatingStatus ? 'Saving...' : currentStatus?.label}</span>
@@ -180,20 +175,20 @@ export default function LeadModalHeader({
             {onMoreMenu && (
               <button onClick={onMoreMenu}
                 className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <MoreVertical className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
               </button>
             )}
             <button onClick={onClose}
               className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
               <X className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.5)' }} />
             </button>
           </div>
         </div>
 
-        {/* Category + date — compact single line */}
-        <p className="text-[11px] mb-2 truncate" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        {/* Category + date */}
+        <p className="text-[11px] mb-2 truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>
           {lead.category_label || (lead.category ? lead.category.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'No category')}
           {isProject && lead.project_number ? ` · #${lead.project_number}` : ''}
           {' · '}{fmtDate(lead.created_at)}
@@ -203,43 +198,41 @@ export default function LeadModalHeader({
         {isProject && allSnapshotItems.length > 0 && (
           <div
             className="flex items-start mb-1"
-            style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)', paddingTop: 10, paddingBottom: 6 }}
+            style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', paddingTop: 10, paddingBottom: 6 }}
           >
-            {/* Mobile: show first 2 only */}
             {mobileItems.map((item, i) => (
               <div
                 key={item.id}
                 className="min-w-0 flex-1 sm:hidden"
-                style={{ paddingLeft: i > 0 ? 12 : 0, borderLeft: i > 0 ? '0.5px solid rgba(255,255,255,0.08)' : 'none' }}
+                style={{ paddingLeft: i > 0 ? 12 : 0, borderLeft: i > 0 ? '0.5px solid rgba(255,255,255,0.07)' : 'none' }}
               >
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px', whiteSpace: 'nowrap' }}>
+                <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.35)', margin: '0 0 2px', whiteSpace: 'nowrap' }}>
                   {item.label}
                 </p>
                 <p style={{ fontSize: 12, fontWeight: 500, color: (item as any).valueColor || 'white', margin: 0, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {item.value || '—'}
                 </p>
                 {item.sub && (
-                  <p style={{ fontSize: 9, color: item.subColor || 'rgba(255,255,255,0.3)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 10, color: item.subColor || 'rgba(255,255,255,0.3)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
                     {item.sub}
                   </p>
                 )}
               </div>
             ))}
-            {/* Desktop: show all */}
             {allSnapshotItems.map((item, i) => (
               <div
                 key={`desktop-${item.id}`}
                 className="min-w-0 flex-1 hidden sm:block"
-                style={{ paddingLeft: i > 0 ? 12 : 0, borderLeft: i > 0 ? '0.5px solid rgba(255,255,255,0.08)' : 'none' }}
+                style={{ paddingLeft: i > 0 ? 12 : 0, borderLeft: i > 0 ? '0.5px solid rgba(255,255,255,0.07)' : 'none' }}
               >
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px', whiteSpace: 'nowrap' }}>
+                <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.35)', margin: '0 0 2px', whiteSpace: 'nowrap' }}>
                   {item.label}
                 </p>
                 <p style={{ fontSize: 12, fontWeight: 500, color: (item as any).valueColor || 'white', margin: 0, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {item.value || '—'}
                 </p>
                 {item.sub && (
-                  <p style={{ fontSize: 9, color: item.subColor || 'rgba(255,255,255,0.3)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 10, color: item.subColor || 'rgba(255,255,255,0.3)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
                     {item.sub}
                   </p>
                 )}
@@ -255,8 +248,8 @@ export default function LeadModalHeader({
               className="flex items-center overflow-x-auto"
               style={{
                 scrollbarWidth: 'none',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: 99,
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: 10,
                 padding: '3px',
                 gap: 2,
               }}
@@ -272,16 +265,15 @@ export default function LeadModalHeader({
                     }}
                     className="flex-shrink-0 flex items-center justify-center gap-1 whitespace-nowrap transition-all"
                     style={{
-                      padding: '5px 8px',
-                      borderRadius: 99,
+                      padding: '5px 9px',
+                      borderRadius: 8,
                       fontSize: 11,
-                      fontWeight: isActive ? 700 : 500,
+                      fontWeight: isActive ? 600 : 500,
                       color: isActive ? '#0f172a' : tab.locked ? '#60a5fa' : 'rgba(255,255,255,0.45)',
                       background: isActive ? 'white' : 'transparent',
-                      boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
                       border: '1px solid transparent',
                     }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.border = '1px solid rgba(255,255,255,0.3)'; }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.border = '1px solid rgba(255,255,255,0.25)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.border = '1px solid transparent'; }}
                   >
                     <tab.icon className="hidden sm:block w-3 h-3 flex-shrink-0" />
