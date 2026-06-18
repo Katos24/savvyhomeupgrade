@@ -2,21 +2,22 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, ArrowRight, ChevronRight, ChevronDown, QrCode, LayoutDashboard, Zap, BookOpen } from 'lucide-react';
+import { Menu, X, ArrowRight, ChevronRight, ChevronDown, Thermometer, Droplets, Zap, Home, Sparkles, BookOpen } from 'lucide-react';
 
-
-
-const FEATURE_LINKS = [
-  { label: 'Lead Capture', desc: 'QR codes, forms, photo intake', href: '/features/lead-capture', icon: <QrCode size={18} /> },
-  { label: 'Operations', desc: 'Board, quotes, scheduling, payments', href: '/features/operations', icon: <LayoutDashboard size={18} /> },
-  { label: 'Tools & Exports', desc: 'Outbox, CSV, digest, AI briefs', href: '/features/tools', icon: <Zap size={18} /> },
+const SOLUTION_LINKS = [
+  { label: 'HVAC',         desc: 'Heating, cooling & air systems',   href: '/solutions/hvac',      icon: <Thermometer size={18} /> },
+  { label: 'Plumbing',     desc: 'Pipes, drains & water systems',    href: '/solutions/plumbing',  icon: <Droplets size={18} /> },
+  { label: 'Electrical',   desc: 'Wiring, panels & installations',   href: '/solutions/electrical',icon: <Zap size={18} /> },
+  { label: 'Roofing',      desc: 'Repairs, replacements & installs', href: '/solutions/roofing',   icon: <Home size={18} /> },
+  { label: 'Cleaning',     desc: 'Residential & commercial cleaning', href: '/solutions/cleaning',  icon: <Sparkles size={18} /> },
+  { label: 'For Bookkeepers', desc: 'Free partner program',          href: '/partners',            icon: <BookOpen size={18} />, highlight: true },
 ];
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [featuresOpen, setFeaturesOpen] = useState(false);
-  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function Nav() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setFeaturesOpen(false);
+        setSolutionsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -43,7 +44,7 @@ export default function Nav() {
   return (
     <>
       <nav
-       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-4 sm:px-6 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-4 sm:px-6 ${
           scrolled
             ? 'py-3 bg-white/95 backdrop-blur-md border-b-2 border-slate-200 shadow-lg'
             : 'py-4 bg-slate-900'
@@ -59,12 +60,12 @@ export default function Nav() {
               width={28}
               height={28}
               className={`h-7 transition-all group-hover:scale-105 ${
-scrolled ? '' : 'brightness-0 invert'
+                scrolled ? '' : 'brightness-0 invert'
               }`}
             />
             <span
-             className={`text-lg sm:text-xl font-black transition-colors ${
-scrolled ? 'text-slate-900' : 'text-white'
+              className={`text-lg sm:text-xl font-black transition-colors ${
+                scrolled ? 'text-slate-900' : 'text-white'
               }`}
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -75,48 +76,54 @@ scrolled ? 'text-slate-900' : 'text-white'
           {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
             <Link
-href="/#how-it-works"
+              href="/#how-it-works"
               className={`text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               How it works
             </Link>
 
-            {/* Features Dropdown */}
+            {/* Solutions Dropdown */}
             <div ref={dropdownRef} className="relative">
               <button
-                onClick={() => setFeaturesOpen(!featuresOpen)}
-                onMouseEnter={() => setFeaturesOpen(true)}
+                onClick={() => setSolutionsOpen(!solutionsOpen)}
+                onMouseEnter={() => setSolutionsOpen(true)}
                 className={`flex items-center gap-1 text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                  scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
                 }`}
               >
-                Features
-                <ChevronDown size={14} className={`transition-transform duration-200 ${featuresOpen ? 'rotate-180' : ''}`} />
+                Solutions
+                <ChevronDown size={14} className={`transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`} />
               </button>
 
               <div
-                onMouseLeave={() => setFeaturesOpen(false)}
-                className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[300px] transition-all duration-200 ${
-                  featuresOpen
+                onMouseLeave={() => setSolutionsOpen(false)}
+                className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[320px] transition-all duration-200 ${
+                  solutionsOpen
                     ? 'opacity-100 translate-y-0 pointer-events-auto'
                     : 'opacity-0 -translate-y-2 pointer-events-none'
                 }`}
               >
                 <div className="bg-white border-2 border-slate-200 shadow-2xl rounded-2xl p-2 overflow-hidden">
-                  {FEATURE_LINKS.map((item) => (
+                  {SOLUTION_LINKS.map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}
-                      onClick={() => setFeaturesOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-colors group"
+                      onClick={() => setSolutionsOpen(false)}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors group ${
+                        item.highlight ? 'hover:bg-emerald-50 border-t-2 border-slate-100 mt-1 pt-4' : 'hover:bg-slate-50'
+                      }`}
                     >
-                      <div className="w-10 h-10 bg-emerald-500 text-white flex items-center justify-center rounded-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform ${
+                        item.highlight ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'
+                      }`}>
                         {item.icon}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-900">{item.label}</p>
+                        <p className={`text-sm font-black ${item.highlight ? 'text-emerald-600' : 'text-slate-900'}`}>
+                          {item.label}
+                        </p>
                         <p className="text-xs text-slate-500 font-bold">{item.desc}</p>
                       </div>
                     </Link>
@@ -128,30 +135,19 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
             <Link
               href="/pricing"
               className={`text-sm font-bold transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               Pricing
             </Link>
-
-            <Link
-  href="/partners"
-  className={`text-sm font-bold transition-colors ${
-scrolled ? 'text-emerald-600 hover:text-emerald-700' : 'text-emerald-400 hover:text-emerald-300'
-  }`}
->
-  For Bookkeepers
-</Link>
           </div>
-
-          
 
           {/* DESKTOP ACTIONS */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
               className={`text-sm font-bold px-4 py-2 transition-colors ${
-scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
               }`}
             >
               Log in
@@ -204,8 +200,8 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
           <div className="flex items-center gap-2">
-<img src="/Lead2ProjectLogo.webp" width={24} height={24} className="h-6 brightness-0 invert" alt="Lead2Project" />
-            <span 
+            <img src="/Lead2ProjectLogo.webp" width={24} height={24} className="h-6 brightness-0 invert" alt="Lead2Project" />
+            <span
               className="text-base font-black text-white"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -224,7 +220,7 @@ scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-whi
         {/* Links */}
         <div className="flex flex-col px-4 gap-1 flex-1 overflow-y-auto">
           <Link
-href="/#how-it-works"
+            href="/#how-it-works"
             onClick={() => setMobileOpen(false)}
             className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
           >
@@ -232,29 +228,35 @@ href="/#how-it-works"
             <ChevronRight size={18} className="text-white/40" />
           </Link>
 
-          {/* Features accordion */}
+          {/* Solutions accordion */}
           <button
-            onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)}
+            onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
             className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 w-full text-left transition-colors"
           >
-            Features
-            <ChevronDown size={18} className={`text-white/40 transition-transform duration-200 ${mobileFeaturesOpen ? 'rotate-180' : ''}`} />
+            Solutions
+            <ChevronDown size={18} className={`text-white/40 transition-transform duration-200 ${mobileSolutionsOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {mobileFeaturesOpen && (
+          {mobileSolutionsOpen && (
             <div className="ml-2 space-y-1 mb-2">
-              {FEATURE_LINKS.map((item) => (
+              {SOLUTION_LINKS.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors ${
+                    item.highlight ? 'border-t border-white/10 mt-1 pt-4' : ''
+                  }`}
                 >
-                  <div className="w-9 h-9 bg-emerald-500 text-white flex items-center justify-center shrink-0 rounded-xl shadow-lg">
+                  <div className={`w-9 h-9 flex items-center justify-center shrink-0 rounded-xl shadow-lg ${
+                    item.highlight ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white'
+                  }`}>
                     {item.icon}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white">{item.label}</p>
+                    <p className={`text-sm font-black ${item.highlight ? 'text-emerald-400' : 'text-white'}`}>
+                      {item.label}
+                    </p>
                     <p className="text-xs text-white/50 font-bold">{item.desc}</p>
                   </div>
                 </Link>
@@ -262,23 +264,14 @@ href="/#how-it-works"
             </div>
           )}
 
-         <Link
-  href="/pricing"
-  onClick={() => setMobileOpen(false)}
-  className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
->
-  Pricing
-  <ChevronRight size={18} className="text-white/40" />
-</Link>
-
           <Link
-  href="/partners"
-  onClick={() => setMobileOpen(false)}
-  className="flex items-center justify-between px-4 py-4 rounded-xl text-emerald-400 font-black hover:bg-white/10 transition-colors"
->
-  For Bookkeepers
-  <ChevronRight size={18} className="text-emerald-400/40" />
-</Link>
+            href="/pricing"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
+          >
+            Pricing
+            <ChevronRight size={18} className="text-white/40" />
+          </Link>
         </div>
 
         {/* Actions */}
