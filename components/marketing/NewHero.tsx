@@ -53,7 +53,7 @@ export default function ArchitectHero() {
 
             {/* SUBHEAD */}
            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-  Lead capture, job tracking, quotes, and invoices — without the complexity or cost of Housecall Pro. Set up in 2 minutes.
+One link tracks every lead, every job, and every payment status, from first click to invoice.
 </p>
 
             {/* CTAs */}
