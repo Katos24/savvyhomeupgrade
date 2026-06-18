@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -52,9 +52,9 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-           <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-One link tracks every lead, every job, and every payment status, from first click to invoice.
-</p>
+            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+              One link tracks every lead, every job, and every payment status, from first click to invoice.
+            </p>
 
             {/* CTAs */}
             <div className="flex flex-col space-y-6 pt-2">
@@ -69,32 +69,20 @@ One link tracks every lead, every job, and every payment status, from first clic
                     <ArrowRight size={20} strokeWidth={3} />
                   </motion.div>
                 </Link>
-
-                <Link href="/demo">
-                  <motion.div
-                    whileHover={{ scale: 1.03, backgroundColor: '#f8fafc' }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center justify-center gap-3 bg-white border-2 border-slate-200 text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-wide transition-all cursor-pointer text-center"
-                  >
-                    <Play size={18} fill="currentColor" className="text-emerald-600" />
-                    Try Demo
-                  </motion.div>
-                </Link>
               </div>
 
-           <div className="flex flex-wrap items-center gap-3">
-              <Image
-  src="/images/quickbooks-export-badge.webp"
-  alt="QuickBooks Export"
-  width={112}
-  height={56}
-  className="h-8 w-auto opacity-70"
-/>
-  <p className="text-xs text-slate-400 font-medium tracking-wide">
-    No credit card · 2 min setup · Cancel anytime
-  </p>
-
-</div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Image
+                  src="/images/quickbooks-export-badge.webp"
+                  alt="QuickBooks Export"
+                  width={112}
+                  height={56}
+                  className="h-8 w-auto opacity-70"
+                />
+                <p className="text-xs text-slate-400 font-medium tracking-wide">
+                  No credit card · 2 min setup · Cancel anytime
+                </p>
+              </div>
             </div>
           </div>
 
