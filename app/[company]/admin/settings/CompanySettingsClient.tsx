@@ -391,7 +391,9 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+
+       
 
         {/* ── IDENTITY CARD ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

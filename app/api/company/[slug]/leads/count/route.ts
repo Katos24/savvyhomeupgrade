@@ -11,7 +11,6 @@ export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
 
-    // ── Auth check ──────────────────────────────────────────
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) {
@@ -29,31 +28,24 @@ export async function GET(request: Request, { params }: Props) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
-    // ── Verify user belongs to this company ─────────────────
-    const companies = await sql`
-      SELECT c.id FROM companies c
+    // ── Single query: verify access AND get the count in one round trip ──
+    const result = await sql`
+      SELECT COUNT(l.id) as count
+      FROM companies c
       JOIN users u ON u.company_id = c.id
+      LEFT JOIN leads l ON l.company_id = c.id AND l.deleted = false
       WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
-      LIMIT 1
+      GROUP BY c.id
     `;
-    if (companies.length === 0) {
+
+    if (result.length === 0) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
-    const companyId = companies[0].id;
 
-    // ── Count all non-deleted leads (unfiltered) ────────────
-    const result = await sql`
-      SELECT COUNT(*) as count
-      FROM leads
-      WHERE company_id = ${companyId}
-        AND deleted = false
-    `;
-
-    return NextResponse.json({
-      success: true,
-      count: parseInt(result[0].count),
-    });
-
+    return NextResponse.json(
+      { success: true, count: parseInt(result[0].count) },
+      { headers: { 'Cache-Control': 'private, max-age=3, stale-while-revalidate=10' } }
+    );
   } catch (error) {
     console.error('Error fetching lead count:', error);
     return NextResponse.json(

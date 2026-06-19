@@ -12,95 +12,66 @@ const PLAN_PRICE_IDS: Record<string, string> = {
   pro:   process.env.STRIPE_PRO_PRICE_ID   || '',
 };
 
-const PLAN_NAMES: Record<string, string> = {
-  basic: 'Basic Plan',
-  pro:   'Pro Plan',
-};
-
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
-    const { companyId, companyEmail, plan = 'basic' } = await req.json();
 
-    if (!companyId || !companyEmail) {
-      return NextResponse.json(
-        { error: 'Missing companyId or companyEmail' },
-        { status: 400 }
-      );
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const companyId = decoded.companyId;
+    if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { plan = 'basic' } = await req.json();
 
     const priceId = PLAN_PRICE_IDS[plan];
     if (!priceId) {
-      return NextResponse.json(
-        { error: `No price configured for plan: ${plan}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `No price configured for plan: ${plan}` }, { status: 500 });
     }
 
     const sql = neon(process.env.DATABASE_URL!);
     const companies = await sql`
-      SELECT slug, name, stripe_customer_id FROM companies WHERE id = ${companyId}
+      SELECT slug, name, email, stripe_customer_id FROM companies WHERE id = ${companyId}
     `;
 
     if (companies.length === 0) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
+    const company = companies[0];
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-
-      // ── Correct success/cancel URLs ──
       success_url: `${baseUrl}/subscribe?subscription=success`,
       cancel_url:  `${baseUrl}/subscribe?subscription=cancelled`,
-
       client_reference_id: companyId.toString(),
-    ...(companies[0].stripe_customer_id
-      ? { customer: companies[0].stripe_customer_id }
-      : { customer_email: companyEmail }),
-
-      // ── Trial + metadata ──
+      ...(company.stripe_customer_id
+        ? { customer: company.stripe_customer_id }
+        : { customer_email: company.email }),
       subscription_data: {
         trial_period_days: 14,
-        metadata: {
-          companyId: companyId.toString(),
-          plan,
-        },
+        metadata: { companyId: companyId.toString(), plan },
       },
-
-      metadata: {
-        companyId: companyId.toString(),
-        plan,
-      },
-
-      // ── Better checkout copy ──
+      metadata: { companyId: companyId.toString(), plan },
       custom_text: {
         submit: {
           message: "You won't be charged until your 14-day free trial ends. Cancel anytime.",
         },
       },
-
-      // ── Allow promo codes ──
       allow_promotion_codes: true,
-
-      // ── Phone not needed ──
-      phone_number_collection: {
-        enabled: false,
-      },
-
-    
-
+      phone_number_collection: { enabled: false },
     });
 
     return NextResponse.json({ url: session.url });
-
   } catch (error: any) {
     console.error('Stripe checkout error:', error);
     return NextResponse.json(

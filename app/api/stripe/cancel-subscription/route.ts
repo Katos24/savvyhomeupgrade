@@ -9,22 +9,26 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
 
-    const { companyId } = await req.json();    if (!companyId) return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const companyId = decoded.companyId;
+    if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const companies = await sql`
       SELECT id, name, email, stripe_subscription_id, subscription_status, trial_ends_at
       FROM companies
       WHERE id = ${companyId}
     `;
-
     if (companies.length === 0) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-
     const company = companies[0];
 
     if (!company.stripe_subscription_id) {
@@ -38,7 +42,6 @@ const cookieStore = await cookies();
 
     const isTrialing = company.subscription_status === 'trialing';
     let periodEnd: Date;
-
     if (isTrialing && company.trial_ends_at) {
       periodEnd = new Date(company.trial_ends_at);
     } else if (canceled.current_period_end) {
@@ -53,9 +56,7 @@ const cookieStore = await cookies();
 
     await sql`
       UPDATE companies
-      SET
-        subscription_cancel_at = ${periodEnd},
-        cancel_at_period_end = true
+      SET subscription_cancel_at = ${periodEnd}, cancel_at_period_end = true
       WHERE id = ${companyId}
     `;
 
@@ -64,7 +65,6 @@ const cookieStore = await cookies();
       message: `Subscription will cancel on ${formattedDate}`,
       access_until: periodEnd,
     });
-
   } catch (error: any) {
     console.error('Cancel subscription error:', error);
     return NextResponse.json({ error: error.message || 'Failed to cancel' }, { status: 500 });

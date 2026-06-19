@@ -19,16 +19,24 @@ const PLAN_ORDER = ['free', 'basic', 'pro'];
 
 export async function POST(req: NextRequest) {
   try {
-const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
 
-    const { companyId, newPlan } = await req.json();
-    if (!companyId || !newPlan) {
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const companyId = decoded.companyId;
+    if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { newPlan } = await req.json();
+    if (!newPlan) {
       return NextResponse.json(
-        { error: 'Missing companyId or newPlan' },
+        { error: 'Missing newPlan' },
         { status: 400 }
       );
     }
@@ -43,7 +51,6 @@ const cookieStore = await cookies();
 
     const sql = neon(process.env.DATABASE_URL!);
 
-    // ── CHANGE: now also fetches name, email, slug for emails ──
     const companies = await sql`
       SELECT stripe_subscription_id, stripe_customer_id, plan_tier, name, email, slug
       FROM companies

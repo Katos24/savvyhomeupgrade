@@ -5,11 +5,16 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(request: Request) {
   try {
-   const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { searchParams } = new URL(request.url);
     const name = searchParams.get('name');
@@ -27,22 +32,19 @@ export async function GET(request: Request) {
 
     const sql = neon(process.env.DATABASE_URL!);
 
+    // ── Verify the requesting user actually belongs to this company ──
+    const access = await sql`
+      SELECT 1 FROM users WHERE id = ${decoded.userId} AND company_id = ${parseInt(company_id)} LIMIT 1
+    `;
+    if (access.length === 0) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const leads = await sql`
       SELECT
-        l.id,
-        l.name,
-        l.city,
-        l.email,
-        l.category,
-        l.status,
-        l.created_at,
-        l.scheduled_date,
-        l.quote_total,
-        l.payment_status,
-        l.project_id,
-        l.address_line_1,
-        l.description,
-        p.project_number
+        l.id, l.name, l.city, l.email, l.category, l.status, l.created_at,
+        l.scheduled_date, l.quote_total, l.payment_status, l.project_id,
+        l.address_line_1, l.description, p.project_number
       FROM leads l
       LEFT JOIN projects p ON l.project_id = p.id
       WHERE
@@ -54,7 +56,6 @@ export async function GET(request: Request) {
       ORDER BY l.created_at DESC
     `;
 
-    // Add match confidence based on email
     const results = leads.map((lead: any) => ({
       ...lead,
       match_confidence:
@@ -63,12 +64,12 @@ export async function GET(request: Request) {
           : 'medium',
     }));
 
-    return NextResponse.json({ leads: results });
+    return NextResponse.json(
+      { leads: results },
+      { headers: { 'Cache-Control': 'private, max-age=3, stale-while-revalidate=10' } }
+    );
   } catch (error) {
     console.error('❌ Error fetching related leads:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch related leads' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch related leads' }, { status: 500 });
   }
 }
