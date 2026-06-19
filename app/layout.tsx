@@ -12,24 +12,24 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["40
 
 export const metadata: Metadata = {
   title: {
-    default: "Lead2Project | Blast your link. Get better leads.",
+    default: "Lead2Project | Stop losing leads in your text threads.",
     template: "%s | Lead2Project",
   },
   description:
-    "Stop losing leads in your text threads. Blast your link, get better leads with photos, and manage your empire from the couch. Built for the guys in the field.",
-  keywords: [
-    "contractor lead management",
-    "QR code for plumbers",
-    "landscaping job tracking",
-    "hvac business dashboard",
-    "service business outbox",
-    "Long Island contractor software",
-    "construction quote app",
-    "job management for trades",
-    "small business booking link",
-    "contractor CRM",
-    "field service software"
-  ],
+    "Stop losing leads in your text threads. Blast your link, get better leads with photos, and run your jobs from your phone. Built for the guys in the field.",
+ keywords: [
+  "contractor lead management",
+  "QR code for plumbers",
+  "landscaping job tracking",
+  "hvac business dashboard",
+  "service business outbox",
+  "construction quote app",
+  "job management for trades",
+  "small business booking link",
+  "contractor CRM",
+  "field service software",
+  "lead tracking for contractors"
+],
   authors: [{ name: "Lead2Project" }],
   creator: "Lead2Project",
   publisher: "Lead2Project",
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://lead2project.com",
     siteName: "Lead2Project",
-    title: "Lead2Project | Manage your empire from the couch.",
+    title: "Lead2Project | Stop losing leads in your text threads.",
     description:
-      "Two links. One to capture. One to run it all. No more text thread madness. Quote, schedule, and track your jobs right from your phone.",
+      "One link to capture leads. One link to run the job. No more digging through texts — quote, schedule, and track jobs right from your phone.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project Dashboard Preview" }],
   },
   twitter: {
@@ -64,8 +64,6 @@ export const metadata: Metadata = {
     },
   },
 };
-
-
 
 export default function RootLayout({
   children,

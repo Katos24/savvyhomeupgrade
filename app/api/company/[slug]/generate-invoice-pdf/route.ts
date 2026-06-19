@@ -111,6 +111,8 @@ export async function GET(
       amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
       paymentLinkUrl: company.payment_link_url || undefined,
       paymentLinkType: company.payment_link_type || undefined,
+      brandColor1: company.email_brand_color_1 || undefined,
+      brandColor2: company.email_brand_color_2 || undefined,
     });
 
     const filename = `Invoice-${project.invoice_number || 'INV'}.pdf`;

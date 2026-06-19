@@ -8,6 +8,7 @@ import {
   Receipt, MessageSquare, Star, X, ChevronRight,
 } from 'lucide-react';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+import EmailPreviewPane from '@/components/dashboard/EmailPreviewPane';
 
 type TemplateKey = 'quote' | 'schedule' | 'payment' | 'invoice' | 'lead_confirmation' | 'job_completion';
 
@@ -79,13 +80,15 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-  lead_confirmation: {
+lead_confirmation: {
     subject: 'We received your request - {{company_name}}',
     body: `Hi {{customer_name}},
 
 Thank you for reaching out to {{company_name}}! We've received your request and will be in touch shortly.
 
 We typically respond within 24 hours.
+
+{{request_summary}}
 
 Best regards,
 {{company_name}}
@@ -114,7 +117,7 @@ const availableVariables: Record<TemplateKey, string[]> = {
   schedule:          ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{scheduled_date}}', '{{scheduled_time}}', '{{customer_address}}'],
   payment:           ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{payment_amount}}', '{{due_date}}'],
   invoice:           ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{invoice_number}}', '{{invoice_total}}', '{{due_date}}'],
-  lead_confirmation: ['{{company_name}}', '{{company_phone}}', '{{customer_name}}'],
+lead_confirmation: ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{request_summary}}'],
   job_completion:    ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{google_review_link}}'],
 };
 
@@ -191,35 +194,7 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
     }
   };
 
-  const getPreview = () => {
-    if (!activeTemplate) return { subject: '', body: '' };
-    const template = templates[activeTemplate];
-    const replacements: Record<string, string> = {
-      '{{company_name}}': company.name,
-      '{{company_phone}}': formatPhone(company.phone || '5551234567'),
-      '{{customer_name}}': 'John Smith',
-      '{{customer_address}}': '123 Main St, Anytown, USA',
-      '{{quote_total}}': '$2,500.00',
-      '{{project_description}}': 'Kitchen renovation',
-      '{{scheduled_date}}': 'March 15, 2026',
-      '{{scheduled_time}}': '10:00 AM',
-      '{{payment_amount}}': '$1,250.00',
-      '{{due_date}}': 'March 30, 2026',
-      '{{invoice_number}}': 'INV-001',
-      '{{invoice_total}}': '$2,500.00',
-'{{google_review_link}}': '[GOOGLE_REVIEW_BUTTON]',
-    };
-    let subject = template.subject;
-    let body = template.body;
-    Object.entries(replacements).forEach(([k, v]) => {
-      const re = new RegExp(k.replace(/[{}]/g, '\\$&'), 'g');
-      subject = subject.replace(re, v);
-      body = body.replace(re, v);
-    });
-    return { subject, body };
-  };
-
-  const preview = getPreview();
+ 
 
   return (
     <div className="pb-8">
@@ -389,94 +364,12 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
                 </div>
               </div>
 
-              {/* RIGHT — preview */}
-              <div className="lg:sticky lg:top-6 lg:self-start">
-                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-3.5 h-3.5 text-blue-500" />
-                      <p className="text-xs font-bold text-gray-700">Live preview</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Sample data</span>
-                  </div>
-                  <div className="p-4">
-                    <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                      <div
-                        className="px-5 py-6 text-center"
-                        style={{ background: `linear-gradient(135deg, ${company.email_brand_color_1 || '#2563eb'}, ${company.email_brand_color_2 || '#1d4ed8'})` }}
-                      >
-                        {company.logo_url && (
-                          <img src={company.logo_url} alt={company.name} className="h-10 w-auto object-contain mx-auto mb-3" />
-                        )}
-                        <p className="text-white font-black text-base">{company.name}</p>
-                      </div>
-                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 w-10 shrink-0">From</span>
-                          <span className="text-xs font-bold text-gray-700">{company.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 w-10 shrink-0">To</span>
-                          <span className="text-xs text-gray-500">john.smith@email.com</span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[10px] font-bold text-gray-400 mb-1">Subject</p>
-                        <p className="text-sm font-bold text-gray-900 leading-snug">{preview.subject}</p>
-                      </div>
-                      <div className="px-4 py-4 bg-white space-y-3">
-                     
-                        {activeTemplate === 'invoice' && (
-                          <>
-                            <div className="text-center space-y-2">
-                              <div
-                                className="inline-block px-4 py-2 rounded-lg text-white text-xs font-black w-full"
-                                style={{ backgroundColor: company.email_brand_color_1 || '#667eea' }}
-                              >
-                                Pay with Venmo — $2,500.00
-                              </div>
-                              <div className="inline-block px-4 py-2 rounded-lg text-white text-xs font-black bg-gray-900 w-full">
-                                Download Invoice PDF
-                              </div>
-                              <p className="text-[10px] text-gray-400">INV-001 · $2,500.00</p>
-                            </div>
-                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                              <p className="text-xs font-bold text-amber-800">Payment Due: March 30, 2026</p>
-                            </div>
-                          </>
-                        )}
-{preview.body.split('[GOOGLE_REVIEW_BUTTON]').map((part, i, arr) => (
-                          <span key={i}>
-                            <span className="whitespace-pre-wrap text-xs text-gray-600 font-sans leading-relaxed">{part}</span>
-                            {i < arr.length - 1 && (
-                              <div style={{ margin: '12px 0' }}>
-                                <span style={{ display: 'inline-block', backgroundColor: '#ffffff', color: '#1a1a1a', padding: '10px 20px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', border: '2px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                                  <img src="https://www.google.com/favicon.ico" alt="G" style={{ width: '14px', height: '14px', verticalAlign: 'middle', marginRight: '8px' }} />
-                                  <span style={{ verticalAlign: 'middle' }}>Leave us a Google Review</span>
-                                </span>
-                              </div>
-                            )}
-                          </span>
-                        ))}
-                                              </div>
-                      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-center">
-                        <p className="text-[10px] text-gray-400">Powered by Lead2Project</p>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-gray-300 text-center mt-3 font-medium">
-                      Variables replaced with real customer data on send
-                    </p>
-                    {activeTemplate === 'quote' && (
-                      <div className="flex items-start gap-2 mt-3 px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-blue-600 leading-relaxed">
-                          Quote line items are automatically included in the email. Use <span className="font-mono font-bold">{'{{line_items}}'}</span> to control where they appear, or leave it out to show them below your message.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+           <EmailPreviewPane
+  activeTemplate={activeTemplate}
+  subject={templates[activeTemplate].subject}
+  body={templates[activeTemplate].body}
+  companySlug={company.slug}
+/>
             </div>
           </motion.div>
         )}

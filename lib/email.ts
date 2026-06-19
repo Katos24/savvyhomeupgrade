@@ -266,18 +266,17 @@ export async function sendLeadConfirmationEmail({
       </div>
 
      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7; white-space: pre-line;">
-        ${confirmTemplate?.body
+       ${confirmTemplate?.body
           ? renderEmailTemplate(confirmTemplate, {
               company_name: company.name || companyName,
               company_phone: company.phone || '',
               customer_name: customerName,
+              request_summary: buildEmailSection('Your Request Summary', summaryTable) + customAnswerHtml,
             }).body
           : `Hi ${customerName}, thanks for reaching out to <strong>${company.name || companyName}</strong>. We have received your request and someone will be in touch with you shortly.`
         }
       </p>
 
-      ${buildEmailSection('Your Request Summary', summaryTable)}
-      ${customAnswerHtml}
       ${buildEmailSection('What Happens Next', nextStepsHtml)}
 
       <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
@@ -668,7 +667,14 @@ contractorEmail?: string;
   companyLogoUrl: company.logo_url || undefined,
   customerName,
   customerEmail,
-  lineItems: invoiceItems,
+  customerPhone: undefined,
+  customerAddress: undefined,
+  lineItems: invoiceItems.map((item: any) => ({
+    description: item.description || '',
+    quantity: item.quantity ?? 1,
+    unitPrice: item.unitPrice ?? undefined,
+    amount: item.amount ?? 0,
+  })),
  total: invoiceTotal,
   notes,
   amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
@@ -1147,6 +1153,9 @@ export async function sendSubscriptionActivatedEmail({
     throw error;
   }
 }
+
+
+
 export async function sendWelcomeEmail({
   userEmail,
   userName,
@@ -1509,6 +1518,9 @@ from: 'Lead2Project <hello@lead2project.com>',
     throw error;
   }
 }
+
+
+
 export async function sendPaymentReminderEmail({
   customerEmail,
   customerName,
@@ -2109,7 +2121,6 @@ export async function sendPaymentReceiptEmail({
   });
 }
 
-
 export async function sendFreeWelcomeEmail({
   userEmail,
   userName,
@@ -2138,71 +2149,182 @@ export async function sendFreeWelcomeEmail({
             <tr><td align="center">
               <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 15px -3px rgba(0,0,0,0.05);max-width:600px;width:100%;border:1px solid #e2e8f0;">
 
+                <!-- HEADER -->
                 <tr>
                   <td style="padding:48px 40px 32px;text-align:center;background:#ffffff;">
-                    <div style="display:inline-block;background:#eff6ff;padding:12px;border-radius:16px;margin-bottom:24px;">
+                    <div style="display:inline-block;background:#f0fdf4;padding:12px;border-radius:16px;margin-bottom:24px;">
                       <img src="https://lead2project.com/Lead2ProjectLogo.webp" width="40" height="40" alt="L2P" style="display:block;">
                     </div>
-                    <p style="margin:0 0 8px 0;color:#3b82f6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">Onboarding Complete</p>
+                    <p style="margin:0 0 8px 0;color:#10b981;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;">You're in</p>
                     <h1 style="margin:0;color:#0f172a;font-size:30px;font-weight:900;line-height:1.2;letter-spacing:-0.5px;">Welcome, ${userName}!</h1>
-                    <p style="margin:16px 0 0 0;color:#64748b;font-size:16px;line-height:1.6;">Your free account for <strong style="color:#0f172a;">${companyName}</strong> is officially active.</p>
+                    <p style="margin:16px 0 0 0;color:#64748b;font-size:16px;line-height:1.6;">Your free account for <strong style="color:#0f172a;">${companyName}</strong> is live. Here's everything you can do right now.</p>
                   </td>
                 </tr>
 
+                <tr><td style="padding:0 40px;"><div style="height:1px;background:#f1f5f9;width:100%;"></div></td></tr>
+
+                <!-- BOOKING LINK -->
                 <tr>
-                  <td style="padding:0 40px;">
-                    <div style="height:1px;background:#f1f5f9;width:100%;"></div>
+                  <td style="padding:32px 40px 16px;">
+                    <div style="background:#f0fdf4;border:1px solid #dcfce7;border-radius:20px;padding:28px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#166534;">Step 1 — Share Your Booking Link</p>
+                      <p style="margin:8px 0 16px 0;font-size:15px;color:#0f172a;font-weight:800;line-height:1.4;">You now have a custom form customers can fill out to request a job.</p>
+                      <p style="margin:0 0 20px 0;font-size:14px;color:#374151;line-height:1.7;">Put it everywhere people might find you:</p>
+
+                      <table cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #dcfce7;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Add the link to your website as a "Request a Quote" button</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #dcfce7;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Add it to your Google Business Profile so customers can request a quote directly from Google</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #dcfce7;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Print the QR code on your truck wrap, yard signs, or business cards</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #dcfce7;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Text or DM the link to anyone who asks for a quote</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Share it in your Facebook page, Instagram bio, or any social profile</span>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <div style="margin-top:24px;">
+                        <a href="${formUrl}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(16,185,129,0.15);">
+                          View Your Booking Page
+                        </a>
+                      </div>
+                    </div>
                   </td>
                 </tr>
 
-                <tr>
-                  <td style="padding:32px 40px 0;">
-                    <h2 style="margin:0 0 12px 0;color:#0f172a;font-size:18px;font-weight:800;">The Workflow</h2>
-                    <p style="margin:0 0 24px 0;font-size:15px;color:#64748b;line-height:1.6;">Share your link. Customers book. Leads hit your dashboard. It's that simple.</p>
-                  </td>
-                </tr>
-
+                <!-- DASHBOARD -->
                 <tr>
                   <td style="padding:0 40px 16px;">
-                    <div style="background:#f0fdf4;border:1px solid #dcfce7;border-radius:20px;padding:24px;">
-                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#166534;">Your Booking Link</p>
-                      <p style="margin:0 0 16px 0;font-size:13px;color:#374151;line-height:1.5;">Print this on your truck or yard signs to capture more leads.</p>
-                      <a href="${formUrl}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(16,185,129,0.1);">
-                        View Booking Page
-                      </a>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:28px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#1e40af;">Step 2 — Manage Your Leads</p>
+                      <p style="margin:8px 0 16px 0;font-size:15px;color:#0f172a;font-weight:800;line-height:1.4;">Every submission lands on your dashboard automatically.</p>
+                      <p style="margin:0 0 20px 0;font-size:14px;color:#374151;line-height:1.7;">From your free dashboard you can:</p>
+
+                      <table cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#0f172a;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">View all incoming leads on a Kanban board or table view</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#0f172a;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Open any lead to see customer name, contact info, and job details</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#0f172a;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Create leads manually for jobs that come in by phone or referral</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#0f172a;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">View your leads on a calendar to see what's coming up</span>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <div style="margin-top:24px;">
+                        <a href="${dashboardUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(15,23,42,0.1);">
+                          Open Your Dashboard
+                        </a>
+                      </div>
                     </div>
                   </td>
                 </tr>
 
+                <!-- UPGRADE TEASE -->
                 <tr>
                   <td style="padding:0 40px 16px;">
-                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:24px;">
-                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#1e40af;">Manage Leads</p>
-                      <p style="margin:0 0 16px 0;font-size:13px;color:#374151;line-height:1.5;">Check this often to see new requests and customer details.</p>
-                      <a href="${dashboardUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 6px rgba(15,23,42,0.1);">
-                        Open Dashboard
-                      </a>
+                    <div style="background:#ffffff;border:2px dashed #cbd5e1;border-radius:20px;padding:28px;">
+                      <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#64748b;">When You're Ready to Grow</p>
+                      <p style="margin:8px 0 16px 0;font-size:15px;color:#0f172a;font-weight:800;line-height:1.4;">Unlock the full workflow on Basic or Pro.</p>
+
+                      <table cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Let customers attach photos and videos directly on your booking form</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Build and send professional quotes with custom line item templates</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Schedule jobs and track payment status on every project</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Send one-click quote, schedule, and payment reminder emails to customers</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Export all job data to CSV or QuickBooks format for your bookkeeper</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">AI brief and assistant on every lead to save time on writeups and follow-ups</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 0;">
+                            <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;vertical-align:middle;margin-right:10px;"></span>
+                            <span style="font-size:14px;color:#374151;font-weight:600;">Daily 6am digest email with open leads, follow-ups, and scheduled jobs</span>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <div style="margin-top:24px;">
+                        <a href="${dashboardUrl.replace('/dashboard', '/admin/settings?tab=billing')}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 10px rgba(59,130,246,0.2);">
+                          Explore Pro Features
+                        </a>
+                        <p style="margin:12px 0 0 0;font-size:12px;color:#94a3b8;">Basic from $49.99/mo · Pro from $79.99/mo · No contracts</p>
+                      </div>
                     </div>
                   </td>
                 </tr>
 
-                <tr>
-                  <td style="padding:16px 40px 48px;">
-                    <div style="background:#ffffff;border:2px dashed #cbd5e1;border-radius:20px;padding:28px;text-align:center;">
-                      <p style="margin:0 0 8px 0;font-size:16px;font-weight:900;color:#0f172a;">Ready to grow your business?</p>
-                      <p style="margin:0 0 20px 0;font-size:14px;color:#64748b;line-height:1.5;">Upgrade to professional tools like AI-generated quotes, job scheduling, and payment tracking.</p>
-                      <a href="${dashboardUrl.replace('/dashboard', '/admin/settings?tab=billing')}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 10px rgba(59,130,246,0.2);">
-                        Explore Pro Features
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-
+                <!-- FOOTER -->
                 <tr>
                   <td style="padding:32px 40px;background:#f8fafc;text-align:center;">
                     <p style="margin:0;color:#94a3b8;font-size:12px;font-weight:500;line-height:1.8;">
                       Lead2Project &copy; 2026 — Built for the trades.<br>
-                      Need help? Just reply to this email.
+                      Questions? Just reply to this email.
                     </p>
                   </td>
                 </tr>
@@ -2227,7 +2349,6 @@ export async function sendFreeWelcomeEmail({
     throw error;
   }
 }
-
 
 
 // ─────────────────────────────────────────────────────────────

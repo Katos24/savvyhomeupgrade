@@ -63,13 +63,15 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-  lead_confirmation: {
+lead_confirmation: {
     subject: 'We received your request - {{company_name}}',
     body: `Hi {{customer_name}},
 
 Thank you for reaching out to {{company_name}}! We've received your request and will be in touch shortly.
 
 We typically respond within 24 hours.
+
+{{request_summary}}
 
 Best regards,
 {{company_name}}
