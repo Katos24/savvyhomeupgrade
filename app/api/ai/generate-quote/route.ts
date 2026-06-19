@@ -13,11 +13,14 @@
 //   - Job expires after 1 hour — no stale data
 //   - No NY hardcoding — works for any US region
 
+// AFTER
 import { NextResponse, after } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
 import { neon } from '@neondatabase/serverless';
 import { can, type PlanTier } from '@/lib/permissions';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export const maxDuration = 60;
 
@@ -344,8 +347,22 @@ export async function POST(request: Request) {
     const category       = sanitizeString(body.category,       100);
     const lead_id        = typeof body.lead_id === 'number' ? body.lead_id : null;
 
+// AFTER
     if (!company_slug) {
       return NextResponse.json({ success: false, error: 'Missing company_slug' }, { status: 400 });
+    }
+
+    // ── Auth: require a real logged-in session ─────────────────────────────
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('auth-token')?.value;
+    if (!authToken) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    let decoded: any;
+    try {
+      decoded = jwt.verify(authToken, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!description && !internal_notes) {
@@ -381,7 +398,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
+  // AFTER
     const { id: companyId, plan_tier } = companyRows[0];
+
+    // ── Verify the logged-in user actually belongs to this company ────────
+    if (decoded.companyId !== companyId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
+
     const dbPlanTier = (plan_tier ?? 'free') as PlanTier;
 
     if (!can(dbPlanTier, 'ai_quote')) {

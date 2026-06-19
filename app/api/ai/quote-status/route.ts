@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { can, type PlanTier } from '@/lib/permissions';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 export async function GET(request: Request) {
   try {
@@ -34,7 +36,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
+  // AFTER
     const { id: companyId, plan_tier } = companyRows[0];
+
+    // ── Auth: require a real logged-in session belonging to this company ──
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get('auth-token')?.value;
+    if (!authToken) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    let decoded: any;
+    try {
+      decoded = jwt.verify(authToken, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    if (decoded.companyId !== companyId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
 
     // Re-check plan on every poll (plan could have been downgraded)
     if (!can((plan_tier ?? 'free') as PlanTier, 'ai_quote')) {
