@@ -36,10 +36,9 @@ export async function POST(request: Request) {
     const inputBuffer = Buffer.from(await file.arrayBuffer());
     const pngBuffer = await sharp.default(inputBuffer).png().toBuffer();
     // Upload PNG to Vercel Blob
-const blob = await put(`logos/${companySlug}-logo.png`, pngBuffer, {
+const blob = await put(`logos/${companySlug}-logo-${Date.now()}.png`, pngBuffer, {
   access: 'public',
   contentType: 'image/png',
-  allowOverwrite: true,
 });
     // Update database with logo URL
     const sql = neon(process.env.DATABASE_URL!);

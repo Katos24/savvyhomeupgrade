@@ -16,7 +16,7 @@ const sql = neon(process.env.DATABASE_URL!);
 async function getCompanyDetails(companyId: number) {
   const companies = await sql`
     SELECT name, logo_url, phone, email, website, email_brand_color_1, email_brand_color_2,
-           payment_link_type, payment_link_url
+           payment_link_type, payment_link_url, bcc_sender_on_email
     FROM companies WHERE id = ${companyId} LIMIT 1
   `;
   return companies[0];
@@ -602,13 +602,14 @@ export async function sendQuoteToCustomer({
       preheader: `Your quote from ${company.name || companyName} — ${fmt(quoteTotal)}`,
     });
 
-    const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <hello@lead2project.com>`,
-      to: customerEmail,
-      replyTo: company.email || undefined,
-      subject: rendered.subject,
-      html,
-    });
+   const emailResult = await resend.emails.send({
+  from: `${company.name || companyName} <hello@lead2project.com>`,
+  to: customerEmail,
+  replyTo: company.email || undefined,
+  bcc: company.bcc_sender_on_email && contractorEmail ? contractorEmail : undefined,
+  subject: rendered.subject,
+  html,
+});
 
     console.log('Quote email sent to customer:', customerEmail);
     return { subject: rendered.subject, html, resendId: emailResult?.data?.id };
@@ -796,20 +797,21 @@ const downloadButtonHtml = `
     });
 
     // ── STEP 5: Send email with PDF attached ──────────────
-    const emailResult = await resend.emails.send({
-      from: `${company.name || companyName} <hello@lead2project.com>`,
-      to: customerEmail,
-      replyTo: company.email || undefined,
-      subject,
-      html,
-      attachments: [
-        {
-          filename: `Invoice-${invoiceNumber}.pdf`,
-          content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
-          contentType: 'application/pdf',
-        },
-      ],
-    });
+   const emailResult = await resend.emails.send({
+  from: `${company.name || companyName} <hello@lead2project.com>`,
+  to: customerEmail,
+  replyTo: company.email || undefined,
+  bcc: company.bcc_sender_on_email && contractorEmail ? contractorEmail : undefined,
+  subject,
+  html,
+  attachments: [
+    {
+      filename: `Invoice-${invoiceNumber}.pdf`,
+      content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
+      contentType: 'application/pdf',
+    },
+  ],
+});
 
    console.log('Invoice email sent to customer:', customerEmail);
     return { subject, html, resendId: emailResult?.data?.id, pdfUrl };
@@ -899,6 +901,7 @@ export async function sendScheduleConfirmation({
       from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
+      bcc: company.bcc_sender_on_email && contractorEmail ? contractorEmail : undefined,
       subject: rendered.subject,
       html,
     });

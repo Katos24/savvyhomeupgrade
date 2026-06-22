@@ -95,7 +95,8 @@ pending_downgrade_at,
 google_review_url,
 google_review_enabled,
 payment_link_type,
-payment_link_url
+payment_link_url,
+bcc_sender_on_email
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
@@ -141,7 +142,9 @@ google_review_url: company.google_review_url ?? '',
 google_review_enabled: company.google_review_enabled ?? false,
 payment_link_type: company.payment_link_type ?? '',
 payment_link_url: company.payment_link_url ?? '',
+bcc_sender_on_email: company.bcc_sender_on_email ?? false,
  };
+
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;
   } catch (error) {

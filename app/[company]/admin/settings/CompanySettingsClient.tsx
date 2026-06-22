@@ -165,8 +165,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
+const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
+const [bccEnabled, setBccEnabled] = useState(company.bcc_sender_on_email ?? false);
+const [bccSaving, setBccSaving] = useState(false);
 
+useEffect(() => {
+  setBccEnabled(companyData.bcc_sender_on_email ?? false);
+}, [companyData.bcc_sender_on_email]);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
@@ -260,10 +265,10 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     qrImg.src = qrCodeUrl;
   };
 
-  const handleSaveIdentity = async () => {
-    setLoading(true);
-    try {
-      let finalLogoUrl = company.logo_url;
+ const handleSaveIdentity = async () => {
+  setLoading(true);
+  try {
+    let finalLogoUrl = companyData.logo_url;
 
       if (logoFile) {
         const fd = new FormData();
@@ -312,6 +317,34 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
       setLoading(false);
     }
   };
+
+const handleToggleBcc = async () => {
+  const newVal = !bccEnabled;
+  setBccEnabled(newVal);
+  setBccSaving(true);
+  try {
+    const res = await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-general',
+        data: {
+          ...formData,
+          email_brand_color_1: formData.color1,
+          email_brand_color_2: formData.color2,
+          bcc_sender_on_email: newVal,
+        },
+      }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.error || 'Save failed');
+  } catch (err) {
+    console.error('Failed to update BCC setting:', err);
+    setBccEnabled(!newVal);
+  } finally {
+    setBccSaving(false);
+  }
+};
 
   const formatPhone = (v: string) => {
     const d = v.replace(/\D/g, '');
@@ -565,7 +598,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
                   <div className="flex items-center gap-2 px-3 pt-3 pb-1">
                     <Globe className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                    <span className="text-[11px] font-medium text-gray-500">Website</span>
+                    <span className="text-[11px] font-medium text-gray-500">Company Website</span>
                   </div>
                   <div className="flex items-center gap-2 px-3 pb-3 pt-0.5">
                     <span className="text-sm font-medium text-gray-800 truncate flex-1">
@@ -697,7 +730,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                       {digestEnabled ? 'Digest on' : 'Digest off'}
                     </span>
                   </button>
-                ) : (
+              ) : (
                   <button onClick={() => openTab('billing')}
                     className="group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all active:scale-95">
                     <Lock className="w-4.5 h-4.5 text-gray-300 group-hover:text-blue-400 transition-colors" />
@@ -705,6 +738,25 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                     <p className="text-[10px] font-medium text-blue-400">Pro</p>
                   </button>
                 )}
+              </div>
+            )}
+
+            {!isEditing && (
+              <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">BCC me on customer emails</p>
+                    <p className="text-[11px] text-gray-400">Get a copy in your own inbox when a quote or schedule email sends</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleToggleBcc}
+                  disabled={bccSaving}
+                  className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
+                </button>
               </div>
             )}
           </div>
