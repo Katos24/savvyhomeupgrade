@@ -432,14 +432,14 @@ const handleToggleBcc = async () => {
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${formData.color1}, ${formData.color2})` }} />
 
-          <div className="p-5 sm:p-7 space-y-5">
+          <div className="p-4 sm:p-7 space-y-5">
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
               <div className="relative shrink-0">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
                   {logoPreview
                     ? <img src={logoPreview} className="w-full h-full object-contain p-1.5" alt="Logo" />
-                    : <span className="text-xl font-semibold text-gray-300">{formData.name.charAt(0)}</span>
+                    : <span className="text-lg sm:text-xl font-semibold text-gray-300">{formData.name.charAt(0)}</span>
                   }
                 </div>
                 {isEditing && (
@@ -464,18 +464,18 @@ const handleToggleBcc = async () => {
 
               <div className="flex-1 min-w-0">
                 {!isEditing
-                  ? <h2 className="text-lg font-semibold text-gray-900 truncate">{formData.name}</h2>
+                  ? <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{formData.name}</h2>
                   : <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="text-lg font-semibold text-gray-900 outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 w-full bg-transparent pb-1" placeholder="Company Name" />
+                      className="text-base sm:text-lg font-semibold text-gray-900 outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 w-full bg-transparent pb-1" placeholder="Company Name" />
                 }
-                <span className={`mt-1.5 inline-block text-[11px] font-medium px-2.5 py-1 rounded-full text-white ${planTier === 'pro' ? 'bg-blue-600' : planTier === 'basic' ? 'bg-gray-700' : 'bg-emerald-600'}`}>
+                <span className={`mt-1.5 inline-block text-[10.5px] sm:text-[11px] font-medium px-2.5 py-1 rounded-full text-white ${planTier === 'pro' ? 'bg-blue-600' : planTier === 'basic' ? 'bg-gray-700' : 'bg-emerald-600'}`}>
                   {planTier} plan
                 </span>
               </div>
 
               {!isEditing && (
                 <button onClick={() => setIsEditing(true)}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium transition">
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium transition">
                   <Pencil className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Edit</span>
                 </button>
@@ -483,17 +483,17 @@ const handleToggleBcc = async () => {
             </div>
 
             {/* ── INFO GRID ── */}
-            {isEditing ? (
+     {isEditing ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { label: 'Company email', key: 'email', type: 'email', placeholder: 'hello@yourcompany.com', icon: <Mail className="w-3.5 h-3.5 text-blue-500" /> },
                   { label: 'Business phone', key: 'phone', type: 'tel', placeholder: '(555) 555-5555', icon: <Phone className="w-3.5 h-3.5 text-emerald-500" /> },
                   { label: 'Company website', key: 'website', type: 'text', placeholder: 'https://yourwebsite.com', icon: <Globe className="w-3.5 h-3.5 text-violet-500" /> },
                 ].map(field => (
-                  <div key={field.key} className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                  <div key={field.key} className="rounded-xl border border-gray-100 bg-gray-50/60 focus-within:bg-white focus-within:border-gray-200 focus-within:shadow-sm overflow-hidden transition-all duration-200">
+                    <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
                       {field.icon}
-                      <span className="text-[11px] font-medium text-gray-500">{field.label}</span>
+                      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">{field.label}</span>
                     </div>
                     <input
                       type={field.type}
@@ -507,32 +507,32 @@ const handleToggleBcc = async () => {
                           setFormData({ ...formData, [field.key]: e.target.value });
                         }
                       }}
-                      className="w-full bg-transparent px-4 pb-3 pt-1 text-sm font-medium text-gray-800 outline-none"
+                      className="w-full bg-transparent px-3.5 sm:px-4 pb-3 pt-1 text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
                     />
                   </div>
                 ))}
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 overflow-hidden">
+                  <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
                     <Palette className="w-3.5 h-3.5 text-pink-500" />
-                    <span className="text-[11px] font-medium text-gray-500">Brand colors</span>
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Brand colors</span>
                   </div>
-                  <div className="flex items-center gap-3 px-4 pb-3 pt-1">
+                  <div className="flex items-center gap-3 px-3.5 sm:px-4 pb-3 pt-1.5">
                     <input type="color" value={formData.color1} onChange={e => setFormData({ ...formData, color1: e.target.value })} className="w-9 h-9 rounded-lg cursor-pointer border border-gray-200 p-0.5" />
                     <input type="color" value={formData.color2} onChange={e => setFormData({ ...formData, color2: e.target.value })} className="w-9 h-9 rounded-lg cursor-pointer border border-gray-200 p-0.5" />
                   </div>
                 </div>
 
                 <div className="sm:col-span-2 rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                    <GoogleG size={14} />
-                    <span className="text-[11px] font-medium text-gray-500">Google review link</span>
+                  <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
+                    <GoogleG size={13} />
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Google review link</span>
                   </div>
-                  <div className="flex flex-col gap-2 px-4 pb-3 pt-1">
+                  <div className="flex flex-col gap-2 px-3.5 sm:px-4 pb-3.5 pt-1.5">
                     <input value={formData.google_review_url} onChange={e => setFormData({ ...formData, google_review_url: e.target.value })}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 ring-blue-100 transition"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-gray-400 placeholder:font-normal"
                       placeholder="https://g.page/r/your-review-link" />
-                    <label className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-200 cursor-pointer">
+                    <label className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
                       <input type="checkbox" checked={formData.google_review_enabled}
                         onChange={e => setFormData({ ...formData, google_review_enabled: e.target.checked })}
                         className="w-4 h-4 accent-blue-600" />
@@ -542,18 +542,14 @@ const handleToggleBcc = async () => {
                 </div>
 
                 <div className="sm:col-span-2 rounded-xl border border-indigo-100 bg-indigo-50/40 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-                    <div className="flex items-center gap-1">
-                      {['#008CFF','#6D1ED4','#00D632','#003087'].map((c,i) => (
-                        <div key={i} className="w-3.5 h-3.5 rounded-md" style={{ background: c }} />
-                      ))}
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-500">Payment link</span>
+                  <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
+                    <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Payment link</span>
                   </div>
-                  <div className="flex flex-col gap-2 px-4 pb-3 pt-1">
+                  <div className="flex flex-col sm:flex-row gap-2 px-3.5 sm:px-4 pb-3.5 pt-1.5">
                     <select value={formData.payment_link_type} onChange={e => setFormData({ ...formData, payment_link_type: e.target.value })}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 ring-blue-100 transition">
-                      <option value="">Select payment method...</option>
+                      className="sm:w-40 shrink-0 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition">
+                      <option value="">Method...</option>
                       <option value="venmo">Venmo</option>
                       <option value="zelle">Zelle</option>
                       <option value="cashapp">Cash App</option>
@@ -567,96 +563,148 @@ const handleToggleBcc = async () => {
                           setFormData(prev => ({ ...prev, payment_link_url: `https://${val}` }));
                         }
                       }}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 ring-blue-100 transition"
+                      className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-gray-400 placeholder:font-normal"
                       placeholder="https://venmo.com/your-handle" />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all duration-200 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0">
+                  <div className="flex items-center gap-2">
                     <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                    <span className="text-[11px] font-medium text-gray-500">Email</span>
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Email</span>
                   </div>
-                  <p className="px-3 pb-3 pt-0.5 text-sm font-medium text-gray-800 truncate">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
                     {formData.email || <span className="text-gray-400 font-normal">Not set</span>}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all duration-200 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0">
+                  <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="text-[11px] font-medium text-gray-500">Phone</span>
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Phone</span>
                   </div>
-                  <p className="px-3 pb-3 pt-0.5 text-sm font-medium text-gray-800">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
                     {formData.phone ? formatPhone(formData.phone) : <span className="text-gray-400 font-normal">Not set</span>}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-                    <Globe className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                    <span className="text-[11px] font-medium text-gray-500">Company Website</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 pb-3 pt-0.5">
-                    <span className="text-sm font-medium text-gray-800 truncate flex-1">
-                      {formData.website || <span className="text-gray-400 font-normal">Not set</span>}
-                    </span>
-                    {formData.website && <a href={formData.website} target="_blank" className="text-blue-400 shrink-0"><ExternalLink className="w-3 h-3" /></a>}
-                  </div>
-                </div>
+                
+            <a
+  href={formData.website || undefined}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={e => { if (!formData.website) e.preventDefault(); }}
+  className={`group rounded-xl border border-gray-100 bg-gray-50/60 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
+    formData.website
+      ? 'hover:bg-white hover:border-violet-200 hover:shadow-sm cursor-pointer'
+      : 'cursor-default'
+  }`}
+>
+  <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center gap-2 min-w-0">
+      <Globe className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">
+        Website
+      </span>
+    </div>
+    {formData.website && (
+      <ExternalLink className="w-3 h-3 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" />
+    )}
+  </div>
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+  <p className="text-sm font-semibold text-gray-900 truncate">
+    {formData.website
+      ? formData.website.replace(/^https?:\/\//, '')
+      : <span className="text-gray-400 font-normal">Not set</span>}
+  </p>
+</a>
+
+
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all duration-200 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0">
+                  <div className="flex items-center gap-2">
                     <Palette className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-                    <span className="text-[11px] font-medium text-gray-500">Colors</span>
+                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Brand colors</span>
                   </div>
-                  <div className="flex items-center gap-2 px-3 pb-3 pt-0.5">
-                    <div className="w-5 h-5 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color1 }} />
-                    <div className="w-5 h-5 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color2 }} />
-                  </div>
-                </div>
-
-                <div className="col-span-2 rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
-                  <div className="flex items-center justify-between px-3 pt-3 pb-1">
-                    <div className="flex items-center gap-2">
-                      <GoogleG size={14} />
-                      <span className="text-[11px] font-medium text-gray-500">Google review</span>
-                    </div>
-                    {formData.google_review_enabled && (
-                      <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Auto on</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 px-3 pb-3 pt-0.5">
-                    <span className="text-sm font-medium text-gray-800 truncate flex-1">
-                      {formData.google_review_url || <span className="text-gray-400 font-normal">Not set</span>}
-                    </span>
-                    {formData.google_review_url && <a href={formData.google_review_url} target="_blank" className="text-blue-400 shrink-0"><ExternalLink className="w-3 h-3" /></a>}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="w-6 h-6 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color1 }} />
+                    <div className="w-6 h-6 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color2 }} />
                   </div>
                 </div>
 
-                <div className="col-span-2 rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-3 pt-3 pb-1">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                      <span className="text-[11px] font-medium text-gray-500">Payment link</span>
-                    </div>
-                    {formData.payment_link_type && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-white"
-                        style={{ background: PAYMENT_COLORS[formData.payment_link_type] || '#64748b' }}>
-                        {formData.payment_link_type}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 px-3 pb-3 pt-0.5">
-                    <span className="text-sm font-medium text-gray-800 truncate flex-1">
-                      {formData.payment_link_url || <span className="text-gray-400 font-normal">Not set</span>}
-                    </span>
-                    {formData.payment_link_url && <a href={formData.payment_link_url} target="_blank" className="text-blue-400 shrink-0"><ExternalLink className="w-3 h-3" /></a>}
-                  </div>
-                </div>
+                
+             <a
+  href={formData.google_review_url || undefined}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={e => { if (!formData.google_review_url) e.preventDefault(); }}
+  className={`group rounded-xl border border-blue-100 bg-blue-50/40 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
+    formData.google_review_url
+      ? 'hover:bg-blue-50 hover:border-blue-200 hover:shadow-sm cursor-pointer'
+      : 'cursor-default'
+  }`}
+>
+  <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center gap-2 min-w-0">
+      <GoogleG size={13} />
+      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">
+        Google review
+      </span>
+    </div>
+
+    {formData.google_review_enabled && (
+      <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100 shrink-0">
+        Auto
+      </span>
+    )}
+  </div>
+
+  <p className="text-sm font-semibold text-gray-900 truncate">
+    {formData.google_review_url
+      ? 'View link'
+      : <span className="text-gray-400 font-normal">Not set</span>}
+  </p>
+</a>
+
+
+               <a
+  href={formData.payment_link_url || undefined}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={e => { if (!formData.payment_link_url) e.preventDefault(); }}
+  className={`group rounded-xl border border-gray-100 bg-gray-50/60 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
+    formData.payment_link_url
+      ? 'hover:bg-white hover:border-gray-200 hover:shadow-sm cursor-pointer'
+      : 'cursor-default'
+  }`}
+>
+  <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center gap-2 min-w-0">
+      <CreditCard className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">
+        Payment link
+      </span>
+    </div>
+
+    {formData.payment_link_type && (
+      <span
+        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0"
+        style={{ background: PAYMENT_COLORS[formData.payment_link_type] || '#64748b' }}
+      >
+        {formData.payment_link_type}
+      </span>
+    )}
+  </div>
+
+  <p className="text-sm font-semibold text-gray-900 truncate">
+    {formData.payment_link_url
+      ? 'View link'
+      : <span className="text-gray-400 font-normal">Not set</span>}
+  </p>
+</a>
+
 
               </div>
             )}
@@ -675,7 +723,7 @@ const handleToggleBcc = async () => {
             )}
 
             {/* Booking link */}
-            <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-3 px-3.5 sm:px-4 py-3.5 rounded-xl border border-gray-100 bg-gray-50">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: formData.color1 }}>
                 <Globe className="w-4 h-4 text-white" />
               </div>
@@ -687,76 +735,97 @@ const handleToggleBcc = async () => {
               </div>
               <button
                 onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-medium transition-all active:scale-95"
                 style={{ background: copied ? '#dcfce7' : '#eff6ff', color: copied ? '#16a34a' : formData.color1 }}>
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
 
-            {/* Quick action buttons */}
+            {/* Quick actions */}
             {!isEditing && (
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                 <button onClick={() => setShowQrModal(true)}
-                  className="group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
+                  className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
                   {qrCodeUrl
-                    ? <img src={qrCodeUrl} className="w-7 h-7 sm:w-8 sm:h-8 rounded-md" alt="QR" />
-                    : <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 rounded-md animate-pulse" />
+                    ? <img src={qrCodeUrl} className="w-6 h-6 sm:w-8 sm:h-8 rounded-md" alt="QR" />
+                    : <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded-md animate-pulse" />
                   }
-                  <span className="text-[11px] font-medium text-gray-600">QR code</span>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">QR code</span>
                 </button>
 
                 <a href={publicLink} target="_blank" rel="noopener noreferrer"
-                  className="group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
-                  <ExternalLink className="w-4.5 h-4.5 text-gray-500 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-[11px] font-medium text-gray-600">View form</span>
+                  className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
+                  <ExternalLink className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                  <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">View form</span>
                 </a>
 
                 {planTier === 'free' ? (
                   <a href={`/${company.slug}/admin/settings`} onClick={e => { e.preventDefault(); openTab('billing'); }}
-                    className="group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl transition-all active:scale-95 bg-gray-900 hover:bg-gray-800">
-                    <CreditCard className="w-4.5 h-4.5 text-white" />
-                    <span className="text-[11px] font-medium text-white">Upgrade</span>
-                    <span className="text-[10px] text-white/60">From $49.99/mo</span>
+                    className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-xl transition-all active:scale-95 bg-gray-900 hover:bg-gray-800">
+                    <CreditCard className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                    <span className="text-[10px] sm:text-[11px] font-medium text-white text-center leading-tight">Upgrade</span>
+                    <span className="hidden sm:block text-[10px] text-white/60">From $49.99/mo</span>
                   </a>
-                ) : can(planTier, 'daily_digest') ? (
-                  <button onClick={() => setShowDigestConfirm(true)}
-                    className={`group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 border rounded-xl transition-all active:scale-95 ${digestEnabled ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
-                    <div className={`w-9 h-5 rounded-full relative transition-colors ${digestEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                      <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all" style={{ left: digestEnabled ? '20px' : '2px' }} />
-                    </div>
-                    <Mail className={`w-4 h-4 ${digestEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-                    <span className={`text-[11px] font-medium ${digestEnabled ? 'text-blue-600' : 'text-gray-500'}`}>
-                      {digestEnabled ? 'Digest on' : 'Digest off'}
-                    </span>
-                  </button>
-              ) : (
+                ) : (
                   <button onClick={() => openTab('billing')}
-                    className="group flex flex-col items-center justify-center gap-2 p-3 sm:p-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all active:scale-95">
-                    <Lock className="w-4.5 h-4.5 text-gray-300 group-hover:text-blue-400 transition-colors" />
-                    <p className="text-[11px] font-medium text-gray-300 group-hover:text-blue-400">Digest</p>
-                    <p className="text-[10px] font-medium text-blue-400">Pro</p>
+                    className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
+                    <CreditCard className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-500 group-hover:text-emerald-500 transition-colors" />
+                    <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">Billing</span>
                   </button>
                 )}
               </div>
             )}
 
+            {/* Automations */}
             {!isEditing && (
-              <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">BCC me on customer emails</p>
-                    <p className="text-[11px] text-gray-400">Get a copy in your own inbox when a quote or schedule email sends</p>
+              <div className="rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+                {planTier !== 'free' && (
+                  can(planTier, 'daily_digest') ? (
+                    <button onClick={() => setShowDigestConfirm(true)}
+                      className="w-full flex items-center justify-between gap-3 p-3 sm:p-3.5 bg-gray-50/60 hover:bg-white transition-colors text-left">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Mail className={`w-4 h-4 shrink-0 ${digestEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-700">Daily digest</p>
+                          <p className="text-[11px] text-gray-400">6AM summary of leads, jobs, and payments</p>
+                        </div>
+                      </div>
+                      <div className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${digestEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${digestEnabled ? 'left-5' : 'left-0.5'}`} />
+                      </div>
+                    </button>
+                  ) : (
+                    <button onClick={() => openTab('billing')}
+                      className="group w-full flex items-center justify-between gap-3 p-3 sm:p-3.5 bg-gray-50/60 hover:bg-blue-50/40 transition-colors text-left">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Mail className="w-4 h-4 shrink-0 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-400 group-hover:text-blue-500 transition-colors">Daily digest</p>
+                          <p className="text-[11px] text-gray-400">6AM summary of leads, jobs, and payments</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-blue-400 bg-blue-50 px-2 py-1 rounded-full shrink-0">Pro</span>
+                    </button>
+                  )
+                )}
+
+                <div className="flex items-center justify-between gap-3 p-3 sm:p-3.5 bg-gray-50/60 hover:bg-white transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Mail className={`w-4 h-4 shrink-0 ${bccEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-700">BCC me on customer emails</p>
+                      <p className="text-[11px] text-gray-400">Get a copy when a quote or schedule email sends</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={handleToggleBcc}
+                    disabled={bccSaving}
+                    className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
+                  </button>
                 </div>
-                <button
-                  onClick={handleToggleBcc}
-                  disabled={bccSaving}
-                  className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
-                >
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
-                </button>
               </div>
             )}
           </div>

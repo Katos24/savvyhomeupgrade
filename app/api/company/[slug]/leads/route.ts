@@ -55,7 +55,7 @@ export async function GET(request: Request, { params }: Props) {
     const endDate    = url.searchParams.get('endDate')?.trim()    || '';
 
     // ── Scheduled Today special case ──────────────────────────
-const isScheduledToday = timeFilter === 'scheduled_today';
+    const isScheduledToday = timeFilter === 'scheduled_today';
     const today = new Date();
     const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -89,8 +89,9 @@ const isScheduledToday = timeFilter === 'scheduled_today';
     const fromISO = timeFrom ? timeFrom.toISOString() : '2000-01-01T00:00:00.000Z';
     const toISO   = timeTo   ? timeTo.toISOString()   : '2099-12-31T23:59:59.999Z';
 
-    // ── Global stats — always all time, no filters ────────────
-    const statsResult = await sql`
+    // ── Build all independent query promises (not awaited yet) ─
+
+    const statsPromise = sql`
       SELECT
         COUNT(*) as total_leads,
         COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
@@ -101,35 +102,27 @@ const isScheduledToday = timeFilter === 'scheduled_today';
       WHERE l.company_id = ${companyId}
         AND l.deleted = false
     `;
-    const globalStats = statsResult[0];
 
-    // ── Status counts (always unfiltered) ────────────────────
-    const statusCountsResult = await sql`
+    const statusCountsPromise = sql`
       SELECT status, COUNT(*) as count
       FROM leads
       WHERE company_id = ${companyId}
         AND deleted = false
       GROUP BY status
     `;
-    const statusCounts = statusCountsResult.reduce((acc: Record<string, number>, row: any) => {
-      acc[row.status] = parseInt(row.count);
-      return acc;
-    }, {});
 
-    // ── Queries: two separate paths ───────────────────────────
-
-    let total = 0;
-    let leads: any[] = [];
+    let countPromise;
+    let leadsPromise;
 
     if (isScheduledToday) {
       // ── Path A: Scheduled Today — filter by p.scheduled_date ──
-      const countResult = await sql`
+      countPromise = sql`
         SELECT COUNT(*) as total
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
           AND l.deleted = false
-         AND p.scheduled_date IS NOT NULL
+          AND p.scheduled_date IS NOT NULL
           AND CAST(p.scheduled_date AS date) = CAST(${todayDateStr} AS date)
           AND (${search} = '' OR (
             l.name        ILIKE ${'%' + search + '%'} OR
@@ -137,10 +130,10 @@ const isScheduledToday = timeFilter === 'scheduled_today';
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${category} = '' 
-  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-)
+          AND (${category} = ''
+            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+          )
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -148,9 +141,8 @@ const isScheduledToday = timeFilter === 'scheduled_today';
             p.assigned_to = ${assignee}
           )
       `;
-      total = parseInt(countResult[0].total);
 
-      leads = await sql`
+      leadsPromise = sql`
         SELECT
           l.*,
           p.id                     as project_id,
@@ -201,10 +193,10 @@ const isScheduledToday = timeFilter === 'scheduled_today';
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${category} = '' 
-  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-)
+          AND (${category} = ''
+            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+          )
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -217,7 +209,7 @@ const isScheduledToday = timeFilter === 'scheduled_today';
 
     } else {
       // ── Path B: Standard filters — filter by l.created_at ─────
-      const countResult = await sql`
+      countPromise = sql`
         SELECT COUNT(*) as total
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
@@ -230,10 +222,10 @@ const isScheduledToday = timeFilter === 'scheduled_today';
             l.description ILIKE ${'%' + search + '%'}
           ))
           AND (${status} = ''   OR l.status = ${status})
-          AND (${category} = '' 
-  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-)
+          AND (${category} = ''
+            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+          )
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -243,9 +235,8 @@ const isScheduledToday = timeFilter === 'scheduled_today';
           AND l.created_at >= ${fromISO}
           AND l.created_at <= ${toISO}
       `;
-      total = parseInt(countResult[0].total);
 
-      leads = await sql`
+      leadsPromise = sql`
         SELECT
           l.*,
           p.id                     as project_id,
@@ -294,10 +285,10 @@ const isScheduledToday = timeFilter === 'scheduled_today';
             l.description ILIKE ${'%' + search + '%'}
           ))
           AND (${status} = ''   OR l.status = ${status})
-          AND (${category} = '' 
-  OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-  OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-)
+          AND (${category} = ''
+            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
+          )
           AND (${payment} = ''  OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
@@ -311,10 +302,25 @@ const isScheduledToday = timeFilter === 'scheduled_today';
       `;
     }
 
+    // ── Run all four independent queries in parallel ─────────
+    const [statsResult, statusCountsResult, countResult, leads] = await Promise.all([
+      statsPromise,
+      statusCountsPromise,
+      countPromise,
+      leadsPromise,
+    ]);
+
+    const globalStats = statsResult[0];
+    const statusCounts = statusCountsResult.reduce((acc: Record<string, number>, row: any) => {
+      acc[row.status] = parseInt(row.count);
+      return acc;
+    }, {});
+    const total = parseInt(countResult[0].total);
+
     const pages = Math.ceil(total / limit);
 
     // ── Process notes ─────────────────────────────────────────
-    const processedLeads = leads.map(lead => {
+    const processedLeads = leads.map((lead: any) => {
       let notes: any[] = [];
       if (lead.project_notes) {
         try {

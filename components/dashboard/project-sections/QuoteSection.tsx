@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import {
-  Plus, Trash2, X, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, CheckCircle2,
+  Plus, Trash2, X, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, CheckCircle2, Save,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -104,38 +104,47 @@ export default function QuoteSection({
   }, [lead?.file_urls, lead?.before_photos]);
 
   // ── AUTOSAVE — fires after any change, debounced slightly ──
+ const doSave = async (data: any[]) => {
+    const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_quote',
+          quote_data: data,
+          quote_total: totalAmount,
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      if (res.ok) {
+        setAutosaveStatus('saved');
+        setTimeout(() => setAutosaveStatus('idle'), 1500);
+        await onRefresh();
+      } else {
+        setAutosaveStatus('idle');
+        toast.error('Failed to save');
+      }
+    } catch {
+      setAutosaveStatus('idle');
+      toast.error('Failed to save');
+    }
+  };
+
   const persistQuote = (data: any[]) => {
     if (!hasProject) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     setAutosaveStatus('saving');
-    saveTimeoutRef.current = setTimeout(async () => {
-      const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
-      try {
-        const res = await fetch('/api/leads/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: lead.id,
-            action: 'save_quote',
-            quote_data: data,
-            quote_total: totalAmount,
-            user_name: currentUser?.name || 'Unknown',
-            user_email: currentUser?.email || '',
-          }),
-        });
-        if (res.ok) {
-          setAutosaveStatus('saved');
-          setTimeout(() => setAutosaveStatus('idle'), 1500);
-          await onRefresh();
-        } else {
-          setAutosaveStatus('idle');
-          toast.error('Failed to save');
-        }
-      } catch {
-        setAutosaveStatus('idle');
-        toast.error('Failed to save');
-      }
-    }, 500);
+    saveTimeoutRef.current = setTimeout(() => { doSave(data); }, 500);
+  };
+
+  const handleManualSave = () => {
+    if (!hasProject) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    setAutosaveStatus('saving');
+    doSave(quoteData);
   };
 
   const handleLoadTemplate = () => {
@@ -282,7 +291,7 @@ export default function QuoteSection({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             {/* Autosave indicator */}
             {autosaveStatus === 'saving' && (
               <span className="text-[11px] text-slate-400 flex items-center gap-1">
@@ -294,6 +303,15 @@ export default function QuoteSection({
                 <CheckCircle2 className="w-3 h-3" /> Saved
               </span>
             )}
+
+            <button
+              onClick={handleManualSave}
+              disabled={!hasProject || quoteData.length === 0 || autosaveStatus === 'saving'}
+              title="Save now"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Save className="w-3.5 h-3.5" />
+            </button>
 
             <motion.button
               whileTap={{ scale: 0.96 }}
@@ -633,7 +651,7 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ── BOTTOM BAR — total + Send only, no Save/Cancel since autosave handles it ── */}
+    {/* ── BOTTOM BAR — total + Save + Send ── */}
         <div className="md:relative md:rounded-b-xl sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -643,14 +661,24 @@ export default function QuoteSection({
                 {fmt(total)}
               </motion.p>
             </div>
-            <motion.button whileTap={{ scale: 0.97 }}
-              onClick={() => setShowEmailModal(true)}
-              disabled={!hasProject || quoteData.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <Send className="w-3.5 h-3.5" />
-              Send
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleManualSave}
+                disabled={!hasProject || quoteData.length === 0 || autosaveStatus === 'saving'}
+                title="Save now"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Save className="w-3.5 h-3.5" />
+              </button>
+              <motion.button whileTap={{ scale: 0.97 }}
+                onClick={() => setShowEmailModal(true)}
+                disabled={!hasProject || quoteData.length === 0}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Send
+              </motion.button>
+            </div>
           </div>
         </div>
 
