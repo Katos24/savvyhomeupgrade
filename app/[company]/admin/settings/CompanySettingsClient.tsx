@@ -662,10 +662,11 @@ const handleToggleBcc = async () => {
   </div>
 
   <p className="text-sm font-semibold text-gray-900 truncate">
-    {formData.google_review_url
-      ? 'View link'
-      : <span className="text-gray-400 font-normal">Not set</span>}
-  </p>
+  {formData.google_review_url
+    ? formData.google_review_url.replace(/^https?:\/\//, '')
+    : <span className="text-gray-400 font-normal">Not set</span>}
+</p>
+
 </a>
 
 
@@ -698,11 +699,12 @@ const handleToggleBcc = async () => {
     )}
   </div>
 
-  <p className="text-sm font-semibold text-gray-900 truncate">
-    {formData.payment_link_url
-      ? 'View link'
-      : <span className="text-gray-400 font-normal">Not set</span>}
-  </p>
+ <p className="text-sm font-semibold text-gray-900 truncate">
+  {formData.payment_link_url
+    ? formData.payment_link_url.replace(/^https?:\/\//, '')
+    : <span className="text-gray-400 font-normal">Not set</span>}
+</p>
+
 </a>
 
 

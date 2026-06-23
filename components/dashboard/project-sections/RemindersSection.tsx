@@ -142,14 +142,18 @@ export default function RemindersSection({ lead, currentUser, onRefresh, hasProj
 
   return (
     <div className="p-4 space-y-3">
-      {!isEditing && !hasReminder && (
+     {!isEditing && !hasReminder && (
         <div className="text-center py-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
             <Clock className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-600 text-sm mb-4 font-medium">No follow-up reminder set</p>
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              setFollowUpDate('');
+              setFollowUpNotes('');
+              setIsEditing(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             <Calendar className="w-4 h-4" />
@@ -187,11 +191,13 @@ export default function RemindersSection({ lead, currentUser, onRefresh, hasProj
               </div>
               <div className="flex gap-2">
             <button
-  onClick={() => {
+ onClick={() => {
     setIsEditing(true);
-    // FIX: Properly format the date for the input field
-    const dateStr = lead.follow_up_date 
-      ? new Date(lead.follow_up_date).toISOString().split('T')[0] 
+    // Slice the date string directly instead of round-tripping through
+    // Date/toISOString — that conversion shifts by a day depending on
+    // local timezone vs. the stored UTC value.
+    const dateStr = lead.follow_up_date
+      ? String(lead.follow_up_date).split('T')[0]
       : '';
     setFollowUpDate(dateStr);
     setFollowUpNotes(lead.follow_up_notes || '');
