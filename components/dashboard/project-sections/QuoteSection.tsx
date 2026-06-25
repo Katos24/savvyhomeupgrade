@@ -47,6 +47,8 @@ export default function QuoteSection({
   const newRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false); // ← add this
+
 
   // Load category template
   useEffect(() => {
@@ -63,8 +65,8 @@ export default function QuoteSection({
   }, [lead?.category, companySlug]);
 
   // Sync with lead data
-useEffect(() => {
-  if (autosaveStatus === 'saving') return;
+  useEffect(() => {
+  if (isSavingRef.current) return; // ← guard moved here
   setQuoteData(lead?.quote_data || []);
   setTemplateBannerDismissed(false);
 }, [lead?.quote_data]);
@@ -106,32 +108,36 @@ useEffect(() => {
 
   // ── AUTOSAVE — fires after any change, debounced slightly ──
  const doSave = async (data: any[]) => {
-    const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
-    try {
-      const res = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: lead.id,
-          action: 'save_quote',
-          quote_data: data,
-          quote_total: totalAmount,
-          user_name: currentUser?.name || 'Unknown',
-          user_email: currentUser?.email || '',
-        }),
-      });
-      if (res.ok) {
-        setAutosaveStatus('saved');
-        setTimeout(() => setAutosaveStatus('idle'), 1500);
-      } else {
-        setAutosaveStatus('idle');
-        toast.error('Failed to save');
-      }
-    } catch {
+  isSavingRef.current = true; // ← add this
+  const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  try {
+    const res = await fetch('/api/leads/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: lead.id,
+        action: 'save_quote',
+        quote_data: data,
+        quote_total: totalAmount,
+        user_name: currentUser?.name || 'Unknown',
+        user_email: currentUser?.email || '',
+      }),
+    });
+    if (res.ok) {
+      setAutosaveStatus('saved');
+      setTimeout(() => setAutosaveStatus('idle'), 1500);
+      await onRefresh();
+    } else {
       setAutosaveStatus('idle');
       toast.error('Failed to save');
     }
-  };
+  } catch {
+    setAutosaveStatus('idle');
+    toast.error('Failed to save');
+  } finally {
+    isSavingRef.current = false; // ← add this, releases the guard only after refresh truly finishes
+  }
+};
 
   const persistQuote = (data: any[]) => {
     if (!hasProject) return;
