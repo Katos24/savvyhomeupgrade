@@ -224,8 +224,7 @@ export default function PaymentUpdate({ lead, company, currentUser, onRefresh, h
             </div>
           )}
         </div>
-
-        {/* PROGRESS BAR */}
+{/* PROGRESS BAR */}
         {total > 0 && (
           <div className="px-4 py-3 border-b border-slate-50">
             <div className="flex justify-between items-center mb-2">
@@ -270,6 +269,23 @@ export default function PaymentUpdate({ lead, company, currentUser, onRefresh, h
             </div>
           </div>
         )}
+
+        {lead?.payment_method === 'stripe' && isPaid && (
+  <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+    <p className="text-[10.5px] text-slate-400">
+      Need to issue a refund? Manage this payment in your{' '}
+      <a
+        href="https://dashboard.stripe.com/login"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-blue-600 hover:underline"
+      >
+        Stripe dashboard
+      </a>.
+    </p>
+  </div>
+)}
+
 
         {/* FORM */}
         <div className="p-4 space-y-3">

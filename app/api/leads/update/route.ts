@@ -1073,16 +1073,22 @@ else if (action === 'send_invoice_to_customer') {
             }],
             customer_email: lead.email || undefined,
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${lead.project_id}`,
-cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lead.company_slug}/dashboard?payment=cancelled`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lead.company_slug}/dashboard?payment=cancelled`,
             metadata: { projectId: lead.project_id.toString() },
           },
           { stripeAccount: lead.stripe_connect_account_id }
         );
         checkoutUrl = newSession.url;
         await sql`UPDATE projects SET stripe_checkout_session_id = ${newSession.id} WHERE id = ${lead.project_id}`;
-      } catch (stripeErr) {
-        console.error('Failed to create Stripe Checkout session:', stripeErr);
-        // fall through — email will just send without a pay-now button
+      } catch (stripeErr: any) {
+        console.error('Failed to create Stripe Checkout session:', stripeErr.message);
+        if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
+          return NextResponse.json({
+            success: false,
+            error: 'Your Stripe account needs attention before you can send payment links. Check your Stripe dashboard or reconnect in Settings.',
+          }, { status: 400 });
+        }
+        // other errors: fall through — email will just send without a pay-now button
       }
     }
 

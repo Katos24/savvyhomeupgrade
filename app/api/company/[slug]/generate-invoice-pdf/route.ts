@@ -108,33 +108,38 @@ export async function GET(
         }
       }
 
-      if (!checkoutUrl) {
-        const newSession = await stripe.checkout.sessions.create(
-          {
-            mode: 'payment',
-            payment_method_types: ['card'],
-            line_items: [{
-              price_data: {
-                currency: 'usd',
-                product_data: { name: `Invoice for ${project.customer_name}` },
-                unit_amount: Math.round(parseFloat(project.quote_total) * 100),
-              },
-              quantity: 1,
-            }],
-            customer_email: project.customer_email || undefined,
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${project.id}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard?payment=cancelled`,
-            metadata: { projectId: project.id.toString(), companySlug: slug },
-          },
-          { stripeAccount: company.stripe_connect_account_id }
-        );
-        checkoutUrl = newSession.url;
+    if (!checkoutUrl) {
+        try {
+          const newSession = await stripe.checkout.sessions.create(
+            {
+              mode: 'payment',
+              payment_method_types: ['card'],
+              line_items: [{
+                price_data: {
+                  currency: 'usd',
+                  product_data: { name: `Invoice for ${project.customer_name}` },
+                  unit_amount: Math.round(parseFloat(project.quote_total) * 100),
+                },
+                quantity: 1,
+              }],
+              customer_email: project.customer_email || undefined,
+              success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${project.id}`,
+              cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard?payment=cancelled`,
+              metadata: { projectId: project.id.toString(), companySlug: slug },
+            },
+            { stripeAccount: company.stripe_connect_account_id }
+          );
+          checkoutUrl = newSession.url;
 
-        await sql`
-          UPDATE projects
-          SET stripe_checkout_session_id = ${newSession.id}
-          WHERE id = ${project.id}
-        `;
+          await sql`
+            UPDATE projects
+            SET stripe_checkout_session_id = ${newSession.id}
+            WHERE id = ${project.id}
+          `;
+        } catch (stripeErr: any) {
+          console.error('Failed to create Stripe Checkout session for PDF:', stripeErr.message);
+          // fall through — PDF will just show the fallback payment_link_url, if any, instead of a Stripe link
+        }
       }
 
       if (checkoutUrl) {
@@ -142,7 +147,7 @@ export async function GET(
         paymentLinkType = 'stripe';
       }
     }
-
+    
     const customerAddress = [project.address_line_1, project.city, project.zip_code].filter(Boolean).join(', ');
 
     // Generate PDF
