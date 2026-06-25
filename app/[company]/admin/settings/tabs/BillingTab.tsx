@@ -11,6 +11,7 @@ import { PLAN_CONFIG, can, type PlanTier } from '@/lib/permissions';
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'denied'>('idle');
+  const [accountStatus, setAccountStatus] = useState<'checking' | 'active' | 'pending' | null>(null);
   const isConnected = !!company.stripe_connect_onboarded;
 
   useEffect(() => {
@@ -20,6 +21,15 @@ function StripeConnectSection({ company }: { company: any }) {
       setStatus(sc as any);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    setAccountStatus('checking');
+    fetch(`/api/company/${company.slug}/stripe/connect-status`)
+      .then(res => res.json())
+      .then(data => setAccountStatus(data.chargesEnabled ? 'active' : 'pending'))
+      .catch(() => setAccountStatus(null));
+  }, [isConnected, company.slug]);
 
   async function handleConnect() {
     setLoading(true);
@@ -68,8 +78,34 @@ function StripeConnectSection({ company }: { company: any }) {
       )}
 
       {isConnected ? (
-        <div className="mt-4 flex items-center gap-2 text-emerald-700 font-bold text-sm">
-          <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
+        <div className="mt-4 space-y-3">
+          {accountStatus === 'pending' && (
+            <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Your Stripe account needs more info before you can receive payouts. Manage it on Stripe to finish setup.</span>
+            </div>
+          )}
+          {accountStatus === 'active' && (
+            <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+              <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
+            </div>
+          )}
+          {accountStatus === 'checking' && (
+            <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
+            </div>
+          )}
+
+          <a
+  href="https://dashboard.stripe.com"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all active:scale-95"
+>
+  Manage on Stripe
+  <ArrowRight className="w-3.5 h-3.5" />
+</a>
+
         </div>
       ) : (
         <button
