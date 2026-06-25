@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import {
-  Plus, Trash2, X, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, CheckCircle2, Save,
+  Plus, Trash2, X, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, CheckCircle2, Save, ChevronDown
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -15,6 +15,7 @@ type QuoteSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const fmt = (n: number) =>
@@ -29,9 +30,10 @@ export default function QuoteSection({
   onRefresh,
   hasProject,
   companySlug,
+  onDirtyChange,
 }: QuoteSectionProps) {
   const [saving, setSaving] = useState(false);
-  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isDirty, setIsDirty] = useState(false);
   const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
   const [showAI, setShowAI] = useState(false);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
@@ -43,12 +45,10 @@ export default function QuoteSection({
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
+  const [showSendMenu, setShowSendMenu] = useState(false);
 
   const newRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isSavingRef = useRef(false); // ← add this
-
 
   // Load category template
   useEffect(() => {
@@ -64,12 +64,29 @@ export default function QuoteSection({
       .catch(() => {});
   }, [lead?.category, companySlug]);
 
-  // Sync with lead data
+  // Sync with lead data — only when not mid-edit, so we don't clobber unsaved work
   useEffect(() => {
-  if (isSavingRef.current) return; // ← guard moved here
-  setQuoteData(lead?.quote_data || []);
-  setTemplateBannerDismissed(false);
-}, [lead?.quote_data]);
+    if (isDirty) return;
+    setQuoteData(lead?.quote_data || []);
+    setTemplateBannerDismissed(false);
+  }, [lead?.quote_data]);
+
+  // Notify parent of dirty state (for tab-switch warnings, etc.)
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty]);
+
+  // Warn before closing/refreshing the tab if there are unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   const fetchOutbox = async () => {
     if (!lead?.id || !companySlug) return;
@@ -106,50 +123,39 @@ export default function QuoteSection({
     return [...parse(lead?.file_urls), ...parse(lead?.before_photos)];
   }, [lead?.file_urls, lead?.before_photos]);
 
-  // ── AUTOSAVE — fires after any change, debounced slightly ──
- const doSave = async (data: any[]) => {
-  isSavingRef.current = true; // ← add this
-  const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
-  try {
-    const res = await fetch('/api/leads/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: lead.id,
-        action: 'save_quote',
-        quote_data: data,
-        quote_total: totalAmount,
-        user_name: currentUser?.name || 'Unknown',
-        user_email: currentUser?.email || '',
-      }),
-    });
-    if (res.ok) {
-      setAutosaveStatus('saved');
-      setTimeout(() => setAutosaveStatus('idle'), 1500);
-      await onRefresh();
-    } else {
-      setAutosaveStatus('idle');
+  // ── EXPLICIT SAVE ONLY — no autosave, no debounce ──
+  const doSave = async (data: any[]) => {
+    setSaving(true);
+    const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_quote',
+          quote_data: data,
+          quote_total: totalAmount,
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      if (res.ok) {
+        toast.success('Quote saved');
+        setIsDirty(false);
+        await onRefresh();
+      } else {
+        toast.error('Failed to save');
+      }
+    } catch {
       toast.error('Failed to save');
+    } finally {
+      setSaving(false);
     }
-  } catch {
-    setAutosaveStatus('idle');
-    toast.error('Failed to save');
-  } finally {
-    isSavingRef.current = false; // ← add this, releases the guard only after refresh truly finishes
-  }
-};
-
-  const persistQuote = (data: any[]) => {
-    if (!hasProject) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    setAutosaveStatus('saving');
-    saveTimeoutRef.current = setTimeout(() => { doSave(data); }, 500);
   };
 
   const handleManualSave = () => {
     if (!hasProject) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    setAutosaveStatus('saving');
     doSave(quoteData);
   };
 
@@ -157,8 +163,8 @@ export default function QuoteSection({
     const items = categoryTemplate.items.map((item: any, i: number) => ({ ...item, id: Date.now() + i }));
     setQuoteData(items);
     setTemplateBannerDismissed(true);
-    persistQuote(items);
-    toast.success('Template loaded');
+    setIsDirty(true);
+    toast.success('Template loaded — remember to save');
   };
 
   const handleAddItems = (items: any[]) => {
@@ -167,7 +173,7 @@ export default function QuoteSection({
     } else {
       setQuoteData(items);
       setShowAI(false);
-      persistQuote(items);
+      setIsDirty(true);
     }
   };
 
@@ -186,22 +192,20 @@ export default function QuoteSection({
       return next;
     });
     setQuoteData(updated);
-  };
-
-  const commitRow = () => {
-    persistQuote(quoteData);
+    setIsDirty(true);
   };
 
   const handleRemoveRow = (id: number) => {
     const updated = quoteData.filter((item: any) => item.id !== id);
     setQuoteData(updated);
-    persistQuote(updated);
+    setIsDirty(true);
   };
 
   const handleAddRow = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
     const updated = [...quoteData, newItem];
     setQuoteData(updated);
+    setIsDirty(true);
     return newItem;
   };
 
@@ -217,7 +221,7 @@ export default function QuoteSection({
     const updated = quoteData.map((item: any) => (item.id === editingItem.id ? editingItem : item));
     setQuoteData(updated);
     setEditingItem(null);
-    persistQuote(updated);
+    setIsDirty(true);
   };
 
   const total = quoteData.reduce((s: number, i: any) => s + (i.amount || 0), 0);
@@ -298,25 +302,20 @@ export default function QuoteSection({
           </div>
 
         <div className="flex items-center gap-2">
-            {/* Autosave indicator */}
-            {autosaveStatus === 'saving' && (
-              <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> Saving
-              </span>
-            )}
-            {autosaveStatus === 'saved' && (
-              <span className="text-[11px] text-emerald-500 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Saved
+            {/* Unsaved changes indicator */}
+            {isDirty && (
+              <span className="text-[11px] text-amber-500 font-medium flex items-center gap-1">
+                Unsaved changes
               </span>
             )}
 
             <button
               onClick={handleManualSave}
-              disabled={!hasProject || quoteData.length === 0 || autosaveStatus === 'saving'}
+              disabled={!hasProject || quoteData.length === 0 || saving}
               title="Save now"
               className="flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <Save className="w-3.5 h-3.5" />
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             </button>
 
             <motion.button
@@ -372,107 +371,112 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ── DESKTOP TABLE — every cell tap-to-edit, no global edit mode ── */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Line item</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Unit price</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-24">Qty</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400 w-28">Amount</th>
-                <th className="w-9" />
+       {/* ── DESKTOP TABLE — every cell tap-to-edit, no global edit mode ── */}
+<div className="hidden md:block overflow-x-auto">
+  <table className="w-full border-collapse text-sm table-fixed">
+    <colgroup>
+      <col />
+      <col className="w-24" />
+      <col className="w-16" />
+      <col className="w-24" />
+      <col className="w-8" />
+    </colgroup>
+    <thead>
+      <tr className="border-b border-gray-100">
+        <th className="text-left px-4 py-2 text-xs font-medium text-gray-400">Line item</th>
+        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Unit price</th>
+        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Qty</th>
+        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Amount</th>
+        <th />
+      </tr>
+    </thead>
+    <tbody>
+      {quoteData.length === 0 ? (
+        <tr>
+          <td colSpan={5}>
+            <button
+              onClick={handleAddRow}
+              className="w-full py-14 flex flex-col items-center justify-center gap-3 group"
+            >
+              <div className="w-11 h-11 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all group-hover:scale-105">
+                <Plus className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs font-medium text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
+            </button>
+          </td>
+        </tr>
+      ) : (
+        <>
+          {quoteData.map((item: any, idx: number) => {
+            const isNew = item.id === lastAddedId && !item.description;
+            return (
+              <tr
+                key={item.id}
+                ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+                className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors group ${
+                  idx % 2 === 1 ? 'bg-gray-50/50' : ''
+                }`}
+              >
+                <td className="px-4 py-1.5">
+                  <input
+                    ref={isNew ? newRowInputRef : undefined}
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                    placeholder="Item description…"
+                    className="w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 bg-transparent rounded-md px-2 py-1 -mx-2 border border-transparent focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="flex items-center justify-end gap-0.5 bg-white/60 border border-gray-200 rounded-md px-1.5 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100">
+                    <span className="text-xs text-gray-400">$</span>
+                    <input
+                      type="number"
+                      value={item.unitPrice || ''}
+                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                      className={`w-full outline-none text-sm text-right text-gray-900 bg-transparent py-1 ${noSpinners}`}
+                    />
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="number"
+                    value={item.quantity || ''}
+                    onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                    className={`w-full outline-none text-sm text-right text-gray-900 bg-white/60 border border-gray-200 rounded-md px-2 py-1 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
+                  />
+                </td>
+                <td className="px-4 py-1.5 text-right text-sm font-semibold text-gray-900 tabular-nums">
+                  ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td className="pr-2 py-1.5">
+                  <button
+                    onClick={() => handleRemoveRow(item.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-md transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {quoteData.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <button
-                      onClick={handleAddRow}
-                      className="w-full py-14 flex flex-col items-center justify-center gap-3 group"
-                    >
-                      <div className="w-11 h-11 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all group-hover:scale-105">
-                        <Plus className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-xs font-medium text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                <>
-                  {quoteData.map((item: any) => {
-                    const isNew = item.id === lastAddedId && !item.description;
-                    return (
-                      <tr
-                        key={item.id}
-                        ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                        className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors group"
-                      >
-                        <td className="px-5 py-2.5">
-                          <input
-                            ref={isNew ? newRowInputRef : undefined}
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                            onBlur={commitRow}
-                            placeholder="Item description…"
-                            className="w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 bg-transparent rounded-lg px-2 py-1 -mx-2 focus:bg-white focus:border focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all"
-                          />
-                        </td>
-                        <td className="px-5 py-2.5">
-                          <div className="flex items-center justify-end gap-0.5">
-                            <span className="text-xs text-gray-400">$</span>
-                            <input
-                              type="number"
-                              value={item.unitPrice || ''}
-                              onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                              onBlur={commitRow}
-                              className={`w-20 outline-none text-sm text-right text-gray-900 bg-transparent rounded-lg px-1.5 py-1 focus:bg-white focus:border focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-5 py-2.5">
-                          <input
-                            type="number"
-                            value={item.quantity || ''}
-                            onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                            onBlur={commitRow}
-                            className={`w-full outline-none text-sm text-right text-gray-900 bg-transparent rounded-lg px-2 py-1 focus:bg-white focus:border focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
-                          />
-                        </td>
-                        <td className="px-5 py-2.5 text-right text-sm font-medium text-gray-900">
-                          ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="pr-3 py-2.5">
-                          <button
-                            onClick={() => handleRemoveRow(item.id)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  <tr>
-                    <td colSpan={5} className="px-5 py-2.5">
-                      <button
-                        onClick={handleAddRow}
-                        className="flex items-center gap-2 text-xs font-medium text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Plus className="w-3 h-3" />
-                        </div>
-                        Add line item
-                      </button>
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
+            );
+          })}
+          <tr>
+  <td colSpan={5} className="p-0">
+    <button
+      onClick={handleAddRow}
+      className="w-full px-4 py-2.5 flex items-center gap-2 text-xs font-medium text-blue-500 bg-blue-50/40 hover:bg-blue-50 hover:text-blue-700 border-t border-dashed border-blue-200 transition-colors"
+    >
+      <Plus className="w-3.5 h-3.5" />
+      Add line item
+    </button>
+  </td>
+</tr>
+        </>
+      )}
+    </tbody>
+  </table>
+</div>
+
 
         {/* ── MOBILE CARDS — tap any card to edit in bottom sheet ── */}
         <div className="md:hidden">
@@ -487,15 +491,15 @@ export default function QuoteSection({
               <span className="text-xs font-medium text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
             </button>
           ) : (
-            <div className="p-3 flex flex-col gap-2">
-              {quoteData.map((item: any) => {
+            <div className="p-3 flex flex-col">
+              {quoteData.map((item: any, index: number) => {
                 const isNew = item.id === lastAddedId && !item.description;
                 return (
                   <div
                     key={item.id}
                     ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
                     onClick={() => setEditingItem(item)}
-                    className="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer active:scale-[0.98] active:bg-gray-50 transition-all"
+                    className={`bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer active:scale-[0.98] active:bg-gray-50 transition-all ${index > 0 ? 'mt-2' : ''}`}
                   >
                     <p className="text-sm font-medium text-gray-900 mb-3">
                       {item.description || <span className="text-gray-300 font-normal">No description</span>}
@@ -548,7 +552,7 @@ export default function QuoteSection({
           )}
         </div>
 
-        {/* ── BOTTOM SHEET EDITOR (mobile) — autosaves on Done ── */}
+        {/* ── BOTTOM SHEET EDITOR (mobile) — local only, save via Save button ── */}
         <AnimatePresence>
           {editingItem && (
             <>
@@ -657,7 +661,7 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-    {/* ── BOTTOM BAR — total + Save + Send ── */}
+        {/* ── BOTTOM BAR — total + Save / Send split button ── */}
         <div className="md:relative md:rounded-b-xl sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -666,24 +670,33 @@ export default function QuoteSection({
                 className="text-base font-semibold text-white whitespace-nowrap">
                 {fmt(total)}
               </motion.p>
+              {isDirty && (
+                <span className="text-[11px] text-amber-400 font-medium ml-1">
+                  Unsaved
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Split Button Container */}
+            <div className="flex items-center bg-slate-800 rounded-lg p-1">
               <button
                 onClick={handleManualSave}
-                disabled={!hasProject || quoteData.length === 0 || autosaveStatus === 'saving'}
-                title="Save now"
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={!hasProject || quoteData.length === 0 || saving}
+                className="flex items-center gap-2 pl-3 pr-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700 rounded-md disabled:opacity-30"
               >
-                <Save className="w-3.5 h-3.5" />
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save
               </button>
-              <motion.button whileTap={{ scale: 0.97 }}
+
+              <div className="w-px h-4 bg-slate-700 mx-1" />
+
+              <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || quoteData.length === 0}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center justify-center w-8 h-8 rounded-md text-white hover:bg-slate-700 transition disabled:opacity-30"
               >
-                <Send className="w-3.5 h-3.5" />
-                Send
-              </motion.button>
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -820,7 +833,7 @@ export default function QuoteSection({
                     setQuoteData(updated);
                     setPendingAiItems(null);
                     setShowAI(false);
-                    persistQuote(updated);
+                    setIsDirty(true);
                   }}
                   className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-medium text-sm hover:bg-slate-800 transition"
                 >
@@ -831,7 +844,7 @@ export default function QuoteSection({
                     setQuoteData(pendingAiItems);
                     setPendingAiItems(null);
                     setShowAI(false);
-                    persistQuote(pendingAiItems);
+                    setIsDirty(true);
                   }}
                   className="w-full py-3.5 bg-white border border-slate-200 text-rose-500 rounded-xl font-medium text-sm hover:bg-rose-50 transition"
                 >
