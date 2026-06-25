@@ -46,7 +46,9 @@ export const FEATURE_PLAN_MAP = {
   customize_form:           'basic',   // branding, field toggles
   customer_video_upload:    'basic',   // customer attaches photos/video on form
   custom_form_questions:    'basic',   // add your own questions to form
-  send_invoice_email: 'pro',
+  send_invoice_email: 'basic',
+  stripe_connect: 'basic',
+
 
 
   // ── Lead board ─────────────────────────────────────────────
@@ -68,7 +70,7 @@ export const FEATURE_PLAN_MAP = {
   quote_templates:          'basic',   // custom line item templates
   send_quote_email:         'pro',     // one-click send requires pro
   send_schedule_email:      'pro',
-  send_payment_reminder:    'pro',
+  send_payment_reminder:    'basic',
 
   // ── Outbox & email templates ───────────────────────────────
   outbox:                   'pro',
@@ -143,7 +145,8 @@ export const PLAN_CONFIG = {
       'Build professional quote templates',
       'Job categories & task templates',
       'Photo & doc uploads on cards',
-      'Payment status tracking',
+      'Accept online payments (Stripe)',
+      'Send invoices & payment reminders',
       'Custom pipeline stages',
       'Job scheduling & quote builder',
       'Unlimited team members',
@@ -157,7 +160,7 @@ export const PLAN_CONFIG = {
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
     features: [
       'Everything in Basic',
-      'One-click emails (quote, schedule, reminder)',
+      'One-click quote & schedule emails',
       'Outbox — full sent email history',
       'Custom email templates',
        'Daily digest email',
@@ -288,7 +291,7 @@ outbox: {
   },
   send_payment_reminder: {
     title: 'One-click payment reminder',
-    description: 'Send payment reminders to customers in one click.',
+    description: 'Send payment reminders to customers in one click — included on Basic.',
   },
   email_templates: {
     title: 'Custom email templates',
@@ -312,7 +315,7 @@ outbox: {
   },
   send_invoice_email: {
   title: 'Send invoices directly to customers',
-  description: 'Email a professional invoice to your customer in one click. Available on Pro.',
+  description: 'Email a professional invoice to your customer and let them pay online with a card.',
 },
   ai_chat: {
     title: 'AI assistant',

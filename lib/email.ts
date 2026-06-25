@@ -620,7 +620,6 @@ export async function sendQuoteToCustomer({
   }
 }
 
-
 export async function sendInvoiceToCustomer({
   customerEmail,
   customerName,
@@ -633,7 +632,9 @@ export async function sendInvoiceToCustomer({
   dueDate,
   notes,
   contractorEmail,
-    amountPaid,
+  amountPaid,
+  paymentLinkUrl,
+  paymentLinkType,
 }: {
   customerEmail: string;
   customerName: string;
@@ -645,8 +646,10 @@ export async function sendInvoiceToCustomer({
   invoiceItems: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
   dueDate?: string;
   notes?: string;
-contractorEmail?: string;
+  contractorEmail?: string;
   amountPaid?: number;
+  paymentLinkUrl?: string;
+  paymentLinkType?: string;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -656,35 +659,39 @@ contractorEmail?: string;
 
     const accentColor = company.email_brand_color_1 || '#667eea';
 
+    // Prefer the explicitly passed-in link (e.g. a Stripe Checkout session)
+    // over the company's static payment_link_url
+    const effectivePaymentUrl = paymentLinkUrl || company.payment_link_url;
+    const effectivePaymentType = paymentLinkType || company.payment_link_type;
+
     // ── STEP 1: Generate PDF buffer ───────────────────────
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
     const pdfBuffer = await generateInvoicePDFBuffer({
-  invoiceNumber,
-  invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-  dueDate,
-  companyName: company.name || companyName,
-  companyPhone: company.phone || companyPhone,
-  companyEmail: company.email || undefined,
-  companyLogoUrl: company.logo_url || undefined,
-  customerName,
-  customerEmail,
-  customerPhone: undefined,
-  customerAddress: undefined,
-  lineItems: invoiceItems.map((item: any) => ({
-    description: item.description || '',
-    quantity: item.quantity ?? 1,
-    unitPrice: item.unitPrice ?? undefined,
-    amount: item.amount ?? 0,
-  })),
- total: invoiceTotal,
-  notes,
-  amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
-  paymentLinkUrl: company.payment_link_url || undefined,
-  paymentLinkType: company.payment_link_type || undefined,
-  brandColor1: company.email_brand_color_1 || undefined,
+      invoiceNumber,
+      invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      dueDate,
+      companyName: company.name || companyName,
+      companyPhone: company.phone || companyPhone,
+      companyEmail: company.email || undefined,
+      companyLogoUrl: company.logo_url || undefined,
+      customerName,
+      customerEmail,
+      customerPhone: undefined,
+      customerAddress: undefined,
+      lineItems: invoiceItems.map((item: any) => ({
+        description: item.description || '',
+        quantity: item.quantity ?? 1,
+        unitPrice: item.unitPrice ?? undefined,
+        amount: item.amount ?? 0,
+      })),
+      total: invoiceTotal,
+      notes,
+      amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
+      paymentLinkUrl: effectivePaymentUrl || undefined,
+      paymentLinkType: effectivePaymentType || undefined,
+      brandColor1: company.email_brand_color_1 || undefined,
       brandColor2: company.email_brand_color_2 || undefined,
-});
-    
+    });
 
     // ── STEP 2: Upload PDF to Vercel Blob ─────────────────
     const { put } = await import('@vercel/blob');
@@ -696,38 +703,38 @@ contractorEmail?: string;
     const pdfUrl = blob.url;
 
     // ── STEP 3: Build email HTML sections ─────────────────
-   const paymentMethodLabels: Record<string, string> = {
-  venmo: 'Pay with Venmo',
-  zelle: 'Pay with Zelle',
-  cashapp: 'Pay with Cash App',
-  paypal: 'Pay with PayPal',
-  other: 'Pay Now',
-};
+    const paymentMethodLabels: Record<string, string> = {
+      venmo: 'Pay with Venmo',
+      zelle: 'Pay with Zelle',
+      cashapp: 'Pay with Cash App',
+      paypal: 'Pay with PayPal',
+      stripe: 'Pay with Card',
+      other: 'Pay Now',
+    };
 
-const rawPaymentUrl = company.payment_link_url || '';
-const paymentUrl = rawPaymentUrl.startsWith('http') ? rawPaymentUrl : `https://${rawPaymentUrl}`;
-const payNowButtonHtml = rawPaymentUrl ? `
-  <div style="margin-bottom: 16px; text-align: center;">
-    <a href="${paymentUrl}"
-      style="display: inline-block; background-color: ${accentColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-      ${paymentMethodLabels[company.payment_link_type] || 'Pay Now'} — ${fmt(invoiceTotal)}
-    </a>
-  </div>
-` : '';
+    const rawPaymentUrl = effectivePaymentUrl || '';
+    const paymentUrl = rawPaymentUrl.startsWith('http') ? rawPaymentUrl : `https://${rawPaymentUrl}`;
+    const payNowButtonHtml = rawPaymentUrl ? `
+      <div style="margin-bottom: 16px; text-align: center;">
+        <a href="${paymentUrl}"
+          style="display: inline-block; background-color: ${accentColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          ${paymentMethodLabels[effectivePaymentType || 'other'] || 'Pay Now'} — ${fmt(invoiceTotal)}
+        </a>
+      </div>
+    ` : '';
 
-
-const downloadButtonHtml = `
-  <div style="margin-bottom: 28px; text-align: center;">
-    ${payNowButtonHtml}
-    <a href="${pdfUrl}"
-      style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-      Download Invoice PDF
-    </a>
-    <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
-      ${invoiceNumber} · ${fmt(invoiceTotal)}
-    </p>
-  </div>
-`;
+    const downloadButtonHtml = `
+      <div style="margin-bottom: 28px; text-align: center;">
+        ${payNowButtonHtml}
+        <a href="${pdfUrl}"
+          style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+          Download Invoice PDF
+        </a>
+        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
+          ${invoiceNumber} · ${fmt(invoiceTotal)}
+        </p>
+      </div>
+    `;
 
     const dueDateHtml = dueDate ? `
       <div style="margin-bottom: 24px; padding: 16px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 10px; text-align: center;">
@@ -762,7 +769,8 @@ const downloadButtonHtml = `
         <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">${notes}</p>
       </div>
     ` : '';
-// ── STEP 4: Build full email ──────────────────────────
+
+    // ── STEP 4: Build full email ──────────────────────────
     const emailTemplates = await getCompanyEmailTemplates(companyId);
     const invoiceTemplate = emailTemplates?.invoice;
     const { subject, body: templateBody } = renderEmailTemplate(
@@ -797,23 +805,23 @@ const downloadButtonHtml = `
     });
 
     // ── STEP 5: Send email with PDF attached ──────────────
-   const emailResult = await resend.emails.send({
-  from: `${company.name || companyName} <hello@lead2project.com>`,
-  to: customerEmail,
-  replyTo: company.email || undefined,
-  bcc: company.bcc_sender_on_email && contractorEmail ? contractorEmail : undefined,
-  subject,
-  html,
-  attachments: [
-    {
-      filename: `Invoice-${invoiceNumber}.pdf`,
-      content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
-      contentType: 'application/pdf',
-    },
-  ],
-});
+    const emailResult = await resend.emails.send({
+      from: `${company.name || companyName} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      bcc: company.bcc_sender_on_email && contractorEmail ? contractorEmail : undefined,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Invoice-${invoiceNumber}.pdf`,
+          content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
+          contentType: 'application/pdf',
+        },
+      ],
+    });
 
-   console.log('Invoice email sent to customer:', customerEmail);
+    console.log('Invoice email sent to customer:', customerEmail);
     return { subject, html, resendId: emailResult?.data?.id, pdfUrl };
 
   } catch (error) {
@@ -821,7 +829,6 @@ const downloadButtonHtml = `
     throw error;
   }
 }
-
 
 export async function sendScheduleConfirmation({
   customerEmail,
@@ -1077,6 +1084,8 @@ export async function sendPaymentFailedEmail({
     throw error;
   }
 }
+
+
 
 export async function sendSubscriptionActivatedEmail({
   companyEmail,
@@ -2604,4 +2613,116 @@ export async function sendContractorReferredWelcomeEmail({
     subject: `You're set up on Lead2Project — ${bookkeeperName} can now access your financials`,
     html,
   });
+}
+
+
+
+
+// Sends a payment receipt to the customer after a successful payment. This is triggered by the webhook after the DB update, so we don't want to throw an error if it fails.
+export async function sendPaymentReceiptToCustomer({
+  customerEmail,
+  customerName,
+  companyName,
+  companyId,
+  amountPaid,
+  invoiceNumber,
+}: {
+  customerEmail: string;
+  customerName: string;
+  companyName: string;
+  companyId: number;
+  amountPaid: number;
+  invoiceNumber?: string;
+}) {
+  try {
+    const company = await getCompanyDetails(companyId);
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          Hi ${customerName}, this confirms your payment to ${company.name || companyName} was successful.
+        </p>
+        <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
+          <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;">Amount paid</p>
+          <p style="margin: 4px 0 0; color: #0f172a; font-size: 28px; font-weight: 800;">${fmt(amountPaid)}</p>
+          ${invoiceNumber ? `<p style="margin: 4px 0 0; color: #94a3b8; font-size: 12px;">${invoiceNumber}</p>` : ''}
+        </div>
+      `,
+      phone: company.phone,
+      website: company.website,
+      preheader: `Payment of ${fmt(amountPaid)} received — thank you!`,
+    });
+
+    await resend.emails.send({
+      from: `${company.name || companyName} <hello@lead2project.com>`,
+      to: customerEmail,
+      replyTo: company.email || undefined,
+      subject: `Payment received — ${fmt(amountPaid)}`,
+      html,
+    });
+
+    console.log('Payment receipt sent to customer:', customerEmail);
+  } catch (error) {
+    console.error('Failed to send payment receipt to customer:', error);
+    // don't throw — this shouldn't block the webhook's DB update
+  }
+}
+
+
+// Sends a payment notification to the contractor after a successful payment. This is triggered by the webhook after the DB update, so we don't want to throw an error if it fails.
+export async function sendPaymentNotificationToContractor({
+  contractorEmail,
+  customerName,
+  companyName,
+  companyId,
+  amountPaid,
+  dashboardUrl,
+}: {
+  contractorEmail: string;
+  customerName: string;
+  companyName: string;
+  companyId: number;
+  amountPaid: number;
+  dashboardUrl: string;
+}) {
+  try {
+    const company = await getCompanyDetails(companyId);
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          ${customerName} just paid <strong>${fmt(amountPaid)}</strong> online.
+        </p>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #111827; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px;">
+            View in dashboard
+          </a>
+        </div>
+      `,
+      preheader: `${customerName} paid ${fmt(amountPaid)}`,
+    });
+
+    await resend.emails.send({
+      from: `Lead2Project <hello@lead2project.com>`,
+      to: contractorEmail,
+      subject: `Payment received — ${fmt(amountPaid)} from ${customerName}`,
+      html,
+    });
+
+    console.log('Payment notification sent to contractor:', contractorEmail);
+  } catch (error) {
+    console.error('Failed to send payment notification to contractor:', error);
+  }
 }

@@ -1,28 +1,107 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard, Calendar, CheckCircle, AlertCircle, Sparkles,
-  Zap, ArrowRight, Lock, TrendingUp, Clock, X
+  Zap, ArrowRight, Lock, TrendingUp, Clock, X, Loader2
 } from 'lucide-react';
-import { PLAN_CONFIG } from '@/lib/permissions';
+import { PLAN_CONFIG, can, type PlanTier } from '@/lib/permissions';
+
+function StripeConnectSection({ company }: { company: any }) {
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'denied'>('idle');
+  const isConnected = !!company.stripe_connect_onboarded;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sc = params.get('stripe_connect');
+    if (sc === 'success' || sc === 'error' || sc === 'denied') {
+      setStatus(sc as any);
+    }
+  }, []);
+
+  async function handleConnect() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/stripe/connect-onboard`);
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setLoading(false);
+      }
+    } catch {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="p-6 rounded-[2.5rem] border border-slate-200 bg-white"
+    >
+      <div className="flex items-center gap-4 mb-1">
+        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
+          <CreditCard className="w-6 h-6 text-indigo-600" />
+        </div>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Payments</p>
+          <p className="text-xl font-black text-slate-900">Stripe</p>
+        </div>
+      </div>
+
+      {status === 'success' && (
+        <p className="mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
+          Stripe connected successfully.
+        </p>
+      )}
+      {status === 'error' && (
+        <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
+          Something went wrong connecting Stripe. Please try again.
+        </p>
+      )}
+      {status === 'denied' && (
+        <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+          Stripe connection was cancelled.
+        </p>
+      )}
+
+      {isConnected ? (
+        <div className="mt-4 flex items-center gap-2 text-emerald-700 font-bold text-sm">
+          <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
+        </div>
+      ) : (
+        <button
+          onClick={handleConnect}
+          disabled={loading}
+          className="mt-4 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {loading ? 'Redirecting...' : 'Connect Stripe to accept payments'}
+        </button>
+      )}
+    </motion.div>
+  );
+}
 
 export default function BillingTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [loading, setLoading] = useState(false);
   const [changingPlan, setChangingPlan] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Modal State
-  const [confirmModal, setConfirmModal] = useState<{ 
-    isOpen: boolean; 
-    plan: 'basic' | 'pro' | null 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    plan: 'basic' | 'pro' | null
   }>({ isOpen: false, plan: null });
 
-  const [activePlan, setActivePlan] = useState<'free' | 'basic' | 'pro'>(
+ const [activePlan, setActivePlan] = useState<'free' | 'basic' | 'pro'>(
     company.plan_tier === 'pro' ? 'pro' : company.plan_tier === 'basic' ? 'basic' : 'free'
   );
+
+  const planTier = (company.plan_tier || 'free') as PlanTier;
 
   const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
     company.pending_downgrade_at
@@ -114,18 +193,18 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
     active: { icon: CheckCircle, text: 'Active', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
     past_due: { icon: AlertCircle, text: 'Past Due', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
- }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || (
-    company.plan_tier === 'free' 
+  }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || (
+    company.plan_tier === 'free'
       ? { icon: Zap, text: 'Free Plan', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' }
       : { icon: AlertCircle, text: 'Inactive', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' }
   );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
-      
+
       {/* ── STATUS CARDS ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className={`md:col-span-2 p-6 rounded-[2.5rem] border ${statusInfo.border} ${statusInfo.bg} flex items-center justify-between`}
         >
@@ -149,7 +228,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           )}
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="p-6 rounded-[2.5rem] border border-slate-200 bg-white flex flex-col justify-center"
         >
@@ -160,7 +239,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
       {/* ── TRIAL BANNER ── */}
       {isTrialing && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
           className="p-6 rounded-[2.5rem] bg-slate-950 text-white flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden"
         >
@@ -170,11 +249,35 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           </div>
           <div className="text-center md:text-left flex-1">
             <p className="font-black text-lg">Free Trial Active</p>
-<p className="text-slate-400 text-sm">
+            <p className="text-slate-400 text-sm">
               Ends {new Date(company.trial_ends_at).toLocaleDateString()}.
               {activePlan === 'pro' ? ' You\'re on the top plan.' : ' You can upgrade anytime.'}
             </p>
-                      </div>
+          </div>
+        </motion.div>
+      )}
+
+   {/* ── STRIPE CONNECT (Customer Payments) ── */}
+      {can(planTier, 'stripe_connect') ? (
+        <StripeConnectSection company={company} />
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="p-6 rounded-[2.5rem] border border-blue-100 bg-blue-50/40 text-center"
+        >
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CreditCard className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-base font-black text-blue-900 mb-2">Accept customer payments</h3>
+          <p className="text-sm text-slate-500 mb-5 max-w-sm mx-auto leading-relaxed">
+            Connect Stripe to let customers pay invoices online with a card. Available on Basic and Pro plans.
+          </p>
+          <button
+            onClick={() => setConfirmModal({ isOpen: true, plan: 'basic' })}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white bg-blue-600 hover:bg-blue-700 transition"
+          >
+            Upgrade to Basic — $49.99/mo
+          </button>
         </motion.div>
       )}
 
@@ -192,7 +295,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         )}
       </AnimatePresence>
 
-     {/* ── PENDING DOWNGRADE BANNER ── */}
+      {/* ── PENDING DOWNGRADE BANNER ── */}
       {pendingDowngrade && (
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -235,7 +338,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
               className={`relative p-8 rounded-[3rem] border-2 transition-all duration-300 flex flex-col ${
                 isCurrent ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 bg-white'
-} ${isTrialing && !isCurrent && planKey !== 'pro' ? 'opacity-60 grayscale-[0.3]' : ''}`}
+              } ${isTrialing && !isCurrent && planKey !== 'pro' ? 'opacity-60 grayscale-[0.3]' : ''}`}
             >
               {isPro && (
                 <div className="absolute -top-3 right-10 bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
@@ -265,27 +368,27 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
               <button
                 onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
-disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro') || (isTrialing && planKey !== 'pro' && activePlan === 'pro')}
+                disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro') || (isTrialing && planKey !== 'pro' && activePlan === 'pro')}
                 className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
-  isCurrent 
-    ? 'bg-blue-100 text-blue-600 cursor-default' 
-    : isTrialing && planKey !== 'pro'
-      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
-      : isPro 
-        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' 
-        : 'bg-slate-900 text-white'
-}`}
+                  isCurrent
+                    ? 'bg-blue-100 text-blue-600 cursor-default'
+                    : isTrialing && planKey !== 'pro'
+                      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                      : isPro
+                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
+                        : 'bg-slate-900 text-white'
+                }`}
               >
-{isCurrent
-  ? 'Current Plan'
-  : changingPlan
-    ? '...'
-    : pendingDowngrade && planKey !== 'pro'
-      ? `Switching ${new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-      : activePlan === 'free'
-        ? `Upgrade to ${config.label}`
-        : `Select ${config.label}`
-}              </button>
+                {isCurrent
+                  ? 'Current Plan'
+                  : changingPlan
+                    ? '...'
+                    : pendingDowngrade && planKey !== 'pro'
+                      ? `Switching ${new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      : activePlan === 'free'
+                        ? `Upgrade to ${config.label}`
+                        : `Select ${config.label}`
+                }              </button>
             </motion.div>
           );
         })}
@@ -295,13 +398,13 @@ disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro')
       <AnimatePresence>
         {confirmModal.isOpen && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setConfirmModal({ isOpen: false, plan: null })}
-              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100]" 
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100]"
             />
             <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 pointer-events-none">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl pointer-events-auto border border-slate-100"
               >
@@ -310,7 +413,7 @@ disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro')
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-2">Confirm Change</h3>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
-                  {confirmModal.plan === 'pro' 
+                  {confirmModal.plan === 'pro'
                     ? `Upgrade to Pro ($79.99/mo) and unlock custom forms, photo uploads, and more.`
                     : `Switching to Basic ($49.99/mo). Your features will change at the end of the current cycle.`}
                 </p>

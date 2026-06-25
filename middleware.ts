@@ -7,10 +7,11 @@ export function middleware(request: NextRequest) {
 
   const isApiRoute = pathname.startsWith('/api/');
 
-  const isPublicApiRoute =
+const isPublicApiRoute =
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/signup') ||
     pathname.startsWith('/api/stripe/webhook') ||
+    pathname.startsWith('/api/stripe/connect-webhook') ||
     pathname.startsWith('/api/webhooks/stripe') ||
     pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/quotes/respond') ||

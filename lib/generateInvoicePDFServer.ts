@@ -410,8 +410,13 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       page.drawText(hasPartialPayment ? `${fmt(balanceDue)} due` : `${fmt(data.total)} due`, {
         x: qrX + qrSize + 10, y: qrY + 22, size: 8, font: fontRegular, color: gray,
       });
-      const shortUrl = data.paymentLinkUrl.replace('https://', '').replace('http://', '');
-      page.drawText(shortUrl.length > 35 ? shortUrl.substring(0, 32) + '...' : shortUrl, {
+     const shortUrl = data.paymentLinkType === 'stripe'
+        ? 'Scan QR or check your email'
+        : (() => {
+            const stripped = data.paymentLinkUrl!.replace('https://', '').replace('http://', '');
+            return stripped.length > 35 ? stripped.substring(0, 32) + '...' : stripped;
+          })();
+      page.drawText(shortUrl, {
         x: qrX + qrSize + 10, y: qrY + 8, size: 7.5, font: fontRegular, color: accent2Color,
       });
     } catch { /* silent */ }

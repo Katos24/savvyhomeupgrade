@@ -59,6 +59,12 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
     return null;
   };
 
+  const getPaymentStatus = (lead: any) => {
+    if (lead.payment_status === 'paid') return 'paid';
+    if (lead.payment_status === 'partial') return 'partial';
+    return null;
+  };
+
   return (
     <>
       {/* ── MOBILE: Compact Rows (unchanged structure — still rows, not cards) ── */}
@@ -69,10 +75,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
         className="sm:hidden space-y-2.5 px-1"
       >
         {leads.map((lead) => {
-          const statusConfig = getStatusConfig(lead.status);
+        const statusConfig = getStatusConfig(lead.status);
           const statusHex = getStatusColorHex(statusConfig.color);
           const isCompleted = lead.status === 'completed';
           const quoteStatus = getQuoteStatus(lead);
+          const paymentStatus = getPaymentStatus(lead);
 
           const rawDate = lead.scheduled_date ? lead.scheduled_date.split('T')[0] : null;
           const displayDate = rawDate 
@@ -109,21 +116,33 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {quoteStatus === 'accepted' && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {paymentStatus === 'paid' ? (
                       <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        <CheckCircle2 className="w-2.5 h-2.5" /> Accepted
+                        <DollarSign className="w-2.5 h-2.5" /> Paid
                       </div>
-                    )}
-                    {quoteStatus === 'declined' && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/20">
-                        <X className="w-2.5 h-2.5" /> Declined
+                    ) : paymentStatus === 'partial' ? (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                        <DollarSign className="w-2.5 h-2.5" /> Partial
                       </div>
-                    )}
-                    {quoteStatus === 'sent' && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
-                        <Send className="w-2.5 h-2.5" /> Sent
-                      </div>
+                    ) : (
+                      <>
+                        {quoteStatus === 'accepted' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                            <CheckCircle2 className="w-2.5 h-2.5" /> Accepted
+                          </div>
+                        )}
+                        {quoteStatus === 'declined' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/20">
+                            <X className="w-2.5 h-2.5" /> Declined
+                          </div>
+                        )}
+                        {quoteStatus === 'sent' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                            <Send className="w-2.5 h-2.5" /> Sent
+                          </div>
+                        )}
+                      </>
                     )}
                     <div
                       className="px-2 py-1 rounded-lg text-[10px] font-medium border"
@@ -177,10 +196,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
         className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-5"
       >
         {leads.map((lead) => {
-          const statusConfig = getStatusConfig(lead.status);
+         const statusConfig = getStatusConfig(lead.status);
           const statusHex = getStatusColorHex(statusConfig.color);
           const isCompleted = lead.status === 'completed';
           const quoteStatus = getQuoteStatus(lead);
+          const paymentStatus = getPaymentStatus(lead);
 
           const rawDate = lead.scheduled_date ? lead.scheduled_date.split('T')[0] : null;
           const displayDate = rawDate 
@@ -218,21 +238,33 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     {statusConfig.label}
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    {quoteStatus === 'accepted' && (
+                <div className="flex items-center gap-2">
+                    {paymentStatus === 'paid' ? (
                       <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        <CheckCircle2 className="w-3 h-3" /> Accepted
+                        <DollarSign className="w-3 h-3" /> Paid
                       </div>
-                    )}
-                    {quoteStatus === 'declined' && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/20">
-                        <X className="w-3 h-3" /> Declined
+                    ) : paymentStatus === 'partial' ? (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                        <DollarSign className="w-3 h-3" /> Partial
                       </div>
-                    )}
-                    {quoteStatus === 'sent' && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
-                        <Send className="w-3 h-3" /> Quote sent
-                      </div>
+                    ) : (
+                      <>
+                        {quoteStatus === 'accepted' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                            <CheckCircle2 className="w-3 h-3" /> Accepted
+                          </div>
+                        )}
+                        {quoteStatus === 'declined' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/20">
+                            <X className="w-3 h-3" /> Declined
+                          </div>
+                        )}
+                        {quoteStatus === 'sent' && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                            <Send className="w-3 h-3" /> Quote sent
+                          </div>
+                        )}
+                      </>
                     )}
                     {lead.follow_up_date && (
                       <div className="bg-red-500 p-1.5 rounded-lg">

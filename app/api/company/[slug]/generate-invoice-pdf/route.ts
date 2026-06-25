@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { stripe } from '@/lib/stripe';
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +31,8 @@ export async function GET(
     // Get company
     const companies = await sql`
       SELECT id, name, phone, email, logo_url, payment_link_url, payment_link_type,
-             email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code
+             email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code,
+             stripe_connect_account_id, stripe_connect_onboarded
       FROM companies WHERE slug = ${slug} LIMIT 1
     `;
     if (!companies.length) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -53,7 +55,7 @@ export async function GET(
       SELECT
         p.id, p.invoice_number, p.quote_total, p.quote_data,
         p.payment_status, p.payment_amount, p.payment_due_date,
-        p.invoice_sent_at, p.created_at,
+        p.invoice_sent_at, p.created_at, p.stripe_checkout_session_id,
         l.name as customer_name, l.email as customer_email,
         l.phone as customer_phone, l.address_line_1, l.city, l.zip_code
       FROM projects p
@@ -85,6 +87,62 @@ export async function GET(
       ? new Date(project.payment_due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : undefined;
 
+    // Determine payment link: prefer a live Stripe Checkout session if Connect is set up
+    let paymentLinkUrl: string | null = company.payment_link_url;
+    let paymentLinkType: string | null = company.payment_link_type;
+
+    if (company.stripe_connect_onboarded && project.payment_status !== 'paid' && project.quote_total > 0) {
+      let checkoutUrl: string | null = null;
+
+      if (project.stripe_checkout_session_id) {
+        try {
+          const existing = await stripe.checkout.sessions.retrieve(
+            project.stripe_checkout_session_id,
+            { stripeAccount: company.stripe_connect_account_id }
+          );
+          if (existing.status === 'open' && existing.url) {
+            checkoutUrl = existing.url;
+          }
+        } catch {
+          // session expired/invalid/not found — fall through and create a new one
+        }
+      }
+
+      if (!checkoutUrl) {
+        const newSession = await stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [{
+              price_data: {
+                currency: 'usd',
+                product_data: { name: `Invoice for ${project.customer_name}` },
+                unit_amount: Math.round(parseFloat(project.quote_total) * 100),
+              },
+              quantity: 1,
+            }],
+            customer_email: project.customer_email || undefined,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${project.id}`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard?payment=cancelled`,
+            metadata: { projectId: project.id.toString(), companySlug: slug },
+          },
+          { stripeAccount: company.stripe_connect_account_id }
+        );
+        checkoutUrl = newSession.url;
+
+        await sql`
+          UPDATE projects
+          SET stripe_checkout_session_id = ${newSession.id}
+          WHERE id = ${project.id}
+        `;
+      }
+
+      if (checkoutUrl) {
+        paymentLinkUrl = checkoutUrl;
+        paymentLinkType = 'stripe';
+      }
+    }
+
     const customerAddress = [project.address_line_1, project.city, project.zip_code].filter(Boolean).join(', ');
 
     // Generate PDF
@@ -109,8 +167,8 @@ export async function GET(
       })),
       total: parseFloat(project.quote_total || '0'),
       amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
-      paymentLinkUrl: company.payment_link_url || undefined,
-      paymentLinkType: company.payment_link_type || undefined,
+      paymentLinkUrl: paymentLinkUrl || undefined,
+      paymentLinkType: paymentLinkType || undefined,
       brandColor1: company.email_brand_color_1 || undefined,
       brandColor2: company.email_brand_color_2 || undefined,
     });

@@ -52,8 +52,8 @@ export default function ArchitectHero() {
             </div>
 
             {/* SUBHEAD */}
-            <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              One link tracks every lead, every job, and every payment status, from first click to invoice.
+           <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
+              One link tracks every lead, sends every quote, and lets customers pay online by card, from first click to paid invoice.
             </p>
 
             {/* CTAs */}
@@ -71,7 +71,7 @@ export default function ArchitectHero() {
                 </Link>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+             <div className="flex flex-wrap items-center gap-3">
                 <Image
                   src="/images/quickbooks-export-badge.webp"
                   alt="QuickBooks Export"
@@ -79,6 +79,10 @@ export default function ArchitectHero() {
                   height={56}
                   className="h-8 w-auto opacity-70"
                 />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-500">Payments powered by</span>
+                  <span className="text-[12px] font-black text-slate-700">Stripe</span>
+                </div>
                 <p className="text-xs text-slate-400 font-medium tracking-wide">
                   No credit card · 2 min setup · Cancel anytime
                 </p>

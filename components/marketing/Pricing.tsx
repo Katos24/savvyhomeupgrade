@@ -34,9 +34,9 @@ const plans = [
     features: [
       'Everything in Free',
       'Custom booking form and branding',
-      'Quotes, scheduling, and payments',
+      'Quotes, scheduling, and online payments',
+      'Send invoices — customers pay by card',
       'QuickBooks and CSV export',
-      'Receipts and financials page',
       'Unlimited team members',
     ],
   },
@@ -51,7 +51,6 @@ const plans = [
     features: [
       'Everything in Basic',
       'One-click quote and schedule emails',
-      'Payment reminder emails',
       'Full email history and templates',
       '6AM Daily Digest',
       'AI Quote Generator✦',

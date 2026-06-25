@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } from '@/lib/email';
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
+import { stripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
   try {
@@ -988,12 +989,14 @@ else if (action === 'save_invoice') {
 
 
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
+// ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 else if (action === 'send_invoice_to_customer') {
   const leadCheck = await sql`
-   SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
-           p.payment_amount, p.payment_status,
+    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
+           p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
            c.name as company_name, c.phone as company_phone,
-           c.id as company_id, c.plan_tier
+           c.id as company_id, c.slug as company_slug, c.plan_tier,
+           c.stripe_connect_account_id, c.stripe_connect_onboarded
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -1033,6 +1036,62 @@ else if (action === 'send_invoice_to_customer') {
   const invoiceTotal = invoiceItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
   const invoiceNumber = body.invoice_number || lead.invoice_number || 'INV-001';
 
+  // ── Generate or reuse a Stripe Connect payment link ──
+  let paymentLinkUrl: string | undefined;
+  let paymentLinkType: string | undefined;
+
+  if (lead.stripe_connect_onboarded && lead.payment_status !== 'paid' && invoiceTotal > 0) {
+    let checkoutUrl: string | null = null;
+
+    if (lead.stripe_checkout_session_id) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(
+          lead.stripe_checkout_session_id,
+          { stripeAccount: lead.stripe_connect_account_id }
+        );
+        if (existing.status === 'open' && existing.url) {
+          checkoutUrl = existing.url;
+        }
+      } catch {
+        // expired/invalid — fall through and create a new one
+      }
+    }
+
+    if (!checkoutUrl) {
+      try {
+        const newSession = await stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [{
+              price_data: {
+                currency: 'usd',
+                product_data: { name: `Invoice for ${lead.name}` },
+                unit_amount: Math.round(invoiceTotal * 100),
+              },
+              quantity: 1,
+            }],
+            customer_email: lead.email || undefined,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${lead.project_id}`,
+cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lead.company_slug}/dashboard?payment=cancelled`,
+            metadata: { projectId: lead.project_id.toString() },
+          },
+          { stripeAccount: lead.stripe_connect_account_id }
+        );
+        checkoutUrl = newSession.url;
+        await sql`UPDATE projects SET stripe_checkout_session_id = ${newSession.id} WHERE id = ${lead.project_id}`;
+      } catch (stripeErr) {
+        console.error('Failed to create Stripe Checkout session:', stripeErr);
+        // fall through — email will just send without a pay-now button
+      }
+    }
+
+    if (checkoutUrl) {
+      paymentLinkUrl = checkoutUrl;
+      paymentLinkType = 'stripe';
+    }
+  }
+
   try {
     const emailResult = await sendInvoiceToCustomer({
       customerEmail: lead.email,
@@ -1047,6 +1106,8 @@ else if (action === 'send_invoice_to_customer') {
       dueDate: body.due_date || undefined,
       notes: body.notes || undefined,
       contractorEmail: user_email,
+      paymentLinkUrl,
+      paymentLinkType,
     });
 
     // Log to outbox
@@ -1065,7 +1126,7 @@ else if (action === 'send_invoice_to_customer') {
       console.error('⚠️ Failed to log to outbox:', outboxErr);
     }
 
-   await sql`
+    await sql`
       UPDATE projects
       SET invoice_status = 'sent',
           invoice_sent_at = NOW(),
