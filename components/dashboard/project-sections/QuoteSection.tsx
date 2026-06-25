@@ -63,10 +63,11 @@ export default function QuoteSection({
   }, [lead?.category, companySlug]);
 
   // Sync with lead data
-  useEffect(() => {
-    setQuoteData(lead?.quote_data || []);
-    setTemplateBannerDismissed(false);
-  }, [lead?.quote_data]);
+useEffect(() => {
+  if (autosaveStatus === 'saving') return;
+  setQuoteData(lead?.quote_data || []);
+  setTemplateBannerDismissed(false);
+}, [lead?.quote_data]);
 
   const fetchOutbox = async () => {
     if (!lead?.id || !companySlug) return;
@@ -122,7 +123,6 @@ export default function QuoteSection({
       if (res.ok) {
         setAutosaveStatus('saved');
         setTimeout(() => setAutosaveStatus('idle'), 1500);
-        await onRefresh();
       } else {
         setAutosaveStatus('idle');
         toast.error('Failed to save');
