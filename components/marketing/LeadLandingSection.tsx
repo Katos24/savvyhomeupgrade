@@ -299,17 +299,11 @@ function PaymentMockup() {
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Due Date</p>
                 <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white">
-                  <span className="text-sm font-bold text-slate-900">05/26/2026</span>
+                  <span className="text-sm font-bold text-slate-900">05/30/2026</span>
                 </div>
               </div>
             </div>
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-emerald-500" />
-                <span className="text-xs font-bold text-emerald-700">Mark as Paid in Full</span>
-              </div>
-              <span className="text-xs font-bold text-emerald-600">$1,200.00</span>
-            </div>
+           
           </div>
         </div>
       </div>
@@ -342,10 +336,10 @@ const STEPS = [
     accent: '#3b82f6',
     mockup: ScheduleMockup,
   },
-  {
+ {
     id: 'payment',
     icon: DollarSign,
-    title: 'Track Every Dollar',
+    title: 'Get Paid Without the Chase',
     mobileLabel: 'Payment',
     accent: '#10b981',
     mockup: PaymentMockup,
@@ -385,7 +379,7 @@ export default function WorkflowCardSection() {
             <span className="text-emerald-500">from one card.</span>
           </h2>
           <p className="text-white font-bold text-sm sm:text-base leading-relaxed" style={{ fontFamily: font }}>
-            Overview. Quote. Schedule. Payment. Every tab lives on the same lead card — no jumping between apps.
+                Overview. Quote. Schedule. Get paid. Every tab lives on the same card — no jumping between apps.
           </p>
         </div>
 
@@ -463,7 +457,7 @@ export default function WorkflowCardSection() {
                 <span className="text-emerald-500">from one card.</span>
               </h2>
               <p className="text-white font-bold text-sm sm:text-base leading-relaxed" style={{ fontFamily: font }}>
-                Overview. Quote. Schedule. Payment. Every tab lives on the same lead card — no jumping between apps.
+                Overview. Quote. Schedule. Get paid. Every tab lives on the same card — no jumping between apps.
               </p>
             </div>
 
