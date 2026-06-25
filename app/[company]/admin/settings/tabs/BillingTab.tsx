@@ -7,6 +7,8 @@ import {
   Zap, ArrowRight, Lock, TrendingUp, Clock, X, Loader2
 } from 'lucide-react';
 import { PLAN_CONFIG, can, type PlanTier } from '@/lib/permissions';
+import StripePaymentInfo from '@/components/dashboard/StripePaymentInfo';
+
 
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
@@ -46,55 +48,64 @@ function StripeConnectSection({ company }: { company: any }) {
     }
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      className="p-6 rounded-[2.5rem] border border-slate-200 bg-white"
-    >
-      <div className="flex items-center gap-4 mb-1">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
-          <CreditCard className="w-6 h-6 text-indigo-600" />
-        </div>
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Payments</p>
-          <p className="text-xl font-black text-slate-900">Stripe</p>
-        </div>
+ return (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+    className="p-6 rounded-[2.5rem] border border-slate-200 bg-white"
+  >
+    <div className="flex items-center gap-4 mb-1">
+      <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
+        <CreditCard className="w-6 h-6 text-indigo-600" />
       </div>
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Payments</p>
+        <p className="text-xl font-black text-slate-900">Stripe</p>
+      </div>
+    </div>
 
-      {status === 'success' && (
-        <p className="mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
-          Stripe connected successfully.
-        </p>
-      )}
-      {status === 'error' && (
-        <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
-          Something went wrong connecting Stripe. Please try again.
-        </p>
-      )}
-      {status === 'denied' && (
-        <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
-          Stripe connection was cancelled.
-        </p>
-      )}
+    {/* Always visible, connected or not */}
+    <div className="mt-2">
+      <StripePaymentInfo accountStatus={isConnected ? accountStatus : null} />
+    </div>
 
-      {isConnected ? (
-        <div className="mt-4 space-y-3">
-          {accountStatus === 'pending' && (
-            <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm font-medium">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Your Stripe account needs more info before you can receive payouts. Manage it on Stripe to finish setup.</span>
-            </div>
-          )}
-          {accountStatus === 'active' && (
-            <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
-              <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
-            </div>
-          )}
-          {accountStatus === 'checking' && (
-            <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
-            </div>
-          )}
+    {status === 'success' && (
+      <p className="mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
+        Stripe connected successfully.
+      </p>
+    )}
+    {status === 'error' && (
+      <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
+        Something went wrong connecting Stripe. Please try again.
+      </p>
+    )}
+    {status === 'denied' && (
+      <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+        Stripe connection was cancelled.
+      </p>
+    )}
+
+
+   {isConnected ? (
+  <div className="mt-4 space-y-3">
+    {accountStatus === 'pending' && (
+      <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm font-medium">
+        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+        <span>Your Stripe account needs more info before you can receive payouts. Manage it on Stripe to finish setup.</span>
+      </div>
+    )}
+    {accountStatus === 'active' && (
+      <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+        <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
+      </div>
+    )}
+    {accountStatus === 'checking' && (
+      <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
+        <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
+      </div>
+    )}
+
+    {/* Always visible once connected, regardless of status */}
+    <StripePaymentInfo accountStatus={accountStatus} />
 
           <a
   href="https://dashboard.stripe.com"
@@ -107,15 +118,42 @@ function StripeConnectSection({ company }: { company: any }) {
 </a>
 
         </div>
-      ) : (
-        <button
-          onClick={handleConnect}
-          disabled={loading}
-          className="mt-4 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {loading ? 'Redirecting...' : 'Connect Stripe to accept payments'}
-        </button>
+     ) : (
+        <div className="mt-4">
+          {/* ── WHAT TO EXPECT ── */}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 mb-4">
+            <p className="text-xs font-black text-slate-700 mb-3">What happens when you connect</p>
+            <ul className="space-y-2.5">
+              <li className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0 mt-0.5">1</div>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Already have a Stripe account? Log in and you're connected in under a minute. No account yet? Stripe will walk you through creating one.
+                </p>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0 mt-0.5">2</div>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  New accounts need basic business and banking info — this is standard for anyone handling customer payments, and Stripe requires it before payouts can start.
+                </p>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0 mt-0.5">3</div>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Once connected, every invoice you send automatically includes a payment link — customers pay by card, no extra steps for you.
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <button
+            onClick={handleConnect}
+            disabled={loading}
+            className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {loading ? 'Redirecting...' : 'Connect Stripe to accept payments'}
+          </button>
+        </div>
       )}
     </motion.div>
   );

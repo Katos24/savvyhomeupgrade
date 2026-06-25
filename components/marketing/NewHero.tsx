@@ -26,15 +26,11 @@ export default function ArchitectHero() {
           {/* LEFT CONTENT */}
           <div className="flex flex-col space-y-6 lg:space-y-10 relative z-20">
             
-            {/* HEADLINE */}
-            <h1
-              className="text-slate-900 font-black tracking-tighter leading-[1.05] text-5xl sm:text-6xl lg:text-7xl"
-              style={{ fontFamily: font }}
-            >
-              The job management tool<br />
-              <span className="text-emerald-600">built for the field.</span>
-            </h1>
-
+       {/* HEADLINE */}
+<h1 className="text-slate-900 tracking-tighter leading-[0.9] sm:leading-[0.95] text-5xl sm:text-6xl lg:text-7xl">
+  <span className="font-extrabold block mb-1 sm:mb-2">The job management tool</span>
+  <span className="font-black text-emerald-600 block">built for the field.</span>
+</h1>
             {/* MOBILE IMAGE */}
             <div className="lg:hidden relative w-full">
               <div className="relative rounded-2xl overflow-hidden bg-slate-50/50">
@@ -51,10 +47,29 @@ export default function ArchitectHero() {
               </div>
             </div>
 
-            {/* SUBHEAD */}
-           <p className="text-slate-700 font-semibold leading-relaxed text-lg lg:text-xl max-w-md border-l-4 border-emerald-500 pl-5">
-              One link tracks every lead, sends every quote, and lets customers pay online by card, from first click to paid invoice.
-            </p>
+{/* SUBHEAD SECTION */}
+<div className="flex flex-col items-start gap-8">
+  <p className="text-xl text-slate-600 max-w-lg leading-normal font-medium tracking-tight">
+    Manage your entire workflow from the first lead to the final payment. Everything you need, all in one place.
+  </p>
+
+  {/* WORKFLOW PILLS */}
+  <div className="flex items-center gap-2 flex-wrap">
+    {['Lead', 'Quote', 'Schedule'].map((step) => (
+      <div key={step} className="flex items-center gap-2">
+        <span className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-[13px] font-semibold text-slate-700">
+          {step}
+        </span>
+        <ArrowRight className="w-4 h-4 text-slate-300" strokeWidth={2} />
+      </div>
+    ))}
+
+    <span className="px-4 py-2 rounded-lg bg-emerald-600 text-[13px] font-semibold text-white shadow-sm">
+      Paid
+    </span>
+  </div>
+</div>
+
 
             {/* CTAs */}
             <div className="flex flex-col space-y-6 pt-2">
@@ -124,7 +139,10 @@ export default function ArchitectHero() {
             </div>
           </motion.div>
         </div>
+        
       </div>
+      
     </section>
+    
   );
 }
