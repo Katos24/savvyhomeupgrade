@@ -87,7 +87,7 @@ export default function DashboardFilters({
             className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-sm font-medium outline-none border transition-all ${
               isDark
                 ? 'bg-[#0A0C14] border-white/10 text-white placeholder-white/25 focus:border-blue-500/40'
-                : 'bg-white border-slate-200 text-slate-900 shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-500/5'
+: 'bg-white border-slate-300 text-slate-900 shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-500/5'
             }`}
           />
           {isSearching && (
@@ -104,8 +104,7 @@ export default function DashboardFilters({
         </div>
 
         {/* View Switcher + Theme combined */}
-        <div className={`flex items-center p-0.5 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
-          {[
+<div className={`flex items-center p-0.5 rounded-xl border shrink-0 ${isDark ? 'bg-[#0A0C14] border-white/10' : 'bg-white border-slate-300 shadow-sm'}`}>          {[
             { id: 'cards', icon: LayoutGrid, feature: null },
             { id: 'table', icon: List, feature: 'table_view' },
             { id: 'calendar', icon: Calendar, feature: 'calendar_view' },
@@ -144,8 +143,7 @@ export default function DashboardFilters({
           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
             showAdvancedFilters || hasActiveFilters
               ? 'bg-blue-600 text-white border-blue-500'
-              : isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
-          }`}
+: isDark ? 'bg-[#0A0C14] border-white/10 text-white/60' : 'bg-white border-slate-300 text-slate-600 shadow-sm'          }`}
         >
           <Filter className="w-3 h-3" />
           Filters
@@ -159,7 +157,7 @@ export default function DashboardFilters({
           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
             isScheduledTodayActive
               ? 'bg-emerald-600 text-white border-emerald-500'
-              : isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+: isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-300 text-slate-500 shadow-sm'
           }`}
         >
           <Clock className="w-3 h-3" />
@@ -172,7 +170,7 @@ export default function DashboardFilters({
           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
             filterPayment === 'unpaid'
               ? 'bg-amber-500 text-white border-amber-400'
-              : isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+: isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-300 text-slate-500 shadow-sm'
           }`}
         >
           <DollarSign className="w-3 h-3" />
@@ -197,7 +195,7 @@ export default function DashboardFilters({
           {/* Desktop Dropdown */}
           <div className="relative z-[100] hidden sm:block">
             <div className={`absolute top-0 left-0 w-[380px] p-5 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 ${
-              isDark ? 'bg-[#0D0F17] border-white/10' : 'bg-white border-slate-200'
+isDark ? 'bg-[#0D0F17] border-white/10' : 'bg-white border-slate-300 shadow-xl'
             }`}>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="space-y-1.5">
@@ -301,7 +299,7 @@ export default function DashboardFilters({
               onClick={() => setShowAdvancedFilters(false)}
             />
             <div className={`relative rounded-t-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto ${
-              isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-200'
+isDark ? 'bg-[#0D0F17] border-t border-white/10' : 'bg-white border-t border-slate-300'
             }`}>
               <div className="w-10 h-1 bg-slate-300/30 rounded-full mx-auto mb-5" />
 

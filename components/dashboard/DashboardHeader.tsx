@@ -1,8 +1,6 @@
 'use client';
-
 import { Menu, Plus, Lock, Loader2 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
-
 export default function DashboardHeader({
   company,
   isDark,
@@ -21,11 +19,11 @@ export default function DashboardHeader({
   onLockedFeature: (key: string) => void;
 }) {
   return (
-    <header className={`sticky top-3 z-50 rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 mb-5 transition-all backdrop-blur-xl ${
-      isDark
-        ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
-        : 'bg-white/90 border border-slate-100 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
-    }`}>
+   <header className={`sticky top-3 z-50 rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 mb-5 transition-all backdrop-blur-xl ${
+  isDark
+    ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
+    : 'bg-white/90 border border-slate-300 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+}`}>
       <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
@@ -37,8 +35,7 @@ export default function DashboardHeader({
           >
             <Menu className="w-4.5 h-4.5" />
           </button>
-
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 border-l border-slate-200/30 pl-2.5 sm:pl-4">
+          <div className={`flex items-center gap-2.5 sm:gap-3 min-w-0 border-l pl-2.5 sm:pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
             {company.logo_url ? (
               <img
                 src={company.logo_url}
@@ -52,19 +49,17 @@ export default function DashboardHeader({
                 {company.name.charAt(0)}
               </div>
             )}
-
             <div className="min-w-0">
               <h1 className={`text-sm font-semibold tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {company.name}
               </h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                <p className="text-[10px] font-medium text-slate-400 truncate">Live</p>
+                <p className={`text-[10px] font-medium truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Live</p>
               </div>
             </div>
           </div>
         </div>
-
         <div className="flex items-center gap-2 shrink-0">
           {isRefreshing && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 hidden xs:block" />}
           {can(planTier, 'create_lead_manual') ? (

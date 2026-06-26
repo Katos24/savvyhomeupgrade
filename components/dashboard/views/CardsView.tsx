@@ -52,6 +52,22 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
     return map[colorName] || '#60a5fa';
   };
 
+  // Darker, solid-fill variants — used for badges in light mode so text stays readable on white/gray
+  const getStatusColorHexLight = (colorName: string) => {
+    const map: Record<string, string> = {
+      blue: '#2563eb',
+      yellow: '#ca8a04',
+      purple: '#9333ea',
+      orange: '#ea580c',
+      green: '#16a34a',
+      red: '#dc2626',
+      gray: '#475569',
+      indigo: '#4f46e5',
+      pink: '#db2777',
+    };
+    return map[colorName] || '#2563eb';
+  };
+
   const getQuoteStatus = (lead: any) => {
     if (lead.project_quote_accepted_at || lead.quote_accepted_at) return 'accepted';
     if (lead.project_quote_declined_at || lead.quote_declined_at) return 'declined';
@@ -96,7 +112,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
               className={`relative cursor-pointer rounded-xl overflow-hidden border transition-all active:scale-[0.98] ${
                 isDark
                   ? 'bg-white/[0.05] border-white/[0.1] active:bg-white/[0.08]'
-                  : 'bg-white border-slate-200 active:bg-slate-50 shadow-sm'
+                  : 'bg-white border-slate-300 shadow-sm active:bg-slate-50'
               } ${isCompleted ? 'opacity-50' : ''}`}
             >
               <div 
@@ -118,13 +134,13 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                   </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                     {paymentStatus === 'paid' ? (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        <DollarSign className="w-2.5 h-2.5" /> Paid
-                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
+  <DollarSign className="w-2.5 h-2.5" /> Partial
+</div>
                     ) : paymentStatus === 'partial' ? (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                        <DollarSign className="w-2.5 h-2.5" /> Partial
-                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
+  <DollarSign className="w-2.5 h-2.5" /> Partial
+</div>
                     ) : (
                       <>
                         {quoteStatus === 'accepted' && (
@@ -146,11 +162,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     )}
                     <div
                       className="px-2 py-1 rounded-lg text-[10px] font-medium border"
-                      style={{
-                        backgroundColor: `${statusHex}15`,
-                        color: statusHex,
-                        borderColor: `${statusHex}30`,
-                      }}
+                      style={
+                        isDark
+                          ? { backgroundColor: `${statusHex}15`, color: statusHex, borderColor: `${statusHex}30` }
+                          : { backgroundColor: getStatusColorHexLight(statusConfig.color), color: '#fff', borderColor: 'transparent' }
+                      }
                     >
                       {statusConfig.label}
                     </div>
@@ -159,11 +175,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-medium text-slate-500">
+<p className={`text-[11px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                       {lead.category?.replace(/_/g, ' ') || 'General'}
                     </p>
                     {hasPhotos && (
-                      <span className="text-[11px] font-medium text-pink-400 flex items-center gap-0.5">
+<span className={`text-[11px] font-medium flex items-center gap-0.5 ${isDark ? 'text-pink-400' : 'text-pink-600'}`}>
                         <Camera className="w-3 h-3" />{lead.file_urls.length}
                       </span>
                     )}
@@ -213,10 +229,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
               variants={cardVariants}
               whileHover={{ y: -2 }}
               onClick={() => onSelectLead(lead)}
-              className={`w-full group cursor-pointer relative flex flex-col ${t.cardBg} border rounded-2xl overflow-hidden transition-all duration-200 ${
+              className={`w-full group cursor-pointer relative flex flex-col ${isDark ? t.cardBg : 'bg-white'} border rounded-2xl overflow-hidden transition-all duration-200 ${
                 isDark 
                   ? 'border-white/10 hover:border-white/20' 
-                  : 'border-slate-200 shadow-sm' 
+                  : 'border-slate-300 shadow-md hover:shadow-lg' 
               } ${isCompleted ? 'opacity-50 grayscale-[0.6]' : 'opacity-100'}`}
             >
               <div 
@@ -228,39 +244,39 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                 <div className="flex items-center justify-between px-6 py-4">
                   <div 
                     className="flex items-center gap-2 px-2.5 py-1 rounded-full border text-[11px] font-medium"
-                    style={{ 
-                      backgroundColor: `${statusHex}15`, 
-                      color: statusHex, 
-                      borderColor: `${statusHex}30` 
-                    }}
+                    style={
+                      isDark
+                        ? { backgroundColor: `${statusHex}15`, color: statusHex, borderColor: `${statusHex}30` }
+                        : { backgroundColor: getStatusColorHexLight(statusConfig.color), color: '#fff', borderColor: 'transparent' }
+                    }
                   >
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isDark ? statusHex : '#fff' }} />
                     {statusConfig.label}
                   </div>
                   
                 <div className="flex items-center gap-2">
                     {paymentStatus === 'paid' ? (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        <DollarSign className="w-3 h-3" /> Paid
-                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'}`}>
+  <DollarSign className="w-3 h-3" /> Paid
+</div>
                     ) : paymentStatus === 'partial' ? (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                        <DollarSign className="w-3 h-3" /> Partial
-                      </div>
+                     <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
+  <DollarSign className="w-2.5 h-2.5" /> Partial
+</div>
                     ) : (
                       <>
                         {quoteStatus === 'accepted' && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                            <CheckCircle2 className="w-3 h-3" /> Accepted
-                          </div>
+                         <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'}`}>
+  <CheckCircle2 className="w-3 h-3" /> Accepted
+</div>
                         )}
                         {quoteStatus === 'declined' && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/20">
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-red-500/15 text-red-400 border-red-500/20' : 'bg-red-500/15 text-red-700 border-red-500/30'}`}>
                             <X className="w-3 h-3" /> Declined
                           </div>
                         )}
                         {quoteStatus === 'sent' && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-blue-500/15 text-blue-400 border-blue-500/20' : 'bg-blue-500/15 text-blue-700 border-blue-500/30'}`}>
                             <Send className="w-3 h-3" /> Quote sent
                           </div>
                         )}
@@ -283,11 +299,11 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     </h3>
                     
                     <div className="flex items-center gap-3">
-                      <p className="text-[11px] font-medium text-slate-400">
-                        {lead.category?.replace(/_/g, ' ') || 'General enquiry'}
-                      </p>
+                      <p className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+  {lead.category?.replace(/_/g, ' ') || 'General enquiry'}
+</p>
                       {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-pink-400 text-[11px] font-medium bg-pink-500/10 px-2 py-0.5 rounded-md">
+<div className={`flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md ${isDark ? 'text-pink-400 bg-pink-500/10' : 'text-pink-700 bg-pink-100'}`}>
                           <Camera className="w-3.5 h-3.5" /> {lead.file_urls.length}
                         </div>
                       )}
@@ -298,16 +314,16 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
                   }`}>
                     <div className="space-y-1">
-                      <span className="block text-[11px] font-medium text-slate-500">Target date</span>
+<span className={`block text-[11px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>Target date</span>
                       <div className={`flex items-center gap-2 font-medium text-sm ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>            
                         <Calendar className="w-4 h-4" />
                         {displayDate}
                       </div>
                     </div>
                     <div className={`space-y-1 border-l pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-                      <span className="block text-[11px] font-medium text-slate-500">Est. revenue</span>
+<span className={`block text-[11px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>Est. revenue</span>
                       <div className={`flex items-center gap-2 font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        <DollarSign className="w-4 h-4 text-emerald-400" />
+<DollarSign className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                         <span>{lead.quote_total ? parseFloat(lead.quote_total).toLocaleString() : '0.00'}</span>
                       </div>
                     </div>
@@ -316,10 +332,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
 
                 <div className={`flex items-center justify-between px-6 py-4 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-full bg-slate-700 border border-white/10 flex items-center justify-center text-[11px] font-medium text-slate-300">
+<div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[11px] font-medium ${isDark ? 'bg-slate-700 border-white/10 text-slate-300' : 'bg-slate-200 border-slate-300 text-slate-700'}`}>
                       {lead.assigned_to?.charAt(0) || <User className="w-3.5 h-3.5" />}
                     </div>
-                    <span className="text-[11px] font-medium text-slate-400">
+                    <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       {lead.assigned_to || 'Assignee'}
                     </span>
                   </div>

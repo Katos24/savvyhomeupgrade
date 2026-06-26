@@ -44,6 +44,7 @@ export async function GET(
         p.payment_due_date,
         p.reminder_sent_at,
         p.invoice_data,
+        p.invoice_number,
         p.invoice_sent_at,
         p.before_photos,
         p.after_photos,

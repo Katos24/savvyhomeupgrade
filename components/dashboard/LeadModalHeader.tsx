@@ -99,7 +99,7 @@ export default function LeadModalHeader({
     { id: 'payment', label: 'Payment', value: paymentAmount ? fmt(paymentAmount) + ' paid' : quoteTotal ? 'Unpaid' : null, sub: paymentSubLabel?.text, subColor: paymentSubLabel?.color, hasData: !!(quoteTotal || paymentAmount) },
     { id: 'schedule', label: 'Scheduled', value: scheduledDate, sub: scheduledTime, subColor: 'rgba(255,255,255,0.4)', hasData: !!scheduledDate },
     { id: 'assigned', label: 'Assigned', value: assignedTo, sub: null, subColor: null, hasData: !!assignedTo },
-    { id: 'sent', label: 'Sent', value: quoteSent ? 'Quote ✓' : 'Quote —', valueColor: quoteSent ? '#34d399' : 'rgba(255,255,255,0.2)', sub: invoiceSent ? 'Invoice ✓' : 'Invoice —', subColor: invoiceSent ? '#60a5fa' : 'rgba(255,255,255,0.2)', hasData: true },
+{ id: 'invoice', label: 'Invoice', value: lead.invoice_number ? `#${lead.invoice_number}` : null, valueColor: '#60a5fa', sub: lead.invoice_sent_at ? 'Sent ✓' : 'Not sent', subColor: lead.invoice_sent_at ? '#34d399' : 'rgba(255,255,255,0.3)', hasData: !!lead.invoice_number },
   ].filter(i => i.hasData);
 
   const mobileItems = allSnapshotItems.slice(0, 2);
