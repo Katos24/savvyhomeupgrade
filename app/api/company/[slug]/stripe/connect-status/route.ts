@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { can, type PlanTier } from '@/lib/permissions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,12 +19,19 @@ export async function GET(
   }
 
   const companyResult = await sql`
-    SELECT stripe_connect_account_id
+    SELECT stripe_connect_account_id, plan_tier
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1
   `;
   const company = companyResult[0];
+
+  // Don't even check Stripe if this plan can't use Connect at all —
+  // saves a Stripe API round-trip on every call for free-plan accounts,
+  // which previously fired unconditionally from Home and the Payments page.
+  if (!can((company?.plan_tier ?? 'free') as PlanTier, 'stripe_connect')) {
+    return NextResponse.json({ chargesEnabled: false });
+  }
 
   if (!company?.stripe_connect_account_id) {
     return NextResponse.json({ chargesEnabled: false });

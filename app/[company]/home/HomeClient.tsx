@@ -285,12 +285,22 @@ export default function HomeClient({ company }: { company: Company }) {
       .catch(() => {});
   }, [publicLink]);
 
+  const planTier = (company.plan_tier || 'free') as PlanTier;
+  const paymentsLocked = !can(planTier, 'stripe_connect');
+  const reviewsLocked = !can(planTier, 'google_reviews');
+
   useEffect(() => {
+    // Don't even hit the endpoint if this plan can't use Stripe Connect at
+    // all — it'll never be anything but "not connected," no need to ask.
+    if (paymentsLocked) {
+      setPaymentsStatus('not_connected');
+      return;
+    }
     fetch(`/api/company/${company.slug}/stripe/connect-status`)
       .then(r => r.json())
       .then(data => setPaymentsStatus(data.chargesEnabled ? 'active' : 'pending'))
       .catch(() => setPaymentsStatus('not_connected'));
-  }, [company.slug]);
+  }, [company.slug, paymentsLocked]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(publicLink);
@@ -299,9 +309,6 @@ export default function HomeClient({ company }: { company: Company }) {
   };
 
   const planLabel = (company.plan_tier || 'free').replace(/^\w/, c => c.toUpperCase());
-  const planTier = (company.plan_tier || 'free') as PlanTier;
-  const paymentsLocked = !can(planTier, 'stripe_connect');
-  const reviewsLocked = !can(planTier, 'google_reviews');
 
   const checklistSteps: ChecklistStep[] = [
     {
