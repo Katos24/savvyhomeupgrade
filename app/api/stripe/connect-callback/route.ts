@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
-
   const code = searchParams.get('code');
   const state = searchParams.get('state'); // this is the slug
   const error = searchParams.get('error');
@@ -18,7 +17,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login`);
   }
 
-const dashboardSettingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${state}/admin/settings`;
+  const dashboardSettingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${state}/admin/settings`;
 
   if (error) {
     console.warn('Stripe Connect OAuth denied:', error, errorDescription);
@@ -29,7 +28,7 @@ const dashboardSettingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${state}/admin/
     return NextResponse.redirect(`${dashboardSettingsUrl}?stripe_connect=error`);
   }
 
- const session = await getSession();
+  const session = await getSession();
   if (!session || session.companySlug !== state) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login`);
   }
@@ -45,9 +44,27 @@ const dashboardSettingsUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${state}/admin/
     });
 
     const connectedAccountId = response.stripe_user_id;
-
     if (!connectedAccountId) {
       throw new Error('No stripe_user_id returned from OAuth token exchange');
+    }
+
+    // Guard against the same Stripe account being linked to two different
+    // companies in our system (e.g. multi-brand operator, or user error
+    // re-running the flow against an account already claimed elsewhere).
+    const existing = await sql`
+      SELECT slug
+      FROM companies
+      WHERE stripe_connect_account_id = ${connectedAccountId}
+        AND slug != ${state}
+      LIMIT 1
+    `;
+    if (existing[0]) {
+      console.warn(
+        'Stripe Connect: account', connectedAccountId,
+        'already linked to company', existing[0].slug,
+        '— rejecting link to', state
+      );
+      return NextResponse.redirect(`${dashboardSettingsUrl}?stripe_connect=already_linked`);
     }
 
     await sql`

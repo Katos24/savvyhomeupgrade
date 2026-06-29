@@ -16,9 +16,10 @@ import EmailTemplatesTab from './tabs/EmailTemplatesTab';
 import CategoriesTab from './tabs/CategoriesTab';
 import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
-import NotificationsTab from './tabs/NotificationsTab';
+import PaymentsTab from './tabs/PaymentsTab';
 
-type Tab = 'form' | 'pipeline' | 'email-templates' | 'categories' | 'team' | 'billing' | 'notifications';
+type Tab = 'form' | 'pipeline' | 'email-templates' | 'categories' | 'team' | 'billing' | 'notifications' | 'payments';
+
 
 const TAB_LABELS: Record<Tab, string> = {
   form: 'Booking Form',
@@ -26,8 +27,9 @@ const TAB_LABELS: Record<Tab, string> = {
   'email-templates': 'Automations',
   categories: 'Categories',
   team: 'Team Access',
-  billing: 'Billing',
+  billing: 'Subscription Billing',
   notifications: 'Notifications',
+  payments: 'Customer Payments',
 };
 
 const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
@@ -37,15 +39,10 @@ const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
   categories:        'settings_categories',
   team:              'settings_team',
   notifications:     'settings_notifications',
+  payments:          'stripe_connect',
 };
 
-const PAYMENT_COLORS: Record<string, string> = {
-  venmo:   '#008CFF',
-  zelle:   '#6D1ED4',
-  cashapp: '#00D632',
-  paypal:  '#003087',
-  other:   '#64748b',
-};
+
 
 function GoogleG({ size = 16 }: { size?: number }) {
   return (
@@ -186,8 +183,6 @@ useEffect(() => {
     color2: company.email_brand_color_2 || '#1F5F8F',
     google_review_url: company.google_review_url || '',
     google_review_enabled: company.google_review_enabled ?? false,
-    payment_link_type: company.payment_link_type || '',
-    payment_link_url: company.payment_link_url || '',
   });
   const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${company.updated_at || Date.now()}` : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -361,6 +356,7 @@ const handleToggleBcc = async () => {
       case 'categories':      return <CategoriesTab company={data} currentUser={currentUser} />;
       case 'team':            return <TeamTab company={data} currentUser={currentUser} />;
       case 'billing':         return <BillingTab company={data} currentUser={currentUser} />;
+            case 'payments':        return <PaymentsTab company={data} currentUser={currentUser} />;
       default:                return null;
     }
   };
@@ -541,32 +537,7 @@ const handleToggleBcc = async () => {
                   </div>
                 </div>
 
-                <div className="sm:col-span-2 rounded-xl border border-indigo-100 bg-indigo-50/40 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
-                    <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Payment link</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 px-3.5 sm:px-4 pb-3.5 pt-1.5">
-                    <select value={formData.payment_link_type} onChange={e => setFormData({ ...formData, payment_link_type: e.target.value })}
-                      className="sm:w-40 shrink-0 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition">
-                      <option value="">Method...</option>
-                      <option value="venmo">Venmo</option>
-                      <option value="zelle">Zelle</option>
-                      <option value="cashapp">Cash App</option>
-                      <option value="paypal">PayPal</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <input value={formData.payment_link_url} onChange={e => setFormData({ ...formData, payment_link_url: e.target.value })}
-                      onBlur={e => {
-                        const val = e.target.value.trim();
-                        if (val && !val.startsWith('http')) {
-                          setFormData(prev => ({ ...prev, payment_link_url: `https://${val}` }));
-                        }
-                      }}
-                      className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-gray-400 placeholder:font-normal"
-                      placeholder="https://venmo.com/your-handle" />
-                  </div>
-                </div>
+           
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
@@ -670,42 +641,6 @@ const handleToggleBcc = async () => {
 </a>
 
 
-               <a
-  href={formData.payment_link_url || undefined}
-  target="_blank"
-  rel="noopener noreferrer"
-  onClick={e => { if (!formData.payment_link_url) e.preventDefault(); }}
-  className={`group rounded-xl border border-gray-100 bg-gray-50/60 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
-    formData.payment_link_url
-      ? 'hover:bg-white hover:border-gray-200 hover:shadow-sm cursor-pointer'
-      : 'cursor-default'
-  }`}
->
-  <div className="flex items-center justify-between gap-2">
-    <div className="flex items-center gap-2 min-w-0">
-      <CreditCard className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">
-        Payment link
-      </span>
-    </div>
-
-    {formData.payment_link_type && (
-      <span
-        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full text-white shrink-0"
-        style={{ background: PAYMENT_COLORS[formData.payment_link_type] || '#64748b' }}
-      >
-        {formData.payment_link_type}
-      </span>
-    )}
-  </div>
-
- <p className="text-sm font-semibold text-gray-900 truncate">
-  {formData.payment_link_url
-    ? formData.payment_link_url.replace(/^https?:\/\//, '')
-    : <span className="text-gray-400 font-normal">Not set</span>}
-</p>
-
-</a>
 
 
               </div>
@@ -833,7 +768,7 @@ const handleToggleBcc = async () => {
           </div>
         </section>
 
-        {/* ── SYSTEM CONFIGURATION ── */}
+     {/* ── SYSTEM CONFIGURATION ── */}
         <div>
           <p className="text-[11px] font-medium text-white/40 mb-3 px-1">System configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -842,8 +777,17 @@ const handleToggleBcc = async () => {
             <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request." color="#f97316" onClick={() => openTab('form')} locked={!can(planTier, 'settings_form')} requiredPlan="Basic" />
             <MenuCard icon={Mail} label="Email Templates" desc="Personalize the emails customers receive — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
+              <MenuCard icon={CreditCard} label="Customer Payments" desc="Connect Stripe to accept cards, or add a manual payment link as a backup." color="#6366f1" onClick={() => openTab('payments')} locked={!can(planTier, 'stripe_connect')} requiredPlan="Basic" />
+          </div>
+        </div>
+
+        {/* ── BILLING & PAYMENTS ── */}
+        <div>
+          <p className="text-[11px] font-medium text-white/40 mb-3 px-1">Billing & payments</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <MenuCard icon={CreditCard} label="Customer Payments" desc="Connect Stripe to accept cards, or add a manual payment link as a backup." color="#6366f1" onClick={() => openTab('payments')} />
             {planTier !== 'free' && (
-              <MenuCard icon={CreditCard} label="Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
+              <MenuCard icon={CreditCard} label="Subscription Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
             )}
           </div>
         </div>

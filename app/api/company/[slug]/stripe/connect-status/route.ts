@@ -11,8 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-
   const session = await getSession();
+
   if (!session || session.companySlug !== slug) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
@@ -30,10 +30,19 @@ export async function GET(
   }
 
   try {
-    const account = await stripe.accounts.retrieve(company.stripe_connect_account_id);
-    return NextResponse.json({ chargesEnabled: !!account.charges_enabled });
+    const account = await (stripe as any).v2.core.accounts.retrieve(
+      company.stripe_connect_account_id,
+      { include: ['configuration.merchant'] }
+    );
+
+    // Same caveat as connect-return — verify "active" against a real
+    // response in test mode before relying on this in production.
+    const chargesEnabled =
+      account.configuration?.merchant?.capabilities?.card_payments?.status === 'active';
+
+    return NextResponse.json({ chargesEnabled });
   } catch (err: any) {
-    console.error('Failed to retrieve connected account status:', err.message);
+    console.error('Failed to retrieve v2 connected account status:', err.message);
     return NextResponse.json({ chargesEnabled: false });
   }
 }

@@ -125,6 +125,41 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    // ── Fired when a company disconnects your platform from their Stripe
+    // dashboard side. Without this, your DB shows them as connected forever
+    // and payment links/checkout sessions for that company would silently
+    // start failing with no warning.
+    case 'account.application.deauthorized': {
+      const connectedAccountId = (event as any).account;
+      if (!connectedAccountId) break;
+
+      await sql`
+        UPDATE companies
+        SET
+          stripe_connect_account_id = NULL,
+          stripe_connect_onboarded = FALSE
+        WHERE stripe_connect_account_id = ${connectedAccountId}
+      `;
+      console.log('Stripe Connect: account deauthorized, cleared for', connectedAccountId);
+      break;
+    }
+
+    // ── Fired whenever Stripe approves, restricts, or otherwise changes
+    // status on a connected account (e.g. charges_enabled flips, or Stripe
+    // disables an account for compliance reasons). Currently just logs —
+    // hook point for a future "your Stripe account needs attention" email.
+    case 'account.updated': {
+      const account = event.data.object as any;
+      if (account.charges_enabled === false && account.requirements?.disabled_reason) {
+        console.warn(
+          'Stripe Connect: account disabled —',
+          account.id,
+          account.requirements.disabled_reason
+        );
+      }
+      break;
+    }
+
     default:
       console.log(`Unhandled Connect event type: ${event.type}`);
       break;

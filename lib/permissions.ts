@@ -317,6 +317,10 @@ outbox: {
   title: 'Send invoices directly to customers',
   description: 'Email a professional invoice to your customer and let them pay online with a card.',
 },
+stripe_connect: {
+  title: 'Accept online payments',
+  description: 'Connect Stripe to let customers pay their invoices online with a card.',
+},
   ai_chat: {
     title: 'AI assistant',
     description: 'Ask questions about your leads, get suggestions, draft follow-up messages.',
