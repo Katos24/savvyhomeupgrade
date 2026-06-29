@@ -40,15 +40,20 @@ export async function GET(req: NextRequest) {
       include: ['configuration.merchant'],
     });
 
+    console.log('FULL ACCOUNT RESPONSE:', JSON.stringify(account, null, 2));
 
-        console.log('FULL ACCOUNT RESPONSE:', JSON.stringify(account, null, 2));
-
-    // NOTE: verify this field path/enum against an actual test-mode response —
-    // I have not independently confirmed "active" is the exact status string
-    // for card_payments capability in v2. Console.log the retrieved account
-    // in test mode and adjust this check to match what you actually see.
+    // Confirmed against a real test-mode response on 2026-06-29:
+    // configuration.merchant.capabilities.card_payments.status is the right
+    // field. Values seen so far: "active", "restricted" (with
+    // status_details[].code === "requirements_past_due" when onboarding is
+    // incomplete). Treat "restricted" as "account exists, not fully
+    // onboarded yet" rather than a hard error — they completed the Account
+    // Link flow (didn't bail), they just have outstanding requirements.
     const capabilityStatus = account.configuration?.merchant?.capabilities?.card_payments?.status;
-    const onboarded = capabilityStatus === 'active' || capabilityStatus === 'pending';
+    const onboarded =
+      capabilityStatus === 'active' ||
+      capabilityStatus === 'pending' ||
+      capabilityStatus === 'restricted';
 
     await sql`
       UPDATE companies

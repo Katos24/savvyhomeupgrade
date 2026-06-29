@@ -35,8 +35,10 @@ export async function GET(
       { include: ['configuration.merchant'] }
     );
 
-    // Same caveat as connect-return — verify "active" against a real
-    // response in test mode before relying on this in production.
+    // Confirmed field path against a real test-mode response. Only "active"
+    // means they can actually take payments — "restricted" (incomplete
+    // requirements) should show as pending/needs-attention in the UI, not
+    // as charges-enabled.
     const chargesEnabled =
       account.configuration?.merchant?.capabilities?.card_payments?.status === 'active';
 
