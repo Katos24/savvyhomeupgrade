@@ -309,14 +309,22 @@ export default function QuoteSection({
               </span>
             )}
 
-            <button
-              onClick={handleManualSave}
-              disabled={!hasProject || quoteData.length === 0 || saving}
-              title="Save now"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            </button>
+           <button
+  onClick={handleManualSave}
+  disabled={!hasProject || quoteData.length === 0 || saving}
+  title="Save now"
+  className={`flex items-center justify-center w-7 h-7 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed ${
+    isDirty
+      ? 'bg-blue-600 text-white hover:bg-blue-700'
+      : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
+  }`}
+>
+  {saving ? (
+    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  ) : (
+    <Save className="w-3.5 h-3.5" />
+  )}
+</button>
 
             <motion.button
               whileTap={{ scale: 0.96 }}
@@ -679,14 +687,25 @@ export default function QuoteSection({
 
             {/* Split Button Container */}
             <div className="flex items-center bg-slate-800 rounded-lg p-1">
-              <button
-                onClick={handleManualSave}
-                disabled={!hasProject || quoteData.length === 0 || saving}
-                className="flex items-center gap-2 pl-3 pr-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700 rounded-md disabled:opacity-30"
-              >
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Save
-              </button>
+ <button
+  onClick={handleManualSave}
+  disabled={!hasProject || quoteData.length === 0 || saving}
+  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition disabled:opacity-30 ${
+    isDirty
+      ? 'bg-blue-600 text-white hover:bg-blue-700'
+      : 'text-slate-300 hover:bg-slate-700'
+  }`}
+>
+  {saving ? (
+    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  ) : isDirty ? (
+    <Save className="w-3.5 h-3.5" />
+  ) : (
+    <CheckCircle2 className="w-3.5 h-3.5" />
+  )}
+
+  {isDirty ? 'Save Changes' : 'Saved'}
+</button>
 
               <div className="w-px h-4 bg-slate-700 mx-1" />
 

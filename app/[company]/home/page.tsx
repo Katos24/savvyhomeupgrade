@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
+import { CATEGORY_MAP } from '@/lib/formCategories';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,6 +22,9 @@ interface Company {
   logo_url: string | null;
   created_at: Date;
   plan_tier?: string;
+  custom_questions?: any[];
+  categoriesCustomized: boolean;
+  hasRealLead: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,17 +54,37 @@ async function getCompany(slug: string): Promise<Company | null> {
   const rows = await sql`
     SELECT
       id, name, slug, email, phone, website, logo_url, created_at,
-      email_brand_color_1, email_brand_color_2, plan_tier
+      email_brand_color_1, email_brand_color_2, plan_tier,
+      form_categories, custom_questions, business_type
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1
   `;
   if (!rows.length) return null;
   const c = rows[0];
+
+  // form_categories is seeded with defaults at signup — it's never null.
+  // "Customized" means it no longer matches what the defaults for this
+  // business_type would be, not just "is non-empty."
+  const defaultCategories = CATEGORY_MAP[c.business_type] || CATEGORY_MAP.general;
+  const stored = c.form_categories || [];
+  const categoriesCustomized = JSON.stringify(stored) !== JSON.stringify(defaultCategories);
+
+  // Signup seeds a sample lead with origin = 'sample' so the dashboard
+  // isn't empty — that shouldn't count as "you've gotten a real lead."
+  const leadRows = await sql`
+    SELECT COUNT(*) as count FROM leads
+    WHERE company_id = ${c.id} AND deleted = false AND (origin IS NULL OR origin != 'sample')
+  `;
+  const hasRealLead = parseInt(leadRows[0]?.count || '0') > 0;
+
   return {
     ...c,
     plan_tier: c.plan_tier || 'free',
-  } as Company;
+    custom_questions: c.custom_questions || [],
+    categoriesCustomized,
+    hasRealLead,
+  } as unknown as Company;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { sendPaymentReminderEmail } from '@/lib/email';
-import { can, type PlanTier } from '@/lib/permissions';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -22,12 +22,15 @@ export async function GET(req: Request, { params }: Props) {
     const companies = await sql`SELECT id, plan_tier FROM companies WHERE slug = ${slug}`;
 if (!companies[0]) return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
 
+
 // Server-side plan check
-if (!can((companies[0].plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder')) {
+if (!can((companies[0].plan_tier ?? 'free') as PlanTier, 'send_payment_reminder')) {
+  const requiredPlan = FEATURE_PLAN_MAP.send_payment_reminder;
   return NextResponse.json({
     success: false,
-    error: 'Payment reminders are available on the Pro plan',
+    error: `Payment reminders are available on the ${PLAN_CONFIG[requiredPlan].label} plan`,
     upgrade_required: true,
+    required_plan: requiredPlan,
   }, { status: 403 });
 }
 
@@ -118,11 +121,13 @@ if (!result[0]) {
 const r = result[0];
 
 // Server-side plan check
-if (!can((r.plan_tier ?? 'basic') as PlanTier, 'send_payment_reminder')) {
+if (!can((r.plan_tier ?? 'free') as PlanTier, 'send_payment_reminder')) {
+  const requiredPlan = FEATURE_PLAN_MAP.send_payment_reminder;
   return NextResponse.json({
     success: false,
-    error: 'Payment reminders are available on the Pro plan',
+    error: `Payment reminders are available on the ${PLAN_CONFIG[requiredPlan].label} plan`,
     upgrade_required: true,
+    required_plan: requiredPlan,
   }, { status: 403 });
 }
 

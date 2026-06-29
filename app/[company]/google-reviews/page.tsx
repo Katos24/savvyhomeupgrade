@@ -3,16 +3,13 @@ import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
-import PaymentsPageClient from './PaymentsPageClient';
+import GoogleReviewsPageClient from './GoogleReviewsPageClient';
 import { can, type PlanTier } from '@/lib/permissions';
 
 async function getCompany(slug: string) {
   const sql = neon(process.env.DATABASE_URL!);
   const rows = await sql`
-    SELECT id, name, slug, email, phone, website, logo_url, created_at,
-      email_brand_color_1, email_brand_color_2, plan_tier,
-      payment_link_type, payment_link_url,
-      stripe_connect_account_id, stripe_connect_onboarded
+    SELECT id, name, slug, plan_tier, google_review_url, google_review_enabled
     FROM companies WHERE slug = ${slug} LIMIT 1
   `;
   if (!rows.length) return null;
@@ -20,6 +17,9 @@ async function getCompany(slug: string) {
   return {
     ...c,
     plan_tier: c.plan_tier || 'free',
+  } as unknown as {
+    id: number; name: string; slug: string; plan_tier: string;
+    google_review_url: string | null; google_review_enabled: boolean;
   };
 }
 
@@ -45,24 +45,17 @@ async function verifyAuth(companySlug: string) {
     `;
     redirect(own.length ? `/${own[0].slug}/home` : '/login');
   }
-  return decoded;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Customer Payments', robots: { index: false, follow: false } };
+  return { title: 'Google Reviews', robots: { index: false, follow: false } };
 }
 
-export default async function PaymentsPage({ params }: { params: Promise<{ company: string }> }) {
+export default async function GoogleReviewsPage({ params }: { params: Promise<{ company: string }> }) {
   const { company: companySlug } = await params;
-  const decoded = await verifyAuth(companySlug);
+  await verifyAuth(companySlug);
   const company = await getCompany(companySlug);
   if (!company) notFound();
 
-  // NOTE: assumed shape — verify against your actual /api/auth/me response.
-  const currentUser = { id: decoded.userId, role: decoded.role || 'owner' };
-
-  const planTier = (company.plan_tier || 'free') as PlanTier;
-  const locked = !can(planTier, 'stripe_connect');
-
-  return <PaymentsPageClient company={company} currentUser={currentUser} locked={locked} />;
+  return <GoogleReviewsPageClient company={company} locked={!can((company.plan_tier || 'free') as PlanTier, 'google_reviews')} />;
 }

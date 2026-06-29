@@ -48,6 +48,8 @@ export const FEATURE_PLAN_MAP = {
   custom_form_questions:    'basic',   // add your own questions to form
   send_invoice_email: 'basic',
   stripe_connect: 'basic',
+  google_reviews: 'basic',
+
 
 
 
@@ -202,6 +204,10 @@ export const UPGRADE_PROMPTS: Record<string, {
     title: 'Payment tracking',
     description: 'Track payment status on every job — see who\'s paid and who hasn\'t.',
   },
+  google_reviews: {
+  title: 'Turn finished jobs into 5-star reviews',
+  description: 'The moment a job is marked complete, your happy customer gets a one-click email asking for a Google review — automatically, every time. More reviews means more visibility on Google, which means more leads finding you first.',
+},
   team_members: {
     title: 'Team members',
     description: 'Invite your crew and assign leads to specific people.',

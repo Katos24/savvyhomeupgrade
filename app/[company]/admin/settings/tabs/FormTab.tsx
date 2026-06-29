@@ -401,7 +401,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
 
           {/* CUSTOM QUESTIONS */}
           <Section
-            icon={<Sparkles className="w-4 h-4 text-amber-500" />}
+            icon={<Sparkles className="w-4 h-4 text-black" />}
             title="Your own questions"
             subtitle="Add custom questions that appear on step 2 — text, dropdown, or yes/no."
             action={canUseCustomQuestions && !showAddQuestion ? (

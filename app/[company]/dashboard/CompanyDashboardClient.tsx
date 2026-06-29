@@ -498,11 +498,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           subscriptionCancelAt={company.subscription_cancel_at}
           planTier={company.plan_tier || 'free'}
         />
-        <PaymentReminderBanner
-          slug={company.slug}
-          onSelectLead={setSelectedLead}
-          allLeads={allLeads}
-        />
+       <PaymentReminderBanner
+  slug={company.slug}
+  planTier={planTier}
+  onSelectLead={setSelectedLead}
+  allLeads={allLeads}
+/>
       </div>
 
       {/* MAIN */}

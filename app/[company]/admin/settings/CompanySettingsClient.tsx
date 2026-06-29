@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
-
+import Link from 'next/link';
 import FormTab from './tabs/FormTab';
 import PipelineTab from './tabs/PipelineTab';
 import EmailTemplatesTab from './tabs/EmailTemplatesTab';
@@ -387,18 +387,22 @@ const handleToggleBcc = async () => {
   };
 
   // ── Tab view ─────────────────────────────────────────────────
-  if (activeTab) {
-    return (
-      <div className="min-h-screen bg-[#0F172A]">
-        <header className="bg-[#0F172A]/95 backdrop-blur-md border-b border-white/10 px-4 py-3.5 sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto flex items-center gap-3">
-            <button onClick={closeTab} className="flex items-center gap-1.5 text-slate-400 font-medium text-sm hover:text-white transition">
-              <ArrowLeft className="w-4 h-4" /> Settings
-            </button>
-            <span className="text-white/20">/</span>
-            <span className="font-medium text-white text-sm">{TAB_LABELS[activeTab]}</span>
-          </div>
-        </header>
+ if (activeTab) {
+return (
+<div className="min-h-screen bg-[#0B0E14]">
+    <header className="border-b border-white/[0.06] px-4 py-3.5 sticky top-0 z-50 bg-[#0B0E14]">
+ <div className="max-w-4xl mx-auto flex items-center gap-3 min-w-0">
+  <Link href={`/${company.slug}/home`} className="flex items-center gap-1.5 text-[12.5px] text-slate-400 hover:text-white transition-colors shrink-0">
+    <ArrowLeft className="w-3.5 h-3.5" /> Home
+  </Link>
+  <span className="text-white/20 shrink-0">/</span>
+  <button onClick={closeTab} className="text-[12.5px] text-slate-400 hover:text-white transition-colors shrink-0">
+    Settings
+  </button>
+  <span className="text-white/20 shrink-0">/</span>
+  <span className="text-[12.5px] font-medium text-white truncate">{TAB_LABELS[activeTab]}</span>
+</div>
+</header>
         <div className="max-w-5xl mx-auto px-4 py-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="bg-white rounded-2xl p-4 shadow-2xl">{renderTabContent(activeTab)}</div>
         </div>
@@ -408,17 +412,16 @@ const handleToggleBcc = async () => {
 
   // ── Main settings view ────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0F172A] pb-20">
-      <header className="bg-[#0F172A]/95 backdrop-blur-md border-b border-white/10 px-4 py-3.5 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <h1 className="text-sm font-semibold text-white">
-            Lead2Project
-          </h1>
-          <a href={`/${company.slug}/dashboard`} className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition">
-            <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
-          </a>
-        </div>
-      </header>
+<div className="min-h-screen bg-[#0B0E14] pb-20">
+       <header className="border-b border-white/[0.06] px-4 py-3.5 sticky top-0 z-40 bg-[#0B0E14]">
+ <div className="max-w-4xl mx-auto flex items-center gap-3 min-w-0">
+  <Link href={`/${company.slug}/home`} className="flex items-center gap-1.5 text-[12.5px] text-slate-400 hover:text-white transition-colors shrink-0">
+    <ArrowLeft className="w-3.5 h-3.5" /> Home
+  </Link>
+  <span className="text-white/20 shrink-0">/</span>
+  <span className="text-[12.5px] font-medium text-white truncate">Settings</span>
+</div>
+</header>
 
      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
 

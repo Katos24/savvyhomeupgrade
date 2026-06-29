@@ -1,138 +1,100 @@
 'use client';
-
-import { useRouter } from 'next/navigation';
-
+import Link from 'next/link';
+import { Menu, Plus, Lock, Loader2, Home } from 'lucide-react';
+import { can, type PlanTier } from '@/lib/permissions';
 export default function DashboardHeader({
-  companySlug,
-  companyName,
-  companyLogoUrl,
-  currentUser,
-  currentPage = 'dashboard'
+company,
+isDark,
+isRefreshing,
+planTier,
+onSidebarOpen,
+onCreateLead,
+onLockedFeature,
 }: {
-  companySlug: string;
-  companyName: string;
-  companyLogoUrl?: string | null;
-  currentUser?: any;
-  currentPage?: 'dashboard' | 'team' | 'settings' | 'deleted-leads';
+company: { name: string; logo_url?: string | null; slug: string };
+isDark: boolean;
+isRefreshing: boolean;
+planTier: PlanTier;
+onSidebarOpen: () => void;
+onCreateLead: () => void;
+onLockedFeature: (key: string) => void;
 }) {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  const navItems = [
-    { label: 'Dashboard', href: `/${companySlug}/dashboard`, key: 'dashboard' },
-    { label: 'Team', href: `/${companySlug}/team`, key: 'team', adminOnly: true },
-    { label: 'Settings', href: `/${companySlug}/settings`, key: 'settings' },
-  ];
-
-  // Check if user is admin or owner
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
-
-  return (
-    <header className="bg-white border-b sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex justify-between items-center">
-          
-          {/* Left: Logo + Company Name */}
-          <div className="flex items-center gap-4">
-            {companyLogoUrl ? (
-              <img 
-                src={companyLogoUrl} 
-                alt={`${companyName} logo`}
-                className="h-12 w-auto object-contain"
-              />
+return (
+<header className={`sticky top-3 z-50 rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 mb-5 transition-all backdrop-blur-xl ${
+isDark
+    ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
+    : 'bg-white/90 border border-slate-300 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+}`}>
+<div className="flex items-center justify-between gap-2 sm:gap-3">
+<div className="flex items-center gap-2 sm:gap-4 min-w-0">
+<button
+data-tour="sidebar-toggle"
+onClick={onSidebarOpen}
+className={`p-2 rounded-xl transition-all active:scale-90 shrink-0 ${
+isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+}`}
+>
+<Menu className="w-4.5 h-4.5" />
+</button>
+<Link
+href={`/${company.slug}/home`}
+title="Home"
+className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all active:scale-90 shrink-0 ${
+isDark ? 'bg-blue-500/10 hover:bg-blue-500/20' : 'bg-blue-50 hover:bg-blue-100'
+}`}
+>
+<Home className="w-3.5 h-3.5 text-blue-500" />
+<span className="text-[9px] font-medium text-blue-500 leading-none">Home</span>
+</Link>
+<div className={`flex items-center gap-2.5 sm:gap-3 min-w-0 border-l pl-2.5 sm:pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+{company.logo_url ? (
+<img
+src={company.logo_url}
+alt="Logo"
+className="h-7 sm:h-9 w-auto object-contain shrink-0"
+/>
             ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                {companyName.charAt(0)}
-              </div>
+<div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-semibold shrink-0 text-sm ${
+isDark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
+}`}>
+{company.name.charAt(0)}
+</div>
             )}
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">{companyName}</h1>
-              {currentUser && (
-                <p className="text-sm text-gray-600">
-                  {currentUser.name || currentUser.email}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Navigation + Logout */}
-          <div className="flex items-center gap-6">
-            
-            {/* Navigation Links */}
-            <nav className="hidden md:flex items-center gap-4">
-              {navItems.map(item => {
-                // Skip admin-only items if not admin
-                if (item.adminOnly && !isAdmin) return null;
-
-                const isActive = currentPage === item.key;
-                
-                return (
-                  <a
-                    key={item.key}
-                    href={item.href}
-                    className={`px-4 py-2 rounded-lg font-medium transition ${
-                      isActive
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                );
-              })}
-            </nav>
-
-            {/* Deleted Leads Link (if admin) */}
-            {isAdmin && (
-              <a
-                href={`/${companySlug}/dashboard/deleted-leads`}
-                className="bg-red-500/20 hover:bg-red-500/30 text-red-700 px-4 py-2 rounded-lg font-semibold transition border border-red-500/30 flex items-center gap-2 text-sm"
-              >
-                🗑️ Deleted
-              </a>
-            )}
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-900 font-medium"
-            >
-              Logout →
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation (if needed) */}
-        <nav className="md:hidden flex gap-2 mt-4 overflow-x-auto">
-          {navItems.map(item => {
-            if (item.adminOnly && !isAdmin) return null;
-            
-            const isActive = currentPage === item.key;
-            
-            return (
-              <a
-                key={item.key}
-                href={item.href}
-                className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                  isActive
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-        </nav>
-      </div>
-    </header>
+<div className="min-w-0">
+<h1 className={`text-sm font-semibold tracking-tight truncate leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+{company.name}
+</h1>
+<div className="flex items-center gap-1.5 mt-0.5">
+<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+<p className={`text-[10px] font-medium truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Live</p>
+</div>
+</div>
+</div>
+</div>
+<div className="flex items-center gap-2 shrink-0">
+{isRefreshing && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 hidden xs:block" />}
+{can(planTier, 'create_lead_manual') ? (
+<button
+data-tour="create-lead"
+onClick={onCreateLead}
+className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-sm transition-all active:scale-95"
+>
+<Plus className="w-4 h-4" />
+<span className="hidden sm:inline">New Lead</span>
+</button>
+          ) : (
+<button
+onClick={() => onLockedFeature('create_lead')}
+className={`inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 ${
+isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'
+}`}
+>
+<Lock className="w-3.5 h-3.5" />
+<span className="hidden sm:inline">New Lead</span>
+</button>
+          )}
+</div>
+</div>
+</header>
   );
 }

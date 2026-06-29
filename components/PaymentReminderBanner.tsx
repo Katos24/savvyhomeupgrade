@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Send, CheckCircle, ExternalLink, AlertCircle, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
-
+import { can, type PlanTier } from '@/lib/permissions';
 
 type Reminder = {
   lead_id: number;
@@ -21,6 +21,11 @@ type Reminder = {
 };
 
 const STORAGE_KEY = 'payment_banner_v2';
+const CACHE_KEY = 'payment_banner_cache_v1';
+// Refetch at most this often — avoids hitting the API on every dashboard
+// mount/navigation. Reminders are inherently low-frequency data (due dates
+// don't shift minute to minute), so an hour is plenty fresh.
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function loadStorage(): { dismissed: boolean; sentIds: number[]; hiddenIds: number[] } {
   try {
@@ -53,13 +58,35 @@ function saveStorage(dismissed: boolean, sentIds: number[], hiddenIds: number[])
   } catch {}
 }
 
+function loadCache(slug: string): { reminders: Reminder[]; fetchedAt: number } | null {
+  try {
+    const raw = localStorage.getItem(`${CACHE_KEY}_${slug}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (Date.now() - data.fetchedAt > CACHE_TTL_MS) return null; // stale
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function saveCache(slug: string, reminders: Reminder[]) {
+  try {
+    localStorage.setItem(`${CACHE_KEY}_${slug}`, JSON.stringify({
+      reminders,
+      fetchedAt: Date.now(),
+    }));
+  } catch {}
+}
+
 interface PaymentReminderBannerProps {
   slug: string;
+  planTier: PlanTier;
   onSelectLead?: (lead: any) => void;
   allLeads?: any[];
 }
 
-export default function PaymentReminderBanner({ slug, onSelectLead, allLeads = [] }: PaymentReminderBannerProps) {
+export default function PaymentReminderBanner({ slug, planTier, onSelectLead, allLeads = [] }: PaymentReminderBannerProps) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [dismissed, setDismissed] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -68,20 +95,41 @@ export default function PaymentReminderBanner({ slug, onSelectLead, allLeads = [
   const [hiddenIds, setHiddenIds] = useState<number[]>([]);
   const [loaded, setLoaded] = useState(false);
 
+  // Feature isn't available on this plan at all — don't fetch, don't render.
+  // Avoids hitting an endpoint that can only ever 403 for this account.
+  const featureAvailable = can(planTier, 'send_payment_reminder');
+
   useEffect(() => {
+    if (!featureAvailable) {
+      setLoaded(true);
+      return;
+    }
+
     const stored = loadStorage();
     setDismissed(stored.dismissed);
     setSentIds(stored.sentIds);
     setHiddenIds(stored.hiddenIds);
     if (stored.dismissed) { setLoaded(true); return; }
 
+    // Serve from cache if it's fresh enough — skip the network call entirely.
+    const cached = loadCache(slug);
+    if (cached) {
+      setReminders(cached.reminders);
+      setLoaded(true);
+      return;
+    }
+
     fetch(`/api/company/${slug}/payment-reminders`)
       .then(r => r.json())
       .then(data => {
-        if (data.success && data.reminders?.length > 0) setReminders(data.reminders);
+        if (data.success) {
+          const list = data.reminders || [];
+          setReminders(list);
+          saveCache(slug, list);
+        }
       })
       .finally(() => setLoaded(true));
-  }, [slug]);
+  }, [slug, featureAvailable]);
 
   const handleSend = async (reminder: Reminder) => {
     setSending(reminder.project_id);
@@ -149,7 +197,7 @@ export default function PaymentReminderBanner({ slug, onSelectLead, allLeads = [
       .catch(() => toast.error('Could not open project'));
   };
 
-  if (!loaded || dismissed) return null;
+  if (!featureAvailable || !loaded || dismissed) return null;
 
   const visible = reminders.filter(r => !hiddenIds.includes(r.project_id));
   if (visible.length === 0) return null;

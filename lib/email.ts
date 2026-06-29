@@ -2383,13 +2383,18 @@ export async function sendGoogleReviewRequestEmail({
     const emailTemplates = await getCompanyEmailTemplates(companyId);
     const completionTemplate = emailTemplates?.job_completion;
 
-    const reviewResult = await sql`
-      SELECT google_review_url, google_review_enabled, name
-      FROM companies WHERE id = ${companyId} LIMIT 1
-    `;
-    const reviewData = reviewResult[0];
+   const reviewResult = await sql`
+  SELECT google_review_url, google_review_enabled, name, plan_tier
+  FROM companies WHERE id = ${companyId} LIMIT 1
+`;
+const reviewData = reviewResult[0];
 
-    if (!reviewData?.google_review_enabled || !reviewData?.google_review_url) return;
+const { can } = await import('@/lib/permissions');
+if (
+  !reviewData?.google_review_enabled ||
+  !reviewData?.google_review_url ||
+  !can((reviewData?.plan_tier ?? 'free') as any, 'google_reviews')
+) return;
 
     const brandColor = company.email_brand_color_1 || '#0f172a';
     const displayCategory = jobCategory ? formatCategory(jobCategory) : 'your recent service';
