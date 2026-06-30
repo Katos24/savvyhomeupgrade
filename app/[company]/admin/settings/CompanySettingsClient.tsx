@@ -196,58 +196,76 @@ useEffect(() => {
 
 
 
- const handleSaveIdentity = async () => {
+const handleSaveIdentity = async () => {
   setLoading(true);
   try {
     let finalLogoUrl = companyData.logo_url;
 
-      if (logoFile) {
-        const fd = new FormData();
-        fd.append('logo', logoFile);
-        fd.append('companySlug', company.slug);
-        const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
-        const uploadData = await uploadRes.json();
-
-        if (!uploadRes.ok || !uploadData.success || !uploadData.logoUrl) {
-          console.error('Logo upload failed:', uploadData);
-          setLoading(false);
-          return;
-        }
-
-        finalLogoUrl = uploadData.logoUrl;
+    if (logoFile) {
+      const fd = new FormData();
+      fd.append('logo', logoFile);
+      fd.append('companySlug', company.slug);
+      const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.success || !uploadData.logoUrl) {
+        console.error('Logo upload failed:', uploadData);
+        setLoading(false);
+        return;
       }
-
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-general',
-          data: {
-            ...formData,
-            logo_url: finalLogoUrl,
-            email_brand_color_1: formData.color1,
-            email_brand_color_2: formData.color2,
-          },
-        }),
-      });
-
-      const resData = await res.json();
-
-      if (res.ok && resData.success) {
-        // Cache-bust so the browser doesn't serve the old cached image at the same URL
-        const bustedUrl = finalLogoUrl ? `${finalLogoUrl}?v=${Date.now()}` : '';
-        setLogoPreview(bustedUrl);
-        setLogoFile(null);
-        setIsEditing(false);
-      } else {
-        console.error('Settings save failed:', resData);
-      }
-    } catch (err) {
-      console.error('handleSaveIdentity error:', err);
-    } finally {
-      setLoading(false);
+      finalLogoUrl = uploadData.logoUrl;
     }
-  };
+
+    // ── Save identity fields ──
+    const identityRes = await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-general',
+        data: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          website: formData.website,
+        },
+      }),
+    });
+    const identityData = await identityRes.json();
+    if (!identityRes.ok || !identityData.success) {
+      console.error('Identity save failed:', identityData);
+      return;
+    }
+
+    // ── Save branding fields ──
+    const brandingRes = await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-branding',
+        data: {
+          logo_url: finalLogoUrl,
+          email_brand_color_1: formData.color1,
+          email_brand_color_2: formData.color2,
+        },
+      }),
+    });
+    const brandingData = await brandingRes.json();
+    if (!brandingRes.ok || !brandingData.success) {
+      console.error('Branding save failed:', brandingData);
+      return;
+    }
+
+    // ── Both succeeded ──
+    const bustedUrl = finalLogoUrl ? `${finalLogoUrl}?v=${Date.now()}` : '';
+    setLogoPreview(bustedUrl);
+    setLogoFile(null);
+    setIsEditing(false);
+
+  } catch (err) {
+    console.error('handleSaveIdentity error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleToggleBcc = async () => {
   const newVal = !bccEnabled;
@@ -258,13 +276,8 @@ const handleToggleBcc = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'update-general',
-        data: {
-          ...formData,
-          email_brand_color_1: formData.color1,
-          email_brand_color_2: formData.color2,
-          bcc_sender_on_email: newVal,
-        },
+       action: 'update-bcc',
+data: { bcc_sender_on_email: newVal },
       }),
     });
     const result = await res.json();
@@ -657,27 +670,7 @@ return (
           </div>
         </div>
 
-        {/* ── HOW IT WORKS ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100">
-            <p className="text-[11px] font-medium text-gray-400">How it works</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-            {[
-              { n: 1, title: 'Set up your identity', body: 'Your logo, colors, and contact info appear on every customer email and your booking form.' },
-              { n: 2, title: 'Share your booking link', body: 'Send the link or print the QR code. Customers tap it, fill out a quick form, and submit a request.' },
-              { n: 3, title: 'Manage in your dashboard', body: 'Every submission lands as a lead. Quote it, schedule it, assign your team, and collect payment.' },
-            ].map(({ n, title, body }) => (
-              <div key={n} className="p-5 flex items-start gap-4">
-                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-semibold text-sm shrink-0">{n}</div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-tight">{title}</p>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed hidden sm:block">{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+    
 
         {/* ── FOOTER ── */}
         <div className="flex justify-end">

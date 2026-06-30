@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock, Download,
+  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock, Download, Trash2
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -550,7 +550,21 @@ const [publicLink, setPublicLink] = useState('');
             mockup={<SettingsMockup />}
           />
         </div>
+     
+
+        {/* ── FOOTER ── */}
+        <div className="flex justify-end">
+          <a href={`/${company.slug}/dashboard/deleted-leads`}
+            className="flex items-center gap-2 px-4 py-2.5 border border-red-500/10 bg-red-500/5 rounded-xl group transition hover:bg-red-500/10">
+            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+            <span className="text-xs font-medium text-red-300">Recovery center</span>
+          </a>
+        </div>
       </div>
+
+
+      
     </div>
+    
   );
 }

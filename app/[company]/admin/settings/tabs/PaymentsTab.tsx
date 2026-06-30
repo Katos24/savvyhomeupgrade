@@ -190,8 +190,8 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'update-general',
-          data: { payment_link_type: type, payment_link_url: url },
+          action: 'update-payment-link',
+data: { payment_link_type: type, payment_link_url: url },
         }),
       });
       const data = await res.json();

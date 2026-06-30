@@ -30,11 +30,8 @@ export default function GoogleReviewsPageClient({ company, locked }: { company: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'update-general',
-          data: {
-            google_review_url: url,
-            google_review_enabled: enabled,
-          },
+          action: 'update-google-reviews',
+          data: { google_review_url: url, google_review_enabled: enabled }
         }),
       });
       const data = await res.json();

@@ -108,34 +108,73 @@ export async function POST(
 
 
     switch (action) {
-  case 'update-general':
-  console.log('update-general data:', JSON.stringify(data));
-  try {
-    const result = await sql`
-      UPDATE companies
-      SET 
-        name = ${data.name},
-        email = ${data.email},
-        phone = ${data.phone || null},
-        website = ${data.website || null},
-        business_type = COALESCE(${data.business_type || null}, business_type),
-        logo_url = COALESCE(${data.logo_url || null}, logo_url),
-        email_brand_color_1 = COALESCE(${data.email_brand_color_1 || null}, email_brand_color_1),
-        email_brand_color_2 = COALESCE(${data.email_brand_color_2 || null}, email_brand_color_2),
-        google_review_url = ${data.google_review_url || null},
-        google_review_enabled = ${data.google_review_enabled ?? false},
-        payment_link_type = ${data.payment_link_type || null},
-        payment_link_url = ${data.payment_link_url || null},
-        bcc_sender_on_email = COALESCE(${data.bcc_sender_on_email}, bcc_sender_on_email)
-      WHERE id = ${company.id}
-      RETURNING *
-    `;
-    return NextResponse.json({ success: true, company: result[0] });
-  } catch (updateError) {
-    console.error('update-general DB error:', updateError);
-    return NextResponse.json({ success: false, error: String(updateError) }, { status: 500 });
-  }
+// ── Company identity (name, email, phone, website only) ──
+case 'update-general': {
+  const result = await sql`
+    UPDATE companies
+    SET
+      name = ${data.name || null},
+      email = ${data.email || null},
+      phone = ${data.phone || null},
+      website = ${data.website || null},
+      business_type = COALESCE(${data.business_type || null}, business_type)
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
 
+// ── Branding (logo, colors) ──
+case 'update-branding': {
+  const result = await sql`
+    UPDATE companies
+    SET
+      logo_url = COALESCE(${data.logo_url || null}, logo_url),
+      email_brand_color_1 = COALESCE(${data.email_brand_color_1 || null}, email_brand_color_1),
+      email_brand_color_2 = COALESCE(${data.email_brand_color_2 || null}, email_brand_color_2)
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
+// ── Google Reviews ──
+case 'update-google-reviews': {
+  const result = await sql`
+    UPDATE companies
+    SET
+      google_review_url = ${data.google_review_url || null},
+      google_review_enabled = ${data.google_review_enabled ?? false}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
+// ── Manual payment link ──
+case 'update-payment-link': {
+  const result = await sql`
+    UPDATE companies
+    SET
+      payment_link_type = ${data.payment_link_type || null},
+      payment_link_url = ${data.payment_link_url || null}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
+// ── BCC preference ──
+case 'update-bcc': {
+  const result = await sql`
+    UPDATE companies
+    SET
+      bcc_sender_on_email = ${data.bcc_sender_on_email ?? false}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
       case 'update-pipeline':
         await sql`
           UPDATE companies

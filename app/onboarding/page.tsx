@@ -275,30 +275,46 @@ function OnboardingWizard({ company }: { company: any }) {
         // Upload logo first (if new file selected)
         const logoUrl = await uploadLogo();
 
-        // Save company info
-        const res = await fetch(`/api/company/${company.slug}/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update-general',
-            data: {
-              name: companyName,
-              email,
-              phone: phone.replace(/\D/g, ''),
-              business_type: company.business_type || 'general',
-              logo_url: logoUrl || null,
-              email_brand_color_1: brandColor,
-              email_brand_color_2: brandColor2,
-            },
-          }),
-        });
+     // ── Save identity fields ──
+const identityRes = await fetch(`/api/company/${company.slug}/settings`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    action: 'update-general',
+    data: {
+      name: companyName,
+      email,
+      phone: phone.replace(/\D/g, ''),
+      business_type: company.business_type || 'general',
+    },
+  }),
+});
+const identityResult = await identityRes.json();
+if (!identityResult.success) {
+  showErr(identityResult.error || 'Failed to save company info.');
+  setSaving(false);
+  return;
+}
 
-        const result = await res.json();
-        if (!result.success) {
-          showErr(result.error || 'Failed to save company info.');
-          setSaving(false);
-          return;
-        }
+// ── Save branding fields ──
+const brandingRes = await fetch(`/api/company/${company.slug}/settings`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    action: 'update-branding',
+    data: {
+      logo_url: logoUrl || null,
+      email_brand_color_1: brandColor,
+      email_brand_color_2: brandColor2,
+    },
+  }),
+});
+const brandingResult = await brandingRes.json();
+if (!brandingResult.success) {
+  showErr(brandingResult.error || 'Failed to save branding.');
+  setSaving(false);
+  return;
+}
       }
 
       // ── STEP 1 → Save categories, then complete onboarding ──
