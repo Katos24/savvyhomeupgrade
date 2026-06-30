@@ -278,10 +278,58 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
   );
 }
 
+function HowSendingWorks({ company }: { company: any }) {
+  const stripeActive = company.stripe_payment_status === 'active';
+  const hasManualLink = !!company.payment_link_url;
+
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+      <p className="text-xs font-black text-slate-700 mb-3">What customers see when you send an invoice</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className={`rounded-xl border p-3.5 ${stripeActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-white'}`}>
+          <p className="text-[11px] font-black text-slate-700 mb-1">
+            {stripeActive ? 'Currently active — Stripe' : 'If Stripe is connected'}
+          </p>
+          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+            The email and PDF include a one-click "Pay Now" button. Customers pay by card, and your dashboard updates automatically — no manual tracking needed.
+          </p>
+        </div>
+        <div className={`rounded-xl border p-3.5 ${!stripeActive && hasManualLink ? 'border-amber-200 bg-amber-50/50' : 'border-slate-200 bg-white'}`}>
+          <p className="text-[11px] font-black text-slate-700 mb-1">
+            {!stripeActive && hasManualLink ? 'Currently active — manual link' : 'If using a manual link instead'}
+          </p>
+          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+            {hasManualLink
+              ? `The email includes your ${company.payment_link_type || 'payment'} link with a note asking the customer to enter the invoice amount themselves when they pay — there's no automatic confirmation when they do.`
+              : 'No manual payment link is set up yet. Add one below as a backup, or connect Stripe above for automatic payment links.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SampleInvoicePreview({ company }: { company: any }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-5">
+      <p className="text-xs font-black text-slate-700 mb-3">Example invoice customers receive</p>
+      <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50" style={{ height: '600px' }}>
+        <iframe
+          src={`/api/company/${company.slug}/preview-invoice`}
+          title="Sample invoice"
+          className="w-full h-full border-0"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
       <StripeConnectSection company={company} />
+      <HowSendingWorks company={company} />
+      <SampleInvoicePreview company={company} />
       <ManualPaymentLinkSection company={company} />
     </div>
   );

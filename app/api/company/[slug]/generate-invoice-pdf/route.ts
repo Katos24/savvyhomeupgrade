@@ -91,7 +91,7 @@ export async function GET(
     let paymentLinkUrl: string | null = company.payment_link_url;
     let paymentLinkType: string | null = company.payment_link_type;
 
-    if (company.stripe_connect_onboarded && project.payment_status !== 'paid' && project.quote_total > 0) {
+if (company.stripe_payment_status === 'active' && project.payment_status !== 'paid' && project.quote_total > 0) {
       let checkoutUrl: string | null = null;
 
       if (project.stripe_checkout_session_id) {

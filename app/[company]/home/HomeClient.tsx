@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock,
+  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock, Download,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -264,26 +264,31 @@ function SetupChecklist({ steps }: { steps: ChecklistStep[] }) {
 }
 
 export default function HomeClient({ company }: { company: Company }) {
-  const [publicLink, setPublicLink] = useState('');
+const [publicLink, setPublicLink] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
+  const [includeLogo, setIncludeLogo] = useState(true);
 
- useEffect(() => {
+
+  useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
   }, [company.slug]);
 
   useEffect(() => {
     if (!publicLink) return;
-    QRCodeLib.toDataURL(publicLink, {
-      width: 480,
-      margin: 1,
-      errorCorrectionLevel: 'H',
-      color: { dark: '#0F172A', light: '#FFFFFF' },
-    })
-      .then(setQrCodeUrl)
-      .catch(() => {});
-  }, [publicLink]);
-
+    const generate = async () => {
+      let dark = '#0F172A', light = '#FFFFFF';
+      if (qrStyle === 'brand') dark = company.email_brand_color_1 || '#0F172A';
+      if (qrStyle === 'dark') { dark = '#FFFFFF'; light = '#0F172A'; }
+      try {
+        const url = await QRCodeLib.toDataURL(publicLink, { width: 1000, margin: 2, errorCorrectionLevel: 'H', color: { dark, light } });
+        setQrCodeUrl(url);
+      } catch {}
+    };
+    generate();
+  }, [publicLink, qrStyle, company.email_brand_color_1]);
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
@@ -299,6 +304,45 @@ export default function HomeClient({ company }: { company: Company }) {
     navigator.clipboard.writeText(publicLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  };
+
+  const downloadStyledQR = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
+    qrImg.onload = () => {
+      canvas.width = qrImg.width;
+      canvas.height = qrImg.height;
+      ctx?.drawImage(qrImg, 0, 0);
+      if (includeLogo && company.logo_url) {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        logoImg.src = company.logo_url;
+        logoImg.onload = () => {
+          const logoSize = canvas.width * 0.18;
+          const x = (canvas.width - logoSize) / 2;
+          const y = (canvas.height - logoSize) / 2;
+          ctx!.fillStyle = 'white';
+          ctx?.beginPath();
+          // @ts-ignore
+          if (ctx?.roundRect) ctx.roundRect(x - 10, y - 10, logoSize + 20, logoSize + 20, 15);
+          else ctx?.rect(x - 10, y - 10, logoSize + 20, logoSize + 20);
+          ctx?.fill();
+          ctx?.drawImage(logoImg, x, y, logoSize, logoSize);
+          const a = document.createElement('a');
+          a.download = `${company.slug}-branded-qr.png`;
+          a.href = canvas.toDataURL('image/png');
+          a.click();
+        };
+      } else {
+        const a = document.createElement('a');
+        a.download = `${company.slug}-qr.png`;
+        a.href = qrImg.src;
+        a.click();
+      }
+    };
+    qrImg.src = qrCodeUrl;
   };
 
   const planLabel = (company.plan_tier || 'free').replace(/^\w/, c => c.toUpperCase());
@@ -401,14 +445,18 @@ export default function HomeClient({ company }: { company: Company }) {
               </div>
             </div>
 
-            <div className="p-6 flex items-center justify-center bg-slate-50/50">
-              <div className="w-32 h-32 rounded-md bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+           <div className="p-6 flex flex-col items-center justify-center gap-2 bg-slate-50/50">
+              <button
+                onClick={() => setShowQrModal(true)}
+                className="w-32 h-32 rounded-md bg-white border border-slate-200 flex items-center justify-center overflow-hidden hover:border-slate-300 transition-colors"
+              >
                 {qrCodeUrl ? (
                   <img src={qrCodeUrl} className="w-full h-full" alt="Booking QR code" />
                 ) : (
                   <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
                 )}
-              </div>
+              </button>
+              <span className="text-[11px] text-black font-medium">Download QR</span>
             </div>
 
           </div>
@@ -418,6 +466,47 @@ export default function HomeClient({ company }: { company: Company }) {
         <div className="mb-3">
           <Eyebrow>Workspace</Eyebrow>
         </div>
+        {showQrModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-gray-900' : 'bg-gray-50 border border-gray-100'}`}>
+                <div className="relative">
+                  <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
+                  {includeLogo && company.logo_url && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-gray-100">
+                        <img src={company.logo_url} className="w-full h-full object-contain" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  {['standard', 'brand', 'dark'].map(s => (
+                    <button key={s} onClick={() => setQrStyle(s as any)}
+                      className={`flex-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${qrStyle === s ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="text-sm font-medium text-gray-700">Embed company logo</span>
+                  <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setShowQrModal(false)} className="py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition bg-gray-50 rounded-xl">Cancel</button>
+                  <button onClick={downloadStyledQR} className="py-3 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition flex items-center justify-center gap-2">
+                    <Download className="w-4 h-4" /> Export PNG
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <NavCard
             label="Dashboard"

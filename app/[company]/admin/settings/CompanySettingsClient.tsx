@@ -159,10 +159,7 @@ const [bccSaving, setBccSaving] = useState(false);
 useEffect(() => {
   setBccEnabled(companyData.bcc_sender_on_email ?? false);
 }, [companyData.bcc_sender_on_email]);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
-  const [includeLogo, setIncludeLogo] = useState(true);
+ 
 
  const [formData, setFormData] = useState({
     name: company.name || '',
@@ -180,19 +177,7 @@ useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
   }, [company.slug]);
 
-  useEffect(() => {
-    if (!publicLink) return;
-    const generate = async () => {
-      let dark = '#0F172A', light = '#FFFFFF';
-      if (qrStyle === 'brand') dark = formData.color1;
-      if (qrStyle === 'dark') { dark = '#FFFFFF'; light = '#0F172A'; }
-      try {
-        const url = await QRCodeLib.toDataURL(publicLink, { width: 1000, margin: 2, errorCorrectionLevel: 'H', color: { dark, light } });
-        setQrCodeUrl(url);
-      } catch {}
-    };
-    generate();
-  }, [publicLink, qrStyle, formData.color1]);
+
 
   const openTab = useCallback((tab: Tab) => {
     setActiveTab(tab);
@@ -209,44 +194,7 @@ useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [company.slug]);
 
-  const downloadStyledQR = async () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const qrImg = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.onload = () => {
-      canvas.width = qrImg.width;
-      canvas.height = qrImg.height;
-      ctx?.drawImage(qrImg, 0, 0);
-      if (includeLogo && logoPreview) {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        logoImg.src = logoPreview;
-        logoImg.onload = () => {
-          const logoSize = canvas.width * 0.18;
-          const x = (canvas.width - logoSize) / 2;
-          const y = (canvas.height - logoSize) / 2;
-          ctx!.fillStyle = 'white';
-          ctx?.beginPath();
-          // @ts-ignore
-          if (ctx?.roundRect) ctx.roundRect(x - 10, y - 10, logoSize + 20, logoSize + 20, 15);
-          else ctx?.rect(x - 10, y - 10, logoSize + 20, logoSize + 20);
-          ctx?.fill();
-          ctx?.drawImage(logoImg, x, y, logoSize, logoSize);
-          const a = document.createElement('a');
-          a.download = `${company.slug}-branded-qr.png`;
-          a.href = canvas.toDataURL('image/png');
-          a.click();
-        };
-      } else {
-        const a = document.createElement('a');
-        a.download = `${company.slug}-qr.png`;
-        a.href = qrImg.src;
-        a.click();
-      }
-    };
-    qrImg.src = qrCodeUrl;
-  };
+
 
  const handleSaveIdentity = async () => {
   setLoading(true);
@@ -616,35 +564,20 @@ return (
             </div>
 
             {/* Quick actions */}
-            {!isEditing && (
-              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                <button onClick={() => setShowQrModal(true)}
-                  className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
-                  {qrCodeUrl
-                    ? <img src={qrCodeUrl} className="w-6 h-6 sm:w-8 sm:h-8 rounded-md" alt="QR" />
-                    : <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded-md animate-pulse" />
-                  }
-                  <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">QR code</span>
-                </button>
-
-                <a href={publicLink} target="_blank" rel="noopener noreferrer"
-                  className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
-                  <ExternalLink className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-500 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">View form</span>
-                </a>
-
+         {!isEditing && (
+              <div>
                 {planTier === 'free' ? (
                   <a href={`/${company.slug}/admin/settings`} onClick={e => { e.preventDefault(); openTab('billing'); }}
-                    className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-xl transition-all active:scale-95 bg-gray-900 hover:bg-gray-800">
-                    <CreditCard className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
-                    <span className="text-[10px] sm:text-[11px] font-medium text-white text-center leading-tight">Upgrade</span>
-                    <span className="hidden sm:block text-[10px] text-white/60">From $49.99/mo</span>
+                    className="group flex items-center justify-center gap-2 p-3.5 rounded-xl transition-all active:scale-95 bg-gray-900 hover:bg-gray-800">
+                    <CreditCard className="w-4 h-4 text-white" />
+                    <span className="text-sm font-medium text-white">Upgrade</span>
+                    <span className="text-xs text-white/60">From $49.99/mo</span>
                   </a>
                 ) : (
                   <button onClick={() => openTab('billing')}
-                    className="group flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95">
-                    <CreditCard className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-500 group-hover:text-emerald-500 transition-colors" />
-                    <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight">Billing</span>
+                    className="group flex items-center justify-center gap-2 p-3.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-all active:scale-95 w-full">
+                    <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-emerald-500 transition-colors" />
+                    <span className="text-sm font-medium text-gray-600">Billing</span>
                   </button>
                 )}
               </div>
@@ -787,52 +720,7 @@ return (
         </div>
       )}
 
-      {/* ── QR Modal ── */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
-          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
-            <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-gray-900' : 'bg-gray-50 border border-gray-100'}`}>
-              <div className="relative">
-                <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
-                {includeLogo && logoPreview && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-gray-100">
-                      <img src={logoPreview} className="w-full h-full object-contain" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                {['standard', 'brand', 'dark'].map(s => (
-                  <button key={s} onClick={() => setQrStyle(s as any)}
-                    className={`flex-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${qrStyle === s ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-sm font-medium text-gray-700">Embed company logo</span>
-                <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setShowQrModal(false)} className="py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition bg-gray-50 rounded-xl">Cancel</button>
-                <button onClick={downloadStyledQR} className="py-3 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" /> Export PNG
-                </button>
-              </div>
-              <p className="text-xs text-gray-400 px-1 leading-relaxed">
-                <span className="text-blue-600 font-medium">Tip:</span>{' '}
-                Scan it on your phone to test your booking form before sharing.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
