@@ -73,7 +73,14 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
   }, [periodFiltered, categoryFilter, statusFilter]);
 
   const totalRevenue = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.quote_total || '0'), 0), [filtered]);
-  const totalCollected = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.payment_amount || '0'), 0), [filtered]);
+  const totalCollected = useMemo(() => filtered.reduce((s, p) => {
+    const amount = parseFloat(p.payment_amount || '0');
+    // Refunded/partially-refunded projects: payment_amount holds the
+    // remaining amount the customer was refunded, not money you still
+    // hold — don't count it toward what's actually collected.
+    if (p.payment_status === 'refunded' || p.payment_status === 'partially_refunded') return s;
+    return s + amount;
+  }, 0), [filtered]);
   const totalOutstanding = totalRevenue - totalCollected;
   const taxReadyCount = filtered.filter(p => p.quote_total && parseFloat(p.quote_total) > 0 && p.payment_status === 'paid').length;
   const taxReadyPct = filtered.length > 0 ? Math.round((taxReadyCount / filtered.length) * 100) : 0;
@@ -81,6 +88,7 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
 
   const unpaidJobs = useMemo(() => filtered.filter(p => !p.payment_status || p.payment_status === 'unpaid'), [filtered]);
   const partialJobs = useMemo(() => filtered.filter(p => p.payment_status === 'partial'), [filtered]);
+  const refundedJobs = useMemo(() => filtered.filter(p => p.payment_status === 'refunded' || p.payment_status === 'partially_refunded'), [filtered]);
 
   const topCustomers = useMemo(() => {
     const map: Record<string, number> = {};
@@ -98,10 +106,12 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
     const paid = filtered.filter(p => p.payment_status === 'paid').length;
     const partial = filtered.filter(p => p.payment_status === 'partial').length;
     const unpaid = filtered.filter(p => !p.payment_status || p.payment_status === 'unpaid').length;
+    const refunded = filtered.filter(p => p.payment_status === 'refunded' || p.payment_status === 'partially_refunded').length;
     return [
       { name: 'Paid', value: paid, color: '#10b981' },
       { name: 'Partial', value: partial, color: '#f59e0b' },
       { name: 'Unpaid', value: unpaid, color: '#f87171' },
+{ name: 'Refunded', value: refunded, color: '#64748b' },
     ].filter(d => d.value > 0);
   }, [filtered]);
 
@@ -202,8 +212,8 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
             </Dropdown>
             <Dropdown open={statusOpen} onToggle={() => { setStatusOpen(!statusOpen); setPeriodOpen(false); setCategoryOpen(false); }}
               label={statusFilter === 'all' ? 'All statuses' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}>
-              {['all', 'paid', 'partial', 'unpaid'].map(s => (
-                <DropItem key={s} value={s} current={statusFilter} onSelect={(v: string) => { setStatusFilter(v); closeDropdowns(); }}
+{['all', 'paid', 'partial', 'unpaid', 'refunded'].map(s => (
+                  <DropItem key={s} value={s} current={statusFilter} onSelect={(v: string) => { setStatusFilter(v); closeDropdowns(); }}
                   label={s === 'all' ? 'All statuses' : s.charAt(0).toUpperCase() + s.slice(1)} />
               ))}
             </Dropdown>
@@ -215,7 +225,7 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <OutstandingWidget t={t} totalOutstanding={totalOutstanding} unpaidJobs={unpaidJobs} partialJobs={partialJobs}
-            onSendReminders={handleSendReminders} />
+            refundedJobs={refundedJobs} onSendReminders={handleSendReminders} />
           <QBOScore t={t} filtered={filtered} />
         </div>
 

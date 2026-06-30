@@ -3,6 +3,7 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Download, CheckCircle2, XCircle, AlertCircle, XCircle as CloseIcon } from 'lucide-react';
 import type { ThemeTokens } from '@/lib/financialsTheme';
+import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -261,13 +262,15 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={{
-                          background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                          color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
-                        }}>
-                        {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                      </span>
+                      {(() => {
+                        const status = getPaymentStatusDisplay(project.payment_status);
+                        return (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                            style={{ background: status.bg, color: status.color }}>
+                            {status.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       {receiptCount > 0 ? (
@@ -324,13 +327,15 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                       {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                    style={{
-                      background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                      color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
-                    }}>
-                    {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                  </span>
+                 {(() => {
+                    const status = getPaymentStatusDisplay(project.payment_status);
+                    return (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                        style={{ background: status.bg, color: status.color }}>
+                        {status.label}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: t.text.secondary }}>{formatCategory(project.category)}</span>

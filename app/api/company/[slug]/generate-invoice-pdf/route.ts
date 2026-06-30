@@ -29,12 +29,12 @@ export async function GET(
     const sql = neon(process.env.DATABASE_URL!);
 
     // Get company
-    const companies = await sql`
-      SELECT id, name, phone, email, logo_url, payment_link_url, payment_link_type,
-             email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code,
-             stripe_connect_account_id, stripe_connect_onboarded
-      FROM companies WHERE slug = ${slug} LIMIT 1
-    `;
+   const companies = await sql`
+  SELECT id, name, phone, email, logo_url, payment_link_url, payment_link_type,
+         email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code,
+         stripe_connect_account_id, stripe_connect_onboarded, stripe_payment_status
+  FROM companies WHERE slug = ${slug} LIMIT 1
+`;
     if (!companies.length) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     const company = companies[0];
 

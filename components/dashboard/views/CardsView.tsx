@@ -75,9 +75,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
     return null;
   };
 
-  const getPaymentStatus = (lead: any) => {
+ const getPaymentStatus = (lead: any) => {
     if (lead.payment_status === 'paid') return 'paid';
     if (lead.payment_status === 'partial') return 'partial';
+    if (lead.payment_status === 'refunded' || lead.payment_status === 'partially_refunded') return 'refunded';
     return null;
   };
 
@@ -132,14 +133,18 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                       </div>
                     )}
                   </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+             <div className="flex items-center gap-1.5 flex-shrink-0">
                     {paymentStatus === 'paid' ? (
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
-  <DollarSign className="w-2.5 h-2.5" /> Partial
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'}`}>
+  <DollarSign className="w-2.5 h-2.5" /> Paid
 </div>
                     ) : paymentStatus === 'partial' ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
   <DollarSign className="w-2.5 h-2.5" /> Partial
+</div>
+                    ) : paymentStatus === 'refunded' ? (
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-slate-500/15 text-slate-400 border-slate-500/20' : 'bg-slate-500/15 text-slate-700 border-slate-500/30'}`}>
+  <DollarSign className="w-2.5 h-2.5" /> Refunded
 </div>
                     ) : (
                       <>
@@ -254,7 +259,7 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     {statusConfig.label}
                   </div>
                   
-                <div className="flex items-center gap-2">
+               <div className="flex items-center gap-2">
                     {paymentStatus === 'paid' ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'}`}>
   <DollarSign className="w-3 h-3" /> Paid
@@ -262,6 +267,10 @@ export default function CardsView({ leads, onSelectLead, statusOptions, isDark =
                     ) : paymentStatus === 'partial' ? (
                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/20' : 'bg-amber-500/15 text-amber-700 border-amber-500/30'}`}>
   <DollarSign className="w-2.5 h-2.5" /> Partial
+</div>
+                    ) : paymentStatus === 'refunded' ? (
+                     <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${isDark ? 'bg-slate-500/15 text-slate-400 border-slate-500/20' : 'bg-slate-500/15 text-slate-700 border-slate-500/30'}`}>
+  <DollarSign className="w-3 h-3" /> Refunded
 </div>
                     ) : (
                       <>

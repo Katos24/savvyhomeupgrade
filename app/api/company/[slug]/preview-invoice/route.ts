@@ -24,7 +24,7 @@ export async function GET(
     const companies = await sql`
       SELECT name, phone, email, logo_url,
              email_brand_color_1, email_brand_color_2,
-             stripe_connect_onboarded
+            stripe_connect_onboarded, stripe_payment_status
       FROM companies WHERE slug = ${slug} LIMIT 1
     `;
     if (!companies.length) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -57,8 +57,8 @@ export async function GET(
       customerAddress: '123 Main St, Anytown, CA',
       lineItems: sampleLineItems,
       total: sampleTotal,
-      paymentLinkUrl: company.stripe_connect_onboarded ? 'https://checkout.stripe.com/sample' : undefined,
-      paymentLinkType: company.stripe_connect_onboarded ? 'stripe' : undefined,
+    paymentLinkUrl: company.stripe_payment_status === 'active' ? 'https://checkout.stripe.com/sample' : undefined,
+paymentLinkType: company.stripe_payment_status === 'active' ? 'stripe' : undefined,
       brandColor1: company.email_brand_color_1 || undefined,
       brandColor2: company.email_brand_color_2 || undefined,
     });

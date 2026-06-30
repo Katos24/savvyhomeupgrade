@@ -55,11 +55,12 @@ export function StatCards({ t, totalRevenue, totalCollected, totalOutstanding, t
 }
 
 /* ── OUTSTANDING WIDGET ── */
-export function OutstandingWidget({ t, totalOutstanding, unpaidJobs, partialJobs, onSendReminders }: {
+export function OutstandingWidget({ t, totalOutstanding, unpaidJobs, partialJobs, refundedJobs, onSendReminders }: {
   t: ThemeTokens;
   totalOutstanding: number;
   unpaidJobs: any[];
   partialJobs: any[];
+  refundedJobs: any[];
   onSendReminders: () => void;
 }) {
   return (
@@ -79,6 +80,15 @@ export function OutstandingWidget({ t, totalOutstanding, unpaidJobs, partialJobs
           <p className="text-xs mb-0.5" style={{ color: t.text.muted }}>Partial payments</p>
           <p className="text-sm font-bold" style={{ color: t.text.primary }}>{partialJobs.length}</p>
         </div>
+        {refundedJobs.length > 0 && (
+          <>
+            <div className="w-px h-8" style={{ background: t.dividerStrong }} />
+           <div>
+              <p className="text-xs mb-0.5" style={{ color: t.text.muted }}>Refunded</p>
+              <p className="text-sm font-bold" style={{ color: '#64748b' }}>{refundedJobs.length}</p>
+            </div>
+          </>
+        )}
         <div className="w-px h-8" style={{ background: t.dividerStrong }} />
         <div>
           <p className="text-xs mb-0.5" style={{ color: t.text.muted }}>Total jobs</p>

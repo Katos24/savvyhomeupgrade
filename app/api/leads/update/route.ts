@@ -991,12 +991,12 @@ else if (action === 'save_invoice') {
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 else if (action === 'send_invoice_to_customer') {
-  const leadCheck = await sql`
+const leadCheck = await sql`
     SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
            p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
            c.name as company_name, c.phone as company_phone,
            c.id as company_id, c.slug as company_slug, c.plan_tier,
-           c.stripe_connect_account_id, c.stripe_connect_onboarded
+           c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -1040,7 +1040,8 @@ else if (action === 'send_invoice_to_customer') {
   let paymentLinkUrl: string | undefined;
   let paymentLinkType: string | undefined;
 
-  if (lead.stripe_connect_onboarded && lead.payment_status !== 'paid' && invoiceTotal > 0) {
+  if (lead.stripe_payment_status === 'active' && lead.payment_status !== 'paid' && invoiceTotal > 0) {
+
     let checkoutUrl: string | null = null;
 
     if (lead.stripe_checkout_session_id) {

@@ -6,6 +6,7 @@ import {
   ArrowLeft, Download, Receipt, FileText, ExternalLink,
   CheckCircle2, XCircle, DollarSign, Clock, ChevronDown, ChevronUp,
 } from 'lucide-react';
+import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 
 type Project = Record<string, any>;
 
@@ -189,8 +190,11 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
   const filtered = useMemo(() => filterByPeriod(localProjects, period), [localProjects, period]);
 
   const totalInvoiced   = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.quote_total || '0'), 0), [filtered]);
-  const totalCollected  = useMemo(() => filtered.reduce((s, p) => s + parseFloat(p.payment_amount || '0'), 0), [filtered]);
-  const totalOutstanding = totalInvoiced - totalCollected;
+const totalCollected  = useMemo(() => filtered.reduce((s, p) => {
+    if (p.payment_status === 'refunded' || p.payment_status === 'partially_refunded') return s;
+    return s + parseFloat(p.payment_amount || '0');
+  }, 0), [filtered]);
+    const totalOutstanding = totalInvoiced - totalCollected;
   const currentLabel    = PERIODS.find(p => p.value === period)?.label || 'This year';
 
   const handleUpdate = (projectId: number, updatedItems: any[]) => {
@@ -334,13 +338,15 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                       <td className="px-4 py-3.5">
                         <p className="text-sm font-medium text-white">{fmt(total)}</p>
                       </td>
-                      <td className="px-4 py-3.5">
-                        <span className="text-[11px] font-medium px-2 py-1 rounded-full" style={{
-                          background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                          color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
-                        }}>
-                          {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                        </span>
+                     <td className="px-4 py-3.5">
+                        {(() => {
+                          const status = getPaymentStatusDisplay(project.payment_status);
+                          return (
+                            <span className="text-[11px] font-medium px-2 py-1 rounded-full" style={{ background: status.bg, color: status.color }}>
+                              {status.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3.5">
                         {receipts.length > 0 ? (
@@ -393,12 +399,14 @@ function InvoicesTab({ projects, company, period, setPeriod }: {
                     <p className="text-sm font-medium text-white truncate">{project.customer_name}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{formatDate(project.created_at)}</p>
                   </div>
-                  <span className="text-[11px] font-medium px-2 py-1 rounded-full shrink-0" style={{
-                    background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                    color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
-                  }}>
-                    {project.payment_status === 'paid' ? 'Paid' : project.payment_status === 'partial' ? 'Partial' : 'Unpaid'}
-                  </span>
+                 {(() => {
+                    const status = getPaymentStatusDisplay(project.payment_status);
+                    return (
+                      <span className="text-[11px] font-medium px-2 py-1 rounded-full shrink-0" style={{ background: status.bg, color: status.color }}>
+                        {status.label}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -595,12 +603,14 @@ function ReceiptsTab({ projects }: { projects: Project[] }) {
               {project.quote_total && (
                 <span className="text-xs font-medium text-slate-400">{fmt(parseFloat(project.quote_total))}</span>
               )}
-              <span className="text-[11px] font-medium px-2 py-1 rounded-full" style={{
-                background: project.payment_status === 'paid' ? 'rgba(16,185,129,0.12)' : project.payment_status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
-                color: project.payment_status === 'paid' ? '#10b981' : project.payment_status === 'partial' ? '#f59e0b' : '#ef4444',
-              }}>
-                {project.payment_status || 'unpaid'}
-              </span>
+             {(() => {
+                const status = getPaymentStatusDisplay(project.payment_status);
+                return (
+                  <span className="text-[11px] font-medium px-2 py-1 rounded-full" style={{ background: status.bg, color: status.color }}>
+                    {status.label}
+                  </span>
+                );
+              })()}
             </div>
           </div>
           <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>

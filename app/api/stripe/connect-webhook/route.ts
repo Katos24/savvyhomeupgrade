@@ -54,10 +54,21 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
+if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
         console.error(
           `Account mismatch on Connect webhook: event from ${eventAccountId}, project ${projectId} belongs to ${projectCheck[0].stripe_connect_account_id}`
         );
+        break;
+      }
+
+      // Idempotency guard — Stripe may redeliver this event (timeouts, retries).
+      // If we already marked this project paid, skip re-processing entirely
+      // so we don't double-send confirmation emails to the customer/contractor.
+      const alreadyPaidCheck = await sql`
+        SELECT payment_status FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
+      `;
+      if (alreadyPaidCheck[0]?.payment_status === 'paid') {
+        console.log(`Project ${projectId} already marked paid — skipping duplicate webhook event ${event.id}`);
         break;
       }
 
@@ -119,17 +130,50 @@ export async function POST(req: NextRequest) {
       break;
     }
 
-    case 'checkout.session.expired': {
+   case 'checkout.session.expired': {
       const session = event.data.object as any;
       console.log('Checkout session expired:', session.id, 'project:', session.metadata?.projectId);
       // No DB update needed — project stays unpaid, contractor can resend
       break;
     }
 
+    // ── Fired when a contractor issues a refund (full or partial) from
+    // their own Stripe Dashboard. Stripe handles the customer-facing
+    // refund email automatically; this just keeps our DB's payment_status
+    // in sync so the dashboard doesn't keep showing "Paid" after money
+    // has actually gone back to the customer.
+    case 'charge.refunded': {
+      const charge = event.data.object as any;
+      const paymentIntentId = charge.payment_intent;
+
+      if (!paymentIntentId) break;
+
+      const projectCheck = await sql`
+        SELECT id FROM projects WHERE stripe_payment_intent_id = ${paymentIntentId} LIMIT 1
+      `;
+
+      if (!projectCheck[0]) {
+        console.error('No matching project for refunded charge:', charge.id, paymentIntentId);
+        break;
+      }
+
+      const refundedAmount = charge.amount_refunded ? charge.amount_refunded / 100 : null;
+      const isFullRefund = charge.amount_refunded === charge.amount;
+
+      await sql`
+        UPDATE projects
+        SET payment_status = ${isFullRefund ? 'refunded' : 'partially_refunded'},
+            payment_amount = ${refundedAmount}
+        WHERE id = ${projectCheck[0].id}
+      `;
+
+      console.log(`Project ${projectCheck[0].id} marked ${isFullRefund ? 'refunded' : 'partially refunded'}, amount: ${refundedAmount}`);
+
+      break;
+    }
+
     // ── Fired when a company disconnects your platform from their Stripe
-    // dashboard side. Without this, your DB shows them as connected forever
-    // and payment links/checkout sessions for that company would silently
-    // start failing with no warning.
+    // dashboard side. ...
     case 'account.application.deauthorized': {
       const connectedAccountId = (event as any).account;
       if (!connectedAccountId) break;
