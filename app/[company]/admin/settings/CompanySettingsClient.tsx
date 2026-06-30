@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Workflow, Mail, Grid, FileText, ArrowLeft, Users,
+  Workflow, Mail, ArrowLeft, Users,
   CreditCard, ChevronRight, Trash2, Camera, Copy, Check,
   Pencil, X, Save, Phone, ExternalLink, Palette, Globe, Download,
   Lock,
@@ -10,50 +10,31 @@ import {
 import QRCodeLib from 'qrcode';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 import Link from 'next/link';
-import FormTab from './tabs/FormTab';
 import PipelineTab from './tabs/PipelineTab';
 import EmailTemplatesTab from './tabs/EmailTemplatesTab';
-import CategoriesTab from './tabs/CategoriesTab';
 import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
-import PaymentsTab from './tabs/PaymentsTab';
 
-type Tab = 'form' | 'pipeline' | 'email-templates' | 'categories' | 'team' | 'billing' | 'notifications' | 'payments';
-
+type Tab = 'pipeline' | 'email-templates' | 'team' | 'billing' | 'notifications';
 
 const TAB_LABELS: Record<Tab, string> = {
-  form: 'Booking Form',
   pipeline: 'Pipeline',
   'email-templates': 'Automations',
-  categories: 'Categories',
   team: 'Team Access',
   billing: 'Subscription Billing',
   notifications: 'Notifications',
-  payments: 'Customer Payments',
 };
 
 const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
-  form:              'settings_form',
   pipeline:          'settings_pipeline',
   'email-templates': 'settings_email_templates',
-  categories:        'settings_categories',
   team:              'settings_team',
   notifications:     'settings_notifications',
-  payments:          'stripe_connect',
 };
 
 
 
-function GoogleG({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-    </svg>
-  );
-}
+
 
 function UpgradeOverlay({ feature, companySlug }: { feature: string; companySlug: string }) {
   const prompt = UPGRADE_PROMPTS[feature];
@@ -78,16 +59,25 @@ function UpgradeOverlay({ feature, companySlug }: { feature: string; companySlug
             </li>
           ))}
         </ul>
-      )}
-      <a
-        href={`/${companySlug}/admin/settings`}
-        onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition"
-      >
-        Upgrade to {config.label}
-        {config?.price && <span className="opacity-75 font-normal">— ${config.price}/mo</span>}
-      </a>
-      <p className="text-xs text-gray-400 mt-3">Cancel anytime. No contracts.</p>
+   )}
+<a
+  href={`/${companySlug}/admin/settings`}
+  onClick={e => {
+    e.preventDefault()
+    window.location.href = `/${companySlug}/admin/settings`
+  }}
+  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition"
+>
+  Upgrade to {config.label}
+  {config?.price && (
+    <span className="opacity-75 font-normal">— ${config.price}/mo</span>
+  )}
+</a>
+
+<p className="text-xs text-gray-400 mt-3">
+  Cancel anytime. No contracts.
+</p>
+
     </div>
   );
 }
@@ -174,15 +164,13 @@ useEffect(() => {
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
   const [includeLogo, setIncludeLogo] = useState(true);
 
-  const [formData, setFormData] = useState({
+ const [formData, setFormData] = useState({
     name: company.name || '',
     email: company.email || '',
     phone: company.phone || '',
     website: company.website || '',
     color1: company.email_brand_color_1 || '#0B3C6D',
     color2: company.email_brand_color_2 || '#1F5F8F',
-    google_review_url: company.google_review_url || '',
-    google_review_enabled: company.google_review_enabled ?? false,
   });
   const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${company.updated_at || Date.now()}` : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -350,21 +338,16 @@ const handleToggleBcc = async () => {
 
   const renderUnlockedTab = (tab: Tab, data: any) => {
     switch (tab) {
-      case 'form':            return <FormTab company={data} currentUser={currentUser} />;
       case 'pipeline':        return <PipelineTab company={data} currentUser={currentUser} />;
       case 'email-templates': return <EmailTemplatesTab company={data} currentUser={currentUser} />;
-      case 'categories':      return <CategoriesTab company={data} currentUser={currentUser} />;
       case 'team':            return <TeamTab company={data} currentUser={currentUser} />;
       case 'billing':         return <BillingTab company={data} currentUser={currentUser} />;
-            case 'payments':        return <PaymentsTab company={data} currentUser={currentUser} />;
       default:                return null;
     }
   };
 
   const getSampleData = (tab: Tab) => {
     switch (tab) {
-      case 'categories': return { form_categories: [{ value: 'roof_repair', label: 'Roof Repair' }, { value: 'inspection', label: 'Inspection' }, { value: 'new_installation', label: 'New Installation' }] };
-      case 'form': return { form_field_config: { address: { enabled: true, required: true }, file_upload: { enabled: true }, lead_source: { enabled: true }, preferred_date: { enabled: true }, preferred_time: { enabled: false } }, custom_questions: [] };
       case 'pipeline': return { status_options: [{ value: 'new', label: 'New', color: 'blue' }, { value: 'quoted', label: 'Quoted', color: 'purple' }, { value: 'scheduled', label: 'Scheduled', color: 'blue' }, { value: 'completed', label: 'Completed', color: 'green' }] };
       default: return {};
     }
@@ -522,25 +505,6 @@ return (
                   </div>
                 </div>
 
-                <div className="sm:col-span-2 rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
-                  <div className="flex items-center gap-2 px-3.5 sm:px-4 pt-3 pb-1">
-                    <GoogleG size={13} />
-                    <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Google review link</span>
-                  </div>
-                  <div className="flex flex-col gap-2 px-3.5 sm:px-4 pb-3.5 pt-1.5">
-                    <input value={formData.google_review_url} onChange={e => setFormData({ ...formData, google_review_url: e.target.value })}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-gray-400 placeholder:font-normal"
-                      placeholder="https://g.page/r/your-review-link" />
-                    <label className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
-                      <input type="checkbox" checked={formData.google_review_enabled}
-                        onChange={e => setFormData({ ...formData, google_review_enabled: e.target.checked })}
-                        className="w-4 h-4 accent-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">Auto-send when job is marked completed</span>
-                    </label>
-                  </div>
-                </div>
-
-           
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
@@ -562,21 +526,23 @@ return (
                   </div>
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     {formData.phone ? formatPhone(formData.phone) : <span className="text-gray-400 font-normal">Not set</span>}
-                  </p>
-                </div>
+</p>
+</div>
 
-                
-            <a
+<a
   href={formData.website || undefined}
   target="_blank"
   rel="noopener noreferrer"
-  onClick={e => { if (!formData.website) e.preventDefault(); }}
+  onClick={e => {
+    if (!formData.website) e.preventDefault()
+  }}
   className={`group rounded-xl border border-gray-100 bg-gray-50/60 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
     formData.website
       ? 'hover:bg-white hover:border-violet-200 hover:shadow-sm cursor-pointer'
       : 'cursor-default'
   }`}
 >
+
   <div className="flex items-center justify-between gap-2">
     <div className="flex items-center gap-2 min-w-0">
       <Globe className="w-3.5 h-3.5 text-violet-500 shrink-0" />
@@ -606,42 +572,9 @@ return (
                     <div className="w-6 h-6 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color1 }} />
                     <div className="w-6 h-6 rounded-md border border-gray-200 shrink-0" style={{ background: formData.color2 }} />
                   </div>
-                </div>
 
                 
-             <a
-  href={formData.google_review_url || undefined}
-  target="_blank"
-  rel="noopener noreferrer"
-  onClick={e => { if (!formData.google_review_url) e.preventDefault(); }}
-  className={`group rounded-xl border border-blue-100 bg-blue-50/40 p-3.5 sm:p-4 flex flex-col gap-1.5 min-w-0 transition-all duration-200 ${
-    formData.google_review_url
-      ? 'hover:bg-blue-50 hover:border-blue-200 hover:shadow-sm cursor-pointer'
-      : 'cursor-default'
-  }`}
->
-  <div className="flex items-center justify-between gap-2">
-    <div className="flex items-center gap-2 min-w-0">
-      <GoogleG size={13} />
-      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">
-        Google review
-      </span>
-    </div>
-
-    {formData.google_review_enabled && (
-      <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100 shrink-0">
-        Auto
-      </span>
-    )}
-  </div>
-
-  <p className="text-sm font-semibold text-gray-900 truncate">
-  {formData.google_review_url
-    ? formData.google_review_url.replace(/^https?:\/\//, '')
-    : <span className="text-gray-400 font-normal">Not set</span>}
-</p>
-
-</a>
+ </div>
 
 
 
@@ -776,11 +709,8 @@ return (
           <p className="text-[11px] font-medium text-white/40 mb-3 px-1">System configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages so every job moves through a process that makes sense for your business." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Basic" />
-            <MenuCard icon={Grid} label="Categories" desc="Add your service types — each gets its own task checklist and pricing template." color="#8b5cf6" onClick={() => openTab('categories')} locked={!can(planTier, 'settings_categories')} requiredPlan="Basic" />
-            <MenuCard icon={FileText} label="Booking Form" desc="Control what customers fill out when they submit a request." color="#f97316" onClick={() => openTab('form')} locked={!can(planTier, 'settings_form')} requiredPlan="Basic" />
             <MenuCard icon={Mail} label="Email Templates" desc="Personalize the emails customers receive — all branded to you." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads to specific people." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
-              <MenuCard icon={CreditCard} label="Customer Payments" desc="Connect Stripe to accept cards, or add a manual payment link as a backup." color="#6366f1" onClick={() => openTab('payments')} locked={!can(planTier, 'stripe_connect')} requiredPlan="Basic" />
           </div>
         </div>
 
@@ -788,7 +718,6 @@ return (
         <div>
           <p className="text-[11px] font-medium text-white/40 mb-3 px-1">Billing & payments</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <MenuCard icon={CreditCard} label="Customer Payments" desc="Connect Stripe to accept cards, or add a manual payment link as a backup." color="#6366f1" onClick={() => openTab('payments')} />
             {planTier !== 'free' && (
               <MenuCard icon={CreditCard} label="Subscription Billing" desc="Manage your plan and subscription." color="#10b981" onClick={() => openTab('billing')} />
             )}

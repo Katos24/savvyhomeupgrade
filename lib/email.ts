@@ -9,6 +9,8 @@ import {
   buildCustomAnswers,
   buildAttachmentSummary,
 } from '@/lib/emailBase';
+import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
+
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sql = neon(process.env.DATABASE_URL!);
@@ -2731,3 +2733,64 @@ export async function sendPaymentNotificationToContractor({
     console.error('Failed to send payment notification to contractor:', error);
   }
 }
+
+
+// Sends a notification when a contractor's Stripe account becomes restricted
+// (e.g. missing SSN, expired ID, new compliance requirement). Triggered from
+// the account.updated webhook only when status regresses TO restricted from
+// something else — see the webhook's previousStatus check. Same fail-soft
+// pattern as the payment emails: never throw, this runs inside a webhook
+// handler that must still return 200 to Stripe.
+export async function sendStripeActionNeededEmail({
+  contractorEmail,
+  companyName,
+  companyId,
+  reasons,
+  dashboardUrl,
+}: {
+  contractorEmail: string;
+  companyName: string;
+  companyId: number;
+  reasons: { capability: string; code: string; resolution: string }[];
+  dashboardUrl: string;
+}) {
+  try {
+    const company = await getCompanyDetails(companyId);
+
+  const reasonItems = reasons.length > 0
+      ? reasons.map(r => `<li style="margin-bottom: 6px; color: #334155; font-size: 14px;">${describeRequirementReason(r.code, r.capability)}</li>`).join('')
+      : `<li style="margin-bottom: 6px; color: #334155; font-size: 14px;">Stripe needs additional information to continue processing payments.</li>`;
+    const html = buildEmail({
+      companyName: company.name || companyName,
+      logoUrl: company.logo_url,
+      brandColor: company.email_brand_color_1,
+      brandColor2: company.email_brand_color_2,
+      bodyHtml: `
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          Your Stripe account needs attention before you can keep accepting card payments. Customer payments and payouts are paused until this is resolved.
+        </p>
+        <ul style="margin: 0 0 20px 0; padding-left: 20px;">
+          ${reasonItems}
+        </ul>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #111827; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px;">
+            Resolve on your dashboard
+          </a>
+        </div>
+      `,
+      preheader: 'Action needed on your Stripe account',
+    });
+
+    await resend.emails.send({
+      from: `Lead2Project <hello@lead2project.com>`,
+      to: contractorEmail,
+      subject: `Action needed — your Stripe payments are paused`,
+      html,
+    });
+
+    console.log('Stripe action-needed email sent to:', contractorEmail);
+  } catch (error) {
+    console.error('Failed to send Stripe action-needed email:', error);
+  }
+}
+

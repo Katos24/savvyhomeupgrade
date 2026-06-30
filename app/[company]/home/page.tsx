@@ -25,6 +25,8 @@ interface Company {
   custom_questions?: any[];
   categoriesCustomized: boolean;
   hasRealLead: boolean;
+  stripe_connect_onboarded: boolean;
+  stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,11 +53,12 @@ export async function generateMetadata(
 
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
-  const rows = await sql`
+ const rows = await sql`
     SELECT
       id, name, slug, email, phone, website, logo_url, created_at,
       email_brand_color_1, email_brand_color_2, plan_tier,
-      form_categories, custom_questions, business_type
+      form_categories, custom_questions, business_type,
+      stripe_connect_onboarded, stripe_payment_status
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1

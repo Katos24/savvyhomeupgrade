@@ -12,7 +12,8 @@ async function getCompany(slug: string) {
     SELECT id, name, slug, email, phone, website, logo_url, created_at,
       email_brand_color_1, email_brand_color_2, plan_tier,
       payment_link_type, payment_link_url,
-      stripe_connect_account_id, stripe_connect_onboarded
+      stripe_connect_account_id, stripe_connect_onboarded,
+      stripe_payment_status, stripe_requirements_summary
     FROM companies WHERE slug = ${slug} LIMIT 1
   `;
   if (!rows.length) return null;

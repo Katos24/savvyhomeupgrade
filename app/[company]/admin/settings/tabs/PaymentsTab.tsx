@@ -6,6 +6,8 @@ import {
   CreditCard, CheckCircle, AlertCircle, ArrowRight, Loader2, ChevronDown,
 } from 'lucide-react';
 import StripePaymentInfo from '@/components/dashboard/StripePaymentInfo';
+import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
+
 
 const PAYMENT_COLORS: Record<string, string> = {
   venmo:   '#008CFF',
@@ -15,26 +17,34 @@ const PAYMENT_COLORS: Record<string, string> = {
   other:   '#64748b',
 };
 
+// Maps Stripe's requirement codes to plain-English copy a contractor can act on.
+// Add to this as you encounter new codes in production — fall back to the
+// generic message for anything unmapped rather than showing a raw Stripe code.
+function describeBlockingReasons(reasons: { capability: string; code: string }[] | null | undefined): string {
+  if (!reasons || reasons.length === 0) {
+    return 'Your Stripe account needs more info before you can receive payouts.';
+  }
+  const messages = reasons.map(r => describeRequirementReason(r.code, r.capability));
+  return Array.from(new Set(messages)).join(' ');
+}
+
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'denied' | 'already_linked'>('idle');
-  const [accountStatus, setAccountStatus] = useState<'checking' | 'active' | 'pending' | null>(null);
+  const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
+
   const isConnected = !!company.stripe_connect_onboarded;
+  const paymentStatus: 'active' | 'restricted' | 'pending' | null = company.stripe_payment_status ?? null;
+  const blockingReasons = company.stripe_requirements_summary ?? [];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sc = params.get('stripe_connect');
-    if (sc === 'success' || sc === 'error' || sc === 'denied' || sc === 'already_linked') setStatus(sc as any);
+    // 'success' is no longer a distinct banner — paymentStatus (read straight
+    // from the company record, set by the redirect route + webhook) is now
+    // the single source of truth for what to show. We still care about the
+    // failure-path params since those don't have a DB equivalent.
+    if (sc === 'error' || sc === 'denied' || sc === 'already_linked') setRedirectStatus(sc as any);
   }, []);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    setAccountStatus('checking');
-    fetch(`/api/company/${company.slug}/stripe/connect-status`)
-      .then(res => res.json())
-      .then(data => setAccountStatus(data.chargesEnabled ? 'active' : 'pending'))
-      .catch(() => setAccountStatus(null));
-  }, [isConnected, company.slug]);
 
   async function handleConnect() {
     setLoading(true);
@@ -64,25 +74,24 @@ function StripeConnectSection({ company }: { company: any }) {
       </div>
 
       <div className="mt-2">
-        <StripePaymentInfo accountStatus={isConnected ? accountStatus : null} />
+        <StripePaymentInfo
+          accountStatus={
+  !isConnected ? null : paymentStatus === 'active' ? 'active' : 'pending'
+}
+        />
       </div>
 
-      {status === 'success' && (
-        <p className="mt-3 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
-          Stripe connected successfully.
-        </p>
-      )}
-      {status === 'error' && (
+      {redirectStatus === 'error' && (
         <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
           Something went wrong connecting Stripe. Please try again.
         </p>
       )}
-      {status === 'denied' && (
+      {redirectStatus === 'denied' && (
         <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
           Stripe connection was cancelled.
         </p>
       )}
-      {status === 'already_linked' && (
+      {redirectStatus === 'already_linked' && (
         <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
           That Stripe account is already connected to a different company. Use a different Stripe account, or contact support if you believe this is an error.
         </p>
@@ -90,32 +99,41 @@ function StripeConnectSection({ company }: { company: any }) {
 
       {isConnected ? (
         <div className="mt-4 space-y-3">
-          {accountStatus === 'pending' && (
-            <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm font-medium">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Your Stripe account needs more info before you can receive payouts. Manage it on Stripe to finish setup.</span>
-            </div>
-          )}
-          {accountStatus === 'active' && (
+          {paymentStatus === 'active' && (
             <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
               <CheckCircle className="w-4 h-4" /> Connected — customers can pay invoices with a card.
             </div>
           )}
-          {accountStatus === 'checking' && (
-            <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
+
+          {paymentStatus === 'restricted' && (
+            <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{describeBlockingReasons(blockingReasons)} Manage it on Stripe to finish setup.</span>
             </div>
           )}
 
-          <a
-            href="https://dashboard.stripe.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all active:scale-95"
-          >
-            Manage on Stripe
-            <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          {paymentStatus === 'pending' && (
+            <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Stripe is reviewing your information.
+            </div>
+          )}
+
+        {paymentStatus === null && (
+  <div className="flex items-center gap-2 text-slate-400 font-medium text-sm">
+    <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
+  </div>
+)}
+
+<a
+  href="https://dashboard.stripe.com"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all active:scale-95"
+>
+  Manage on Stripe
+  <ArrowRight className="w-3.5 h-3.5" />
+</a>
+
         </div>
       ) : (
         <div className="mt-4">

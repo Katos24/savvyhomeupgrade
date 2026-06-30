@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
+
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,28 +38,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const account = await (stripe as any).v2.core.accounts.retrieve(accountId, {
+const account = await (stripe as any).v2.core.accounts.retrieve(accountId, {
       include: ['configuration.merchant'],
     });
 
     console.log('FULL ACCOUNT RESPONSE:', JSON.stringify(account, null, 2));
 
-    // Confirmed against a real test-mode response on 2026-06-29:
-    // configuration.merchant.capabilities.card_payments.status is the right
-    // field. Values seen so far: "active", "restricted" (with
-    // status_details[].code === "requirements_past_due" when onboarding is
-    // incomplete). Treat "restricted" as "account exists, not fully
-    // onboarded yet" rather than a hard error — they completed the Account
-    // Link flow (didn't bail), they just have outstanding requirements.
-    const capabilityStatus = account.configuration?.merchant?.capabilities?.card_payments?.status;
-    const onboarded =
-      capabilityStatus === 'active' ||
-      capabilityStatus === 'pending' ||
-      capabilityStatus === 'restricted';
+    const { onboarded, paymentStatus, blockingReasons } = parseAccountStatus(account);
 
     await sql`
       UPDATE companies
-      SET stripe_connect_onboarded = ${onboarded}
+      SET
+        stripe_connect_onboarded = ${onboarded},
+        stripe_payment_status = ${paymentStatus},
+        stripe_requirements_summary = ${JSON.stringify(blockingReasons)}
       WHERE slug = ${slug}
     `;
 

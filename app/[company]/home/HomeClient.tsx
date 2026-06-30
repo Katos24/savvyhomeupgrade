@@ -19,6 +19,8 @@ type Company = {
   custom_questions?: any[];
   categoriesCustomized: boolean;
   hasRealLead: boolean;
+  stripe_connect_onboarded: boolean;
+  stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
 };
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -145,8 +147,7 @@ function SettingsMockup() {
   );
 }
 
-function StatusBadge({ status }: { status: 'active' | 'pending' | 'not_connected' | 'loading' }) {
-  if (status === 'loading') return <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-300" />;
+function StatusBadge({ status }: { status: 'active' | 'pending' | 'not_connected' }) {
   const styles = {
     active: 'text-emerald-700 bg-emerald-50 border-emerald-100',
     pending: 'text-amber-700 bg-amber-50 border-amber-100',
@@ -267,9 +268,7 @@ export default function HomeClient({ company }: { company: Company }) {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const [paymentsStatus, setPaymentsStatus] = useState<'loading' | 'active' | 'pending' | 'not_connected'>('loading');
-
-  useEffect(() => {
+ useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
   }, [company.slug]);
 
@@ -289,18 +288,12 @@ export default function HomeClient({ company }: { company: Company }) {
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
 
-  useEffect(() => {
-    // Don't even hit the endpoint if this plan can't use Stripe Connect at
-    // all — it'll never be anything but "not connected," no need to ask.
-    if (paymentsLocked) {
-      setPaymentsStatus('not_connected');
-      return;
-    }
-    fetch(`/api/company/${company.slug}/stripe/connect-status`)
-      .then(r => r.json())
-      .then(data => setPaymentsStatus(data.chargesEnabled ? 'active' : 'pending'))
-      .catch(() => setPaymentsStatus('not_connected'));
-  }, [company.slug, paymentsLocked]);
+  const paymentsStatus: 'active' | 'pending' | 'not_connected' =
+    paymentsLocked || !company.stripe_connect_onboarded
+      ? 'not_connected'
+      : company.stripe_payment_status === 'active'
+        ? 'active'
+        : 'pending'; // covers 'restricted' and null (not-yet-backfilled) alike
 
   const handleCopy = () => {
     navigator.clipboard.writeText(publicLink);

@@ -33,12 +33,14 @@ type CompanyDTO = {
   subscription_status: string | null;
   trial_ends_at: string | null;
   plan_tier: string;
-    form_field_config: any;
-pending_downgrade_at: string | null;
-payment_link_type: string | null;
-payment_link_url: string | null;
-stripe_connect_account_id: string | null;
-stripe_connect_onboarded: boolean;
+  form_field_config: any;
+  pending_downgrade_at: string | null;
+  payment_link_type: string | null;
+  payment_link_url: string | null;
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarded: boolean;
+  stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
+  stripe_requirements_summary: any;
 };
 
 export default async function SettingsPage({
@@ -92,15 +94,17 @@ export default async function SettingsPage({
         subscription_status,
         trial_ends_at,
         plan_tier,
-       form_field_config,
-pending_downgrade_at,
-google_review_url,
-google_review_enabled,
-payment_link_type,
-payment_link_url,
-bcc_sender_on_email,
-stripe_connect_account_id,
-stripe_connect_onboarded
+        form_field_config,
+        pending_downgrade_at,
+        google_review_url,
+        google_review_enabled,
+        payment_link_type,
+        payment_link_url,
+        bcc_sender_on_email,
+        stripe_connect_account_id,
+        stripe_connect_onboarded,
+        stripe_payment_status,
+        stripe_requirements_summary
       FROM companies
       WHERE slug = ${resolvedParams.company}
       LIMIT 1
@@ -139,18 +143,19 @@ stripe_connect_onboarded
       custom_questions: company.custom_questions,
       subscription_status: company.subscription_status,
       trial_ends_at: company.trial_ends_at,
-       plan_tier: company.plan_tier,
+      plan_tier: company.plan_tier,
       form_field_config: company.form_field_config,
-pending_downgrade_at: company.pending_downgrade_at ?? null,
-google_review_url: company.google_review_url ?? '',
-google_review_enabled: company.google_review_enabled ?? false,
-payment_link_type: company.payment_link_type ?? '',
-payment_link_url: company.payment_link_url ?? '',
-bcc_sender_on_email: company.bcc_sender_on_email ?? false,
-stripe_connect_account_id: company.stripe_connect_account_id ?? null,
-stripe_connect_onboarded: company.stripe_connect_onboarded ?? false,
- };
-
+      pending_downgrade_at: company.pending_downgrade_at ?? null,
+      google_review_url: company.google_review_url ?? '',
+      google_review_enabled: company.google_review_enabled ?? false,
+      payment_link_type: company.payment_link_type ?? '',
+      payment_link_url: company.payment_link_url ?? '',
+      bcc_sender_on_email: company.bcc_sender_on_email ?? false,
+      stripe_connect_account_id: company.stripe_connect_account_id ?? null,
+      stripe_connect_onboarded: company.stripe_connect_onboarded ?? false,
+      stripe_payment_status: company.stripe_payment_status ?? null,
+      stripe_requirements_summary: company.stripe_requirements_summary ?? [],
+    };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;
   } catch (error) {

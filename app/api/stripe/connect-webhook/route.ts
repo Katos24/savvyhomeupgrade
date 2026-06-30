@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { headers } from 'next/headers';
+import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -148,15 +149,54 @@ export async function POST(req: NextRequest) {
     // status on a connected account (e.g. charges_enabled flips, or Stripe
     // disables an account for compliance reasons). Currently just logs —
     // hook point for a future "your Stripe account needs attention" email.
-    case 'account.updated': {
+   case 'account.updated': {
       const account = event.data.object as any;
-      if (account.charges_enabled === false && account.requirements?.disabled_reason) {
-        console.warn(
-          'Stripe Connect: account disabled —',
-          account.id,
-          account.requirements.disabled_reason
-        );
+      const connectedAccountId = account.id;
+
+      const { paymentStatus, blockingReasons } = parseAccountStatus(account);
+
+      const previous = await sql`
+        SELECT stripe_payment_status
+        FROM companies
+        WHERE stripe_connect_account_id = ${connectedAccountId}
+        LIMIT 1
+      `;
+      const previousStatus = previous[0]?.stripe_payment_status;
+
+      await sql`
+        UPDATE companies
+        SET
+          stripe_payment_status = ${paymentStatus},
+          stripe_requirements_summary = ${JSON.stringify(blockingReasons)}
+        WHERE stripe_connect_account_id = ${connectedAccountId}
+      `;
+
+      console.log(
+        `Stripe Connect: ${connectedAccountId} status -> ${paymentStatus}`,
+        blockingReasons.length ? blockingReasons : '(no blockers)'
+      );
+
+      if (paymentStatus === 'restricted' && previousStatus !== 'restricted') {
+        const companyRow = await sql`
+          SELECT id, email as contractor_email, name as company_name, slug as company_slug
+          FROM companies
+          WHERE stripe_connect_account_id = ${connectedAccountId}
+          LIMIT 1
+        `;
+        const c = companyRow[0];
+  if (c?.contractor_email) {
+      const { sendStripeActionNeededEmail } = await import('@/lib/email');
+      await sendStripeActionNeededEmail({
+        contractorEmail: c.contractor_email,
+        companyName: c.company_name,
+        companyId: c.id, // confirm this column name — see note below
+        reasons: blockingReasons,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${c.company_slug}/admin/settings`,
+      });
+    }
+
       }
+
       break;
     }
 
