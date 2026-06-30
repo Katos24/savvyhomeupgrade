@@ -714,7 +714,7 @@ export default function QuoteSection({
                 disabled={!hasProject || quoteData.length === 0}
                 className="flex items-center justify-center w-8 h-8 rounded-md text-white hover:bg-slate-700 transition disabled:opacity-30"
               >
-                <ChevronDown className="w-4 h-4" />
+<Mail className="w-4 h-4" />
               </button>
             </div>
           </div>

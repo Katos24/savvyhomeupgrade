@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import {
   Calendar, User,
   X, Eye,
-  ChevronDown, ChevronUp, Hash, CheckCircle2,
-  History
+  ChevronDown, ChevronUp, Hash, CheckCircle2, Clock,
+  History, Loader2, Save, Mail
 } from 'lucide-react';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
@@ -25,7 +25,6 @@ type SchedulingSectionProps = {
 export default function SchedulingSection({ lead, currentUser, onRefresh, hasProject, companySlug, teamMembers = [] }: SchedulingSectionProps) {
   const [saving, setSaving] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [showHours, setShowHours] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   const [scheduledDate, setScheduledDate] = useState('');
@@ -42,6 +41,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [clockOpen, setClockOpen] = useState(false);
 
   const scheduleEmailLog = useMemo(() => {
     try {
@@ -187,10 +187,10 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
         )}
       </AnimatePresence>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
 
         {/* HEADER */}
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Schedule</h3>
             {lastEmailSentAt && (
@@ -202,12 +202,25 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               </div>
             )}
           </div>
-          <button
-            onClick={() => setShowCalendarModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-all hover:bg-slate-50"
-          >
-            <Calendar size={13} /> Calendar
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setClockOpen(true)}
+              className="flex items-center justify-center w-8 h-8 border border-slate-200 text-slate-500 rounded-lg transition-all hover:bg-slate-50 relative"
+              title="Job hours"
+            >
+              <Clock size={14} />
+              {(estimatedHours || actualHours) && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+              )}
+            </button>
+           <button
+              onClick={() => setShowCalendarModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-all hover:bg-slate.50"
+            >
+              <Calendar size={13} />
+              <span className="hidden sm:inline">Calendar</span>
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-3">
@@ -282,50 +295,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
             </div>
           </div>
 
-          <StickyActionBar
-            summary={
-              scheduledDate
-                ? `${new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${assignedTo ? ` · ${assignedTo}` : ''}`
-                : 'Not scheduled'
-            }
-            primaryLabel="Save Schedule"
-            primaryLoading={saving}
-            onPrimary={() => handleSave()}
-            secondaryLabel="Send Schedule"
-            secondaryDisabled={!hasProject || !scheduledDate || saving}
-            onSecondary={() => setShowEmailModal(true)}
-          />
 
-          {/* JOB HOURS */}
-          <div className="pt-2 border-t border-slate-100">
-            <button onClick={() => setShowHours(v => !v)} className="flex items-center justify-between w-full py-1">
-              <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-                <Hash size={11} /> Job hours
-              </span>
-              <div className="text-slate-400">
-                {showHours ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </div>
-            </button>
-            <AnimatePresence>
-              {showHours && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-2 grid grid-cols-2 gap-2 pb-1">
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-400 mb-1 block">Estimated</label>
-                      <input type="number" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-400 mb-1 block">Actual</label>
-                      <input type="number" step="0.5" value={actualHours} onChange={(e) => setActualHours(e.target.value)} placeholder="0.0" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none" />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* SENT HISTORY */}
           {outboxLog.length > 0 && (
@@ -375,8 +345,132 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               </div>
             </div>
           )}
+</div>
+
+        {/* FOOTER — matches Quote section style */}
+        <div className="px-4 py-3 bg-slate-900 flex items-center justify-between mt-auto">
+          <span className="text-xs text-slate-400">
+            {scheduledDate
+              ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+              : 'Not scheduled'}
+          </span>
+          <div className="flex items-center bg-slate-800 rounded-lg p-1">
+            <button
+              onClick={() => handleSave()}
+              disabled={saving}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition disabled:opacity-30 text-slate-300 hover:bg-slate-700"
+            >
+              {saving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <div className="w-px h-4 bg-slate-700 mx-1" />
+           <div className="relative group">
+              <button
+                onClick={() => {
+                  if (!hasProject) {
+                    toast.error('Create a project first');
+                    return;
+                  }
+                  if (!scheduledDate) {
+                    toast.error('Add a date to send the schedule');
+                    return;
+                  }
+                  setShowEmailModal(true);
+                }}
+                className={`flex items-center justify-center w-8 h-8 rounded-md text-white hover:bg-slate-700 transition ${(!hasProject || !scheduledDate) ? 'opacity-30' : ''}`}
+              >
+                <Mail className="w-4 h-4" />
+              </button>
+              {(!hasProject || !scheduledDate) && (
+                <div className="absolute bottom-full right-0 mb-2 w-44 bg-slate-700 text-white text-[11px] font-medium px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center leading-relaxed">
+                  {!hasProject
+                    ? 'Create a project first'
+                    : 'Add a date to send schedule'}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* JOB HOURS MODAL */}
+      <AnimatePresence>
+        {clockOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setClockOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="bg-white w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock size={14} className="text-slate-400" />
+                  <p className="text-sm font-semibold text-slate-900">Job hours</p>
+                </div>
+                <button
+                  onClick={() => setClockOpen(false)}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg transition"
+                >
+                  <X size={14} className="text-slate-400" />
+                </button>
+              </div>
+              <div className="px-5 py-5 space-y-4">
+                <div>
+                  <label className="text-[11px] font-medium text-slate-400 mb-1.5 block uppercase tracking-wide">Estimated hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={estimatedHours}
+                    onChange={e => setEstimatedHours(e.target.value)}
+                    placeholder="0.0"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-slate-400 mb-1.5 block uppercase tracking-wide">Actual hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={actualHours}
+                    onChange={e => setActualHours(e.target.value)}
+                    placeholder="0.0"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                  />
+                </div>
+                {estimatedHours && actualHours && (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="text-[11px] font-medium text-slate-500">Over/under</span>
+                    <span className={`text-xs font-bold ${parseFloat(actualHours) > parseFloat(estimatedHours) ? 'text-red-500' : 'text-emerald-600'}`}>
+                      {parseFloat(actualHours) > parseFloat(estimatedHours)
+                        ? `+${(parseFloat(actualHours) - parseFloat(estimatedHours)).toFixed(1)} hrs over`
+                        : `${(parseFloat(estimatedHours) - parseFloat(actualHours)).toFixed(1)} hrs under`}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="px-5 pb-5">
+                <button
+                  onClick={() => { handleSave(); setClockOpen(false); }}
+                  disabled={saving}
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+                >
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {saving ? 'Saving...' : 'Save hours'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* MODALS */}
       <SchedulingCalendarModal
