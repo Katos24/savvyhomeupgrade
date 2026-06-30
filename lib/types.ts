@@ -8,7 +8,7 @@ export type StatusOption = {
 
 
 
-// lib/types.ts
+// lib/types.ts-s
 
 export interface AIAnalysisData {
   summary?: string;
