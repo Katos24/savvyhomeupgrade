@@ -380,10 +380,14 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 <p className="text-[13px] font-medium text-gray-900">BCC me on customer emails</p>
                 <p className="text-[12px] text-gray-600 mt-0.5">Get a copy when a quote or schedule email sends</p>
               </div>
-              <button onClick={handleToggleBcc} disabled={bccSaving}
-                className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
-              </button>
+             <button 
+  onClick={handleToggleBcc} 
+  disabled={bccSaving}
+  className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+  style={{ minWidth: '2.5rem', minHeight: '1.25rem', maxWidth: '2.5rem' }}
+>
+  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
+</button>
             </div>
 
           </div>
