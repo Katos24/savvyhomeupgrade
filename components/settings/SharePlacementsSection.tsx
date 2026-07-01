@@ -180,14 +180,13 @@ export default function SharePlacementsSection({ companySlug, publicLink }: { co
   return (
     <>
       <div className="mt-3">
-        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Share your link</p>
-        <div className="flex flex-wrap gap-2">
+<p className="text-[13px] font-semibold text-white mb-2">Where can you put your link?</p>
+<div className="flex flex-wrap gap-2">
           {placements.map(p => (
             <button
               key={p.id}
               onClick={() => setActive(p.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-[12px] font-medium transition-colors"
-            >
+className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-[13px] font-medium transition-colors"            >
               {p.icon}
               {p.label}
             </button>
