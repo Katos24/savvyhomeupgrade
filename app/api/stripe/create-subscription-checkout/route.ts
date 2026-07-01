@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { plan = 'basic' } = await req.json();
-
     const priceId = PLAN_PRICE_IDS[plan];
     if (!priceId) {
       return NextResponse.json({ error: `No price configured for plan: ${plan}` }, { status: 500 });
@@ -37,7 +36,9 @@ export async function POST(req: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!);
     const companies = await sql`
-      SELECT slug, name, email, stripe_customer_id FROM companies WHERE id = ${companyId}
+      SELECT id, slug, name, email, stripe_customer_id, trial_ends_at, subscription_status
+      FROM companies
+      WHERE id = ${companyId}
     `;
 
     if (companies.length === 0) {
@@ -45,6 +46,12 @@ export async function POST(req: NextRequest) {
     }
 
     const company = companies[0];
+
+    // ── Has this company ever had a trial? ──
+    // trial_ends_at gets set on first checkout.session.completed
+    // so if it's non-null they've already used their trial
+    const alreadyTrialed = company.trial_ends_at != null;
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     const session = await stripe.checkout.sessions.create({
@@ -58,13 +65,16 @@ export async function POST(req: NextRequest) {
         ? { customer: company.stripe_customer_id }
         : { customer_email: company.email }),
       subscription_data: {
-        trial_period_days: 14,
+        // Only give trial if they've never had one before
+        ...(!alreadyTrialed ? { trial_period_days: 14 } : {}),
         metadata: { companyId: companyId.toString(), plan },
       },
       metadata: { companyId: companyId.toString(), plan },
       custom_text: {
         submit: {
-          message: "You won't be charged until your 14-day free trial ends. Cancel anytime.",
+          message: alreadyTrialed
+            ? 'Your card will be charged today. Cancel anytime.'
+            : "You won't be charged until your 14-day free trial ends. Cancel anytime.",
         },
       },
       allow_promotion_codes: true,
@@ -72,6 +82,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
+
   } catch (error: any) {
     console.error('Stripe checkout error:', error);
     return NextResponse.json(

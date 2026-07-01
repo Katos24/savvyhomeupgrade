@@ -52,17 +52,14 @@ function hexToRgb(hex: string) {
   );
 }
 
-// Convert hex to HSL
 function hexToHsl(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
   let r = parseInt(h.substring(0, 2), 16) / 255;
   let g = parseInt(h.substring(2, 4), 16) / 255;
   let b = parseInt(h.substring(4, 6), 16) / 255;
-
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   let hue = 0, sat = 0;
   const lit = (max + min) / 2;
-
   if (max !== min) {
     const d = max - min;
     sat = lit > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -75,11 +72,9 @@ function hexToHsl(hex: string): [number, number, number] {
   return [hue * 360, sat * 100, lit * 100];
 }
 
-// Convert HSL back to pdf-lib rgb
 function hslToRgbColor(h: number, s: number, l: number) {
   const hN = h / 360, sN = s / 100, lN = l / 100;
   let r: number, g: number, b: number;
-
   if (s === 0) {
     r = g = b = lN;
   } else {
@@ -100,36 +95,20 @@ function hslToRgbColor(h: number, s: number, l: number) {
   return rgb(r, g, b);
 }
 
-// Darken any color to be safe for large header fills
-// Clamps lightness to 20-32%, reduces saturation slightly
-// Pure black (#000000) gets nudged to a dark slate so it has character
 function darkenForHeader(hex: string) {
-  if (!isValidHex(hex)) return rgb(0.10, 0.13, 0.18); // default dark slate
-
+  if (!isValidHex(hex)) return rgb(0.10, 0.13, 0.18);
   let [h, s, l] = hexToHsl(hex);
-
-  // Pure black or near-black — nudge to dark slate with slight hue
   if (l < 5) return rgb(0.10, 0.13, 0.18);
-
-  // Very light colors — fall back to dark slate
   if (l > 85) return rgb(0.10, 0.13, 0.18);
-
-  // Clamp lightness to 20-32% range — always dark enough for white text
   l = Math.max(20, Math.min(32, l));
-
-  // Reduce saturation slightly for very vivid colors so they don't scream
   if (s > 80) s = s * 0.75;
-
   return hslToRgbColor(h, s, l);
 }
 
-// Make accent color safe for small use on white (ensure it's dark enough to see)
 function accentForWhite(hex: string) {
   if (!isValidHex(hex)) return rgb(0.02, 0.59, 0.43);
   const [h, s, l] = hexToHsl(hex);
-  // If too light to see on white, darken it
   if (l > 70) return hslToRgbColor(h, s, 45);
-  // If pure black, use a visible dark slate
   if (l < 5) return rgb(0.10, 0.13, 0.18);
   return hexToRgb(hex);
 }
@@ -161,14 +140,14 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
 
   let y = height;
 
-  // ── THIN ACCENT TOP BAR ───────────────────────────────────
+  // ── THIN ACCENT TOP BAR ──
   page.drawRectangle({ x: 0, y: height - 4, width, height: 4, color: accent2Color });
 
-  // ── HEADER — darkened brand color, always safe for white text ──
-  const headerH = 100;
+  // ── HEADER ──
+  const headerH = 120;
   page.drawRectangle({ x: 0, y: height - 4 - headerH, width, height: headerH, color: headerColor });
 
-  // ── LOGO ─────────────────────────────────────────────────
+  // ── LOGO ──
   let logoEndX = margin;
   if (data.companyLogoUrl) {
     try {
@@ -178,10 +157,10 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       const logoImage = contentType.includes('png')
         ? await doc.embedPng(arrayBuffer)
         : await doc.embedJpg(arrayBuffer);
-      const logoDims = logoImage.scaleToFit(55, 55);
+      const logoDims = logoImage.scaleToFit(72, 72);
       page.drawImage(logoImage, {
         x: margin,
-        y: height - 4 - 20 - logoDims.height,
+        y: height - 4 - 24 - logoDims.height,
         width: logoDims.width,
         height: logoDims.height,
       });
@@ -189,29 +168,29 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     } catch { /* silent */ }
   }
 
-  // ── COMPANY NAME + CONTACT (white on dark header) ─────────
+  // ── COMPANY NAME + CONTACT ──
   page.drawText(data.companyName.toUpperCase(), {
-    x: logoEndX, y: height - 4 - 28, size: 12, font: fontBold, color: white,
+    x: logoEndX, y: height - 4 - 34, size: 16, font: fontBold, color: white,
   });
-  let contactY = height - 4 - 44;
+  let contactY = height - 4 - 56;
   if (data.companyPhone) {
     page.drawText(formatPhone(data.companyPhone), {
-      x: logoEndX, y: contactY, size: 8, font: fontRegular, color: rgb(0.75, 0.78, 0.83),
+      x: logoEndX, y: contactY, size: 9, font: fontRegular, color: rgb(0.75, 0.78, 0.83),
     });
-    contactY -= 12;
+    contactY -= 13;
   }
   if (data.companyEmail) {
     page.drawText(data.companyEmail, {
-      x: logoEndX, y: contactY, size: 8, font: fontRegular, color: rgb(0.75, 0.78, 0.83),
+      x: logoEndX, y: contactY, size: 9, font: fontRegular, color: rgb(0.75, 0.78, 0.83),
     });
   }
 
-  // ── INVOICE LABEL ─────────────────────────────────────────
+  // ── INVOICE LABEL ──
   page.drawText('INVOICE', {
-    x: width - margin - 110, y: height - 4 - 40, size: 28, font: fontBold, color: white,
+    x: width - margin - 110, y: height - 4 - 40, size: 34, font: fontBold, color: white,
   });
 
-  // ── META ROWS ─────────────────────────────────────────────
+  // ── META ROWS ──
   const metaRows = [
     { label: 'Invoice #', value: data.invoiceNumber },
     { label: 'Date',      value: data.invoiceDate   },
@@ -228,19 +207,18 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     metaY -= 13;
   }
 
-  y = height - 4 - headerH - 20;
+  y = height - 4 - headerH - 30;
 
-  // ── BILL TO + AMOUNT BAND ─────────────────────────────────
-  const bandH = 90;
+  // ── BILL TO + AMOUNT BAND ──
+  const bandH = 105;
 
-  // Bill To — light background, accent left border
   page.drawRectangle({ x: margin, y: y - bandH, width: contentW * 0.50, height: bandH, color: lightGray });
   page.drawRectangle({ x: margin, y: y - bandH, width: 3, height: bandH, color: accentColor });
 
   let billY = y - 16;
   page.drawText('BILL TO', { x: margin + 10, y: billY, size: 7, font: fontBold, color: accentColor });
   billY -= 14;
-  page.drawText(data.customerName, { x: margin + 10, y: billY, size: 11, font: fontBold, color: black });
+  page.drawText(data.customerName, { x: margin + 10, y: billY, size: 13, font: fontBold, color: black });
   billY -= 13;
   if (data.customerEmail) {
     page.drawText(data.customerEmail, { x: margin + 10, y: billY, size: 8, font: fontRegular, color: gray });
@@ -254,7 +232,7 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     page.drawText(data.customerAddress, { x: margin + 10, y: billY, size: 8, font: fontRegular, color: gray });
   }
 
-  // Amount Due box — off white with accent top bar
+  // ── AMOUNT DUE BOX ──
   const boxX = margin + contentW * 0.55;
   const boxW = contentW * 0.45;
 
@@ -264,17 +242,17 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
   let boxY = y - 18;
   if (hasPartialPayment) {
     page.drawText('BALANCE DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
-    boxY -= 22;
-    page.drawText(fmt(balanceDue), { x: boxX + 14, y: boxY, size: 20, font: fontBold, color: accentColor });
-    boxY -= 16;
+    boxY -= 24;
+    page.drawText(fmt(balanceDue), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accentColor });
+    boxY -= 18;
     page.drawText(`of ${fmt(data.total)} total`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
     boxY -= 12;
-    page.drawText(`Paid: ${fmt(data.amountPaid ?? 0)}`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: accent2Color });
+    page.drawText(`Paid: ${fmt(data.amountPaid ?? 0)}`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
   } else {
     page.drawText('AMOUNT DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
-    boxY -= 24;
-    page.drawText(fmt(data.total), { x: boxX + 14, y: boxY, size: 22, font: fontBold, color: darkGray });
-    boxY -= 16;
+    boxY -= 26;
+    page.drawText(fmt(data.total), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accentColor });
+    boxY -= 18;
     if (data.dueDate) {
       page.drawText(`Due ${data.dueDate}`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
     }
@@ -282,27 +260,27 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
 
   y = y - bandH - 18;
 
-  // ── TABLE HEADER ──────────────────────────────────────────
-  page.drawRectangle({ x: margin, y: y - 6, width: contentW, height: 24, color: lightGray });
-  page.drawRectangle({ x: margin, y: y - 6, width: 3, height: 24, color: accentColor });
+  // ── TABLE HEADER ──
+  page.drawRectangle({ x: margin, y: y - 6, width: contentW, height: 28, color: rgb(0.93, 0.94, 0.96) });
+  page.drawRectangle({ x: margin, y: y - 6, width: 3, height: 28, color: accentColor });
 
   const colDesc = margin + 8;
   const colQty  = margin + contentW * 0.56;
   const colUnit = margin + contentW * 0.70;
   const colAmt  = margin + contentW - 8;
 
-  page.drawText('DESCRIPTION', { x: colDesc, y, size: 7.5, font: fontBold, color: darkGray });
-  page.drawText('QTY',         { x: colQty,  y, size: 7.5, font: fontBold, color: darkGray });
-  page.drawText('UNIT PRICE',  { x: colUnit, y, size: 7.5, font: fontBold, color: darkGray });
-  page.drawText('AMOUNT',      { x: colAmt - 38, y, size: 7.5, font: fontBold, color: darkGray });
+  page.drawText('DESCRIPTION', { x: colDesc, y, size: 8.5, font: fontBold, color: darkGray });
+  page.drawText('QTY',         { x: colQty,  y, size: 8.5, font: fontBold, color: darkGray });
+  page.drawText('UNIT PRICE',  { x: colUnit, y, size: 8.5, font: fontBold, color: darkGray });
+  page.drawText('AMOUNT',      { x: colAmt - 38, y, size: 8.5, font: fontBold, color: darkGray });
 
-  y -= 22;
+  y -= 24;
 
-  // ── LINE ITEMS ────────────────────────────────────────────
+  // ── LINE ITEMS ──
   for (let i = 0; i < data.lineItems.length; i++) {
     const item = data.lineItems[i];
     if (i % 2 === 1) {
-      page.drawRectangle({ x: margin, y: y - 6, width: contentW, height: 20, color: lightGray });
+      page.drawRectangle({ x: margin, y: y - 6, width: contentW, height: 22, color: lightGray });
     }
     page.drawRectangle({ x: margin, y: y - 7, width: contentW, height: 0.5, color: mutedGray });
 
@@ -310,18 +288,18 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       ? item.description.substring(0, 49) + '...'
       : item.description;
 
-    page.drawText(desc,                          { x: colDesc,     y, size: 9, font: fontRegular, color: black       });
-    page.drawText(String(item.quantity ?? 1),    { x: colQty,      y, size: 9, font: fontRegular, color: gray        });
-    page.drawText(item.unitPrice ? fmt(item.unitPrice) : '-', { x: colUnit, y, size: 9, font: fontRegular, color: gray });
-    page.drawText(fmt(item.amount),              { x: colAmt - 42, y, size: 9, font: fontBold,    color: accent2Color });
-    y -= 21;
+    page.drawText(desc,                          { x: colDesc,     y, size: 10, font: fontRegular, color: black    });
+    page.drawText(String(item.quantity ?? 1),    { x: colQty,      y, size: 10, font: fontRegular, color: gray     });
+    page.drawText(item.unitPrice ? fmt(item.unitPrice) : '-', { x: colUnit, y, size: 10, font: fontRegular, color: gray });
+    page.drawText(fmt(item.amount),              { x: colAmt - 42, y, size: 10, font: fontBold,    color: darkGray });
+    y -= 24;
   }
 
   y -= 6;
   page.drawRectangle({ x: margin, y, width: contentW, height: 0.5, color: mutedGray });
   y -= 20;
 
-  // ── TOTALS ────────────────────────────────────────────────
+  // ── TOTALS ──
   const totalsX = margin + contentW * 0.55;
   const totalsW = contentW * 0.45;
 
@@ -336,54 +314,55 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     page.drawText('Amount Paid', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
     page.drawText(`- ${fmt(data.amountPaid ?? 0)}`, {
       x: totalsX + totalsW - 10 - (fmt(data.amountPaid ?? 0).length * 5.5 + 16),
-      y, size: 9, font: fontRegular, color: accent2Color,
+      y, size: 9, font: fontRegular, color: gray,
     });
     y -= 14;
     page.drawRectangle({ x: totalsX, y, width: totalsW, height: 0.5, color: mutedGray });
     y -= 16;
 
-    page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 36, color: offWhite });
-    page.drawRectangle({ x: totalsX, y: y + 26, width: totalsW, height: 3, color: accentColor });
-    page.drawText('BALANCE DUE', { x: totalsX + 10, y: y + 6, size: 8, font: fontBold, color: gray });
+    page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 48, color: offWhite });
+    page.drawRectangle({ x: totalsX, y: y + 38, width: totalsW, height: 3, color: accentColor });
+    page.drawText('BALANCE DUE', { x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: gray });
     page.drawText(fmt(balanceDue), {
       x: totalsX + totalsW - 10 - (fmt(balanceDue).length * 7.2),
-      y: y + 6, size: 14, font: fontBold, color: accentColor,
+      y: y + 6, size: 18, font: fontBold, color: darkGray,
     });
-    y -= 46;
+    y -= 58;
   } else {
-    page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 36, color: offWhite });
-    page.drawRectangle({ x: totalsX, y: y + 26, width: totalsW, height: 3, color: accentColor });
-    page.drawText('TOTAL DUE', { x: totalsX + 10, y: y + 6, size: 8, font: fontBold, color: gray });
+    page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 48, color: offWhite });
+    page.drawRectangle({ x: totalsX, y: y + 38, width: totalsW, height: 3, color: accentColor });
+    page.drawText('TOTAL DUE', { x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: gray });
     page.drawText(fmt(data.total), {
       x: totalsX + totalsW - 10 - (fmt(data.total).length * 7.2),
-      y: y + 6, size: 14, font: fontBold, color: darkGray,
+      y: y + 6, size: 18, font: fontBold, color: darkGray,
     });
-    y -= 46;
+    y -= 58;
   }
 
-  // ── NOTES ─────────────────────────────────────────────────
+  // ── NOTES ──
   if (data.notes) {
     y -= 10;
-    page.drawRectangle({ x: margin, y: y - 4, width: contentW, height: 0.5, color: mutedGray });
+    page.drawRectangle({ x: margin, y: y - 65, width: contentW, height: 70, color: lightGray });
+    page.drawRectangle({ x: margin, y: y + 4, width: contentW, height: 3, color: accentColor });
     y -= 18;
-    page.drawText('NOTES', { x: margin, y, size: 7.5, font: fontBold, color: gray });
+    page.drawText('NOTES', { x: margin + 10, y, size: 7.5, font: fontBold, color: gray });
     y -= 13;
     const words = data.notes.split(' ');
     let line = '';
     for (const word of words) {
       const test = line ? `${line} ${word}` : word;
-      if (fontRegular.widthOfTextAtSize(test, 9) > contentW) {
-        page.drawText(line, { x: margin, y, size: 9, font: fontRegular, color: black });
+      if (fontRegular.widthOfTextAtSize(test, 9) > contentW - 20) {
+        page.drawText(line, { x: margin + 10, y, size: 9, font: fontRegular, color: black });
         y -= 13;
         line = word;
       } else {
         line = test;
       }
     }
-    if (line) page.drawText(line, { x: margin, y, size: 9, font: fontRegular, color: black });
+    if (line) page.drawText(line, { x: margin + 10, y, size: 9, font: fontRegular, color: black });
   }
 
-  // ── QR CODE ───────────────────────────────────────────────
+  // ── QR CODE ──
   if (data.paymentLinkUrl) {
     try {
       const QRCode = await import('qrcode');
@@ -397,35 +376,28 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       const qrX      = margin;
       const qrY      = 48;
 
-      page.drawRectangle({ x: qrX - 8, y: qrY - 8, width: qrSize + 130, height: qrSize + 16, color: lightGray });
+      page.drawRectangle({ x: qrX - 8, y: qrY - 8, width: qrSize + 140, height: qrSize + 24, color: lightGray });
       page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
 
-      const paymentLabels: Record<string, string> = {
-        venmo: 'Scan to pay with Venmo', zelle: 'Scan to pay with Zelle',
-        cashapp: 'Scan to pay with Cash App', paypal: 'Scan to pay with PayPal', other: 'Scan to pay',
-      };
-      page.drawText(paymentLabels[data.paymentLinkType || ''] || 'Scan to pay', {
-        x: qrX + qrSize + 10, y: qrY + 36, size: 8.5, font: fontBold, color: black,
+      page.drawText('Scan QR to Pay', {
+        x: qrX + qrSize + 10, y: qrY + 48, size: 10, font: fontBold, color: black,
       });
-      page.drawText(hasPartialPayment ? `${fmt(balanceDue)} due` : `${fmt(data.total)} due`, {
-        x: qrX + qrSize + 10, y: qrY + 22, size: 8, font: fontRegular, color: gray,
+      page.drawText(hasPartialPayment ? fmt(balanceDue) : fmt(data.total), {
+        x: qrX + qrSize + 10, y: qrY + 32, size: 14, font: fontBold, color: accentColor,
       });
-     const shortUrl = data.paymentLinkType === 'stripe'
-        ? 'Scan QR or check your email'
-        : (() => {
-            const stripped = data.paymentLinkUrl!.replace('https://', '').replace('http://', '');
-            return stripped.length > 35 ? stripped.substring(0, 32) + '...' : stripped;
-          })();
-      page.drawText(shortUrl, {
-        x: qrX + qrSize + 10, y: qrY + 8, size: 7.5, font: fontRegular, color: accent2Color,
-      });
+      
     } catch { /* silent */ }
   }
 
-  // ── FOOTER ────────────────────────────────────────────────
+  // ── FOOTER ──
   page.drawRectangle({ x: 0, y: 0, width, height: 36, color: headerColor });
-  page.drawText('Thank you for your business.', {
-    x: width / 2 - 72, y: 13, size: 9, font: fontBold, color: rgb(0.6, 0.65, 0.72),
+  const footerParts = [
+    'Thank you for your business',
+    ...(data.companyPhone ? [`Questions? ${formatPhone(data.companyPhone)}`] : []),
+    ...(data.companyEmail ? [data.companyEmail] : []),
+  ];
+  page.drawText(footerParts.join('  •  '), {
+    x: margin, y: 13, size: 8, font: fontRegular, color: rgb(0.6, 0.65, 0.72),
   });
 
   return await doc.save();
