@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock, Download, Trash2
+  Copy, Check, ExternalLink, ArrowUpRight, Loader2, Lock, Download, Trash2,
+  Camera, Palette, Save, Pencil, X
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
+import SharePlacementsSection from '@/components/settings/SharePlacementsSection';
+
 
 type Company = {
   id: number;
@@ -117,18 +120,11 @@ function ReviewsMockup() {
         <circle cx="18" cy="16" r="7" fill="#F1F5F9" />
         <rect x="32" y="11" width="60" height="4" rx="2" fill="#94A3B8" />
         <rect x="32" y="19" width="40" height="3" rx="1.5" fill="#CBD5E1" />
-        {[0, 1, 2, 3, 4].map(i => (
-          <path
-            key={i}
-            d="M8 0l2.4 4.9 5.4.8-3.9 3.8.9 5.4L8 12.3l-4.8 2.6.9-5.4L.2 5.7l5.4-.8z"
-            fill="#FBBC05"
-            transform={`translate(${10 + i * 18}, 30)`}
-          />
+        {[0,1,2,3,4].map(i => (
+          <path key={i} d="M8 0l2.4 4.9 5.4.8-3.9 3.8.9 5.4L8 12.3l-4.8 2.6.9-5.4L.2 5.7l5.4-.8z" fill="#FBBC05" transform={`translate(${10 + i * 18}, 30)`} />
         ))}
       </svg>
-      <div className="absolute top-2 right-2">
-        <GoogleG size={14} />
-      </div>
+      <div className="absolute top-2 right-2"><GoogleG size={14} /></div>
     </div>
   );
 }
@@ -136,7 +132,7 @@ function ReviewsMockup() {
 function SettingsMockup() {
   return (
     <svg viewBox="0 0 200 70" className="w-full max-w-[170px]">
-      {[0, 1, 2].map(i => (
+      {[0,1,2].map(i => (
         <g key={i} transform={`translate(0, ${i * 24})`}>
           <rect x="0" y="0" width="80" height="4" rx="2" fill="#94A3B8" />
           <rect x="120" y="-3" width="40" height="10" rx="5" fill={i === 1 ? '#6366F1' : '#E2E8F0'} />
@@ -153,11 +149,7 @@ function StatusBadge({ status }: { status: 'active' | 'pending' | 'not_connected
     pending: 'text-amber-700 bg-amber-50 border-amber-100',
     not_connected: 'text-slate-500 bg-slate-50 border-slate-200',
   };
-  const text = {
-    active: 'Connected',
-    pending: 'Needs attention',
-    not_connected: 'Not connected',
-  };
+  const text = { active: 'Connected', pending: 'Needs attention', not_connected: 'Not connected' };
   return (
     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${styles[status]}`}>
       {text[status]}
@@ -165,44 +157,31 @@ function StatusBadge({ status }: { status: 'active' | 'pending' | 'not_connected
   );
 }
 
-function NavCard({
-  label, description, href, mockup, stat, statLabel, badge, locked, requiredPlan,
-}: {
-  label: string;
-  description: string;
-  href: string;
-  mockup: React.ReactNode;
-  stat?: React.ReactNode;
-  statLabel?: string;
-  badge?: React.ReactNode;
-  locked?: boolean;
-  requiredPlan?: string;
+function NavCard({ label, description, href, mockup, stat, statLabel, badge, locked, requiredPlan }: {
+  label: string; description: string; href: string; mockup: React.ReactNode;
+  stat?: React.ReactNode; statLabel?: string; badge?: React.ReactNode;
+  locked?: boolean; requiredPlan?: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="group bg-white rounded-lg border border-slate-200/80 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all flex flex-col relative"
-    >
+    <Link href={href} className="group bg-white rounded-lg border border-slate-200/80 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all flex flex-col relative">
       {locked && (
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded-full border border-slate-200">
           <Lock className="w-2.5 h-2.5 text-slate-400" />
           <span className="text-[9px] font-medium text-slate-500">{requiredPlan}</span>
         </div>
       )}
-      <MockupPanel>
-        <div className={locked ? 'opacity-40' : ''}>{mockup}</div>
-      </MockupPanel>
+      <MockupPanel><div className={locked ? 'opacity-40' : ''}>{mockup}</div></MockupPanel>
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between gap-2 mb-1">
           <h3 className="text-[13px] font-semibold text-slate-900">{label}</h3>
           {badge}
         </div>
-        <p className="text-[12px] text-slate-500 leading-relaxed flex-1">{description}</p>
+        <p className="text-[12px] text-slate-600 leading-relaxed flex-1">{description}</p>
         <div className="flex items-center justify-between mt-3">
           {stat !== undefined ? (
             <div>
               <div className="text-[15px] font-semibold text-slate-900 tabular-nums leading-none">{stat}</div>
-              {statLabel && <div className="text-[10px] text-slate-400 mt-1">{statLabel}</div>}
+              {statLabel && <div className="text-[10px] text-slate-500 mt-1">{statLabel}</div>}
             </div>
           ) : <span />}
           <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
@@ -212,17 +191,11 @@ function NavCard({
   );
 }
 
-type ChecklistStep = {
-  label: string;
-  description: string;
-  done: boolean;
-  href: string;
-};
+type ChecklistStep = { label: string; description: string; done: boolean; href: string; };
 
 function SetupChecklist({ steps }: { steps: ChecklistStep[] }) {
   const doneCount = steps.filter(s => s.done).length;
   if (doneCount === steps.length) return null;
-
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3">
@@ -231,29 +204,17 @@ function SetupChecklist({ steps }: { steps: ChecklistStep[] }) {
       </div>
       <div className="bg-white rounded-lg border border-slate-200/80 overflow-hidden">
         <div className="h-0.5 bg-slate-100">
-          <div
-            className="h-full bg-indigo-500 transition-all duration-500"
-            style={{ width: `${(doneCount / steps.length) * 100}%` }}
-          />
+          <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
         </div>
         {steps.map((step, i) => (
-          <Link
-            key={step.label}
-            href={step.href}
-            className={`flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/80 transition-colors ${
-              i !== steps.length - 1 ? 'border-b border-slate-100' : ''
-            } ${step.done ? 'opacity-50' : ''}`}
-          >
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-              step.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-            }`}>
+          <Link key={step.label} href={step.href}
+            className={`flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/80 transition-colors ${i !== steps.length - 1 ? 'border-b border-slate-100' : ''} ${step.done ? 'opacity-50' : ''}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
               {step.done ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-[12.5px] font-medium ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                {step.label}
-              </p>
-              <p className="text-[11.5px] text-slate-400 mt-0.5">{step.description}</p>
+              <p className={`text-[12.5px] font-medium ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{step.label}</p>
+              <p className="text-[11.5px] text-slate-500 mt-0.5">{step.description}</p>
             </div>
             {!step.done && <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />}
           </Link>
@@ -264,13 +225,22 @@ function SetupChecklist({ steps }: { steps: ChecklistStep[] }) {
 }
 
 export default function HomeClient({ company }: { company: Company }) {
-const [publicLink, setPublicLink] = useState('');
+  const [publicLink, setPublicLink] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
   const [includeLogo, setIncludeLogo] = useState(true);
 
+  // Branding state
+  const [isEditingBrand, setIsEditingBrand] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandSaved, setBrandSaved] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [companyName, setCompanyName] = useState(company.name || '');
+  const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
+  const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
 
   useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
@@ -280,7 +250,7 @@ const [publicLink, setPublicLink] = useState('');
     if (!publicLink) return;
     const generate = async () => {
       let dark = '#0F172A', light = '#FFFFFF';
-      if (qrStyle === 'brand') dark = company.email_brand_color_1 || '#0F172A';
+      if (qrStyle === 'brand') dark = color1;
       if (qrStyle === 'dark') { dark = '#FFFFFF'; light = '#0F172A'; }
       try {
         const url = await QRCodeLib.toDataURL(publicLink, { width: 1000, margin: 2, errorCorrectionLevel: 'H', color: { dark, light } });
@@ -288,17 +258,49 @@ const [publicLink, setPublicLink] = useState('');
       } catch {}
     };
     generate();
-  }, [publicLink, qrStyle, company.email_brand_color_1]);
+  }, [publicLink, qrStyle, color1]);
+
+  const handleSaveBranding = async () => {
+    setBrandSaving(true);
+    try {
+      let finalLogoUrl = company.logo_url;
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append('logo', logoFile);
+        fd.append('companySlug', company.slug);
+        const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
+        const uploadData = await uploadRes.json();
+        if (uploadRes.ok && uploadData.success) finalLogoUrl = uploadData.logoUrl;
+      }
+      await fetch(`/api/company/${company.slug}/settings`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ action: 'update-name', data: { name: companyName } }),
+});
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-branding', data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 } }),
+      });
+      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+      setLogoFile(null);
+      setIsEditingBrand(false);
+      setBrandSaved(true);
+      setTimeout(() => setBrandSaved(false), 2000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBrandSaving(false);
+    }
+  };
+
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
 
   const paymentsStatus: 'active' | 'pending' | 'not_connected' =
-    paymentsLocked || !company.stripe_connect_onboarded
-      ? 'not_connected'
-      : company.stripe_payment_status === 'active'
-        ? 'active'
-        : 'pending'; // covers 'restricted' and null (not-yet-backfilled) alike
+    paymentsLocked || !company.stripe_connect_onboarded ? 'not_connected'
+    : company.stripe_payment_status === 'active' ? 'active' : 'pending';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(publicLink);
@@ -325,9 +327,7 @@ const [publicLink, setPublicLink] = useState('');
           const y = (canvas.height - logoSize) / 2;
           ctx!.fillStyle = 'white';
           ctx?.beginPath();
-          // @ts-ignore
-          if (ctx?.roundRect) ctx.roundRect(x - 10, y - 10, logoSize + 20, logoSize + 20, 15);
-          else ctx?.rect(x - 10, y - 10, logoSize + 20, logoSize + 20);
+          ctx?.rect(x - 10, y - 10, logoSize + 20, logoSize + 20);
           ctx?.fill();
           ctx?.drawImage(logoImg, x, y, logoSize, logoSize);
           const a = document.createElement('a');
@@ -348,124 +348,170 @@ const [publicLink, setPublicLink] = useState('');
   const planLabel = (company.plan_tier || 'free').replace(/^\w/, c => c.toUpperCase());
 
   const checklistSteps: ChecklistStep[] = [
-    {
-      label: 'Connect payments',
-      description: 'So customers can actually pay you online',
-      done: paymentsStatus === 'active',
-      href: `/${company.slug}/payments`,
-    },
-    {
-      label: 'Set up categories & pricing',
-      description: 'Auto-load tasks and quotes by job type',
-      done: company.categoriesCustomized,
-      href: `/${company.slug}/categories`,
-    },
-    {
-      label: 'Customize your booking form',
-      description: 'Add questions specific to your business',
-      done: (company.custom_questions?.length ?? 0) > 0,
-      href: `/${company.slug}/form`,
-    },
-    {
-      label: 'Get your first lead',
-      description: 'Share your booking link to get started',
-      done: company.hasRealLead,
-      href: `/${company.slug}/dashboard`,
-    },
+    { label: 'Connect payments', description: 'So customers can actually pay you online', done: paymentsStatus === 'active', href: `/${company.slug}/payments` },
+    { label: 'Set up categories & pricing', description: 'Auto-load tasks and quotes by job type', done: company.categoriesCustomized, href: `/${company.slug}/categories` },
+    { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, href: `/${company.slug}/form` },
+    { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, href: `/${company.slug}/dashboard` },
   ];
 
   return (
     <div className="min-h-screen bg-[#0B0E14]">
-      {/* ── Top status bar ── */}
+      {/* Top status bar */}
       <div className="border-b border-white/[0.06]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 overflow-hidden bg-white/[0.06]">
-              {company.logo_url ? (
-                <img src={company.logo_url} className="w-full h-full object-contain p-1" alt="" />
-              ) : (
-                <span className="text-white text-[11px] font-semibold">{company.name?.charAt(0)}</span>
-              )}
+            <div className="w-12 h-12 rounded-md flex items-center justify-center shrink-0 overflow-hidden bg-white/[0.06]">
+              {logoPreview
+                ? <img src={logoPreview} className="w-full h-full object-contain p-1" alt="" />
+                : <span className="text-white text-[11px] font-semibold">{companyName?.charAt(0)}</span>
+              }
             </div>
-            <span className="text-[13px] font-medium text-white truncate">{company.name}</span>
+            <span className="text-[13px] font-medium text-white truncate">{companyName}</span>
           </div>
           <div className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span className="text-[11px] text-slate-400">Live</span>
             </div>
-            <span className="text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded border border-white/10">
-              {planLabel}
-            </span>
+            <span className="text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded border border-white/10">{planLabel}</span>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-
         <SetupChecklist steps={checklistSteps} />
 
-        {/* ── Booking link — the one structured data block ── */}
-        <div className="mb-3">
-          <Eyebrow>Booking form</Eyebrow>
-        </div>
+        {/* ── BRANDING + QR SECTION ── */}
+        <div className="mb-3"><Eyebrow>Your brand &amp; booking link</Eyebrow></div>
         <div className="bg-white rounded-lg border border-slate-200/80 mb-10 overflow-hidden">
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
-            <div className="p-6 flex flex-col">
-              <h2 className="text-[15px] font-semibold text-slate-900 mb-1.5">
-                Share this link or QR code anywhere
-              </h2>
-              <p className="text-[12.5px] text-slate-500 leading-relaxed mb-5 max-w-md">
-                Every submission lands in your dashboard as a lead — no setup required on the customer's end.
-              </p>
+          {/* Brand color bar */}
+          <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
 
-              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-md border border-slate-200 bg-slate-50 mb-3 max-w-md">
-                <code className="text-[12.5px] font-mono text-slate-600 truncate flex-1">
-                  lead2project.com/{company.slug}
-                </code>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied' : 'Copy link'}
-                </button>
-                <a
-                  href={publicLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition-colors"
-                >
-                  View form <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-
-           <div className="p-6 flex flex-col items-center justify-center gap-2 bg-slate-50/50">
-              <button
-                onClick={() => setShowQrModal(true)}
-                className="w-32 h-32 rounded-md bg-white border border-slate-200 flex items-center justify-center overflow-hidden hover:border-slate-300 transition-colors"
-              >
-                {qrCodeUrl ? (
-                  <img src={qrCodeUrl} className="w-full h-full" alt="Booking QR code" />
-                ) : (
-                  <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
+          <div className="p-5 sm:p-6">
+            {/* Row 1: Logo + Company name */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="relative shrink-0">
+                <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                  {logoPreview
+                    ? <img src={logoPreview} className="w-full h-full object-contain p-1" alt="Logo" />
+                    : <span className="text-slate-400 text-sm font-semibold">{companyName?.charAt(0)}</span>
+                  }
+                </div>
+                {isEditingBrand && (
+                  <label className="absolute -bottom-1 -right-1 p-1 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition">
+                    <Camera className="w-2.5 h-2.5" />
+                    <input type="file" className="hidden" accept="image/*" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 4 * 1024 * 1024) { alert('Logo must be under 4MB.'); return; }
+                      setLogoFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }} />
+                  </label>
                 )}
-              </button>
-              <span className="text-[11px] text-black font-medium">Download QR</span>
+              </div>
+
+              {isEditingBrand
+                ? <input value={companyName} onChange={e => setCompanyName(e.target.value)}
+                    className="flex-1 text-[15px] font-semibold text-slate-900 outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 bg-transparent pb-0.5" placeholder="Company name" />
+                : <h2 className="flex-1 text-[15px] font-semibold text-slate-900 truncate">{companyName}</h2>
+              }
+
+              {!isEditingBrand
+                ? <button onClick={() => setIsEditingBrand(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition shrink-0">
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                : <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => { setIsEditingBrand(false); setCompanyName(company.name); setColor1(company.email_brand_color_1 || '#0B3C6D'); setColor2(company.email_brand_color_2 || '#1F5F8F'); setLogoPreview(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : ''); setLogoFile(null); }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                      <X className="w-3 h-3" /> Cancel
+                    </button>
+                    <button onClick={handleSaveBranding} disabled={brandSaving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 transition">
+                      {brandSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : brandSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+                      {brandSaving ? 'Saving...' : brandSaved ? 'Saved' : 'Save'}
+                    </button>
+                  </div>
+              }
             </div>
 
+            {/* Row 2: Brand colors (left) + QR & link (right) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 items-start">
+
+              {/* Left: brand colors */}
+              <div>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Palette className="w-3 h-3" /> Brand colors
+                </p>
+                {isEditingBrand
+                  ? <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-center gap-1">
+                        <input type="color" value={color1} onChange={e => setColor1(e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5" />
+                        <span className="text-[10px] text-slate-500">Primary</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <input type="color" value={color2} onChange={e => setColor2(e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5" />
+                        <span className="text-[10px] text-slate-500">Secondary</span>
+                      </div>
+                      <div className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
+                    </div>
+                  : <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg border border-slate-200 shrink-0" style={{ background: color1 }} />
+                      <div className="w-8 h-8 rounded-lg border border-slate-200 shrink-0" style={{ background: color2 }} />
+                      <div className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
+                    </div>
+                }
+                <p className="text-[11.5px] text-slate-600 mt-2">Used in your customer emails and booking form.</p>
+              </div>
+
+              {/* Right: QR + link */}
+              <div className="flex gap-4 items-start">
+                <button onClick={() => setShowQrModal(true)}
+                  className="w-20 h-20 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden hover:border-slate-300 transition shrink-0">
+                  {qrCodeUrl
+                    ? <img src={qrCodeUrl} className="w-full h-full" alt="QR code" />
+                    : <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
+                  }
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 bg-slate-50 mb-2">
+                    <code className="text-[12px] font-mono text-slate-700 truncate flex-1">
+                      lead2project.com/{company.slug}
+                    </code>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleCopy}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
+                      {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                    <a href={publicLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition">
+                      View form <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <button onClick={() => setShowQrModal(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
+                      <Download className="w-3 h-3" /> QR
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
 
+        <SharePlacementsSection companySlug={company.slug} publicLink={publicLink} />
+
+
         {/* ── Workspace cards ── */}
-        <div className="mb-3">
-          <Eyebrow>Workspace</Eyebrow>
-        </div>
+        <div className="mb-3"><Eyebrow>Workspace</Eyebrow></div>
+
+        {/* QR Modal */}
         {showQrModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
@@ -473,10 +519,10 @@ const [publicLink, setPublicLink] = useState('');
               <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-gray-900' : 'bg-gray-50 border border-gray-100'}`}>
                 <div className="relative">
                   <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" />
-                  {includeLogo && company.logo_url && (
+                  {includeLogo && logoPreview && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-gray-100">
-                        <img src={company.logo_url} className="w-full h-full object-contain" />
+                        <img src={logoPreview} className="w-full h-full object-contain" />
                       </div>
                     </div>
                   )}
@@ -507,53 +553,18 @@ const [publicLink, setPublicLink] = useState('');
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <NavCard
-            label="Dashboard"
-            description="Manage leads, schedule jobs, track every project"
-            href={`/${company.slug}/dashboard`}
-            mockup={<DashboardMockup />}
-          />
-          <NavCard
-            label="Customer payments"
-            description="Accept cards with Stripe, or use a manual payment link"
-            href={`/${company.slug}/payments`}
-            mockup={<InvoiceMockup />}
-            badge={<StatusBadge status={paymentsStatus} />}
-            locked={paymentsLocked}
-            requiredPlan="Basic"
-          />
-          <NavCard
-            label="Pricing templates"
-            description="Task checklists and pricing by category, auto-loaded on new jobs"
-            href={`/${company.slug}/categories`}
-            mockup={<CategoriesMockup />}
-          />
-          <NavCard
-            label="Booking form"
-            description="Customize what customers fill out, branding, and custom questions"
-            href={`/${company.slug}/form`}
-            mockup={<FormMockup />}
-          />
-          <NavCard
-            label="Google reviews"
-            description="Auto-request a review from customers when a job's marked complete"
-            href={`/${company.slug}/google-reviews`}
-            mockup={<ReviewsMockup />}
-            locked={reviewsLocked}
-            requiredPlan="Basic"
-          />
-          <NavCard
-            label="Settings"
-            description="Pipeline, team, billing, and email configuration"
-            href={`/${company.slug}/admin/settings`}
-            mockup={<SettingsMockup />}
-          />
-        </div>
-     
 
-        {/* ── FOOTER ── */}
-        <div className="flex justify-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <NavCard label="Booking form" description="Customize what customers fill out — questions, branding, address, date and time" href={`/${company.slug}/form`} mockup={<FormMockup />} />
+          <NavCard label="Dashboard" description="Manage leads, schedule jobs, send quotes, track payments and photos" href={`/${company.slug}/dashboard`} mockup={<DashboardMockup />} />
+          <NavCard label="Pricing templates" description="Task checklists and pricing by category, auto-loaded on new jobs" href={`/${company.slug}/categories`} mockup={<CategoriesMockup />} />
+          <NavCard label="Customer payments" description="Accept cards with Stripe, or use a manual payment link" href={`/${company.slug}/payments`} mockup={<InvoiceMockup />} badge={<StatusBadge status={paymentsStatus} />} locked={paymentsLocked} requiredPlan="Basic" />
+          <NavCard label="Google reviews" description="Auto-request a review from customers when a job is marked complete" href={`/${company.slug}/google-reviews`} mockup={<ReviewsMockup />} locked={reviewsLocked} requiredPlan="Basic" />
+          <NavCard label="Settings" description="Pipeline stages, email templates, team access, and billing" href={`/${company.slug}/admin/settings`} mockup={<SettingsMockup />} />
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end mt-6">
           <a href={`/${company.slug}/dashboard/deleted-leads`}
             className="flex items-center gap-2 px-4 py-2.5 border border-red-500/10 bg-red-500/5 rounded-xl group transition hover:bg-red-500/10">
             <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -561,10 +572,6 @@ const [publicLink, setPublicLink] = useState('');
           </a>
         </div>
       </div>
-
-
-      
     </div>
-    
   );
 }

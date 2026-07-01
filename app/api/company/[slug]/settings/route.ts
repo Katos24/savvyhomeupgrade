@@ -139,6 +139,18 @@ case 'update-branding': {
 }
 
 // ── Google Reviews ──
+case 'update-name': {
+  const result = await sql`
+    UPDATE companies
+    SET name = ${data.name || null}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+ 
+
+// ── Google Reviews ──
 case 'update-google-reviews': {
   const result = await sql`
     UPDATE companies

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, Check, Loader2, Star } from 'lucide-react';
+import { Save, Check, Loader2, Star, Send, ToggleRight, Building2 } from 'lucide-react';
 import StandalonePageShell from '@/components/StandalonePageShell';
 import StandaloneUpgradeOverlay from '@/components/StandaloneUpgradeOverlay';
 
@@ -15,6 +15,29 @@ function GoogleG({ size = 20 }: { size?: number }) {
     </svg>
   );
 }
+
+const features = [
+  {
+    icon: Star,
+    title: 'Auto-request on job completion',
+    desc: 'When you mark a job complete, your customer gets a branded email asking for a Google review while the experience is still fresh.',
+  },
+  {
+    icon: Send,
+    title: 'One-click, fully branded',
+    desc: 'The review request goes out under your name with no manual steps — same as your other one-click emails.',
+  },
+  {
+    icon: ToggleRight,
+    title: 'One setting, always on',
+    desc: 'Paste your Google review link once and toggle it on. Every completed job triggers the request automatically.',
+  },
+  {
+    icon: Building2,
+    title: 'Works with any Google Business Profile',
+    desc: 'Just grab your review link from your Google Business Profile and paste it below.',
+  },
+];
 
 export default function GoogleReviewsPageClient({ company, locked }: { company: any; locked?: boolean }) {
   const [url, setUrl] = useState(company.google_review_url || '');
@@ -31,7 +54,7 @@ export default function GoogleReviewsPageClient({ company, locked }: { company: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update-google-reviews',
-          data: { google_review_url: url, google_review_enabled: enabled }
+          data: { google_review_url: url, google_review_enabled: enabled },
         }),
       });
       const data = await res.json();
@@ -39,61 +62,95 @@ export default function GoogleReviewsPageClient({ company, locked }: { company: 
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }
-    } catch {
-      // keep it simple, no error UI for now
     } finally {
       setSaving(false);
     }
   };
 
   const content = (
-    <>
-      <div className="flex items-center gap-3 mb-1">
-        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-          <GoogleG size={20} />
-        </div>
+    <div>
+      {/* Hero */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-8">
         <div>
-          <h2 className="text-[15px] font-semibold text-slate-900">Collect Google reviews</h2>
-          <p className="text-[12.5px] text-slate-500">
-            Automatically ask happy customers to leave you a review when a job is marked complete.
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[11px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+            <GoogleG size={13} /> Google reviews
+          </div>
+          <h1 className="text-[22px] font-semibold text-slate-900 leading-snug mb-3">
+            Turn completed jobs into 5-star reviews
+          </h1>
+          <p className="text-[14px] text-slate-700 leading-relaxed">
+            When a job wraps up, your customer automatically gets a branded email asking for a Google review.
+            No manual follow-up, no chasing — just more reviews from customers who are already happy.
           </p>
+        </div>
+
+        {/* Visual */}
+        <div className="relative flex justify-center items-center min-h-[220px]">
+          <div className="absolute left-0 top-2 w-[170px] sm:w-[190px] bg-white border border-slate-200 rounded-xl shadow-md p-3.5 z-10">
+            <p className="text-[10px] text-slate-500 mb-1">To: Sarah M.</p>
+            <p className="text-[13px] font-semibold text-slate-900 mb-2">Hi Sarah</p>
+            <p className="text-[11px] text-slate-700 leading-relaxed mb-3">
+              Thanks for choosing us. We'd love to hear how your project went.
+            </p>
+            <p className="text-[11.5px] font-semibold text-blue-600">Leave a Google review →</p>
+          </div>
+
+          <div className="absolute right-0 bottom-0 w-[160px] sm:w-[175px] bg-white border border-slate-200 rounded-xl shadow-md p-3.5 z-20">
+            <div className="flex justify-center mb-1.5">
+              <GoogleG size={24} />
+            </div>
+            <div className="flex justify-center gap-0.5 mb-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+            <p className="text-center text-[12px] font-semibold text-slate-900">Your Company</p>
+            <p className="text-center text-[10px] text-slate-600 mb-2">4.9 · 47 reviews</p>
+            <div className="border-t border-slate-200 pt-2">
+              <p className="text-[10.5px] font-semibold text-slate-800">Mike T. left a review</p>
+              <p className="text-[10px] text-slate-600 italic leading-snug mt-0.5">
+                "Incredibly professional. Would hire again."
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 space-y-4">
-        <div>
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">
-            Your Google review link
+      {/* ── SETTINGS — above the feature cards ── */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8 space-y-4">
+
+        {/* Link + toggle on same row */}
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+          <div className="flex-1 min-w-0">
+            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
+              Google review link
+            </label>
+            <input
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              onBlur={() => {
+                const val = url.trim();
+                if (val && !val.startsWith('http')) setUrl(`https://${val}`);
+              }}
+              placeholder="https://g.page/r/your-review-link"
+              className="w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-slate-500 placeholder:font-normal"
+            />
+          </div>
+
+          <label className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-lg px-4 py-2.5 cursor-pointer hover:border-slate-300 transition-colors shrink-0">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={e => setEnabled(e.target.checked)}
+              className="w-4 h-4 accent-blue-600 shrink-0"
+            />
+            <span className="text-sm font-medium text-slate-900 whitespace-nowrap">Auto-send on completion</span>
           </label>
-          <input
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            onBlur={() => {
-              const val = url.trim();
-              if (val && !val.startsWith('http')) setUrl(`https://${val}`);
-            }}
-            placeholder="https://g.page/r/your-review-link"
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none focus:ring-2 ring-blue-100 transition placeholder:text-slate-400 placeholder:font-normal"
-          />
-          <p className="text-[11.5px] text-slate-400 mt-1.5">
-            Don't have one? Find it in your Google Business Profile under "Get more reviews."
-          </p>
         </div>
 
-        <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:border-slate-300 transition-colors">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={e => setEnabled(e.target.checked)}
-            className="w-4 h-4 accent-blue-600"
-          />
-          <div>
-            <span className="text-sm font-medium text-slate-700 block">Auto-send when job is marked completed</span>
-            <span className="text-[11.5px] text-slate-400">
-              Customers get a one-click email asking for a review right after the work's done.
-            </span>
-          </div>
-        </label>
+        <p className="text-[12px] text-slate-600">
+          Find your review link in your Google Business Profile under "Get more reviews." Once saved and toggled on, every completed job triggers the request automatically.
+        </p>
 
         <button
           onClick={handleSave}
@@ -104,7 +161,22 @@ export default function GoogleReviewsPageClient({ company, locked }: { company: 
           {saving ? 'Saving...' : saved ? 'Saved' : 'Save changes'}
         </button>
       </div>
-    </>
+
+      {/* Feature cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {features.map(({ icon: Icon, title, desc }) => (
+          <div key={title} className="flex gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+              <Icon className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-slate-900 mb-0.5">{title}</p>
+              <p className="text-[12.5px] text-slate-700 leading-relaxed">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   return (
