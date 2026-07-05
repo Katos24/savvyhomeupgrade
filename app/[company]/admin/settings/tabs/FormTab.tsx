@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, AlertCircle, Check, Edit2, X,
@@ -99,9 +99,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [newOption, setNewOption] = useState('');
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('preview');
 
-  const publicUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/${company.slug}`
-    : `https://lead2project.com/${company.slug}`;
+  const [publicUrl, setPublicUrl] = useState(`https://lead2project.com/${company.slug}`);
+
+  useEffect(() => {
+    setPublicUrl(`${window.location.origin}/${company.slug}`);
+  }, [company.slug]);
 
   const categories: Category[] = company.form_categories?.length > 0
     ? company.form_categories

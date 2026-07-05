@@ -68,7 +68,8 @@ function SidebarItem({ icon: Icon, label, active, locked, onClick }: {
   );
 }
 
-export default function HomeClient({ company, currentUser }: { company: Company; currentUser?: any }) {
+export default function HomeClient({ company: initialCompany, currentUser }: { company: Company; currentUser?: any }) {
+  const [company, setCompany] = useState(initialCompany);
   const [activeSection, setActiveSection] = useState<SectionKey>('overview');
 
   const [publicLink, setPublicLink] = useState('');
@@ -127,7 +128,14 @@ export default function HomeClient({ company, currentUser }: { company: Company;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update-branding', data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 } }),
       });
-      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+     if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+      setCompany(prev => ({
+        ...prev,
+        name: companyName,
+        logo_url: finalLogoUrl ?? prev.logo_url,
+        email_brand_color_1: color1,
+        email_brand_color_2: color2,
+      }));
       setLogoFile(null);
       setIsEditingBrand(false);
       setBrandSaved(true);
