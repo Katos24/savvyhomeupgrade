@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, X, Mail, FileText, MousePointerClick, AlertCircle } from 'lucide-react';
 
-export default function StripePaymentInfo({ accountStatus }: { accountStatus: 'checking' | 'active' | 'pending' | null }) {
-  const [open, setOpen] = useState(false);
+export default function StripePaymentInfo({ accountStatus }: { accountStatus: 'active' | 'restricted' | 'pending' | null }) {
+    const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,6 +17,7 @@ export default function StripePaymentInfo({ accountStatus }: { accountStatus: 'c
   }, []);
 
   const isPending = accountStatus === 'pending';
+  const needsAttention = accountStatus === 'restricted';
 
   return (
     <div className="relative inline-block" ref={ref}>
@@ -46,6 +47,14 @@ export default function StripePaymentInfo({ accountStatus }: { accountStatus: 'c
               </button>
             </div>
 
+           {needsAttention && (
+              <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2.5 mb-3">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-rose-800 font-medium leading-relaxed">
+                  Your Stripe account needs more information before payment links will work — check the details above.
+                </p>
+              </div>
+            )}
             {isPending && (
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 mb-3">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
@@ -83,8 +92,10 @@ export default function StripePaymentInfo({ accountStatus }: { accountStatus: 'c
 </ul>
 
             <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-                {isPending
+            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                {needsAttention
+                  ? 'Resolve the items above on Stripe, then this works automatically.'
+                  : isPending
                   ? 'Once Stripe shows your account is fully set up, this works automatically — nothing else to configure.'
                   : 'Nothing to set up beyond connecting Stripe — this works automatically.'}
               </p>

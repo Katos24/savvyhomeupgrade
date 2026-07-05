@@ -30,7 +30,8 @@ function describeBlockingReasons(reasons: { capability: string; code: string }[]
 
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
-  const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
+const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
+const [connectError, setConnectError] = useState<string | null>(null);
 
   const isConnected = !!company.stripe_connect_onboarded;
   const paymentStatus: 'active' | 'restricted' | 'pending' | null = company.stripe_payment_status ?? null;
@@ -47,16 +48,22 @@ function StripeConnectSection({ company }: { company: any }) {
   }, []);
 
   async function handleConnect() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/stripe/connect-onboard`);
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setLoading(false);
-    } catch {
+  setLoading(true);
+  setConnectError(null);
+  try {
+    const res = await fetch(`/api/company/${company.slug}/stripe/connect-onboard`);
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
       setLoading(false);
+      setConnectError(data.error || 'Something went wrong. Please try again.');
     }
+  } catch {
+    setLoading(false);
+    setConnectError('Something went wrong. Please try again.');
   }
+}
 
   return (
     <motion.div
@@ -75,9 +82,7 @@ function StripeConnectSection({ company }: { company: any }) {
 
       <div className="mt-2">
         <StripePaymentInfo
-          accountStatus={
-  !isConnected ? null : paymentStatus === 'active' ? 'active' : 'pending'
-}
+          accountStatus={!isConnected ? null : paymentStatus}
         />
       </div>
 
@@ -94,6 +99,11 @@ function StripeConnectSection({ company }: { company: any }) {
       {redirectStatus === 'already_linked' && (
         <p className="mt-3 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
           That Stripe account is already connected to a different company. Use a different Stripe account, or contact support if you believe this is an error.
+        </p>
+      )}
+      {connectError && (
+        <p className="mt-3 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
+          {connectError}
         </p>
       )}
 

@@ -36,9 +36,13 @@ export default function BookkeeperDashboardClient({ bookkeeper }: Props) {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+const [copied, setCopied] = useState(false);
 
-  const referralUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://lead2project.com'}/signup?ref=${bookkeeper.partner_code}`;
+const [referralUrl, setReferralUrl] = useState(`https://lead2project.com/signup?ref=${bookkeeper.partner_code}`);
+
+useEffect(() => {
+  setReferralUrl(`${window.location.origin}/signup?ref=${bookkeeper.partner_code}`);
+}, [bookkeeper.partner_code]);
 
   const fetchClients = async () => {
     setLoading(true);

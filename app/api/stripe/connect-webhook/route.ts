@@ -233,7 +233,7 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
       await sendStripeActionNeededEmail({
         contractorEmail: c.contractor_email,
         companyName: c.company_name,
-        companyId: c.id, // confirm this column name — see note below
+        companyId: c.id,
         reasons: blockingReasons,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${c.company_slug}/admin/settings`,
       });

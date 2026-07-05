@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { can, type PlanTier } from '@/lib/permissions';
+import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,13 +43,13 @@ export async function GET(
       company.stripe_connect_account_id,
       { include: ['configuration.merchant'] }
     );
-
-    // Confirmed field path against a real test-mode response. Only "active"
-    // means they can actually take payments — "restricted" (incomplete
-    // requirements) should show as pending/needs-attention in the UI, not
-    // as charges-enabled.
-    const chargesEnabled =
-      account.configuration?.merchant?.capabilities?.card_payments?.status === 'active';
+    // Use the shared parser so this endpoint can't drift from what
+    // connect-return / the webhook write to the DB. Previously this
+    // checked card_payments only and ignored payouts — a contractor
+    // could show as "chargesEnabled: true" here while payouts were
+    // actually restricted.
+    const { paymentStatus } = parseAccountStatus(account);
+    const chargesEnabled = paymentStatus === 'active';
 
     return NextResponse.json({ chargesEnabled });
   } catch (err: any) {

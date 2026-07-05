@@ -38,11 +38,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-const account = await (stripe as any).v2.core.accounts.retrieve(accountId, {
+    const account = await (stripe as any).v2.core.accounts.retrieve(accountId, {
       include: ['configuration.merchant'],
     });
 
-    console.log('FULL ACCOUNT RESPONSE:', JSON.stringify(account, null, 2));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('FULL ACCOUNT RESPONSE:', JSON.stringify(account, null, 2));
+    }
 
     const { onboarded, paymentStatus, blockingReasons } = parseAccountStatus(account);
 

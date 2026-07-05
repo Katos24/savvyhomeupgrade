@@ -5,29 +5,7 @@ import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
 import { CATEGORY_MAP } from '@/lib/formCategories';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface Company {
-  id: number;
-  name: string;
-  slug: string;
-  email: string;
-  phone: string | null;
-  website: string | null;
-  email_brand_color_1: string | null;
-  email_brand_color_2: string | null;
-  logo_url: string | null;
-  created_at: Date;
-  plan_tier?: string;
-  custom_questions?: any[];
-  categoriesCustomized: boolean;
-  hasRealLead: boolean;
-  stripe_connect_onboarded: boolean;
-  stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
-}
+import { getCompanyBySlug } from '@/lib/getCompany';
 
 // ---------------------------------------------------------------------------
 // Metadata
@@ -37,9 +15,8 @@ export async function generateMetadata(
   { params }: { params: Promise<{ company: string }> }
 ): Promise<Metadata> {
   const { company: slug } = await params;
-  const sql = neon(process.env.DATABASE_URL!);
-  const rows = await sql`SELECT name FROM companies WHERE slug = ${slug} LIMIT 1`;
-  const name = rows[0]?.name ?? 'Home';
+  const company = await getCompanyBySlug(slug);
+  const name = company?.name ?? 'Home';
 
   return {
     title: `${name} | Home`,
@@ -48,23 +25,16 @@ export async function generateMetadata(
 }
 
 // ---------------------------------------------------------------------------
-// Data
+// Data — now a thin layer of Home-specific *computed* fields on top of the
+// shared raw row. No more hand-picked column list here — that's the whole
+// point of this change. If the schema grows a new column, every page using
+// getCompanyBySlug gets it automatically; nothing here needs to change.
 // ---------------------------------------------------------------------------
 
-async function getCompany(slug: string): Promise<Company | null> {
+async function getHomeData(slug: string) {
   const sql = neon(process.env.DATABASE_URL!);
- const rows = await sql`
-    SELECT
-      id, name, slug, email, phone, website, logo_url, created_at,
-      email_brand_color_1, email_brand_color_2, plan_tier,
-      form_categories, custom_questions, business_type,
-      stripe_connect_onboarded, stripe_payment_status
-    FROM companies
-    WHERE slug = ${slug}
-    LIMIT 1
-  `;
-  if (!rows.length) return null;
-  const c = rows[0];
+  const c = await getCompanyBySlug(slug);
+  if (!c) return null;
 
   // form_categories is seeded with defaults at signup — it's never null.
   // "Customized" means it no longer matches what the defaults for this
@@ -87,14 +57,14 @@ async function getCompany(slug: string): Promise<Company | null> {
     custom_questions: c.custom_questions || [],
     categoriesCustomized,
     hasRealLead,
-  } as unknown as Company;
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Auth — same verification as dashboard page
+// Auth — same as before, now returns decoded so we can pass currentUser down
 // ---------------------------------------------------------------------------
 
-async function verifyAuth(companySlug: string): Promise<void> {
+async function verifyAuth(companySlug: string): Promise<any> {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token');
 
@@ -133,6 +103,8 @@ async function verifyAuth(companySlug: string): Promise<void> {
     `;
     redirect(own.length ? `/${own[0].slug}/home` : '/login');
   }
+
+  return decoded;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,10 +118,10 @@ export default async function CompanyHomePage({
 }) {
   const { company: companySlug } = await params;
 
-  await verifyAuth(companySlug);
+  const decoded = await verifyAuth(companySlug);
 
-  const company = await getCompany(companySlug);
+  const company = await getHomeData(companySlug);
   if (!company) notFound();
 
-  return <HomeClient company={company} />;
+  return <HomeClient company={company as any} currentUser={{ id: decoded.userId }} />;
 }

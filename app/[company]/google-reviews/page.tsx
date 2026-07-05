@@ -1,29 +1,14 @@
-import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
 import GoogleReviewsPageClient from './GoogleReviewsPageClient';
 import { can, type PlanTier } from '@/lib/permissions';
-
-async function getCompany(slug: string) {
-  const sql = neon(process.env.DATABASE_URL!);
-  const rows = await sql`
-    SELECT id, name, slug, plan_tier, google_review_url, google_review_enabled
-    FROM companies WHERE slug = ${slug} LIMIT 1
-  `;
-  if (!rows.length) return null;
-  const c = rows[0];
-  return {
-    ...c,
-    plan_tier: c.plan_tier || 'free',
-  } as unknown as {
-    id: number; name: string; slug: string; plan_tier: string;
-    google_review_url: string | null; google_review_enabled: boolean;
-  };
-}
+import { getCompanyBySlug } from '@/lib/getCompany';
 
 async function verifyAuth(companySlug: string) {
+  const { neon } = await import('@neondatabase/serverless');
+  const sql = neon(process.env.DATABASE_URL!);
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token');
   if (!token?.value) redirect('/login');
@@ -33,7 +18,6 @@ async function verifyAuth(companySlug: string) {
   } catch {
     redirect('/login');
   }
-  const sql = neon(process.env.DATABASE_URL!);
   const access = await sql`
     SELECT c.slug FROM users u JOIN companies c ON u.company_id = c.id
     WHERE u.id = ${decoded.userId} AND c.slug = ${companySlug} LIMIT 1
@@ -54,8 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function GoogleReviewsPage({ params }: { params: Promise<{ company: string }> }) {
   const { company: companySlug } = await params;
   await verifyAuth(companySlug);
-  const company = await getCompany(companySlug);
+  const company = await getCompanyBySlug(companySlug);
   if (!company) notFound();
-
-  return <GoogleReviewsPageClient company={company} locked={!can((company.plan_tier || 'free') as PlanTier, 'google_reviews')} />;
+  const planTier = (company.plan_tier || 'free') as PlanTier;
+  return <GoogleReviewsPageClient company={company} locked={!can(planTier, 'google_reviews')} />;
 }

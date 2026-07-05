@@ -3,45 +3,9 @@ import { redirect } from 'next/navigation';
 import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
 import CompanySettingsClient from './CompanySettingsClient';
+import { getCompanyBySlug } from '@/lib/getCompany';
 
 const sql = neon(process.env.DATABASE_URL!);
-
-type CompanyDTO = {
-  id: number;
-  name: string;
-  slug: string;
-  email: string;
-  phone: string | null;
-  website: string | null;
-  business_type: string;
-  logo_url: string | null;
-  status_options: any;
-  form_categories: any;
-  email_templates: any;
-  email_brand_color_1: string | null;
-  email_brand_color_2: string | null;
-  reminder_settings: any;
-  notification_preferences: any;
-  daily_digest_enabled: boolean;
-  daily_digest_time: string | null;
-  address_enabled: boolean;
-  address_required: boolean;
-  cta_heading: string | null;
-  cta_button_text: string | null;
-  cta_success_message: string | null;
-  custom_questions: any;
-  subscription_status: string | null;
-  trial_ends_at: string | null;
-  plan_tier: string;
-  form_field_config: any;
-  pending_downgrade_at: string | null;
-  payment_link_type: string | null;
-  payment_link_url: string | null;
-  stripe_connect_account_id: string | null;
-  stripe_connect_onboarded: boolean;
-  stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
-  stripe_requirements_summary: any;
-};
 
 export default async function SettingsPage({
   params,
@@ -66,57 +30,16 @@ export default async function SettingsPage({
     const currentUser = users[0];
     if (!currentUser) redirect('/login');
 
-    const companies = await sql`
-      SELECT 
-        id,
-        name,
-        slug,
-        email,
-        phone,
-        website,
-        business_type,
-        logo_url,
-        status_options,
-        form_categories,
-        email_templates,
-        email_brand_color_1,
-        email_brand_color_2,
-        reminder_settings,
-        notification_preferences,
-        daily_digest_enabled,
-        daily_digest_time,
-        address_enabled,
-        address_required,
-        cta_heading,
-        cta_button_text,
-        cta_success_message,
-        custom_questions,
-        subscription_status,
-        trial_ends_at,
-        plan_tier,
-        form_field_config,
-        pending_downgrade_at,
-        google_review_url,
-        google_review_enabled,
-        payment_link_type,
-        payment_link_url,
-        bcc_sender_on_email,
-        stripe_connect_account_id,
-        stripe_connect_onboarded,
-        stripe_payment_status,
-        stripe_requirements_summary
-      FROM companies
-      WHERE slug = ${resolvedParams.company}
-      LIMIT 1
-    `;
-
-    const company = companies[0];
+    const company = await getCompanyBySlug(resolvedParams.company);
     if (!company) redirect('/login');
     if (currentUser.company_id !== company.id) redirect('/login');
     if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
       redirect(`/${resolvedParams.company}/dashboard`);
     }
 
+    // Same explicit DTO shaping as before, unchanged — this is genuinely
+    // page-specific defaulting logic (?? null, ?? false, ?? []), not a raw
+    // passthrough, so it stays here rather than moving into the shared query.
     const dto = {
       id: company.id,
       name: company.name,
