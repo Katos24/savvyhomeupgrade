@@ -1189,12 +1189,12 @@ export async function sendWelcomeEmail({
 }) {
   const planDetails = {
 
-    basic: {
-      label: 'Basic',
-      price: '$49.99/mo',
-      features: ['Everything in Free', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
-      color: '#2563eb', // Deeper Blue
-    },
+   basic: {
+  label: 'Basic',
+  price: '$49.99/mo',
+  features: ['Everything in Free', 'Accept online payments (Stripe)', 'Send invoices & payment reminders', 'Job categories & pricing templates', 'CSV export'],
+  color: '#2563eb', // Deeper Blue
+},
     pro: {
       label: 'Pro',
       price: '$79.99/mo',

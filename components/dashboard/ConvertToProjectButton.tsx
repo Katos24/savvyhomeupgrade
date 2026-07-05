@@ -196,35 +196,39 @@ if (lead.project_id) return null;
 
             {/* Actions */}
             <div className="px-5 pb-6 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={isConverting}
-                className="
-                  py-3
-                  bg-gray-100 hover:bg-gray-200
-                  text-gray-700 font-medium text-sm
-                  rounded-xl
-                  transition
-                  disabled:opacity-50
-                "
-              >
-                Cancel
-              </button>
+             <button
+  onClick={() => setShowConfirm(false)}
+  disabled={isConverting}
+  className="
+    py-3
+    bg-gray-100 hover:bg-gray-200
+    text-gray-700 font-medium text-sm
+    rounded-xl
+    transition
+    disabled:opacity-50
+  "
+>
+  Cancel
+</button>
 
-              <button
-                onClick={handleConvert}
-                disabled={isConverting}
-                className="
-                  py-3
-                  bg-blue-600 hover:bg-blue-700
-                  text-white font-medium text-sm
-                  rounded-xl
-                  transition
-                  disabled:opacity-50
-                "
-              >
-                {isConverting ? 'Creating...' : 'Create'}
-              </button>
+<button
+  onClick={handleConvert}
+  disabled={isConverting}
+  className="
+    py-3
+    bg-blue-600 hover:bg-blue-700
+    text-white font-medium text-sm
+    rounded-xl
+    transition
+    disabled:opacity-50
+    flex items-center justify-center gap-2
+  "
+>
+  {isConverting && (
+    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+  )}
+  {isConverting ? 'Creating...' : 'Create'}
+</button>
             </div>
           </div>
         </div>

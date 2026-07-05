@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Workflow, Mail, ArrowLeft, Users, CreditCard, ChevronRight,
-  Trash2, Copy, Check, Phone, ExternalLink, Globe, Lock, Save, X, Pencil, Loader2,
+  Trash2, Copy, Check, Phone, ExternalLink, Globe, Lock, Save, X, Pencil, Loader2, Sparkles,
 } from 'lucide-react';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 import Link from 'next/link';
@@ -59,25 +59,27 @@ function UpgradeOverlay({ feature, companySlug }: { feature: string; companySlug
   );
 }
 
-function MenuCard({ icon: Icon, label, desc, color, onClick, locked, requiredPlan }: {
+function MenuCard({ icon: Icon, label, desc, color, onClick, locked, requiredPlan, emphasized }: {
   icon: any; label: string; desc: string; color: string;
-  onClick: () => void; locked?: boolean; requiredPlan?: string;
+  onClick: () => void; locked?: boolean; requiredPlan?: string; emphasized?: boolean;
 }) {
   return (
     <button onClick={onClick}
-      className="bg-white rounded-xl p-4 sm:p-5 text-left group hover:shadow-md transition-all duration-200 flex flex-col h-full active:scale-[0.98] border border-gray-100 relative overflow-hidden">
+      className={`bg-white rounded-xl p-4 text-left group hover:shadow-md transition-all duration-200 flex flex-col h-full active:scale-[0.98] border relative overflow-hidden ${
+        emphasized ? 'border-emerald-200 ring-1 ring-emerald-100' : 'border-gray-100'
+      }`}>
       {locked && (
         <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
           <Lock className="w-2.5 h-2.5 text-gray-400" />
           <span className="text-[10px] font-medium text-gray-400">{requiredPlan}</span>
         </div>
       )}
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: locked ? '#f1f5f9' : `${color}15` }}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: locked ? '#f1f5f9' : `${color}15` }}>
         <Icon className="w-4 h-4" style={{ color: locked ? '#94a3b8' : color }} />
       </div>
       <p className={`text-sm font-semibold leading-tight mb-1 ${locked ? 'text-gray-400' : 'text-gray-900 group-hover:text-blue-600'} transition-colors`}>{label}</p>
       <p className="text-[12px] text-gray-500 leading-relaxed flex-1 hidden sm:block">{desc}</p>
-      <div className={`mt-3 flex items-center gap-1 text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-all ${locked ? 'text-gray-400' : 'text-blue-500'}`}>
+      <div className={`mt-2.5 flex items-center gap-1 text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-all ${locked ? 'text-gray-400' : 'text-blue-500'}`}>
         {locked ? `Upgrade to ${requiredPlan}` : 'Configure'} <ChevronRight className="w-3 h-3" />
       </div>
     </button>
@@ -90,7 +92,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [companyData, setCompanyData] = useState(company);
 
-  // Contact info
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [contactSaving, setContactSaving] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
@@ -100,7 +101,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     website: company.website || '',
   });
 
-  // Digest / BCC
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
   const [showDigestConfirm, setShowDigestConfirm] = useState(false);
   const [bccEnabled, setBccEnabled] = useState(company.bcc_sender_on_email ?? false);
@@ -144,7 +144,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         body: JSON.stringify({
           action: 'update-general',
           data: {
-            name: companyData.name, // always pass existing name to avoid clearing it
+            name: companyData.name,
             email: contactForm.email || null,
             phone: contactForm.phone || null,
             website: contactForm.website || null,
@@ -216,7 +216,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     return renderUnlockedTab(tab, companyData);
   };
 
-  // ── Tab view ──
   if (activeTab) {
     return (
       <div className="min-h-screen bg-[#0B0E14]">
@@ -238,9 +237,8 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     );
   }
 
-  // ── Main settings view ──
   return (
-    <div className="min-h-screen bg-[#0B0E14] pb-20">
+    <div className="min-h-screen bg-[#0B0E14] pb-16">
       <header className="border-b border-white/[0.06] px-4 py-3.5 sticky top-0 z-40 bg-[#0B0E14]">
         <div className="max-w-4xl mx-auto flex items-center gap-3 min-w-0">
           <Link href={`/${company.slug}/home`} className="flex items-center gap-1.5 text-[12.5px] text-slate-400 hover:text-white transition-colors shrink-0">
@@ -251,11 +249,50 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+
+        {/* ── BILLING — now first, and impossible to miss ── */}
+        {planTier === 'free' ? (
+          <button
+            onClick={() => openTab('billing')}
+            className="w-full text-left rounded-2xl p-6 bg-gradient-to-br from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.99]"
+          >
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-white leading-tight">Upgrade your plan</p>
+                  <p className="text-[13px] text-white/85 mt-0.5">Unlock payments, pricing tools, and more — starting at $49.99/mo</p>
+                </div>
+              </div>
+              <span className="px-5 py-2.5 rounded-xl bg-white text-emerald-700 font-bold text-sm shrink-0">
+                See plans →
+              </span>
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={() => openTab('billing')}
+            className="w-full text-left rounded-2xl p-5 bg-white border-2 border-emerald-200 ring-1 ring-emerald-100 hover:shadow-md transition-all flex items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Subscription & billing</p>
+                <p className="text-[12px] text-gray-500 mt-0.5">Manage your plan, payment method, and invoices</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+          </button>
+        )}
 
         {/* ── CONTACT INFO ── */}
         <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
             <div>
               <h2 className="text-[14px] font-semibold text-gray-900">{companyData.name}</h2>
               <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full text-white inline-block mt-1 ${planTier === 'pro' ? 'bg-blue-600' : planTier === 'basic' ? 'bg-gray-700' : 'bg-emerald-600'}`}>
@@ -281,7 +318,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             }
           </div>
 
-          <div className="p-5 space-y-3">
+          <div className="p-4 space-y-2.5">
             {isEditingContact ? (
               <>
                 {[
@@ -289,7 +326,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                   { label: 'Phone', key: 'phone', type: 'tel', placeholder: '(555) 555-5555', icon: <Phone className="w-3.5 h-3.5 text-emerald-500" /> },
                   { label: 'Company Website', key: 'website', type: 'text', placeholder: 'https://yourwebsite.com', icon: <Globe className="w-3.5 h-3.5 text-violet-500" /> },
                 ].map(field => (
-                  <div key={field.key} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-gray-200 transition">
+                  <div key={field.key} className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-gray-200 transition">
                     {field.icon}
                     <input
                       type={field.type}
@@ -309,13 +346,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
                 ))}
               </>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
                   { label: 'Email', value: companyData.email, icon: <Mail className="w-3.5 h-3.5 text-blue-500" /> },
                   { label: 'Phone', value: companyData.phone ? formatPhone(companyData.phone) : null, icon: <Phone className="w-3.5 h-3.5 text-emerald-500" /> },
                   { label: 'Company Website', value: companyData.website ? companyData.website.replace(/^https?:\/\//, '') : null, icon: <Globe className="w-3.5 h-3.5 text-violet-500" />, href: companyData.website },
                 ].map(item => (
-                  <div key={item.label} className="flex flex-col gap-1.5 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div key={item.label} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50">
                     <div className="flex items-center gap-2">
                       {item.icon}
                       <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">{item.label}</span>
@@ -328,8 +365,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               </div>
             )}
 
-            {/* Booking link */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50">
               <Globe className="w-4 h-4 text-slate-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-[10.5px] font-medium text-gray-500 mb-0.5">Booking link</p>
@@ -346,15 +382,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
         {/* ── AUTOMATIONS ── */}
         <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
+          <div className="px-5 py-3.5 border-b border-gray-100">
             <h2 className="text-[14px] font-semibold text-gray-900">Automations</h2>
           </div>
           <div className="divide-y divide-gray-100">
-
-            {/* Daily digest */}
             {can(planTier, 'daily_digest') ? (
               <button onClick={() => setShowDigestConfirm(true)}
-                className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-gray-50 transition text-left">
+                className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-gray-50 transition text-left">
                 <div>
                   <p className="text-[13px] font-medium text-gray-900">Daily digest</p>
                   <p className="text-[12px] text-gray-600 mt-0.5">6AM summary of leads, jobs, and payments</p>
@@ -365,7 +399,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               </button>
             ) : (
               <button onClick={() => openTab('billing')}
-                className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-blue-50/40 transition text-left group">
+                className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-blue-50/40 transition text-left group">
                 <div>
                   <p className="text-[13px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Daily digest</p>
                   <p className="text-[12px] text-gray-500 mt-0.5">6AM summary of leads, jobs, and payments</p>
@@ -374,53 +408,32 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
               </button>
             )}
 
-            {/* BCC */}
-            <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
               <div>
                 <p className="text-[13px] font-medium text-gray-900">BCC me on customer emails</p>
                 <p className="text-[12px] text-gray-600 mt-0.5">Get a copy when a quote or schedule email sends</p>
               </div>
-             <button 
-  onClick={handleToggleBcc} 
-  disabled={bccSaving}
-  className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
-  style={{ minWidth: '2.5rem', minHeight: '1.25rem', maxWidth: '2.5rem' }}
->
-  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
-</button>
+              <button
+                onClick={handleToggleBcc}
+                disabled={bccSaving}
+                className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                style={{ minWidth: '2.5rem', minHeight: '1.25rem', maxWidth: '2.5rem' }}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
+              </button>
             </div>
-
           </div>
         </section>
 
         {/* ── SYSTEM CONFIGURATION ── */}
         <div>
-          <p className="text-[11px] font-medium text-white/40 mb-3 px-1">System configuration</p>
+          <p className="text-[11px] font-medium text-white/40 mb-2.5 px-1">System configuration</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages and workflow." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Basic" />
             <MenuCard icon={Mail} label="Email Templates" desc="Personalize the emails customers receive." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
             <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
           </div>
         </div>
-
-        {/* ── BILLING ── */}
-        {planTier !== 'free' && (
-          <div>
-            <p className="text-[11px] font-medium text-white/40 mb-3 px-1">Billing</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <MenuCard icon={CreditCard} label="Subscription" desc="Manage your plan and billing." color="#10b981" onClick={() => openTab('billing')} />
-            </div>
-          </div>
-        )}
-
-        {planTier === 'free' && (
-          <a href={`/${company.slug}/admin/settings`} onClick={e => { e.preventDefault(); openTab('billing'); }}
-            className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-gray-900 hover:bg-gray-800 transition">
-            <CreditCard className="w-4 h-4 text-white" />
-            <span className="text-sm font-medium text-white">Upgrade your plan</span>
-            <span className="text-xs text-white/60">From $49.99/mo</span>
-          </a>
-        )}
 
         {/* ── FOOTER ── */}
         <div className="flex justify-end">
@@ -432,7 +445,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
         </div>
       </div>
 
-      {/* Digest confirm modal */}
       {showDigestConfirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setShowDigestConfirm(false)} />

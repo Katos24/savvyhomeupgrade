@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, CheckSquare, Trash2, Calculator, Save, AlertTriangle, Layers, DollarSign, AlertCircle, Info } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
-import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+import { can, type PlanTier } from '@/lib/permissions';
+import { Lock } from 'lucide-react';
 
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
@@ -29,7 +30,23 @@ const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appear
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 
+function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
+  return (
+    <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-slate-200 rounded-lg">
+      <Lock className="w-5 h-5 text-slate-300 mx-auto mb-3" />
+      <p className="text-sm font-medium text-slate-700">Categories & pricing is on the Basic plan</p>
+      <a href={`/${companySlug}/billing`} className="inline-block mt-3 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-colors">
+        Upgrade to Basic
+      </a>
+    </div>
+  );
+}
+
 export default function CategoriesTab({ company, currentUser }: { company: any; currentUser?: any }) {
+  if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
+    return <LockedCategoriesSection companySlug={company.slug} />;
+  }
+
   const defaultCategories = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
 
   const [categories, setCategories] = useState<Category[]>(
@@ -224,15 +241,7 @@ useEffect(() => {
 
       {/* ── HEADER WITH TOP SAVE ─────────────────────────────────────────── */}
 
-       {(company.plan_tier === 'free') && (
-       <SettingsUpgradeBanner
-         planLabel="Basic"
-         price="$49.99/mo"
-         message="configure your categories now, then upgrade to auto-load tasks and pricing on new projects."
-         companySlug={company.slug}
-       />
-     )}
-   
+     
 <div className="pt-2">
   <div className="flex items-start justify-between gap-4 mb-4">
     <div>

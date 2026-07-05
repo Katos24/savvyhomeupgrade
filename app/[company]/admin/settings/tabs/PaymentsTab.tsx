@@ -133,6 +133,8 @@ const [connectError, setConnectError] = useState<string | null>(null);
     <Loader2 className="w-4 h-4 animate-spin" /> Checking account status...
   </div>
 )}
+{paymentStatus === null ? null : paymentStatus === 'active' ? (
+
 
 <a
   href="https://dashboard.stripe.com"
@@ -143,6 +145,17 @@ const [connectError, setConnectError] = useState<string | null>(null);
   Manage on Stripe
   <ArrowRight className="w-3.5 h-3.5" />
 </a>
+) : (
+  <button
+    onClick={handleConnect}
+    disabled={loading}
+    className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white rounded-xl font-bold text-sm transition-all active:scale-95"
+  >
+    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+    {loading ? 'Redirecting...' : 'Finish setup on Stripe'}
+    {!loading && <ArrowRight className="w-3.5 h-3.5" />}
+  </button>
+)}
 
         </div>
       ) : (

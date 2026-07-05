@@ -139,9 +139,10 @@ export default function HomeClient({ company, currentUser }: { company: Company;
     }
   };
 
-  const planTier = (company.plan_tier || 'free') as PlanTier;
+const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
+  const categoriesLocked = !can(planTier, 'categories');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(publicLink);
@@ -232,7 +233,7 @@ export default function HomeClient({ company, currentUser }: { company: Company;
               <LayoutGrid className="w-4 h-4 shrink-0 text-slate-400" />
               <span className="flex-1">{dashboardLabel}</span>
             </a>
-            <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} onClick={() => setActiveSection('categories')} />
+            <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
             <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
             <SidebarItem icon={Star} label={sectionLabels.reviews} active={activeSection === 'reviews'} locked={reviewsLocked} onClick={() => setActiveSection('reviews')} />
           </nav>
