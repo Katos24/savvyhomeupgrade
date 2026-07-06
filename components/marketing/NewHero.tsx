@@ -28,8 +28,8 @@ export default function ArchitectHero() {
             
        {/* HEADLINE */}
 <h1 className="text-slate-900 tracking-tighter leading-[0.9] sm:leading-[0.95] text-5xl sm:text-6xl lg:text-7xl">
-  <span className="font-extrabold block mb-1 sm:mb-2">The job management tool</span>
-  <span className="font-black text-emerald-600 block">built for the field.</span>
+  <span className="font-extrabold block mb-1 sm:mb-2">From first inquiry</span>
+  <span className="font-black text-emerald-600 block">to final invoice.</span>
 </h1>
             {/* MOBILE IMAGE */}
             <div className="lg:hidden relative w-full">
@@ -50,12 +50,12 @@ export default function ArchitectHero() {
 {/* SUBHEAD SECTION */}
 <div className="flex flex-col items-start gap-8">
   <p className="text-xl text-slate-600 max-w-lg leading-normal font-medium tracking-tight">
-    Manage your entire workflow from the first lead to the final payment. Everything you need, all in one place.
+    The all-in-one operating system for trade businesses. Capture leads, manage your project workflow, and get paid faster with professional, one-click invoicing.
   </p>
 
   {/* WORKFLOW PILLS */}
   <div className="flex items-center gap-2 flex-wrap">
-    {['Lead', 'Quote', 'Schedule'].map((step) => (
+    {['Lead', 'Quote', 'Project'].map((step) => (
       <div key={step} className="flex items-center gap-2">
         <span className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-[13px] font-semibold text-slate-700">
           {step}

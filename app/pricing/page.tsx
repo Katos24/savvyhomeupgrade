@@ -33,9 +33,9 @@ const PLAN_HIGHLIGHTS = {
  Basic: [
     'Everything in Free',
     'Custom booking form and branding',
+    'Accept online payments — send invoices customers pay by card',
     'Job categories, tasks, and quote templates',
     'Scheduling and quote builder',
-    'Accept online payments — send invoices customers pay by card',
     'Photo and document uploads',
     'CSV and QuickBooks export',
     'AI classified QuickBooks line items',
