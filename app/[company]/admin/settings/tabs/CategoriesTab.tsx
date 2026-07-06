@@ -315,12 +315,12 @@ useEffect(() => {
           const taskCount = cat.task_templates?.length || 0;
           const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
           return (
-            <motion.div
-              key={cat.value}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="group bg-[#0F172A] border border-gray-800 rounded-2xl p-5 hover:border-indigo-500/40 transition-all duration-200"
-            >
+           <motion.div
+  key={cat.value}
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="group bg-[#0F172A] border border-gray-800 rounded-2xl p-5 hover:border-indigo-500/50 shadow-sm hover:shadow-indigo-500/10 transition-all duration-300"
+>
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center">
                   <Layers className="w-5 h-5 text-indigo-400" />
