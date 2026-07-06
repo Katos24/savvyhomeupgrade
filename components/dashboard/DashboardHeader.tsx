@@ -35,16 +35,6 @@ isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate
 >
 <Menu className="w-4.5 h-4.5" />
 </button>
-<a
-href={`/${company.slug}/home`}
-title="Home"
-className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all active:scale-90 shrink-0 ${
-isDark ? 'bg-blue-500/10 hover:bg-blue-500/20' : 'bg-blue-50 hover:bg-blue-100'
-}`}
->
-<Home className="w-3.5 h-3.5 text-blue-500" />
-<span className="text-[9px] font-medium text-blue-500 leading-none">Home</span>
-</a>
 <div className={`flex items-center gap-2.5 sm:gap-3 min-w-0 border-l pl-2.5 sm:pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
 {company.logo_url ? (
 <img

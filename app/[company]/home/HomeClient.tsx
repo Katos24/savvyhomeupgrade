@@ -266,39 +266,6 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
         {activeSection === 'overview' && (
           <div className="max-w-3xl mx-auto px-6 py-8">
 
-            {doneCount < checklistSteps.length && (
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-3">
-                  <Eyebrow>Get set up</Eyebrow>
-                  <span className="text-[11px] text-slate-400 tabular-nums">{doneCount}/{checklistSteps.length}</span>
-                </div>
-                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                  <div className="h-1 bg-slate-100">
-                    <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${(doneCount / checklistSteps.length) * 100}%` }} />
-                  </div>
-                  {checklistSteps.map((step, i) => {
-                    const rowClass = `w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left ${i !== checklistSteps.length - 1 ? 'border-b border-slate-100' : ''} ${step.done ? 'opacity-50' : ''}`;
-                    const inner = (
-                      <>
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                          {step.done ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{step.label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{step.description}</p>
-                        </div>
-                      </>
-                    );
-                    return step.kind === 'link' ? (
-                      <a key={step.label} href={step.href} className={rowClass}>{inner}</a>
-                    ) : (
-                      <button key={step.label} onClick={() => setActiveSection(step.section)} className={rowClass}>{inner}</button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             <div className="mb-3"><Eyebrow>Your brand &amp; booking link</Eyebrow></div>
             <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
@@ -392,15 +359,15 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                           lead2project.com/{company.slug}
                         </code>
                       </div>
-                      <div className="flex items-center gap-2">
+                     <div className="flex flex-wrap items-center gap-2">
                         <button onClick={handleCopy}
                           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
                           {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                           {copied ? 'Copied' : 'Copy'}
                         </button>
-                        <a href={publicLink} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition">
-                          View form <ExternalLink className="w-3 h-3" />
+                       <a href={publicLink} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition whitespace-nowrap shrink-0">
+                          View form <ExternalLink className="w-3 h-3 shrink-0" />
                         </a>
                         <button onClick={() => setShowQrModal(true)}
                           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
@@ -410,8 +377,41 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                     </div>
                   </div>
                 </div>
-              </div>
+          </div>
             </div>
+
+            {doneCount < checklistSteps.length && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-3">
+                  <Eyebrow>Get set up</Eyebrow>
+                  <span className="text-[11px] text-slate-400 tabular-nums">{doneCount}/{checklistSteps.length}</span>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                  <div className="h-1 bg-slate-100">
+                    <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${(doneCount / checklistSteps.length) * 100}%` }} />
+                  </div>
+                  {checklistSteps.map((step, i) => {
+                    const rowClass = `w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left ${i !== checklistSteps.length - 1 ? 'border-b border-slate-100' : ''} ${step.done ? 'opacity-50' : ''}`;
+                    const inner = (
+                      <>
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                          {step.done ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{step.label}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{step.description}</p>
+                        </div>
+                      </>
+                    );
+                    return step.kind === 'link' ? (
+                      <a key={step.label} href={step.href} className={rowClass}>{inner}</a>
+                    ) : (
+                      <button key={step.label} onClick={() => setActiveSection(step.section)} className={rowClass}>{inner}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end mt-6">
               <a href={`/${company.slug}/dashboard/deleted-leads`}

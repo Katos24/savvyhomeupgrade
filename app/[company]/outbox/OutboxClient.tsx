@@ -154,7 +154,9 @@ function getTypeConfig(type: string) {
       return { label: 'Schedule', icon: <Calendar className="w-5 h-5" />, color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)' }
     case 'payment_reminder':
       return { label: 'Payment Reminder', icon: <Bell className="w-5 h-5" />, color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)' }
-    default:
+    case 'invoice':
+      return { label: 'Invoice', icon: <FileText className="w-5 h-5" />, color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }
+      default:
       return { label: type, icon: <Mail className="w-5 h-5" />, color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' }
   }
 }
@@ -254,7 +256,7 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
       return localStorage.getItem('outbox-theme') !== 'light'
     })
     useEffect(() => { localStorage.setItem('outbox-theme', isDark ? 'dark' : 'light') }, [isDark])
-    const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder'>('all')
+  const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder' | 'invoice'>('all')
   const [outboxPage, setOutboxPage] = useState(1)
   const [allOutboxEmails, setAllOutboxEmails] = useState<OutboxEmail[]>(outboxEmails)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -357,7 +359,8 @@ const hasMore = allOutboxEmails.length < tabTotal
     { key: 'all',              label: 'All',       count: totalEmails ?? allEmails.length },
     { key: 'quote',            label: 'Quotes',    count: typeCountMap['quote'] ?? allEmails.filter(e => e.type === 'quote').length },
     { key: 'schedule',         label: 'Schedules', count: typeCountMap['schedule'] ?? allEmails.filter(e => e.type === 'schedule').length },
-    { key: 'payment_reminder', label: 'Reminders', count: typeCountMap['payment_reminder'] ?? reminderCount },
+  { key: 'payment_reminder', label: 'Reminders', count: typeCountMap['payment_reminder'] ?? reminderCount },
+    { key: 'invoice',          label: 'Invoices',  count: typeCountMap['invoice'] ?? allEmails.filter(e => e.type === 'invoice').length },
   ] as const
 
   const toggleRow = (idx: number) => setExpandedIdx(prev => prev === idx ? null : idx)
