@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Copy, Check, ExternalLink, Loader2, Lock, Download, Trash2,
+  LayoutDashboard, Copy, Check, ExternalLink, Loader2, Lock, Download, Trash2,
   Palette, Save, Pencil, X, LayoutGrid, FileText, Tags, CreditCard,
   Star, Settings as SettingsIcon,
 } from 'lucide-react';
@@ -55,15 +55,15 @@ function SidebarItem({ icon: Icon, label, active, locked, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
         active
-          ? 'bg-blue-50 text-blue-700'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          ? 'bg-[#3e4046] text-[#4ade80]' // Active: Green text
+          : 'text-white hover:bg-[#3e4046]' // Inactive: White text
       }`}
     >
-      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-700' : 'text-slate-400'}`} />
+      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#4ade80]' : 'text-white'}`} />
       <span className="flex-1">{label}</span>
-      {locked && <Lock className="w-3 h-3 text-slate-300 shrink-0" />}
+      {locked && <Lock className="w-3 h-3 text-white/50 shrink-0" />}
     </button>
   );
 }
@@ -216,51 +216,71 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
 
-      {/* ── SIDEBAR ── */}
-      <aside className="lg:w-60 shrink-0 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 lg:min-h-screen">
-        <div className="p-4">
-          <div className="flex items-center gap-2.5 px-2 py-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-              {logoPreview
-                ? <img src={logoPreview} className="w-full h-full object-contain p-0.5" alt="" />
-                : <span className="text-slate-500 text-xs font-semibold">{companyName?.charAt(0)}</span>
-              }
-            </div>
-            <span className="text-[13px] font-semibold text-slate-900 truncate">{companyName}</span>
-          </div>
+        {/* ── SIDEBAR ── */}
+<aside className="lg:w-64 shrink-0 bg-[#2b2d31] border-r border-[#3e4046] lg:min-h-screen flex flex-col text-white">
+  {/* Header */}
+  <div className="p-4 border-b border-[#3e4046]">
+    <div className="flex items-center gap-3 px-2 py-1">
+      <div className="w-8 h-8 rounded-lg bg-[#3e4046] flex items-center justify-center shrink-0">
+        {logoPreview ? (
+          <img src={logoPreview} className="w-full h-full object-cover rounded-lg" alt="" />
+        ) : (
+          <span className="font-semibold text-xs text-white">{companyName?.charAt(0)}</span>
+        )}
+      </div>
+      <span className="text-sm font-semibold text-white truncate">{companyName}</span>
+    </div>
+  </div>
 
-          <nav className="space-y-0.5">
-            <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} />
-            <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => setActiveSection('form')} />
-            <a
-              href={`/${company.slug}/dashboard`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            >
-              <LayoutGrid className="w-4 h-4 shrink-0 text-slate-400" />
-              <span className="flex-1">{dashboardLabel}</span>
-            </a>
-            <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
-            <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
-            <SidebarItem icon={Star} label={sectionLabels.reviews} active={activeSection === 'reviews'} locked={reviewsLocked} onClick={() => setActiveSection('reviews')} />
-          </nav>
+{/* Navigation */}
+<div className="flex-1 px-3 py-4 space-y-6">
+  
+  {/* Dashboard Section (Opens in new tab) */}
+  <nav className="space-y-0.5">
+    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Home</p>
+    <a
+      href={`/${company.slug}/dashboard`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
+    >
+      <LayoutDashboard className="w-4 h-4" />
+      Dashboard
+    </a>
+  </nav>
 
-          <div className="h-px bg-slate-100 my-3" />
+  {/* Management Navigation (Stays in current page) */}
+  <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
+    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
+    
+    <div className="space-y-0.5">
+      <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} />
+      <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => setActiveSection('form')} />
+      <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
+      <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
+      <SidebarItem icon={Star} label={sectionLabels.reviews} active={activeSection === 'reviews'} locked={reviewsLocked} onClick={() => setActiveSection('reviews')} />
+    </div>
+  </nav>
 
-          <a
-            href={`/${company.slug}/admin/settings`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          >
-            <SettingsIcon className="w-4 h-4 shrink-0 text-slate-400" />
-            <span className="flex-1">{settingsLabel}</span>
-          </a>
-        </div>
-      </aside>
+  {/* System Section (Opens in new tab) */}
+  <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
+    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">System</p>
+    <a
+      href={`/${company.slug}/admin/settings`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
+    >
+      <SettingsIcon className="w-4 h-4 text-white" />
+      {settingsLabel}
+    </a>
+  </nav>
+</div>
+</aside>
 
-      {/* ── CONTENT ── */}
+
+
+       {/* ── CONTENT ── */}
       <main className="flex-1 min-w-0">
 
         {activeSection === 'overview' && (

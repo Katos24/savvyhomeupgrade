@@ -224,6 +224,42 @@ export default function QuoteSection({
     setIsDirty(true);
   };
 
+  const status =
+  (lead?.quote_accepted_at || lead?.project_quote_accepted_at)
+    ? 'approved'
+    : (lead?.quote_declined_at || lead?.project_quote_declined_at)
+    ? 'declined'
+    : (lead?.quote_sent_at || lead?.project_quote_sent_at)
+    ? 'sent'
+    : 'draft';
+
+const statusConfig: any = {
+  draft: {
+    label: 'Draft',
+    color: 'text-slate-500 bg-slate-100',
+    dot: 'bg-slate-400',
+    action: 'Send Quote',
+  },
+  sent: {
+    label: 'Sent',
+    color: 'text-blue-600 bg-blue-50',
+    dot: 'bg-blue-500',
+    action: 'Resend',
+  },
+  approved: {
+    label: 'Approved',
+    color: 'text-emerald-600 bg-emerald-50',
+    dot: 'bg-emerald-500',
+    action: 'Create Project',
+  },
+  declined: {
+    label: 'Declined',
+    color: 'text-red-600 bg-red-50',
+    dot: 'bg-red-500',
+    action: 'Revise',
+  },
+};
+
   const total = quoteData.reduce((s: number, i: any) => s + (i.amount || 0), 0);
   const lastAddedId = quoteData.length > 0 ? quoteData[quoteData.length - 1].id : null;
 

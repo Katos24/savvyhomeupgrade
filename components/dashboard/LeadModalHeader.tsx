@@ -108,7 +108,7 @@ export default function LeadModalHeader({
     { id: 'overview',  label: 'Overview',  icon: User,          show: true, locked: false },
     { id: 'quote',     label: 'Quote',     icon: FileText,      show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'schedule',  label: 'Schedule',  icon: Calendar,      show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
-    { id: 'payment',   label: 'Billing',   icon: CreditCard,    show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
+    { id: 'payment',   label: 'Invoice',   icon: CreditCard,    show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'tasks',     label: 'Tasks',     icon: ListChecks,    show: isProject || !can(planTier, 'custom_tasks'), locked: !can(planTier, 'custom_tasks') },
     { id: 'photos',    label: 'Media',     icon: ImageIcon,     show: isProject || !can(planTier, 'docs_on_card'), locked: !can(planTier, 'docs_on_card') },
     { id: 'activity',  label: 'Activity',  icon: MessageCircle, show: isProject, locked: false },
