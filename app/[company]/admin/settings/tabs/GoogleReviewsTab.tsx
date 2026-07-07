@@ -122,13 +122,13 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
             <div className="flex items-center gap-2 mb-4 text-slate-900 font-semibold text-sm">
                 <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Trigger: Mark Job Complete
             </div>
-            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[200px] md:h-[300px]">
-              <img 
-                src="/images/mark-job-complete.png" 
-                alt="Mark job as complete" 
-                className="w-full h-full object-cover object-top" 
-              />
-            </div>
+           <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[200px]">
+  <img 
+    src="/images/mark-job-complete.png" 
+    alt="Mark job as complete" 
+    className="w-full h-full object-cover object-top scale-100"
+  />
+</div>
         </div>
       </div>
     </div>

@@ -20,6 +20,7 @@ import {
   CreditCard,
   Star,
   Settings as SettingsIcon,
+  Menu,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -118,6 +119,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
   const [includeLogo, setIncludeLogo] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
@@ -273,10 +275,33 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
   const settingsLabel = 'Settings';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+<div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+
+        {/* ── MOBILE TOP BAR ── */}
+        <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 bg-white border-b border-slate-200 px-4 py-3">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 -ml-2 rounded-lg hover:bg-slate-100 transition"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
+          <span className="text-sm font-semibold text-slate-900 truncate">{companyName}</span>
+        </div>
+
+        {/* ── MOBILE OVERLAY ── */}
+        {mobileNavOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileNavOpen(false)}
+          />
+        )}
 
         {/* ── SIDEBAR ── */}
-<aside className="lg:w-64 shrink-0 bg-[#2b2d31] border-r border-[#3e4046] lg:min-h-screen flex flex-col text-white">
+<aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#2b2d31] border-r border-[#3e4046] flex flex-col text-white transform transition-transform duration-300 ease-in-out
+  ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
+  lg:static lg:translate-x-0 lg:w-64 lg:min-h-screen lg:shrink-0`}>
+
   {/* Header */}
   <div className="p-4 border-b border-[#3e4046]">
     <div className="flex items-center gap-3 px-2 py-1">
@@ -288,6 +313,13 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
         )}
       </div>
       <span className="text-sm font-semibold text-white truncate">{companyName}</span>
+      <button
+        onClick={() => setMobileNavOpen(false)}
+        className="ml-auto p-1.5 rounded-lg hover:bg-[#3e4046] lg:hidden"
+        aria-label="Close menu"
+      >
+        <X className="w-4 h-4 text-white" />
+      </button>
     </div>
   </div>
 
@@ -312,11 +344,11 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
   <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
     <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
     
-  <div className="space-y-0.5">
-  <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} />
-  <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => setActiveSection('form')} />
-  <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
-  <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
+   <div className="space-y-0.5">
+  <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => { setActiveSection('overview'); setMobileNavOpen(false); }} />
+  <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => { setActiveSection('form'); setMobileNavOpen(false); }} />
+  <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => { setActiveSection('categories'); setMobileNavOpen(false); }} />
+  <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => { setActiveSection('payments'); setMobileNavOpen(false); }} />
   
   {/* Updated Google Reviews Item */}
   <SidebarItem 
@@ -324,7 +356,7 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
     label={sectionLabels.reviews} 
     active={activeSection === 'reviews'} 
     locked={reviewsLocked} 
-    onClick={() => setActiveSection('reviews')} 
+    onClick={() => { setActiveSection('reviews'); setMobileNavOpen(false); }} 
   />
 </div>
   </nav>
