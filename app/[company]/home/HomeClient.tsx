@@ -87,19 +87,21 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-function SidebarItem({ icon: Icon, label, active, locked, onClick }: {
-  icon: any; label: string; active: boolean; locked?: boolean; onClick: () => void;
+function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
+  icon?: any; imageUrl?: string; label: string; active: boolean; locked?: boolean; onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
-        active
-          ? 'bg-[#3e4046] text-[#4ade80]' // Active: Green text
-          : 'text-white hover:bg-[#3e4046]' // Inactive: White text
+        active ? 'bg-[#3e4046] text-[#4ade80]' : 'text-white hover:bg-[#3e4046]'
       }`}
     >
-      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#4ade80]' : 'text-white'}`} />
+      {imageUrl ? (
+        <img src={imageUrl} className="w-4 h-4 shrink-0" alt="" />
+      ) : (
+        <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#4ade80]' : 'text-white'}`} />
+      )}
       <span className="flex-1">{label}</span>
       {locked && <Lock className="w-3 h-3 text-white/50 shrink-0" />}
     </button>
@@ -310,13 +312,21 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
   <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
     <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
     
-    <div className="space-y-0.5">
-      <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} />
-      <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => setActiveSection('form')} />
-      <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
-      <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
-      <SidebarItem icon={Star} label={sectionLabels.reviews} active={activeSection === 'reviews'} locked={reviewsLocked} onClick={() => setActiveSection('reviews')} />
-    </div>
+  <div className="space-y-0.5">
+  <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} />
+  <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => setActiveSection('form')} />
+  <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => setActiveSection('categories')} />
+  <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => setActiveSection('payments')} />
+  
+  {/* Updated Google Reviews Item */}
+  <SidebarItem 
+    imageUrl="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+    label={sectionLabels.reviews} 
+    active={activeSection === 'reviews'} 
+    locked={reviewsLocked} 
+    onClick={() => setActiveSection('reviews')} 
+  />
+</div>
   </nav>
 
   {/* System Section (Opens in new tab) */}
