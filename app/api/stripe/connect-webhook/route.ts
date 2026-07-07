@@ -72,7 +72,28 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
         break;
       }
 
-      const amountPaid = session.amount_total ? session.amount_total / 100 : null;
+       const amountPaid = session.amount_total ? session.amount_total / 100 : null;
+
+      // Fetch card brand/last4 once at payment time so BillingSection can
+      // display it without a live Stripe call on every page load.
+      let cardBrand: string | null = null;
+      let cardLast4: string | null = null;
+      try {
+        const intent = await stripe.paymentIntents.retrieve(
+          session.payment_intent as string,
+          { expand: ['latest_charge'] },
+          { stripeAccount: eventAccountId }
+        );
+        const charge = (intent as any).latest_charge;
+        const cardDetails = charge?.payment_method_details?.card;
+        if (cardDetails) {
+          cardBrand = cardDetails.brand;
+          cardLast4 = cardDetails.last4;
+        }
+      } catch (err: any) {
+        console.error('Failed to retrieve card details for receipt:', err.message);
+        // Non-fatal — payment still gets marked paid even if this fails
+      }
 
       await sql`
         UPDATE projects
@@ -82,7 +103,9 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
           payment_method = 'stripe',
           paid_at = NOW(),
           payment_date = CURRENT_DATE,
-          stripe_payment_intent_id = ${session.payment_intent as string}
+          stripe_payment_intent_id = ${session.payment_intent as string},
+          card_brand = ${cardBrand},
+          card_last4 = ${cardLast4}
         WHERE id = ${parseInt(projectId)}
       `;
 
@@ -167,7 +190,7 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
             refunded_at = NOW()
         WHERE id = ${projectCheck[0].id}
       `;
-      
+
       console.log(`Project ${projectCheck[0].id} marked ${isFullRefund ? 'refunded' : 'partially refunded'}, amount: ${refundedAmount}`);
 
       break;

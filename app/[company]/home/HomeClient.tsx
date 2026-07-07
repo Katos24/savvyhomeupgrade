@@ -3,17 +3,9 @@
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
-  Copy,
-  Check,
-  ExternalLink,
-  Loader2,
   Lock,
   Download,
-  Trash2,
-  Palette,
-  Save,
-  Pencil,
-  X, Mail, Phone, Globe,
+  X, 
   LayoutGrid,
   FileText,
   Tags,
@@ -30,6 +22,8 @@ import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
 import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
 import FormTab from '@/app/[company]/admin/settings/tabs/FormTab';
 import GoogleReviewsTab from '@/app/[company]/admin/settings/tabs/GoogleReviewsTab';
+import OverviewTab from '@/app/[company]/admin/settings/tabs/OverviewTab';
+
 // Settings has no single "SettingsTab" file — it's CompanySettingsClient composing
 // Pipeline / Email templates / Team / Billing as nested tabs. Bigger wire-in than the
 // others; confirm before I drop it in, since it may expect its own internal tab nav
@@ -86,6 +80,14 @@ function formatPhone(value: string) {
   }
 
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function normalizeUrl(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
+  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
 }
 
 function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
@@ -154,8 +156,9 @@ const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
     generate();
   }, [publicLink, qrStyle, color1]);
 
-  const handleSaveBranding = async () => {
+const handleSaveBranding = async () => {
     setBrandSaving(true);
+    const normalizedWebsite = normalizeUrl(companyWebsite);
     try {
       let finalLogoUrl = company.logo_url;
       if (logoFile) {
@@ -167,36 +170,37 @@ const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
         if (uploadRes.ok && uploadData.success) finalLogoUrl = uploadData.logoUrl;
       }
       await fetch(`/api/company/${company.slug}/settings`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    action: 'update-general',
-    data: {
-      name: companyName,
-      email: companyEmail,
-      phone: companyPhone,
-      website: companyWebsite
-    }
-  }),
-});
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'update-general',
+          data: {
+            name: companyName,
+            email: companyEmail,
+            phone: companyPhone,
+            website: normalizedWebsite
+          }
+        }),
+      });
       await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update-branding', data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 } }),
       });
-     if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
-     setCompany(prev => ({
-  ...prev,
-  name: companyName,
-  email: companyEmail,
-  phone: companyPhone,
-  website: companyWebsite,
-  logo_url: finalLogoUrl ?? prev.logo_url,
-  email_brand_color_1: color1,
-  email_brand_color_2: color2,
-}));
+      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+      setCompanyWebsite(normalizedWebsite);
+      setCompany(prev => ({
+        ...prev,
+        name: companyName,
+        email: companyEmail,
+        phone: companyPhone,
+        website: normalizedWebsite,
+        logo_url: finalLogoUrl ?? prev.logo_url,
+        email_brand_color_1: color1,
+        email_brand_color_2: color2,
+      }));
       setLogoFile(null);
       setIsEditingBrand(false);
       setBrandSaved(true);
@@ -405,268 +409,39 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
 
 {/* ── CONTENT ── */}
 <main className="flex-1 min-w-0">
-  {activeSection === 'overview' && (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="mb-3"><Eyebrow>Your brand & booking link</Eyebrow></div>
-
-      {/* CARD CONTAINER */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-        <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
-        
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="relative shrink-0">
-                    <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
-                      {logoPreview
-                        ? <img src={logoPreview} className="w-full h-full object-contain p-1" alt="Logo" />
-                        : <span className="text-slate-400 text-sm font-semibold">{companyName?.charAt(0)}</span>
-                      }
-                    </div>
-                    {isEditingBrand && (
-                      <label className="absolute -bottom-1 -right-1 p-1 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition">
-                        <Pencil className="w-2.5 h-2.5" />
-                        <input type="file" className="hidden" accept="image/*" onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 4 * 1024 * 1024) { alert('Logo must be under 4MB.'); return; }
-                          setLogoFile(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setLogoPreview(reader.result as string);
-                          reader.readAsDataURL(file);
-                        }} />
-                      </label>
-                    )}
-                  </div>
-
-                  {isEditingBrand
-                    ? <input value={companyName} onChange={e => setCompanyName(e.target.value)}
-                        className="flex-1 text-[15px] font-semibold text-slate-900 outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 bg-transparent pb-0.5" placeholder="Company name" />
-                    : <h2 className="flex-1 text-[15px] font-semibold text-slate-900 truncate">{companyName}</h2>
-                    
-                  }
-                  {!isEditingBrand && (
-  <span
-    className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
-      company.plan_tier === 'pro'
-        ? 'bg-blue-100 text-blue-700'
-        : company.plan_tier === 'basic'
-        ? 'bg-slate-100 text-slate-700'
-        : 'bg-emerald-100 text-emerald-700'
-    }`}
-  >
-    {company.plan_tier} Plan
-  </span>
+{activeSection === 'overview' && (
+  <OverviewTab
+    company={company}
+    color1={color1}
+    color2={color2}
+    logoPreview={logoPreview}
+    isEditingBrand={isEditingBrand}
+    setIsEditingBrand={setIsEditingBrand}
+    companyName={companyName}
+    setCompanyName={setCompanyName}
+    companyEmail={companyEmail}
+    setCompanyEmail={setCompanyEmail}
+    companyPhone={companyPhone}
+    setCompanyPhone={setCompanyPhone}
+    formatPhone={formatPhone}
+    companyWebsite={companyWebsite}
+    setCompanyWebsite={setCompanyWebsite}
+    setLogoFile={setLogoFile}
+    setLogoPreview={setLogoPreview}
+    setColor1={setColor1}
+    setColor2={setColor2}
+    brandSaving={brandSaving}
+    brandSaved={brandSaved}
+    onSaveBranding={handleSaveBranding}
+    qrCodeUrl={qrCodeUrl}
+    onShowQrModal={() => setShowQrModal(true)}
+    publicLink={publicLink}
+    copied={copied}
+    onCopy={handleCopy}
+    checklistSteps={checklistSteps}
+    onNavigateSection={(section) => setActiveSection(section as SectionKey)}
+  />
 )}
-
-                  {!isEditingBrand
-                    ? <button onClick={() => setIsEditingBrand(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition shrink-0">
-                        <Pencil className="w-3 h-3" /> Edit
-                      </button>
-                    : <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => { setIsEditingBrand(false);
-
-setCompanyName(company.name);
-setCompanyEmail(company.email || '');
-setCompanyPhone(company.phone || '');
-setCompanyWebsite(company.website || '');
-
-setColor1(company.email_brand_color_1 || '#0B3C6D');
-setColor2(company.email_brand_color_2 || '#1F5F8F');
-
-setLogoPreview(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
-setLogoFile(null); }}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
-                          <X className="w-3 h-3" /> Cancel
-                        </button>
-                        <button onClick={handleSaveBranding} disabled={brandSaving}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 transition">
-                          {brandSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : brandSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                          {brandSaving ? 'Saving...' : brandSaved ? 'Saved' : 'Save'}
-                        </button>
-                      </div>
-                  }
-                </div>
-
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Palette className="w-3 h-3" /> Brand colors
-                    </p>
-                    {isEditingBrand
-                      ? <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-center gap-1">
-                            <input type="color" value={color1} onChange={e => setColor1(e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5" />
-                            <span className="text-[10px] text-slate-500">Primary</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <input type="color" value={color2} onChange={e => setColor2(e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5" />
-                            <span className="text-[10px] text-slate-500">Secondary</span>
-                          </div>
-                          <div className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
-                        </div>
-                      : <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg border border-slate-200 shrink-0" style={{ background: color1 }} />
-                          <div className="w-8 h-8 rounded-lg border border-slate-200 shrink-0" style={{ background: color2 }} />
-                          <div className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
-                        </div>
-                    }
-                    <p className="text-[11.5px] text-slate-600 mt-2">Used in your customer emails and booking form.</p>
-                  </div>
-
-                  <div className="mt-6">
-  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">
-    Company Information
-  </p>
-
-  <div className="space-y-2">
-
-<div>
-  <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
-    <Mail className="w-4 h-4 text-blue-500 shrink-0" />
-
-    {isEditingBrand ? (
-      <input
-        value={companyEmail}
-        onChange={(e) => setCompanyEmail(e.target.value)}
-        placeholder="Company email"
-        className="flex-1 bg-transparent outline-none text-sm"
-      />
-    ) : (
-      <span className="text-sm text-slate-700 truncate flex-1">
-        {company.email || 'No email added'}
-      </span>
-    )}
-  </div>
-  <p className="text-[11px] text-slate-500 mt-1 px-1">
-    Customer replies and BCC copies of quote, schedule, and invoice emails go here — double check this is correct.
-  </p>
-</div>
-
-   <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
-  <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-
-  {isEditingBrand ? (
-    <input
-  value={companyPhone}
-  onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
-  placeholder="(555) 555-5555"
-  maxLength={14}
-  className="flex-1 bg-transparent outline-none text-sm"
-/>
-  ) : (
-    <span className="text-sm text-slate-700">
-{company.phone ? formatPhone(company.phone) : 'No phone number'}
-    </span>
-  )}
-</div>
-
-   <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
-  <Globe className="w-4 h-4 text-violet-500 shrink-0" />
-
-  {isEditingBrand ? (
-    <input
-      value={companyWebsite}
-      onChange={(e) => setCompanyWebsite(e.target.value)}
-      placeholder="https://yourcompany.com"
-      className="flex-1 bg-transparent outline-none text-sm"
-    />
-  ) : company.website ? (
-    <a
-      href={company.website}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-sm text-blue-600 hover:underline truncate"
-    >
-      {company.website.replace(/^https?:\/\//, '')}
-    </a>
-  ) : (
-    <span className="text-sm text-slate-700">
-      No website added
-    </span>
-  )}
-</div>
-
-  </div>
-</div>
-
-                  <div className="flex gap-4 items-start">
-                    <button onClick={() => setShowQrModal(true)}
-                      className="w-20 h-20 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden hover:border-slate-300 transition shrink-0">
-                      {qrCodeUrl
-                        ? <img src={qrCodeUrl} className="w-full h-full" alt="QR code" />
-                        : <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
-                      }
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 bg-slate-50 mb-2">
-                        <code className="text-[12px] font-mono text-slate-700 truncate flex-1">
-                          lead2project.com/{company.slug}
-                        </code>
-                      </div>
-                     <div className="flex flex-wrap items-center gap-2">
-                        <button onClick={handleCopy}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
-                          {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                          {copied ? 'Copied' : 'Copy'}
-                        </button>
-                       <a href={publicLink} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition whitespace-nowrap shrink-0">
-                          View form <ExternalLink className="w-3 h-3 shrink-0" />
-                        </a>
-                        <button onClick={() => setShowQrModal(true)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition">
-                          <Download className="w-3 h-3" /> QR
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-          </div>
-            </div>
-
-            {doneCount < checklistSteps.length && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-3">
-                  <Eyebrow>Get set up</Eyebrow>
-                  <span className="text-[11px] text-slate-400 tabular-nums">{doneCount}/{checklistSteps.length}</span>
-                </div>
-                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                  <div className="h-1 bg-slate-100">
-                    <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${(doneCount / checklistSteps.length) * 100}%` }} />
-                  </div>
-                  {checklistSteps.map((step, i) => {
-                    const rowClass = `w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left ${i !== checklistSteps.length - 1 ? 'border-b border-slate-100' : ''} ${step.done ? 'opacity-50' : ''}`;
-                    const inner = (
-                      <>
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                          {step.done ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{step.label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{step.description}</p>
-                        </div>
-                      </>
-                    );
-                    return step.kind === 'link' ? (
-                      <a key={step.label} href={step.href} className={rowClass}>{inner}</a>
-                    ) : (
-                      <button key={step.label} onClick={() => setActiveSection(step.section)} className={rowClass}>{inner}</button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end mt-6">
-              <a href={`/${company.slug}/dashboard/deleted-leads`}
-                className="flex items-center gap-2 px-4 py-2.5 border border-red-100 bg-red-50 rounded-lg group transition hover:bg-red-100">
-                <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                <span className="text-xs font-medium text-red-600">Recovery center</span>
-              </a>
-            </div>
-          </div>
-        )}
 
         <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'form' ? 'block' : 'none' }}>
           <FormTab company={company} currentUser={currentUser} />

@@ -3,7 +3,7 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Download, CheckCircle2, XCircle, AlertCircle, XCircle as CloseIcon } from 'lucide-react';
 import type { ThemeTokens } from '@/lib/financialsTheme';
-import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
+import { getPaymentStatusDisplay, getPaymentMethodLabel } from '@/lib/paymentStatus';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -261,14 +261,21 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                         <p className="text-xs mt-0.5" style={{ color: '#f59e0b' }}>{fmtFull(collected)} paid</p>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                   <td className="px-6 py-4">
                       {(() => {
                         const status = getPaymentStatusDisplay(project.payment_status);
                         return (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                            style={{ background: status.bg, color: status.color }}>
-                            {status.label}
-                          </span>
+                          <div>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                              style={{ background: status.bg, color: status.color }}>
+                              {status.label}
+                            </span>
+                            {project.payment_amount && (
+                              <p className="text-[11px] mt-1" style={{ color: t.text.muted }}>
+                                {getPaymentMethodLabel(project)}
+                              </p>
+                            )}
+                          </div>
                         );
                       })()}
                     </td>
@@ -327,7 +334,7 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                       {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
-                 {(() => {
+                  {(() => {
                     const status = getPaymentStatusDisplay(project.payment_status);
                     return (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
@@ -337,6 +344,11 @@ const FinancialsTable = forwardRef<FinancialsTableRef, {
                     );
                   })()}
                 </div>
+                {project.payment_amount && (
+                  <p className="text-[11px]" style={{ color: t.text.muted }}>
+                    {getPaymentMethodLabel(project)}
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: t.text.secondary }}>{formatCategory(project.category)}</span>
                   <span className="text-sm font-medium" style={{ color: t.text.primary }}>{fmtFull(total)}</span>

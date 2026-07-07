@@ -90,11 +90,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
     }
   };
 
-  const [showAddQuestion, setShowAddQuestion] = useState(false);
+const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
-
+  const [linkCopied, setLinkCopied] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`https://lead2project.com/${company.slug}`);
 
   useEffect(() => {
@@ -242,8 +242,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
       </div>
 
       {/* ── LIVE, EDITABLE FORM ── */}
-      <div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden w-full max-w-[480px] mx-auto">
-        <AnimatePresence mode="wait">
+<div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden w-full max-w-full sm:max-w-[480px] mx-auto">        <AnimatePresence mode="wait">
           <motion.div
             key={previewStep}
             initial={{ opacity: 0, x: 12 }}
@@ -287,7 +286,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </AnimatePresence>
       </div>
 
-      <button
+   <button
         onClick={handleSaveAll}
         disabled={loading}
         className="w-full py-3.5 mt-4 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
@@ -295,6 +294,62 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
         {loading ? 'Saving...' : 'Save changes'}
       </button>
+
+      {/* ── SHARE YOUR LINK IDEAS ── */}
+      <div className="mt-10 pt-8 border-t border-slate-200">
+        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
+          Get the word out
+        </p>
+        <p className="text-sm text-slate-600 mb-4">
+          Your booking link works anywhere you can put a link or a QR code.
+        </p>
+
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 mb-5">
+          <code className="text-[12px] font-mono text-slate-700 truncate flex-1">{publicUrl}</code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(publicUrl);
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 1800);
+            }}
+            className="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition"
+          >
+            {linkCopied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ShareIdeaCard
+            title="Google Business Profile"
+            description="Add your booking link to your Google Business Profile website field — it's often the first place customers look before they even reach your site."
+          />
+          <ShareIdeaCard
+            title="Social media"
+            description="Add it to your Instagram or Facebook bio, or drop it in a post."
+          />
+          <ShareIdeaCard
+            title="Your website"
+            description="Link it from a 'Get a Quote' or 'Book Now' button."
+          />
+          <ShareIdeaCard
+            title="Flyers & signs"
+            description="Print it — or the QR code from your Overview tab — on flyers, yard signs, or door hangers."
+          />
+          <ShareIdeaCard
+            title="Vehicle & business cards"
+            description="A QR code on your truck magnet or business card lets people book on the spot."
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareIdeaCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+      <p className="text-[12px] font-semibold text-slate-800">{title}</p>
+      <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">{description}</p>
     </div>
   );
 }

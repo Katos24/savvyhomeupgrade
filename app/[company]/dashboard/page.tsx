@@ -32,6 +32,7 @@ interface Company {
   onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
+  stripe_connect_account_id?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +68,8 @@ async function getCompany(slug: string): Promise<Company | null> {
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,
       form_field_config,
-      onboarding_completed, onboarding_steps, cancel_at_period_end, subscription_cancel_at
+      onboarding_completed, onboarding_steps, cancel_at_period_end, subscription_cancel_at,
+      stripe_connect_account_id
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1

@@ -20,21 +20,31 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const normalizeUrl = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return trimmed;
+    if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
+    if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+    return trimmed;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
     setError('');
+    const normalizedUrl = normalizeUrl(url);
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update-google-reviews',
-          data: { google_review_url: url, google_review_enabled: enabled },
+          data: { google_review_url: normalizedUrl, google_review_enabled: enabled },
         }),
       });
       const data = await res.json().catch(() => null);
       if (res.ok && data?.success) {
+        setUrl(normalizedUrl);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } else {
@@ -76,29 +86,55 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
         </div>
       </div>
 
-      {/* 2. Middle Setup Section */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex-1 w-full flex items-center gap-3">
-          <Link className="w-5 h-5 text-indigo-600 shrink-0" />
-          <input
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            placeholder="Paste your Google review link here..."
-            className="w-full bg-white border border-indigo-200 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-200"
-          />
+ {/* 2. Middle Setup Section */}
+<div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+    <div className="flex-1 w-full">
+      <label htmlFor="google-review-url" className="block text-[12px] font-semibold text-slate-700 mb-1.5 ml-1">
+        Google review link
+      </label>
+      <div className="flex items-center gap-3">
+        <Link className="w-5 h-5 text-indigo-600 shrink-0" />
+        <input
+          id="google-review-url"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          placeholder="Enter your Google Business Profile review link..."
+          className="w-full bg-white border border-indigo-200 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-200"
+        />
+      </div>
+    </div>
+
+    <label className="flex items-center gap-3 px-4 py-3 bg-white border border-indigo-200 rounded-lg cursor-pointer hover:border-indigo-300 w-full md:w-auto">
+      <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
+      <span className="text-sm font-semibold text-slate-900 whitespace-nowrap">Auto-send</span>
+    </label>
+
+    <button
+      onClick={handleSave}
+      disabled={saving}
+      className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-all"
+    >
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+      {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
+    </button>
+  </div>
+
+  <div className="mt-3 pl-8 pr-1">
+    <p className="text-[12px] text-slate-600 leading-relaxed">
+  <a
+    href="https://support.google.com/business/answer/7035772"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-indigo-600 font-medium hover:underline"
+  >
+    See Google's guide to sharing your review link
+  </a>{" "}
+  — or search "get more reviews" in your Google Business Profile app, tap{" "}
+  <strong>Share review form</strong>, and copy the link it gives you.
+</p>
+
         </div>
-        <label className="flex items-center gap-3 px-4 py-3 bg-white border border-indigo-200 rounded-lg cursor-pointer hover:border-indigo-300 w-full md:w-auto">
-            <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
-            <span className="text-sm font-semibold text-slate-900 whitespace-nowrap">Auto-send</span>
-        </label>
-        <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-all"
-        >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
-        </button>
       </div>
 
       {/* 3. Details/Workflow Grid */}

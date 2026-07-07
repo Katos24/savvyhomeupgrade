@@ -89,6 +89,7 @@ export default function BillingSection({
   // amount-based derivation below would otherwise mis-classify a refunded
   // project as "Paid." Refund flags take precedence in every UI branch.
   const isRefunded = lead?.payment_status === 'refunded';
+  const isStripeVerified = !!lead?.stripe_payment_intent_id;
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
   const isClosed = isRefunded || isPartiallyRefunded;
   const refundedAmount = parseFloat(lead?.refunded_amount || '0');
@@ -242,6 +243,14 @@ export default function BillingSection({
       </div>
     );
   }
+
+  function StripeWordmark() {
+  return (
+    <span className="font-bold text-sm tracking-tight" style={{ color: '#635BFF' }}>
+      stripe
+    </span>
+  );
+}
 
   return (
     <>
@@ -460,11 +469,40 @@ export default function BillingSection({
               )}
             </div>
 
-            {/* Record/Edit Payment button — hidden entirely when closed.
-                A refunded project's payment record shouldn't be re-editable via this UI
-                (would let a user overwrite the historical charge amount). If manual
-                refund tracking is needed later, that's a separate flow. */}
-            {!isClosed && (
+    {/* Stripe-verified payment — locked, not editable via this UI.
+                Verification is based on stripe_payment_intent_id existing
+                (set only by Stripe's webhook), NOT on payment_method === 'stripe',
+                since that string can be typed in manually and wouldn't be a
+                real guarantee. */}
+            {!isClosed && isStripeVerified && (
+              <div className="w-full py-2.5 px-3 rounded-xl mt-auto bg-slate-50 border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-medium text-slate-500">Charged via</span>
+                    <StripeWordmark />
+                    {lead.card_brand && lead.card_last4 && (
+                      <span className="text-[11px] font-medium text-slate-600 capitalize">
+                        · {lead.card_brand} •••• {lead.card_last4}
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={`https://dashboard.stripe.com/${company?.stripe_connect_account_id}/payments/${lead.stripe_payment_intent_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 underline"
+                  >
+                    View in Stripe
+                  </a>
+                </div>
+                <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                  Verified automatically by Stripe — locked from manual editing here.
+                </p>
+              </div>
+            )}
+
+            {/* Manual (non-Stripe) payment — editable as before */}
+            {!isClosed && !isStripeVerified && (
               <button
                 onClick={() => setShowRecordPayment(true)}
                 className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors mt-auto ${
@@ -482,6 +520,7 @@ export default function BillingSection({
               <div className="w-full py-2.5 rounded-xl mt-auto bg-slate-100 text-center">
                 <p className="text-xs font-medium text-slate-500">
                   Payment record closed
+                  {isStripeVerified && ' · originally charged via Stripe'}
                 </p>
               </div>
             )}

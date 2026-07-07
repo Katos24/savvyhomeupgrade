@@ -53,6 +53,73 @@ const STATUS_COLORS: Record<string, string> = {
   green: '#22c55e', red: '#ef4444', gray: '#6b7280', indigo: '#6366f1', pink: '#ec4899',
 };
 
+// Stripe's real brand purple — only used for their own wordmark, matching
+// the same treatment used in PaymentsTab/BillingSection.
+function StripeWordmark() {
+  return (
+    <span className="font-bold" style={{ color: '#635BFF' }}>
+      stripe
+    </span>
+  );
+}
+
+// Shared payment cell for both mobile and desktop tables — same signal set
+// as BillingSection: paid/partial/refunded, Stripe-verified (via
+// stripe_payment_intent_id, not the editable payment_method string) vs
+// manually recorded, plus card brand/last4 when available.
+function PaymentCell({ lead, textMutedClass, textEmptyClass, size = 'md' }: {
+  lead: any;
+  textMutedClass: string;
+  textEmptyClass: string;
+  size?: 'sm' | 'md';
+}) {
+  const amountSize = size === 'sm' ? 'text-[12px]' : 'text-sm';
+  const subSize = size === 'sm' ? 'text-[10px]' : 'text-xs';
+
+  const isRefunded = lead.payment_status === 'refunded';
+  const isPartiallyRefunded = lead.payment_status === 'partially_refunded';
+  const isClosed = isRefunded || isPartiallyRefunded;
+  const isStripeVerified = !!lead.stripe_payment_intent_id;
+
+  if (isClosed) {
+    return (
+      <div>
+        <div className={`${amountSize} font-bold text-slate-500`}>
+          {formatCurrency(lead.refunded_amount || lead.payment_amount || 0)}
+        </div>
+        <div className={`${subSize} ${textMutedClass}`}>
+          {isRefunded ? 'Refunded' : 'Partially refunded'}
+        </div>
+      </div>
+    );
+  }
+
+  if (!lead.payment_amount) {
+    return lead.payment_status
+      ? <span className={`${subSize} ${textMutedClass} capitalize`}>{lead.payment_status}</span>
+      : <span className={textEmptyClass}>—</span>;
+  }
+
+  return (
+    <div>
+      <div className={`${amountSize} font-bold text-sky-500`}>{formatCurrency(lead.payment_amount)}</div>
+      <div className={`${subSize} ${textMutedClass} flex items-center gap-1 flex-wrap capitalize`}>
+        {lead.payment_status === 'partial' && <span className="text-amber-500 font-semibold">Partial ·</span>}
+        {isStripeVerified ? (
+          <>
+            <StripeWordmark />
+            {lead.card_brand && lead.card_last4 && (
+              <span className="normal-case">· {lead.card_brand} •••• {lead.card_last4}</span>
+            )}
+          </>
+        ) : (
+          lead.payment_method || 'Manual'
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TableView({
   leads, onSelectLead, statusOptions,
   onBulkUpdate, onBulkDelete,

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { can, type PlanTier } from '@/lib/permissions';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getPaymentMethodLabel } from '@/lib/paymentStatus';
+
 
 export async function GET(
   request: Request,
@@ -79,8 +81,13 @@ p.quote_data,
 p.payment_status,
 p.payment_amount,
 p.payment_due_date,
-p.payment_date,
-p.payment_method,
+ p.payment_date,
+        p.payment_method,
+        p.stripe_payment_intent_id,
+        p.refunded_amount,
+        p.refunded_at,
+        p.card_brand,
+        p.card_last4,
         l.lead_source,
         l.preferred_date,
         l.preferred_time,
@@ -295,10 +302,13 @@ for (const lead of invoicedLeads) {
         'Assigned To',
         'Estimated Hours',
         'Quote Total',
-        'Payment Status',
+         'Payment Status',
         'Payment Amount',
+        'Payment Method Detail',
         'Payment Due Date',
         'Payment Received Date',
+        'Refunded Amount',
+        'Refund Date',
         'Created Date',
         'Lead Source',
         'Preferred Date',
@@ -338,8 +348,12 @@ escape(lead.name || ''),
           escape(lead.quote_total ? `$${parseFloat(lead.quote_total).toFixed(2)}` : ''),
           escape(lead.payment_status || ''),
           escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
+                  escape(getPaymentMethodLabel(lead)),
+
           escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),
           escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
+          escape(lead.refunded_amount ? `$${parseFloat(lead.refunded_amount).toFixed(2)}` : ''),
+          escape(lead.refunded_at ? new Date(lead.refunded_at).toLocaleDateString() : ''),
           escape(new Date(lead.created_at).toLocaleDateString()),
           escape(lead.lead_source || ''),
           escape(lead.preferred_date ? new Date(lead.preferred_date).toLocaleDateString() : ''),
