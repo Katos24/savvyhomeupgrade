@@ -520,14 +520,15 @@ quote_data = ${JSON.stringify(quote_data)},
    else if (action === 'send_quote_to_customer') {
   
   const leadCheck = await sql`
-    SELECT l.*, p.quote_data, p.quote_total, 
-           c.name as company_name, c.phone as company_phone, 
-           c.id as company_id, c.plan_tier
-    FROM leads l
-    LEFT JOIN projects p ON l.project_id = p.id
-    LEFT JOIN companies c ON l.company_id = c.id
-    WHERE l.id = ${id}
-  `;
+  SELECT l.*, p.quote_data, p.quote_total, 
+         c.name as company_name, c.phone as company_phone, 
+         c.email as company_email,
+         c.id as company_id, c.plan_tier
+  FROM leads l
+  LEFT JOIN projects p ON l.project_id = p.id
+  LEFT JOIN companies c ON l.company_id = c.id
+  WHERE l.id = ${id}
+`;
 
   if (!leadCheck[0]) {
     return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
@@ -577,7 +578,7 @@ await sql`UPDATE projects
   quoteItems: quoteItems,
   projectDescription: lead.category || 'Your project',
   quoteToken: quoteToken,
-  contractorEmail: user_email,
+  contractorEmail: lead.company_email,
 });
 
         // Log to outbox
@@ -644,28 +645,22 @@ await sql`UPDATE projects
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
   
-  const result = await sql`
-    SELECT 
-      l.id,
-      l.name,
-      l.email,
-      l.address_line_1,
-      l.address_line_2,
-      l.city,
-      l.zip_code,
-      l.project_id,
-      p.scheduled_date::text as scheduled_date,
-      p.scheduled_time::text as scheduled_time,
-      p.assigned_to,
-      c.name as company_name,
-      c.phone as company_phone,
-      c.id as company_id,
-      c.plan_tier
-    FROM leads l
-    JOIN projects p ON l.project_id = p.id
-    JOIN companies c ON l.company_id = c.id
-    WHERE l.id = ${id}
-  `;
+ const result = await sql`
+  SELECT 
+    l.id, l.name, l.email, l.address_line_1, l.address_line_2, l.city, l.zip_code, l.project_id,
+    p.scheduled_date::text as scheduled_date,
+    p.scheduled_time::text as scheduled_time,
+    p.assigned_to,
+    c.name as company_name,
+    c.phone as company_phone,
+    c.email as company_email,
+    c.id as company_id,
+    c.plan_tier
+  FROM leads l
+  JOIN projects p ON l.project_id = p.id
+  JOIN companies c ON l.company_id = c.id
+  WHERE l.id = ${id}
+`;
 
   if (!result[0]) {
     return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
@@ -703,7 +698,7 @@ const emailResult = await sendScheduleConfirmation({
   scheduledTime: lead.scheduled_time || undefined,
   serviceAddress: serviceAddress || undefined,
   assignedTo: lead.assigned_to || undefined,
-  contractorEmail: user_email,
+  contractorEmail: lead.company_email,
 });
 
         // Log to outbox
@@ -995,6 +990,7 @@ const leadCheck = await sql`
     SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
            p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
            c.name as company_name, c.phone as company_phone,
+           c.email as company_email,
            c.id as company_id, c.slug as company_slug, c.plan_tier,
            c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status
     FROM leads l
@@ -1112,9 +1108,9 @@ const leadCheck = await sql`
       invoiceItems,
       dueDate: body.due_date || undefined,
       notes: body.notes || undefined,
-      contractorEmail: user_email,
-      paymentLinkUrl,
-      paymentLinkType,
+      contractorEmail: lead.company_email,
+  paymentLinkUrl,
+  paymentLinkType,
     });
 
     // Log to outbox

@@ -521,21 +521,26 @@ setLogoFile(null); }}
 
   <div className="space-y-2">
 
-    <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
-  <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+<div>
+  <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+    <Mail className="w-4 h-4 text-blue-500 shrink-0" />
 
-  {isEditingBrand ? (
-    <input
-      value={companyEmail}
-      onChange={(e) => setCompanyEmail(e.target.value)}
-      placeholder="Company email"
-      className="flex-1 bg-transparent outline-none text-sm"
-    />
-  ) : (
-    <span className="text-sm text-slate-700 truncate flex-1">
-      {company.email || 'No email added'}
-    </span>
-  )}
+    {isEditingBrand ? (
+      <input
+        value={companyEmail}
+        onChange={(e) => setCompanyEmail(e.target.value)}
+        placeholder="Company email"
+        className="flex-1 bg-transparent outline-none text-sm"
+      />
+    ) : (
+      <span className="text-sm text-slate-700 truncate flex-1">
+        {company.email || 'No email added'}
+      </span>
+    )}
+  </div>
+  <p className="text-[11px] text-slate-500 mt-1 px-1">
+    Customer replies and BCC copies of quote, schedule, and invoice emails go here — double check this is correct.
+  </p>
 </div>
 
    <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">

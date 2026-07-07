@@ -277,10 +277,12 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
             )}
 
             <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <div>
-                <p className="text-[13px] font-medium text-gray-900">BCC me on customer emails</p>
-                <p className="text-[12px] text-gray-600 mt-0.5">Get a copy when a quote or schedule email sends</p>
-              </div>
+      <div>
+  <p className="text-[13px] font-medium text-gray-900">BCC me on customer emails</p>
+  <p className="text-[12px] text-gray-600 mt-0.5">
+    Sends a copy of every <strong className="font-semibold text-gray-900">quote</strong>, <strong className="font-semibold text-gray-900">schedule</strong>, and <strong className="font-semibold text-gray-900">invoice</strong> email to your <strong className="font-semibold text-gray-900 underline">company email</strong>
+  </p>
+</div>
               <button
                 onClick={handleToggleBcc}
                 disabled={bccSaving}
