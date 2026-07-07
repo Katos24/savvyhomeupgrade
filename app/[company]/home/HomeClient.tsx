@@ -2,9 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Copy, Check, ExternalLink, Loader2, Lock, Download, Trash2,
-  Palette, Save, Pencil, X, LayoutGrid, FileText, Tags, CreditCard,
-  Star, Settings as SettingsIcon,
+  LayoutDashboard,
+  Copy,
+  Check,
+  ExternalLink,
+  Loader2,
+  Lock,
+  Download,
+  Trash2,
+  Palette,
+  Save,
+  Pencil,
+  X, Mail, Phone, Globe,
+  LayoutGrid,
+  FileText,
+  Tags,
+  CreditCard,
+  Star,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -24,17 +39,26 @@ type Company = {
   id: number;
   name: string;
   slug: string;
+
   logo_url?: string | null;
+
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
+
   plan_tier?: string;
+
   custom_questions?: any[];
+
   categoriesCustomized: boolean;
   hasRealLead: boolean;
+
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
 };
-
 type SectionKey = 'overview' | 'form' | 'categories' | 'payments' | 'reviews';
 
 type ChecklistStep =
@@ -47,6 +71,20 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  }
+
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
 function SidebarItem({ icon: Icon, label, active, locked, onClick }: {
@@ -85,8 +123,14 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [companyName, setCompanyName] = useState(company.name || '');
-  const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
-  const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
+const [companyEmail, setCompanyEmail] = useState(company.email || '');
+const [companyPhone, setCompanyPhone] = useState(
+  formatPhone(company.phone || '')
+);
+const [companyWebsite, setCompanyWebsite] = useState(company.website || '');
+
+const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
+const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
 
   useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
@@ -119,23 +163,36 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         if (uploadRes.ok && uploadData.success) finalLogoUrl = uploadData.logoUrl;
       }
       await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-name', data: { name: companyName } }),
-      });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    action: 'update-general',
+    data: {
+      name: companyName,
+      email: companyEmail,
+      phone: companyPhone,
+      website: companyWebsite
+    }
+  }),
+});
       await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update-branding', data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 } }),
       });
      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
-      setCompany(prev => ({
-        ...prev,
-        name: companyName,
-        logo_url: finalLogoUrl ?? prev.logo_url,
-        email_brand_color_1: color1,
-        email_brand_color_2: color2,
-      }));
+     setCompany(prev => ({
+  ...prev,
+  name: companyName,
+  email: companyEmail,
+  phone: companyPhone,
+  website: companyWebsite,
+  logo_url: finalLogoUrl ?? prev.logo_url,
+  email_brand_color_1: color1,
+  email_brand_color_2: color2,
+}));
       setLogoFile(null);
       setIsEditingBrand(false);
       setBrandSaved(true);
@@ -263,32 +320,57 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
   </nav>
 
   {/* System Section (Opens in new tab) */}
-  <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
-    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">System</p>
-    <a
-      href={`/${company.slug}/admin/settings`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
-    >
-      <SettingsIcon className="w-4 h-4 text-white" />
-      {settingsLabel}
-    </a>
-  </nav>
+{/* ── SYSTEM SECTION ── */}
+<nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
+  <p className="px-3 text-[10px] font-bold text-white/50 uppercase tracking-wider mb-2">
+    System Settings
+  </p>
+  
+  {/* The main button that opens your settings page */}
+  <a
+    href={`/${company.slug}/admin/settings`}
+    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
+  >
+    <SettingsIcon className="w-4 h-4 text-white" />
+    Settings
+  </a>
+
+  {/* Static list of what's inside - no links */}
+  <div className="mt-1 space-y-1 pl-10 pr-3 pb-2">
+    <ul className="text-[12px] text-white/60 space-y-1">
+      <li className="flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white/30" /> Pipeline
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white/30" /> Email Templates
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white/30" /> Team Access
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white/30" /> Billing
+      </li>
+      <li className="flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-white/30" /> Notifications
+      </li>
+    </ul>
+  </div>
+</nav>
 </div>
 </aside>
 
 
 
-       {/* ── CONTENT ── */}
-      <main className="flex-1 min-w-0">
+{/* ── CONTENT ── */}
+<main className="flex-1 min-w-0">
+  {activeSection === 'overview' && (
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="mb-3"><Eyebrow>Your brand & booking link</Eyebrow></div>
 
-        {activeSection === 'overview' && (
-          <div className="max-w-3xl mx-auto px-6 py-8">
-
-            <div className="mb-3"><Eyebrow>Your brand &amp; booking link</Eyebrow></div>
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
+      {/* CARD CONTAINER */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+        <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
+        
               <div className="p-5 sm:p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="relative shrink-0">
@@ -318,7 +400,21 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                     ? <input value={companyName} onChange={e => setCompanyName(e.target.value)}
                         className="flex-1 text-[15px] font-semibold text-slate-900 outline-none border-b-2 border-dashed border-blue-200 focus:border-blue-500 bg-transparent pb-0.5" placeholder="Company name" />
                     : <h2 className="flex-1 text-[15px] font-semibold text-slate-900 truncate">{companyName}</h2>
+                    
                   }
+                  {!isEditingBrand && (
+  <span
+    className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
+      company.plan_tier === 'pro'
+        ? 'bg-blue-100 text-blue-700'
+        : company.plan_tier === 'basic'
+        ? 'bg-slate-100 text-slate-700'
+        : 'bg-emerald-100 text-emerald-700'
+    }`}
+  >
+    {company.plan_tier} Plan
+  </span>
+)}
 
                   {!isEditingBrand
                     ? <button onClick={() => setIsEditingBrand(true)}
@@ -326,7 +422,18 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                         <Pencil className="w-3 h-3" /> Edit
                       </button>
                     : <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => { setIsEditingBrand(false); setCompanyName(company.name); setColor1(company.email_brand_color_1 || '#0B3C6D'); setColor2(company.email_brand_color_2 || '#1F5F8F'); setLogoPreview(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : ''); setLogoFile(null); }}
+                        <button onClick={() => { setIsEditingBrand(false);
+
+setCompanyName(company.name);
+setCompanyEmail(company.email || '');
+setCompanyPhone(company.phone || '');
+setCompanyWebsite(company.website || '');
+
+setColor1(company.email_brand_color_1 || '#0B3C6D');
+setColor2(company.email_brand_color_2 || '#1F5F8F');
+
+setLogoPreview(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
+setLogoFile(null); }}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
                           <X className="w-3 h-3" /> Cancel
                         </button>
@@ -339,7 +446,7 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                   }
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 items-start">
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   <div>
                     <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                       <Palette className="w-3 h-3" /> Brand colors
@@ -364,6 +471,77 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
                     }
                     <p className="text-[11.5px] text-slate-600 mt-2">Used in your customer emails and booking form.</p>
                   </div>
+
+                  <div className="mt-6">
+  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">
+    Company Information
+  </p>
+
+  <div className="space-y-2">
+
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+  <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+
+  {isEditingBrand ? (
+    <input
+      value={companyEmail}
+      onChange={(e) => setCompanyEmail(e.target.value)}
+      placeholder="Company email"
+      className="flex-1 bg-transparent outline-none text-sm"
+    />
+  ) : (
+    <span className="text-sm text-slate-700 truncate flex-1">
+      {company.email || 'No email added'}
+    </span>
+  )}
+</div>
+
+   <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+  <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
+
+  {isEditingBrand ? (
+    <input
+  value={companyPhone}
+  onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
+  placeholder="(555) 555-5555"
+  maxLength={14}
+  className="flex-1 bg-transparent outline-none text-sm"
+/>
+  ) : (
+    <span className="text-sm text-slate-700">
+{company.phone ? formatPhone(company.phone) : 'No phone number'}
+    </span>
+  )}
+</div>
+
+   <div className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+  <Globe className="w-4 h-4 text-violet-500 shrink-0" />
+
+  {isEditingBrand ? (
+    <input
+      value={companyWebsite}
+      onChange={(e) => setCompanyWebsite(e.target.value)}
+      placeholder="https://yourcompany.com"
+      className="flex-1 bg-transparent outline-none text-sm"
+    />
+  ) : company.website ? (
+    <a
+      href={company.website}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm text-blue-600 hover:underline truncate"
+    >
+      {company.website.replace(/^https?:\/\//, '')}
+    </a>
+  ) : (
+    <span className="text-sm text-slate-700">
+      No website added
+    </span>
+  )}
+</div>
+
+  </div>
+</div>
 
                   <div className="flex gap-4 items-start">
                     <button onClick={() => setShowQrModal(true)}
@@ -529,5 +707,16 @@ function LockedSection({ label, companySlug }: { label: string; companySlug: str
         Upgrade to Basic
       </a>
     </div>
+  );
+}
+
+function SidebarSubItem({ label, href }: { label: string; href: string }) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-3 px-3 py-2 text-[13px] text-slate-300 hover:text-white hover:bg-[#3e4046]/50 rounded-lg transition-colors pl-8"
+    >
+      {label}
+    </a>
   );
 }

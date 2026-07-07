@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Workflow, Mail, ArrowLeft, Users, CreditCard, ChevronRight,
-  Trash2, Copy, Check, Phone, ExternalLink, Globe, Lock, Save, X, Pencil, Loader2, Sparkles,
+  Trash2,  Check, Lock,  Sparkles,
 } from 'lucide-react';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 import Link from 'next/link';
@@ -92,15 +92,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
   const [activeTab, setActiveTab] = useState<Tab | null>(null);
   const [companyData, setCompanyData] = useState(company);
 
-  const [isEditingContact, setIsEditingContact] = useState(false);
-  const [contactSaving, setContactSaving] = useState(false);
-  const [contactSaved, setContactSaved] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    email: company.email || '',
-    phone: company.phone || '',
-    website: company.website || '',
-  });
-
+ 
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
   const [showDigestConfirm, setShowDigestConfirm] = useState(false);
   const [bccEnabled, setBccEnabled] = useState(company.bcc_sender_on_email ?? false);
@@ -127,43 +119,13 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
       const res = await fetch(`/api/company/${company.slug}/settings`);
       const data = await res.json();
       if (data.success && data.company) {
-        setCompanyData(data.company);
-        setContactForm({ email: data.company.email || '', phone: data.company.phone || '', website: data.company.website || '' });
-      }
+  setCompanyData(data.company);
+}
     } catch {}
     setActiveTab(null);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [company.slug]);
 
-  const handleSaveContact = async () => {
-    setContactSaving(true);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-general',
-          data: {
-            name: companyData.name,
-            email: contactForm.email || null,
-            phone: contactForm.phone || null,
-            website: contactForm.website || null,
-          },
-        }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        setCompanyData(result.company);
-        setIsEditingContact(false);
-        setContactSaved(true);
-        setTimeout(() => setContactSaved(false), 2000);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setContactSaving(false);
-    }
-  };
 
   const handleToggleBcc = async () => {
     const newVal = !bccEnabled;
@@ -182,12 +144,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
     }
   };
 
-  const formatPhone = (v: string) => {
-    const d = v.replace(/\D/g, '');
-    if (d.length <= 3) return d;
-    if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
-    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6,10)}`;
-  };
 
   const renderUnlockedTab = (tab: Tab, data: any) => {
     switch (tab) {
@@ -290,95 +246,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
           </button>
         )}
 
-        {/* ── CONTACT INFO ── */}
-        <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-            <div>
-              <h2 className="text-[14px] font-semibold text-gray-900">{companyData.name}</h2>
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full text-white inline-block mt-1 ${planTier === 'pro' ? 'bg-blue-600' : planTier === 'basic' ? 'bg-gray-700' : 'bg-emerald-600'}`}>
-                {planTier} plan
-              </span>
-            </div>
-            {!isEditingContact
-              ? <button onClick={() => setIsEditingContact(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-[12px] font-medium transition">
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
-              : <div className="flex gap-2">
-                  <button onClick={() => { setIsEditingContact(false); setContactForm({ email: companyData.email || '', phone: companyData.phone || '', website: companyData.website || '' }); }}
-                    className="flex items-center gap-1 px-3 py-2 border border-gray-200 text-gray-600 rounded-xl text-[12px] font-medium hover:bg-gray-50 transition">
-                    <X className="w-3 h-3" /> Cancel
-                  </button>
-                  <button onClick={handleSaveContact} disabled={contactSaving}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-[12px] font-medium transition">
-                    {contactSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : contactSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                    {contactSaving ? 'Saving...' : contactSaved ? 'Saved' : 'Save'}
-                  </button>
-                </div>
-            }
-          </div>
-
-          <div className="p-4 space-y-2.5">
-            {isEditingContact ? (
-              <>
-                {[
-                  { label: 'Email', key: 'email', type: 'email', placeholder: 'hello@yourcompany.com', icon: <Mail className="w-3.5 h-3.5 text-blue-500" /> },
-                  { label: 'Phone', key: 'phone', type: 'tel', placeholder: '(555) 555-5555', icon: <Phone className="w-3.5 h-3.5 text-emerald-500" /> },
-                  { label: 'Company Website', key: 'website', type: 'text', placeholder: 'https://yourwebsite.com', icon: <Globe className="w-3.5 h-3.5 text-violet-500" /> },
-                ].map(field => (
-                  <div key={field.key} className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-gray-200 transition">
-                    {field.icon}
-                    <input
-                      type={field.type}
-                      value={(contactForm as any)[field.key]}
-                      placeholder={field.placeholder}
-                      onChange={e => {
-                        if (field.key === 'phone') {
-                          const d = e.target.value.replace(/\D/g, '');
-                          if (d.length <= 10) setContactForm({ ...contactForm, phone: formatPhone(d) });
-                        } else {
-                          setContactForm({ ...contactForm, [field.key]: e.target.value });
-                        }
-                      }}
-                      className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-                    />
-                  </div>
-                ))}
-              </>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {[
-                  { label: 'Email', value: companyData.email, icon: <Mail className="w-3.5 h-3.5 text-blue-500" /> },
-                  { label: 'Phone', value: companyData.phone ? formatPhone(companyData.phone) : null, icon: <Phone className="w-3.5 h-3.5 text-emerald-500" /> },
-                  { label: 'Company Website', value: companyData.website ? companyData.website.replace(/^https?:\/\//, '') : null, icon: <Globe className="w-3.5 h-3.5 text-violet-500" />, href: companyData.website },
-                ].map(item => (
-                  <div key={item.label} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50">
-                    <div className="flex items-center gap-2">
-                      {item.icon}
-                      <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">{item.label}</span>
-                    </div>
-                    <p className="text-[13px] font-semibold text-gray-900 truncate">
-                      {item.value || <span className="text-gray-400 font-normal">Not set</span>}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50">
-              <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10.5px] font-medium text-gray-500 mb-0.5">Booking link</p>
-                <code className="text-[12px] font-mono text-gray-700 truncate block">lead2project.com/{company.slug}</code>
-              </div>
-              <button onClick={() => { navigator.clipboard.writeText(publicLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-gray-200 text-gray-700 hover:bg-white transition">
-                {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-            </div>
-          </div>
-        </section>
+   
 
         {/* ── AUTOMATIONS ── */}
         <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
