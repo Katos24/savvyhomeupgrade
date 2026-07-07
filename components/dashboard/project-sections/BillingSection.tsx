@@ -84,8 +84,17 @@ export default function BillingSection({
   const total = quoteTotal;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
-  const isPaid = total > 0 && paidAmount >= total;
-  const isPartial = paidAmount > 0 && !isPaid;
+ // ── Refund state comes from DB status, NOT from the amount fields.
+  // payment_amount deliberately preserves the original charge, so the
+  // amount-based derivation below would otherwise mis-classify a refunded
+  // project as "Paid." Refund flags take precedence in every UI branch.
+  const isRefunded = lead?.payment_status === 'refunded';
+  const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
+  const isClosed = isRefunded || isPartiallyRefunded;
+  const refundedAmount = parseFloat(lead?.refunded_amount || '0');
+
+  const isPaid = !isClosed && total > 0 && paidAmount >= total;
+  const isPartial = !isClosed && paidAmount > 0 && !isPaid;
   const hasExistingInvoice = !!lead?.invoice_number;
   const invoiceSent = invoiceLog.length > 0;
   const lastReminderSent = lead?.reminder_sent_at || null;
@@ -240,50 +249,72 @@ export default function BillingSection({
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
 
         {/* ── FINANCIAL SNAPSHOT ── */}
-        <div style={{ background: '#0f172a' }} className="p-5">
+      <div style={{ background: '#0f172a' }} className="p-5">
 
           {/* Mobile: stacked, Desktop: single row */}
           <div className="md:flex md:items-end md:justify-between md:gap-6">
             <div className="mb-4 md:mb-0">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>
-                {isPaid ? 'Paid in full' : 'Outstanding balance'}
+                {isRefunded ? 'Refunded'
+                  : isPartiallyRefunded ? 'Partially refunded'
+                  : isPaid ? 'Paid in full'
+                  : 'Outstanding balance'}
               </p>
               <p className="text-4xl font-black text-white leading-none">
-                {isPaid ? fmt(total) : fmt(remaining)}
+                {isClosed ? fmt(refundedAmount)
+                  : isPaid ? fmt(total)
+                  : fmt(remaining)}
               </p>
+              {isClosed && lead?.refunded_at && (
+                <p className="text-[11px] mt-2" style={{ color: '#64748b' }}>
+                  Refunded {fmtDate(lead.refunded_at)}
+                </p>
+              )}
             </div>
 
             {/* Stats — row on both mobile and desktop */}
             <div className="grid grid-cols-3 md:flex md:items-end md:gap-8 gap-4">
               <div>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Collected</p>
-                <p className="text-xl font-black" style={{ color: '#34d399' }}>{fmt(paidAmount)}</p>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>
+                  {isPartiallyRefunded ? 'Original charge' : 'Collected'}
+                </p>
+                <p className="text-xl font-black" style={{ color: isClosed ? '#94a3b8' : '#34d399' }}>
+                  {fmt(paidAmount)}
+                </p>
               </div>
-             
+
               <div>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Status</p>
                 <span className={`text-[11px] font-black px-2.5 py-1 rounded-full inline-block ${
-                  isPaid ? 'bg-emerald-500/20 text-emerald-400'
+                  isRefunded ? 'bg-slate-600/40 text-slate-300'
+                  : isPartiallyRefunded ? 'bg-slate-600/40 text-slate-300'
+                  : isPaid ? 'bg-emerald-500/20 text-emerald-400'
                   : isPartial ? 'bg-amber-500/20 text-amber-400'
                   : 'bg-slate-700 text-slate-400'
                 }`}>
-                  {isPaid ? 'Paid' : isPartial ? 'Partial' : 'Unpaid'}
+                  {isRefunded ? 'Refunded'
+                    : isPartiallyRefunded ? 'Partial refund'
+                    : isPaid ? 'Paid'
+                    : isPartial ? 'Partial'
+                    : 'Unpaid'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Progress bar */}
+          {/* Progress bar — slate when refunded, green otherwise */}
           <div className="mt-4 h-1.5 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
             <motion.div
               className="h-full rounded-full"
-              style={{ background: '#34d399' }}
+              style={{ background: isClosed ? '#64748b' : '#34d399' }}
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
             />
           </div>
-          <p className="text-[10px] mt-1.5" style={{ color: '#475569' }}>{Math.round(progressPct)}% collected</p>
+          <p className="text-[10px] mt-1.5" style={{ color: '#475569' }}>
+            {isClosed ? `${fmt(refundedAmount)} refunded` : `${Math.round(progressPct)}% collected`}
+          </p>
         </div>
 
         {/* ── INVOICE + PAYMENT — side by side desktop, stacked mobile ── */}
@@ -384,22 +415,32 @@ export default function BillingSection({
             </div>
           </div>
 
-          {/* Payment block */}
+       {/* Payment block */}
           <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment</p>
-                <p className="text-xl font-black text-slate-900 leading-none">{fmt(paidAmount)}</p>
-                {lead?.payment_method && (
+                <p className="text-xl font-black text-slate-900 leading-none">
+                  {isClosed ? fmt(refundedAmount) : fmt(paidAmount)}
+                </p>
+                {isClosed ? (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Refunded{lead?.refunded_at ? ` · ${fmtDate(lead.refunded_at)}` : ''}
+                  </p>
+                ) : lead?.payment_method && (
                   <p className="text-xs text-slate-500 mt-1 capitalize">
                     {lead.payment_method.replace('_', ' ')} · {fmtDate(lead.payment_date)}
                   </p>
                 )}
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {isPaid ? 'Paid in full' : isPartial ? `${fmt(remaining)} remaining` : 'Not yet collected'}
+                  {isRefunded ? `Original charge ${fmt(paidAmount)}`
+                    : isPartiallyRefunded ? `${fmt(paidAmount - refundedAmount)} kept`
+                    : isPaid ? 'Paid in full'
+                    : isPartial ? `${fmt(remaining)} remaining`
+                    : 'Not yet collected'}
                 </p>
               </div>
-              {!isPaid && (
+              {!isPaid && !isClosed && (
                 <div className="relative group">
                   <button
                     onClick={() => setShowReminderConfirm(true)}
@@ -419,16 +460,31 @@ export default function BillingSection({
               )}
             </div>
 
-            <button
-              onClick={() => setShowRecordPayment(true)}
-              className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors mt-auto ${
-                isPaid
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-              }`}
-            >
-              {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
-            </button>
+            {/* Record/Edit Payment button — hidden entirely when closed.
+                A refunded project's payment record shouldn't be re-editable via this UI
+                (would let a user overwrite the historical charge amount). If manual
+                refund tracking is needed later, that's a separate flow. */}
+            {!isClosed && (
+              <button
+                onClick={() => setShowRecordPayment(true)}
+                className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors mt-auto ${
+                  isPaid
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+              </button>
+            )}
+
+            {/* Refunded state gets a plain informational tag instead of a button */}
+            {isClosed && (
+              <div className="w-full py-2.5 rounded-xl mt-auto bg-slate-100 text-center">
+                <p className="text-xs font-medium text-slate-500">
+                  Payment record closed
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

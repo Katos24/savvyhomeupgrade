@@ -160,13 +160,14 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
       const refundedAmount = charge.amount_refunded ? charge.amount_refunded / 100 : null;
       const isFullRefund = charge.amount_refunded === charge.amount;
 
-      await sql`
+    await sql`
         UPDATE projects
         SET payment_status = ${isFullRefund ? 'refunded' : 'partially_refunded'},
-            payment_amount = ${refundedAmount}
+            refunded_amount = ${refundedAmount},
+            refunded_at = NOW()
         WHERE id = ${projectCheck[0].id}
       `;
-
+      
       console.log(`Project ${projectCheck[0].id} marked ${isFullRefund ? 'refunded' : 'partially refunded'}, amount: ${refundedAmount}`);
 
       break;

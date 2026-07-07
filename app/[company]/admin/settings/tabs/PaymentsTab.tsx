@@ -349,11 +349,30 @@ function SampleInvoicePreview({ company }: { company: any }) {
 
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
-      <StripeConnectSection company={company} />
-      <HowSendingWorks company={company} />
+    <div className="max-w-4xl mx-auto space-y-8 pb-24 px-4 sm:px-0">
+      {/* ── HEADER ── */}
+      <div>
+        <h2 className="text-2xl font-black text-slate-900">Payment Settings</h2>
+        <p className="text-sm text-slate-500 mt-1">Configure how you collect money from customers.</p>
+      </div>
+
+      {/* ── MAIN ACTIONS ── */}
+      <div className="grid md:grid-cols-5 gap-8">
+        <div className="md:col-span-3 space-y-6">
+          <StripeConnectSection company={company} />
+          <ManualPaymentLinkSection company={company} />
+        </div>
+
+        {/* ── CONTEXTUAL HELPER (Sticky on desktop) ── */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="sticky top-6">
+            <HowSendingWorks company={company} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── PREVIEW ── */}
       <SampleInvoicePreview company={company} />
-      <ManualPaymentLinkSection company={company} />
     </div>
   );
 }
