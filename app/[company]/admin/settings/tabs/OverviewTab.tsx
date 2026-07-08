@@ -21,14 +21,14 @@ import {
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+    <span className="text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
       {children}
     </span>
   );
 }
 
-// Blends a hex color toward white for soft tinted backgrounds — keeps every
-// tint derived from the company's own brand color instead of a picked palette.
+// Blends a hex color toward white — used only for the brand-color preview
+// strip, so that stays tied to the company's own colors.
 function tint(hex: string, amount: number) {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
@@ -47,21 +47,17 @@ type ShareIdeaCardProps = {
   icon: React.ElementType;
   title: string;
   description: string;
-  accent: string;
 };
 
-function ShareIdeaCard({ icon: Icon, title, description, accent }: ShareIdeaCardProps) {
+function ShareIdeaCard({ icon: Icon, title, description }: ShareIdeaCardProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-start gap-3">
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: tint(accent, 0.85) }}
-      >
-        <Icon className="w-4 h-4" style={{ color: accent }} />
+    <div className="flex items-start gap-3 rounded-lg border-2 border-stone-200 bg-white p-4">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-stone-200 bg-stone-50">
+        <Icon className="h-4 w-4 text-stone-700" />
       </div>
       <div>
-        <p className="text-[12.5px] font-semibold text-slate-800">{title}</p>
-        <p className="text-[11.5px] text-slate-500 mt-0.5 leading-relaxed">
+        <p className="text-[13px] font-bold text-stone-900">{title}</p>
+        <p className="mt-0.5 text-[12.5px] font-medium leading-relaxed text-stone-600">
           {description}
         </p>
       </div>
@@ -69,31 +65,51 @@ function ShareIdeaCard({ icon: Icon, title, description, accent }: ShareIdeaCard
   );
 }
 
-type InfoRowProps = {
+type LabeledFieldProps = {
   icon: React.ElementType;
-  accent: string;
-  children: React.ReactNode;
+  label: string;
+  editing: boolean;
+  value?: string;
+  onChange?: (v: string) => void;
+  placeholder?: string;
+  display: React.ReactNode;
   caption?: string;
+  className?: string;
+  maxLength?: number;
 };
 
-function InfoRow({ icon: Icon, accent, children, caption }: InfoRowProps) {
+function LabeledField({
+  icon: Icon,
+  label,
+  editing,
+  value,
+  onChange,
+  placeholder,
+  display,
+  caption,
+  className = '',
+  maxLength,
+}: LabeledFieldProps) {
   return (
-    <div>
-      <div
-        className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5"
-        style={{ background: tint(accent, 0.94) }}
-      >
-        <div
-          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-          style={{ background: tint(accent, 0.75) }}
-        >
-          <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+    <div className={className}>
+      <label className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </label>
+      {editing ? (
+        <input
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className="w-full rounded-lg border-2 border-stone-300 bg-white px-3 py-2.5 text-sm font-bold text-stone-900 outline-none transition focus:border-stone-900"
+        />
+      ) : (
+        <div className="w-full rounded-lg border-2 border-stone-200 bg-stone-50 px-3 py-2.5 text-sm font-bold text-stone-800">
+          {display}
         </div>
-        {children}
-      </div>
-      {caption && (
-        <p className="text-[11px] text-slate-500 mt-1 px-1">{caption}</p>
       )}
+      {caption && <p className="mt-1.5 text-[12px] font-semibold text-stone-500">{caption}</p>}
     </div>
   );
 }
@@ -205,402 +221,349 @@ export default function OverviewTab({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <div className="mb-3">
-        <Eyebrow>Your brand &amp; booking link</Eyebrow>
-      </div>
+    <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
+      <div className="mx-auto max-w-4xl pb-16">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-stone-900">Your brand</h2>
+          <p className="mt-1 text-[15px] font-semibold text-stone-700">
+            How customers see you, and where they book.
+          </p>
+        </div>
 
-      {/* ── BRANDING CARD ── */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-        {/* Soft brand-color wash instead of a thin bar on plain white */}
-        <div
-          className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4"
-          style={{
-            background: `linear-gradient(135deg, ${tint(color1, 0.9)}, ${tint(color2, 0.9)})`,
-          }}
-        >
-          {/* Row 1 on mobile: logo, name, plan badge. Buttons drop to their own row. */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* ── BRANDING CARD ── */}
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b-2 border-stone-100 p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
               <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-xl border border-white bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
                   {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      className="w-full h-full object-contain p-1"
-                      alt="Logo"
-                    />
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoPreview} className="h-full w-full object-contain p-1.5" alt="Logo" />
                   ) : (
-                    <span className="text-slate-400 text-sm font-semibold">
+                    <span className="text-xl font-extrabold text-stone-300">
                       {companyName?.charAt(0)}
                     </span>
                   )}
                 </div>
                 {isEditingBrand && (
-                  <label className="absolute -bottom-1 -right-1 p-1 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition">
-                    <Pencil className="w-2.5 h-2.5" />
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                    />
+                  <label className="absolute -bottom-1 -right-1 cursor-pointer rounded-md bg-stone-900 p-1.5 text-white transition hover:bg-stone-800">
+                    <Pencil className="h-3 w-3" />
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </label>
                 )}
               </div>
 
-              {isEditingBrand ? (
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Company name"
-                  className="flex-1 min-w-0 text-[15px] font-semibold text-slate-900 outline-none border-b-2 border-dashed border-slate-400/50 focus:border-slate-600 bg-transparent pb-0.5"
-                />
-              ) : (
-                <h2 className="flex-1 min-w-0 text-[15px] font-semibold text-slate-900 truncate">
-                  {companyName}
-                </h2>
-              )}
-
-              {!isEditingBrand && (
-                <span className="shrink-0 px-2 py-1 rounded-full text-[10px] font-semibold uppercase bg-white/80 text-slate-700 shadow-sm">
-                  {company.plan_tier} Plan
+              <div className="min-w-0 flex-1">
+                {isEditingBrand ? (
+                  <input
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Company name"
+                    className="w-full min-w-0 border-b-2 border-dashed border-stone-300 bg-transparent pb-1 text-lg font-extrabold text-stone-900 outline-none focus:border-stone-900"
+                  />
+                ) : (
+                  <h3 className="truncate text-lg font-extrabold text-stone-900">{companyName}</h3>
+                )}
+                <span className="mt-1.5 inline-block rounded-full bg-stone-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                  {company.plan_tier} plan
                 </span>
-              )}
+              </div>
             </div>
 
-            {/* Buttons — full width row on mobile, inline on desktop */}
-            <div className="flex items-center gap-2 shrink-0 justify-end">
+            <div className="flex shrink-0 items-center gap-2">
               {!isEditingBrand ? (
                 <button
                   onClick={() => setIsEditingBrand(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-white/60 bg-white/70 text-slate-700 hover:bg-white transition"
+                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-3.5 py-2 text-[13px] font-bold text-stone-800 transition-colors hover:bg-stone-50"
                 >
-                  <Pencil className="w-3 h-3" /> Edit
+                  <Pencil className="h-3.5 w-3.5" /> Edit
                 </button>
               ) : (
                 <>
                   <button
                     onClick={handleCancelEdit}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-white/60 bg-white/70 text-slate-600 hover:bg-white transition"
+                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-3.5 py-2 text-[13px] font-bold text-stone-700 transition-colors hover:bg-stone-50"
                   >
-                    <X className="w-3 h-3" /> Cancel
+                    <X className="h-3.5 w-3.5" /> Cancel
                   </button>
                   <button
                     onClick={onSaveBranding}
                     disabled={brandSaving}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 transition"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-3.5 py-2 text-[13px] font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
                   >
                     {brandSaving ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : brandSaved ? (
-                      <Check className="w-3 h-3" />
+                      <Check className="h-3.5 w-3.5" />
                     ) : (
-                      <Save className="w-3 h-3" />
+                      <Save className="h-3.5 w-3.5" />
                     )}
-                    {brandSaving ? 'Saving...' : brandSaved ? 'Saved' : 'Save'}
+                    {brandSaving ? 'Saving' : brandSaved ? 'Saved' : 'Save'}
                   </button>
                 </>
               )}
             </div>
           </div>
-        </div>
 
-        <div className="p-4 sm:p-6 pt-5">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Brand colors */}
-            <div>
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <Palette className="w-3 h-3" /> Brand colors
-              </p>
-              {isEditingBrand ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-1">
-                    <input
-                      type="color"
-                      value={color1}
-                      onChange={(e) => setColor1(e.target.value)}
-                      className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5"
-                    />
-                    <span className="text-[10px] text-slate-500">Primary</span>
+          <div className="p-6 sm:p-8">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Brand colors */}
+              <div>
+                <p className="mb-3 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
+                  <Palette className="h-3.5 w-3.5" /> Brand colors
+                </p>
+                {isEditingBrand ? (
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={color1}
+                        onChange={(e) => setColor1(e.target.value)}
+                        className="h-11 w-11 cursor-pointer rounded-lg border-2 border-stone-300 p-0.5"
+                      />
+                      <span className="text-[11px] font-bold text-stone-500">Primary</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={color2}
+                        onChange={(e) => setColor2(e.target.value)}
+                        className="h-11 w-11 cursor-pointer rounded-lg border-2 border-stone-300 p-0.5"
+                      />
+                      <span className="text-[11px] font-bold text-stone-500">Secondary</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <input
-                      type="color"
-                      value={color2}
-                      onChange={(e) => setColor2(e.target.value)}
-                      className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 p-0.5"
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-10 shrink-0 rounded-lg border-2 border-stone-200"
+                      style={{ background: color1 }}
                     />
-                    <span className="text-[10px] text-slate-500">Secondary</span>
+                    <div
+                      className="h-10 w-10 shrink-0 rounded-lg border-2 border-stone-200"
+                      style={{ background: color2 }}
+                    />
                   </div>
-                  <div
-                    className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200"
-                    style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg border border-slate-200 shrink-0"
-                    style={{ background: color1 }}
-                  />
-                  <div
-                    className="w-8 h-8 rounded-lg border border-slate-200 shrink-0"
-                    style={{ background: color2 }}
-                  />
-                  <div
-                    className="flex-1 h-8 rounded-lg overflow-hidden border border-slate-200"
-                    style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }}
-                  />
-                </div>
-              )}
-              <p className="text-[11.5px] text-slate-600 mt-2">
-                Used in your customer emails and booking form.
-              </p>
+                )}
+                <div
+                  className="mt-3 h-2 w-full max-w-[180px] overflow-hidden rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${tint(color1, 0.1)}, ${tint(color2, 0.1)})` }}
+                />
+                <p className="mt-3 text-[13px] font-semibold text-stone-600">
+                  Used in your customer emails and booking form.
+                </p>
+              </div>
+
+              {/* Company info — labeled fields, no cramming */}
+              <div className="grid grid-cols-1 gap-4">
+                <LabeledField
+                  icon={Mail}
+                  label="Company email"
+                  editing={isEditingBrand}
+                  value={companyEmail}
+                  onChange={setCompanyEmail}
+                  placeholder="you@company.com"
+                  display={company.email || 'No email added'}
+                  caption="Customer replies and BCC copies of quote, schedule, and invoice emails go here — double check this is correct."
+                />
+                <LabeledField
+                  icon={Phone}
+                  label="Company phone"
+                  editing={isEditingBrand}
+                  value={companyPhone}
+                  onChange={(v) => setCompanyPhone(formatPhone(v))}
+                  placeholder="(555) 555-5555"
+                  maxLength={14}
+                  display={company.phone ? formatPhone(company.phone) : 'No phone number'}
+                />
+                <LabeledField
+                  icon={Globe}
+                  label="Website"
+                  editing={isEditingBrand}
+                  value={companyWebsite}
+                  onChange={setCompanyWebsite}
+                  placeholder="https://yourcompany.com"
+                  display={
+                    company.website ? (
+                      <a
+                        href={company.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-stone-900 underline"
+                      >
+                        {company.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    ) : (
+                      'No website added'
+                    )
+                  }
+                />
+              </div>
             </div>
 
-            {/* Company info */}
-            <div>
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                Company Information
+            {/* Booking link + QR */}
+            <div className="mt-8 border-t-2 border-stone-100 pt-8">
+              <p className="text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
+                Your booking link
               </p>
-
-              <div className="space-y-2">
-                <InfoRow
-                  icon={Mail}
-                  accent={color1}
-                  caption="Customer replies and BCC copies of quote, schedule, and invoice emails go here — double check this is correct."
+              <p className="mb-4 mt-1.5 text-[13px] font-semibold leading-relaxed text-stone-600">
+                Customers fill out a quick project form styled with your
+                branding. Submissions land as new leads in your dashboard.
+              </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <button
+                  onClick={onShowQrModal}
+                  className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-stone-300 bg-white transition hover:bg-stone-50"
                 >
-                  {isEditingBrand ? (
-                    <input
-                      value={companyEmail}
-                      onChange={(e) => setCompanyEmail(e.target.value)}
-                      placeholder="Company email"
-                      className="flex-1 min-w-0 bg-transparent outline-none text-sm"
-                    />
+                  {qrCodeUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrCodeUrl} className="h-full w-full" alt="QR code" />
                   ) : (
-                    <span className="text-sm text-slate-700 truncate flex-1 min-w-0">
-                      {company.email || 'No email added'}
-                    </span>
+                    <Loader2 className="h-4 w-4 animate-spin text-stone-300" />
                   )}
-                </InfoRow>
-
-                <InfoRow icon={Phone} accent={color1}>
-                  {isEditingBrand ? (
-                    <input
-                      value={companyPhone}
-                      onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
-                      placeholder="(555) 555-5555"
-                      maxLength={14}
-                      className="flex-1 min-w-0 bg-transparent outline-none text-sm"
-                    />
-                  ) : (
-                    <span className="text-sm text-slate-700 truncate flex-1 min-w-0">
-                      {company.phone ? formatPhone(company.phone) : 'No phone number'}
-                    </span>
-                  )}
-                </InfoRow>
-
-                <InfoRow icon={Globe} accent={color1}>
-                  {isEditingBrand ? (
-                    <input
-                      value={companyWebsite}
-                      onChange={(e) => setCompanyWebsite(e.target.value)}
-                      placeholder="https://yourcompany.com"
-                      className="flex-1 min-w-0 bg-transparent outline-none text-sm"
-                    />
-                  ) : company.website ? (
+                </button>
+                <div className="w-full min-w-0 flex-1">
+                  <div className="mb-2.5 overflow-x-auto rounded-lg border-2 border-stone-300 bg-stone-50 px-3.5 py-3">
+                    <code className="whitespace-nowrap font-mono text-[13px] font-bold text-stone-800">
+                      {publicLink || `lead2project.com/${company.slug}`}
+                    </code>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={onCopy}
+                      className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-3 py-2 text-[12.5px] font-bold text-stone-800 transition-colors hover:bg-stone-50"
+                    >
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
                     <a
-                      href={company.website}
+                      href={publicLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline truncate flex-1 min-w-0"
+                      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-[12.5px] font-bold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: color1 }}
                     >
-                      {company.website.replace(/^https?:\/\//, '')}
+                      View form <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                     </a>
-                  ) : (
-                    <span className="text-sm text-slate-700 truncate flex-1 min-w-0">
-                      No website added
-                    </span>
-                  )}
-                </InfoRow>
-              </div>
-            </div>
-          </div>
-
-          {/* QR + link — full width row so the URL never has to truncate */}
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">
-              Your booking link
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <button
-                onClick={onShowQrModal}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border flex items-center justify-center overflow-hidden hover:opacity-90 transition shrink-0"
-                style={{ background: tint(color1, 0.94), borderColor: tint(color1, 0.7) }}
-              >
-                {qrCodeUrl ? (
-                  <img src={qrCodeUrl} className="w-full h-full" alt="QR code" />
-                ) : (
-                  <Loader2 className="w-4 h-4 text-slate-300 animate-spin" />
-                )}
-              </button>
-              <div className="flex-1 min-w-0 w-full">
-                <div
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-md border mb-2 overflow-x-auto"
-                  style={{ background: tint(color1, 0.94), borderColor: tint(color1, 0.75) }}
-                >
-                  <code className="text-[13px] font-mono text-slate-700 whitespace-nowrap">
-                    {publicLink || `lead2project.com/${company.slug}`}
-                  </code>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={onCopy}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    {copied ? (
-                      <Check className="w-3 h-3 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3 h-3" />
-                    )}
-                    {copied ? 'Copied' : 'Copy'}
-                  </button>
-                  <a
-                    href={publicLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium bg-slate-900 text-white hover:bg-slate-800 transition whitespace-nowrap shrink-0"
-                  >
-                    View form <ExternalLink className="w-3 h-3 shrink-0" />
-                  </a>
-                  <button
-                    onClick={onShowQrModal}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <Download className="w-3 h-3" /> QR
-                  </button>
+                    <button
+                      onClick={onShowQrModal}
+                      className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-3 py-2 text-[12.5px] font-bold text-stone-800 transition-colors hover:bg-stone-50"
+                    >
+                      <Download className="h-3.5 w-3.5" /> QR code
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── SHARE YOUR LINK ── */}
-      <div className="mt-8">
-        <div className="mb-3">
-          <Eyebrow>Get the word out</Eyebrow>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 sm:p-6">
-          <p className="text-sm text-slate-600 mb-4">
-            Your booking link works anywhere you can put a link or a QR code — the
-            more places it lives, the more leads come in.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <ShareIdeaCard
-              icon={Globe}
-              accent={color1}
-              title="Google Business Profile"
-              description="Add it to your website field — often the first place customers look before they even reach your site."
-            />
-            <ShareIdeaCard
-              icon={MessageSquare}
-              accent={color2}
-              title="Social media"
-              description="Add it to your Instagram or Facebook bio, or drop it in a post."
-            />
-            <ShareIdeaCard
-              icon={FileImage}
-              accent={color1}
-              title="Flyers & signs"
-              description="Print the link or a QR code on flyers, yard signs, or door hangers."
-            />
-            <ShareIdeaCard
-              icon={Truck}
-              accent={color2}
-              title="Vehicle & business cards"
-              description="A QR code on your truck magnet or business card lets people book on the spot."
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── CHECKLIST ── */}
-      {doneCount < checklistSteps.length && (
+        {/* ── SHARE YOUR LINK ── */}
         <div className="mt-8">
-          <div className="flex items-center justify-between mb-3">
-            <Eyebrow>Get set up</Eyebrow>
-            <span className="text-[11px] text-slate-400 tabular-nums">
-              {doneCount}/{checklistSteps.length}
-            </span>
+          <div className="mb-3">
+            <Eyebrow>Get the word out</Eyebrow>
           </div>
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="h-1 bg-slate-100">
-              <div
-                className="h-full transition-all duration-500"
-                style={{
-                  width: `${(doneCount / checklistSteps.length) * 100}%`,
-                  background: `linear-gradient(90deg, ${color1}, ${color2})`,
-                }}
+          <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-sm sm:p-8">
+            <p className="mb-5 text-[14px] font-semibold leading-relaxed text-stone-600">
+              Your booking link works anywhere you can put a link or a QR
+              code — the more places it lives, the more leads come in.
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <ShareIdeaCard
+                icon={Globe}
+                title="Google Business Profile"
+                description="Add it to your website field — often the first place customers look before they even reach your site."
+              />
+              <ShareIdeaCard
+                icon={MessageSquare}
+                title="Social media"
+                description="Add it to your Instagram or Facebook bio, or drop it in a post."
+              />
+              <ShareIdeaCard
+                icon={FileImage}
+                title="Flyers & signs"
+                description="Print the link or a QR code on flyers, yard signs, or door hangers."
+              />
+              <ShareIdeaCard
+                icon={Truck}
+                title="Vehicle & business cards"
+                description="A QR code on your truck magnet or business card lets people book on the spot."
               />
             </div>
-            {checklistSteps.map((step, i) => {
-              const rowClass = `w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-slate-50 transition-colors text-left ${
-                i !== checklistSteps.length - 1 ? 'border-b border-slate-100' : ''
-              } ${step.done ? 'opacity-50' : ''}`;
-
-              const inner = (
-                <>
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                    style={step.done ? { background: tint(color1, 0.8) } : {}}
-                  >
-                    {step.done ? (
-                      <Check className="w-3 h-3 stroke-[3px]" style={{ color: color1 }} />
-                    ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-medium ${
-                        step.done ? 'text-slate-400 line-through' : 'text-slate-900'
-                      }`}
-                    >
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">{step.description}</p>
-                  </div>
-                </>
-              );
-
-              return step.kind === 'link' ? (
-                <a key={step.label} href={step.href} className={rowClass}>
-                  {inner}
-                </a>
-              ) : (
-                <button
-                  key={step.label}
-                  onClick={() => onNavigateSection(step.section)}
-                  className={rowClass}
-                >
-                  {inner}
-                </button>
-              );
-            })}
           </div>
         </div>
-      )}
 
-      <div className="flex justify-end mt-6">
-        <a
-          href={`/${company.slug}/dashboard/deleted-leads`}
-          className="flex items-center gap-2 px-4 py-2.5 border border-red-100 bg-red-50 rounded-lg group transition hover:bg-red-100"
-        >
-          <Trash2 className="w-3.5 h-3.5 text-red-500" />
-          <span className="text-xs font-medium text-red-600">Recovery center</span>
-        </a>
+        {/* ── CHECKLIST ── */}
+        {doneCount < checklistSteps.length && (
+          <div className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <Eyebrow>Get set up</Eyebrow>
+              <span className="text-[13px] font-bold tabular-nums text-stone-500">
+                {doneCount}/{checklistSteps.length}
+              </span>
+            </div>
+            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+              <div className="h-1.5 bg-stone-100">
+                <div
+                  className="h-full bg-stone-900 transition-all duration-500"
+                  style={{ width: `${(doneCount / checklistSteps.length) * 100}%` }}
+                />
+              </div>
+              {checklistSteps.map((step, i) => {
+                const rowClass = `flex w-full items-center gap-3 px-6 py-4 text-left transition-colors hover:bg-stone-50 sm:px-8 ${
+                  i !== checklistSteps.length - 1 ? 'border-b-2 border-stone-100' : ''
+                } ${step.done ? 'opacity-50' : ''}`;
+
+                const inner = (
+                  <>
+                    <div
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                        step.done ? 'border-stone-900 bg-stone-900' : 'border-stone-300'
+                      }`}
+                    >
+                      {step.done && <Check className="h-3 w-3 stroke-[3px] text-white" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm font-bold ${
+                          step.done ? 'text-stone-400 line-through' : 'text-stone-900'
+                        }`}
+                      >
+                        {step.label}
+                      </p>
+                      <p className="mt-0.5 text-[12.5px] font-semibold text-stone-500">
+                        {step.description}
+                      </p>
+                    </div>
+                  </>
+                );
+
+                return step.kind === 'link' ? (
+                  <a key={step.label} href={step.href} className={rowClass}>
+                    {inner}
+                  </a>
+                ) : (
+                  <button key={step.label} onClick={() => onNavigateSection(step.section)} className={rowClass}>
+                    {inner}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <a
+            href={`/${company.slug}/dashboard/deleted-leads`}
+            className="inline-flex items-center gap-2 rounded-lg border-2 border-rose-200 bg-rose-50 px-4 py-2.5 text-[13px] font-bold text-rose-700 transition-colors hover:bg-rose-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Recovery center
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Trash2, AlertCircle, Check, Edit2, X,
-  ChevronDown, Eye, Tag,
+  AlertCircle, Check, Edit2, X,
+  ChevronDown, Eye,
   User, Mail, Phone, MapPin, Calendar,
   Clock, HelpCircle, Image as ImageIcon, Megaphone, Lock,
+  Globe, Link2, Truck, Trash2,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import type { Transition } from 'framer-motion';
@@ -44,6 +45,129 @@ const DEFAULT_FIELD_CONFIG: FieldConfig = {
 
 const spring: Transition = { type: 'spring', damping: 28, stiffness: 320 };
 
+/* ───────────────────────── Top info-card bar ─────────────────────────
+   Each card opens a modal with an image + text slot. Swap the `image`
+   path and `body` copy below for your own content — layout doesn't need
+   to change when you do. */
+type InfoCard = {
+  id: string;
+  icon: React.ElementType;
+  title: string;
+  teaser: string;
+  image: string;
+  body: string;
+};
+
+const FORM_INFO_CARDS: InfoCard[] = [
+  {
+    id: 'step1',
+    icon: User,
+    title: 'Step 1 fields',
+    teaser: "What customers fill out first",
+    image: '/images/form-guide/step1.png',
+    body: 'Add your own explanation here of what step 1 covers and why these fields are always collected.',
+  },
+  {
+    id: 'custom-questions',
+    icon: HelpCircle,
+    title: 'Custom questions',
+    teaser: 'Ask anything you need',
+    image: '/images/form-guide/custom-questions.png',
+    body: 'Add your own explanation here of how custom questions work and when to use them.',
+  },
+  {
+    id: 'photo-upload',
+    icon: ImageIcon,
+    title: 'Photo uploads',
+    teaser: 'Let customers attach photos',
+    image: '/images/form-guide/photo-upload.png',
+    body: 'Add your own explanation here of the photo upload feature.',
+  },
+  {
+    id: 'share',
+    icon: Megaphone,
+    title: 'Sharing your form',
+    teaser: 'Where to put your link',
+    image: '/images/form-guide/share.png',
+    body: 'Add your own explanation here, or point people to the ideas at the bottom of this page.',
+  },
+];
+
+// Shows the real image if it loads; falls back to a plain placeholder
+// instead of a broken-image icon if the path isn't filled in yet.
+function ImageOrPlaceholder({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [errored, setErrored] = useState(false);
+  if (errored) {
+    return (
+      <div className={`flex flex-col items-center justify-center gap-2 bg-stone-100 text-stone-400 ${className || ''}`}>
+        <ImageIcon className="h-6 w-6" />
+        <span className="text-[11px] font-bold uppercase tracking-wide">Add image</span>
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className={className} onError={() => setErrored(true)} />
+  );
+}
+
+function InfoCardBar({ onSelect }: { onSelect: (id: string) => void }) {
+  return (
+    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+      {FORM_INFO_CARDS.map((card) => (
+        <button
+          key={card.id}
+          onClick={() => onSelect(card.id)}
+          className="flex min-w-[190px] shrink-0 items-start gap-3 rounded-lg border-2 border-stone-300 bg-white p-3.5 text-left transition-colors hover:border-stone-400 hover:bg-stone-50"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-stone-200 bg-stone-50">
+            <card.icon className="h-4 w-4 text-stone-700" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-bold text-stone-900">{card.title}</p>
+            <p className="mt-0.5 truncate text-[11.5px] font-semibold text-stone-500">{card.teaser}</p>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function InfoModal({ card, onClose }: { card: InfoCard; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/70 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-lg bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b-2 border-stone-200 px-5 py-4">
+          <span className="text-[15px] font-extrabold text-stone-900">{card.title}</span>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 text-stone-500 hover:bg-stone-100"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-5">
+          <ImageOrPlaceholder
+            src={card.image}
+            alt={card.title}
+            className="block h-48 w-full rounded-lg object-cover"
+          />
+          <p className="mt-4 text-[14px] font-semibold leading-relaxed text-stone-700">
+            {card.body}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
   const canUsePhotoUpload     = can(planTier, 'customer_video_upload');
@@ -53,7 +177,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [ctaSuccessMessage, setCtaSuccessMessage] = useState(company.cta_success_message || '');
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
-  const [previewStep, setPreviewStep] = useState<1 | 2>(1);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
@@ -90,7 +214,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
     }
   };
 
-const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
   const [newOption, setNewOption] = useState('');
@@ -164,192 +288,195 @@ const [showAddQuestion, setShowAddQuestion] = useState(false);
     setEditingQuestionId(null);
   };
 
+  const activeCard = FORM_INFO_CARDS.find((c) => c.id === activeCardId) || null;
+
   return (
-    <div className="max-w-3xl mx-auto pb-20 px-4 sm:px-6">
-      {(company.plan_tier === 'free') && (
-        <SettingsUpgradeBanner
-          planLabel="Basic"
-          price="$49.99/mo"
-          message="Your booking form is live. Upgrade to add custom branding, photo uploads, and custom questions."
-          companySlug={company.slug}
-        />
-      )}
-
-      {/* ── TOP BAR (mobile: buttons go full-width side by side under the title) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-6 border-b border-slate-200 mb-6">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Booking form</h1>
-          <p className="text-sm text-slate-500 mt-0.5 leading-snug">
-            Toggle fields directly on the form below — it's exactly what customers see.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-            title="View live form"
-          >
-            <Eye className="w-4 h-4" />
-            View
-          </a>
-
-          <button
-            onClick={handleSaveAll}
-            disabled={loading}
-            className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
-          >
-            {loading && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {loading ? 'Saving...' : 'Save changes'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── STATUS TOAST ── */}
-      <AnimatePresence>
-        {status.type && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg border mb-4 text-sm font-medium ${
-              status.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-red-50 border-red-200 text-red-800'
-            }`}
-          >
-            {status.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
-            {status.message}
-          </motion.div>
+    <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
+      <div className="mx-auto max-w-4xl pb-16">
+        {(company.plan_tier === 'free') && (
+          <div className="mb-6">
+            <SettingsUpgradeBanner
+              planLabel="Basic"
+              price="$49.99/mo"
+              message="Your booking form is live. Upgrade to add custom branding, photo uploads, and custom questions."
+              companySlug={company.slug}
+            />
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* ── STEP SWITCHER ── */}
-      <div className="flex items-center gap-1.5 mb-3">
-        {([1, 2] as const).map((step) => (
-          <button
-            key={step}
-            onClick={() => setPreviewStep(step)}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              previewStep === step
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {step === 1 ? 'Step 1' : 'Step 2 · editable'}
-          </button>
-        ))}
-      </div>
+        {/* ── TITLE + ACTIONS ── */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold tracking-tight text-stone-900">Booking form</h2>
+            <p className="mt-1 text-[15px] font-semibold text-stone-700">
+              This is exactly what customers see. Toggle fields below to change it.
+            </p>
+          </div>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-800 transition-colors hover:bg-stone-50 sm:flex-none"
+            >
+              <Eye className="h-4 w-4" /> View
+            </a>
+            <button
+              onClick={handleSaveAll}
+              disabled={loading}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60 sm:flex-none"
+            >
+              {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+              {loading ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
+        </div>
 
-      {/* ── LIVE, EDITABLE FORM ── */}
-<div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden w-full max-w-full sm:max-w-[480px] mx-auto">        <AnimatePresence mode="wait">
-          <motion.div
-            key={previewStep}
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={spring}
-          >
-            {previewStep === 1 && (
-              <FormStep1
-                heading={getCtaHeading()}
-                categories={categories}
-                brandColor1={brandColor1}
-                brandColor2={brandColor2}
-                logoUrl={company.logo_url}
-              />
-            )}
-            {previewStep === 2 && (
-              <FormStep2Editable
-                fieldConfig={fieldConfig}
-                toggleField={toggleField}
-                customQuestions={customQuestions}
-                setCustomQuestions={setCustomQuestions}
-                canUseCustomQuestions={canUseCustomQuestions}
-                canUsePhotoUpload={canUsePhotoUpload}
-                brandColor1={brandColor1}
-                brandColor2={brandColor2}
-                companySlug={company.slug}
-                showAddQuestion={showAddQuestion}
-                setShowAddQuestion={setShowAddQuestion}
-                editingQuestionId={editingQuestionId}
-                setEditingQuestionId={setEditingQuestionId}
-                newQuestion={newQuestion}
-                setNewQuestion={setNewQuestion}
-                newOption={newOption}
-                setNewOption={setNewOption}
-                onSaveQuestion={addOrUpdateQuestion}
-                onCancelQuestion={resetForm}
-              />
-            )}
-          </motion.div>
+        {/* ── INFO CARD BAR ── */}
+        <div className="mb-6">
+          <InfoCardBar onSelect={setActiveCardId} />
+        </div>
+
+        {/* ── STATUS TOAST ── */}
+        <AnimatePresence>
+          {status.type && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              className={`mb-4 flex items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-bold ${
+                status.type === 'success'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                  : 'border-rose-300 bg-rose-50 text-rose-800'
+              }`}
+            >
+              {status.type === 'success' ? <Check className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+              {status.message}
+            </motion.div>
+          )}
         </AnimatePresence>
-      </div>
 
-   <button
-        onClick={handleSaveAll}
-        disabled={loading}
-        className="w-full py-3.5 mt-4 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
-      >
-        {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-        {loading ? 'Saving...' : 'Save changes'}
-      </button>
+        {/* ── FORM PREVIEW: step 1 fixed, step 2 editable, one card ── */}
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b-2 border-stone-200 bg-stone-100 px-5 py-3">
+            <span className="text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
+              Step 1
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-stone-600">
+              <Lock className="h-3 w-3" /> Always collected, can&apos;t be edited
+            </span>
+          </div>
 
-      {/* ── SHARE YOUR LINK IDEAS ── */}
-      <div className="mt-10 pt-8 border-t border-slate-200">
-        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
-          Get the word out
-        </p>
-        <p className="text-sm text-slate-600 mb-4">
-          Your booking link works anywhere you can put a link or a QR code.
-        </p>
+          <FormStep1
+            heading={getCtaHeading()}
+            categories={categories}
+            brandColor1={brandColor1}
+            brandColor2={brandColor2}
+            logoUrl={company.logo_url}
+          />
 
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 mb-5">
-          <code className="text-[12px] font-mono text-slate-700 truncate flex-1">{publicUrl}</code>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(publicUrl);
-              setLinkCopied(true);
-              setTimeout(() => setLinkCopied(false), 1800);
-            }}
-            className="shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition"
-          >
-            {linkCopied ? 'Copied' : 'Copy'}
-          </button>
+          <div className="border-t-2 border-stone-200">
+            <FormStep2Editable
+              fieldConfig={fieldConfig}
+              toggleField={toggleField}
+              customQuestions={customQuestions}
+              setCustomQuestions={setCustomQuestions}
+              canUseCustomQuestions={canUseCustomQuestions}
+              canUsePhotoUpload={canUsePhotoUpload}
+              brandColor1={brandColor1}
+              brandColor2={brandColor2}
+              companySlug={company.slug}
+              showAddQuestion={showAddQuestion}
+              setShowAddQuestion={setShowAddQuestion}
+              editingQuestionId={editingQuestionId}
+              setEditingQuestionId={setEditingQuestionId}
+              newQuestion={newQuestion}
+              setNewQuestion={setNewQuestion}
+              newOption={newOption}
+              setNewOption={setNewOption}
+              onSaveQuestion={addOrUpdateQuestion}
+              onCancelQuestion={resetForm}
+              ctaSuccessMessage={ctaSuccessMessage}
+              setCtaSuccessMessage={setCtaSuccessMessage}
+            />
+          </div>
         </div>
 
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ShareIdeaCard
-            title="Google Business Profile"
-            description="Add your booking link to your Google Business Profile website field — it's often the first place customers look before they even reach your site."
-          />
-          <ShareIdeaCard
-            title="Social media"
-            description="Add it to your Instagram or Facebook bio, or drop it in a post."
-          />
-          <ShareIdeaCard
-            title="Your website"
-            description="Link it from a 'Get a Quote' or 'Book Now' button."
-          />
-          <ShareIdeaCard
-            title="Flyers & signs"
-            description="Print it — or the QR code from your Overview tab — on flyers, yard signs, or door hangers."
-          />
-          <ShareIdeaCard
-            title="Vehicle & business cards"
-            description="A QR code on your truck magnet or business card lets people book on the spot."
-          />
+        <button
+          onClick={handleSaveAll}
+          disabled={loading}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-stone-900 py-3.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
+        >
+          {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+          {loading ? 'Saving...' : 'Save changes'}
+        </button>
+
+        {/* ── SHARE YOUR LINK IDEAS ── */}
+        <div className="mt-8 overflow-hidden rounded-2xl bg-white p-6 shadow-sm sm:p-8">
+          <p className="mb-1 text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
+            Get the word out
+          </p>
+          <p className="mb-4 text-[14px] font-semibold text-stone-600">
+            Your booking link works anywhere you can put a link or a QR code.
+          </p>
+
+          <div className="mb-5 flex items-center gap-2 rounded-lg border-2 border-stone-300 bg-stone-50 px-3.5 py-3">
+            <code className="flex-1 truncate font-mono text-[13px] font-bold text-stone-800">{publicUrl}</code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(publicUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1800);
+              }}
+              className="shrink-0 rounded-md border-2 border-stone-300 bg-white px-3 py-1.5 text-[12px] font-bold text-stone-800 transition-colors hover:bg-stone-100"
+            >
+              {linkCopied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <ShareIdeaCard
+              icon={Globe}
+              title="Google Business Profile"
+              description="Add your booking link to your Google Business Profile website field — it's often the first place customers look before they even reach your site."
+            />
+            <ShareIdeaCard
+              icon={Megaphone}
+              title="Social media"
+              description="Add it to your Instagram or Facebook bio, or drop it in a post."
+            />
+            <ShareIdeaCard
+              icon={Link2}
+              title="Your website"
+              description="Link it from a 'Get a Quote' or 'Book Now' button."
+            />
+            <ShareIdeaCard
+              icon={ImageIcon}
+              title="Flyers & signs"
+              description="Print it — or the QR code from your Overview tab — on flyers, yard signs, or door hangers."
+            />
+            <ShareIdeaCard
+              icon={Truck}
+              title="Vehicle & business cards"
+              description="A QR code on your truck magnet or business card lets people book on the spot."
+            />
+          </div>
         </div>
       </div>
+
+      {activeCard && <InfoModal card={activeCard} onClose={() => setActiveCardId(null)} />}
     </div>
   );
 }
 
-function ShareIdeaCard({ title, description }: { title: string; description: string }) {
+function ShareIdeaCard({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-      <p className="text-[12px] font-semibold text-slate-800">{title}</p>
-      <p className="text-[11.5px] text-slate-500 mt-1 leading-relaxed">{description}</p>
+    <div className="flex items-start gap-3 rounded-lg border-2 border-stone-200 bg-white p-4">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-stone-200 bg-stone-50">
+        <Icon className="h-4 w-4 text-stone-700" />
+      </div>
+      <div>
+        <p className="text-[13px] font-bold text-stone-900">{title}</p>
+        <p className="mt-0.5 text-[12.5px] font-medium leading-relaxed text-stone-600">{description}</p>
+      </div>
     </div>
   );
 }
@@ -363,10 +490,10 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
       aria-checked={enabled}
       aria-label={ariaLabel}
       onClick={onToggle}
-      className={`w-10 h-6 rounded-full relative transition-all duration-300 shrink-0 shadow-inner ${enabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+      className={`relative h-6 w-10 shrink-0 rounded-full shadow-inner transition-all duration-300 ${enabled ? 'bg-emerald-600' : 'bg-stone-300'}`}
     >
       <div
-        className="absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform duration-300"
+        className="absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-300"
         style={{ transform: enabled ? 'translateX(16px)' : 'translateX(0)' }}
       />
     </button>
@@ -387,36 +514,36 @@ function EditableFieldRow({
 
   return (
     <div
-      className={`rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
+      className={`overflow-hidden rounded-lg border-2 transition-all duration-300 ${
         locked
-          ? 'border-slate-100 bg-slate-50'
+          ? 'border-stone-200 bg-stone-50'
           : active
-          ? 'border-blue-500 bg-blue-50/30'
-          : 'border-slate-200 bg-white'
+          ? 'border-emerald-600 bg-emerald-50/40'
+          : 'border-stone-300 bg-white'
       }`}
     >
       {/* Header row — this is ALL a disabled field shows */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
-        <p className={`flex-1 min-w-0 truncate text-[10px] font-bold uppercase tracking-wider ${
-          active ? 'text-slate-800' : 'text-slate-400'
+        <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-emerald-700' : 'text-stone-400'}`} />
+        <p className={`min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wider ${
+          active ? 'text-stone-900' : 'text-stone-500'
         }`}>
           {label}
         </p>
-        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold shrink-0 ${
-          locked ? 'bg-slate-100 text-slate-400'
-          : active ? 'bg-blue-100 text-blue-700'
-          : 'bg-slate-100 text-slate-400'
+        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold ${
+          locked ? 'bg-stone-200 text-stone-500'
+          : active ? 'bg-emerald-100 text-emerald-800'
+          : 'bg-stone-200 text-stone-500'
         }`}>
           {locked ? 'Locked' : active ? 'Active' : 'Off'}
         </span>
         {locked ? (
           <a
             href={`/company/${companySlug}/settings/billing`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-900 px-3 py-1.5 text-white transition-colors hover:bg-stone-800"
           >
-            <Lock className="w-3 h-3" />
-            <span className="text-[9px] font-bold uppercase tracking-tight">Upgrade</span>
+            <Lock className="h-3 w-3" />
+            <span className="text-[10px] font-bold uppercase tracking-tight">Upgrade</span>
           </a>
         ) : (
           <ToggleSwitch enabled={enabled} onToggle={onToggle!} ariaLabel={`Toggle ${label}`} />
@@ -442,69 +569,63 @@ function EditableFieldRow({
   );
 }
 
-/* ─────────────────── STEP 1 (read-only mock — always-collected fields) ─────────────────── */
+/* ─────────────────── STEP 1 (fixed, read-only preview — always-collected fields) ─────────────────── */
 function FormStep1({ heading, categories, brandColor1, brandColor2, logoUrl }: {
   heading: string; categories: Category[]; brandColor1: string; brandColor2: string; logoUrl?: string | null;
 }) {
-  const labelClass = "text-[9px] font-bold text-slate-800 uppercase tracking-wider ml-1 mb-1.5";
-  const inputClass = "w-full h-11 bg-white border border-slate-200 rounded-xl px-4 text-slate-800 text-[11px] flex items-center gap-3 shadow-sm";
+  const labelClass = "text-[9px] font-bold text-stone-800 uppercase tracking-wider ml-1 mb-1.5";
+  const inputClass = "w-full h-11 bg-white border border-stone-200 rounded-xl px-4 text-stone-800 text-[11px] flex items-center gap-3 shadow-sm";
 
   return (
     <div className="bg-white">
+      {/* This gradient reflects the company's real brand colors — it's an
+          accurate live preview of the customer-facing form, not decoration. */}
       <div className="p-5 sm:p-6 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
-        {logoUrl && <img src={logoUrl} alt="" className="h-8 w-auto object-contain mb-4" />}
+        {logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="h-8 w-auto object-contain mb-4" />
+        )}
         <h3 className="text-lg font-bold tracking-tight text-white">{heading || 'Request a Free Quote'}</h3>
       </div>
 
-      <div className="p-4 sm:p-5 space-y-5">
-        <div className="flex items-start gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
-          <Lock className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" />
+      <div className="p-4 sm:p-5 space-y-4">
+        <div>
+          <p className={labelClass}>Full Name</p>
+          <div className={inputClass}><User className="w-3.5 h-3.5 text-stone-400 shrink-0" />John Smith</div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <p className="text-[11px] font-bold text-slate-800">Always collected</p>
-            <p className="text-[10px] text-slate-600 mt-0.5 leading-relaxed">Name, email, phone, category, and description are essential.</p>
+            <p className={labelClass}>Email</p>
+            <div className={inputClass}><Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />john@example.com</div>
+          </div>
+          <div>
+            <p className={labelClass}>Phone</p>
+            <div className={inputClass}><Phone className="w-3.5 h-3.5 text-stone-400 shrink-0" />(555) 123-4567</div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <p className={labelClass}>Full Name</p>
-            <div className={inputClass}><User className="w-3.5 h-3.5 text-slate-400 shrink-0" />John Smith</div>
+        <div>
+          <p className={labelClass}>Service Needed</p>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat, i) => (
+              <div
+                key={i}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border ${
+                  i === 0 ? 'text-white border-transparent' : 'bg-white text-stone-800 border-stone-200'
+                }`}
+                style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+              >
+                {cat.label}
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Stacks on phones, two columns from sm up */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className={labelClass}>Email</p>
-              <div className={inputClass}><Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />john@example.com</div>
-            </div>
-            <div>
-              <p className={labelClass}>Phone</p>
-              <div className={inputClass}><Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />(555) 123-4567</div>
-            </div>
-          </div>
-
-          <div>
-            <p className={labelClass}>Service Needed</p>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat, i) => (
-                <div
-                  key={i}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border ${
-                    i === 0 ? 'text-white border-transparent' : 'bg-white text-slate-800 border-slate-200'
-                  }`}
-                  style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-                >
-                  {cat.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className={labelClass}>Project Description</p>
-            <div className="w-full h-20 bg-white border border-slate-200 rounded-xl p-4 text-slate-600 text-[11px] shadow-sm">
-              Describe your project here...
-            </div>
+        <div>
+          <p className={labelClass}>Project Description</p>
+          <div className="w-full h-20 bg-white border border-stone-200 rounded-xl p-4 text-stone-600 text-[11px] shadow-sm">
+            Describe your project here...
           </div>
         </div>
       </div>
@@ -518,6 +639,7 @@ function FormStep2Editable({
   canUseCustomQuestions, canUsePhotoUpload, brandColor1, brandColor2, companySlug,
   showAddQuestion, setShowAddQuestion, editingQuestionId, setEditingQuestionId,
   newQuestion, setNewQuestion, newOption, setNewOption, onSaveQuestion, onCancelQuestion,
+  ctaSuccessMessage, setCtaSuccessMessage,
 }: {
   fieldConfig: FieldConfig; toggleField: (f: keyof FieldConfig) => void;
   customQuestions: CustomQuestion[]; setCustomQuestions: (q: CustomQuestion[]) => void;
@@ -528,6 +650,7 @@ function FormStep2Editable({
   newQuestion: CustomQuestion; setNewQuestion: (q: CustomQuestion) => void;
   newOption: string; setNewOption: (v: string) => void;
   onSaveQuestion: () => void; onCancelQuestion: () => void;
+  ctaSuccessMessage: string; setCtaSuccessMessage: (v: string) => void;
 }) {
   return (
     <div className="bg-white">
@@ -537,6 +660,22 @@ function FormStep2Editable({
       </div>
 
       <div className="p-4 sm:p-5 space-y-2.5">
+        <div>
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-stone-700 ml-1">
+            Success message
+          </label>
+          <textarea
+            value={ctaSuccessMessage}
+            onChange={(e) => setCtaSuccessMessage(e.target.value)}
+            placeholder="Thanks! We'll be in touch within 24 hours."
+            rows={2}
+            className="w-full rounded-xl border-2 border-stone-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-stone-900 outline-none transition focus:border-stone-900"
+          />
+          <p className="mt-1.5 ml-1 text-[10.5px] font-semibold text-stone-500">
+            Shown to customers right after they submit the form.
+          </p>
+        </div>
+
         <EditableFieldRow
           icon={MapPin}
           label="Address"
@@ -545,22 +684,22 @@ function FormStep2Editable({
           mockContent={
             <div className="space-y-2">
               <div>
-                <p className="text-[9px] font-bold text-slate-700 uppercase tracking-wider mb-1">Street Address</p>
-                <div className="h-9 w-full bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-600 flex items-center">123 Main St</div>
+                <p className="text-[9px] font-bold text-stone-700 uppercase tracking-wider mb-1">Street Address</p>
+                <div className="h-9 w-full bg-white border border-stone-200 rounded-xl px-3 text-xs text-stone-600 flex items-center">123 Main St</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-700 uppercase tracking-wider mb-1">City</p>
-                  <div className="h-9 w-full bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-600 flex items-center">New York</div>
+                  <p className="text-[9px] font-bold text-stone-700 uppercase tracking-wider mb-1">City</p>
+                  <div className="h-9 w-full bg-white border border-stone-200 rounded-xl px-3 text-xs text-stone-600 flex items-center">New York</div>
                 </div>
                 <div>
-                  <p className="text-[9px] font-bold text-slate-700 uppercase tracking-wider mb-1">Zip Code</p>
-                  <div className="h-9 w-full bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-600 flex items-center">12345</div>
+                  <p className="text-[9px] font-bold text-stone-700 uppercase tracking-wider mb-1">Zip Code</p>
+                  <div className="h-9 w-full bg-white border border-stone-200 rounded-xl px-3 text-xs text-stone-600 flex items-center">12345</div>
                 </div>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-slate-700 uppercase tracking-wider mb-1">Unit / Apt</p>
-                <div className="h-9 w-full bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-600 flex items-center">Apt 4B</div>
+                <p className="text-[9px] font-bold text-stone-700 uppercase tracking-wider mb-1">Unit / Apt</p>
+                <div className="h-9 w-full bg-white border border-stone-200 rounded-xl px-3 text-xs text-stone-600 flex items-center">Apt 4B</div>
               </div>
             </div>
           }
@@ -571,7 +710,7 @@ function FormStep2Editable({
           label="Preferred Date"
           enabled={fieldConfig.preferred_date.enabled}
           onToggle={() => toggleField('preferred_date')}
-          mockContent={<div className="h-10 w-full bg-white border border-slate-200 rounded-xl px-4 text-xs text-slate-600 flex items-center">MM/DD/YYYY</div>}
+          mockContent={<div className="h-10 w-full bg-white border border-stone-200 rounded-xl px-4 text-xs text-stone-600 flex items-center">MM/DD/YYYY</div>}
         />
 
         <EditableFieldRow
@@ -579,7 +718,7 @@ function FormStep2Editable({
           label="Preferred Time"
           enabled={fieldConfig.preferred_time.enabled}
           onToggle={() => toggleField('preferred_time')}
-          mockContent={<div className="h-10 w-full bg-white border border-slate-200 rounded-xl px-4 text-xs text-slate-600 flex items-center">Morning, Afternoon...</div>}
+          mockContent={<div className="h-10 w-full bg-white border border-stone-200 rounded-xl px-4 text-xs text-stone-600 flex items-center">Morning, Afternoon...</div>}
         />
 
         <EditableFieldRow
@@ -587,7 +726,7 @@ function FormStep2Editable({
           label="Lead Source"
           enabled={fieldConfig.lead_source.enabled}
           onToggle={() => toggleField('lead_source')}
-          mockContent={<div className="h-10 w-full bg-white border border-slate-200 rounded-xl px-4 text-xs text-slate-600 flex items-center">Selection dropdown...</div>}
+          mockContent={<div className="h-10 w-full bg-white border border-stone-200 rounded-xl px-4 text-xs text-stone-600 flex items-center">Selection dropdown...</div>}
         />
 
         <EditableFieldRow
@@ -598,34 +737,34 @@ function FormStep2Editable({
           locked={!canUsePhotoUpload}
           companySlug={companySlug}
           mockContent={
-            <div className="w-full border-2 border-dashed border-blue-300 rounded-xl flex flex-col items-center justify-center gap-1.5 py-4 bg-blue-50/50">
-              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-blue-600" />
+            <div className="w-full border-2 border-dashed border-emerald-300 rounded-xl flex flex-col items-center justify-center gap-1.5 py-4 bg-emerald-50/50">
+              <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-emerald-700" />
               </div>
-              <p className="text-xs font-semibold text-slate-700">Click to upload photos</p>
-              <p className="text-[10px] text-slate-600">JPG, PNG, or video</p>
+              <p className="text-xs font-semibold text-stone-700">Click to upload photos</p>
+              <p className="text-[10px] text-stone-600">JPG, PNG, or video</p>
             </div>
           }
         />
 
         {/* Custom Questions */}
         <div className="space-y-2.5 pt-2">
-          <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider ml-1">Custom Questions</p>
+          <p className="text-[11px] font-bold text-stone-700 uppercase tracking-wider ml-1">Custom Questions</p>
 
           {customQuestions.map(q => (
-            <div key={q.id} className="group relative rounded-2xl border-2 border-blue-100 bg-white p-3.5 shadow-sm transition-all hover:border-blue-200">
+            <div key={q.id} className="group relative rounded-lg border-2 border-stone-200 bg-white p-3.5 transition-all hover:border-stone-300">
               {/* Actions — always visible on touch devices (no hover on mobile) */}
               <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => { setNewQuestion(q); setEditingQuestionId(q.id); setShowAddQuestion(true); }}
-                  className="p-1.5 bg-white border border-blue-200 rounded-lg text-blue-600 hover:bg-blue-50 shadow-sm"
+                  className="p-1.5 bg-white border-2 border-stone-300 rounded-lg text-stone-700 hover:bg-stone-50"
                   aria-label="Edit question"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setCustomQuestions(customQuestions.filter(x => x.id !== q.id))}
-                  className="p-1.5 bg-white border border-red-200 rounded-lg text-red-600 hover:bg-red-50 shadow-sm"
+                  className="p-1.5 bg-white border-2 border-rose-300 rounded-lg text-rose-700 hover:bg-rose-50"
                   aria-label="Delete question"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -633,32 +772,32 @@ function FormStep2Editable({
               </div>
 
               <div className="flex items-center gap-2 mb-2.5 pr-20">
-                <HelpCircle className="w-4 h-4 text-blue-500 shrink-0" />
-                <p className="text-xs font-bold text-slate-800 uppercase tracking-tight truncate">{q.label}</p>
+                <HelpCircle className="w-4 h-4 text-stone-700 shrink-0" />
+                <p className="text-xs font-bold text-stone-900 uppercase tracking-tight truncate">{q.label}</p>
               </div>
 
               {q.type === 'text' && (
-                <div className="h-10 w-full bg-slate-50 border border-slate-200 rounded-lg flex items-center px-4 text-xs text-slate-600">
+                <div className="h-10 w-full bg-stone-50 border border-stone-200 rounded-lg flex items-center px-4 text-xs text-stone-600">
                   User will type text here...
                 </div>
               )}
 
               {q.type === 'select' && (
-                <div className="h-10 w-full bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between px-4 text-xs text-slate-600">
+                <div className="h-10 w-full bg-stone-50 border border-stone-200 rounded-lg flex items-center justify-between px-4 text-xs text-stone-600">
                   <span className="truncate">
                     {q.options?.length ? `${q.options.length} option${q.options.length === 1 ? '' : 's'}: ${q.options.slice(0, 3).join(', ')}${q.options.length > 3 ? '…' : ''}` : 'Select an option...'}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-2" />
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0 ml-2" />
                 </div>
               )}
 
               {q.type === 'checkbox' && (
                 <div className="flex gap-4">
-                  <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                    <div className="w-4 h-4 rounded border-2 border-slate-300" /> Yes
+                  <div className="flex items-center gap-2 text-xs text-stone-600 font-medium">
+                    <div className="w-4 h-4 rounded border-2 border-stone-300" /> Yes
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                    <div className="w-4 h-4 rounded border-2 border-slate-300" /> No
+                  <div className="flex items-center gap-2 text-xs text-stone-600 font-medium">
+                    <div className="w-4 h-4 rounded border-2 border-stone-300" /> No
                   </div>
                 </div>
               )}
@@ -666,9 +805,9 @@ function FormStep2Editable({
           ))}
 
           {!canUseCustomQuestions ? (
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center gap-3">
-              <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-              <p className="text-[11px] font-medium text-slate-500">Upgrade to add custom questions</p>
+            <div className="p-4 rounded-lg border-2 border-stone-200 bg-stone-50 flex items-center gap-3">
+              <Lock className="w-4 h-4 text-stone-400 shrink-0" />
+              <p className="text-[11px] font-semibold text-stone-500">Upgrade to add custom questions</p>
             </div>
           ) : showAddQuestion ? (
             <InlineQuestionEditor
@@ -683,7 +822,7 @@ function FormStep2Editable({
           ) : (
             <button
               onClick={() => setShowAddQuestion(true)}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider hover:border-blue-400 hover:text-blue-600 transition-all"
+              className="w-full py-3 rounded-lg border-2 border-dashed border-stone-300 text-stone-600 text-[11px] font-bold uppercase tracking-wider hover:border-stone-500 hover:text-stone-800 transition-all"
             >
               + Add Custom Question
             </button>
@@ -707,12 +846,12 @@ function InlineQuestionEditor({
   onCancel: () => void;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-blue-200 bg-blue-50/50 p-4 space-y-4 shadow-sm">
+    <div className="rounded-lg border-2 border-stone-300 bg-stone-50 p-4 space-y-4">
       <input
         type="text"
         value={question.label}
         onChange={e => onChange({ ...question, label: e.target.value })}
-        className="w-full px-4 py-2.5 rounded-xl border border-blue-200 bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition text-sm font-semibold"
+        className="w-full px-4 py-2.5 rounded-lg border-2 border-stone-300 bg-white text-stone-900 placeholder-stone-400 outline-none transition text-sm font-semibold focus:border-stone-900"
         placeholder='e.g., "What is your budget range?"'
         autoFocus
       />
@@ -726,10 +865,10 @@ function InlineQuestionEditor({
           <button
             key={t.val}
             onClick={() => onChange({ ...question, type: t.val as any, options: t.val === 'select' ? question.options : [] })}
-            className={`py-2 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all ${
+            className={`py-2 rounded-lg border-2 text-[10px] font-bold uppercase tracking-wide transition-all ${
               question.type === t.val
-                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'
+                ? 'bg-stone-900 border-stone-900 text-white'
+                : 'bg-white border-stone-300 text-stone-600 hover:border-stone-400'
             }`}
           >
             {t.label}
@@ -738,18 +877,18 @@ function InlineQuestionEditor({
       </div>
 
       {question.type === 'select' && (
-        <div className="space-y-2 border-t border-blue-100 pt-3">
+        <div className="space-y-2 border-t-2 border-stone-200 pt-3">
           <AnimatePresence>
             {question.options?.map((opt, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 6 }}
-                className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200"
+                className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border-2 border-stone-200"
               >
-                <span className="text-xs font-medium text-slate-700">{opt}</span>
+                <span className="text-xs font-semibold text-stone-800">{opt}</span>
                 <button
                   onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })}
-                  className="text-slate-400 hover:text-red-500 transition-colors"
+                  className="text-stone-400 hover:text-rose-600 transition-colors"
                   aria-label="Remove option"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -763,7 +902,7 @@ function InlineQuestionEditor({
               type="text"
               value={newOption}
               onChange={e => onOptionChange(e.target.value)}
-              className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white outline-none focus:border-blue-400 transition"
+              className="flex-1 px-3 py-2 text-xs rounded-lg border-2 border-stone-300 bg-white outline-none focus:border-stone-900 transition"
               placeholder="Add an option..."
               onKeyDown={e => {
                 if (e.key === 'Enter' && newOption) {
@@ -774,7 +913,7 @@ function InlineQuestionEditor({
             />
             <button
               onClick={() => { if (newOption) { onChange({ ...question, options: [...(question.options || []), newOption] }); onOptionChange(''); } }}
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition"
+              className="px-4 py-2 bg-stone-900 text-white rounded-lg text-xs font-bold hover:bg-stone-800 transition"
             >
               Add
             </button>
@@ -785,13 +924,13 @@ function InlineQuestionEditor({
       <div className="flex gap-2 pt-1">
         <button
           onClick={onSave}
-          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+          className="flex-1 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
         >
           {isEditing ? 'Update Question' : 'Add Question'}
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+          className="px-4 py-2.5 bg-white border-2 border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
         >
           Cancel
         </button>
