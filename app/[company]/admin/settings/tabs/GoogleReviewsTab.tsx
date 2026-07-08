@@ -71,6 +71,8 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
               <FeatureItem>Automatically dispatch review requests when you mark a job as <strong>Completed</strong>.</FeatureItem>
               <FeatureItem>Collect and manage ratings from your preferred customers.</FeatureItem>
               <FeatureItem>Elevate your business reputation with more Google Reviews.</FeatureItem>
+                            <FeatureItem>Requires a Google Business profile address. Only available in US/CA</FeatureItem>
+
             </div>
           </div>
           <div className="relative hidden md:block">

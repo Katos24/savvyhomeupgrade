@@ -805,6 +805,34 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
             </div>
           </div>
 
+{/* ───────────────────────── Sending invoices ───────────────────────── */}
+<div className="border-t-2 border-stone-100 p-6 sm:p-10">
+  <p className="mb-1 text-[13px] font-bold uppercase tracking-wide text-stone-700">
+    Sending invoices
+  </p>
+
+  <p className="mb-6 text-[15px] leading-relaxed text-stone-700">
+    When your invoice is ready, click the <span className="font-bold">Send</span> button
+    on the invoice card. The invoice will be emailed to your customer's primary
+    email address, and they'll receive the invoice along with a secure payment
+    link (if enabled).
+  </p>
+
+  <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
+    {/* Replace with your screenshot */}
+    <img
+      src="/images/invoice_send.png"
+      alt="Invoice send button"
+      className="object-contain"
+    />
+  </div>
+
+  <p className="mt-4 text-sm text-stone-500">
+    Don't see a customer email? Add one from the Lead Details screen before
+    sending your invoice.
+  </p>
+</div>
+
           <div className="border-t-2 border-stone-100 p-6 sm:p-10">
             <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700">
               What the customer receives

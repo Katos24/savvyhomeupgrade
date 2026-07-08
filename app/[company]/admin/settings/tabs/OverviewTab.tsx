@@ -273,11 +273,12 @@ export default function OverviewTab({
             <div className="flex shrink-0 items-center gap-2">
               {!isEditingBrand ? (
                 <button
-                  onClick={() => setIsEditingBrand(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-3.5 py-2 text-[13px] font-bold text-stone-800 transition-colors hover:bg-stone-50"
-                >
-                  <Pencil className="h-3.5 w-3.5" /> Edit
-                </button>
+  onClick={() => setIsEditingBrand(true)}
+  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-50 px-3.5 py-2 text-[13px] font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+>
+  <Pencil className="h-3.5 w-3.5" /> Edit
+</button>
+
               ) : (
                 <>
                   <button
@@ -364,7 +365,7 @@ export default function OverviewTab({
                   onChange={setCompanyEmail}
                   placeholder="you@company.com"
                   display={company.email || 'No email added'}
-                  caption="Customer replies and BCC copies of quote, schedule, and invoice emails go here — double check this is correct."
+                  caption="This is your Reply‑To inbox. Customer replies land here, and you can also BCC yourself on all quote, schedule, and invoice emails by enabling it in Settings."
                 />
                 <LabeledField
                   icon={Phone}
