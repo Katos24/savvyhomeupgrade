@@ -2,10 +2,12 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import InvoiceSection from '@/components/marketing/InvoiceSection';
 import HowItWorksSection from '@/components/marketing/HowItWorksSection';
 import ProblemSection from '@/components/marketing/ProblemSection';
 import TheFixSection from '@/components/marketing/FixSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
+import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import TruckSection from '@/components/marketing/TruckSection'; // Your Distribution Section
 import LeadLandingSection from '@/components/marketing/LeadLandingSection'; // Your Workflow Section
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
@@ -22,6 +24,7 @@ export default function NewHome() {
 
       {/* 1. THE HOOK: The current state of chaos vs. order */}
       <NewHero />
+      <InvoiceSection />
 
       <HowItWorksSection />
 
@@ -35,9 +38,9 @@ export default function NewHome() {
 
   {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
       <CustomizeFormSection />
+    <QuoteToPaidSection />
 
       {/* 3. THE SOLUTION: The "Lead2Project" Concept (The Fix) */}
-      <TheFixSection />
 
     
 

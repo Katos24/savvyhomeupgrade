@@ -209,10 +209,42 @@ function StripeConnectSection({ company }: { company: any }) {
   >('idle');
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  const isConnected = !!company.stripe_connect_onboarded;
-  const paymentStatus: 'active' | 'restricted' | 'pending' | null =
-    company.stripe_payment_status ?? null;
-  const blockingReasons = company.stripe_requirements_summary ?? [];
+  // Live status, overriding the (possibly stale) server-rendered prop.
+  // The DB only updates when Stripe's webhook fires, which can lag behind
+  // what the person just did on Stripe's side by several seconds — this
+  // closes that gap instead of making them guess-and-refresh.
+  const [liveStatus, setLiveStatus] = useState<{
+    isConnected: boolean;
+    paymentStatus: 'active' | 'restricted' | 'pending' | null;
+    blockingReasons: { capability: string; code: string }[];
+  } | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+
+  const isConnected = liveStatus ? liveStatus.isConnected : !!company.stripe_connect_onboarded;
+  const paymentStatus: 'active' | 'restricted' | 'pending' | null = liveStatus
+    ? liveStatus.paymentStatus
+    : company.stripe_payment_status ?? null;
+  const blockingReasons = liveStatus ? liveStatus.blockingReasons : company.stripe_requirements_summary ?? [];
+
+  async function refreshLiveStatus() {
+    setCheckingStatus(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/stripe/refresh-status`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setLiveStatus({
+          isConnected: !!data.stripe_connect_onboarded,
+          paymentStatus: data.stripe_payment_status ?? null,
+          blockingReasons: data.stripe_requirements_summary ?? [],
+        });
+      }
+    } catch {
+      // Silent — worst case, the person still sees the last known status
+      // and can hit "Refresh status" again.
+    } finally {
+      setCheckingStatus(false);
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -220,6 +252,18 @@ function StripeConnectSection({ company }: { company: any }) {
     if (sc === 'error' || sc === 'denied' || sc === 'already_linked') {
       setRedirectStatus(sc as any);
     }
+
+    // Get the real current status whenever: (a) we just came back from
+    // Stripe at all (any stripe_connect param present), or (b) we're
+    // already in a not-fully-settled state, since that's exactly where a
+    // stale read causes confusion.
+    const justReturnedFromStripe = sc !== null;
+    const inUnsettledState =
+      !!company.stripe_connect_onboarded && company.stripe_payment_status !== 'active';
+    if (justReturnedFromStripe || inUnsettledState) {
+      refreshLiveStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleConnect() {
@@ -257,8 +301,24 @@ function StripeConnectSection({ company }: { company: any }) {
             <Zap className="h-3 w-3" /> Recommended
           </span>
         </div>
-        <StatusStamp state={stampState} />
+        <div className="flex items-center gap-2">
+          {checkingStatus && (
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-stone-400">
+              <Loader2 className="h-3 w-3 animate-spin" /> Checking with Stripe
+            </span>
+          )}
+          <StatusStamp state={stampState} />
+        </div>
       </div>
+
+      {isConnected && paymentStatus !== 'active' && !checkingStatus && (
+        <button
+          onClick={refreshLiveStatus}
+          className="mt-2 text-[12px] font-bold text-stone-500 underline hover:text-stone-800"
+        >
+          Refresh status
+        </button>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {CARD_NETWORKS.map((n) => (
@@ -794,49 +854,68 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
             <HowThisWorks />
           </div>
 
-          <div className="border-y-2 border-stone-200 bg-stone-50 p-6 sm:p-10">
-            <MethodTabs method={method} onChange={setMethod} hasManualLink={hasManualLink} />
-            <div className="mt-6">
-              {method === 'stripe' ? (
-                <StripeConnectSection company={company} />
-              ) : (
-                <ManualPaymentLinkSection company={company} />
-              )}
+          {/* ───────────────────────── Sending invoices ───────────────────────── */}
+          <div className="border-t-2 border-stone-100 p-6 sm:p-10">
+            <p className="mb-1 text-[13px] font-bold uppercase tracking-wide text-stone-700">
+              Sending invoices
+            </p>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
+              {/* Text column — filled card, centered, matches the image column's height */}
+              <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
+                  <Send className="h-6 w-6 text-emerald-700" />
+                </div>
+                <p className="text-xl leading-relaxed text-stone-800">
+                  When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button
+                  on the invoice card. The invoice will be emailed to your customer&apos;s primary
+                  email address, and they&apos;ll receive the invoice along with a secure payment
+                  link (if enabled).
+                </p>
+              </div>
+
+              {/* Image column */}
+              <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
+                {/* Replace with your screenshot */}
+                <img
+                  src="/images/invoice_send.webp"
+                  alt="Invoice send button"
+                  className="w-full object-contain"
+                />
+              </div>
             </div>
           </div>
 
-{/* ───────────────────────── Sending invoices ───────────────────────── */}
-{/* Requires: import { Send } from 'lucide-react'; */}
-<div className="border-t-2 border-stone-100 p-6 sm:p-10">
-  <p className="mb-1 text-[13px] font-bold uppercase tracking-wide text-stone-700">
-    Sending invoices
-  </p>
+          {/* ───────────────────────── Payment method ───────────────────────── */}
+          <div className="border-y-2 border-stone-200 bg-stone-50 p-6 sm:p-10">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
+              <div>
+                <MethodTabs method={method} onChange={setMethod} hasManualLink={hasManualLink} />
+                <div className="mt-6">
+                  {method === 'stripe' ? (
+                    <StripeConnectSection company={company} />
+                  ) : (
+                    <ManualPaymentLinkSection company={company} />
+                  )}
+                </div>
+              </div>
 
-  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
-    {/* Text column — filled card, centered, matches the image column's height */}
-    <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
-        <Send className="h-6 w-6 text-emerald-700" />
-      </div>
-      <p className="text-xl leading-relaxed text-stone-800">
-        When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button
-        on the invoice card. The invoice will be emailed to your customer's primary
-        email address, and they'll receive the invoice along with a secure payment
-        link (if enabled).
-      </p>
-    </div>
-
-    {/* Image column */}
-    <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
-      {/* Replace with your screenshot */}
-      <img
-        src="/images/invoice_send.png"
-        alt="Invoice send button"
-        className="w-full object-contain"
-      />
-    </div>
-  </div>
-</div>
+              {/* Thumbnail — shows where the pay button actually lands on the invoice */}
+              <div className="lg:pt-1">
+                <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
+                  {/* Replace with your screenshot */}
+                  <img
+                    src="/images/invoice_payment_thumbnail.webp"
+                    alt="Pay now button on the invoice"
+                    className="w-full object-contain"
+                  />
+                </div>
+                <p className="mt-2 text-center text-[11px] font-bold text-stone-500">
+                  What your customer sees on the invoice
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="border-t-2 border-stone-100 p-6 sm:p-10">
             <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700">

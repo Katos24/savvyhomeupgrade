@@ -297,19 +297,18 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
 
 
 
-          {/* SENT HISTORY */}
+{/* SENT HISTORY */}
           {outboxLog.length > 0 && (
-            <div className="pt-3 border-t border-slate-100 -mx-4 px-4 pb-1">
+            <div className="pt-3 border-t border-slate-100 -mx-4 px-4 pb-1 bg-slate-50">
               <div className="flex items-center gap-1.5 mb-2.5">
                 <History size={11} className="text-slate-400" />
                 <span className="text-[11px] font-medium text-slate-400">
                   Sent history ({outboxLog.length})
                 </span>
               </div>
-
               <div className="max-h-[160px] overflow-y-auto pr-1 space-y-1.5">
                 {outboxLog.map((entry: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 transition-all hover:border-slate-200">
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-slate-200 transition-all hover:border-slate-300">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500' : 'bg-emerald-500'}`} />
                       <div className="min-w-0">
@@ -335,7 +334,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
                     {entry.html_body && (
                       <button
                         onClick={() => setPreviewHtml(entry.html_body)}
-                        className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all shrink-0"
                       >
                         <Eye size={11} /> Preview
                       </button>
@@ -345,7 +344,7 @@ export default function SchedulingSection({ lead, currentUser, onRefresh, hasPro
               </div>
             </div>
           )}
-</div>
+        </div>
 
         {/* FOOTER — matches Quote section style */}
         <div className="px-4 py-3 bg-slate-900 flex items-center justify-between mt-auto">

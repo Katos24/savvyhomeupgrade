@@ -301,7 +301,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/quote-sheet-preview.png"
+                    src="/images/quote-sheet-preview.webp"
                     alt="Quote sheet showing pricing template line items"
                     className="h-14 w-auto rounded object-cover"
                   />
@@ -789,7 +789,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
               <div className="overflow-y-auto p-5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/images/quote-sheet-preview.png"
+                  src="/images/quote-sheet-preview.webp"
                   alt="Quote sheet with pricing template line items loaded"
                   className="w-full rounded-lg border-2 border-stone-200"
                 />

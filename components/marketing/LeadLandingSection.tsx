@@ -256,54 +256,62 @@ function PaymentMockup() {
         <div className="bg-white rounded-xl border border-slate-200/60 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center">
                 <DollarSign size={14} className="text-white" />
               </div>
               <span className="text-[11px] font-black text-slate-900 uppercase tracking-wide">Payment Hub</span>
             </div>
-            <div className="text-right">
-              <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">Total Quote</p>
-              <p className="text-base font-black text-slate-900">$1,200.00</p>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-white" /> Paid
+            </span>
           </div>
+
           <div className="p-4 space-y-4">
-            <div>
-              <div className="flex items-center gap-1.5 mb-2">
-                <CheckCircle2 size={14} className="text-emerald-500" />
-                <span className="text-xs font-bold text-slate-900">Settled</span>
-              </div>
-              <div className="w-full h-2.5 bg-emerald-100 rounded-full overflow-hidden">
-                <div className="h-full w-full bg-emerald-500 rounded-full" />
-              </div>
-            </div>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Amount</p>
-              <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white">
-                <span className="text-sm font-black text-slate-900">1,200.00</span>
-              </div>
-            </div>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Method</p>
-              <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white flex items-center justify-between">
-                <span className="text-sm text-slate-400">Select...</span>
-                <ChevronDown size={14} className="text-slate-400" />
+            {/* Stripe row — the primary path, front and center */}
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+              <span className="text-sm font-black tracking-tight" style={{ color: '#635BFF' }}>stripe</span>
+              <div className="flex items-center gap-1">
+                <span
+                  className="flex h-5 w-7 items-center justify-center rounded-[3px] bg-white text-[8px] font-black italic"
+                  style={{ color: '#1A1F71' }}
+                >
+                  VISA
+                </span>
+                <span className="flex h-5 w-7 items-center justify-center rounded-[3px] bg-black text-[7px] font-bold text-white">
+                  Pay
+                </span>
               </div>
             </div>
+
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Amount collected</p>
+              <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white flex items-baseline justify-between">
+                <span className="text-lg font-black text-slate-900">$1,200.00</span>
+                <span className="text-[10px] font-bold text-emerald-600">of $1,200.00</span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 flex items-start gap-2">
+              <CheckCircle2 size={14} className="text-emerald-600 mt-0.5 shrink-0" />
+              <p className="text-[11px] font-bold text-emerald-800 leading-relaxed">
+                Tracked automatically the moment they pay — no follow-up needed.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Paid Date</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Paid</p>
                 <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white">
                   <span className="text-sm font-bold text-slate-900">05/26/2026</span>
                 </div>
               </div>
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Due Date</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Method</p>
                 <div className="border border-slate-200 rounded-lg px-3 py-3 bg-white">
-                  <span className="text-sm font-bold text-slate-900">05/30/2026</span>
+                  <span className="text-sm font-bold text-slate-900">Card via Stripe</span>
                 </div>
               </div>
             </div>
-           
           </div>
         </div>
       </div>

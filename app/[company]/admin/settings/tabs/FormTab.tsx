@@ -147,7 +147,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     icon: ImageIcon,
     title: 'Flyers & signs',
     teaser: 'Print the link or QR code',
-    image: '/images/flyers.png',
+    image: '/images/flyers.webp',
     body: 'Print your booking link, or better, the QR code from your Overview tab, on flyers, yard signs, or door hangers. Someone can scan it standing right in front of their house instead of typing a URL by hand — fewer steps means more of them actually follow through.',
   },
   {

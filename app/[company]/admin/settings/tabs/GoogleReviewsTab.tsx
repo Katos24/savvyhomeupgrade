@@ -162,7 +162,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
             </div>
            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[200px]">
   <img 
-    src="/images/mark-job-complete.png" 
+    src="/images/mark-job-complete.webp" 
     alt="Mark job as complete" 
     className="w-full h-full object-cover object-top scale-100"
   />

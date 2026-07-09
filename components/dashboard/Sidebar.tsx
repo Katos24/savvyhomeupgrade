@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import {
-  LayoutGrid, Calendar, Settings, LogOut, X,
-  User, BarChart3, Mail, Users as UsersIcon,
+  LayoutGrid, Calendar, LogOut, X,
+  User, Mail, Users as UsersIcon,
   ChevronRight, Sparkles,
   DollarSign, Home
 } from 'lucide-react';
@@ -40,16 +40,17 @@ export default function Sidebar({
     return pathname.includes(path);
   };
 
- const navItems = [
-  { href: `/${companySlug}/home`,                icon: Home,       label: 'Home',      exactMatch: true,  color: '#60a5fa' },
-  { href: `/${companySlug}/dashboard`,           icon: LayoutGrid, label: 'Dashboard', exactMatch: true,  color: '#818cf8' },
-  { href: `/${companySlug}/dashboard/customers`, icon: UsersIcon,  label: 'Customers', exactMatch: false, color: '#fbbf24' },
-{ href: `/${companySlug}/dashboard/analytics`, icon: BarChart3,  label: 'Analytics', exactMatch: false, color: '#a78bfa' },
-{ href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
-  { href: `/${companySlug}/dashboard/calendar`,  icon: Calendar,   label: 'Calendar',  exactMatch: false, color: '#34d399' },
-  { href: `/${companySlug}/outbox`,              icon: Mail,       label: 'Outbox',    exactMatch: false, color: '#fb923c' },
-  { href: `/${companySlug}/admin/settings`,      icon: Settings,   label: 'Settings',  exactMatch: false, color: '#94a3b8' },
-];
+  const homeHref = `/${companySlug}/home`;
+  const homeActive = isActive(homeHref, true);
+
+  // Analytics and Settings removed — Settings now lives inside Home.
+  const navItems = [
+    { href: `/${companySlug}/dashboard`,            icon: LayoutGrid, label: 'Dashboard',  exactMatch: true,  color: '#818cf8' },
+    { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
+    { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
+    { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
+    { href: `/${companySlug}/outbox`,               icon: Mail,       label: 'Outbox',     exactMatch: false, color: '#fb923c' },
+  ];
 
   useEffect(() => {
     if (isOpen && window.innerWidth < 1024) {
@@ -121,34 +122,34 @@ export default function Sidebar({
             <div className="flex items-center gap-2">
               {/* Dashboard Tour Quick Access */}
               <button
-  onClick={() => {
-    localStorage.removeItem(`tour-completed-${companySlug}`);
-    onClose();
-    // Navigate with tour param
-    window.location.href = `/${companySlug}/dashboard?tour=1`;
-  }}
-  title="Replay Dashboard Tour"
-  className="group relative p-2 rounded-xl transition-all hover:scale-110 active:scale-95"
-  style={{
-    background: 'rgba(59,130,246,0.08)',
-    border: '1px solid rgba(59,130,246,0.15)',
-  }}
->
-  <Sparkles className="w-4 h-4 text-blue-400 group-hover:text-blue-300" />
+                onClick={() => {
+                  localStorage.removeItem(`tour-completed-${companySlug}`);
+                  onClose();
+                  // Navigate with tour param
+                  window.location.href = `/${companySlug}/dashboard?tour=1`;
+                }}
+                title="Replay Dashboard Tour"
+                className="group relative p-2 rounded-xl transition-all hover:scale-110 active:scale-95"
+                style={{
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.15)',
+                }}
+              >
+                <Sparkles className="w-4 h-4 text-blue-400 group-hover:text-blue-300" />
 
-  {/* Tooltip desktop only */}
-  <span
-    className="hidden lg:block absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 pointer-events-none transition-all"
-    style={{
-      background: '#0f172a',
-      color: '#ffffff',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-    }}
-  >
-    Dashboard Tour
-  </span>
-</button>
+                {/* Tooltip desktop only */}
+                <span
+                  className="hidden lg:block absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 pointer-events-none transition-all"
+                  style={{
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                  }}
+                >
+                  Dashboard Tour
+                </span>
+              </button>
 
               <button
                 onClick={onClose}
@@ -160,6 +161,35 @@ export default function Sidebar({
           </div>
         </div>
 
+        {/* HOME — pulled out of the nav list as its own featured hub button,
+            since it's conceptually different from the other pages (it now
+            also holds Settings), not just another item in the list. */}
+        <div className="px-3 pt-4 shrink-0">
+          <Link
+            href={homeHref}
+            className="flex items-center gap-3 rounded-xl px-4 py-3.5 font-bold text-sm text-white shadow-lg transition-all hover:scale-[1.015]"
+            style={{
+              background: homeActive
+                ? 'linear-gradient(135deg, rgba(96,165,250,0.28), rgba(129,140,248,0.18))'
+                : 'linear-gradient(135deg, rgba(96,165,250,0.14), rgba(129,140,248,0.08))',
+              border: homeActive
+                ? '1px solid rgba(96,165,250,0.55)'
+                : '1px solid rgba(96,165,250,0.25)',
+            }}
+          >
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: 'rgba(96,165,250,0.22)' }}
+            >
+              <Home className="h-[18px] w-[18px]" style={{ color: '#60a5fa' }} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="leading-tight">Home</p>
+            </div>
+            {homeActive && <ChevronRight className="h-3.5 w-3.5 shrink-0" style={{ color: '#60a5fa' }} />}
+          </Link>
+        </div>
+
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-3">
@@ -169,29 +199,19 @@ export default function Sidebar({
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exactMatch);
-            const isSettings = item.label === 'Settings';
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-all group relative ${
-                  active
-                    ? 'text-white'
-                    : isSettings
-                    ? 'text-blue-400/80 hover:text-blue-300'
-                    : 'text-slate-500 hover:text-white hover:bg-white/5'
+                  active ? 'text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'
                 }`}
                 style={
                   active
                     ? {
-                        background: isSettings
-                          ? 'rgba(56, 189, 248, 0.1)'
-                          : 'rgba(99,102,241,0.12)',
-                        border:
-                          active && isSettings
-                            ? '1px solid rgba(56, 189, 248, 0.2)'
-                            : '1px solid rgba(99,102,241,0.2)',
+                        background: 'rgba(99,102,241,0.12)',
+                        border: '1px solid rgba(99,102,241,0.2)',
                       }
                     : { border: '1px solid transparent' }
                 }
@@ -208,13 +228,7 @@ export default function Sidebar({
                   style={{ color: active ? item.color : undefined }}
                 />
 
-                <span
-                  className={`flex-1 ${
-                    !active && isSettings ? 'text-blue-400/90 font-bold' : ''
-                  }`}
-                >
-                  {item.label}
-                </span>
+                <span className="flex-1">{item.label}</span>
 
                 {active && (
                   <ChevronRight className="w-3.5 h-3.5 text-slate-600" />

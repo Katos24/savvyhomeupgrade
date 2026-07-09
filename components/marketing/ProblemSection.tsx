@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Phone, MessageCircle, Mic, User, Play } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
@@ -16,7 +16,7 @@ function MissedCall() {
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
-          <span className="text-red-400 text-sm">📞</span>
+          <Phone className="w-4 h-4 text-red-400" />
         </div>
         <div>
           <p className="text-white text-xs font-bold">Missed Call</p>
@@ -43,18 +43,18 @@ function TextMessage() {
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-          <span className="text-green-400 text-sm">💬</span>
+          <MessageCircle className="w-4 h-4 text-green-400" />
         </div>
         <div>
           <p className="text-white text-xs font-bold">Mike R.</p>
-          <p className="text-slate-500 text-[10px]">iMessage · now</p>
+          <p className="text-slate-500 text-[10px]">Text message · now</p>
         </div>
       </div>
       <div className="bg-[#2a2a2e] rounded-xl p-3">
         <p className="text-white text-xs leading-relaxed">Hey I found you on google, I need a roof estimate. Can you come look at it? My address is 42 Oak...</p>
       </div>
       <div className="mt-2 bg-[#34c759]/10 rounded-xl p-2 text-center">
-        <p className="text-[#34c759] text-[10px] font-bold">iMessage</p>
+        <p className="text-[#34c759] text-[10px] font-bold">Unread</p>
       </div>
     </motion.div>
   );
@@ -123,7 +123,7 @@ function FacebookDM() {
       <div className="space-y-2">
         <div className="flex gap-2 items-start">
           <div className="w-6 h-6 rounded-full bg-orange-500/20 flex-shrink-0 flex items-center justify-center">
-            <span className="text-[10px]">👤</span>
+            <User className="w-3 h-3 text-orange-300" />
           </div>
           <div className="bg-[#3a3b3c] rounded-xl p-2 max-w-[170px]">
             <p className="text-white text-[10px] leading-relaxed">Do you guys do siding? Saw ur page. Need a quote ASAP</p>
@@ -146,14 +146,14 @@ function Voicemail() {
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
-          <span className="text-orange-400 text-sm">🎙️</span>
+          <Mic className="w-3.5 h-3.5 text-orange-400" />
         </div>
         <span className="text-white text-xs font-bold">Voicemail</span>
       </div>
       <div className="bg-[#2a2a2e] rounded-lg p-2.5">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full bg-orange-500/30 flex items-center justify-center">
-            <span className="text-orange-300 text-[8px]">▶</span>
+            <Play className="w-2.5 h-2.5 fill-orange-300 text-orange-300" />
           </div>
           <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
             <div className="h-full w-[35%] bg-orange-500 rounded-full" />
@@ -180,7 +180,7 @@ function StickyNote() {
           Call back<br />
           Tom - deck job<br />
           631-555-0199<br />
-          <span className="text-yellow-700 text-xs">← forgot to call 😬</span>
+          <span className="text-yellow-700 text-xs">← forgot to call</span>
         </p>
       </div>
       <div className="w-full h-2 bg-yellow-400/50 blur-sm" />

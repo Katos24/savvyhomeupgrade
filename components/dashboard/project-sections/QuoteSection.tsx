@@ -756,21 +756,20 @@ const statusConfig: any = {
           </div>
         </div>
 
-        {/* SENT HISTORY */}
+{/* SENT HISTORY */}
         {outboxLog.length > 0 && (
-          <div className="px-4 pb-4 pt-3 border-t border-slate-100">
+          <div className="px-4 pb-4 pt-3 border-t border-slate-100 bg-slate-50">
             <div className="flex items-center gap-1.5 mb-2.5 px-1">
               <Mail className="w-3 h-3 text-slate-400" />
               <span className="text-[11px] text-slate-400">
                 Sent history ({outboxLog.length})
               </span>
             </div>
-
             <div className="max-h-[160px] overflow-y-auto pr-1 space-y-1.5">
               {outboxLog.map((entry: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl gap-3 hover:border-slate-200 transition-all"
+                  className="flex items-center justify-between px-3 py-2.5 bg-white border border-slate-200 rounded-xl gap-3 hover:border-slate-300 transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
@@ -788,11 +787,10 @@ const statusConfig: any = {
                       )}
                     </div>
                   </div>
-
                   {entry.html_body && (
                     <button
                       onClick={() => setPreviewHtml(entry.html_body)}
-                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-lg text-[10px] font-medium transition-colors"
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-lg text-[10px] font-medium transition-colors"
                     >
                       <Eye className="w-3 h-3" /> Preview
                     </button>

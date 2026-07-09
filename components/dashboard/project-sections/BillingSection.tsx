@@ -326,8 +326,8 @@ export default function BillingSection({
           </p>
         </div>
 
-        {/* ── INVOICE + PAYMENT — side by side desktop, stacked mobile ── */}
-        <div className="md:grid md:grid-cols-2 gap-3 p-3 md:items-stretch">
+        {/* ── INVOICE + PAYMENT — Payment stacks below Invoice ── */}
+        <div className="flex flex-col gap-3 p-3">
 
           {/* Invoice block */}
           <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
@@ -469,7 +469,7 @@ export default function BillingSection({
               )}
             </div>
 
-    {/* Stripe-verified payment — locked, not editable via this UI.
+            {/* Stripe-verified payment — locked, not editable via this UI.
                 Verification is based on stripe_payment_intent_id existing
                 (set only by Stripe's webhook), NOT on payment_method === 'stripe',
                 since that string can be typed in manually and wouldn't be a
@@ -503,16 +503,23 @@ export default function BillingSection({
 
             {/* Manual (non-Stripe) payment — editable as before */}
             {!isClosed && !isStripeVerified && (
-              <button
-                onClick={() => setShowRecordPayment(true)}
-                className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors mt-auto ${
-                  isPaid
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                }`}
-              >
-                {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
-              </button>
+              <div className="mt-auto">
+                <button
+                  onClick={() => setShowRecordPayment(true)}
+                  className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors ${
+                    isPaid
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+                </button>
+                <p className="mt-2 text-[10.5px] leading-relaxed text-slate-400">
+                  Only use this for cash, check, or other manual payments.
+                  Stripe payments are detected and recorded automatically —
+                  no need to enter those here.
+                </p>
+              </div>
             )}
 
             {/* Refunded state gets a plain informational tag instead of a button */}

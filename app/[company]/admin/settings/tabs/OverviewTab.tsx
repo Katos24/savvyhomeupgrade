@@ -45,6 +45,41 @@ function tint(hex: string, amount: number) {
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
+// Mirrors the status logic used on the Payments tab, so this badge always
+// agrees with what's shown there — same fields, same precedence.
+function getStripeState(company: any): 'active' | 'pending' | 'restricted' | 'none' {
+  if (!company?.stripe_connect_onboarded) return 'none';
+  if (company.stripe_payment_status === 'active') return 'active';
+  if (company.stripe_payment_status === 'restricted') return 'restricted';
+  return 'pending';
+}
+
+function StripeStatusBadge({
+  company,
+  onNavigateSection,
+}: {
+  company: any;
+  onNavigateSection: (section: string) => void;
+}) {
+  const state = getStripeState(company);
+  const config = {
+    active: { label: 'Stripe: Active', pill: 'bg-emerald-600 text-white', dot: 'bg-white' },
+    pending: { label: 'Stripe: In review', pill: 'bg-amber-500 text-white', dot: 'bg-white' },
+    restricted: { label: 'Stripe: Needs attention', pill: 'bg-rose-600 text-white', dot: 'bg-white' },
+    none: { label: 'Stripe not connected', pill: 'bg-stone-200 text-stone-700', dot: 'bg-stone-500' },
+  }[state];
+
+  return (
+    <button
+      onClick={() => onNavigateSection('payments')}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-opacity hover:opacity-90 ${config.pill}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+      {config.label}
+    </button>
+  );
+}
+
 type ShareIdeaCardProps = {
   icon: React.ElementType;
   title: string;
@@ -298,6 +333,8 @@ export default function OverviewTab({
                 )}
               </div>
             </div>
+
+            <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
 
             <div className="flex shrink-0 items-center gap-2">
               {!isEditingBrand ? (
