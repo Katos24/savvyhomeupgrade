@@ -17,7 +17,9 @@ import {
   MessageSquare,
   Truck,
   FileImage,
+  Sparkles,
 } from 'lucide-react';
+import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -194,6 +196,7 @@ export default function OverviewTab({
   onNavigateSection,
 }: OverviewTabProps) {
   const doneCount = checklistSteps.filter((s) => s.done).length;
+  const isFreePlan = (company.plan_tier || 'free') === 'free';
 
   const handleCancelEdit = () => {
     setIsEditingBrand(false);
@@ -230,24 +233,35 @@ export default function OverviewTab({
           </p>
         </div>
 
+        {isFreePlan && (
+          <div className="mb-6">
+            <SettingsUpgradeBanner
+              planLabel="Basic"
+              price="$49.99/mo"
+              message="Upgrade to unlock more capabilities to fully own and run your business."
+              companySlug={company.slug}
+            />
+          </div>
+        )}
+
         {/* ── BRANDING CARD ── */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b-2 border-stone-100 p-6 sm:flex-row sm:items-center sm:p-8">
             <div className="flex min-w-0 flex-1 items-center gap-4">
               <div className="relative shrink-0">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
                   {logoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoPreview} className="h-full w-full object-contain p-1.5" alt="Logo" />
+                    <img src={logoPreview} className="h-full w-full object-contain p-2" alt="Logo" />
                   ) : (
-                    <span className="text-xl font-extrabold text-stone-300">
+                    <span className="text-3xl font-extrabold text-stone-300">
                       {companyName?.charAt(0)}
                     </span>
                   )}
                 </div>
                 {isEditingBrand && (
-                  <label className="absolute -bottom-1 -right-1 cursor-pointer rounded-md bg-stone-900 p-1.5 text-white transition hover:bg-stone-800">
-                    <Pencil className="h-3 w-3" />
+                  <label className="absolute -bottom-1.5 -right-1.5 cursor-pointer rounded-md bg-stone-900 p-1.5 text-white transition hover:bg-stone-800">
+                    <Pencil className="h-3.5 w-3.5" />
                     <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </label>
                 )}
@@ -264,21 +278,35 @@ export default function OverviewTab({
                 ) : (
                   <h3 className="truncate text-lg font-extrabold text-stone-900">{companyName}</h3>
                 )}
-                <span className="mt-1.5 inline-block rounded-full bg-stone-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                  {company.plan_tier} plan
-                </span>
+
+                {isFreePlan ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border-2 border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                      Free plan
+                    </span>
+                    <a
+                      href={`/${company.slug}/billing`}
+                      className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-stone-800"
+                    >
+                      <Sparkles className="h-3 w-3" /> Upgrade
+                    </a>
+                  </div>
+                ) : (
+                  <span className="mt-1.5 inline-block rounded-full bg-stone-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                    {company.plan_tier} plan
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
               {!isEditingBrand ? (
                 <button
-  onClick={() => setIsEditingBrand(true)}
-  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-50 px-3.5 py-2 text-[13px] font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
->
-  <Pencil className="h-3.5 w-3.5" /> Edit
-</button>
-
+                  onClick={() => setIsEditingBrand(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-50 px-3.5 py-2 text-[13px] font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
               ) : (
                 <>
                   <button
@@ -308,6 +336,52 @@ export default function OverviewTab({
 
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Company info — labeled fields, no cramming */}
+              <div className="grid grid-cols-1 gap-4">
+                <LabeledField
+                  icon={Mail}
+                  label="Company email"
+                  editing={isEditingBrand}
+                  value={companyEmail}
+                  onChange={setCompanyEmail}
+                  placeholder="you@company.com"
+                  display={company.email || 'No email added'}
+                  caption="This is your Reply‑To inbox. Customer replies land here, and you can also BCC yourself on all quote, schedule, and invoice emails by enabling it in Settings."
+                />
+                <LabeledField
+                  icon={Phone}
+                  label="Company phone"
+                  editing={isEditingBrand}
+                  value={companyPhone}
+                  onChange={(v) => setCompanyPhone(formatPhone(v))}
+                  placeholder="(555) 555-5555"
+                  maxLength={14}
+                  display={company.phone ? formatPhone(company.phone) : 'No phone number'}
+                />
+                <LabeledField
+                  icon={Globe}
+                  label="Website"
+                  editing={isEditingBrand}
+                  value={companyWebsite}
+                  onChange={setCompanyWebsite}
+                  placeholder="https://yourcompany.com"
+                  display={
+                    company.website ? (
+                      <a
+                        href={company.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-stone-900 underline"
+                      >
+                        {company.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    ) : (
+                      'No website added'
+                    )
+                  }
+                />
+              </div>
+
               {/* Brand colors */}
               <div>
                 <p className="mb-3 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
@@ -353,52 +427,6 @@ export default function OverviewTab({
                 <p className="mt-3 text-[13px] font-semibold text-stone-600">
                   Used in your customer emails and booking form.
                 </p>
-              </div>
-
-              {/* Company info — labeled fields, no cramming */}
-              <div className="grid grid-cols-1 gap-4">
-                <LabeledField
-                  icon={Mail}
-                  label="Company email"
-                  editing={isEditingBrand}
-                  value={companyEmail}
-                  onChange={setCompanyEmail}
-                  placeholder="you@company.com"
-                  display={company.email || 'No email added'}
-                  caption="This is your Reply‑To inbox. Customer replies land here, and you can also BCC yourself on all quote, schedule, and invoice emails by enabling it in Settings."
-                />
-                <LabeledField
-                  icon={Phone}
-                  label="Company phone"
-                  editing={isEditingBrand}
-                  value={companyPhone}
-                  onChange={(v) => setCompanyPhone(formatPhone(v))}
-                  placeholder="(555) 555-5555"
-                  maxLength={14}
-                  display={company.phone ? formatPhone(company.phone) : 'No phone number'}
-                />
-                <LabeledField
-                  icon={Globe}
-                  label="Website"
-                  editing={isEditingBrand}
-                  value={companyWebsite}
-                  onChange={setCompanyWebsite}
-                  placeholder="https://yourcompany.com"
-                  display={
-                    company.website ? (
-                      <a
-                        href={company.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-stone-900 underline"
-                      >
-                        {company.website.replace(/^https?:\/\//, '')}
-                      </a>
-                    ) : (
-                      'No website added'
-                    )
-                  }
-                />
               </div>
             </div>
 

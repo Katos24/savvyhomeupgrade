@@ -57,7 +57,7 @@ export default function SettingsUpgradeBanner({ planLabel, price, message, compa
               {message}
             </p>
             <p className="text-xs text-white mt-2">
-              Go to <span className="text-blue-400 font-semibold">Billing</span> to upgrade your plan.
+              Go to <span className="text-blue-400 font-semibold">Settings</span> to upgrade your plan.
             </p>
           </div>
         </div>

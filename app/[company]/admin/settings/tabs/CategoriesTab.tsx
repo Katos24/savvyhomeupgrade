@@ -39,7 +39,7 @@ function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
           <Lock className="mx-auto mb-3 h-6 w-6 text-stone-300" />
           <p className="text-sm font-bold text-stone-800">Categories &amp; pricing is on the Basic plan</p>
           <a
-            href={`/${companySlug}/billing`}
+            href={`/${companySlug}/admin/settings`}
             className="mt-4 inline-block rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-stone-800"
           >
             Upgrade to Basic

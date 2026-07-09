@@ -10,7 +10,7 @@ import {
   Zap,
   X,
   Link2,
-  PenLine,
+  PenLine, Send
 } from 'lucide-react';
 import StripePaymentInfo from '@/components/dashboard/StripePaymentInfo';
 import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
@@ -806,31 +806,36 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
           </div>
 
 {/* ───────────────────────── Sending invoices ───────────────────────── */}
+{/* Requires: import { Send } from 'lucide-react'; */}
 <div className="border-t-2 border-stone-100 p-6 sm:p-10">
   <p className="mb-1 text-[13px] font-bold uppercase tracking-wide text-stone-700">
     Sending invoices
   </p>
 
-  <p className="mb-6 text-[15px] leading-relaxed text-stone-700">
-    When your invoice is ready, click the <span className="font-bold">Send</span> button
-    on the invoice card. The invoice will be emailed to your customer's primary
-    email address, and they'll receive the invoice along with a secure payment
-    link (if enabled).
-  </p>
+  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
+    {/* Text column — filled card, centered, matches the image column's height */}
+    <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
+        <Send className="h-6 w-6 text-emerald-700" />
+      </div>
+      <p className="text-xl leading-relaxed text-stone-800">
+        When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button
+        on the invoice card. The invoice will be emailed to your customer's primary
+        email address, and they'll receive the invoice along with a secure payment
+        link (if enabled).
+      </p>
+    </div>
 
-  <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
-    {/* Replace with your screenshot */}
-    <img
-      src="/images/invoice_send.png"
-      alt="Invoice send button"
-      className="object-contain"
-    />
+    {/* Image column */}
+    <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
+      {/* Replace with your screenshot */}
+      <img
+        src="/images/invoice_send.png"
+        alt="Invoice send button"
+        className="w-full object-contain"
+      />
+    </div>
   </div>
-
-  <p className="mt-4 text-sm text-stone-500">
-    Don't see a customer email? Add one from the Lead Details screen before
-    sending your invoice.
-  </p>
 </div>
 
           <div className="border-t-2 border-stone-100 p-6 sm:p-10">

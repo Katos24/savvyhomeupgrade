@@ -525,7 +525,7 @@ function LockedSection({ label, companySlug }: { label: string; companySlug: str
     <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-slate-200 rounded-lg">
       <Lock className="w-5 h-5 text-slate-300 mx-auto mb-3" />
       <p className="text-sm font-medium text-slate-700">{label} is on the Basic plan</p>
-      <a href={`/${companySlug}/billing`} className="inline-block mt-3 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-colors">
+      <a href={`/${companySlug}/admin/settings`} className="inline-block mt-3 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-colors">
         Upgrade to Basic
       </a>
     </div>
