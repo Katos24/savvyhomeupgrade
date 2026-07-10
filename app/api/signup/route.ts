@@ -8,6 +8,8 @@ import { isReservedSlug } from '@/lib/reservedSlugs';
 // Welcome email now fires from the Stripe webhook after payment confirms,
 // so only paying customers receive it and ghost accounts don't.
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
   try {
     const {
@@ -25,6 +27,19 @@ export async function POST(req: NextRequest) {
     if (!companyName || !slug || !email || !password || !ownerName) {
       return NextResponse.json(
         { error: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
+    // Same shape check as the frontend, but this is the copy that actually
+    // matters — the frontend one can be bypassed by anyone posting to this
+    // route directly. Trimmed and lowercased before validating and storing
+    // so "Test@Example.com " and "test@example.com" aren't treated as two
+    // different accounts.
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: 'Enter a valid email address' },
         { status: 400 }
       );
     }
@@ -55,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const existingUser = await sql`
-      SELECT id FROM users WHERE email = ${email}
+      SELECT id FROM users WHERE email = ${normalizedEmail}
     `;
 
     if (existingUser.length > 0) {
@@ -96,7 +111,7 @@ const defaultFieldConfig = JSON.stringify({
       ) VALUES (
         ${companyName},
         ${slug},
-        ${email},
+        ${normalizedEmail},
         ${phone || null},
         ${businessType},
         ${JSON.stringify(DEFAULT_STATUSES)},
@@ -129,7 +144,7 @@ const defaultFieldConfig = JSON.stringify({
         role
       ) VALUES (
         ${ownerName},
-        ${email},
+        ${normalizedEmail},
         ${hashedPassword},
         ${newCompany.id},
         'owner'
@@ -198,7 +213,7 @@ if (plan === 'free') {
     const token = jwt.sign(
       {
         userId: newUser.id,
-        email: email,
+        email: normalizedEmail,
         role: 'owner',
         companyId: newCompany.id,
         companySlug: newCompany.slug,
@@ -226,7 +241,7 @@ if (plan === 'free') {
             }),
             sendContractorReferredWelcomeEmail({
               contractorName: ownerName,
-              contractorEmail: email,
+              contractorEmail: normalizedEmail,
               bookkeeperName: bk.name,
               dashboardUrl: `${baseUrl}/${newCompany.slug}/dashboard`,
             }),
@@ -242,7 +257,7 @@ if (plan === 'free') {
         const { sendFreeWelcomeEmail } = await import('@/lib/email');
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lead2project.com';
         await sendFreeWelcomeEmail({
-          userEmail: email,
+          userEmail: normalizedEmail,
           userName: ownerName,
           companyName,
           companySlug: newCompany.slug,

@@ -14,22 +14,20 @@ import {
   Mail,
 } from 'lucide-react';
 
-const font = "'Nunito', sans-serif";
-
 function OutboxPreview() {
   const logs = [
-    { user: 'Sarah Johnson', action: 'Quote sent', amount: '$1,200.00', status: 'Delivered', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-100', time: '12m ago' },
+    { user: 'Sarah Johnson', action: 'Roofing Quote sent', amount: '$8,400.00', status: 'Delivered', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-100', time: '12m ago' },
     { user: 'Mike Davis', action: 'Schedule confirmation', amount: '', status: 'Opened', statusColor: 'text-blue-600 bg-blue-50 border-blue-100', time: '1h ago' },
     { user: 'Tom Harris', action: 'Payment reminder', amount: '$3,400.00', status: 'Delivered', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-100', time: '3h ago' },
-    { user: 'Alex Cooper', action: 'Quote sent', amount: '$875.00', status: 'Pending', statusColor: 'text-slate-500 bg-slate-50 border-slate-100', time: 'Just now' },
+    { user: 'Alex Cooper', action: 'Emergency Tarp Quote', amount: '$875.00', status: 'Pending', statusColor: 'text-slate-500 bg-slate-50 border-slate-100', time: 'Just now' },
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full text-left">
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-slate-50">
         <div className="flex items-center gap-1.5">
           <Send size={10} className="text-slate-500" />
-          <span className="text-[9px] font-black text-slate-800 tracking-tight" style={{ fontFamily: font }}>Outbox</span>
+          <span className="text-[10px] font-black text-slate-800 tracking-tight">Outbox</span>
         </div>
         <div className="flex items-center gap-1 text-[8px] text-slate-400 font-bold">
           <Clock size={8} /> Live tracking
@@ -40,7 +38,7 @@ function OutboxPreview() {
           <div key={i} className="flex items-center justify-between px-3 py-2.5">
             <div className="min-w-0 pr-2">
               <div className="flex items-center gap-1.5">
-                <p className="text-[10px] font-black text-slate-900 truncate" style={{ fontFamily: font }}>{log.user}</p>
+                <p className="text-[10px] font-black text-slate-900 truncate">{log.user}</p>
                 <span className="text-[7px] text-slate-400 font-bold flex-shrink-0">{log.time}</span>
               </div>
               <p className="text-[9px] text-slate-500 font-bold truncate mt-0.5">
@@ -59,26 +57,26 @@ function OutboxPreview() {
 
 function CategoriesPreview() {
   const categories = [
-    { name: 'Roof Repair', color: '#f97316', templates: 'Quote template + 4 tasks' },
-    { name: 'Leak Detection', color: '#3b82f6', templates: 'Quote template + 2 tasks' },
-    { name: 'Full Replacement', color: '#10b981', templates: 'Quote template + 7 tasks' },
+    { name: 'Roof Repair', color: '#f97316', templates: 'Repair agreement + 3 tasks' },
+    { name: 'Leak Detection', color: '#3b82f6', templates: 'Inspection sheet + 2 tasks' },
+    { name: 'Full Replacement', color: '#10b981', templates: 'Production scope + 7 tasks' },
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full text-left">
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-slate-50">
         <div className="flex items-center gap-1.5">
           <Tag size={10} className="text-slate-500" />
-          <span className="text-[9px] font-black text-slate-800 tracking-tight" style={{ fontFamily: font }}>Categories</span>
+          <span className="text-[10px] font-black text-slate-800 tracking-tight">Workflow Folders</span>
         </div>
-        <span className="text-[8px] font-bold text-blue-500">+ Add New</span>
+        <span className="text-[8px] font-bold text-blue-500 cursor-pointer hover:underline">+ Add New</span>
       </div>
       <div className="divide-y divide-slate-50">
         {categories.map((cat, i) => (
           <div key={i} className="px-3 py-2.5">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-              <span className="text-[10px] font-black text-slate-900" style={{ fontFamily: font }}>{cat.name}</span>
+              <span className="text-[10px] font-black text-slate-900">{cat.name}</span>
             </div>
             <div className="pl-4">
               <span className="text-[8px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded flex items-center gap-0.5 w-fit">
@@ -97,7 +95,7 @@ function ExportPreview() {
     { name: 'John Smith', category: 'Roof Repair', status: 'Scheduled', amount: '$5,750', checked: true },
     { name: 'Sarah Kim', category: 'Leak Detect', status: 'Quoted', amount: '$1,200', checked: true },
     { name: 'Mike Davis', category: 'Inspection', status: 'New', amount: '$450', checked: false },
-    { name: 'Alex Cooper', category: 'Siding', status: 'In Progress', amount: '$3,800', checked: true },
+    { name: 'Alex Cooper', category: 'Gutter Guard', status: 'In Progress', amount: '$3,800', checked: true },
   ];
 
   const statusColors: Record<string, string> = {
@@ -108,7 +106,7 @@ function ExportPreview() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden w-full text-left">
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-slate-50">
         <div className="flex gap-1.5">
           <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[8px] font-bold text-slate-500">
@@ -119,8 +117,8 @@ function ExportPreview() {
           </div>
         </div>
         <div className="flex gap-1.5">
-          <span className="text-[8px] font-bold text-blue-500 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">Bulk Edit (3)</span>
-          <span className="text-[8px] font-black text-white bg-slate-900 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+          <span className="text-[8px] font-bold text-blue-500 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">Bulk Selected (3)</span>
+          <span className="text-[8px] font-black text-white bg-slate-900 px-1.5 py-0.5 rounded flex items-center gap-0.5 cursor-pointer">
             <Download size={7} /> CSV
           </span>
         </div>
@@ -135,7 +133,7 @@ function ExportPreview() {
                 {row.checked && <CheckCircle2 size={8} className="text-white" />}
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-900 truncate" style={{ fontFamily: font }}>{row.name}</p>
+                <p className="text-[10px] font-black text-slate-900 truncate">{row.name}</p>
                 <p className="text-[8px] text-slate-400 font-bold">{row.category}</p>
               </div>
             </div>
@@ -158,89 +156,82 @@ export default function OperationsShowcase() {
       icon: Mail,
       iconBg: 'bg-emerald-500/10 border-emerald-500/20',
       iconColor: 'text-emerald-400',
-      accentBorder: 'border-emerald-500/20 hover:border-emerald-500/40',
+      accentBorder: 'border-slate-800 hover:border-emerald-500/30',
       accentGlow: 'bg-emerald-500',
       title: 'One-Click Emails, Tracked',
-      desc: 'Send quotes, confirmations, and payment reminders. Every email tracked in your outbox.',
+      desc: 'Send quotes, confirmations, and project reminders. Every pipeline notification is monitored live.',
       preview: OutboxPreview,
     },
     {
       icon: Tag,
       iconBg: 'bg-amber-500/10 border-amber-500/20',
       iconColor: 'text-amber-400',
-      accentBorder: 'border-amber-500/20 hover:border-amber-500/40',
+      accentBorder: 'border-slate-800 hover:border-amber-500/30',
       accentGlow: 'bg-amber-500',
-      title: 'Categories That Work For You',
-      desc: 'Attach quote templates and tasks to each job type.',
+      title: 'Job Archetypes That Fit Your Crew',
+      desc: 'Link localized material lists, safety scopes, and dispatch sheets automatically to job types.',
       preview: CategoriesPreview,
     },
     {
       icon: Download,
       iconBg: 'bg-sky-500/10 border-sky-500/20',
       iconColor: 'text-sky-400',
-      accentBorder: 'border-sky-500/20 hover:border-sky-500/40',
+      accentBorder: 'border-slate-800 hover:border-sky-500/30',
       accentGlow: 'bg-sky-500',
-      title: 'Your Data. Always Yours.',
-      desc: 'Export directly to QuickBooks or download a full CSV. Bulk edits, full data portability. No lock-in.',      preview: ExportPreview,
+      title: 'Your Assets. Fully Exportable.',
+      desc: 'Sync financial data with external accounting ledgers or pull CSV books. Safe data ownership with no lock-ins.',
+      preview: ExportPreview,
     },
   ];
 
   return (
-    <section id="showcase" className="py-24 sm:py-28 lg:py-36 bg-slate-100 relative overflow-hidden">
+    <section id="showcase" className="py-20 sm:py-28 bg-slate-900 border-t border-slate-800 relative overflow-hidden">
       <div
-        className="absolute inset-0 opacity-[0.3] pointer-events-none"
+        className="absolute inset-0 opacity-[0.03] pointer-events-none bg-repeat"
         style={{
-          backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
+          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
         }}
       />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
-
-        {/* Section header */}
-        <div className="max-w-2xl mb-12 sm:mb-16">
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400 mb-4"
-            style={{ fontFamily: font }}
-          >
-            Beyond the board view
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl sm:text-5xl text-slate-900 font-black leading-[1.05] tracking-tight"
-            style={{ fontFamily: font }}
-          >
-            Everything else you need. <br />
-            <span className="text-emerald-600">Nothing you don&apos;t.</span>
-          </motion.h2>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Balanced Structural Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
+          <div className="lg:col-span-5 text-left">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-3">
+              Beyond the pipeline board
+            </p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl text-white font-black leading-tight tracking-tight">
+              Everything else you need. <br />
+              <span className="text-slate-500">Nothing you don&apos;t.</span>
+            </h2>
+          </div>
+          <div className="lg:col-span-7">
+            {/* Tablet Action Frame Overlay */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 w-full aspect-[16/8] shadow-2xl"
+            >
+              <Image
+                src="/images/quote-send-tablet.webp"
+                alt="Oakridge roofing quote production interface view"
+                fill
+                className="object-cover object-center opacity-85"
+                sizes="(max-w-1024px) 100vw, 700px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 sm:left-6 text-left">
+                <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">Live Action Capture</p>
+                <p className="text-sm font-black text-white">Project assessment finalized. One tap to fire out details.</p>
+              </div>
+            </motion.div>
+          </div>
         </div>
 
-        {/* Tablet image — natural aspect ratio on mobile, fixed ratio on desktop */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative rounded-2xl overflow-hidden mb-12 sm:mb-16 w-full aspect-[4/3] sm:aspect-[16/7]"
-        >
-          <Image
-            src="/images/quote-send-tablet.webp"
-            alt="Sending a quote on tablet"
-            fill
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
-          <div className="absolute bottom-4 sm:bottom-5 left-4 sm:left-6">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">In action</p>
-            <p className="text-base sm:text-lg font-black text-white" style={{ fontFamily: font }}>Quote built. One tap to send.</p>
-          </div>
-        </motion.div>
-
-        {/* 3-card grid */}
+        {/* 3-Card Interactive Sandbox Dashboard Matrix Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {cards.map((card, i) => {
             const Icon = card.icon;
@@ -248,25 +239,25 @@ export default function OperationsShowcase() {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className={`relative bg-slate-900 border rounded-2xl p-6 flex flex-col transition-all duration-300 group ${card.accentBorder}`}
+                transition={{ delay: i * 0.05, duration: 0.25 }}
+                className={`relative bg-slate-950/40 border rounded-2xl p-6 flex flex-col transition-all duration-300 group ${card.accentBorder}`}
               >
-                <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px ${card.accentGlow} opacity-30 blur-[1px]`} />
-                <div className="mb-5">
+                <div className={`absolute top-0 left-1/4 w-1/2 h-px ${card.accentGlow} opacity-20 blur-[1px]`} />
+                <div className="mb-6 text-left">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 border ${card.iconBg}`}>
-                    <Icon size={16} className={card.iconColor} />
+                    <Icon size={15} className={card.iconColor} strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-base font-black text-white tracking-tight mb-1.5" style={{ fontFamily: font }}>
+                  <h3 className="text-base font-black text-white tracking-tight mb-1.5">
                     {card.title}
                   </h3>
-                  <p className="text-xs text-slate-400 font-bold leading-relaxed" style={{ fontFamily: font }}>
+                  <p className="text-xs text-slate-500 font-bold leading-relaxed">
                     {card.desc}
                   </p>
                 </div>
-                <div className="mt-auto">
+                <div className="mt-auto pt-2 bg-slate-950/10 rounded-xl">
                   <Preview />
                 </div>
               </motion.div>

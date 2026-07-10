@@ -76,9 +76,11 @@ function SignupForm() {
   const goNext = () => {
     setError('');
 
+    // Step 1 is now just the account essentials — email and password.
+    // Name and phone moved to Step 2, alongside the company info.
     if (step === 1) {
-      if (!formData.ownerName.trim()) { setError('Enter your name'); return; }
       if (!formData.email.trim()) { setError('Enter your email'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) { setError('Enter a valid email address'); return; }
       if (formData.password.length < 6) { setError('Password must be at least 6 characters'); return; }
       if (formData.password !== formData.confirmPassword) { setError('Passwords do not match'); return; }
       setStep(2);
@@ -86,6 +88,7 @@ function SignupForm() {
     }
 
     if (step === 2) {
+      if (!formData.ownerName.trim()) { setError('Enter your name'); return; }
       if (!formData.companyName.trim()) { setError('Enter your company name'); return; }
       if (!formData.businessType) { setError('Please select a business type'); return; }
       setStep(3);
@@ -210,8 +213,8 @@ function SignupForm() {
               {step === 3 && "Here's what you're getting"}
             </h1>
             <p className="text-slate-500 font-medium text-sm">
-              {step === 1 && "Just your name, email, password, and a way to reach you."}
-              {step === 2 && "This sets up your branded booking link."}
+              {step === 1 && "Just your email and a password to get started."}
+              {step === 2 && "Who we're working with, and your branded booking link."}
               {step === 3 && "One last look before you're in — your workspace URL can't be changed after this."}
             </p>
           </div>
@@ -227,25 +230,13 @@ function SignupForm() {
             {step === 1 && (
               <div className="space-y-5">
                 <CustomInput
-                  label="Your Name"
-                  placeholder="John Smith"
-                  value={formData.ownerName}
-                  onChange={(v) => setFormData(prev => ({ ...prev, ownerName: v }))}
-                />
-                <CustomInput
-                  label="Company Email"
+                  label="Email"
                   type="email"
                   placeholder="john@company.com"
                   value={formData.email}
                   onChange={(v) => setFormData(prev => ({ ...prev, email: v }))}
                   hint="Used to log in and reset your password"
-                />
-                <CustomInput
-                  label="Phone Number"
-                  placeholder="(555) 000-0000"
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  hint="Optional"
+                  important
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <CustomInput
@@ -269,6 +260,21 @@ function SignupForm() {
 
             {step === 2 && (
               <div className="space-y-5">
+                <CustomInput
+                  label="Your Name"
+                  placeholder="John Smith"
+                  value={formData.ownerName}
+                  onChange={(v) => setFormData(prev => ({ ...prev, ownerName: v }))}
+                  important
+                />
+                <CustomInput
+                  label="Phone Number"
+                  placeholder="(555) 000-0000"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  hint="Optional"
+                />
+
                 <CustomInput
                   label="Company Name"
                   placeholder="e.g. Blueline Mechanical"

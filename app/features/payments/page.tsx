@@ -74,7 +74,7 @@ export default function PaymentPage() {
             {/* Right — payment screen screenshot */}
             <div className="hidden lg:block rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
               <img
-                src="/images/payment-screen.png"
+                src="/images/invoice_send.webp"
                 alt="Payment hub in Lead2Project"
                 className="w-full h-auto"
               />

@@ -2,14 +2,13 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
-import InvoiceSection from '@/components/marketing/InvoiceSection';
+import FullStorySection from '@/components/marketing/FullStorySection';
+import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
+
 import HowItWorksSection from '@/components/marketing/HowItWorksSection';
 import ProblemSection from '@/components/marketing/ProblemSection';
-import TheFixSection from '@/components/marketing/FixSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
-import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import TruckSection from '@/components/marketing/TruckSection'; // Your Distribution Section
-import LeadLandingSection from '@/components/marketing/LeadLandingSection'; // Your Workflow Section
 import EfficiencyShowcase from '@/components/marketing/EfficiencyShowcase';
 import DigestBanner from '@/components/marketing/DigestBanner';
 import SelfServeBanner from '@/components/marketing/SelfServeBanner';
@@ -24,47 +23,46 @@ export default function NewHome() {
 
       {/* 1. THE HOOK: The current state of chaos vs. order */}
       <NewHero />
-      <InvoiceSection />
+      <FullStorySection />
+            <ProblemSection />
+                  <HowItWorksSection />
 
-      <HowItWorksSection />
+
+    <QuoteToPaidSection />
+
 
 
       {/* 2. THE PROBLEM: Why the current way (threads/folders) is failing them */}
-      <ProblemSection />
 
-
+  <CustomizeFormSection />
       {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) Google section */}
       <TruckSection />
 
   {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
-      <CustomizeFormSection />
-    <QuoteToPaidSection />
+    
 
       {/* 3. THE SOLUTION: The "Lead2Project" Concept (The Fix) */}
 
     
 
 
-      {/* 6. THE HEART: Running the job from one card */}
-      <LeadLandingSection />
+       <DigestBanner />
 
-  
+      <SelfServeBanner />
 
       {/* 7. THE SPEED: One-click emails & Outbox tracking */}
       <EfficiencyShowcase />
 
 
 
-            {/* 8. THE PEACE OF MIND: Daily Digest */}
-      <DigestBanner />
-
+ 
+      <Pricing />
     
 
       {/* 9. THE BARRIER REMOVAL: Self-serve sign up */}
-      <SelfServeBanner />
 
-      {/* 10. PRICING */}
-      <Pricing />
+
+
 
       {/* 11. FINAL CTA */}
       <FinalCTA />
