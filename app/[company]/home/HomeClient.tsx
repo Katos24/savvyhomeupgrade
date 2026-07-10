@@ -260,12 +260,14 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
     qrImg.src = qrCodeUrl;
   };
 
-  const checklistSteps: ChecklistStep[] = [
+const checklistSteps: ChecklistStep[] = [
+    { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
+        { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
+
     { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
-    { label: 'Set up categories & pricing', description: 'Auto-load tasks and quotes by job type', done: company.categoriesCustomized, kind: 'section', section: 'categories' },
-    { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
   ];
+
   const doneCount = checklistSteps.filter(s => s.done).length;
 
   const sectionLabels: Record<SectionKey, string> = {

@@ -113,6 +113,10 @@ type LabeledFieldProps = {
   caption?: string;
   className?: string;
   maxLength?: number;
+  // Draws attention to fields that are still empty. Only applies while not
+  // editing — once someone's actively typing into it, the glow would just
+  // be noise on top of the focus ring they're already looking at.
+  highlight?: boolean;
 };
 
 function LabeledField({
@@ -126,7 +130,9 @@ function LabeledField({
   caption,
   className = '',
   maxLength,
+  highlight = false,
 }: LabeledFieldProps) {
+  const showGlow = highlight && !editing;
   return (
     <div className={className}>
       <label className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-stone-500">
@@ -142,7 +148,13 @@ function LabeledField({
           className="w-full rounded-lg border-2 border-stone-300 bg-white px-3 py-2.5 text-sm font-bold text-stone-900 outline-none transition focus:border-stone-900"
         />
       ) : (
-        <div className="w-full rounded-lg border-2 border-stone-200 bg-stone-50 px-3 py-2.5 text-sm font-bold text-stone-800">
+        <div
+          className={`w-full rounded-lg border-2 px-3 py-2.5 text-sm font-bold ${
+            showGlow
+              ? 'attn-glow border-amber-400 bg-amber-50 text-stone-800'
+              : 'border-stone-200 bg-stone-50 text-stone-800'
+          }`}
+        >
           {display}
         </div>
       )}
@@ -260,6 +272,17 @@ export default function OverviewTab({
 
   return (
     <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
+      {/* Plain CSS, not a Tailwind utility — arbitrary-value animate-[...]
+          needs the keyframe to actually exist somewhere, and I don't know
+          if this app's tailwind.config defines one. This is a boring,
+          dependency-free way to guarantee the pulse renders. */}
+      <style>{`
+        @keyframes attnGlowPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.45); }
+          50% { box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+        }
+        .attn-glow { animation: attnGlowPulse 2s ease-in-out infinite; }
+      `}</style>
       <div className="mx-auto max-w-4xl pb-16">
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight text-stone-900">Your brand</h2>
@@ -268,23 +291,19 @@ export default function OverviewTab({
           </p>
         </div>
 
-        {isFreePlan && (
-          <div className="mb-6">
-            <SettingsUpgradeBanner
-              planLabel="Basic"
-              price="$49.99/mo"
-              message="Upgrade to unlock more capabilities to fully own and run your business."
-              companySlug={company.slug}
-            />
-          </div>
-        )}
-
+   
         {/* ── BRANDING CARD ── */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b-2 border-stone-100 p-6 sm:flex-row sm:items-center sm:p-8">
             <div className="flex min-w-0 flex-1 items-center gap-4">
               <div className="relative shrink-0">
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
+                <div
+                  className={`flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border-2 bg-white ${
+                    !company.logo_url && !isEditingBrand
+                      ? 'attn-glow border-amber-400'
+                      : 'border-stone-200'
+                  }`}
+                >
                   {logoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoPreview} className="h-full w-full object-contain p-2" alt="Logo" />
@@ -320,7 +339,7 @@ export default function OverviewTab({
                       Free plan
                     </span>
                     <a
-                      href={`/${company.slug}/billing`}
+                      href={`/${company.slug}/admin/settings`}
                       className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-stone-800"
                     >
                       <Sparkles className="h-3 w-3" /> Upgrade
@@ -384,6 +403,7 @@ export default function OverviewTab({
                   placeholder="you@company.com"
                   display={company.email || 'No email added'}
                   caption="This is your Reply‑To inbox. Customer replies land here, and you can also BCC yourself on all quote, schedule, and invoice emails by enabling it in Settings."
+                  highlight={!company.email}
                 />
                 <LabeledField
                   icon={Phone}
@@ -394,6 +414,7 @@ export default function OverviewTab({
                   placeholder="(555) 555-5555"
                   maxLength={14}
                   display={company.phone ? formatPhone(company.phone) : 'No phone number'}
+                  highlight={!company.phone}
                 />
                 <LabeledField
                   icon={Globe}
@@ -416,6 +437,7 @@ export default function OverviewTab({
                       'No website added'
                     )
                   }
+                  highlight={!company.website}
                 />
               </div>
 
@@ -528,6 +550,8 @@ export default function OverviewTab({
           </div>
         </div>
 
+        
+
         {/* ── SHARE YOUR LINK ── */}
         <div className="mt-8">
           <div className="mb-3">
@@ -621,6 +645,17 @@ export default function OverviewTab({
             </div>
           </div>
         )}
+
+        {isFreePlan && (
+  <div className="mt-8">
+    <SettingsUpgradeBanner
+      planLabel="Basic"
+      price="$49.99/mo"
+      message="Upgrade to unlock more capabilities to fully own and run your business."
+      companySlug={company.slug}
+    />
+  </div>
+)}
 
         <div className="mt-6 flex justify-end">
           <a
