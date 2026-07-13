@@ -452,7 +452,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   // -------------------------------------------------------------------------
 
   return (
-    <div className={`min-h-screen relative selection:bg-blue-500/30 ${isDark ? 'bg-[#1e293b]' : 'bg-gray-50'}`}>
+<div className={`min-h-screen relative selection:bg-blue-500/30 ${isDark ? 'bg-[#334155]' : 'bg-gray-50'}`}>
       <Toaster position="top-right" richColors />
 
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg focus:font-bold">

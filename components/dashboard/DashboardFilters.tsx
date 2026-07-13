@@ -153,26 +153,26 @@ export default function DashboardFilters({
         <div className={`w-px h-4 mx-0.5 shrink-0 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 
         <button
-          onClick={() => setTimeFilter(isScheduledTodayActive ? 'all' : 'scheduled_today')}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-            isScheduledTodayActive
+onClick={() => setTimeFilter(isScheduledTodayActive ? 'all' : 'scheduled_today')}
+className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+isScheduledTodayActive
               ? 'bg-emerald-600 text-white border-emerald-500'
-: isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-300 text-slate-500 shadow-sm'
-          }`}
-        >
+: isDark ? 'bg-white/10 border-white/10 text-white/80' : 'bg-white border-slate-400 text-slate-800 shadow-sm'
+}`}
+>
           <Clock className="w-3 h-3" />
           <span className="hidden sm:inline">Scheduled today</span>
           <span className="sm:hidden">Today</span>
         </button>
 
         <button
-          onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-            filterPayment === 'unpaid'
+onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
+className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+filterPayment === 'unpaid'
               ? 'bg-amber-500 text-white border-amber-400'
-: isDark ? 'bg-white/5 border-white/5 text-white/50' : 'bg-white border-slate-300 text-slate-500 shadow-sm'
-          }`}
-        >
+: isDark ? 'bg-white/10 border-white/10 text-white/80' : 'bg-white border-slate-400 text-slate-800 shadow-sm'
+}`}
+>
           <DollarSign className="w-3 h-3" />
           Unpaid
         </button>

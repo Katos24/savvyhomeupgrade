@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
 import CompanyDashboardClient from './CompanyDashboardClient';
 
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
