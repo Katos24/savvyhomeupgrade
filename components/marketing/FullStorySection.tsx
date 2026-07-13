@@ -39,14 +39,14 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  {
-    id: 'overview',
-    title: 'Client Management',
-    shortTitle: 'Clients',
-    description: 'Manage client details, fast communications, and full project history.',
-    icon: Users,
-    side: 'left',
-  },
+{
+  id: 'overview',
+  title: 'Client Management',
+  shortTitle: 'Overview',
+  description: 'Client contact info and the original job request, side by side — no digging through texts.',
+  icon: Users,
+  side: 'left',
+},
   {
     id: 'quote',
     title: 'Smart Estimates',
@@ -427,7 +427,7 @@ const MediaView = () => (
 
 export default function InteractiveShowcase() {
   // Set default active tab to 'media' so the new view pass displays instantly
-  const [activeFeature, setActiveFeature] = useState<FeatureId>('media');
+const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
 
   const renderPhoneContent = () => {
     switch (activeFeature) {

@@ -16,6 +16,8 @@ import {
   Eye,
   EyeOff,
   Globe,
+  LayoutDashboard,
+  FileText,
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -29,6 +31,10 @@ interface CustomInputProps {
 }
 
 const STEP_LABELS = ['Account', 'Company', 'Confirm'];
+
+// 4 checkpoints total: landing on the form already "counts" Sign Up as
+// checked (endowed progress), so the bar never starts at 0%.
+const PROGRESS_STEPS = ['Sign Up', 'Company', 'Confirm', 'Done'];
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -51,6 +57,10 @@ function SignupForm() {
     businessType: '',
     ownerName: '',
   });
+
+  // step 1 -> 25 (Sign Up pre-credited), step 2 -> 50, step 3 -> 75, success -> 100
+  const progressPercent = loading ? 100 : step * 25;
+  const checkedCount = loading ? 4 : step; // how many chips show a checkmark
 
   const handleCompanyNameChange = (name: string) => {
     const slug = name
@@ -76,8 +86,6 @@ function SignupForm() {
   const goNext = () => {
     setError('');
 
-    // Step 1 is now just the account essentials — email and password.
-    // Name and phone moved to Step 2, alongside the company info.
     if (step === 1) {
       if (!formData.email.trim()) { setError('Enter your email'); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) { setError('Enter a valid email address'); return; }
@@ -171,7 +179,7 @@ function SignupForm() {
 
         <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
           <p className="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">
-            {plan === 'free' ? `Step ${step} of 3` : 'Step 1 of 2'}
+            {plan === 'free' ? `${progressPercent}% complete` : 'Step 1 of 2'}
           </p>
           <p className="text-sm text-slate-300 font-bold">
             {plan === 'free' ? STEP_LABELS[step - 1] : 'Create your administrative account to get started.'}
@@ -182,7 +190,7 @@ function SignupForm() {
       <div className="flex-1 overflow-y-auto px-4 py-8 md:px-12 lg:px-24">
         <div className="max-w-xl mx-auto">
 
-          <div className="flex lg:hidden items-center justify-between mb-10 px-1">
+          <div className="flex lg:hidden items-center justify-between mb-8 px-1">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center p-1">
                 <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="w-full h-full object-contain" />
@@ -191,16 +199,53 @@ function SignupForm() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-6">
-            {[1, 2, 3].map(i => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === step ? 'w-8 bg-blue-600' : i < step ? 'w-8 bg-blue-200' : 'w-8 bg-slate-100'
-                }`}
-              />
-            ))}
-          </div>
+          {/* Endowed-progress bar: Sign Up shows as already checked the moment
+              the form loads, so the person never starts at a discouraging 0%. */}
+          {plan === 'free' && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  Setting up your account
+                </span>
+                <span className="text-[11px] font-black text-blue-600">
+                  {progressPercent}% complete
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                {PROGRESS_STEPS.map((label, i) => {
+                  const idx = i + 1;
+                  const done = idx <= checkedCount;
+                  const active = idx === step && !loading;
+                  return (
+                    <div key={label} className="flex-1 flex items-center gap-1.5">
+                      <div
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide transition-all ${
+                          done
+                            ? 'bg-blue-50 text-blue-600'
+                            : active
+                            ? 'bg-slate-100 text-slate-600'
+                            : 'bg-slate-50 text-slate-300'
+                        }`}
+                      >
+                        {done ? (
+                          <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                        ) : (
+                          <span className="w-3 text-center shrink-0">{idx}</span>
+                        )}
+                        <span className="truncate">{label}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full mb-4">
@@ -324,56 +369,32 @@ function SignupForm() {
             {step === 3 && (
               <div className="space-y-5">
                 <div className="relative">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-slate-200 overflow-hidden">
-                      <div className="flex items-center gap-1.5 px-3.5 pt-3">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                          Public
-                        </span>
-                        <span className="text-[10px] text-slate-400">Anyone with the link sees this</span>
-                      </div>
-                      <div className="h-20 bg-slate-50 border-b border-slate-100 flex items-center justify-center px-4 mt-2">
-                        <div className="w-full max-w-[200px]">
-                          <FormPreviewMockup />
-                        </div>
-                      </div>
-                      <div className="p-3.5">
-                        <p className="text-[11px] font-black text-slate-700 mb-1">Your customer booking form</p>
-                        <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">
-                          Customers fill this out themselves — share the link anywhere
-                        </p>
-                        <code className="text-[10.5px] font-mono font-medium text-blue-600 block truncate">
-                          lead2project.com/{formData.slug || 'your-company'}
-                        </code>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PreviewCard
+                      badge="Public"
+                      badgeColor="emerald"
+                      caption="Anyone with the link sees this"
+                      title="Your customer booking form"
+                      description="Customers fill this out themselves — share the link anywhere"
+                      url={`lead2project.com/${formData.slug || 'your-company'}`}
+                    >
+                      <FormPreviewMockup />
+                    </PreviewCard>
 
-                    <div className="rounded-xl border border-slate-200 overflow-hidden">
-                      <div className="flex items-center gap-1.5 px-3.5 pt-3">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                          Private
-                        </span>
-                        <span className="text-[10px] text-slate-400">Only you can see this</span>
-                      </div>
-                      <div className="h-20 bg-slate-50 border-b border-slate-100 flex items-center justify-center px-4 mt-2">
-                        <div className="w-full max-w-[200px]">
-                          <DashboardPreviewMockup />
-                        </div>
-                      </div>
-                      <div className="p-3.5">
-                        <p className="text-[11px] font-black text-slate-700 mb-1">Your dashboard</p>
-                        <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">
-                          Every submission lands here automatically, as a new lead
-                        </p>
-                        <code className="text-[10.5px] font-mono font-medium text-blue-600 block truncate">
-                          lead2project.com/{formData.slug || 'your-company'}/dashboard
-                        </code>
-                      </div>
-                    </div>
+                    <PreviewCard
+                      badge="Private"
+                      badgeColor="slate"
+                      caption="Only you can see this"
+                      title="Your dashboard"
+                      description="Every submission lands here automatically, as a new lead"
+                      url={`lead2project.com/${formData.slug || 'your-company'}/dashboard`}
+                    >
+                      <DashboardPreviewMockup />
+                    </PreviewCard>
                   </div>
 
                   {/* Connecting arrow, desktop only */}
-                  <div className="hidden sm:flex absolute top-[100px] left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-200 shadow-sm z-10">
+                  <div className="hidden sm:flex absolute top-[76px] left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-200 shadow-sm z-10">
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                   </div>
                 </div>
@@ -482,37 +503,132 @@ function SignupForm() {
   );
 }
 
+function PreviewCard({
+  badge,
+  badgeColor,
+  caption,
+  title,
+  description,
+  url,
+  children,
+}: {
+  badge: string;
+  badgeColor: 'emerald' | 'slate';
+  caption: string;
+  title: string;
+  description: string;
+  url: string;
+  children: React.ReactNode;
+}) {
+  const badgeClasses =
+    badgeColor === 'emerald'
+      ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
+      : 'text-slate-500 bg-slate-100 border-slate-200';
+
+  return (
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+      <div className="flex items-center gap-1.5 px-3 pt-3">
+        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${badgeClasses}`}>
+          {badge}
+        </span>
+        <span className="text-[10px] text-slate-400">{caption}</span>
+      </div>
+      <div className="h-28 bg-slate-50 border-y border-slate-100 mt-2.5 overflow-hidden">
+        {children}
+      </div>
+      <div className="p-3.5">
+        <p className="text-[11px] font-black text-slate-700 mb-1">{title}</p>
+        <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">{description}</p>
+        <code className="text-[10.5px] font-mono font-medium text-blue-600 block truncate">{url}</code>
+      </div>
+    </div>
+  );
+}
+
+function BrowserChrome({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 h-6 bg-white border-b border-slate-100">
+      <div className="flex gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
+      </div>
+      <div className="flex-1 h-3.5 rounded bg-slate-50 flex items-center px-2">
+        <span className="text-[7px] text-slate-400 font-medium truncate">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 function FormPreviewMockup() {
   return (
-    <div className="w-full space-y-1.5 px-1">
-      <div>
-        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Full Name</p>
-        <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
-          <span className="text-[9px] font-medium text-slate-700 truncate">Sarah Johnson</span>
+    <div className="w-full h-full flex flex-col">
+      <BrowserChrome label="lead2project.com/your-company" />
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-[220px] space-y-1.5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <FileText className="w-2.5 h-2.5 text-blue-500" />
+            <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Request a Quote</span>
+          </div>
+          <div>
+            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Full Name</p>
+            <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
+              <span className="text-[8.5px] font-medium text-slate-700 truncate">Sarah Johnson</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Project Description</p>
+            <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
+              <span className="text-[8.5px] font-medium text-slate-700 truncate">Kitchen remodel — 123 Main St</span>
+            </div>
+          </div>
+          <div className="h-5 w-16 rounded bg-blue-600 flex items-center justify-center mt-1.5">
+            <span className="text-[8px] font-bold text-white">Submit</span>
+          </div>
         </div>
-      </div>
-      <div>
-        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Project Description</p>
-        <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
-          <span className="text-[9px] font-medium text-slate-700 truncate">Kitchen remodel — 123 Main St</span>
-        </div>
-      </div>
-      <div className="h-5 w-16 rounded bg-blue-600 flex items-center justify-center">
-        <span className="text-[8px] font-bold text-white">Submit</span>
       </div>
     </div>
   );
 }
 
 function DashboardPreviewMockup() {
+  const rows = [
+    { name: 'Sarah Johnson', detail: 'Kitchen remodel — 123 Main St', tag: 'New', tagColor: 'blue' as const },
+    { name: 'Mike Torres', detail: 'Roof inspection — 88 Oak Ave', tag: 'New', tagColor: 'blue' as const },
+    { name: 'Dana Wells', detail: 'Bathroom repipe — 4 Elm Ct', tag: 'Won', tagColor: 'emerald' as const },
+  ];
+
   return (
-    <div className="w-full px-1">
-      <div className="rounded-md bg-white border border-blue-200 px-2 py-1.5 shadow-sm">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[9px] font-bold text-slate-800 truncate">Sarah Johnson</p>
-          <span className="text-[7px] font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded shrink-0">New</span>
+    <div className="w-full h-full flex flex-col">
+      <BrowserChrome label="lead2project.com/your-company/dashboard" />
+      <div className="flex-1 px-2.5 py-2 space-y-1">
+        <div className="flex items-center gap-1.5 mb-1">
+          <LayoutDashboard className="w-2.5 h-2.5 text-blue-500" />
+          <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Leads</span>
         </div>
-        <p className="text-[8px] text-slate-400 truncate">Kitchen remodel — 123 Main St</p>
+        {rows.map((row, i) => (
+          <div
+            key={row.name}
+            className={`rounded-md bg-white border px-2 py-1 flex items-center gap-1.5 ${
+              i === 0 ? 'border-blue-200 shadow-sm' : 'border-slate-100'
+            }`}
+          >
+            <div className="w-3.5 h-3.5 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+              <span className="text-[6px] font-black text-slate-500">{row.name.charAt(0)}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[8px] font-bold text-slate-800 truncate leading-tight">{row.name}</p>
+              <p className="text-[7px] text-slate-400 truncate leading-tight">{row.detail}</p>
+            </div>
+            <span
+              className={`text-[6.5px] font-bold px-1 py-0.5 rounded shrink-0 ${
+                row.tagColor === 'blue' ? 'text-blue-600 bg-blue-50' : 'text-emerald-600 bg-emerald-50'
+              }`}
+            >
+              {row.tag}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -53,7 +53,6 @@ function TicketCard({
 }
 
 export default function ArchitectHero() {
-  // Real product workflow states to show progression instead of static text
   const workflowSteps = [
     { label: 'Lead',    status: 'Captured', icon: UserPlus,  color: 'text-blue-600',  bg: 'bg-blue-50' },
     { label: 'Quote',   status: 'Approved', icon: FileText,  color: 'text-indigo-600',bg: 'bg-indigo-50' },
@@ -64,9 +63,9 @@ export default function ArchitectHero() {
   return (
     <section
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-slate-50 pt-28 pb-16 sm:pt-32 lg:pt-36 lg:pb-24 border-b border-slate-200/60 z-10"
+      className="relative overflow-hidden bg-gradient-to-b from-amber-50/50 via-orange-50/20 to-white pt-28 pb-16 sm:pt-32 lg:pt-36 lg:pb-24 border-b border-slate-200/60 z-10"
     >
-      {/* Blueprint Grid & Soft Radial Glow Background */}
+      {/* Blueprint Grid & Dual Warm/Cool Glow Background */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -76,6 +75,7 @@ export default function ArchitectHero() {
         }}
       />
       <div className="pointer-events-none absolute -right-20 top-0 h-[600px] w-[600px] rounded-full bg-emerald-400/10 blur-[130px]" />
+      <div className="pointer-events-none absolute -left-32 top-40 h-[500px] w-[500px] rounded-full bg-amber-400/15 blur-[130px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[48%_52%]">
@@ -84,9 +84,9 @@ export default function ArchitectHero() {
           <div className="relative z-20 flex flex-col gap-5 sm:gap-6 text-left">
             
             {/* Tag Badge */}
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-3.5 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50/80 px-3.5 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-800">
                 Built for trade businesses
               </span>
             </div>
@@ -99,7 +99,7 @@ export default function ArchitectHero() {
 
             {/* INLINE MOBILE GRAPHIC: Fallback visual on smaller viewports */}
             <div className="lg:hidden relative w-full my-2">
-              <div className="relative rounded-2xl border border-slate-200/60 bg-white/40 p-2 shadow-sm">
+              <div className="relative rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm p-2 shadow-sm">
                 <Image
                   src="/images/hero-image-laptop.webp"
                   alt="Lead2Project Dashboard Showcase"
@@ -119,7 +119,7 @@ export default function ArchitectHero() {
             </p>
 
             {/* UPGRADED WORKFLOW PIPELINE TRACKER */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-xs max-w-xl w-full">
+            <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3 shadow-xs max-w-xl w-full">
               <div className="grid grid-cols-4 items-center relative">
                 {workflowSteps.map((step, idx) => {
                   const StepIcon = step.icon;
