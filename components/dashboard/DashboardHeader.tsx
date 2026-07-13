@@ -1,5 +1,5 @@
 'use client';
-import { Menu, Plus, Lock, Loader2, Home } from 'lucide-react';
+import { Menu, Plus, Lock, Loader2, RefreshCw, Home } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 export default function DashboardHeader({
 company,
@@ -9,6 +9,7 @@ planTier,
 onSidebarOpen,
 onCreateLead,
 onLockedFeature,
+onRefresh,
 }: {
 company: { name: string; logo_url?: string | null; slug: string };
 isDark: boolean;
@@ -17,6 +18,7 @@ planTier: PlanTier;
 onSidebarOpen: () => void;
 onCreateLead: () => void;
 onLockedFeature: (key: string) => void;
+onRefresh: () => void;
 }) {
 return (
 <header className={`sticky top-3 z-50 rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 mb-5 transition-all backdrop-blur-xl ${
@@ -61,7 +63,20 @@ isDark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
 </div>
 </div>
 <div className="flex items-center gap-2 shrink-0">
-{isRefreshing && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500 hidden xs:block" />}
+<button
+onClick={onRefresh}
+disabled={isRefreshing}
+aria-label="Refresh dashboard"
+className={`p-2 rounded-xl transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed ${
+isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+}`}
+>
+{isRefreshing ? (
+<Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+) : (
+<RefreshCw className="w-4 h-4" />
+)}
+</button>
 {can(planTier, 'create_lead_manual') ? (
 <button
 data-tour="create-lead"

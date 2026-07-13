@@ -3,7 +3,7 @@
 import {
   useState, useEffect, useRef, useMemo, useCallback, useTransition,
 } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LeadModal from '@/components/dashboard/LeadModal';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -509,7 +509,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       {/* MAIN */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
 
-        <DashboardHeader
+   <DashboardHeader
           company={company}
           isDark={isDark}
           isRefreshing={isRefreshing}
@@ -517,7 +517,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onSidebarOpen={() => setSidebarOpen(true)}
           onCreateLead={() => setIsCreateModalOpen(true)}
           onLockedFeature={setLockedDashboardModal}
+          onRefresh={() => fetchLeads(1, false)}
         />
+
+    
 
         <DashboardStats globalStats={globalStats} allLeads={allLeads} isDark={isDark} />
 
