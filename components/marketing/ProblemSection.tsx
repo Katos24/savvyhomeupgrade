@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowRight, Phone, MessageCircle, FileText, FileSpreadsheet } from 'lucide-react';
+import { ArrowRight, Phone, MessageCircle, FileSpreadsheet } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
@@ -123,88 +123,6 @@ function StickyNote() {
   );
 }
 
-const ALL_LEADS = [
-  { name: 'Sarah T.', type: 'Bathroom Remodel', status: 'NEW', statusColor: 'bg-emerald-500', rev: '$1,200', invoice: 'Not sent', invoiceColor: 'text-slate-500' },
-  { name: 'Mike R.', type: 'Roof Estimate', status: 'QUOTED', statusColor: 'bg-blue-500', rev: '$4,800', invoice: 'Sent', invoiceColor: 'text-blue-400' },
-  { name: 'Tom K.', type: 'Deck Build', status: 'SCHEDULED', statusColor: 'bg-sky-500', rev: '$3,400', invoice: 'Partial · $1,700 due', invoiceColor: 'text-amber-400' },
-  { name: 'Lisa P.', type: 'Duct Repair', status: 'IN PROGRESS', statusColor: 'bg-violet-500', rev: '$890', invoice: 'Unpaid', invoiceColor: 'text-rose-400' },
-];
-
-function DashboardMockup() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.15 }}
-      className="w-full"
-    >
-      <div className="bg-slate-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-950/60 border-b border-white/5">
-          <div className="flex gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-slate-700" />
-            <div className="w-2 h-2 rounded-full bg-slate-700" />
-            <div className="w-2 h-2 rounded-full bg-slate-700" />
-          </div>
-          <div className="flex-1 bg-slate-800/40 rounded-xl px-3 py-1 mx-4 border border-white/5">
-            <p className="text-slate-400 text-[9px] text-center font-mono tracking-wide truncate">lead2project.com/dashboard</p>
-          </div>
-        </div>
-
-        <div className="p-4 bg-slate-900">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Image src="/images/arctic-air-logo.webp" alt="Arctic Air HVAC logo" width={16} height={16} className="object-contain" />
-              </div>
-              <div>
-                <p className="text-white text-[11px] font-black">Arctic Air HVAC</p>
-                <p className="text-emerald-500 text-[8px] font-bold uppercase tracking-widest">Live Operations Board</p>
-              </div>
-            </div>
-            <div className="bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-lg">
-              + New
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {[
-              { label: 'Leads', value: '12', color: 'text-white' },
-              { label: 'Active', value: '8', color: 'text-violet-400' },
-              { label: 'Quoted', value: '5', color: 'text-blue-400' },
-              { label: 'Sched.', value: '3', color: 'text-emerald-400' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-slate-800/80 rounded-xl p-2 border border-white/5">
-                <p className="text-slate-500 text-[7px] font-black uppercase tracking-wider truncate">{stat.label}</p>
-                <p className={`text-sm font-black mt-0.5 ${stat.color}`}>{stat.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-1.5">
-            {ALL_LEADS.map((lead, i) => (
-              <div key={i} className="bg-slate-800/50 rounded-xl px-3 py-2 border border-white/5 flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`${lead.statusColor} text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider`}>
-                      {lead.status}
-                    </span>
-                    <p className="text-white text-[11px] font-black truncate">{lead.name}</p>
-                  </div>
-                  <p className="text-slate-400 text-[9px] font-bold mt-0.5 flex items-center gap-1">
-                    <FileText size={9} /> {lead.type} · <span className={lead.invoiceColor}>{lead.invoice}</span>
-                  </p>
-                </div>
-                <span className="text-white text-xs font-black flex-shrink-0 ml-2">{lead.rev}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function ProblemSection() {
   return (
     <section className="bg-slate-700 py-16 sm:py-20 lg:py-24 overflow-hidden border-b border-white/5">
@@ -238,7 +156,7 @@ export default function ProblemSection() {
             </div>
           </div>
 
-          {/* RIGHT: the fix — header + dashboard */}
+          {/* RIGHT: the fix — header + real product screenshot */}
           <div className="flex flex-col gap-5">
             <div>
               <span className="mb-2 inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-amber-400">
@@ -255,7 +173,21 @@ export default function ProblemSection() {
               </p>
             </div>
 
-            <DashboardMockup />
+          <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="w-full"
+            >
+              <Image
+                src="/images/hero-image-laptop.webp"
+                alt="Lead2Project real dashboard showing tracked jobs"
+                width={1400}
+                height={1000}
+                className="w-full h-auto object-contain drop-shadow-2xl"
+              />
+            </motion.div>
           </div>
 
         </div>
