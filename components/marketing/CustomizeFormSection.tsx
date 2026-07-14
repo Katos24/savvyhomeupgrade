@@ -2,100 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image as ImageIcon, MapPin, Phone, Mail, User, Camera, Palette, ListChecks } from 'lucide-react';
+import { 
+  MapPin, 
+  Camera, 
+  Palette, 
+  ListChecks, 
+  User, 
+  Phone, 
+  Mail, 
+  Image as ImageIcon 
+} from 'lucide-react';
+import { TRADE_EXAMPLES, type TradeExample } from './tradeExamples';
 
 const font = "'Nunito', sans-serif";
 
-const EXAMPLES = [
-  {
-    trade: 'Roofing',
-    company: 'Ridge Line Roofing',
-    color: '#f97316',
-    logo: '/images/ridgelinelogo.webp',
-    questions: [
-      {
-        label: 'Service Needed',
-        type: 'pills' as const,
-        options: ['Roof Repair', 'Roof Replacement', 'Leak Detection', 'Inspection', 'Gutter Work'],
-        selected: 2,
-      },
-      {
-        label: 'How old is your roof?',
-        type: 'pills' as const,
-        options: ['Under 10 yrs', '10-20 yrs', '20+ yrs', 'Not sure'],
-        selected: 1,
-      },
-    ],
-    uploadPreview: '/images/roof-damage.webp',
-    uploadFileName: 'roof-damage.webp',
-  },
-  {
-    trade: 'HVAC',
-    company: 'Arctic Air HVAC',
-    color: '#0ea5e9',
-    logo: '/images/arctic-air-logo.webp',
-    questions: [
-      {
-        label: 'System Type',
-        type: 'pills' as const,
-        options: ['Central AC', 'Heat Pump', 'Mini Split', 'Furnace', 'Full HVAC'],
-        selected: 0,
-      },
-      {
-        label: "What's the issue?",
-        type: 'pills' as const,
-        options: ['Blowing warm', 'No airflow', 'Strange noise', 'Routine maintenance'],
-        selected: 3,
-      },
-    ],
-    uploadPreview: '',
-    uploadFileName: '',
-  },
-  {
-    trade: 'Plumbing',
-    company: 'Rapid Flow Plumbing',
-    color: '#10b981',
-    logo: '/images/rapid-flow-logo.webp',
-    questions: [
-      {
-        label: 'Service Type',
-        type: 'pills' as const,
-        options: ['Leak Repair', 'Drain Cleaning', 'Water Heater', 'Pipe Burst', 'Remodel'],
-        selected: 0,
-      },
-      {
-        label: 'How urgent is this?',
-        type: 'pills' as const,
-        options: ['Emergency', 'This week', 'Flexible', 'Just a quote'],
-        selected: 0,
-      },
-    ],
-    uploadPreview: '',
-    uploadFileName: '',
-  },
-  {
-    trade: 'Solar',
-    company: 'Sun Peak Solar',
-    color: '#eab308',
-    logo: '/images/sun-peak-logo.webp',
-    questions: [
-      {
-        label: 'Interested In',
-        type: 'pills' as const,
-        options: ['Solar Panels', 'Battery Storage', 'EV Charger', 'Full System', 'Maintenance'],
-        selected: 3,
-      },
-      {
-        label: 'Monthly electric bill?',
-        type: 'pills' as const,
-        options: ['Under $100', '$100-$200', '$200-$300', 'Over $300'],
-        selected: 2,
-      },
-    ],
-    uploadPreview: '',
-    uploadFileName: '',
-  },
-];
+// ==========================================
+// Sub-components & Helpers
+// ==========================================
 
 function CalloutTag({ icon: Icon, text, className = '' }: { icon: any; text: string; className?: string }) {
   return (
@@ -111,20 +34,164 @@ function CalloutTag({ icon: Icon, text, className = '' }: { icon: any; text: str
   );
 }
 
+function TradeFormCard({
+  example,
+  compact = false,
+}: {
+  example: TradeExample;
+  compact?: boolean;
+}) {
+  // Compact (hero): name + phone only, one question, no photo preview.
+  // Full (CustomizeFormSection): name + phone + email, address, both
+  // questions, and a real photo preview when the trade has one.
+  const questions = compact ? example.questions.slice(0, 1) : example.questions;
+
+  return (
+    <div className={`w-full relative ${compact ? 'max-w-[290px]' : 'max-w-[370px]'}`}>
+      <motion.div
+        animate={{ backgroundColor: example.color }}
+        transition={{ duration: 0.6 }}
+        className={`absolute -inset-1 opacity-20 blur-xl rounded-2xl pointer-events-none ${compact ? '' : 'group-hover:opacity-30'}`}
+      />
+
+      <motion.div
+        animate={{ borderColor: `${example.color}40` }}
+        transition={{ duration: 0.5 }}
+        className={`relative bg-white rounded-2xl border-2 overflow-hidden w-full ${
+          compact ? 'shadow-[0_20px_40px_rgba(0,0,0,0.35)]' : 'shadow-[0_30px_60px_rgba(0,0,0,0.4)]'
+        }`}
+      >
+        <div className={`relative flex items-center overflow-hidden ${compact ? 'h-12 px-3.5 gap-2.5' : 'h-14 px-4 gap-3'}`}>
+          <motion.div
+            className="absolute inset-0 z-0"
+            animate={{ backgroundColor: example.color }}
+            transition={{ duration: 0.5 }}
+          />
+          <div className={`relative z-10 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-sm ${compact ? 'w-7 h-7' : 'w-8 h-8'}`}>
+            <img src={example.logo} className={compact ? 'w-4 h-4 object-contain' : 'w-5 h-5 object-contain'} alt="" />
+          </div>
+          <div className="relative z-10 min-w-0">
+            <h4 className={`text-white leading-tight font-black tracking-tight truncate ${compact ? 'text-[11px]' : 'text-xs'}`}>
+              {example.company.name}
+            </h4>
+            <p className={`text-white/70 uppercase tracking-widest font-black ${compact ? 'text-[7px]' : 'text-[8px]'}`}>
+              Project Request Form
+            </p>
+          </div>
+        </div>
+
+        <div className={compact ? 'p-3.5 space-y-3' : 'p-4 space-y-4'}>
+          <div className={`grid gap-1.5 ${compact ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <div className={`bg-slate-50 border border-slate-100 rounded-lg font-bold text-slate-800 flex items-center gap-1 ${compact ? 'px-2 py-1.5 text-[8px]' : 'px-2 py-2 text-[9px]'}`}>
+              <User size={compact ? 9 : 10} className="text-slate-400 shrink-0" /> John Smith
+            </div>
+            <div className={`bg-slate-50 border border-slate-100 rounded-lg font-bold text-slate-800 flex items-center gap-1 ${compact ? 'px-2 py-1.5 text-[8px]' : 'px-2 py-2 text-[9px]'}`}>
+              <Phone size={compact ? 9 : 10} className="text-slate-400 shrink-0" /> (555) 0142
+            </div>
+            {!compact && (
+              <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1 truncate">
+                <Mail size={10} className="text-slate-400 shrink-0" /> john@...
+              </div>
+            )}
+          </div>
+
+          <div className={`bg-slate-50 border border-slate-100 rounded-lg font-bold text-slate-800 flex items-center gap-1.5 ${compact ? 'px-2 py-1.5 text-[8px]' : 'px-2.5 py-2 text-[9px]'}`}>
+            <MapPin size={compact ? 9 : 10} className="text-slate-400 shrink-0" /> 123 Main St, Anytown NY
+          </div>
+
+          <div className={compact ? 'min-h-[52px]' : 'min-h-[105px]'}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={example.trade}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.25 }}
+                className={compact ? '' : 'space-y-3.5'}
+              >
+                {questions.map((q, qi) => (
+                  <div key={qi}>
+                    <label className={`text-slate-400 uppercase tracking-wider font-black block mb-1 ${compact ? 'text-[8px]' : 'text-[9px] mb-1.5'}`}>
+                      {q.label}
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {q.options.map((option, oi) => (
+                        <div
+                          key={option}
+                          className={`rounded-lg font-extrabold border-2 transition-all duration-300 ${
+                            compact ? 'px-2 py-1 text-[8px]' : 'px-2.5 py-1.5 text-[9px]'
+                          } ${
+                            oi === q.selected
+                              ? 'text-white border-transparent shadow-sm'
+                              : 'bg-white text-slate-500 border-slate-100 hover:border-slate-200'
+                          }`}
+                          style={oi === q.selected ? { backgroundColor: example.color } : undefined}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div>
+            {!compact && (
+              <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+                Site Conditions / Photos
+              </label>
+            )}
+            {!compact && example.uploadPreview ? (
+              <div className="flex gap-2.5 items-center p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                <img src={example.uploadPreview} className="w-10 h-10 object-cover rounded-lg border border-slate-200/60" alt="" />
+                <div>
+                  <p className="text-[9px] font-black text-slate-800" style={{ fontFamily: font }}>{example.uploadFileName}</p>
+                  <p className="text-[8px] font-black text-emerald-600 uppercase tracking-wider">File Attached</p>
+                </div>
+              </div>
+            ) : (
+              <div className={`text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50 font-bold text-slate-400 ${compact ? 'py-2.5 text-[8px]' : 'py-3.5 text-[9px]'}`}>
+                <ImageIcon size={compact ? 12 : 14} className="mx-auto mb-1 text-slate-300" />
+                Tap to attach photos or files
+              </div>
+            )}
+          </div>
+
+          <motion.button
+            animate={{ backgroundColor: example.color }}
+            transition={{ duration: 0.5 }}
+            className={`w-full rounded-xl text-white font-black uppercase tracking-wider shadow-md transition-opacity hover:opacity-95 ${
+              compact ? 'py-2 text-[9px]' : 'py-2.5 text-[10px]'
+            }`}
+          >
+            Submit Intake Form
+          </motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ==========================================
+// Main Exported Component
+// ==========================================
+
 export default function CustomizeFormSection() {
   const [activeExample, setActiveExample] = useState(0);
-  const current = EXAMPLES[activeExample];
+  const current = TRADE_EXAMPLES[activeExample];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveExample((prev) => (prev + 1) % EXAMPLES.length);
+      setActiveExample((prev) => (prev + 1) % TRADE_EXAMPLES.length);
     }, 4500);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-slate-950">
-      
+
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
@@ -132,11 +199,11 @@ export default function CustomizeFormSection() {
           backgroundSize: '40px 40px',
         }}
       />
-      
-      <motion.div 
+
+      <motion.div
         animate={{ backgroundColor: `${current.color}10` }}
         transition={{ duration: 0.8 }}
-        className="absolute right-0 top-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none" 
+        className="absolute right-0 top-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none"
       />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
@@ -196,7 +263,7 @@ export default function CustomizeFormSection() {
 
             {/* SELECTION TABS */}
             <div className="flex gap-1.5 p-1 bg-white/[0.02] border border-white/[0.06] rounded-xl mb-8 flex-wrap justify-center backdrop-blur-sm">
-              {EXAMPLES.map((example, i) => (
+              {TRADE_EXAMPLES.map((example, i) => (
                 <button
                   key={example.trade}
                   onClick={() => setActiveExample(i)}
@@ -215,124 +282,8 @@ export default function CustomizeFormSection() {
               ))}
             </div>
 
-            {/* FORM PREVIEW */}
-            <div className="w-full max-w-[370px] relative group">
-              
-              <motion.div 
-                animate={{ backgroundColor: current.color }}
-                transition={{ duration: 0.6 }}
-                className="absolute -inset-1 opacity-20 blur-xl rounded-2xl pointer-events-none transition-opacity group-hover:opacity-30"
-              />
-              
-              <motion.div
-                animate={{ borderColor: `${current.color}40` }}
-                transition={{ duration: 0.5 }}
-                className="relative bg-white rounded-2xl border-2 overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.4)] w-full"
-              >
-                <div className="relative h-14 flex items-center px-4 gap-3 overflow-hidden">
-                  <motion.div
-                    className="absolute inset-0 z-0"
-                    animate={{ backgroundColor: current.color }}
-                    transition={{ duration: 0.5 }}
-                  />
-                  <div className="relative z-10 w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <img src={current.logo} className="w-5 h-5 object-contain" alt="" />
-                  </div>
-                  <div className="relative z-10">
-                    <h4 className="text-xs text-white leading-tight font-black tracking-tight">
-                      {current.company}
-                    </h4>
-                    <p className="text-[8px] text-white/70 uppercase tracking-widest font-black">
-                      Project Request Form
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1">
-                      <User size={10} className="text-slate-400 flex-shrink-0" /> John Smith
-                    </div>
-                    <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1">
-                      <Phone size={10} className="text-slate-400 flex-shrink-0" /> (555) 0142
-                    </div>
-                    <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1 truncate">
-                      <Mail size={10} className="text-slate-400 flex-shrink-0" /> john@...
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-2 text-[9px] font-bold text-slate-800 flex items-center gap-1.5">
-                    <MapPin size={10} className="text-slate-400 flex-shrink-0" /> 123 Main St, Anytown NY
-                  </div>
-
-                  <div className="min-h-[105px]">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={current.trade}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.25 }}
-                        className="space-y-3.5"
-                      >
-                        {current.questions.map((q, qi) => (
-                          <div key={qi}>
-                            <label className="text-[9px] text-slate-400 uppercase tracking-wider font-black block mb-1.5">
-                              {q.label}
-                            </label>
-                            <div className="flex flex-wrap gap-1">
-                              {q.options.map((option, oi) => (
-                                <div
-                                  key={option}
-                                  className={`px-2.5 py-1.5 rounded-lg text-[9px] font-extrabold border-2 transition-all duration-300 ${
-                                    oi === q.selected
-                                      ? 'text-white border-transparent shadow-sm'
-                                      : 'bg-white text-slate-500 border-slate-100 hover:border-slate-200'
-                                  }`}
-                                  style={{
-                                    fontFamily: font,
-                                    ...(oi === q.selected ? { backgroundColor: current.color } : {}),
-                                  }}
-                                >
-                                  {option}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                      Site Conditions / Photos
-                    </label>
-                    {current.uploadPreview ? (
-                      <div className="flex gap-2.5 items-center p-2 bg-slate-50 border border-slate-100 rounded-xl">
-                        <img src={current.uploadPreview} className="w-10 h-10 object-cover rounded-lg border border-slate-200/60" alt="" />
-                        <div>
-                          <p className="text-[9px] font-black text-slate-800" style={{ fontFamily: font }}>{current.uploadFileName}</p>
-                          <p className="text-[8px] font-black text-emerald-600 uppercase tracking-wider">File Attached</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center border border-dashed border-slate-200 rounded-xl py-3.5 text-[9px] text-slate-400 font-bold bg-slate-50/50">
-                        <ImageIcon size={14} className="mx-auto mb-1 text-slate-300" />
-                        Tap to attach photos or files
-                      </div>
-                    )}
-                  </div>
-
-                  <motion.button
-                    animate={{ backgroundColor: current.color }}
-                    transition={{ duration: 0.5 }}
-                    className="w-full py-2.5 rounded-xl text-white text-[10px] font-black uppercase tracking-wider shadow-md transition-opacity hover:opacity-95"
-                  >
-                    Submit Intake Form
-                  </motion.button>
-                </div>
-              </motion.div>
+            <div className="group w-full flex justify-center">
+              <TradeFormCard example={current} />
             </div>
 
             {/* Subtext + badges — mobile only, below form */}

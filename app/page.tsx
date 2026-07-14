@@ -8,7 +8,6 @@ import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import ValuePropsSection from '@/components/marketing/ValuePropsSection';
 import HowItWorksSection from '@/components/marketing/HowItWorksSection';
 import ProblemSection from '@/components/marketing/ProblemSection';
-import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
 import TruckSection from '@/components/marketing/TruckSection'; // Your Distribution Section
 import DigestBanner from '@/components/marketing/DigestBanner';
 import SelfServeBanner from '@/components/marketing/SelfServeBanner';
@@ -35,7 +34,8 @@ return (
 
 {/* 2. THE PROBLEM: Why the current way (threads/folders) is failing them */}
 
-<CustomizeFormSection />
+{/* CustomizeFormSection removed — its job (industry picker, full form
+    preview) now lives directly in the hero. */}
 {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) Google section */}
 <TruckSection />
 

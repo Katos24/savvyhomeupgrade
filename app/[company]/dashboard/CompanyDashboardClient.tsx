@@ -518,6 +518,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onCreateLead={() => setIsCreateModalOpen(true)}
           onLockedFeature={setLockedDashboardModal}
           onRefresh={() => fetchLeads(1, false)}
+          accentColor={company.email_brand_color_1 || undefined}
         />
 
     
