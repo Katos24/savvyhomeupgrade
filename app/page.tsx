@@ -25,10 +25,12 @@ return (
 <ProblemSection />
 <FullStorySection />
 <ValuePropsSection />
-<HowItWorksSection />
 
 
 <QuoteToPaidSection />
+
+<HowItWorksSection />
+
 
 
 
