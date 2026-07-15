@@ -2,6 +2,7 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import DashboardShowcase from '@/components/marketing/DashboardShowcase';
 import FullStorySection from '@/components/marketing/FullStorySection';
 import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 
@@ -23,19 +24,21 @@ return (
 
 {/* 1. THE HOOK: The current state of chaos vs. order */}
 <NewHero />
+<DashboardShowcase />
+
 <FullStorySection />
 
 <CustomizeFormSection />
 
 
-<ProblemSection />
+<HowItWorksSection />
 
 <TruckSection />
 
 
 
+<ValuePropsSection />
 
-<HowItWorksSection />
 
 <QuoteToPaidSection />
 
@@ -44,7 +47,6 @@ return (
 
 
 
-<ValuePropsSection />
 
 
 

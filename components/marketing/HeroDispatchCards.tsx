@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ChevronRight, User, Camera, Check, X, LayoutGrid, Rows3, CalendarDays } from 'lucide-react';
 import type { TradeLead } from '@/components/marketing/tradeExamples';
@@ -104,9 +104,10 @@ function getTokens(isDark: boolean) {
     emptyCellBg: isDark ? 'bg-white/[0.01]' : 'bg-slate-50/60',
     dayNumMuted: isDark ? 'text-slate-500' : 'text-slate-400',
     dayHeaderMuted: isDark ? 'text-slate-600' : 'text-slate-400',
-    indicatorBg: isDark
-      ? 'bg-white/[0.03] border-white/10 text-slate-300'
-      : 'bg-slate-100 border-slate-200 text-slate-600',
+    segTrack: isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200',
+    segPill: isDark ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.35)]' : 'bg-white shadow-sm border border-slate-200',
+    segTextActive: 'text-slate-900',
+    segTextInactive: isDark ? 'text-slate-400' : 'text-slate-500',
   };
 }
 type Tokens = ReturnType<typeof getTokens>;
@@ -502,39 +503,12 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
 }
 
 // ==========================================
-// Default export — the view is pinned to whichever trade is currently
-// showing, not an independent timer, so it can't drift out of sync with
-// the trade rotation happening one level up in ArchitectHero.
-//
-// TRADE_VIEW_MAP lets you deliberately pin a view to a specific trade
-// (e.g. plumbing always shows as a table). Fill this in with the real
-// trade keys from tradeExamples.ts once confirmed — I don't have that
-// file, so it starts empty rather than guessing wrong strings that would
-// silently fail to match. Any trade not listed falls back to a
-// deterministic hash of its name, so it still gets a *consistent* view
-// every time that trade comes up (never re-randomized), just not one
-// you've deliberately chosen yet.
+// Default export — Cards / Table / Calendar as a manual, Apple-style
+// segmented control (sliding pill behind the active option), not an
+// automatic timer or trade-derived pick. This intentionally replaces the
+// earlier "no click, tied to trade" behavior — the person building this
+// changed direction and wants a real toggle now.
 // ==========================================
-const TRADE_VIEW_MAP: Partial<Record<string, ViewKey>> = {
-  // plumbing: 'table',
-  // electrical: 'cards',
-  // roofing: 'calendar',
-};
-
-function hashStringToIndex(str: string, mod: number): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
-  }
-  return hash % mod;
-}
-
-function getViewForTrade(trade: string): ViewKey {
-  const override = TRADE_VIEW_MAP[trade.trim().toLowerCase()];
-  if (override) return override;
-  return VIEW_SEQUENCE[hashStringToIndex(trade, VIEW_SEQUENCE.length)];
-}
-
 const VIEW_SEQUENCE: ViewKey[] = ['cards', 'table', 'calendar'];
 const VIEW_META: Record<ViewKey, { label: string; icon: typeof LayoutGrid }> = {
   cards: { label: 'Cards', icon: LayoutGrid },
@@ -543,17 +517,35 @@ const VIEW_META: Record<ViewKey, { label: string; icon: typeof LayoutGrid }> = {
 };
 
 export default function HeroDispatchCards({ leads, statusOptions, trade, isDark = true }: HeroDispatchCardsProps) {
-  const view = getViewForTrade(trade);
+  const [view, setView] = useState<ViewKey>('cards');
   const tokens = getTokens(isDark);
-  const ActiveIcon = VIEW_META[view].icon;
+  const activeIndex = VIEW_SEQUENCE.indexOf(view);
 
   return (
     <div className="space-y-3">
-      <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border w-fit transition-colors duration-300 ${tokens.indicatorBg}`}
-      >
-        <ActiveIcon className="w-3 h-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{VIEW_META[view].label} view</span>
+      <div className={`relative grid grid-cols-3 rounded-xl border p-1 w-full max-w-sm ${tokens.segTrack}`}>
+        <motion.div
+          className={`absolute top-1 bottom-1 left-1 rounded-lg ${tokens.segPill}`}
+          style={{ width: 'calc(33.333% - 4px)' }}
+          animate={{ x: `${activeIndex * 100}%` }}
+          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        />
+        {VIEW_SEQUENCE.map((key) => {
+          const meta = VIEW_META[key];
+          const isActive = key === view;
+          return (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={`relative z-10 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors duration-200 cursor-pointer ${
+                isActive ? tokens.segTextActive : `${tokens.segTextInactive} hover:${isDark ? 'text-slate-200' : 'text-slate-700'}`
+              }`}
+            >
+              <meta.icon className="w-3 h-3 shrink-0" />
+              <span className="hidden sm:inline">{meta.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       <AnimatePresence mode="wait">
