@@ -9,6 +9,7 @@ import ValuePropsSection from '@/components/marketing/ValuePropsSection';
 import HowItWorksSection from '@/components/marketing/HowItWorksSection';
 import ProblemSection from '@/components/marketing/ProblemSection';
 import TruckSection from '@/components/marketing/TruckSection'; // Your Distribution Section
+import CustomizeFormSection from '@/components/marketing/CustomizeFormSection'; // Your Entry Point Section
 import DigestBanner from '@/components/marketing/DigestBanner';
 import SelfServeBanner from '@/components/marketing/SelfServeBanner';
 import Pricing from '@/components/marketing/Pricing';
@@ -22,14 +23,28 @@ return (
 
 {/* 1. THE HOOK: The current state of chaos vs. order */}
 <NewHero />
-<ProblemSection />
 <FullStorySection />
-<ValuePropsSection />
 
+<CustomizeFormSection />
+
+
+<ProblemSection />
+
+<TruckSection />
+
+
+
+
+<HowItWorksSection />
 
 <QuoteToPaidSection />
 
-<HowItWorksSection />
+
+
+
+
+
+<ValuePropsSection />
 
 
 
@@ -39,7 +54,6 @@ return (
 {/* CustomizeFormSection removed — its job (industry picker, full form
     preview) now lives directly in the hero. */}
 {/* 5. DISTRIBUTION: Where to put the link (QR/Trucks/Bios) Google section */}
-<TruckSection />
 
 {/* 4. THE ENTRY POINT: Custom Forms (The "Where" & "How") */}
 

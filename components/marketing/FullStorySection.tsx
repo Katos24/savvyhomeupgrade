@@ -39,14 +39,14 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-{
-  id: 'overview',
-  title: 'Client Management',
-  shortTitle: 'Overview',
-  description: 'Client contact info and the original job request, side by side — no digging through texts.',
-  icon: Users,
-  side: 'left',
-},
+  {
+    id: 'overview',
+    title: 'Client Management',
+    shortTitle: 'Overview',
+    description: 'Client contact info and the original job request, side by side — no digging through texts.',
+    icon: Users,
+    side: 'left',
+  },
   {
     id: 'quote',
     title: 'Smart Estimates',
@@ -365,8 +365,6 @@ const InvoiceView = () => (
   </div>
 );
 
-// --- UPGRADED HIGH FIDELITY MEDIA VIEW (Incorporating roof-damage.png) ---
-
 const MediaView = () => (
   <div className="flex-1 flex flex-col p-3 min-h-0 text-left justify-between">
     <div className="bg-white rounded-2xl border border-slate-200/70 shadow-xs p-3.5 space-y-3 flex-1 flex flex-col min-h-0">
@@ -426,9 +424,9 @@ const MediaView = () => (
 // --- Main Interactive Module Framework Engine Component ---
 
 export default function InteractiveShowcase() {
-  // Set default active tab to 'media' so the new view pass displays instantly
-const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
+  const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
 
+  // Restored renderPhoneContent function safely inside the component
   const renderPhoneContent = () => {
     switch (activeFeature) {
       case 'overview': return <OverviewView />;
@@ -481,29 +479,36 @@ const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
           
           {/* Left Feature Selection Cards (Desktop only Column) */}
           <div className="hidden lg:flex lg:col-span-4 flex-col gap-5">
-            {FEATURES.filter(f => f.side === 'left').map((feature) => (
-              <button
-                key={feature.id}
-                onClick={() => setActiveFeature(feature.id)}
-                className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
-                  activeFeature === feature.id
-                    ? 'border-emerald-500 bg-slate-900 shadow-[0_0_25px_rgba(16,185,129,0.1)]'
-                    : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
-                  activeFeature === feature.id ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  <feature.icon size={20} strokeWidth={2.5} />
-                </div>
-                <h3 className={`text-lg font-black mb-1.5 ${activeFeature === feature.id ? 'text-white' : 'text-slate-300'}`}>
-                  {feature.title}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed font-bold">
-                  {feature.description}
-                </p>
-              </button>
-            ))}
+            {FEATURES.filter(f => f.side === 'left').map((feature) => {
+              const isActive = activeFeature === feature.id;
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => setActiveFeature(feature.id)}
+                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
+                    isActive
+                      ? 'border-emerald-500 bg-white shadow-xl scale-[1.02]'
+                      : 'border-transparent bg-white/90 hover:bg-white hover:border-slate-350 shadow-md'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
+                    isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <feature.icon size={20} strokeWidth={2.5} />
+                  </div>
+                  <h3 className={`text-lg font-black mb-1.5 transition-colors ${
+                    isActive ? 'text-slate-950' : 'text-slate-800'
+                  }`}>
+                    {feature.title}
+                  </h3>
+                  <p className={`text-xs leading-relaxed font-bold transition-colors ${
+                    isActive ? 'text-slate-600' : 'text-slate-500'
+                  }`}>
+                    {feature.description}
+                  </p>
+                </button>
+              );
+            })}
           </div>
 
           {/* Central Live Device Framework Sandbox Container */}
@@ -540,29 +545,36 @@ const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
 
           {/* Right Feature Selection Cards (Desktop only Column) */}
           <div className="hidden lg:flex lg:col-span-4 flex-col gap-5">
-            {FEATURES.filter(f => f.side === 'right').map((feature) => (
-              <button
-                key={feature.id}
-                onClick={() => setActiveFeature(feature.id)}
-                className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
-                  activeFeature === feature.id
-                    ? 'border-emerald-500 bg-slate-900 shadow-[0_0_25px_rgba(16,185,129,0.1)]'
-                    : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
-                  activeFeature === feature.id ? 'bg-emerald-500/20 text-emerald-500' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  <feature.icon size={20} strokeWidth={2.5} />
-                </div>
-                <h3 className={`text-lg font-black mb-1.5 ${activeFeature === feature.id ? 'text-white' : 'text-slate-300'}`}>
-                  {feature.title}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed font-bold">
-                  {feature.description}
-                </p>
-              </button>
-            ))}
+            {FEATURES.filter(f => f.side === 'right').map((feature) => {
+              const isActive = activeFeature === feature.id;
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => setActiveFeature(feature.id)}
+                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
+                    isActive
+                      ? 'border-emerald-500 bg-white shadow-xl scale-[1.02]'
+                      : 'border-transparent bg-white/90 hover:bg-white hover:border-slate-350 shadow-md'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
+                    isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <feature.icon size={20} strokeWidth={2.5} />
+                  </div>
+                  <h3 className={`text-lg font-black mb-1.5 transition-colors ${
+                    isActive ? 'text-slate-950' : 'text-slate-800'
+                  }`}>
+                    {feature.title}
+                  </h3>
+                  <p className={`text-xs leading-relaxed font-bold transition-colors ${
+                    isActive ? 'text-slate-600' : 'text-slate-500'
+                  }`}>
+                    {feature.description}
+                  </p>
+                </button>
+              );
+            })}
           </div>
 
         </div>

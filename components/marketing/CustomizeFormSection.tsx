@@ -10,11 +10,26 @@ import {
   User, 
   Phone, 
   Mail, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  Home,
+  Wind,
+  Droplet,
+  Sun,
+  Zap,
+  HardHat,
 } from 'lucide-react';
 import { TRADE_EXAMPLES, type TradeExample } from './tradeExamples';
 
 const font = "'Nunito', sans-serif";
+
+const TRADE_ICONS: Record<string, any> = {
+  Roofing: Home,
+  HVAC: Wind,
+  Plumbing: Droplet,
+  Solar: Sun,
+  Electrical: Zap,
+  'General Contractor': HardHat, // was: Construction: HardHat
+};
 
 // ==========================================
 // Sub-components & Helpers
@@ -26,10 +41,10 @@ function CalloutTag({ icon: Icon, text, className = '' }: { icon: any; text: str
       initial={{ opacity: 0, scale: 0.95 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
-      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md transition-all duration-300 hover:border-white/[0.12] ${className}`}
+      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:border-slate-300 ${className}`}
     >
-      <Icon size={14} className="text-emerald-400" />
-      <span className="text-xs font-bold text-slate-300" style={{ fontFamily: font }}>{text}</span>
+      <Icon size={14} className="text-emerald-600" />
+      <span className="text-xs font-bold text-slate-700" style={{ fontFamily: font }}>{text}</span>
     </motion.div>
   );
 }
@@ -41,9 +56,6 @@ function TradeFormCard({
   example: TradeExample;
   compact?: boolean;
 }) {
-  // Compact (hero): name + phone only, one question, no photo preview.
-  // Full (CustomizeFormSection): name + phone + email, address, both
-  // questions, and a real photo preview when the trade has one.
   const questions = compact ? example.questions.slice(0, 1) : example.questions;
 
   return (
@@ -190,36 +202,32 @@ export default function CustomizeFormSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-slate-950">
+    <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-white">
 
+      {/* Light-mode blueprint dot pattern, matching the rest of the site */}
       <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        className="absolute inset-0 opacity-[0.035] pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
+          backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
         }}
-      />
-
-      <motion.div
-        animate={{ backgroundColor: `${current.color}10` }}
-        transition={{ duration: 0.8 }}
-        className="absolute right-0 top-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none"
       />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
 
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
 
-          {/* LEFT — headline always first on mobile, full copy on desktop */}
+          {/* LEFT — headline, copy, and badges — always light, since the
+              section background is light now */}
           <div className="order-1 lg:order-last flex flex-col justify-center">
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-white mb-4"
+              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-4"
               style={{ fontFamily: font }}
             >
-              Your form, your brand
+              The fix: your form, your brand
             </motion.p>
 
             <motion.h2
@@ -227,7 +235,7 @@ export default function CustomizeFormSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-4xl sm:text-5xl text-white font-black leading-[1.05] tracking-tight mb-0 lg:mb-5"
+              className="text-4xl sm:text-5xl text-slate-950 font-black leading-[1.05] tracking-tight mb-0 lg:mb-5"
               style={{ fontFamily: font }}
             >
               Custom forms <br />
@@ -244,7 +252,7 @@ export default function CustomizeFormSection() {
             {/* Subtext + badges — desktop only */}
             <div className="hidden lg:block">
               <p
-                className="text-slate-400 font-bold text-base sm:text-lg mb-8 mt-5 max-w-sm leading-relaxed"
+                className="text-slate-600 font-bold text-base sm:text-lg mb-8 mt-5 max-w-sm leading-relaxed"
                 style={{ fontFamily: font }}
               >
                 Build a form that feels like your business and gives customers confidence that you know your stuff.
@@ -258,38 +266,62 @@ export default function CustomizeFormSection() {
             </div>
           </div>
 
-          {/* RIGHT — Interactive Card Preview */}
+          {/* RIGHT — dark panel holding the tabs + form preview, so the
+              light section still gets a "spotlight" area behind the card */}
           <div className="order-2 lg:order-first flex flex-col items-center w-full">
+            <div className="relative w-full bg-slate-950 rounded-3xl px-5 py-10 sm:p-10 lg:p-12 flex flex-col items-center overflow-hidden">
+              
+              <div
+                className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+                  backgroundSize: '40px 40px',
+                }}
+              />
+              <motion.div
+                animate={{ backgroundColor: `${current.color}10` }}
+                transition={{ duration: 0.8 }}
+                className="absolute right-0 top-1/4 w-72 h-72 rounded-full blur-[100px] pointer-events-none"
+              />
 
-            {/* SELECTION TABS */}
-            <div className="flex gap-1.5 p-1 bg-white/[0.02] border border-white/[0.06] rounded-xl mb-8 flex-wrap justify-center backdrop-blur-sm">
-              {TRADE_EXAMPLES.map((example, i) => (
-                <button
-                  key={example.trade}
-                  onClick={() => setActiveExample(i)}
-                  className={`px-4 py-1.5 rounded-lg text-xs tracking-wide transition-all duration-300 ${
-                    activeExample === i
-                      ? 'text-white shadow-sm font-black'
-                      : 'bg-transparent text-slate-400 font-bold hover:text-slate-200'
-                  }`}
-                  style={{
-                    fontFamily: font,
-                    ...(activeExample === i ? { backgroundColor: example.color } : {}),
-                  }}
-                >
-                  {example.trade}
-                </button>
-              ))}
+              {/* SELECTION TABS — single scrollable row, icon + label, no
+                  wrapping (fixes the "Construction" orphan-row problem) */}
+              <div className="relative z-10 w-full max-w-full overflow-x-auto scrollbar-none mb-8">
+                <div className="flex gap-1.5 p-1 bg-white/[0.03] border border-white/[0.08] rounded-xl w-max mx-auto">
+                  {TRADE_EXAMPLES.map((example, i) => {
+                    const Icon = TRADE_ICONS[example.trade];
+                    return (
+                      <button
+                        key={example.trade}
+                        onClick={() => setActiveExample(i)}
+                        className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs tracking-wide transition-all duration-300 ${
+                          activeExample === i
+                            ? 'text-white shadow-sm font-black'
+                            : 'bg-transparent text-slate-400 font-bold hover:text-slate-200'
+                        }`}
+                        style={{
+                          fontFamily: font,
+                          ...(activeExample === i ? { backgroundColor: example.color } : {}),
+                        }}
+                      >
+                        {Icon && <Icon size={12} strokeWidth={2.5} />}
+                        {example.trade}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="relative z-10 group w-full flex justify-center">
+                <TradeFormCard example={current} />
+              </div>
             </div>
 
-            <div className="group w-full flex justify-center">
-              <TradeFormCard example={current} />
-            </div>
-
-            {/* Subtext + badges — mobile only, below form */}
+            {/* Subtext + badges — mobile only, below the dark panel, on the
+                light section background */}
             <div className="block lg:hidden w-full mt-8">
               <p
-                className="text-slate-400 font-bold text-base leading-relaxed mb-6"
+                className="text-slate-600 font-bold text-base leading-relaxed mb-6"
                 style={{ fontFamily: font }}
               >
                 Build a form that feels like your business and gives customers confidence that you know your stuff.

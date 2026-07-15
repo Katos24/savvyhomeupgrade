@@ -11,7 +11,11 @@ import {
   ShieldCheck,
   X,
   Maximize2,
-  Sparkles
+  Sparkles,
+  Wifi,
+  Battery,
+  Bell,
+  Send
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -25,137 +29,275 @@ function StripeWordmark({ className = '' }: { className?: string }) {
   );
 }
 
-const PaidCard = () => (
-  <div className="relative flex h-[380px] sm:h-[440px] w-full max-w-[400px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
+// ==========================================
+// Tighter, Custom-Height iPhone Frame (Payment Success)
+// ==========================================
+const PaidCardInPhone = () => {
+  const mockTime = "09:41";
 
-    <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50 px-3 py-1.5 shadow-sm">
-      <Lock className="text-emerald-600 w-3 h-3" />
-      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500">Secure</span>
-    </span>
-    
-    <div className="relative z-10 mb-5 sm:mb-6 text-emerald-600">
-      <motion.div
-        initial={{ scale: 0 }}
-        whileInView={{ scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ type: 'spring', bounce: 0.5, delay: 0.3 }}
-      >
-        <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-emerald-50">
-          <CheckCircle2 className="w-12 h-12 sm:w-14 sm:h-14" strokeWidth={2.5} />
-        </div>
-      </motion.div>
-    </div>
-    
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.5 }}
-      className="relative z-10"
-    >
-      <p className="text-4xl sm:text-5xl font-black leading-tight text-slate-900">$9,121.00</p>
-      <p className="mt-2.5 sm:mt-3 flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-widest text-emerald-600">
-        <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Paid & Tracked
-      </p>
+  return (
+    <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[310px] h-[480px] sm:h-[540px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.2)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between">
       
-      <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
-        Powered by <StripeWordmark className="text-base" />
+      {/* iPhone Dynamic Island */}
+      <div className="absolute top-3.5 left-1/2 -translate-x-1/2 h-4 w-20 bg-black rounded-full z-30 flex items-center justify-center">
+        <span className="w-1.5 h-1.5 bg-slate-900/40 rounded-full ml-auto mr-2" />
       </div>
-    </motion.div>
-  </div>
-);
+
+      {/* Internal Phone Screen */}
+      <div className="relative flex-1 w-full h-full rounded-[34px] bg-slate-50 overflow-hidden flex flex-col justify-between pt-6 pb-3 px-3 select-none">
+        
+        {/* iOS Status Bar */}
+        <div className="flex justify-between items-center px-3 py-0.5 text-slate-950 z-20 text-[9px] font-black tracking-tight shrink-0">
+          <span>{mockTime}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[7px] font-extrabold uppercase">5G</span>
+            <Wifi size={9} strokeWidth={2.5} />
+            <Battery size={11} className="ml-0.5" />
+          </div>
+        </div>
+
+        {/* Dynamic Push Notification */}
+        <motion.div
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', delay: 0.8, stiffness: 100 }}
+          className="z-20 mt-2 mx-0.5"
+        >
+          <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-2.5 shadow-[0_8px_16px_rgba(0,0,0,0.06)] flex items-start gap-2.5 text-left">
+            <div className="h-7 w-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/20">
+              <Bell size={12} strokeWidth={2.5} className="animate-bounce" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 leading-none">Notification</p>
+                <p className="text-[8px] font-bold text-slate-400 leading-none">now</p>
+              </div>
+              <p className="text-[10px] font-black text-slate-900 mt-1 leading-tight">
+                Kevin Smith Paid
+              </p>
+              <p className="text-[9px] font-bold text-slate-500 leading-relaxed truncate">
+                $9,121.00 via Ridge Line Roofing
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Success Canvas Area */}
+        <div className="relative flex-1 flex flex-col items-center justify-center text-center px-1">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08),transparent_65%)] pointer-events-none" />
+
+          {/* Secure Stripe Badge */}
+          <span className="mb-3 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 shadow-sm">
+            <Lock className="text-[#635BFF] w-2 h-2" />
+            <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-500">Secure Stripe Checkout</span>
+          </span>
+          
+          {/* Success Checkmark Circle */}
+          <div className="mb-3 text-emerald-600">
+            <motion.div
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: 'spring', bounce: 0.5, delay: 0.3 }}
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 shadow-inner">
+                <CheckCircle2 className="w-8 h-8" strokeWidth={2.5} />
+              </div>
+            </motion.div>
+          </div>
+          
+          {/* Main Transaction Text */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }}
+            className="z-10"
+          >
+            <p className="text-2xl sm:text-3xl font-black leading-none text-slate-900 tracking-tight">$9,121.00</p>
+            
+            <p className="mt-1.5 inline-flex items-center justify-center gap-1 text-[8.5px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50/70 border border-emerald-100/60 px-2 py-0.5 rounded-full">
+              <ShieldCheck className="w-2.5 h-2.5" /> Paid & Logged
+            </p>
+            
+            {/* Stripe Brand Integration */}
+            <div className="mt-6 flex flex-col items-center gap-0.5">
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Processed securely via</span>
+              <StripeWordmark className="text-sm" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* iPhone Bottom Home Bar */}
+        <div className="w-20 h-1 bg-slate-900/15 rounded-full mx-auto shrink-0 z-20 mt-1" />
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// NEW WIDER iPhone Frame for Step 2
+// ==========================================
+// ==========================================
+// Send Invoice iPhone Frame — same size as PaidCardInPhone (Step 3)
+// ==========================================
+const SendInvoicePhone = () => {
+  return (
+    <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[310px] h-[480px] sm:h-[540px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between">
+      
+      {/* iPhone Dynamic Island — same w-20/h-4 as PaidCardInPhone */}
+      <div className="absolute top-3.5 left-1/2 -translate-x-1/2 h-4 w-20 bg-black rounded-full z-30 flex items-center justify-center">
+        <span className="w-1.5 h-1.5 bg-slate-900/40 rounded-full ml-auto mr-2" />
+      </div>
+
+      {/* Internal Phone Screen — same rounded-[34px] frame as PaidCardInPhone */}
+      <div className="relative flex-1 w-full h-full rounded-[34px] overflow-hidden bg-slate-50">
+        <Image 
+          src="/images/sendInvoice.webp" 
+          alt="Resend Invoice Action Window"
+          fill
+          className="object-cover object-top"
+          priority
+        />
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// Downward Connector
+// ==========================================
+function StepConnector() {
+  return (
+    <div className="flex justify-center my-2">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-2xs">
+        <ArrowRight className="w-5 h-5 rotate-90" strokeWidth={2.5} />
+      </div>
+    </div>
+  );
+}
 
 export default function QuoteToPaidWorkflow() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <section className="relative overflow-hidden bg-slate-50 py-16 sm:py-24">
+    <section className="relative overflow-hidden bg-[#fafafa] py-16 sm:py-24">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.5]"
         style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 sm:gap-12">
-          
-          {/* Invoice Column (Left) */}
-          <div className="w-full max-w-[440px] flex flex-col">
-            <div className="mb-5 text-left">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-1">
-                Professional Invoicing
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-[1.2]" style={{ fontFamily: font }}>
-                Generate professional invoices with <span className="text-emerald-600">your business branding.</span>
-              </h2>
-            </div>
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
+        
+        {/* Header Block */}
+        <div className="text-center mb-14 sm:mb-20">
+          <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-2">
+            Automated Workflow
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto" style={{ fontFamily: font }}>
+            From sending a branded estimate to <span className="text-emerald-600">secure payment delivery</span>
+          </h2>
+        </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="w-full"
-            >
-              <div 
-                onClick={() => setIsModalOpen(true)}
-                className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300"
+        {/* Grid Workflow Flow */}
+        <div className="flex flex-col gap-10 sm:gap-14">
+
+          {/* STEP 1: Invoice left, description right */}
+          <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-14">
+            <div className="w-full md:w-1/2">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
               >
-                <Image 
-                  src="/images/invoice_full.webp" 
-                  alt="Professional Invoice PDF with lead2project branding"
-                  width={900}
-                  height={1170}
-                  className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
-                />
-                
-                <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/5 flex items-center justify-center">
-                  <div className="translate-y-2 opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-900 shadow-xl transition-all">
-                    <Maximize2 className="text-emerald-600 w-3.5 h-3.5" /> Preview Branding
+                <div 
+                  onClick={() => setIsModalOpen(true)}
+                  className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300 h-[380px] sm:h-[460px] lg:h-[500px]"
+                >
+                  <Image 
+                    src="/images/invoice_full.webp" 
+                    alt="Professional Invoice PDF with branding"
+                    fill
+                    className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.01]"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/5 flex items-center justify-center">
+                    <div className="translate-y-2 opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-900 shadow-xl transition-all">
+                      <Maximize2 className="text-emerald-600 w-3.5 h-3.5" /> Preview Branding
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="mt-3.5 flex items-center justify-start gap-2 text-slate-400 px-1">
-                <FileText className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-wider">Tap to view branding choices</span>
-              </div>
-            </motion.div>
+                <div className="mt-3.5 flex items-center justify-center md:justify-start gap-2 text-slate-400 px-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Tap to view branding choices</span>
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="w-full md:w-1/2 text-center md:text-left">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-2">
+                Step 1: Professional Invoices
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug mb-3" style={{ fontFamily: font }}>
+                Branded estimates, ready in one click
+              </h3>
+              <p className="text-sm sm:text-base font-bold text-slate-500 max-w-md mx-auto md:mx-0">
+                Generate clean, branded estimates & invoices complete with your signature branding, custom line items, and QR codes instantly.
+              </p>
+            </div>
           </div>
 
-          {/* Connector Arrow (Middle) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-center self-center py-4 lg:py-0 lg:mt-28"
-          >
-            <div className="flex h-11 w-11 lg:h-14 lg:w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
-              <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 rotate-90 lg:rotate-0" strokeWidth={2.5} />
-            </div>
-          </motion.div>
+          <StepConnector />
 
-          {/* Paid Confirmation Column (Right) */}
-          <div className="w-full max-w-[400px] flex flex-col">
-            <div className="mb-5 text-left">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-1">
-                Integrated Payouts
-              </span>
-              <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-[1.2]" style={{ fontFamily: font }}>
-                Connect with <StripeWordmark className="text-2xl sm:text-4xl" /> to track payments and <span className="text-emerald-600">get paid faster.</span>
-              </h3>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="w-full"
-            >
-              <PaidCard />
-              <div className="mt-3.5 flex items-center justify-start gap-2 text-slate-400 px-1">
-                <CreditCard className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-wider">Instant Cards & ACH Sync</span>
+          {/* STEP 2: Phone right (WIDE), description left */}
+          <div className="flex flex-col md:flex-row-reverse items-center gap-8 lg:gap-14">
+            <div className="w-full md:w-1/2 flex justify-center">
+              <div>
+                <SendInvoicePhone />
+                <div className="mt-4 flex items-center justify-center gap-2 text-slate-400 px-1">
+                  <Send className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Fast Outbound Dispatching</span>
+                </div>
               </div>
-            </motion.div>
+            </div>
+
+            <div className="w-full md:w-1/2 text-center md:text-left">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-blue-500 font-mono block mb-2">
+                Step 2: 1-Tap Delivery
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug mb-3" style={{ fontFamily: font }}>
+                Straight to their phone, instantly
+              </h3>
+              <p className="text-sm sm:text-base font-bold text-slate-500 max-w-md mx-auto md:mx-0">
+                Deliver files with custom options directly to your client&apos;s phone via email, link, or automated SMS sequences.
+              </p>
+            </div>
+          </div>
+
+          <StepConnector />
+
+          {/* STEP 3: Phone left, description right */}
+          <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-14">
+            <div className="w-full md:w-1/2 flex justify-center">
+              <div>
+                <PaidCardInPhone />
+                <div className="mt-4 flex items-center justify-center gap-2 text-slate-400 px-1">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Instant Cards & ACH Sync</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full md:w-1/2 text-center md:text-left">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-2">
+                Step 3: Integrated Payouts
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug mb-3" style={{ fontFamily: font }}>
+                Get paid without chasing
+              </h3>
+              <p className="text-sm sm:text-base font-bold text-slate-500 max-w-md mx-auto md:mx-0">
+                Connect securely with <StripeWordmark className="text-sm" /> to accept instant ACH or card payments tracked in real-time.
+              </p>
+            </div>
           </div>
 
         </div>
