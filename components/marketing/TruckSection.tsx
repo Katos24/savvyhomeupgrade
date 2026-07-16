@@ -63,7 +63,7 @@ export default function DistributionSection() {
             
             <h2 className="text-slate-900 font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-6">
               Get clean leads from everywhere.<br />
-              <span className="text-emerald-600">Without picking up the phone.</span>
+                        <span className="text-[#0A3A66]"> Without picking up the phone.</span>
             </h2>
 
             <p className="text-slate-500 font-semibold text-base sm:text-lg leading-relaxed mb-6">

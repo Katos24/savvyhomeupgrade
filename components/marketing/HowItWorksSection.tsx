@@ -82,7 +82,9 @@ export default function HowItWorksSection() {
             className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]"
             style={{ fontFamily: font }}
           >
-            Up and running <span className="text-emerald-400 underline decoration-emerald-500/30 decoration-wavy decoration-2 underline-offset-8">in minutes.</span>
+            Up and running 
+                        <span className="text-[#7BC94F]"> in minutes</span>
+
           </h2>
         </div>
 

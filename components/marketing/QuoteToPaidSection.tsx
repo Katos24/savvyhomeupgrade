@@ -273,7 +273,10 @@ export default function QuoteToPaidWorkflow() {
             Automated Workflow
           </span>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto" style={{ fontFamily: font }}>
-            From saved templates to <span className="text-emerald-600">secure payment</span>, automatically
+            From saved templates to 
+                        <span className="text-[#0A3A66] underline underline-offset-2"> secure payment</span> automatically
+
+            
           </h2>
         </div>
 

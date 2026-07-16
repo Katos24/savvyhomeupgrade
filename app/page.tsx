@@ -39,6 +39,8 @@ return (
 
 <ValuePropsSection />
 
+<DigestBanner />
+
 
 <CustomizeFormSection />
 
@@ -66,21 +68,19 @@ return (
 
 
 
-<DigestBanner />
 
-<SelfServeBanner />
 
 
 
 <Pricing />
 
 {/* 9. THE BARRIER REMOVAL: Self-serve sign up */}
+<SelfServeBanner />
 
 
 
 
 {/* 11. FINAL CTA */}
-<FinalCTA />
 
 <Footer />
 </div>

@@ -20,6 +20,7 @@ interface CardsViewProps {
   statusOptions: any[];
   isDark?: boolean;
   planTier?: string;
+  accentColor?: string;
 }
 
 const containerVariants: Variants = {
@@ -103,18 +104,27 @@ const stepDotClasses: Record<StepState, { dark: string; light: string }> = {
   problem: { dark: 'bg-red-500 border-red-400', light: 'bg-red-500 border-red-500' },
 };
 
-function StepDot({ state, isDark, size = 'md' }: { state: StepState; isDark: boolean; size?: 'sm' | 'md' }) {
+function StepDot({ state, isDark, size = 'md', activeColor }: { state: StepState; isDark: boolean; size?: 'sm' | 'md'; activeColor?: string }) {
   const dim = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
   const iconDim = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3';
 
   if (state === 'partial') {
-    // Half-filled dot: amber left half, hollow right half — visually distinct
-    // from a fully-paid solid dot rather than just a different color.
     const borderColor = isDark ? 'border-amber-400' : 'border-amber-500';
     return (
       <div className={`${dim} rounded-full border-2 ${borderColor} relative overflow-hidden shrink-0`}>
         <div className="absolute inset-y-0 left-0 w-1/2 bg-amber-500" />
       </div>
+    );
+  }
+
+  // 'active' uses the company's brand color instead of a fixed hue —
+  // it's a neutral "in progress" signal, not success/failure, so it's safe to brand.
+  if (state === 'active' && activeColor) {
+    return (
+      <div
+        className={`${dim} rounded-full border-2 flex items-center justify-center shrink-0`}
+        style={{ backgroundColor: activeColor, borderColor: activeColor }}
+      />
     );
   }
 
@@ -194,11 +204,8 @@ function ProgressTracker({
             >
               {s.step.label}
             </span>
-            {s.step.isStripe && (
-              <span
-                className="text-[8px] font-bold tracking-tight mt-0.5"
-                style={{ color: '#635BFF' }}
-              >
+           {s.step.isStripe && (
+              <span className={`text-[8px] font-semibold tracking-tight mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 via Stripe
               </span>
             )}
@@ -293,8 +300,8 @@ export default function CardsView({
                       {statusConfig.label}
                     </span>
                   </div>
-                  {hasPhotos && (
-                    <span className={`text-[12px] font-medium flex items-center gap-1 ${isDark ? 'text-pink-400' : 'text-pink-600'}`}>
+                 {hasPhotos && (
+                    <span className={`text-[12px] font-medium flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <Camera className="w-3.5 h-3.5" />
                       {lead.file_urls.length}
                     </span>

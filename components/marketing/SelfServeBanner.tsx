@@ -33,7 +33,7 @@ export default function SelfServeBanner() {
             
             <h2 className="text-slate-900 font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-6">
               Sign up and start <br />
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">in under 2 minutes.</span>
+                        <span className="text-[#0A3A66]"> in under 2 minutes</span>
             </h2>
             
            <p className="text-slate-500 font-bold text-base sm:text-lg leading-relaxed max-w-xl mb-6">

@@ -295,7 +295,9 @@ export default function DashboardShowcase() {
             From submission to dispatch board
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-            One form in. Already organized on your board.
+            One form in. 
+                        <span className="text-[#0A3A66]"> Already organized on your board.</span>
+
           </h2>
         </div>
 

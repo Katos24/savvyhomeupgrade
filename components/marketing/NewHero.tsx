@@ -58,13 +58,7 @@ export default function ArchitectHero() {
         {/* STAGE 1: CENTERED HERO TEXT */}
         <div className="flex flex-col items-center text-center space-y-8 mb-14 lg:mb-16">
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 sm:px-4 whitespace-nowrap">
-            <Wrench className="w-4 h-4 text-[#7BC94F] shrink-0" />
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wide sm:tracking-widest text-white">
-              <span className="sm:hidden">Built for Trades</span>
-              <span className="hidden sm:inline">Built for Contractors & Local Trades</span>
-            </span>
-          </div>
+        
 
           <h1 className="tracking-tight leading-[0.95] text-white text-5xl sm:text-6xl lg:text-[76px] font-black">
             Your form. Your workflow.<br />

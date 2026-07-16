@@ -73,7 +73,7 @@ export default function Pricing() {
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl text-white mb-4 font-black tracking-tight leading-[1.05]" style={{ fontFamily: font }}>
               One job pays for <br />
-              <span className="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.15)]">the whole year.</span>
+            <span className="text-[#7BC94F]"> the whole year.</span>
             </h2>
             <p className="text-slate-400 max-w-sm mx-auto text-sm sm:text-base font-bold leading-relaxed" style={{ fontFamily: font }}>
               Cancel anytime. No hidden setup fees. Just better business.

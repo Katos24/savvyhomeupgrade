@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
+import FaqModal from '@/components/FaqModal';
 
 // Real sections you already have code for — confirmed via `find`, not guessed.
 import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
@@ -121,8 +122,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
   const [includeLogo, setIncludeLogo] = useState(true);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
+const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [showFaqModal, setShowFaqModal] = useState(false);
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandSaved, setBrandSaved] = useState(false);
@@ -318,10 +319,17 @@ const checklistSteps: ChecklistStep[] = [
           <span className="font-semibold text-xs text-white">{companyName?.charAt(0)}</span>
         )}
       </div>
-      <span className="text-sm font-semibold text-white truncate">{companyName}</span>
+     <span className="text-sm font-semibold text-white truncate">{companyName}</span>
+      <button
+        onClick={() => setShowFaqModal(true)}
+        className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/30 text-[11px] font-bold text-white hover:bg-[#3e4046]"
+        aria-label="How Lead2Project works"
+      >
+        ?
+      </button>
       <button
         onClick={() => setMobileNavOpen(false)}
-        className="ml-auto p-1.5 rounded-lg hover:bg-[#3e4046] lg:hidden"
+        className="p-1.5 rounded-lg hover:bg-[#3e4046] lg:hidden"
         aria-label="Close menu"
       >
         <X className="w-4 h-4 text-white" />
@@ -466,6 +474,9 @@ const checklistSteps: ChecklistStep[] = [
         </div>
 
       </main>
+
+   {/* ── FAQ MODAL ── */}
+      {showFaqModal && <FaqModal onClose={() => setShowFaqModal(false)} />}
 
       {/* ── QR MODAL ── */}
       {showQrModal && (

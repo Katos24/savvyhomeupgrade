@@ -86,7 +86,8 @@ export default function ValuePropsSection() {
             className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight"
             style={{ fontFamily: font }}
           >
-            Less busywork. <span className="text-amber-400">More billable hours.</span>
+            Less busywork. 
+            <span className="text-[#7BC94F]"> More billable hours.</span>
           </h2>
         </div>
 

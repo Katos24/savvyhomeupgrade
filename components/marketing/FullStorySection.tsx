@@ -446,7 +446,8 @@ export default function InteractiveShowcase() {
         <div className="text-center mb-10 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
             Manage your entire business <br className="hidden sm:block" />
-            <span className="text-emerald-500">from one screen.</span>
+            <span className="text-[#7BC94F]">from one screen.</span>
+
           </h2>
           <p className="text-slate-400 text-sm sm:text-base font-medium max-w-2xl mx-auto px-2">
             Tap the modules below to look at how real-time operational control layouts update instantly inside the field app preview.

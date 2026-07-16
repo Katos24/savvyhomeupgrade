@@ -450,9 +450,17 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
+const accentColor = company.email_brand_color_1 || '#2563eb';
 
   return (
 <div className={`min-h-screen relative selection:bg-blue-500/30 ${isDark ? 'bg-[#334155]' : 'bg-gray-50'}`}>
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
+        style={{
+          background: `radial-gradient(ellipse at top, ${accentColor}1f, transparent 70%)`,
+        }}
+        aria-hidden="true"
+      />
       <Toaster position="top-right" richColors />
 
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg focus:font-bold">
@@ -484,6 +492,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             onClose={() => setSidebarOpen(false)}
             currentView={currentView}
             onViewChange={setCurrentView}
+            brandColor1={company.email_brand_color_1 || '#2563eb'}
+  brandColor2={company.email_brand_color_2 || '#4f46e5'}
           />
         </aside>
       </div>
@@ -518,7 +528,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onCreateLead={() => setIsCreateModalOpen(true)}
           onLockedFeature={setLockedDashboardModal}
           onRefresh={() => fetchLeads(1, false)}
-          accentColor={company.email_brand_color_1 || undefined}
+          accentColor={accentColor}
         />
 
     
