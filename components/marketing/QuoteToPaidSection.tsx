@@ -11,11 +11,14 @@ import {
   Sparkles,
   Wifi,
   Battery,
-  Bell
+  Bell,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
+
+const STEP_HEIGHT = 'h-[440px] sm:h-[480px]';
 
 function StripeWordmark({ className = '' }: { className?: string }) {
   return (
@@ -25,9 +28,119 @@ function StripeWordmark({ className = '' }: { className?: string }) {
   );
 }
 
-// ==========================================
-// Tighter, Custom-Height iPhone Frame (Payment Success) — unchanged
-// ==========================================
+const TEMPLATE_ITEMS = [
+  { label: 'Tear-off & Disposal (per sq.)', price: 85 },
+  { label: 'Architectural Shingles', price: 165 },
+  { label: 'Synthetic Underlayment', price: 88 },
+  { label: 'Ice & Water Shield (Rolls)', price: 120 },
+  { label: 'Drip Edge (10ft Sections)', price: 18 },
+  { label: 'Ridge Vent (4ft Sections)', price: 24 },
+];
+
+const PricingTemplateCard = () => (
+  <div className={`relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900 shadow-lg overflow-hidden flex flex-col`}>
+    <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+      <div>
+        <h4 className="text-white font-black text-sm leading-none">Pricing Template</h4>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1.5">
+          Full Roof Replacement
+        </p>
+      </div>
+      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+        <X className="w-3.5 h-3.5 text-slate-400" />
+      </div>
+    </div>
+
+    <div className="px-3 py-1.5 grid grid-cols-[1fr_60px_36px_70px] gap-2 text-[9px] font-black uppercase tracking-wider text-slate-500 border-b border-white/5 shrink-0">
+      <span>Item Description</span>
+      <span className="text-right">Unit Price</span>
+      <span className="text-right">Qty</span>
+      <span className="text-right">Total</span>
+    </div>
+
+    <div className="flex-1 overflow-hidden divide-y divide-white/5">
+      {TEMPLATE_ITEMS.map((item) => (
+        <div key={item.label} className="grid grid-cols-[1fr_60px_36px_70px] gap-2 items-center px-3 py-3">
+          <span className="text-white text-xs font-bold leading-tight truncate">{item.label}</span>
+          <span className="text-slate-400 text-xs font-semibold text-right">${item.price}</span>
+          <span className="text-slate-400 text-xs font-semibold text-right">1</span>
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-emerald-400 text-xs font-black">${item.price.toFixed(2)}</span>
+            <Trash2 className="w-3 h-3 text-slate-600 shrink-0" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const INVOICE_ITEMS = [
+  { label: 'Tear-off & Disposal (per sq.)', qty: 25, price: 85, total: 2125 },
+  { label: 'Architectural Shingles', qty: 25, price: 165, total: 4125 },
+  { label: 'Synthetic Underlayment', qty: 5, price: 88, total: 440 },
+  { label: 'Ice & Water Shield (Rolls)', qty: 4, price: 120, total: 480 },
+  { label: 'Drip Edge (10ft Sections)', qty: 20, price: 18, total: 360 },
+];
+
+const InvoiceCard = ({ onOpen }: { onOpen: () => void }) => (
+  <div
+    onClick={onOpen}
+    className={`group relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300 overflow-hidden flex flex-col`}
+  >
+    <div className="flex items-center justify-between px-5 py-4 bg-slate-900 shrink-0">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 p-1">
+          <img src="/images/ridgelinelogo.webp" alt="Ridge Line Roofing" className="w-full h-full object-contain" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-white font-black text-xs leading-tight truncate">RIDGE LINE ROOFING</p>
+          <p className="text-slate-400 text-[9px] font-semibold truncate">(555) 522-2444</p>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-white font-black text-sm leading-none">INVOICE</p>
+        <p className="text-slate-500 text-[9px] font-semibold mt-1">INV-001</p>
+      </div>
+    </div>
+
+    <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 shrink-0">
+      <div>
+        <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Bill To</p>
+        <p className="text-slate-900 text-xs font-black mt-0.5">Kevin Smith</p>
+      </div>
+      <div className="text-right">
+        <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Amount Due</p>
+        <p className="text-slate-900 text-lg font-black mt-0.5">$9,121.00</p>
+      </div>
+    </div>
+
+    <div className="px-5 py-1.5 grid grid-cols-[1fr_30px_46px_60px] gap-2 text-[8px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 shrink-0">
+      <span>Description</span>
+      <span className="text-right">Qty</span>
+      <span className="text-right">Price</span>
+      <span className="text-right">Amount</span>
+    </div>
+
+    <div className="flex-1 overflow-hidden divide-y divide-slate-50">
+      {INVOICE_ITEMS.map((item) => (
+        <div key={item.label} className="grid grid-cols-[1fr_30px_46px_60px] gap-2 items-center px-5 py-2.5">
+          <span className="text-slate-700 text-[11px] font-bold leading-tight truncate">{item.label}</span>
+          <span className="text-slate-400 text-[11px] text-right">{item.qty}</span>
+          <span className="text-slate-400 text-[11px] text-right">${item.price}</span>
+          <span className="text-slate-900 text-[11px] font-bold text-right">${item.total.toLocaleString()}</span>
+        </div>
+      ))}
+      <div className="px-5 py-2.5 text-[10px] font-bold text-slate-400">+ 5 more line items</div>
+    </div>
+
+    <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/5 flex items-center justify-center pointer-events-none">
+      <div className="translate-y-2 opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-900 shadow-xl transition-all">
+        <Maximize2 className="text-emerald-600 w-3.5 h-3.5" /> Preview Branding
+      </div>
+    </div>
+  </div>
+);
+
 const PaidCardInPhone = () => {
   const mockTime = "09:41";
 
@@ -122,9 +235,6 @@ const PaidCardInPhone = () => {
   );
 };
 
-// ==========================================
-// Send Invoice iPhone Frame — unchanged
-// ==========================================
 const SendInvoicePhone = () => {
   return (
     <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px] h-[440px] sm:h-[480px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between">
@@ -158,7 +268,6 @@ export default function QuoteToPaidWorkflow() {
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
 
-        {/* Header Block */}
         <div className="text-center mb-14 sm:mb-16">
           <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-2">
             Automated Workflow
@@ -168,23 +277,14 @@ export default function QuoteToPaidWorkflow() {
           </h2>
         </div>
 
-        {/* 2x2 STEP GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 lg:gap-x-12 gap-y-12 sm:gap-y-16">
 
-          {/* STEP 1: Set up templates ahead of time */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg h-[300px] sm:h-[360px]">
-              <Image 
-                src="/images/quote-template.webp" 
-                alt="Reusable pricing template with saved line items"
-                fill
-                className="object-cover object-top"
-              />
-            </div>
+            <PricingTemplateCard />
             <div className="mt-5">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-1.5">
                 Step 1: Reusable Templates
@@ -198,28 +298,12 @@ export default function QuoteToPaidWorkflow() {
             </div>
           </motion.div>
 
-          {/* STEP 2: Adjust quantities, generate PDF */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div 
-              onClick={() => setIsModalOpen(true)}
-              className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300 h-[300px] sm:h-[360px]"
-            >
-              <Image 
-                src="/images/invoice_full.webp" 
-                alt="Professional invoice PDF with adjustable line items"
-                fill
-                className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.01]"
-              />
-              <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/5 flex items-center justify-center">
-                <div className="translate-y-2 opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-900 shadow-xl transition-all">
-                  <Maximize2 className="text-emerald-600 w-3.5 h-3.5" /> Preview Branding
-                </div>
-              </div>
-            </div>
+            <InvoiceCard onOpen={() => setIsModalOpen(true)} />
             <div className="mt-5">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-1.5">
                 Step 2: Adjust & Generate
@@ -233,13 +317,12 @@ export default function QuoteToPaidWorkflow() {
             </div>
           </motion.div>
 
-          {/* STEP 3: Send to customer */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="flex items-center justify-center h-[300px] sm:h-[360px]">
+            <div className={`flex items-center justify-center ${STEP_HEIGHT}`}>
               <SendInvoicePhone />
             </div>
             <div className="mt-5">
@@ -255,13 +338,12 @@ export default function QuoteToPaidWorkflow() {
             </div>
           </motion.div>
 
-          {/* STEP 4: Paid */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="flex items-center justify-center h-[300px] sm:h-[360px]">
+            <div className={`flex items-center justify-center ${STEP_HEIGHT}`}>
               <PaidCardInPhone />
             </div>
             <div className="mt-5">
@@ -280,7 +362,6 @@ export default function QuoteToPaidWorkflow() {
         </div>
       </div>
 
-      {/* BRANDING PREVIEW OVERLAY MODAL — unchanged, now triggered from Step 2 */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-10">

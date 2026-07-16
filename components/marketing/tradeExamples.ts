@@ -58,7 +58,7 @@ export type TradeExample = {
 export const TRADE_EXAMPLES: TradeExample[] = [
   {
     trade: 'Roofing',
-    color: '#f97316',
+    color: '#C2410C',
     logo: '/images/ridgelinelogo.webp',
     heroPhoto: '/images/roofing.webp', // TODO: replace with a real, licensed roofing photo
     questions: [
@@ -170,7 +170,7 @@ export const TRADE_EXAMPLES: TradeExample[] = [
   },
   {
     trade: 'HVAC',
-    color: '#0ea5e9',
+    color: '#1E3A5F',
     logo: '/images/arctic-air-logo.webp',
     heroPhoto: '/images/hvac.webp', // Use the HVAC technician photo you uploaded earlier — save it at this path
     questions: [
@@ -282,7 +282,7 @@ export const TRADE_EXAMPLES: TradeExample[] = [
   },
   {
     trade: 'Plumbing',
-    color: '#10b981',
+    color: '#166534',
     logo: '/images/rapid-flow-logo.webp',
     heroPhoto: '/images/plumbing.webp', // TODO: replace with a real, licensed plumbing photo
     questions: [
@@ -394,7 +394,7 @@ export const TRADE_EXAMPLES: TradeExample[] = [
   },
   {
     trade: 'Solar',
-    color: '#eab308',
+    color: '#B45309',
     logo: '/images/sun-peak-logo.webp',
     heroPhoto: '/images/solar.webp', // TODO: replace with a real, licensed solar photo
     questions: [
@@ -506,7 +506,7 @@ export const TRADE_EXAMPLES: TradeExample[] = [
   },
   {
     trade: 'Electrical',
-    color: '#a855f7',
+    color: '#334155',
     logo: '/images/voltline-logo.webp',
     heroPhoto: '/images/electrical.webp', // TODO: replace with a real, licensed electrical photo
     questions: [
@@ -617,8 +617,8 @@ export const TRADE_EXAMPLES: TradeExample[] = [
     ],
   },
   {
-    trade: 'General Contractor',
-    color: '#3b82f6',
+    trade: 'Construction',
+    color: '#57534E',
     logo: '/images/cornerstone-logo.webp',
     heroPhoto: '/images/construction.webp', // TODO: replace with a real, licensed construction photo
     questions: [

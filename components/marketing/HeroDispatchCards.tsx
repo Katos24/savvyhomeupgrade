@@ -1,32 +1,27 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ChevronRight, User, Camera, Check, X, LayoutGrid, Rows3, CalendarDays } from 'lucide-react';
 import type { TradeLead } from '@/components/marketing/tradeExamples';
 
 // ==========================================
-// Standalone hero preview — Cards / Table / Calendar, auto-cycling, with
-// light/dark support driven by the parent (see `isDark` prop).
+// Standalone hero preview — Cards / Table / Calendar.
+//
+// This used to own the view-switcher pill AND the content in one
+// component. Now it's split in two:
+//   - `DispatchViewSwitcher`: the pill control only. Render it wherever
+//     you want (e.g. outside the laptop bezel), and hold the `view` state
+//     in the parent.
+//   - `HeroDispatchCards` (default export): content only, fully
+//     controlled via the `view` prop. No internal view state, no
+//     auto-cycling — it renders whatever `view` the parent gives it.
 //
 // Deliberately does NOT import the internal dashboard's CardsView,
 // TableView, CalendarView, getTheme, safeJSONParse, or isStripeVerified —
-// those are dashboard internals (and in TableView/CalendarView's case,
-// depend on @/lib/theme, @/lib/utils, and sonner toasts wired to real
-// bulk-update/delete endpoints) that can change shape at any time. The
+// those are dashboard internals that can change shape at any time. The
 // marketing hero should never depend on them or on DOM-scraping tricks
 // to force a layout.
-//
-// Typed directly against TradeLead (from tradeExamples.ts). Note what
-// TradeLead does NOT have, compared to the internal dashboard's lead shape:
-// no quote_accepted_at / quote_declined_at, no invoice_status /
-// invoice_sent_at, and — as far as this file has confirmed — no phone,
-// email, city, zip_code, lead_source, or custom_answers either. So the
-// "quote" step here can only ever be pending/sent (never accepted/
-// declined), the "invoice" step is derived from payment_status alone, and
-// the Table/Calendar previews below only surface fields already proven to
-// exist elsewhere in this file. If tradeExamples.ts gains more fields
-// later, extend these views accordingly rather than assuming.
 // ==========================================
 
 interface StatusOption {
@@ -35,18 +30,18 @@ interface StatusOption {
   color: string;
 }
 
+export type ViewKey = 'cards' | 'table' | 'calendar';
+
 interface HeroDispatchCardsProps {
   leads: TradeLead[];
   statusOptions: StatusOption[];
-  /** Which trade is currently shown — used to pin a consistent view per trade. */
   trade: string;
-  /** Drives light/dark styling for this preview. Defaults to dark to match prior behavior. */
+  view: ViewKey;
   isDark?: boolean;
 }
 
 type StepState = 'pending' | 'active' | 'partial' | 'done' | 'problem';
 type Step = { state: StepState; label: string };
-type ViewKey = 'cards' | 'table' | 'calendar';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -70,13 +65,6 @@ const STATUS_COLOR_HEX: Record<string, string> = {
   pink: '#f472b6',
 };
 
-// ------------------------------------------
-// Theme tokens — every color-sensitive class used across the three views
-// lives here, keyed off isDark. Saturated status colors (blue-500,
-// emerald-500, etc.) are left as-is since they read fine on both light
-// and dark surfaces; only neutrals (text, borders, panel backgrounds)
-// switch.
-// ------------------------------------------
 function getTokens(isDark: boolean) {
   return {
     textPrimary: isDark ? 'text-white' : 'text-slate-900',
@@ -112,9 +100,6 @@ function getTokens(isDark: boolean) {
 }
 type Tokens = ReturnType<typeof getTokens>;
 
-// file_urls comes in as a JSON-stringified array (see tradeExamples.ts,
-// e.g. JSON.stringify([{ url, name, type }]) or JSON.stringify([])).
-// Parse defensively — never crash the hero over a malformed string.
 function parseFileUrls(raw: string): unknown[] {
   if (!raw) return [];
   try {
@@ -141,9 +126,6 @@ function formatShortDate(dateStr?: string | null): string | null {
 }
 
 function getQuoteStep(lead: TradeLead): Step {
-  // TradeLead only has project_quote_sent_at — no accepted/declined field
-  // exists in this data, so those states are intentionally omitted rather
-  // than invented.
   if (lead.project_quote_sent_at) return { state: 'active', label: 'Sent' };
   return { state: 'pending', label: 'Not sent' };
 }
@@ -158,8 +140,6 @@ function getScheduleStep(lead: TradeLead): Step {
 }
 
 function getInvoiceStep(lead: TradeLead): Step {
-  // TradeLead has no invoice_status/invoice_sent_at — derived from
-  // payment_status alone.
   if (lead.payment_status === 'paid') return { state: 'done', label: 'Paid' };
   if (lead.payment_status === 'partial') return { state: 'partial', label: 'Partial' };
   if (lead.payment_status === 'refunded' || lead.payment_status === 'partially_refunded') {
@@ -203,12 +183,30 @@ function connectorClass(state: StepState, tokens: Tokens) {
   return state === 'done' ? 'bg-emerald-500/50' : tokens.dotPending.split(' ')[0];
 }
 
-function ProgressTracker({ lead, tokens }: { lead: TradeLead; tokens: Tokens }) {
+function ProgressTracker({ lead, tokens, compact = false }: { lead: TradeLead; tokens: Tokens; compact?: boolean }) {
   const steps: { key: string; category: string; step: Step }[] = [
     { key: 'quote', category: 'Quote', step: getQuoteStep(lead) },
     { key: 'schedule', category: 'Sched.', step: getScheduleStep(lead) },
     { key: 'invoice', category: 'Invoice', step: getInvoiceStep(lead) },
   ];
+
+  // Compact: dots + connectors only, no per-step text labels underneath —
+  // used in the mobile row layout where there isn't room for a 3-column
+  // label grid under each row.
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5">
+        {steps.map((s, i) => (
+          <div key={s.key} className="flex items-center flex-1 last:flex-none">
+            <StepDot state={s.step.state} tokens={tokens} />
+            {i < steps.length - 1 && (
+              <div className={`flex-1 h-[2px] mx-1 rounded-full ${connectorClass(s.step.state, tokens)}`} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -238,17 +236,13 @@ function ProgressTracker({ lead, tokens }: { lead: TradeLead; tokens: Tokens }) 
   );
 }
 
-// ==========================================
-// CARDS VIEW — fixed 2-column grid, no responsive breakpoints, no
-// querySelector hacks needed from the parent.
-// ==========================================
 function CardsGrid({ leads, statusOptions, tokens }: { leads: TradeLead[]; statusOptions: StatusOption[]; tokens: Tokens }) {
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 gap-4"
+      className="flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4"
     >
       {leads.map((lead) => {
         const statusConfig = getStatusConfig(lead.status, statusOptions);
@@ -263,57 +257,91 @@ function CardsGrid({ leads, statusOptions, tokens }: { leads: TradeLead[]; statu
             key={lead.id}
             variants={cardVariants}
             whileHover={{ y: -2 }}
-            className={`w-full group relative flex flex-col border rounded-2xl overflow-hidden transition-all duration-200 ${tokens.cardBg} ${tokens.cardBorder} ${tokens.cardBorderHover} ${tokens.cardShadow} ${
+            className={`w-full group relative border rounded-2xl overflow-hidden transition-all duration-200 ${tokens.cardBg} ${tokens.cardBorder} ${tokens.cardBorderHover} ${tokens.cardShadow} ${
               isCompleted ? 'opacity-50 grayscale-[0.6]' : 'opacity-100'
             }`}
           >
-            <div className="w-full h-1 shrink-0" style={{ backgroundColor: statusHex }} />
-
-            <div className="flex flex-1 flex-col">
-              <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: statusHex }} />
-                  <span className={`text-[11px] font-medium ${tokens.chipText}`}>{statusConfig.label}</span>
-                </div>
-              </div>
-
-              <div className="px-4 pb-2 flex-1">
-                <div className="mb-3">
-                  <h3 className={`text-base font-semibold mb-0.5 truncate ${tokens.textPrimary}`}>{lead.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <p className={`text-[10px] font-medium ${tokens.textMuted}`}>
-                      {lead.category?.replace(/_/g, ' ') || 'General enquiry'}
-                    </p>
-                    {hasPhotos && (
-                      <div className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md text-pink-400 bg-pink-500/10">
-                        <Camera className="w-3 h-3" /> {fileUrls.length}
-                      </div>
-                    )}
-                    {quoteTotal > 0 && (
-                      <p className={`ml-auto text-[13px] font-semibold ${tokens.quoteText}`}>
-                        ${quoteTotal.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className={`p-3 rounded-xl border mb-3 ${tokens.panelBg} ${tokens.panelBorder}`}>
-                  <ProgressTracker lead={lead} tokens={tokens} />
-                </div>
-              </div>
-
-              <div className={`flex items-center justify-between px-4 py-3 border-t ${tokens.divider}`}>
+            {/* MOBILE ROW LAYOUT — shown below sm only. A full 2-column card
+                grid was too cramped on narrow phones (name, category, photo
+                count, price, and a 3-step tracker with labels all fighting
+                for ~140px), so mobile gets a single-column row instead. */}
+            <div className="sm:hidden flex items-center gap-3 px-3 py-2.5">
+              <span className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: statusHex }} />
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-medium ${tokens.chipBg} ${tokens.chipBorder} ${tokens.chipText}`}>
-                    {lead.assigned_to?.charAt(0) || <User className="w-3 h-3" />}
-                  </div>
-                  <span className={`text-[10px] font-medium ${tokens.textMuted}`}>
-                    {lead.assigned_to || 'Assignee'}
-                  </span>
+                  <h3 className={`text-sm font-semibold truncate ${tokens.textPrimary}`}>{lead.name}</h3>
+                  {quoteTotal > 0 && (
+                    <span className={`ml-auto shrink-0 text-xs font-semibold ${tokens.quoteText}`}>
+                      ${quoteTotal.toLocaleString()}
+                    </span>
+                  )}
                 </div>
-                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-black transition-all duration-200 ${tokens.reviewHover}`}>
-                  <span className="text-[10px] font-medium">Review</span>
-                  <ChevronRight className="w-3 h-3" />
+                <div className="flex items-center gap-1.5">
+                  <p className={`text-[10px] font-medium truncate ${tokens.textMuted}`}>
+                    {lead.category?.replace(/_/g, ' ') || 'General enquiry'}
+                  </p>
+                  {hasPhotos && (
+                    <div className="flex items-center gap-0.5 text-[9px] font-medium text-pink-400 shrink-0">
+                      <Camera className="w-2.5 h-2.5" /> {fileUrls.length}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-1.5">
+                  <ProgressTracker lead={lead} tokens={tokens} compact />
+                </div>
+              </div>
+            </div>
+
+            {/* FULL CARD LAYOUT — hidden below sm, unchanged from before */}
+            <div className="hidden sm:flex sm:flex-col">
+              <div className="w-full h-1 shrink-0" style={{ backgroundColor: statusHex }} />
+
+              <div className="flex flex-1 flex-col">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: statusHex }} />
+                    <span className={`text-[11px] font-medium ${tokens.chipText}`}>{statusConfig.label}</span>
+                  </div>
+                </div>
+
+                <div className="px-4 pb-2 flex-1">
+                  <div className="mb-3">
+                    <h3 className={`text-base font-semibold mb-0.5 truncate ${tokens.textPrimary}`}>{lead.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-[10px] font-medium ${tokens.textMuted}`}>
+                        {lead.category?.replace(/_/g, ' ') || 'General enquiry'}
+                      </p>
+                      {hasPhotos && (
+                        <div className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md text-pink-400 bg-pink-500/10">
+                          <Camera className="w-3 h-3" /> {fileUrls.length}
+                        </div>
+                      )}
+                      {quoteTotal > 0 && (
+                        <p className={`ml-auto text-[13px] font-semibold ${tokens.quoteText}`}>
+                          ${quoteTotal.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={`p-3 rounded-xl border mb-3 ${tokens.panelBg} ${tokens.panelBorder}`}>
+                    <ProgressTracker lead={lead} tokens={tokens} />
+                  </div>
+                </div>
+
+                <div className={`flex items-center justify-between px-4 py-3 border-t ${tokens.divider}`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-medium ${tokens.chipBg} ${tokens.chipBorder} ${tokens.chipText}`}>
+                      {lead.assigned_to?.charAt(0) || <User className="w-3 h-3" />}
+                    </div>
+                    <span className={`text-[10px] font-medium ${tokens.textMuted}`}>
+                      {lead.assigned_to || 'Assignee'}
+                    </span>
+                  </div>
+                  <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-black transition-all duration-200 ${tokens.reviewHover}`}>
+                    <span className="text-[10px] font-medium">Review</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -324,13 +352,6 @@ function CardsGrid({ leads, statusOptions, tokens }: { leads: TradeLead[]; statu
   );
 }
 
-// ==========================================
-// TABLE VIEW — compact preview. Columns are limited to fields already
-// confirmed to exist on TradeLead elsewhere in this file (name, category,
-// status, scheduled_date, quote_total, assigned_to). No sorting, bulk
-// edit, or delete — this is a marketing snapshot, not the real dashboard
-// table.
-// ==========================================
 function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; statusOptions: StatusOption[]; tokens: Tokens }) {
   return (
     <div className={`rounded-xl border overflow-hidden ${tokens.wrapperBg} ${tokens.wrapperBorder}`}>
@@ -338,21 +359,11 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
         <table className="w-full min-w-[480px]">
           <thead>
             <tr className={`border-b ${tokens.divider} ${tokens.theadBg}`}>
-              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>
-                Customer
-              </th>
-              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>
-                Status
-              </th>
-              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>
-                Scheduled
-              </th>
-              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>
-                Quote
-              </th>
-              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>
-                Assigned
-              </th>
+              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>Customer</th>
+              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>Status</th>
+              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>Scheduled</th>
+              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>Quote</th>
+              <th className={`px-3 py-2 text-left text-[9px] font-black uppercase tracking-wider ${tokens.textFainter}`}>Assigned</th>
             </tr>
           </thead>
           <tbody className={`divide-y ${tokens.rowDivider}`}>
@@ -371,10 +382,7 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
                     </div>
                   </td>
                   <td className="px-3 py-2.5 align-top whitespace-nowrap">
-                    <span
-                      className="px-1.5 py-0.5 rounded text-[9px] font-black text-white"
-                      style={{ backgroundColor: statusHex }}
-                    >
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black text-white" style={{ backgroundColor: statusHex }}>
                       {statusConfig.label}
                     </span>
                   </td>
@@ -382,11 +390,7 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
                     {scheduled || <span className={`font-normal ${tokens.textFainter}`}>Not set</span>}
                   </td>
                   <td className={`px-3 py-2.5 align-top text-[12px] font-bold whitespace-nowrap ${tokens.quoteText}`}>
-                    {quoteTotal > 0 ? (
-                      `$${quoteTotal.toLocaleString()}`
-                    ) : (
-                      <span className={`font-normal ${tokens.textFainter}`}>—</span>
-                    )}
+                    {quoteTotal > 0 ? `$${quoteTotal.toLocaleString()}` : <span className={`font-normal ${tokens.textFainter}`}>—</span>}
                   </td>
                   <td className="px-3 py-2.5 align-top whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
@@ -411,12 +415,6 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
   );
 }
 
-// ==========================================
-// CALENDAR VIEW — compact month grid. The displayed month is derived from
-// the first lead that has a scheduled_date (falling back to the current
-// month), so demo entries are visible immediately — this is a static
-// snapshot, not a navigable calendar.
-// ==========================================
 function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; statusOptions: StatusOption[]; tokens: Tokens }) {
   const referenceDate = useMemo(() => {
     const withDate = leads.find((l) => !!l.scheduled_date);
@@ -462,7 +460,7 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
 
       <div className="grid grid-cols-7">
         {Array.from({ length: firstDay }).map((_, i) => (
-          <div key={`empty-${i}`} className={`h-9 sm:h-11 border-r border-b ${tokens.divider} ${tokens.emptyCellBg}`} />
+          <div key={`empty-${i}`} className={`h-12 sm:h-16 border-r border-b ${tokens.divider} ${tokens.emptyCellBg}`} />
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1;
@@ -470,24 +468,39 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
           const todayCell = isToday(day);
 
           return (
-            <div
-              key={day}
-              className={`h-9 sm:h-11 border-r border-b ${tokens.divider} p-1 flex flex-col items-center justify-start`}
-            >
+            <div key={day} className={`h-12 sm:h-16 border-r border-b ${tokens.divider} p-1 flex flex-col items-center justify-start gap-0.5 overflow-hidden`}>
               <span
-                className={`text-[9px] font-black w-4 h-4 flex items-center justify-center rounded ${
+                className={`text-[9px] font-black w-4 h-4 flex items-center justify-center rounded shrink-0 ${
                   todayCell ? 'bg-blue-500 text-white' : tokens.dayNumMuted
                 }`}
               >
                 {day}
               </span>
+              {/* Named badges instead of bare dots — makes clear these are
+                  actual scheduled jobs you can see at a glance, not just an
+                  abstract "something's happening" marker. */}
               {dayLeads.length > 0 && (
-                <div className="flex gap-0.5 mt-0.5">
-                  {dayLeads.slice(0, 3).map((l) => {
+                <div className="w-full flex flex-col items-stretch gap-0.5">
+                  {dayLeads.slice(0, 2).map((l) => {
                     const statusConfig = getStatusConfig(l.status, statusOptions);
                     const hex = STATUS_COLOR_HEX[statusConfig.color] || '#60a5fa';
-                    return <span key={l.id} className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: hex }} />;
+                    const firstName = l.name?.split(' ')[0] || 'Lead';
+                    return (
+                      <span
+                        key={l.id}
+                        className="w-full px-1 py-[1px] rounded text-[7px] sm:text-[8px] font-bold text-white truncate text-center leading-tight"
+                        style={{ backgroundColor: hex }}
+                        title={l.name}
+                      >
+                        {firstName}
+                      </span>
+                    );
                   })}
+                  {dayLeads.length > 2 && (
+                    <span className={`text-[7px] font-bold text-center ${tokens.textFainter}`}>
+                      +{dayLeads.length - 2} more
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -503,11 +516,9 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
 }
 
 // ==========================================
-// Default export — Cards / Table / Calendar as a manual, Apple-style
-// segmented control (sliding pill behind the active option), not an
-// automatic timer or trade-derived pick. This intentionally replaces the
-// earlier "no click, tied to trade" behavior — the person building this
-// changed direction and wants a real toggle now.
+// EXPORTED SWITCHER — the Cards/Table/Calendar pill control, on its own.
+// Render this wherever you want (e.g. outside the laptop bezel); it holds
+// no state itself — the parent owns `view` and passes `onChange`.
 // ==========================================
 const VIEW_SEQUENCE: ViewKey[] = ['cards', 'table', 'calendar'];
 const VIEW_META: Record<ViewKey, { label: string; icon: typeof LayoutGrid }> = {
@@ -516,51 +527,67 @@ const VIEW_META: Record<ViewKey, { label: string; icon: typeof LayoutGrid }> = {
   calendar: { label: 'Calendar', icon: CalendarDays },
 };
 
-export default function HeroDispatchCards({ leads, statusOptions, trade, isDark = true }: HeroDispatchCardsProps) {
-  const [view, setView] = useState<ViewKey>('cards');
+export function DispatchViewSwitcher({
+  view,
+  onChange,
+  isDark = true,
+}: {
+  view: ViewKey;
+  onChange: (view: ViewKey) => void;
+  isDark?: boolean;
+}) {
   const tokens = getTokens(isDark);
   const activeIndex = VIEW_SEQUENCE.indexOf(view);
 
   return (
-    <div className="space-y-3">
-      <div className={`relative grid grid-cols-3 rounded-xl border p-1 w-full max-w-sm ${tokens.segTrack}`}>
-        <motion.div
-          className={`absolute top-1 bottom-1 left-1 rounded-lg ${tokens.segPill}`}
-          style={{ width: 'calc(33.333% - 4px)' }}
-          animate={{ x: `${activeIndex * 100}%` }}
-          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-        />
-        {VIEW_SEQUENCE.map((key) => {
-          const meta = VIEW_META[key];
-          const isActive = key === view;
-          return (
-            <button
-              key={key}
-              onClick={() => setView(key)}
-              className={`relative z-10 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors duration-200 cursor-pointer ${
-                isActive ? tokens.segTextActive : `${tokens.segTextInactive} hover:${isDark ? 'text-slate-200' : 'text-slate-700'}`
-              }`}
-            >
-              <meta.icon className="w-3 h-3 shrink-0" />
-              <span className="hidden sm:inline">{meta.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${trade}-${view}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.2 }}
-        >
-          {view === 'cards' && <CardsGrid leads={leads} statusOptions={statusOptions} tokens={tokens} />}
-          {view === 'table' && <TablePreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
-          {view === 'calendar' && <CalendarPreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
-        </motion.div>
-      </AnimatePresence>
+    <div className={`relative grid grid-cols-3 rounded-xl border p-1 w-full max-w-sm mx-auto ${tokens.segTrack}`}>
+      <motion.div
+        className={`absolute top-1 bottom-1 left-1 rounded-lg ${tokens.segPill}`}
+        style={{ width: 'calc(33.333% - 4px)' }}
+        animate={{ x: `${activeIndex * 100}%` }}
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+      />
+      {VIEW_SEQUENCE.map((key) => {
+        const meta = VIEW_META[key];
+        const isActive = key === view;
+        return (
+          <button
+            key={key}
+            onClick={() => onChange(key)}
+            className={`relative z-10 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors duration-200 cursor-pointer ${
+              isActive ? tokens.segTextActive : `${tokens.segTextInactive} hover:${isDark ? 'text-slate-200' : 'text-slate-700'}`
+            }`}
+          >
+            <meta.icon className="w-3 h-3 shrink-0" />
+            <span className="hidden sm:inline">{meta.label}</span>
+          </button>
+        );
+      })}
     </div>
+  );
+}
+
+// ==========================================
+// Default export — content only. Fully controlled via `view`; no internal
+// state, no switcher rendered here. The parent should default its own
+// `view` state to 'cards'.
+// ==========================================
+export default function HeroDispatchCards({ leads, statusOptions, trade, view, isDark = true }: HeroDispatchCardsProps) {
+  const tokens = getTokens(isDark);
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={`${trade}-${view}`}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.2 }}
+      >
+        {view === 'cards' && <CardsGrid leads={leads} statusOptions={statusOptions} tokens={tokens} />}
+        {view === 'table' && <TablePreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
+        {view === 'calendar' && <CalendarPreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
+      </motion.div>
+    </AnimatePresence>
   );
 }
