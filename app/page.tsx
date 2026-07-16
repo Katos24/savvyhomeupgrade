@@ -27,20 +27,23 @@ return (
 <DashboardShowcase />
 
 <FullStorySection />
+<QuoteToPaidSection />
 
-<CustomizeFormSection />
+
 
 
 <HowItWorksSection />
 
+
 <TruckSection />
-
-
 
 <ValuePropsSection />
 
 
-<QuoteToPaidSection />
+<CustomizeFormSection />
+
+
+
 
 
 
