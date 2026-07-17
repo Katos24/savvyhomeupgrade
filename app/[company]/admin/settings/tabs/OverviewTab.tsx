@@ -21,6 +21,7 @@ import {
   Sparkles,
   Lock,
   FileText,
+  Receipt
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
@@ -219,68 +220,33 @@ type OverviewTabProps = {
   onNavigateSection: (section: string) => void;
 };
 
-function BrandInvoicePreview({ company }: { company: any }) {
+
+function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refreshToken?: number }) {
   const [expanded, setExpanded] = useState(false);
-  const [thumbLoaded, setThumbLoaded] = useState(false);
-  const [thumbTimedOut, setThumbTimedOut] = useState(false);
   const [modalLoaded, setModalLoaded] = useState(false);
   const [modalTimedOut, setModalTimedOut] = useState(false);
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const canSendInvoices = can(planTier, 'send_invoice_email');
-  const previewUrl = `/api/company/${company.slug}/preview-invoice`;
-
-  useEffect(() => {
-    const t = setTimeout(() => { if (!thumbLoaded) setThumbTimedOut(true); }, 8000);
-    return () => clearTimeout(t);
-  }, [thumbLoaded]);
+  const previewUrl = `/api/company/${company.slug}/preview-invoice?v=${refreshToken}`;
 
   useEffect(() => {
     if (!expanded) return;
+    setModalLoaded(false);
+    setModalTimedOut(false);
     const t = setTimeout(() => { if (!modalLoaded) setModalTimedOut(true); }, 8000);
     return () => clearTimeout(t);
-  }, [expanded, modalLoaded]);
+  }, [expanded, refreshToken]);
 
   return (
     <>
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="block w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-left transition hover:border-stone-300"
+        className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-[13px] font-bold text-stone-800 shadow-sm transition hover:bg-stone-50"
       >
-        <div className="relative h-40 w-full overflow-hidden bg-white">
-          {!thumbLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white">
-              {thumbTimedOut ? (
-                <p className="px-4 text-center text-[11px] font-semibold text-stone-500">
-                  Preview didn&apos;t load
-                </p>
-              ) : (
-                <Loader2 className="h-4 w-4 animate-spin text-stone-300" />
-              )}
-            </div>
-          )}
-          <iframe
-            src={previewUrl}
-            title="Sample invoice"
-            onLoad={() => setThumbLoaded(true)}
-            style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none' }}
-          />
-
-          {!canSendInvoices && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-stone-900/55 backdrop-blur-[1px]">
-              <span className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-800">
-                <Lock className="h-3 w-3" /> Upgrade to send invoices
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 border-t border-stone-200 px-3 py-2">
-          <FileText className="h-3.5 w-3.5 text-stone-500" />
-          <span className="text-[11px] font-semibold text-stone-600">
-            {canSendInvoices ? 'Tap to view your invoice' : 'Preview — upgrade to send'}
-          </span>
-        </div>
+        <Receipt className="h-4 w-4 text-stone-600" />
+        Preview invoice
       </button>
 
       {expanded && (
@@ -314,8 +280,9 @@ function BrandInvoicePreview({ company }: { company: any }) {
                 </div>
               )}
               <iframe
+                key={refreshToken}
                 src={previewUrl}
-                title="Sample invoice, enlarged"
+                title="Sample invoice"
                 onLoad={() => setModalLoaded(true)}
                 style={{ width: '100%', height: '100%', border: 0 }}
               />
@@ -375,9 +342,16 @@ export default function OverviewTab({
 }: OverviewTabProps) {
   const doneCount = checklistSteps.filter((s) => s.done).length;
   const isFreePlan = (company.plan_tier || 'free') === 'free';
+    const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
+
   
   // Highlighting state for missing details
   const missingLogo = !company.logo_url && !logoPreview;
+  useEffect(() => {
+    if (brandSaved) {
+      setInvoicePreviewRefreshToken((n) => n + 1);
+    }
+  }, [brandSaved]);
 
   const handleCancelEdit = () => {
     setIsEditingBrand(false);
@@ -633,7 +607,7 @@ export default function OverviewTab({
                 )}
 
                 <div className="mt-4">
-                  <BrandInvoicePreview company={company} />
+                  <BrandInvoicePreview company={company} refreshToken={invoicePreviewRefreshToken} />
                 </div>
                 <p className="mt-3 text-[12px] leading-relaxed text-stone-500">
                   This is what customers see when you send an invoice, styled with your brand.

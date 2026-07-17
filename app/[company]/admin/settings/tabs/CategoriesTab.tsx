@@ -252,7 +252,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   return (
     <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-4xl pb-24">
-        {/* ── TITLE + ACTIONS ── */}
+      {/* ── TITLE + ACTIONS ── */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-stone-900">Service categories</h2>
@@ -262,77 +262,33 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
               </span>
             )}
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving || !isDirty}
-            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-colors ${
-              isDirty
-                ? 'bg-stone-900 text-white hover:bg-stone-800'
-                : 'cursor-not-allowed bg-stone-200 text-stone-400'
-            }`}
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Saving...' : isDirty ? 'Save changes' : 'Saved'}
-          </button>
+          {isDirty && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Saving...' : 'Save changes'}
+            </button>
+          )}
         </div>
-
-        {/* ── HEADLINE + ICON BULLETS ── */}
+        
+{/* ── HEADLINE ── */}
         <div className="mb-6">
-          <h3 className="text-[18px] font-extrabold leading-snug text-stone-900">
-            Set it once, it&apos;s ready for every job
+          <h3 className="text-[18px] font-bold leading-snug text-stone-900">
+            Set up your estimate templates to create invoices faster
           </h3>
-          <div className="mt-3 space-y-2">
-            <div className="flex items-start gap-2.5">
-              <Tag className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-[14px] font-semibold leading-relaxed text-stone-800">
-                <span className="font-extrabold text-stone-900">Customers pick a category</span> on your booking form — this is that list.
-              </p>
-            </div>
-       
-            <div className="flex items-start gap-2.5">
-              <Calculator className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <div className="flex-1">
-                <p className="text-[14px] font-semibold leading-relaxed text-stone-800">
-                  <span className="font-extrabold text-stone-900">Set up your estimate templates</span> — pick a category and pricing drops right into the Quote tab.
-                </p>
-                <button
-                  onClick={() => setShowQuotePreview(true)}
-                  className="mt-2 flex items-center gap-2.5 rounded-lg border-2 border-stone-300 bg-white p-1.5 pr-3 transition-colors hover:border-stone-400"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/quote-sheet-preview.webp"
-                    alt="Quote sheet showing pricing template line items"
-                    className="h-14 w-auto rounded object-cover"
-                  />
-                  <span className="text-[12px] font-bold text-stone-700 underline">
-                    See where this shows up
-                  </span>
-                </button>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Send className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-[14px] font-semibold leading-relaxed text-stone-800">
-                <span className="font-extrabold text-stone-900">
-                  Send <span className="rounded bg-emerald-100 px-1 text-emerald-800">invoices</span> faster
-                </span>{' '}
-                once your quote&apos;s built — turning it into an invoice is a click away.
-              </p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <SlidersHorizontal className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-[14px] font-semibold leading-relaxed text-stone-800">
-                <span className="font-extrabold text-stone-900">Adjust quantity and price per job</span> — templates are a starting point, not a lock.
-              </p>
-            </div>
-                 <div className="flex items-start gap-2.5">
-              <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-[14px] font-semibold leading-relaxed text-stone-800">
-                <span className="font-extrabold text-stone-900">Task checklists load automatically</span> — once the job lands on your dashboard, nothing to add by hand.
-              </p>
-            </div>
-          </div>
+          <ul className="mt-3 space-y-1.5 text-[14px] font-medium leading-relaxed text-stone-600">
+            <li>Adjust quantity and price per job — templates are just a starting point.</li>
+            <li>Add or remove line items whenever a job needs it.</li>
+          </ul>
+          <button
+            onClick={() => setShowQuotePreview(true)}
+            className="mt-3 text-[12px] font-semibold text-stone-500 underline hover:text-stone-700"
+          >
+            See where this shows up
+          </button>
         </div>
 
         {/* ── STATUS ── */}

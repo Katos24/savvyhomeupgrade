@@ -251,15 +251,25 @@ export default function CustomizeFormSection() {
 
           {/* LEFT */}
           <div className="order-1 lg:order-last flex flex-col justify-center">
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+           <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 mb-4"
-              style={{ fontFamily: font }}
+              className="flex items-center gap-3 mb-5"
             >
-              The fix: your form, your brand
-            </motion.p>
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-black text-white"
+                style={{ backgroundColor: state.color }}
+              >
+                1
+              </span>
+              <span
+                className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500"
+                style={{ fontFamily: font }}
+              >
+                Sign up and build your form
+              </span>
+            </motion.div>
 
             <motion.h2
               initial={{ opacity: 0, y: 15 }}
@@ -269,9 +279,9 @@ export default function CustomizeFormSection() {
               className="text-4xl sm:text-5xl text-slate-950 font-black leading-[1.05] tracking-tight mb-0 lg:mb-5"
               style={{ fontFamily: font }}
             >
-              Build it once,{' '}
+              Sign up, then{' '}
               <span className="block pt-1" style={{ color: state.color }}>
-                make it yours.
+                build your intake form.
               </span>
             </motion.h2>
 
@@ -280,13 +290,13 @@ export default function CustomizeFormSection() {
                 className="text-slate-600 font-bold text-base sm:text-lg mb-8 mt-5 max-w-sm leading-relaxed"
                 style={{ fontFamily: font }}
               >
-                Upload your logo, pick your brand color, turn optional fields on or off, and add your own questions. No developer required.
+                Add custom questions to capture exactly what your business needs from a lead. Customers can attach photos and short videos right on the form. No developer required.
               </p>
               <div className="flex flex-wrap gap-2.5 max-w-md">
-                <CalloutTag icon={Palette} text="Your colors & logo" />
-                <CalloutTag icon={ListChecks} text="Custom question logic" />
-                <CalloutTag icon={Camera} text="Photo & video attachment" />
+                <CalloutTag icon={ListChecks} text="Custom questions for your business" />
+                <CalloutTag icon={Camera} text="Photo & short video attachments" />
                 <CalloutTag icon={MapPin} text="Clean address capture" />
+                <CalloutTag icon={Palette} text="Your branding & logo (Basic plan)" />
               </div>
             </div>
           </div>
@@ -574,18 +584,18 @@ export default function CustomizeFormSection() {
               Reset demo
             </button>
 
-            <div className="block lg:hidden w-full mt-8">
+          <div className="block lg:hidden w-full mt-8">
               <p
                 className="text-slate-600 font-bold text-base leading-relaxed mb-6"
                 style={{ fontFamily: font }}
               >
-                Upload your logo, pick your brand color, turn optional fields on or off, and add your own questions. No developer required.
+                Add custom questions to capture exactly what your business needs from a lead. Customers can attach photos and short videos right on the form. No developer required.
               </p>
               <div className="flex flex-wrap gap-2.5">
-                <CalloutTag icon={Palette} text="Your colors & logo" />
-                <CalloutTag icon={ListChecks} text="Custom question logic" />
-                <CalloutTag icon={Camera} text="Photo & video attachment" />
+                <CalloutTag icon={ListChecks} text="Custom questions for your business" />
+                <CalloutTag icon={Camera} text="Photo & short video attachments" />
                 <CalloutTag icon={MapPin} text="Clean address capture" />
+                <CalloutTag icon={Palette} text="Your branding & logo (Basic plan)" />
               </div>
             </div>
 

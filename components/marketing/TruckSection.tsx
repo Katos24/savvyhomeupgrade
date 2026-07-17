@@ -1,20 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { 
-  Globe, 
-  QrCode, 
-  CreditCard, 
-  Star, 
-  ArrowRight,
-  Facebook,
-  Instagram
-} from 'lucide-react';
+import { Globe, QrCode, Facebook, Instagram, CreditCard } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
-// Official Google multi-color G SVG logo component
 function GoogleLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,206 +17,138 @@ function GoogleLogo({ className }: { className?: string }) {
   );
 }
 
-const USE_CASES = [
-  { icon: GoogleLogo, title: 'Google Profile', isCustom: true },
-  { icon: Globe, title: 'Your Website', color: 'text-emerald-600' },
-  { icon: Instagram, title: 'Instagram Bio', color: 'text-pink-600' },
-  { icon: Facebook, title: 'Facebook Page', color: 'text-blue-600' },
-  { icon: QrCode, title: 'Yard Signs', color: 'text-indigo-600' },
-  { icon: CreditCard, title: 'Business Cards', color: 'text-slate-700' },
+// Bento cells — each optionally has an image (desktop only). Cells without
+// a confirmed real asset fall back to an icon-only tile so nothing 404s;
+// swap `image` in once you have a real screenshot/photo for that spot.
+const BENTO_CELLS = [
+  {
+    title: 'Google Business Profile',
+    subtitle: 'Often the first thing a customer sees',
+    icon: GoogleLogo,
+    isCustomIcon: true,
+    image: null, // TODO: add a Google Business Profile screenshot
+    span: 'lg:col-span-2 lg:row-span-1',
+  },
+  {
+    title: 'Truck wraps & yard signs',
+    subtitle: 'Scan, submit, done',
+    icon: QrCode,
+    color: 'text-indigo-400',
+    image: '/images/qrbranded2.webp',
+    span: 'lg:col-span-2 lg:row-span-2',
+  },
+  {
+    title: 'Instagram bio',
+    subtitle: 'Link in bio, right to your form',
+    icon: Instagram,
+    color: 'text-pink-400',
+    image: null, // TODO: add an Instagram bio screenshot
+    span: 'lg:col-span-1',
+  },
+  {
+    title: 'Facebook page',
+    subtitle: 'Pin it to the top of your page',
+    icon: Facebook,
+    color: 'text-blue-400',
+    image: null, // TODO: add a Facebook page screenshot
+    span: 'lg:col-span-1',
+  },
+  {
+    title: 'QR code, scanned in the field',
+    subtitle: 'Customer scans, form opens instantly',
+    icon: QrCode,
+    color: 'text-emerald-400',
+    image: '/images/qr-scan-2.webp',
+    span: 'lg:col-span-2',
+  },
+  {
+    title: 'Business cards',
+    subtitle: 'Hand one over, they book on the spot',
+    icon: CreditCard,
+    color: 'text-slate-300',
+    image: null, // TODO: add a business card mockup
+    span: 'lg:col-span-2',
+  },
 ];
 
-export default function DistributionSection() {
+export default function TruckSection() {
   return (
-    <section 
-      id="distribution" 
+    <section
+      id="distribution"
       style={{ fontFamily: font }}
-      className="relative bg-slate-50 py-20 sm:py-28 overflow-hidden border-b border-slate-100"
+      className="relative bg-[#0B1220] py-20 sm:py-28 overflow-hidden border-b border-white/5"
     >
-      {/* Background Micro Dot Texture */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* TRANSITIONAL HERO: FROM CHAOS TO AUTOMATED CAPTURE */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center mb-24">
+        {/* Header with step badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex items-center gap-3 mb-5"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-xl font-black text-white">
+            2
+          </span>
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400">
+            Blast your link everywhere
+          </span>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-            className="flex flex-col text-left lg:col-span-7"
-          >
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-rose-500 mb-3 block">
-              Stop Playing Phone Tag
-            </span>
-            
-            <h2 className="text-slate-900 font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-6">
-              Get clean leads from everywhere.<br />
-                        <span className="text-[#0A3A66]"> Without picking up the phone.</span>
-            </h2>
+        <motion.h2
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-white font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-12 max-w-2xl"
+        >
+          Share your link and QR code — <span className="text-emerald-400">put it everywhere.</span>
+        </motion.h2>
 
-            <p className="text-slate-500 font-semibold text-base sm:text-lg leading-relaxed mb-6">
-              Instead of losing quotes to missed calls and messy texts, route your prospects directly to your custom booking form. Put your link on Google, print it on your trucks, and let customers build their own estimates while you work.
-            </p>
-
-            <ul className="space-y-3.5">
-              {[
-                "Capture ready-to-buy leads while you are busy on-site",
-                'Provide clients a structured 1-minute "Request Quote" experience',
-                'Collect site photos, measurements, and details automatically'
-              ].map((point, i) => (
-                <li key={i} className="flex items-center gap-3 text-slate-700 font-bold text-sm">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-50 border border-emerald-100 text-emerald-600">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* GOOGLE MOCK WINDOW CARD DISPLAY */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="w-full max-w-sm mx-auto lg:mr-0 lg:col-span-5"
-          >
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 relative transition-all duration-300 hover:shadow-2xl">
-              
-              {/* Google Verified Badge Overlay */}
-              <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-full py-1 px-2.5 shadow-2xs">
-                <GoogleLogo className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black text-slate-700">Verified Profile</span>
-              </div>
-
-              <div className="flex justify-between items-start mb-5 pt-2">
-                <div className="flex gap-3.5">
-                  <div className="w-12 h-12 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
-                    <img src="/images/arctic-air-logo.webp" alt="Arctic Air Branding Logo" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-slate-900 leading-tight">Arctic Air HVAC</h3>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <div className="flex items-center text-amber-400 gap-0.5">
-                        {[...Array(5)].map((_, idx) => (
-                          <Star key={idx} size={11} fill="currentColor" className="text-amber-450" />
-                        ))}
-                      </div>
-                      <span className="text-slate-400 font-bold text-[11px] ml-1">4.9 (124 reviews)</span>
-                    </div>
-                    <p className="text-slate-400 font-bold text-[10px] mt-0.5">HVAC Contractor · Holbrook</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Call-to-action Links */}
-              <div className="border-t border-b border-slate-100 py-3.5 my-4 space-y-3.5">
-                <div className="flex items-center justify-between group cursor-pointer">
-                  <span className="text-xs font-bold text-slate-600">Online Estimate</span>
-                  <span className="text-xs font-black text-emerald-600 flex items-center gap-1 group-hover:underline">
-                    Request a Quote <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                  </span>
-                </div>
-                <div className="flex items-center justify-between group cursor-pointer">
-                  <span className="text-xs font-bold text-slate-600">Appointments</span>
-                  <span className="text-xs font-black text-blue-600 flex items-center gap-1 group-hover:underline">
-                    Schedule Job <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                {['Website', 'Directions', 'Call'].map((label) => (
-                  <div key={label} className="py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-black text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors">
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-        </div>
-
-        {/* MULTI-CHANNEL DISTRIBUTION NETWORKS */}
-        <div>
-          <motion.h3
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-xl font-black text-slate-900 mb-8 text-center uppercase tracking-wider text-slate-400 text-xs"
-          >
-            Deploy your assets everywhere else
-          </motion.h3>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-4">
+          {BENTO_CELLS.map((cell, i) => (
             <motion.div
-              initial={{ opacity: 0, x: -12 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              key={cell.title}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="relative rounded-2xl border border-slate-200/60 overflow-hidden min-h-[260px] sm:min-h-[340px] bg-slate-100 shadow-sm group"
+              transition={{ duration: 0.35, delay: i * 0.04 }}
+              className={`relative rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden shadow-sm hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300 min-h-[160px] flex flex-col ${cell.span || ''}`}
             >
-              <Image
-                src="/images/qr-scan-2.webp"
-                alt="Customer scanning a custom QR code on a service truck to quickly request a design quote"
-                fill
-                priority
-                className="object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out"
-              />
-              <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-lg shadow-sm">
-                Scan · Submit · Done
+              {cell.image && (
+                <div className="relative hidden sm:block flex-1 min-h-[120px] bg-white/5">
+                  <Image
+                    src={cell.image}
+                    alt={cell.title}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
+                </div>
+              )}
+
+              <div className={`p-4 sm:p-5 ${cell.image ? 'sm:absolute sm:bottom-0 sm:left-0 sm:right-0' : 'flex-1 flex flex-col justify-center'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                    {cell.isCustomIcon ? (
+                      <cell.icon className="w-4 h-4" />
+                    ) : (
+                      <cell.icon size={16} className={cell.color} />
+                    )}
+                  </div>
+                  <h4 className="text-sm font-black text-white">
+                    {cell.title}
+                  </h4>
+                </div>
+                <p className="text-[11px] font-bold text-slate-400">
+                  {cell.subtitle}
+                </p>
               </div>
             </motion.div>
-
-            <div className="flex flex-col gap-4">
-              <motion.div
-                initial={{ opacity: 0, x: 12 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-                className="relative rounded-2xl border border-slate-200/60 overflow-hidden h-36 w-full bg-slate-100 shadow-sm group"
-              >
-                <Image
-                  src="/images/qrbranded2.webp"
-                  alt="Branded custom tracking codes printed on service trucks and landscape yard placements"
-                  fill
-                  className="object-cover object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
-                <p className="absolute bottom-4 left-4 text-white text-[10px] font-black uppercase tracking-widest">
-                  Truck Wraps · Yard Signs · Social Channels
-                </p>
-              </motion.div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {USE_CASES.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: i * 0.04 }}
-                    className="bg-white border border-slate-200/70 rounded-xl p-4 shadow-xs hover:border-slate-350 hover:shadow-sm transition-all group cursor-default text-left flex flex-col justify-start"
-                  >
-                    {item.isCustom ? (
-                      <item.icon className="w-[18px] h-[18px] mb-2 group-hover:scale-110 transition-transform duration-200" />
-                    ) : (
-                      <item.icon size={18} className={`${item.color} mb-2 group-hover:scale-110 transition-transform duration-200`} />
-                    )}
-                    <h4 className="text-xs font-black text-slate-900">{item.title}</h4>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-          </div>
+          ))}
         </div>
 
       </div>

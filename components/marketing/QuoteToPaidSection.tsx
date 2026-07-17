@@ -268,10 +268,15 @@ export default function QuoteToPaidWorkflow() {
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
 
-        <div className="text-center mb-14 sm:mb-16">
-          <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-2">
-            Automated Workflow
-          </span>
+       <div className="text-center mb-14 sm:mb-16">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-xl font-black text-white">
+              5
+            </span>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-600 font-mono">
+              Send the invoice
+            </span>
+          </div>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto" style={{ fontFamily: font }}>
             From saved templates to 
                         <span className="text-[#0A3A66] underline underline-offset-2"> secure payment</span> automatically

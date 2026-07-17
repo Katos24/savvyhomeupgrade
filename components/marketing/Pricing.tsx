@@ -62,43 +62,43 @@ const plans = [
 
 export default function Pricing() {
   return (
-    <section id="pricing" className="relative py-24 sm:py-32 px-6 sm:px-8 overflow-hidden bg-slate-950">
-      {/* ... keeping your background elements as they were ... */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      <div className="absolute top-20 left-20 w-96 h-96 bg-sky-500 rounded-full blur-3xl opacity-5" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-500 rounded-full blur-3xl opacity-5" />
+    <section id="pricing" className="relative py-24 sm:py-32 px-6 sm:px-8 overflow-hidden bg-slate-50">
+      {/* Light-mode compatible background elements */}
+      <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      <div className="absolute top-20 left-20 w-96 h-96 bg-sky-400 rounded-full blur-3xl opacity-10" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-400 rounded-full blur-3xl opacity-10" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl text-white mb-4 font-black tracking-tight leading-[1.05]" style={{ fontFamily: font }}>
+            <h2 className="text-4xl sm:text-5xl text-slate-900 mb-4 font-black tracking-tight leading-[1.05]" style={{ fontFamily: font }}>
               One job pays for <br />
-            <span className="text-[#7BC94F]"> the whole year.</span>
+              <span className="text-[#68AB43]"> the whole year.</span>
             </h2>
-            <p className="text-slate-400 max-w-sm mx-auto text-sm sm:text-base font-bold leading-relaxed" style={{ fontFamily: font }}>
+            <p className="text-slate-500 max-w-sm mx-auto text-sm sm:text-base font-bold leading-relaxed" style={{ fontFamily: font }}>
               Cancel anytime. No hidden setup fees. Just better business.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {plans.map((plan, idx) => (
-              <div key={plan.name} className={`relative rounded-2xl p-6 sm:p-8 border flex flex-col justify-between ${plan.highlight ? 'bg-slate-900/60 border-emerald-500/50 shadow-xl shadow-black/20' : `bg-slate-900/30 border-white/[0.06] ${plan.borderStyle}`}`}>
+              <div key={plan.name} className={`relative rounded-2xl p-6 sm:p-8 border flex flex-col justify-between ${plan.highlight ? 'bg-white border-emerald-500 shadow-xl shadow-slate-200' : `bg-white/70 backdrop-blur-sm border-slate-200 ${plan.borderStyle}`}`}>
                 {plan.highlight && (
-                  <div className="absolute -top-3 left-6 bg-emerald-500 text-slate-950 text-[9px] uppercase tracking-widest font-black px-3 py-1 rounded-md" style={{ fontFamily: font }}>
+                  <div className="absolute -top-3 left-6 bg-emerald-500 text-white text-[9px] uppercase tracking-widest font-black px-3 py-1 rounded-md" style={{ fontFamily: font }}>
                     Most Popular
                   </div>
                 )}
                 
                 <div>
-                  <div className="mb-6 border-b border-white/[0.05] pb-6">
-                    <h3 className={`text-[10px] uppercase tracking-widest font-black mb-1 ${plan.highlight ? 'text-emerald-400' : 'text-slate-500'}`} style={{ fontFamily: font }}>
+                  <div className="mb-6 border-b border-slate-100 pb-6">
+                    <h3 className={`text-[10px] uppercase tracking-widest font-black mb-1 ${plan.highlight ? 'text-emerald-600' : 'text-slate-400'}`} style={{ fontFamily: font }}>
                       {plan.name} Tier
                     </h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-white tracking-tight" style={{ fontFamily: font }}>${plan.price}</span>
-                      <span className="text-xs uppercase font-extrabold text-slate-500" style={{ fontFamily: font }}>/ mo</span>
+                      <span className="text-4xl font-black text-slate-900 tracking-tight" style={{ fontFamily: font }}>${plan.price}</span>
+                      <span className="text-xs uppercase font-extrabold text-slate-400" style={{ fontFamily: font }}>/ mo</span>
                     </div>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed mt-3" style={{ fontFamily: font }}>{plan.desc}</p>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-3" style={{ fontFamily: font }}>{plan.desc}</p>
                   </div>
 
                   <div className="space-y-3.5 mb-8">
@@ -107,12 +107,12 @@ export default function Pricing() {
                       const label = f.replace('✦', '').trim();
                       return (
                         <div key={f} className="flex items-center gap-3">
-                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${isAI ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : plan.highlight ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/[0.02] border-white/[0.08] text-slate-500'}`}>
+                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${isAI ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : plan.highlight ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                             <Check size={10} strokeWidth={3} />
                           </div>
-                          <span className={`text-xs font-bold ${isAI ? 'text-emerald-400' : 'text-slate-300'}`} style={{ fontFamily: font }}>
+                          <span className={`text-xs font-bold ${isAI ? 'text-emerald-600' : 'text-slate-600'}`} style={{ fontFamily: font }}>
                             {label}
-                            {isAI && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-400 uppercase tracking-wide font-black">AI</span>}
+                            {isAI && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 uppercase tracking-wide font-black">AI</span>}
                           </span>
                         </div>
                       );
@@ -121,7 +121,7 @@ export default function Pricing() {
                 </div>
 
                 <Link href={plan.href}>
-                  <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }} className={`block text-center w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer border ${plan.highlight ? 'bg-emerald-500 text-slate-950 border-emerald-400 hover:bg-emerald-400' : 'bg-white/[0.02] text-white border-white/[0.08] hover:bg-white/[0.05]'}`} style={{ fontFamily: font }}>
+                  <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }} className={`block text-center w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer border ${plan.highlight ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'}`} style={{ fontFamily: font }}>
                     {plan.cta}
                   </motion.div>
                 </Link>
