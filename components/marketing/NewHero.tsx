@@ -175,7 +175,6 @@ export default function GlassmorphismHero() {
                     <span>PAID</span>
                   </div>
                   <span className="text-[9px] font-bold text-slate-200">$1,850.00</span>
-                  <StripeLogo className="h-2.5 w-auto mt-0.5" />
                 </div>
 
               </div>
