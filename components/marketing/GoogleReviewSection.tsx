@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Mail } from 'lucide-react';
+import { CheckCircle2, Mail, Star } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
@@ -25,7 +25,7 @@ export default function GoogleReviewSection() {
 
         <div className="text-center mb-12 sm:mb-16">
           <div className="flex items-center justify-center gap-3 mb-4">
-           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-xl font-black text-slate-950">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-xl font-black text-slate-950">
               6
             </span>
             <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-amber-400 font-mono">
@@ -46,48 +46,91 @@ export default function GoogleReviewSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
 
-          {/* Real email copy, pulled from GoogleReviewsTab */}
+          {/* Email preview card with explicit Google Stars */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6"
+            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6 flex flex-col justify-between"
           >
-            <div className="flex items-center gap-2 mb-4 text-white font-black text-sm">
-              <Mail className="w-4 h-4 text-indigo-400" /> Customer email preview
-            </div>
-            <div className="bg-white rounded-lg p-5 border border-slate-200 text-sm text-slate-700 italic">
-              <p className="mb-3">Hi [Customer Name],</p>
-              <p className="mb-4">
-                &quot;Thanks for choosing us! Could you spare a moment to leave us a Google review?&quot;
-              </p>
-              <div className="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 font-medium text-[13px] px-4 py-2 rounded shadow-sm">
-                <GoogleLogo className="w-4 h-4" />
-                Leave a Google review
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-white font-black text-sm">
+                  <Mail className="w-4 h-4 text-indigo-400" /> Customer email preview
+                </div>
+                {/* Google 5-star badge pill */}
+                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black text-amber-400">5.0</span>
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-5 border border-slate-200 text-sm text-slate-700 shadow-sm relative">
+                <p className="mb-2.5 font-semibold text-slate-800">Hi [Customer Name],</p>
+                <p className="mb-4 italic text-slate-600">
+                  &quot;Thanks for choosing us! Could you spare a moment to leave us a 5-star Google review?&quot;
+                </p>
+
+                {/* Interactive Star Rating Callout */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3.5 text-center my-3">
+                  <div className="flex items-center justify-center gap-1.5 mb-2">
+                    <GoogleLogo className="w-4 h-4" />
+                    <span className="text-xs font-black text-slate-800">Rate us on Google</span>
+                  </div>
+                  
+                  {/* Visual Star Selector */}
+                  <div className="flex items-center justify-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400 drop-shadow-xs" />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 block mt-1">Tap a star to leave feedback</span>
+                </div>
+
+                <div className="mt-3 text-center">
+                  <div className="inline-flex items-center justify-center gap-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-black text-xs px-5 py-2.5 rounded-lg shadow-sm w-full transition-colors">
+                    <GoogleLogo className="w-4 h-4 bg-white rounded-full p-0.5" />
+                    Leave a Google Review
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="text-[11px] text-indigo-400 font-bold mt-3">
+
+            <p className="text-[11px] text-indigo-400 font-bold mt-4">
               Customize this template in Email Settings.
             </p>
           </motion.div>
 
-          {/* Trigger card, matching the real "Mark Job Complete" trigger */}
+          {/* Trigger card */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.08 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6"
+            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6 flex flex-col justify-between"
           >
-            <div className="flex items-center gap-2 mb-4 text-white font-black text-sm">
-              <CheckCircle2 className="w-4 h-4 text-indigo-400" /> Trigger: mark job complete
+            <div>
+              <div className="flex items-center gap-2 mb-4 text-white font-black text-sm">
+                <CheckCircle2 className="w-4 h-4 text-indigo-400" /> Trigger: mark job complete
+              </div>
+              <div className="rounded-xl overflow-hidden border border-white/10 shadow-sm h-[250px] sm:h-[280px]">
+                <img
+                  src="/images/mark-job-complete.webp"
+                  alt="Mark job as complete"
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
             </div>
-            <div className="rounded-xl overflow-hidden border border-white/10 shadow-sm h-[200px]">
-              <img
-                src="/images/mark-job-complete.webp"
-                alt="Mark job as complete"
-                className="w-full h-full object-cover object-top"
-              />
+
+            <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-white/5 pt-3">
+              <span className="font-semibold">Automatic Dispatch</span>
+              <span className="text-emerald-400 font-black flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Enabled
+              </span>
             </div>
           </motion.div>
 
