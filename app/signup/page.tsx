@@ -158,16 +158,16 @@ function SignupForm() {
             <span className="text-2xl font-black tracking-tighter text-white">Lead2Project</span>
           </div>
 
-          <h2 className="text-4xl font-black leading-tight mb-8">
+         <h2 className="text-4xl font-black leading-tight mb-8">
             The Operating System for{' '}
-            <span className="text-blue-400">Pro Services.</span>
+            <span className="text-emerald-400">Pro Services.</span>
           </h2>
 
           <div className="space-y-8">
             {[
-              { icon: <Clock className="w-5 h-5 text-blue-400" />, text: 'Start Free. Upgrade plan with a 14-day free trial' },
-              { icon: <Zap className="w-5 h-5 text-blue-400" />, text: 'Convert leads to projects in seconds' },
-              { icon: <ShieldCheck className="w-5 h-5 text-blue-400" />, text: 'Secure, automated client payments' },
+              { icon: <Clock className="w-5 h-5 text-emerald-400" />, text: 'Start Free. Upgrade plan with a 14-day free trial' },
+              { icon: <Zap className="w-5 h-5 text-emerald-400" />, text: 'Convert leads to projects in seconds' },
+              { icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />, text: 'Secure, automated client payments' },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-4 text-slate-300 font-medium">
                 <div className="mt-1">{item.icon}</div>
@@ -177,8 +177,8 @@ function SignupForm() {
           </div>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-          <p className="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">
+       <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+          <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">
             {plan === 'free' ? `${progressPercent}% complete` : 'Step 1 of 2'}
           </p>
           <p className="text-sm text-slate-300 font-bold">
@@ -207,13 +207,13 @@ function SignupForm() {
                 <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                   Setting up your account
                 </span>
-                <span className="text-[11px] font-black text-blue-600">
+                <span className="text-[11px] font-black text-emerald-600">
                   {progressPercent}% complete
                 </span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-3">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-out"
+                  className="h-full rounded-full bg-emerald-600 transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -225,16 +225,16 @@ function SignupForm() {
                   return (
                     <div key={label} className="flex-1 flex items-center gap-1.5">
                       <div
-                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide transition-all ${
+                     className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide transition-all ${
                           done
-                            ? 'bg-blue-50 text-blue-600'
+                            ? 'bg-emerald-50 text-emerald-600'
                             : active
                             ? 'bg-slate-100 text-slate-600'
                             : 'bg-slate-50 text-slate-300'
                         }`}
                       >
                         {done ? (
-                          <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
                         ) : (
                           <span className="w-3 text-center shrink-0">{idx}</span>
                         )}
@@ -248,8 +248,7 @@ function SignupForm() {
           )}
 
           <div className="mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full mb-4">
-              <UserPlus className="w-3.5 h-3.5" />
+<div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full mb-4">              <UserPlus className="w-3.5 h-3.5" />
               <span className="text-[10px] font-black uppercase tracking-widest">{STEP_LABELS[step - 1]}</span>
             </div>
             <h1 className="text-3xl font-black text-slate-900 mb-2">
@@ -328,10 +327,10 @@ function SignupForm() {
                   important
                 />
 
-                {formData.slug && (
-                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-blue-100 bg-blue-50/50">
-                    <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                    <code className="text-[13px] font-mono font-medium text-blue-700 truncate">
+               {formData.slug && (
+                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-emerald-100 bg-emerald-50/50">
+                    <Globe className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <code className="text-[13px] font-mono font-medium text-emerald-700 truncate">
                       lead2project.com/{formData.slug}
                     </code>
                   </div>
@@ -350,10 +349,10 @@ function SignupForm() {
                           key={type.value}
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, businessType: type.value }))}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
                             active
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200 hover:text-blue-600'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'
                           }`}
                         >
                           <Icon className="w-3.5 h-3.5" />
@@ -426,16 +425,16 @@ function SignupForm() {
                     type="checkbox"
                     id="terms"
                     checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+                   onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
                   />
                   <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed cursor-pointer">
                     I agree to the{' '}
-                    <a href="/terms" target="_blank" className="text-blue-600 font-semibold hover:underline">
+                    <a href="/terms" target="_blank" className="text-emerald-600 font-semibold hover:underline">
                       Terms of Service
                     </a>{' '}
                     and{' '}
-                    <a href="/privacy" target="_blank" className="text-blue-600 font-semibold hover:underline">
+                    <a href="/privacy" target="_blank" className="text-emerald-600 font-semibold hover:underline">
                       Privacy Policy
                     </a>
                   </label>
@@ -459,7 +458,7 @@ function SignupForm() {
                   key="continue-btn"
                   type="button"
                   onClick={goNext}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
                 >
                   Continue
                   <ArrowRight className="w-5 h-5" />
@@ -493,7 +492,7 @@ function SignupForm() {
               </div>
               <p className="text-center text-slate-500 text-sm">
                 Already registered?{' '}
-                <a href="/login" className="text-blue-600 font-black hover:underline">Log in here</a>
+                <a href="/login" className="text-emerald-600 font-black hover:underline">Log in here</a>
               </p>
             </div>
           </form>
@@ -538,8 +537,8 @@ function PreviewCard({
       </div>
       <div className="p-3.5">
         <p className="text-[11px] font-black text-slate-700 mb-1">{title}</p>
-        <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">{description}</p>
-        <code className="text-[10.5px] font-mono font-medium text-blue-600 block truncate">{url}</code>
+       <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">{description}</p>
+                <code className="text-[10.5px] font-mono font-medium text-emerald-600 block truncate">{url}</code>
       </div>
     </div>
   );
@@ -567,7 +566,7 @@ function FormPreviewMockup() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-[220px] space-y-1.5">
           <div className="flex items-center gap-1.5 mb-1">
-            <FileText className="w-2.5 h-2.5 text-blue-500" />
+          <FileText className="w-2.5 h-2.5 text-emerald-500" />
             <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Request a Quote</span>
           </div>
           <div>
@@ -582,7 +581,7 @@ function FormPreviewMockup() {
               <span className="text-[8.5px] font-medium text-slate-700 truncate">Kitchen remodel — 123 Main St</span>
             </div>
           </div>
-          <div className="h-5 w-16 rounded bg-blue-600 flex items-center justify-center mt-1.5">
+          <div className="h-5 w-16 rounded bg-emerald-600 flex items-center justify-center mt-1.5">
             <span className="text-[8px] font-bold text-white">Submit</span>
           </div>
         </div>
@@ -603,14 +602,14 @@ function DashboardPreviewMockup() {
       <BrowserChrome label="lead2project.com/your-company/dashboard" />
       <div className="flex-1 px-2.5 py-2 space-y-1">
         <div className="flex items-center gap-1.5 mb-1">
-          <LayoutDashboard className="w-2.5 h-2.5 text-blue-500" />
+<LayoutDashboard className="w-2.5 h-2.5 text-emerald-500" />
           <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Leads</span>
         </div>
         {rows.map((row, i) => (
           <div
             key={row.name}
-            className={`rounded-md bg-white border px-2 py-1 flex items-center gap-1.5 ${
-              i === 0 ? 'border-blue-200 shadow-sm' : 'border-slate-100'
+           className={`rounded-md bg-white border px-2 py-1 flex items-center gap-1.5 ${
+              i === 0 ? 'border-emerald-200 shadow-sm' : 'border-slate-100'
             }`}
           >
             <div className="w-3.5 h-3.5 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
@@ -641,7 +640,7 @@ function CustomInput({ label, value, onChange, placeholder, type = 'text', hint,
   return (
     <div className="space-y-1.5 flex-1">
       <div className="flex justify-between items-center ml-1">
-        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-blue-500' : 'text-slate-600'}`}>
+        <label className={`text-[11px] font-black uppercase tracking-wider ${important ? 'text-emerald-500' : 'text-slate-600'}`}>
           {label}
         </label>
         {hint && <span className="text-[10px] font-bold text-slate-300">{hint}</span>}
@@ -657,10 +656,10 @@ function CustomInput({ label, value, onChange, placeholder, type = 'text', hint,
             w-full px-4 py-3.5 rounded-xl border shadow-sm outline-none transition-all
             !text-slate-900 !font-black text-base
             placeholder:text-slate-300 placeholder:font-medium
-            focus:ring-4 focus:ring-blue-50 focus:border-blue-500
+            focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500
             bg-white
             ${isPassword ? 'pr-12' : ''}
-            ${important ? 'border-blue-200' : 'border-slate-200'}
+            ${important ? 'border-emerald-200' : 'border-slate-200'}
           `}
         />
         {isPassword && (
