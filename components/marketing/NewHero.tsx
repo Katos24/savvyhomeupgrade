@@ -5,7 +5,7 @@ import {
   ArrowRight, 
   ClipboardList, 
   Wrench, 
-  Zap, Send
+  Zap, Send, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,8 +18,6 @@ const StripeLogo = ({ className, color = 'currentColor' }: { className?: string;
   </svg>
 );
 
-// True multi-color Google "G" mark — reads correctly regardless of what
-// background it sits on, unlike a single-currentColor version.
 const GoogleLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -33,15 +31,15 @@ const GoogleLogo = ({ className }: { className?: string }) => (
 const FEATURES = [
   { 
     label: 'Intake Form', 
-    desc: 'Custom Qs & QR', 
+    desc: 'Custom Branding', 
     icon: ClipboardList, 
     bg: 'bg-blue-600', 
     border: 'border-blue-800' 
   },
   { 
-    label: 'Your Branding', 
+    label: 'Faster Estimates', 
     desc: 'Templates', 
-    icon: Wrench, 
+    icon: DollarSign, 
     bg: 'bg-emerald-600', 
     border: 'border-emerald-800' 
   },
@@ -52,7 +50,7 @@ const FEATURES = [
     bg: 'bg-amber-600', 
     border: 'border-amber-800' 
   },
-{ 
+  { 
     label: 'Invoices & Pay', 
     desc: 'Via Stripe',
     icon: Send,
@@ -70,7 +68,7 @@ const FEATURES = [
 
 export default function SimpleHero() {
   return (
-    <section className="relative overflow-hidden bg-slate-950 pt-20 pb-24 sm:pt-28 sm:pb-32 px-6 sm:px-8 border-b border-slate-900">
+    <section className="relative overflow-hidden bg-slate-950 pt-28 pb-20 sm:pt-36 sm:pb-32 px-6 sm:px-8 border-b border-slate-900">
       
       {/* Subtle Dark Background Grid & Orbs */}
       <div 
@@ -83,51 +81,66 @@ export default function SimpleHero() {
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-10 w-80 h-80 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto relative z-10 text-center">
-        
-        {/* Simple Pill Badge */}
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/80 px-3.5 py-1 shadow-sm mb-6">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>
-            Built for Local Contractors
-          </span>
+      <div className="max-w-6xl mx-auto relative z-10">
+
+        {/* Split Layout: Copy left, Image right */}
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-20">
+          
+          {/* Left: Badge, Headline, Subtitle, CTAs */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/80 px-3.5 py-1 shadow-sm mb-6">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400" style={{ fontFamily: font }}>
+                Built for Local Contractors
+              </span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.05] mb-6" style={{ fontFamily: font }}>
+              Everything you need for your trade in{' '}
+              <span className="text-emerald-400 relative inline-block">
+                one simple dashboard.
+                <span className="absolute bottom-1 left-0 right-0 h-1.5 bg-emerald-500/20 rounded-full -z-10" />
+              </span>
+            </h1>
+
+            <p className="text-slate-400 font-bold text-base sm:text-lg mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0" style={{ fontFamily: font }}>
+              The operating system for growing service crews. Capture leads via custom forms, track active bookings, and collect automated review payouts.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
+              <Link href="/signup">
+                <button 
+                  className="w-full sm:w-auto bg-emerald-600 text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl border-b-4 border-emerald-800 shadow-md shadow-emerald-900/30 hover:bg-emerald-500 active:translate-y-[2px] active:border-b-2 transition-all flex items-center justify-center gap-2"
+                  style={{ fontFamily: font }}
+                >
+                  Get Started Free
+                  <ArrowRight size={16} strokeWidth={3} />
+                </button>
+              </Link>
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider" style={{ fontFamily: font }}>
+                No credit card required
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Product screenshot */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+          >
+            <img
+              src="/images/heroimagefull.webp"
+              alt="Ridge Line Roofing dashboard on laptop and the mobile intake form on a phone"
+              className="w-full h-auto"
+            />
+          </motion.div>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-4xl sm:text-6xl text-white font-black tracking-tight leading-[1.05] mb-6 max-w-3xl mx-auto" style={{ fontFamily: font }}>
-          Everything you need for your trade in{' '}
-          <span className="text-emerald-400 relative inline-block">
-            one simple dashboard.
-            <span className="absolute bottom-1 left-0 right-0 h-1.5 bg-emerald-500/20 rounded-full -z-10" />
-          </span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-slate-400 font-bold text-base sm:text-lg max-w-xl mx-auto mb-8 leading-relaxed" style={{ fontFamily: font }}>
-          The operating system for growing service crews. Capture leads via custom forms, track active bookings, and collect automated review payouts.
-        </p>
-
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-          <Link href="/signup">
-            <button 
-              className="w-full sm:w-auto bg-emerald-600 text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl border-b-4 border-emerald-800 shadow-md shadow-emerald-900/30 hover:bg-emerald-500 active:translate-y-[2px] active:border-b-2 transition-all flex items-center justify-center gap-2"
-              style={{ fontFamily: font }}
-            >
-              Get Started Free
-              <ArrowRight size={16} strokeWidth={3} />
-            </button>
-          </Link>
-          <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider" style={{ fontFamily: font }}>
-            No credit card required
-          </span>
-        </div>
-
-        {/* Centered Premium Tactile Feature Track */}
+        {/* Centered Premium Tactile Feature Track — unchanged, stays bottom-centered */}
         <div className="max-w-4xl mx-auto">
           <div className="relative p-5 pb-6 bg-slate-900/60 border border-slate-800/80 rounded-[2rem] shadow-2xl shadow-black/40 backdrop-blur-sm">
             
-            {/* Snap Blocks Wrapper */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 relative z-10">
               {FEATURES.map((item, index) => {
                 const IconComponent = item.icon;
@@ -139,9 +152,6 @@ export default function SimpleHero() {
                     key={index}
                     className={`flex flex-col items-center justify-between text-center p-4 rounded-2xl text-white ${item.bg} border-b-[5px] ${item.border} shadow-lg cursor-pointer transition-all select-none`}
                   >
-                    {/* Glassmorphic Icon Bubble — holds either a lucide icon
-                        or a real brand logo (Stripe / Google), sized to sit
-                        comfortably inside the same bubble. */}
                     <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center shadow-[inset_0_1.5px_3px_rgba(255,255,255,0.25)] border border-white/10 mb-4">
                       {CustomIcon ? (
                         <CustomIcon className="h-4 w-auto max-w-[26px]" />
@@ -162,7 +172,6 @@ export default function SimpleHero() {
               })}
             </div>
 
-            {/* Bottom Playful Base Track (Tactile Studs) */}
             <div className="absolute bottom-2 left-6 right-6 h-3 flex justify-between px-2 pointer-events-none opacity-10">
               {Array.from({ length: 14 }).map((_, i) => (
                 <div key={i} className="w-3 h-3 rounded-full bg-white" />

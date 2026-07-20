@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Globe, QrCode, Facebook, Instagram, CreditCard } from 'lucide-react';
+import { Globe, QrCode, Facebook, Instagram, CreditCard, Star, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
@@ -17,58 +17,43 @@ function GoogleLogo({ className }: { className?: string }) {
   );
 }
 
-// Bento cells — each optionally has an image (desktop only). Cells without
-// a confirmed real asset fall back to an icon-only tile so nothing 404s;
-// swap `image` in once you have a real screenshot/photo for that spot.
-const BENTO_CELLS = [
-  {
-    title: 'Google Business Profile',
-    subtitle: 'Often the first thing a customer sees',
-    icon: GoogleLogo,
-    isCustomIcon: true,
-    image: null, // TODO: add a Google Business Profile screenshot
-    span: 'lg:col-span-2 lg:row-span-1',
-  },
-  {
-    title: 'Truck wraps & yard signs',
-    subtitle: 'Scan, submit, done',
-    icon: QrCode,
-    color: 'text-indigo-400',
-    image: '/images/qrbranded2.webp',
-    span: 'lg:col-span-2 lg:row-span-2',
-  },
-  {
-    title: 'Instagram bio',
-    subtitle: 'Link in bio, right to your form',
-    icon: Instagram,
-    color: 'text-pink-400',
-    image: null, // TODO: add an Instagram bio screenshot
-    span: 'lg:col-span-1',
-  },
-  {
-    title: 'Facebook page',
-    subtitle: 'Pin it to the top of your page',
-    icon: Facebook,
-    color: 'text-blue-400',
-    image: null, // TODO: add a Facebook page screenshot
-    span: 'lg:col-span-1',
-  },
-  {
-    title: 'QR code, scanned in the field',
-    subtitle: 'Customer scans, form opens instantly',
-    icon: QrCode,
-    color: 'text-emerald-400',
-    image: '/images/qr-scan-2.webp',
-    span: 'lg:col-span-2',
-  },
-  {
-    title: 'Business cards',
-    subtitle: 'Hand one over, they book on the spot',
-    icon: CreditCard,
-    color: 'text-slate-300',
-    image: null, // TODO: add a business card mockup
-    span: 'lg:col-span-2',
-  },
+function GoogleProfileMockup() {
+  return (
+    <div className="w-full max-w-[260px] mx-auto bg-white rounded-2xl shadow-xl p-4">
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+          <GoogleLogo className="w-4.5 h-4.5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[12px] font-black text-slate-900 truncate">Ridge Line Roofing</p>
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} size={9} className="text-amber-400" fill="currentColor" />
+            ))}
+            <span className="text-[9px] font-bold text-slate-400 ml-1">4.9 (124 reviews)</span>
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-slate-100 pt-2.5 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-500">Website</span>
+          <span className="text-[10px] font-black text-emerald-600 flex items-center gap-1">
+            Request a Quote <ArrowRight size={10} />
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-500">Appointments</span>
+          <span className="text-[10px] font-black text-blue-600">Schedule Job</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const OTHER_CHANNELS = [
+  { label: 'Instagram bio', icon: Instagram, color: 'text-pink-400' },
+  { label: 'Facebook page', icon: Facebook, color: 'text-blue-400' },
+  { label: 'Business cards', icon: CreditCard, color: 'text-slate-300' },
 ];
 
 export default function TruckSection() {
@@ -82,7 +67,6 @@ export default function TruckSection() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Header with step badge */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -102,54 +86,68 @@ export default function TruckSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-white font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-12 max-w-2xl"
+          className="text-white font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-4 max-w-2xl"
         >
           Share your link and QR code — <span className="text-emerald-400">put it everywhere.</span>
         </motion.h2>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-4">
-          {BENTO_CELLS.map((cell, i) => (
-            <motion.div
-              key={cell.title}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.35, delay: i * 0.04 }}
-              className={`relative rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden shadow-sm hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300 min-h-[160px] flex flex-col ${cell.span || ''}`}
-            >
-              {cell.image && (
-                <div className="relative hidden sm:block flex-1 min-h-[120px] bg-white/5">
-                  <Image
-                    src={cell.image}
-                    alt={cell.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
-                </div>
-              )}
+        <p className="text-slate-400 font-bold text-sm sm:text-base max-w-xl mb-12">
+          Truck decals, yard signs, social posts — one link and QR code work everywhere you can put them.
+        </p>
 
-              <div className={`p-4 sm:p-5 ${cell.image ? 'sm:absolute sm:bottom-0 sm:left-0 sm:right-0' : 'flex-1 flex flex-col justify-center'}`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
-                    {cell.isCustomIcon ? (
-                      <cell.icon className="w-4 h-4" />
-                    ) : (
-                      <cell.icon size={16} className={cell.color} />
-                    )}
-                  </div>
-                  <h4 className="text-sm font-black text-white">
-                    {cell.title}
-                  </h4>
-                </div>
-                <p className="text-[11px] font-bold text-slate-400">
-                  {cell.subtitle}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+        {/* Hero image + Google Profile side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 mb-10 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+          >
+            <Image
+              src="/images/qrbranded2.webp"
+              alt="Ridge Line Roofing QR code and booking link shown on a truck decal, yard sign, and social media post"
+              width={1920}
+              height={1300}
+              className="w-full h-auto"
+              priority
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 text-center">
+              Google Business Profile
+            </p>
+            <GoogleProfileMockup />
+          </motion.div>
         </div>
+
+        {/* Lightweight supporting row for the rest */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="flex flex-wrap items-center justify-center gap-3"
+        >
+          {OTHER_CHANNELS.map((channel) => (
+            <div
+              key={channel.label}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5"
+            >
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10">
+                <channel.icon size={14} className={channel.color} />
+              </div>
+              <span className="text-xs font-bold text-slate-300">{channel.label}</span>
+            </div>
+          ))}
+        </motion.div>
 
       </div>
     </section>

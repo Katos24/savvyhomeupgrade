@@ -442,39 +442,31 @@ export default function InteractiveShowcase() {
     <section className="bg-slate-950 py-16 md:py-24 lg:py-32 px-4 sm:px-6 overflow-hidden relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_50%)] pointer-events-none" />
 
-   <div className="max-w-7xl mx-auto">
-        <div className="relative mb-10 sm:mb-16">
-          <div className="absolute right-0 top-0 hidden sm:flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
-              The full story, tab by tab
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-xl font-black text-slate-950">
-              4
-            </span>
-          </div>
+  <div className="max-w-7xl mx-auto">
+  {/* Header Section - Left Aligned & Compact */}
+  <div className="mb-8 sm:mb-12 text-left">
+    {/* Step Badge + Subtitle Tag */}
+    <div className="flex items-center gap-3 mb-4">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-lg font-black text-slate-950">
+        4
+      </span>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+        Step 4 · The full story, tab by tab
+      </span>
+    </div>
 
-          <div className="flex sm:hidden items-center gap-3 mb-5">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-xl font-black text-slate-950">
-              4
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
-              The full story, tab by tab
-            </span>
-          </div>
-
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
-              Manage your entire business <br className="hidden sm:block" />
-              <span className="text-[#7BC94F]">from one screen.</span>
-            </h2>
-            <p className="text-slate-400 text-sm sm:text-base font-medium max-w-2xl mx-auto px-2">
-              Tap the modules below to look at how real-time operational control layouts update instantly inside the field app preview.
-            </p>
-          </div>
-        </div>
+    {/* Title & Description */}
+    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
+      Manage your entire business <br className="hidden sm:block" />
+      <span className="text-[#7BC94F]">from one screen.</span>
+    </h2>
+    <p className="text-slate-400 text-sm sm:text-base font-medium max-w-xl">
+      Tap the modules below to look at how real-time operational control layouts update instantly inside the field app preview.
+    </p>
+  </div>
 
         {/* Mobile Viewports Top Horizontally Scrollable Selector Badges Row */}
-        <div className="lg:hidden flex gap-2 overflow-x-auto pb-5 pt-1 px-1 snap-x scrollbar-none justify-start min-w-full items-center">
+  <div className="lg:hidden flex gap-2 overflow-x-auto pb-5 pt-1 px-1 snap-x scrollbar-none justify-start min-w-full items-center">
           {FEATURES.map((feature) => {
             const isSelected = activeFeature === feature.id;
             return (
