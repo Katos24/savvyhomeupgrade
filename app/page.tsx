@@ -8,6 +8,7 @@ import DashboardShowcase from '@/components/marketing/DashboardShowcase';
 import FullStorySection from '@/components/marketing/FullStorySection';
 import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import GoogleReviewSection from '@/components/marketing/GoogleReviewSection';
+import DigestBanner from '@/components/marketing/DigestBanner';
 
 import Pricing from '@/components/marketing/Pricing';
 import FinalCTA from '@/components/marketing/FinalCTA';
@@ -38,6 +39,8 @@ export default function NewHome() {
       {/* 6. Collect the Google review — TODO: no section built yet, needs a new component */}
 
       <GoogleReviewSection />
+
+      <DigestBanner />
 
       {/* 7. Pricing */}
       <Pricing />
