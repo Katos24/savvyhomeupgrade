@@ -451,7 +451,7 @@ export default function InteractiveShowcase() {
         4
       </span>
       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-        Step 4 · The full story, tab by tab
+        The full story, tab by tab
       </span>
     </div>
 
