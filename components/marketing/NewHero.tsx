@@ -126,14 +126,7 @@ export default function GlassmorphismHero() {
               {/* Glass Top Highlight Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-emerald-500/5 to-transparent rounded-2xl pointer-events-none" />
 
-              {/* Header inside Card */}
-              <div className="relative z-10 flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-wider">
-                <span className="text-slate-300 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> Automated Workflow
-                </span>
-                <span className="text-emerald-400 font-bold">Instant Payout</span>
-              </div>
-
+            
               {/* Workflow Flow Elements */}
               <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
                 
