@@ -94,7 +94,7 @@ export default function GlassmorphismHero() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative mb-8 sm:mb-0"
+            className="relative sm:mb-0"
           >
             <div className="relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
@@ -104,12 +104,13 @@ export default function GlassmorphismHero() {
               />
             </div>
 
-            {/* --- ULTRA FROSTED GLASS CARD OVERLAY (UPDATED FOR MOBILE) --- */}
+            {/* --- FROSTED GLASS CARD: in-flow on mobile (reserves real space,
+                 can't overlap anything below it), absolute-overlay from sm: up --- */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.92, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.5 }}
-              className="absolute -bottom-10 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-bottom-8 sm:-left-8 z-20 
+              className="relative -mt-8 mx-auto sm:absolute sm:mt-0 sm:mx-0 sm:-bottom-8 sm:-left-8 sm:left-auto z-20 
                          /* Responsive Widths */
                          w-[92%] sm:w-auto max-w-[340px] sm:max-w-[390px]
                          /* Frosted Effect Core */
@@ -120,6 +121,7 @@ export default function GlassmorphismHero() {
                          border border-white/20 
                          shadow-[0_25px_50px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)]
                          rounded-2xl p-4 sm:p-5"
+            
             >
               {/* Glass Top Highlight Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-emerald-500/5 to-transparent rounded-2xl pointer-events-none" />
