@@ -40,7 +40,7 @@ const FEATURES = [
 
 export default function GlassmorphismHero() {
   return (
-    <section className="relative overflow-hidden bg-[#0a0d14] pt-28 pb-20 sm:pt-36 sm:pb-32 px-6 sm:px-8 border-b border-slate-800/80">
+    <section className="relative overflow-hidden bg-[#0a0d14] pt-28 pb-28 sm:pt-36 sm:pb-32 px-6 sm:px-8 border-b border-slate-800/80">
       
       {/* Background Glow */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[650px] h-[380px] bg-emerald-500/10 rounded-full blur-[130px] pointer-events-none" />
@@ -48,7 +48,7 @@ export default function GlassmorphismHero() {
       <div className="max-w-6xl mx-auto relative z-10">
 
         {/* Hero Split Layout */}
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-20">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-20 lg:mb-24">
           
           {/* Left Column */}
           <div className="text-center lg:text-left">
@@ -70,17 +70,23 @@ export default function GlassmorphismHero() {
               The operating system for growing service crews. Capture leads via custom forms, track active bookings, and collect automated review payouts.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
-              <Link href="/signup">
-                <button 
-                  className="w-full sm:w-auto bg-emerald-500 text-slate-950 font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
-                  style={{ fontFamily: font }}
-                >
-                  Get Started Free
-                  <ArrowRight size={16} strokeWidth={3} />
-                </button>
-              </Link>
-            </div>
+           <div className="flex flex-col items-center lg:items-start justify-center lg:justify-start gap-3">
+  <Link href="/signup" className="w-full sm:w-auto">
+    <button 
+      className="w-full sm:w-auto bg-emerald-500 text-slate-950 font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
+      style={{ fontFamily: font }}
+    >
+      Get Started Free
+      <ArrowRight size={16} strokeWidth={3} />
+    </button>
+  </Link>
+  
+  {/* No Credit Card Note */}
+  <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5" style={{ fontFamily: font }}>
+    <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+    No credit card required
+  </p>
+</div>
           </div>
 
           {/* Right Column: Hero Laptop + HEAVY FROSTED GLASS CONTAINER */}
@@ -88,7 +94,7 @@ export default function GlassmorphismHero() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative"
+            className="relative mb-8 sm:mb-0"
           >
             <div className="relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
@@ -98,21 +104,22 @@ export default function GlassmorphismHero() {
               />
             </div>
 
-            {/* --- ULTRA FROSTED GLASS CARD OVERLAY --- */}
+            {/* --- ULTRA FROSTED GLASS CARD OVERLAY (UPDATED FOR MOBILE) --- */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.92, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.5 }}
-              className="absolute -bottom-8 -left-3 sm:-left-8 z-20 
+              className="absolute -bottom-10 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-bottom-8 sm:-left-8 z-20 
+                         /* Responsive Widths */
+                         w-[92%] sm:w-auto max-w-[340px] sm:max-w-[390px]
                          /* Frosted Effect Core */
-                         bg-slate-950/40 
+                         bg-slate-950/60 
                          backdrop-blur-xl 
                          backdrop-saturate-200 
                          /* Glass Borders & Inner Shine */
                          border border-white/20 
                          shadow-[0_25px_50px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)]
-                         rounded-2xl p-4 sm:p-5 
-                         max-w-[340px] sm:max-w-[390px]"
+                         rounded-2xl p-4 sm:p-5"
             >
               {/* Glass Top Highlight Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-emerald-500/5 to-transparent rounded-2xl pointer-events-none" />
@@ -126,7 +133,7 @@ export default function GlassmorphismHero() {
               </div>
 
               {/* Workflow Flow Elements */}
-              <div className="relative z-10 flex items-center justify-between gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
+              <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
                 
                 {/* 1. Invoice Document */}
                 <div className="flex items-center gap-2 bg-slate-900/90 p-2 rounded-lg border border-slate-700/80 shadow-md">
@@ -146,7 +153,7 @@ export default function GlassmorphismHero() {
                 {/* 2. Glow Curved Arrow */}
                 <div className="flex items-center justify-center shrink-0">
                   <svg 
-                    className="w-7 h-7 sm:w-9 sm:h-9 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]" 
+                    className="w-6 h-6 sm:w-9 sm:h-9 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]" 
                     viewBox="0 0 50 50" 
                     fill="none" 
                   >
