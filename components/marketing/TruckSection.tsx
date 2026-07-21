@@ -29,7 +29,7 @@ function GoogleLogo({ className }: { className?: string }) {
 
 function GoogleProfileMockup() {
   return (
-    <div className="w-full max-w-[260px] mx-auto bg-white rounded-2xl shadow-2xl p-4 border border-slate-100">
+    <div className="w-full bg-white rounded-2xl shadow-2xl p-4 border border-slate-100">
       <div className="flex items-center gap-2.5 mb-3">
         <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
           <GoogleLogo className="w-4.5 h-4.5" />
@@ -130,60 +130,71 @@ export default function TruckSection() {
         {/* Main Content Card Container */}
         <div className="relative p-4 sm:p-8 bg-white/[0.02] border border-white/10 rounded-[2.5rem] backdrop-blur-xl shadow-2xl">
           
-    
-          {/* Hero image + Google Profile side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mb-8 items-center">
+          {/* Main Grid: Left side image, Right side Google + Channels */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+            
+            {/* Left: Main QR Graphic Image */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl group"
+              className="relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl group h-full"
             >
               <Image
                 src="/images/qrbranded2.webp"
                 alt="Ridge Line Roofing QR code and booking link shown on a truck decal, yard sign, and social media post"
                 width={1920}
                 height={1300}
-                className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.01]"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                 priority
               />
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md flex flex-col justify-center h-full"
-            >
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">
-                Google Business Profile integration
-              </p>
-              <GoogleProfileMockup />
-            </motion.div>
-          </div>
-
-          {/* Supporting Channels Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="pt-4 border-t border-white/5 flex flex-wrap items-center justify-center gap-3"
-          >
-            {OTHER_CHANNELS.map((channel) => (
-              <div
-                key={channel.label}
-                className={`inline-flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 transition-all duration-300 ${channel.border} hover:bg-white/[0.06] hover:-translate-y-0.5 cursor-default`}
+            {/* Right Column: Google Profile + Social Channels Stacked */}
+            <div className="flex flex-col gap-4">
+              
+              {/* Google Business Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md"
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                  <channel.icon size={15} className={channel.color} />
-                </div>
-                <span className="text-xs font-bold text-slate-200">{channel.label}</span>
-              </div>
-            ))}
-          </motion.div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 text-center">
+                  Google Business Profile Integration
+                </p>
+                <GoogleProfileMockup />
+              </motion.div>
+
+              {/* Social Channels Stack (Instagram, Facebook, etc.) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md flex flex-col gap-2.5"
+              >
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 text-center">
+                  More Distribution Channels
+                </p>
+                {OTHER_CHANNELS.map((channel) => (
+                  <div
+                    key={channel.label}
+                    className={`flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition-all duration-300 ${channel.border} hover:bg-white/[0.06] cursor-default`}
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                      <channel.icon size={15} className={channel.color} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-200">{channel.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+
+            </div>
+
+          </div>
 
         </div>
 

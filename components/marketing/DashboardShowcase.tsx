@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, LayoutDashboard, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { Sparkles, LayoutDashboard, CheckCircle2, ChevronDown } from 'lucide-react';
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
@@ -18,14 +18,48 @@ const STATUS_OPTIONS = [
   { value: 'completed', label: 'Job Completed', color: 'blue' },
 ];
 
+// Map trades to theme mode (isDark) and custom glow colors
+const TRADE_THEMES: Record<string, { isDark: boolean; glow: string; badge: string }> = {
+  Roofing: { 
+    isDark: true, 
+    glow: 'from-emerald-500/30 via-teal-500/20', 
+    badge: 'bg-emerald-500 text-white' 
+  },
+  Electrical: { 
+    isDark: false, 
+    glow: 'from-amber-500/25 via-yellow-500/15', 
+    badge: 'bg-amber-500 text-white' 
+  },
+  Plumbing: { 
+    isDark: true, 
+    glow: 'from-blue-600/30 via-cyan-500/20', 
+    badge: 'bg-blue-500 text-white' 
+  },
+  HVAC: { 
+    isDark: false, 
+    glow: 'from-sky-500/25 via-indigo-500/15', 
+    badge: 'bg-sky-600 text-white' 
+  },
+  Landscaping: { 
+    isDark: false, 
+    glow: 'from-emerald-500/25 via-green-500/15', 
+    badge: 'bg-emerald-600 text-white' 
+  },
+};
+
 export default function DashboardShowcase() {
   const [activeExample, setActiveExample] = useState(0);
   const [view, setView] = useState<ViewKey>('cards');
   const [isPaused, setIsPaused] = useState(false);
 
   const current = TRADE_EXAMPLES[activeExample];
+  const theme = TRADE_THEMES[current.trade] || {
+    isDark: false,
+    glow: 'from-blue-500/20 via-teal-500/10',
+    badge: 'bg-slate-900 text-white',
+  };
 
-  // Auto-rotate trade examples unless the user interacts
+  // Auto-rotate trade examples unless paused
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
@@ -37,126 +71,161 @@ export default function DashboardShowcase() {
   return (
     <section
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-slate-50 py-24 sm:py-32 border-b border-slate-200 text-slate-900"
+      className="relative overflow-hidden bg-slate-100/70 py-16 sm:py-24 text-slate-900 border-b border-slate-200"
     >
-      {/* Background Dot Grid */}
+      {/* Background Grid Pattern */}
       <div
-        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(#000 1.2px, transparent 1.2px)',
           backgroundSize: '24px 24px',
         }}
       />
 
-      {/* Ambient Radial Lighting */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-blue-100/60 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-teal-100/50 rounded-full blur-[140px] pointer-events-none" />
-
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
+        {/* Compact Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -6 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex items-center gap-3 mb-4 justify-center"
+            className="flex items-center gap-2 mb-3 justify-center"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-lg font-black text-white shadow-md">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-black text-white shadow-sm">
               3
             </span>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-              Form lands, ready to track
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+              Instant Dispatch Pipeline
             </span>
           </motion.div>
 
-          <h2 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-[1.08] mb-4">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight leading-[1.1] mb-3">
             Every submission lands
-            <span className="block pt-1 text-[#0A3A66]"> already organized on your board.</span>
+            <span className="block text-sky-700"> already organized on your board.</span>
           </h2>
 
-          <p className="text-slate-600 font-bold text-base sm:text-lg max-w-xl mx-auto">
-            No endless email threads or lost sticky notes. Watch leads drop directly into your pipeline with complete job details ready for action.
+          <p className="text-slate-600 font-bold text-sm sm:text-base max-w-lg mx-auto">
+            No endless email threads. Watch incoming leads populate directly into your trade-specific board.
           </p>
         </div>
 
-        {/* Interactive Trade Example Switches */}
-        <div 
-          className="flex flex-wrap items-center justify-center gap-2 mb-8"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {TRADE_EXAMPLES.map((item, idx) => {
-            const isActive = idx === activeExample;
-            return (
-              <button
-                key={item.trade}
-                type="button"
-                onClick={() => {
-                  setActiveExample(idx);
-                  setIsPaused(true);
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 border ${
-                  isActive
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-105'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
-                }`}
-              >
-                {item.trade}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* View Switcher & Mockup Container */}
-        <div className="w-full relative">
+        {/* Main Interface Wrapper */}
+        <div className="relative">
           
-          {/* Glass Backing Panel */}
-          <div className="relative p-3 sm:p-6 bg-white/70 border border-slate-200/90 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
+          {/* Dynamic Trade Glow (Behind the Dashboard Card) */}
+          <motion.div
+            key={`glow-${current.trade}`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className={`absolute -inset-4 rounded-[3.5rem] bg-gradient-to-r ${theme.glow} to-transparent blur-2xl pointer-events-none z-0`}
+          />
+
+          {/* Light Outer Glass Frame */}
+          <div className="relative z-10 p-3 sm:p-5 bg-white/80 border border-slate-200/90 rounded-[2.5rem] shadow-xl backdrop-blur-md">
             
-            {/* Top Right Live Badge */}
-            <div className="absolute -top-4 right-6 sm:right-8 bg-slate-900 text-teal-300 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-20">
-              <Sparkles size={13} className="text-teal-400" />
-              <span>Real-Time Dispatch Board</span>
-            </div>
-
-            {/* View Switcher Controls */}
-            <div className="mb-4 flex justify-center">
-              <DispatchViewSwitcher view={view} onChange={setView} isDark={false} />
-            </div>
-
-            {/* Laptop Frame Preview */}
-            <div className="relative rounded-2xl border border-slate-800/80 bg-slate-900 overflow-hidden shadow-2xl">
+            {/* Top Controls: Trade Tabs + View Switcher */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 bg-slate-100/80 p-2 rounded-2xl border border-slate-200/60">
               
-              {/* Mock Mac Browser Header Bar */}
-              <div className="px-4 py-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+              {/* Interactive Trade Tabs */}
+              <LayoutGroup id="trade-tabs">
+                <div 
+                  className="flex flex-wrap items-center gap-1"
+                  onMouseEnter={() => setIsPaused(true)}
+                  onMouseLeave={() => setIsPaused(false)}
+                >
+                  {TRADE_EXAMPLES.map((item, idx) => {
+                    const isActive = idx === activeExample;
+                    return (
+                      <button
+                        key={item.trade}
+                        type="button"
+                        onClick={() => {
+                          setActiveExample(idx);
+                          setIsPaused(true);
+                        }}
+                        className={`relative px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                          isActive ? 'text-white' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {isActive && (
+                          <motion.span
+                            layoutId="activeTradeTab"
+                            className="absolute inset-0 bg-slate-900 rounded-xl shadow-sm"
+                            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                          />
+                        )}
+                        <span className="relative z-10">{item.trade}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </LayoutGroup>
+
+              {/* View Switcher Controls */}
+              <div className="shrink-0">
+                <DispatchViewSwitcher view={view} onChange={setView} isDark={theme.isDark} />
+              </div>
+            </div>
+
+            {/* Dashboard Container (Switches Dark/Light per trade) */}
+            <div className={`relative rounded-2xl border transition-colors duration-300 overflow-hidden shadow-xl ${
+              theme.isDark 
+                ? 'bg-slate-950 border-slate-800 text-white' 
+                : 'bg-white border-slate-200 text-slate-900'
+            }`}>
+              
+              {/* Top Browser Header Bar */}
+              <div className={`px-4 py-2 border-b flex items-center justify-between transition-colors duration-300 ${
+                theme.isDark 
+                  ? 'bg-slate-900/90 border-slate-800' 
+                  : 'bg-slate-100 border-slate-200'
+              }`}>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                  <div className={`w-2.5 h-2.5 rounded-full ${theme.isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full ${theme.isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full ${theme.isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 </div>
-                <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1 rounded-md text-[10px] font-bold text-slate-400">
-                  <LayoutDashboard size={12} className="text-teal-400" />
-                  <span>app.workrequest.com/dispatch</span>
+                
+                {/* Specific URL display */}
+                <div className={`flex items-center gap-2 px-3 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                  theme.isDark
+                    ? 'bg-slate-800 text-slate-300 border-slate-700'
+                    : 'bg-white text-slate-600 border-slate-200/80 shadow-2xs'
+                }`}>
+                  <LayoutDashboard size={12} className={theme.isDark ? 'text-teal-400' : 'text-sky-600'} />
+                  <span>https://lead2project.com/ridge-line-roofing/dashboard</span>
+                  <ChevronDown size={11} className="text-slate-400" />
                 </div>
-                <div className="w-12" /> {/* Spacer */}
+
+                <motion.div 
+                  key={`badge-${current.trade}`}
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${theme.badge}`}
+                >
+                  {current.trade} Live
+                </motion.div>
               </div>
 
               {/* Board Screen Content */}
-              <div className="relative flex flex-col w-full min-h-[440px] sm:min-h-[480px] lg:min-h-[520px]">
-                <div className="flex-1 min-h-0 p-3 sm:p-5 overflow-y-auto flex flex-col space-y-4">
+              <div className={`relative flex flex-col w-full min-h-[380px] sm:min-h-[420px] transition-colors duration-300 ${
+                theme.isDark ? 'bg-slate-900/50' : 'bg-slate-50/50'
+              }`}>
+                <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={current.trade}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.22 }}
-                      className="flex flex-col flex-1 min-h-0 space-y-4"
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col space-y-3"
                     >
                       <DashboardHeader
                         company={current.company}
-                        isDark={true}
+                        isDark={theme.isDark}
                         isRefreshing={false}
                         planTier="pro"
                         onSidebarOpen={() => {}}
@@ -169,7 +238,7 @@ export default function DashboardShowcase() {
                       <DashboardStats
                         globalStats={current.stats}
                         allLeads={current.leads}
-                        isDark={true}
+                        isDark={theme.isDark}
                       />
 
                       <HeroDispatchCards
@@ -177,7 +246,7 @@ export default function DashboardShowcase() {
                         statusOptions={STATUS_OPTIONS}
                         trade={current.trade}
                         view={view}
-                        isDark={true}
+                        isDark={theme.isDark}
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -186,10 +255,11 @@ export default function DashboardShowcase() {
 
             </div>
 
-            {/* Bottom Trust Note */}
-            <div className="mt-4 flex items-center justify-center gap-2 text-slate-500 text-xs font-bold">
-              <CheckCircle2 size={15} className="text-teal-600" />
+            {/* Bottom Footer Note */}
+            <div className="mt-3 flex items-center justify-center gap-2 text-slate-500 text-xs font-bold">
+              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
               <span>Instant lead notifications sent straight to your phone & email</span>
+              <Sparkles size={13} className="text-amber-500 shrink-0" />
             </div>
 
           </div>
