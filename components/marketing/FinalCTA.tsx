@@ -38,8 +38,8 @@ export default function FinalCTA() {
           className="text-4xl sm:text-5xl lg:text-6xl text-white font-black mb-6 leading-[1.05] tracking-tight"
           style={{ fontFamily: font }}
         >
-          Control your pipeline. <br />
-          <span className="text-emerald-400 drop-shadow-[0_0_30px_rgba(52,211,153,0.15)]">Secure your sanity.</span>
+          Run your trade better. <br />
+          <span className="text-emerald-400 drop-shadow-[0_0_30px_rgba(52,211,153,0.15)]">Never chase another invoice.</span>
         </h2>
 
         <p
