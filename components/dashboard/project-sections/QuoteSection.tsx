@@ -3,7 +3,19 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import {
-  Plus, Trash2, X, Mail, Loader2, Send, Sparkles, Eye, Receipt, ArrowRightLeft, CheckCircle2, Save, ChevronDown
+  Plus,
+  Trash2,
+  X,
+  Mail,
+  Loader2,
+  Send,
+  Sparkles,
+  Receipt,
+  CheckCircle2,
+  Save,
+  Minus,
+  Eye,
+  ArrowRightLeft,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -32,23 +44,48 @@ export default function QuoteSection({
   companySlug,
   onDirtyChange,
 }: QuoteSectionProps) {
-  const [saving, setSaving] = useState(false);
+ const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [quoteData, setQuoteData] = useState(lead?.quote_data || []);
+  const [quoteData, setQuoteData] = useState<any[]>(lead?.quote_data || []);
+  const [taxRate, setTaxRate] = useState<number>(lead?.quote_tax_rate ?? 0);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [pendingAiItems, setPendingAiItems] = useState<any[] | null>(null);
   const [showAI, setShowAI] = useState(false);
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [pendingAiItems, setPendingAiItems] = useState<any[] | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
-  const [showSendMenu, setShowSendMenu] = useState(false);
 
   const newRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Restrict key presses for numeric fields
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = true) => {
+    // Allow navigation keys, backspace, delete, tab, enter
+    if (
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
+        e.key
+      ) ||
+      (e.ctrlKey || e.metaKey) // Allow copy/paste/select all
+    ) {
+      return;
+    }
+
+    if (allowDecimal && e.key === '.') {
+      // Prevent multiple decimals
+      if (e.currentTarget.value.includes('.')) {
+        e.preventDefault();
+      }
+      return;
+    }
+
+    // Block non-digit characters
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
 
   // Load category template
   useEffect(() => {
@@ -64,19 +101,20 @@ export default function QuoteSection({
       .catch(() => {});
   }, [lead?.category, companySlug]);
 
-  // Sync with lead data — only when not mid-edit, so we don't clobber unsaved work
+ // Sync with lead data — only when clean
   useEffect(() => {
     if (isDirty) return;
     setQuoteData(lead?.quote_data || []);
+    setTaxRate(lead?.quote_tax_rate ?? 0);
     setTemplateBannerDismissed(false);
-  }, [lead?.quote_data]);
+  }, [lead?.quote_data, lead?.quote_tax_rate]);
 
-  // Notify parent of dirty state (for tab-switch warnings, etc.)
+  // Notify parent of dirty state
   useEffect(() => {
     onDirtyChange?.(isDirty);
-  }, [isDirty]);
+  }, [isDirty, onDirtyChange]);
 
-  // Warn before closing/refreshing the tab if there are unsaved changes
+  // Prevent accidental tab close with unsaved edits
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -101,9 +139,10 @@ export default function QuoteSection({
     } catch {}
   };
 
-  useEffect(() => { fetchOutbox(); }, [lead?.id, companySlug]);
+  useEffect(() => {
+    fetchOutbox();
+  }, [lead?.id, companySlug]);
 
-  // Scroll new row into view once it's rendered
   useEffect(() => {
     if (newRowRef.current) {
       newRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -123,10 +162,10 @@ export default function QuoteSection({
     return [...parse(lead?.file_urls), ...parse(lead?.before_photos)];
   }, [lead?.file_urls, lead?.before_photos]);
 
-  // ── EXPLICIT SAVE ONLY — no autosave, no debounce ──
-  const doSave = async (data: any[]) => {
+  const doSave = async (data: any[], rate: number = taxRate) => {
     setSaving(true);
-    const totalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+    const subtotalAmount = data.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+    const totalAmount = subtotalAmount + subtotalAmount * (rate / 100);
     try {
       const res = await fetch('/api/leads/update', {
         method: 'POST',
@@ -135,20 +174,21 @@ export default function QuoteSection({
           id: lead.id,
           action: 'save_quote',
           quote_data: data,
+          quote_tax_rate: rate,
           quote_total: totalAmount,
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
         }),
       });
       if (res.ok) {
-        toast.success('Quote saved');
+        toast.success('Quote saved successfully');
         setIsDirty(false);
         await onRefresh();
       } else {
-        toast.error('Failed to save');
+        toast.error('Failed to save quote');
       }
     } catch {
-      toast.error('Failed to save');
+      toast.error('Failed to save quote');
     } finally {
       setSaving(false);
     }
@@ -156,25 +196,17 @@ export default function QuoteSection({
 
   const handleManualSave = () => {
     if (!hasProject) return;
-    doSave(quoteData);
+    doSave(quoteData, taxRate);
   };
 
-  const handleLoadTemplate = () => {
+ const handleLoadTemplate = () => {
+    if (!categoryTemplate?.items) return;
     const items = categoryTemplate.items.map((item: any, i: number) => ({ ...item, id: Date.now() + i }));
     setQuoteData(items);
+    setTaxRate(categoryTemplate.tax_rate ?? 0);
     setTemplateBannerDismissed(true);
     setIsDirty(true);
-    toast.success('Template loaded — remember to save');
-  };
-
-  const handleAddItems = (items: any[]) => {
-    if (quoteData.length > 0) {
-      setPendingAiItems(items);
-    } else {
-      setQuoteData(items);
-      setShowAI(false);
-      setIsDirty(true);
-    }
+    toast.success('Template loaded');
   };
 
   const handleUpdateCell = (id: number, field: string, value: any) => {
@@ -185,10 +217,8 @@ export default function QuoteSection({
         next[field] = value;
       } else {
         next[field] = value === '' ? 0 : parseFloat(value) || 0;
-        if (field === 'quantity' || field === 'unitPrice') {
-          next.amount = parseFloat(String(next.quantity || 0)) * parseFloat(String(next.unitPrice || 0));
-        }
       }
+      next.amount = parseFloat(String(next.quantity || 0)) * parseFloat(String(next.unitPrice || 0));
       return next;
     });
     setQuoteData(updated);
@@ -203,64 +233,38 @@ export default function QuoteSection({
 
   const handleAddRow = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
-    const updated = [...quoteData, newItem];
-    setQuoteData(updated);
+    setQuoteData([...quoteData, newItem]);
     setIsDirty(true);
-    return newItem;
   };
 
   const handleAddRowMobile = () => {
-    const newItem = handleAddRow();
-    // Open the bottom sheet directly from the click handler — not from a ref
-    // callback, since ref callbacks can re-fire on every re-render and reset
-    // editingItem while the user is mid-type.
+    const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
+    setQuoteData([...quoteData, newItem]);
     setEditingItem(newItem);
+    setIsDirty(true);
   };
 
   const handleDoneEditing = () => {
+    if (!editingItem) return;
     const updated = quoteData.map((item: any) => (item.id === editingItem.id ? editingItem : item));
     setQuoteData(updated);
     setEditingItem(null);
     setIsDirty(true);
   };
 
-  const status =
-  (lead?.quote_accepted_at || lead?.project_quote_accepted_at)
-    ? 'approved'
-    : (lead?.quote_declined_at || lead?.project_quote_declined_at)
-    ? 'declined'
-    : (lead?.quote_sent_at || lead?.project_quote_sent_at)
-    ? 'sent'
-    : 'draft';
+  const handleAddItems = (newItems: any[]) => {
+    if (quoteData.length > 0) {
+      setPendingAiItems(newItems);
+    } else {
+      setQuoteData(newItems);
+      setShowAI(false);
+      setIsDirty(true);
+    }
+  };
 
-const statusConfig: any = {
-  draft: {
-    label: 'Draft',
-    color: 'text-slate-500 bg-slate-100',
-    dot: 'bg-slate-400',
-    action: 'Send Quote',
-  },
-  sent: {
-    label: 'Sent',
-    color: 'text-blue-600 bg-blue-50',
-    dot: 'bg-blue-500',
-    action: 'Resend',
-  },
-  approved: {
-    label: 'Approved',
-    color: 'text-emerald-600 bg-emerald-50',
-    dot: 'bg-emerald-500',
-    action: 'Create Project',
-  },
-  declined: {
-    label: 'Declined',
-    color: 'text-red-600 bg-red-50',
-    dot: 'bg-red-500',
-    action: 'Revise',
-  },
-};
-
-  const total = quoteData.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const subtotal = useMemo(() => quoteData.reduce((s: number, i: any) => s + (i.amount || 0), 0), [quoteData]);
+  const taxAmount = useMemo(() => subtotal * (taxRate / 100), [subtotal, taxRate]);
+  const total = subtotal + taxAmount;
   const lastAddedId = quoteData.length > 0 ? quoteData[quoteData.length - 1].id : null;
 
   return (
@@ -269,37 +273,36 @@ const statusConfig: any = {
       <AnimatePresence>
         {previewHtml && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
-              initial={{ scale: 0.97, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 16 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl"
-              style={{ height: '88vh' }}
-              onClick={e => e.stopPropagation()}
+              initial={{ scale: 0.97, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.97, y: 16 }}
+              className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl h-[85vh]"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-slate-400" />
+                  <Mail className="w-4 h-4 text-gray-400" />
                   <div>
-                    <p className="text-xs text-slate-400">Email preview</p>
-                    <p className="text-sm font-medium text-slate-800">Client proposal</p>
+                    <p className="text-xs text-gray-400">Preview</p>
+                    <p className="text-sm font-semibold text-gray-900">Client Proposal</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setPreviewHtml(null)}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg transition"
-                >
-                  <X className="w-4 h-4 text-slate-500" />
+                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
-              <div className="flex-1 overflow-hidden bg-slate-50 p-3" style={{ minHeight: 0 }}>
+              <div className="flex-1 overflow-hidden bg-gray-50 p-3">
                 <iframe
                   title="Email Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
-                  className="w-full h-full border-0 rounded-xl bg-white"
+                  className="w-full h-full border-0 rounded-xl bg-white shadow-sm"
                   sandbox="allow-same-origin"
                 />
               </div>
@@ -308,76 +311,44 @@ const statusConfig: any = {
         )}
       </AnimatePresence>
 
-      {/* ── MAIN CARD ── */}
+      {/* ── MAIN CONTAINER ── */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-xl border border-gray-200"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden"
       >
-
         {/* HEADER */}
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
           <div className="flex items-center gap-2.5">
-            <Receipt className="w-4 h-4 text-slate-400" />
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <Receipt className="w-4 h-4" />
+            </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 leading-none">Quote sheet</h3>
-              {(lead?.project_quote_accepted_at || lead?.quote_accepted_at) ? (
-                <span className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1">
-                  <CheckCircle2 className="w-3 h-3" /> Accepted {new Date(lead.project_quote_accepted_at || lead.quote_accepted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              <h3 className="text-sm font-semibold text-gray-900 leading-none">Quote Builder</h3>
+              {lead?.project_quote_accepted_at || lead?.quote_accepted_at ? (
+                <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
+                  <CheckCircle2 className="w-3 h-3" /> Approved
                 </span>
-              ) : (lead?.project_quote_declined_at || lead?.quote_declined_at) ? (
-                <span className="text-[11px] text-red-500 mt-1 block">Declined</span>
-              ) : (lead?.project_quote_sent_at || lead?.quote_sent_at) ? (
-                <span className="flex items-center gap-1 text-[11px] text-blue-500 mt-1">
-                  <Send className="w-3 h-3" /> Sent {new Date(lead.project_quote_sent_at || lead.quote_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              ) : lead?.project_quote_sent_at || lead?.quote_sent_at ? (
+                <span className="flex items-center gap-1 text-[11px] text-blue-600 font-medium mt-1">
+                  <Send className="w-3 h-3" /> Sent
                 </span>
               ) : (
-                <p className="text-[11px] text-slate-400 mt-1">Line item breakdown</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Build & send job estimate</p>
               )}
             </div>
           </div>
 
-        <div className="flex items-center gap-2">
-            {/* Unsaved changes indicator */}
-            {isDirty && (
-              <span className="text-[11px] text-amber-500 font-medium flex items-center gap-1">
-                Unsaved changes
-              </span>
-            )}
-
-           <button
-  onClick={handleManualSave}
-  disabled={!hasProject || quoteData.length === 0 || saving}
-  title="Save now"
-  className={`flex items-center justify-center w-7 h-7 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed ${
-    isDirty
-      ? 'bg-blue-600 text-white hover:bg-blue-700'
-      : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
-  }`}
->
-  {saving ? (
-    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-  ) : (
-    <Save className="w-3.5 h-3.5" />
-  )}
-</button>
-
+          <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={() => setShowAI(v => !v)}
-              className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium transition ${
-                showAI
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+              onClick={() => setShowAI((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-medium transition ${
+                showAI ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              AI
-              {leadPhotos.length > 0 && !showAI && (
-                <span className="bg-blue-200 text-blue-700 px-1.5 rounded-full text-[10px]">
-                  {leadPhotos.length}
-                </span>
-              )}
+              AI Assistant
             </motion.button>
           </div>
         </div>
@@ -386,28 +357,30 @@ const statusConfig: any = {
         <AnimatePresence>
           {categoryTemplate && quoteData.length === 0 && !templateBannerDismissed && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mx-4 mt-3 flex items-center justify-between gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+              <div className="m-3 flex items-center justify-between gap-3 bg-blue-50/80 border border-blue-100 rounded-xl px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-blue-800 truncate">Template: {categoryTemplate.name}</p>
-                  <p className="text-[11px] text-blue-500">
-                    {categoryTemplate.items?.length || 0} pre-filled items for {lead.category}
+                  <p className="text-xs font-semibold text-blue-900 truncate">Preset Template: {categoryTemplate.name}</p>
+                  <p className="text-[11px] text-blue-600">
+                    {categoryTemplate.items?.length || 0} standard items available
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleLoadTemplate}
-                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition shadow-sm"
                   >
-                    Load
+                    Load Items
                   </button>
                   <button
                     onClick={() => setTemplateBannerDismissed(true)}
-                    className="w-6 h-6 flex items-center justify-center text-blue-400 hover:text-blue-600 transition"
+                    className="p-1 text-blue-400 hover:text-blue-600 transition"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -415,114 +388,114 @@ const statusConfig: any = {
           )}
         </AnimatePresence>
 
-       {/* ── DESKTOP TABLE — every cell tap-to-edit, no global edit mode ── */}
-<div className="hidden md:block overflow-x-auto">
-  <table className="w-full border-collapse text-sm table-fixed">
-    <colgroup>
-      <col />
-      <col className="w-24" />
-      <col className="w-16" />
-      <col className="w-24" />
-      <col className="w-8" />
-    </colgroup>
-    <thead>
-      <tr className="border-b border-gray-100">
-        <th className="text-left px-4 py-2 text-xs font-medium text-gray-400">Line item</th>
-        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Unit price</th>
-        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Qty</th>
-        <th className="text-right px-4 py-2 text-xs font-medium text-gray-400">Amount</th>
-        <th />
-      </tr>
-    </thead>
-    <tbody>
-      {quoteData.length === 0 ? (
-        <tr>
-          <td colSpan={5}>
-            <button
-              onClick={handleAddRow}
-              className="w-full py-14 flex flex-col items-center justify-center gap-3 group"
-            >
-              <div className="w-11 h-11 rounded-full bg-blue-600 group-hover:bg-blue-500 flex items-center justify-center transition-all group-hover:scale-105">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xs font-medium text-blue-500 group-hover:text-blue-600 transition-colors">Add line item</span>
-            </button>
-          </td>
-        </tr>
-      ) : (
-        <>
-          {quoteData.map((item: any, idx: number) => {
-            const isNew = item.id === lastAddedId && !item.description;
-            return (
-              <tr
-                key={item.id}
-                ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors group ${
-                  idx % 2 === 1 ? 'bg-gray-50/50' : ''
-                }`}
-              >
-                <td className="px-4 py-1.5">
-                  <input
-                    ref={isNew ? newRowInputRef : undefined}
-                    type="text"
-                    value={item.description}
-                    onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                    placeholder="Item description…"
-                    className="w-full outline-none text-sm font-medium text-gray-900 placeholder-gray-300 bg-transparent rounded-md px-2 py-1 -mx-2 border border-transparent focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all"
-                  />
-                </td>
-                <td className="px-2 py-1.5">
-                  <div className="flex items-center justify-end gap-0.5 bg-white/60 border border-gray-200 rounded-md px-1.5 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100">
-                    <span className="text-xs text-gray-400">$</span>
-                    <input
-                      type="number"
-                      value={item.unitPrice || ''}
-                      onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                      className={`w-full outline-none text-sm text-right text-gray-900 bg-transparent py-1 ${noSpinners}`}
-                    />
-                  </div>
-                </td>
-                <td className="px-2 py-1.5">
-                  <input
-                    type="number"
-                    value={item.quantity || ''}
-                    onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                    className={`w-full outline-none text-sm text-right text-gray-900 bg-white/60 border border-gray-200 rounded-md px-2 py-1 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
-                  />
-                </td>
-                <td className="px-4 py-1.5 text-right text-sm font-semibold text-gray-900 tabular-nums">
-                  ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td className="pr-2 py-1.5">
-                  <button
-                    onClick={() => handleRemoveRow(item.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-md transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </td>
+        {/* ── DESKTOP TABLE VIEW ── */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full border-collapse text-sm table-fixed">
+            <colgroup>
+              <col />
+              <col className="w-28" />
+              <col className="w-20" />
+              <col className="w-28" />
+              <col className="w-10" />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-gray-100 text-[11px] font-semibold uppercase tracking-wider text-gray-400 bg-gray-50/30">
+                <th className="text-left px-4 py-2.5">Line Item</th>
+                <th className="text-right px-3 py-2.5">Unit Price</th>
+                <th className="text-center px-2 py-2.5">Qty</th>
+                <th className="text-right px-4 py-2.5">Amount</th>
+                <th />
               </tr>
-            );
-          })}
-          <tr>
-  <td colSpan={5} className="p-0">
-    <button
-      onClick={handleAddRow}
-      className="w-full px-4 py-2.5 flex items-center gap-2 text-xs font-medium text-blue-500 bg-blue-50/40 hover:bg-blue-50 hover:text-blue-700 border-t border-dashed border-blue-200 transition-colors"
-    >
-      <Plus className="w-3.5 h-3.5" />
-      Add line item
-    </button>
-  </td>
-</tr>
-        </>
-      )}
-    </tbody>
-  </table>
-</div>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {quoteData.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-center">
+                      <p className="text-xs text-gray-400">No line items added yet.</p>
+                      <button
+                        onClick={handleAddRow}
+                        className="mt-1 inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold hover:bg-blue-100 transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add First Item
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                quoteData.map((item: any) => {
+                  const isNew = item.id === lastAddedId && !item.description;
+                  return (
+                    <tr
+                      key={item.id}
+                      ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+                      className="hover:bg-blue-50/20 transition-colors group"
+                    >
+                      <td className="px-4 py-2">
+                        <input
+                          ref={isNew ? newRowInputRef : undefined}
+                          type="text"
+                          value={item.description}
+                          onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                          placeholder="Scope description..."
+                          className="w-full text-sm font-medium text-gray-900 bg-transparent outline-none placeholder-gray-300 focus:text-blue-600"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="inline-flex items-center gap-1 bg-gray-50 group-hover:bg-white border border-gray-200/60 rounded-lg px-2 py-1 focus-within:border-blue-400 focus-within:bg-white transition">
+                          <span className="text-xs text-gray-400">$</span>
+                          <input
+                            type="number"
+                            step="any"
+                            value={item.unitPrice || ''}
+                            onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                            onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                            placeholder="0.00"
+                            className={`w-20 text-right text-xs font-medium text-gray-900 bg-transparent outline-none ${noSpinners}`}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="number"
+                          step="any"
+                          value={item.quantity || ''}
+                          onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                          onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                          placeholder="1"
+                          className={`w-12 text-center text-xs font-medium text-gray-900 bg-gray-50 group-hover:bg-white border border-gray-200/60 rounded-lg py-1 outline-none focus:border-blue-400 focus:bg-white transition ${noSpinners}`}
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-right text-xs font-semibold text-gray-900 tabular-nums">
+                        {fmt(item.amount || 0)}
+                      </td>
+                      <td className="pr-3 py-2 text-right">
+                        <button
+                          onClick={() => handleRemoveRow(item.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+          {quoteData.length > 0 && (
+            <div className="p-2 border-t border-gray-100 bg-gray-50/30">
+              <button
+                onClick={handleAddRow}
+                className="w-full py-2 flex items-center justify-center gap-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50/50 rounded-xl border border-dashed border-blue-200 transition"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Item Row
+              </button>
+            </div>
+          )}
+        </div>
 
-
-        {/* ── MOBILE CARDS — tap any card to edit in bottom sheet ── */}
+        {/* ── MOBILE CARDS ── */}
         <div className="md:hidden">
           {quoteData.length === 0 ? (
             <button
@@ -574,7 +547,10 @@ const statusConfig: any = {
                         <span className="text-sm font-medium text-gray-700">{item.quantity}</span>
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleRemoveRow(item.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveRow(item.id);
+                        }}
                         className="ml-auto p-2 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -585,7 +561,7 @@ const statusConfig: any = {
               })}
               <button
                 onClick={handleAddRowMobile}
-                className="w-full border-2 border-dashed border-blue-200 rounded-2xl py-3 flex items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/40 transition-all group"
+                className="w-full border-2 border-dashed border-blue-200 rounded-2xl py-3 flex items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/40 transition-all group mt-2"
               >
                 <div className="w-5 h-5 rounded-full border border-gray-300 group-hover:border-blue-400 flex items-center justify-center transition-colors">
                   <Plus className="w-3 h-3 text-gray-400 group-hover:text-blue-500" />
@@ -596,7 +572,7 @@ const statusConfig: any = {
           )}
         </div>
 
-        {/* ── BOTTOM SHEET EDITOR (mobile) — local only, save via Save button ── */}
+        {/* ── BOTTOM SHEET EDITOR (mobile) ── */}
         <AnimatePresence>
           {editingItem && (
             <>
@@ -662,24 +638,28 @@ const statusConfig: any = {
                         <span className="text-sm font-medium text-gray-400">$</span>
                         <input
                           type="number"
+                          step="any"
                           value={editingItem.unitPrice || ''}
+                          onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
                             const unitPrice = parseFloat(e.target.value) || 0;
-                            setEditingItem({ ...editingItem, unitPrice, amount: unitPrice * editingItem.quantity });
+                            setEditingItem({ ...editingItem, unitPrice, amount: unitPrice * (editingItem.quantity || 0) });
                           }}
                           placeholder="0.00"
                           className={`flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder-gray-300 ${noSpinners}`}
                         />
                       </div>
                     </div>
-                    <div className="w-24">
+                    <div className="w-28">
                       <label className="block text-xs font-medium text-gray-700 mb-1.5">Qty</label>
                       <input
                         type="number"
+                        step="any"
                         value={editingItem.quantity || ''}
+                        onKeyDown={(e) => handleNumericKeyDown(e, true)}
                         onChange={(e) => {
-                          const quantity = parseInt(e.target.value) || 0;
-                          setEditingItem({ ...editingItem, quantity, amount: editingItem.unitPrice * quantity });
+                          const quantity = parseFloat(e.target.value) || 0;
+                          setEditingItem({ ...editingItem, quantity, amount: (editingItem.unitPrice || 0) * quantity });
                         }}
                         placeholder="1"
                         className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 text-center outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
@@ -706,64 +686,81 @@ const statusConfig: any = {
         </AnimatePresence>
 
         {/* ── BOTTOM BAR — total + Save / Send split button ── */}
-        <div className="md:relative md:rounded-b-xl sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800">
-          <div className="px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <p className="text-[11px] text-slate-500">Total</p>
-              <motion.p key={total} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                className="text-base font-semibold text-white whitespace-nowrap">
-                {fmt(total)}
-              </motion.p>
-              {isDirty && (
-                <span className="text-[11px] text-amber-400 font-medium ml-1">
-                  Unsaved
-                </span>
-              )}
+       <div className="md:relative md:rounded-b-xl sticky bottom-0 z-10 bg-slate-900 border-t border-slate-800">
+          <div className="px-4 py-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            {/* Numbers row */}
+            <div className="flex items-center justify-between gap-4 sm:justify-start sm:gap-5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[10px] text-slate-500">Subtotal</span>
+                <span className="text-xs font-medium text-slate-300">{fmt(subtotal)}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-slate-500">Tax</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={taxRate}
+                  onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
+                  className="w-12 bg-slate-800 border border-slate-700 rounded-md px-1.5 py-1 text-xs font-medium text-white text-right outline-none focus:border-blue-500"
+                />
+                <span className="text-[10px] text-slate-500">%</span>
+              </div>
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] text-slate-500">Total</span>
+                <motion.span
+                  key={total}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-base font-semibold text-white whitespace-nowrap"
+                >
+                  {fmt(total)}
+                </motion.span>
+                {isDirty && <span className="text-[10px] text-amber-400 font-medium">Unsaved</span>}
+              </div>
             </div>
 
-            {/* Split Button Container */}
-            <div className="flex items-center bg-slate-800 rounded-lg p-1">
- <button
-  onClick={handleManualSave}
-  disabled={!hasProject || quoteData.length === 0 || saving}
-  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition disabled:opacity-30 ${
-    isDirty
-      ? 'bg-blue-600 text-white hover:bg-blue-700'
-      : 'text-slate-300 hover:bg-slate-700'
-  }`}
->
-  {saving ? (
-    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-  ) : isDirty ? (
-    <Save className="w-3.5 h-3.5" />
-  ) : (
-    <CheckCircle2 className="w-3.5 h-3.5" />
-  )}
-
-  {isDirty ? 'Save Changes' : 'Saved'}
-</button>
+            {/* Actions row */}
+            <div className="flex items-center bg-slate-800 rounded-lg p-1 self-stretch sm:self-auto">
+              <button
+                onClick={handleManualSave}
+                disabled={!hasProject || quoteData.length === 0 || saving}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition disabled:opacity-30 ${
+                  isDirty ? 'bg-blue-600 text-white hover:bg-blue-700' : 'text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isDirty ? (
+                  <Save className="w-3.5 h-3.5" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                )}
+                {isDirty ? 'Save Changes' : 'Saved'}
+              </button>
 
               <div className="w-px h-4 bg-slate-700 mx-1" />
 
               <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || quoteData.length === 0}
-                className="flex items-center justify-center w-8 h-8 rounded-md text-white hover:bg-slate-700 transition disabled:opacity-30"
+                className="flex items-center justify-center w-8 h-8 shrink-0 rounded-md text-white hover:bg-slate-700 transition disabled:opacity-30"
               >
-<Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-{/* SENT HISTORY */}
+        {/* SENT HISTORY */}
         {outboxLog.length > 0 && (
           <div className="px-4 pb-4 pt-3 border-t border-slate-100 bg-slate-50">
             <div className="flex items-center gap-1.5 mb-2.5 px-1">
               <Mail className="w-3 h-3 text-slate-400" />
-              <span className="text-[11px] text-slate-400">
-                Sent history ({outboxLog.length})
-              </span>
+              <span className="text-[11px] text-slate-400">Sent history ({outboxLog.length})</span>
             </div>
             <div className="max-h-[160px] overflow-y-auto pr-1 space-y-1.5">
               {outboxLog.map((entry: any, i: number) => (
@@ -772,7 +769,11 @@ const statusConfig: any = {
                   className="flex items-center justify-between px-3 py-2.5 bg-white border border-slate-200 rounded-xl gap-3 hover:border-slate-300 transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
+                      }`}
+                    />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-medium text-slate-700">
@@ -806,13 +807,12 @@ const statusConfig: any = {
       <AnimatePresence>
         {showAI && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
           >
-            <motion.div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowAI(false)}
-            />
+            <motion.div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAI(false)} />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
@@ -836,10 +836,7 @@ const statusConfig: any = {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowAI(false)}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg transition"
-                >
+                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
                   <X className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
@@ -862,11 +859,15 @@ const statusConfig: any = {
       <AnimatePresence>
         {pendingAiItems && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-sm"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 16 }}
+              initial={{ scale: 0.95, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 16 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white w-full max-w-sm rounded-2xl p-7 text-center shadow-2xl"
             >
@@ -876,8 +877,10 @@ const statusConfig: any = {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Sync AI items?</h3>
               <p className="text-sm text-gray-500 mb-6 leading-relaxed px-2">
                 You already have{' '}
-                <span className="font-medium text-gray-800">{quoteData.length} line item{quoteData.length > 1 ? 's' : ''}</span>.
-                Add AI items to existing, or replace everything?
+                <span className="font-medium text-gray-800">
+                  {quoteData.length} line item{quoteData.length > 1 ? 's' : ''}
+                </span>
+                . Add AI items to existing, or replace everything?
               </p>
               <div className="flex flex-col gap-2.5">
                 <button
@@ -915,23 +918,33 @@ const statusConfig: any = {
         )}
       </AnimatePresence>
 
-      <SendEmailModal
-        open={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
-        type="quote"
-        leadId={lead.id}
-        currentUser={currentUser}
-        customerName={lead.name}
-        customerEmail={lead.email}
-        contextLine={quoteData.length > 0 ? fmt(total) : null}
-        lastSentAt={outboxLog[0]?.created_at || null}
-        lastHtmlBody={lastHtmlBody}
-      />
+      {/* ── EMAIL COMPOSER MODAL ── */}
+      {showEmailModal && (
+        <SendEmailModal
+          open={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          onSuccess={async () => {
+            setShowEmailModal(false);
+            await onRefresh();
+            await fetchOutbox();
+          }}
+          type="quote"
+          leadId={lead.id}
+          currentUser={currentUser}
+          customerName={lead.name}
+          customerEmail={lead.email}
+          contextLine={quoteData.length > 0 ? fmt(total) : null}
+          lastSentAt={outboxLog[0]?.created_at || null}
+          lastHtmlBody={lastHtmlBody}
+        />
+      )}
 
       <style jsx>{`
         input[type='number']::-webkit-inner-spin-button,
-        input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type='number']::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
       `}</style>
     </>
   );

@@ -39,11 +39,12 @@ export async function GET(
 
     const company = companies[0];
 
-    const projects = await sql`
+   const projects = await sql`
       SELECT
         p.id,
         p.invoice_number,
         p.quote_total,
+        p.quote_tax_rate,
         p.payment_status,
         p.payment_amount,
         p.payment_date,

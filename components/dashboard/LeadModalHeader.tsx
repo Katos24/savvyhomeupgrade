@@ -99,7 +99,7 @@ export default function LeadModalHeader({
     { id: 'payment', label: 'Payment', value: paymentAmount ? fmt(paymentAmount) + ' paid' : quoteTotal ? 'Unpaid' : null, sub: paymentSubLabel?.text, subColor: paymentSubLabel?.color, hasData: !!(quoteTotal || paymentAmount) },
     { id: 'schedule', label: 'Scheduled', value: scheduledDate, sub: scheduledTime, subColor: 'rgba(255,255,255,0.4)', hasData: !!scheduledDate },
     { id: 'assigned', label: 'Assigned', value: assignedTo, sub: null, subColor: null, hasData: !!assignedTo },
-{ id: 'invoice', label: 'Invoice', value: lead.invoice_number ? `#${lead.invoice_number}` : null, valueColor: '#60a5fa', sub: lead.invoice_sent_at ? 'Sent ✓' : 'Not sent', subColor: lead.invoice_sent_at ? '#34d399' : 'rgba(255,255,255,0.3)', hasData: !!lead.invoice_number },
+    { id: 'invoice', label: 'Invoice', value: lead.invoice_number ? `#${lead.invoice_number}` : null, valueColor: '#60a5fa', sub: lead.invoice_sent_at ? 'Sent ✓' : 'Not sent', subColor: lead.invoice_sent_at ? '#34d399' : 'rgba(255,255,255,0.3)', hasData: !!lead.invoice_number },
   ].filter(i => i.hasData);
 
   const mobileItems = allSnapshotItems.slice(0, 2);
@@ -111,9 +111,9 @@ export default function LeadModalHeader({
     { id: 'payment',   label: 'Invoice',   icon: CreditCard,    show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'tasks',     label: 'Tasks',     icon: ListChecks,    show: isProject || !can(planTier, 'custom_tasks'), locked: !can(planTier, 'custom_tasks') },
     { id: 'photos',    label: 'Media',     icon: ImageIcon,     show: isProject || !can(planTier, 'docs_on_card'), locked: !can(planTier, 'docs_on_card') },
+        { id: 'reminders', label: 'Reminders', icon: Bell,          show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
+
     { id: 'activity',  label: 'Activity',  icon: MessageCircle, show: isProject, locked: false },
-    { id: 'reminders', label: 'Reminders', icon: Bell,          show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
-    { id: 'ai',        label: 'AI',        icon: Sparkles,      show: isProject || !can(planTier, 'ai_brief'), locked: !can(planTier, 'ai_brief') },
   ].filter(t => t.show) as { id: string; label: string; icon: React.ElementType; show: boolean; locked: boolean }[];
 
   return (

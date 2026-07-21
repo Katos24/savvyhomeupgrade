@@ -1,5 +1,5 @@
 'use client';
-import { Menu, Plus, Lock, Loader2, RefreshCw, Home } from 'lucide-react';
+import { Menu, Plus, Lock, Loader2, RefreshCw, Eye, Home } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { useState } from 'react';
 
@@ -37,6 +37,8 @@ export default function DashboardHeader({
   onCreateLead,
   onLockedFeature,
   onRefresh,
+  onTestDrive,
+  testDriveLoading = false,
   accentColor = '#2563eb', // matches the original bg-blue-600 default exactly
 }: {
   company: { name: string; logo_url?: string | null; slug: string };
@@ -47,6 +49,8 @@ export default function DashboardHeader({
   onCreateLead: () => void;
   onLockedFeature: (key: string) => void;
   onRefresh: () => void;
+  onTestDrive?: () => void;
+  testDriveLoading?: boolean;
   accentColor?: string;
 }) {
 const buttonTextColor = getContrastTextColor(accentColor);
@@ -115,7 +119,7 @@ const buttonTextColor = getContrastTextColor(accentColor);
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+       <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
@@ -131,7 +135,24 @@ const buttonTextColor = getContrastTextColor(accentColor);
             )}
           </button>
 
-        {can(planTier, 'create_lead_manual') ? (
+          {onTestDrive && (
+            <button
+              onClick={onTestDrive}
+              disabled={testDriveLoading}
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium text-sm transition-all active:scale-95 disabled:opacity-50 ${
+                isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+              }`}
+            >
+              {testDriveLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+              See what customers see
+            </button>
+          )}
+
+          {can(planTier, 'create_lead_manual') ? (
             <button
               data-tour="create-lead"
               onClick={onCreateLead}

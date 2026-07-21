@@ -60,6 +60,9 @@ export default function BillingSection({
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+ const isStripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
+
+
 
   // ── LOGS ─────────────────────────────────────────────────
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
@@ -81,7 +84,13 @@ export default function BillingSection({
   const invoiceNumber = lead?.invoice_number || generateInvoiceNumber(lead?.project_number);
   const quoteTotal = parseFloat(lead?.quote_total || '0');
   const hasQuote = quoteTotal > 0;
-  const total = quoteTotal;
+const total = quoteTotal;
+
+  // quote_total is tax-inclusive (set when the quote was saved), so back out
+  // the subtotal algebraically rather than assuming a stored pre-tax value.
+  const invoiceTaxRate = parseFloat(lead?.quote_tax_rate || '0');
+  const invoiceSubtotal = invoiceTaxRate > 0 ? total / (1 + invoiceTaxRate / 100) : total;
+  const invoiceTaxAmount = total - invoiceSubtotal;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
  // ── Refund state comes from DB status, NOT from the amount fields.
@@ -93,6 +102,25 @@ export default function BillingSection({
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
   const isClosed = isRefunded || isPartiallyRefunded;
   const refundedAmount = parseFloat(lead?.refunded_amount || '0');
+
+ const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
+  const hasManualLink = !!company?.payment_link_url;
+  const hasPayLink = stripeActive || hasManualLink;
+
+  const paymentMethodLabels: Record<string, string> = {
+    venmo: 'Venmo',
+    zelle: 'Zelle',
+    cashapp: 'Cash App',
+    paypal: 'PayPal',
+    stripe: 'Stripe',
+    other: 'your payment link',
+  };
+
+  const activeMethodLabel = stripeActive
+    ? 'Stripe'
+    : hasManualLink
+      ? paymentMethodLabels[company?.payment_link_type || 'other'] || 'your payment link'
+      : null;
 
   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
@@ -258,87 +286,75 @@ export default function BillingSection({
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
 
         {/* ── FINANCIAL SNAPSHOT ── */}
-      <div style={{ background: '#0f172a' }} className="p-5">
-
-          {/* Mobile: stacked, Desktop: single row */}
+       <div className="p-5 border-b border-slate-100">
           <div className="md:flex md:items-end md:justify-between md:gap-6">
             <div className="mb-4 md:mb-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
                 {isRefunded ? 'Refunded'
                   : isPartiallyRefunded ? 'Partially refunded'
                   : isPaid ? 'Paid in full'
                   : 'Outstanding balance'}
               </p>
-              <p className="text-4xl font-black text-white leading-none">
+              <p className="text-4xl font-black text-slate-900 leading-none">
                 {isClosed ? fmt(refundedAmount)
                   : isPaid ? fmt(total)
                   : fmt(remaining)}
               </p>
               {isClosed && lead?.refunded_at && (
-                <p className="text-[11px] mt-2" style={{ color: '#64748b' }}>
+                <p className="text-[11px] text-slate-400 mt-2">
                   Refunded {fmtDate(lead.refunded_at)}
                 </p>
               )}
+              {!isClosed && invoiceTaxRate > 0 && (
+                <div className="mt-2 flex items-center gap-3 text-[11px] font-semibold text-slate-400">
+                  <span>Subtotal {fmt(invoiceSubtotal)}</span>
+                  <span>·</span>
+                  <span>Tax ({invoiceTaxRate}%) {fmt(invoiceTaxAmount)}</span>
+                </div>
+              )}
             </div>
 
-            {/* Stats — row on both mobile and desktop */}
-            <div className="grid grid-cols-3 md:flex md:items-end md:gap-8 gap-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>
-                  {isPartiallyRefunded ? 'Original charge' : 'Collected'}
-                </p>
-                <p className="text-xl font-black" style={{ color: isClosed ? '#94a3b8' : '#34d399' }}>
-                  {fmt(paidAmount)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748b' }}>Status</p>
-                <span className={`text-[11px] font-black px-2.5 py-1 rounded-full inline-block ${
-                  isRefunded ? 'bg-slate-600/40 text-slate-300'
-                  : isPartiallyRefunded ? 'bg-slate-600/40 text-slate-300'
-                  : isPaid ? 'bg-emerald-500/20 text-emerald-400'
-                  : isPartial ? 'bg-amber-500/20 text-amber-400'
-                  : 'bg-slate-700 text-slate-400'
-                }`}>
-                  {isRefunded ? 'Refunded'
-                    : isPartiallyRefunded ? 'Partial refund'
-                    : isPaid ? 'Paid'
-                    : isPartial ? 'Partial'
-                    : 'Unpaid'}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-[11px] font-black px-2.5 py-1 rounded-full inline-block ${
+                isRefunded || isPartiallyRefunded ? 'bg-slate-100 text-slate-500'
+                : isPaid ? 'bg-emerald-50 text-emerald-700'
+                : isPartial ? 'bg-amber-50 text-amber-700'
+                : 'bg-slate-100 text-slate-500'
+              }`}>
+                {isRefunded ? 'Refunded'
+                  : isPartiallyRefunded ? 'Partial refund'
+                  : isPaid ? 'Paid'
+                  : isPartial ? 'Partial'
+                  : 'Unpaid'}
+              </span>
             </div>
           </div>
 
-          {/* Progress bar — slate when refunded, green otherwise */}
-          <div className="mt-4 h-1.5 rounded-full overflow-hidden" style={{ background: '#1e293b' }}>
+          <div className="mt-4 h-1.5 rounded-full overflow-hidden bg-slate-100">
             <motion.div
               className="h-full rounded-full"
-              style={{ background: isClosed ? '#64748b' : '#34d399' }}
+              style={{ backgroundColor: isClosed ? '#94a3b8' : '#10b981' }}
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
             />
           </div>
-          <p className="text-[10px] mt-1.5" style={{ color: '#475569' }}>
-            {isClosed ? `${fmt(refundedAmount)} refunded` : `${Math.round(progressPct)}% collected`}
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            {isClosed ? `${fmt(refundedAmount)} refunded` : `${fmt(paidAmount)} collected · ${Math.round(progressPct)}%`}
           </p>
         </div>
 
         {/* ── INVOICE + PAYMENT — Payment stacks below Invoice ── */}
         <div className="flex flex-col gap-3 p-3">
 
-          {/* Invoice block */}
+        {/* Invoice block */}
           <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Invoice</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Invoice</p>
                 <p className="text-xl font-black text-slate-900 leading-none">{invoiceNumber}</p>
-                <label className="cursor-pointer block mt-1">
-                  <p className="text-xs text-slate-500 hover:text-blue-500 transition-colors">
-                    {dueDate ? `Due ${fmtDate(dueDate)}` : '+ Set due date'}
-                  </p>
+                <label className="cursor-pointer inline-flex items-center gap-1 mt-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+                  {dueDate ? `Due ${fmtDate(dueDate)}` : 'Set due date'}
                   <input
                     type="date"
                     value={dueDate}
@@ -361,66 +377,75 @@ export default function BillingSection({
                     className="sr-only"
                   />
                 </label>
-                {invoiceSent ? (
-                  <p className="text-xs font-bold text-emerald-600 mt-1">
-                    ✓ Sent {fmtDate(invoiceLog[0].created_at)}
-                    {invoiceLog.length > 1 ? ` · ${invoiceLog.length}x` : ''}
-                  </p>
-                ) : (
-                  <p className="text-xs font-bold text-amber-500 mt-1">⚠ Not sent yet</p>
-                )}
-                <p className="text-xs text-slate-400 mt-0.5">{lineItems.length} item{lineItems.length !== 1 ? 's' : ''} · {fmt(total)}</p>
+              <p className="text-xs mt-1.5 font-semibold flex items-center gap-1">
+                  {invoiceSent ? (
+                    <span className="text-emerald-600">
+                      Sent {fmtDate(invoiceLog[0].created_at)}{invoiceLog.length > 1 ? ` · ${invoiceLog.length}x` : ''}
+                    </span>
+                  ) : (
+                    <span className="text-amber-600">Not sent yet</span>
+                  )}
+                </p>
+             <p className="text-[10.5px] text-slate-400 mt-1.5 leading-relaxed">
+                  {hasPayLink ? (
+                    <>Includes a Pay Now link via <span className="font-semibold text-slate-500">{activeMethodLabel}</span> on the email and PDF.</>
+                  ) : (
+                    <>
+                      No payment link yet — customers can't pay online until you{' '}
+                      <a
+                        href={`/${company?.slug}/admin/settings#billing`}
+                        className="text-blue-600 font-semibold hover:underline"
+                      >
+                        connect Stripe or add a manual link
+                      </a>
+                      .
+                    </>
+                  )}
+                </p>
               </div>
-              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                isPaid ? 'bg-emerald-100 text-emerald-700'
-                : isPartial ? 'bg-amber-100 text-amber-700'
-                : invoiceSent ? 'bg-blue-100 text-blue-700'
-                : 'bg-slate-100 text-slate-500'
-              }`}>
-                {isPaid ? 'Paid' : isPartial ? 'Partial' : invoiceSent ? 'Sent' : 'Draft'}
-              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-auto pt-3">
-           <button
-  onClick={handleDownload}
-  disabled={downloading}
-  className="
-    group flex items-center justify-center gap-2
-    px-4 py-2.5
-    bg-white border border-slate-200 
-    hover:border-emerald-300 hover:bg-emerald-50
-    text-slate-700 hover:text-emerald-700
-    font-bold text-xs rounded-xl
-    shadow-sm transition-all duration-200
-    disabled:opacity-50
-  "
->
-  {downloading ? (
-    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-  ) : (
-    <Download className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-  )}
-  PDF
-</button>
-              {canSendInvoice ? (
+          <div className="flex items-stretch gap-2 mt-auto pt-3">
+             {canSendInvoice ? (
                 <button
                   onClick={() => setShowSendConfirm(true)}
                   disabled={isPaid}
-                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-40"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-40"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  {isPaid ? 'Paid' : invoiceSent ? 'Resend' : 'Send'}
+                  <Send className="w-4 h-4" />
+                  {isPaid ? 'Paid' : invoiceSent ? 'Resend invoice' : 'Send invoice'}
                 </button>
               ) : (
                 <button
                   onClick={() => window.location.href = `/${company?.slug}/admin/settings#billing`}
-                  className="flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-xs rounded-xl"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  Upgrade
+                  <Lock className="w-4 h-4" />
+                  Upgrade to send
                 </button>
               )}
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                aria-label="Download invoice PDF"
+                className="
+                  group flex items-center justify-center gap-1.5 shrink-0
+                  px-3.5
+                  bg-white border border-slate-200
+                  hover:border-slate-300 hover:bg-slate-50
+                  text-slate-500 hover:text-slate-700
+                  font-semibold text-xs rounded-xl
+                  transition-all duration-200
+                  disabled:opacity-50
+                "
+              >
+                {downloading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                PDF
+              </button>
             </div>
           </div>
 
@@ -428,26 +453,21 @@ export default function BillingSection({
           <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment</p>
-                <p className="text-xl font-black text-slate-900 leading-none">
-                  {isClosed ? fmt(refundedAmount) : fmt(paidAmount)}
-                </p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment</p>
                 {isClosed ? (
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm font-bold text-slate-700">
                     Refunded{lead?.refunded_at ? ` · ${fmtDate(lead.refunded_at)}` : ''}
                   </p>
-                ) : lead?.payment_method && (
-                  <p className="text-xs text-slate-500 mt-1 capitalize">
+                ) : lead?.payment_method ? (
+                  <p className="text-sm font-bold text-slate-700 capitalize">
                     {lead.payment_method.replace('_', ' ')} · {fmtDate(lead.payment_date)}
                   </p>
+                ) : (
+                  <p className="text-sm font-semibold text-slate-400">Not yet collected</p>
                 )}
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {isRefunded ? `Original charge ${fmt(paidAmount)}`
-                    : isPartiallyRefunded ? `${fmt(paidAmount - refundedAmount)} kept`
-                    : isPaid ? 'Paid in full'
-                    : isPartial ? `${fmt(remaining)} remaining`
-                    : 'Not yet collected'}
-                </p>
+                {isPartiallyRefunded && (
+                  <p className="text-xs text-slate-400 mt-0.5">{fmt(paidAmount - refundedAmount)} kept after refund</p>
+                )}
               </div>
               {!isPaid && !isClosed && (
                 <div className="relative group">
@@ -501,24 +521,45 @@ export default function BillingSection({
               </div>
             )}
 
-            {/* Manual (non-Stripe) payment — editable as before */}
+            {/* Manual (non-Stripe) payment.
+                If Stripe is active for this company, manual entry is a
+                low-emphasis fallback, not the primary action — the
+                default expectation is that Stripe records itself. */}
             {!isClosed && !isStripeVerified && (
               <div className="mt-auto">
-                <button
-                  onClick={() => setShowRecordPayment(true)}
-                  className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors ${
-                    isPaid
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  }`}
-                >
-                  {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
-                </button>
-                <p className="mt-2 text-[10.5px] leading-relaxed text-slate-400">
-                  Only use this for cash, check, or other manual payments.
-                  Stripe payments are detected and recorded automatically —
-                  no need to enter those here.
-                </p>
+                {isStripeActive && !isPaid && !isPartial ? (
+                  <>
+                    <div className="w-full py-2.5 px-3 rounded-xl bg-white border border-slate-200 text-center">
+                      <p className="text-xs font-semibold text-slate-500">Awaiting payment via Stripe</p>
+                      <p className="text-[10.5px] text-slate-400 mt-0.5">Updates automatically once they pay</p>
+                    </div>
+                    <button
+                      onClick={() => setShowRecordPayment(true)}
+                      className="mt-2 w-full text-[11px] font-semibold text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
+                    >
+                      Record a manual payment instead
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setShowRecordPayment(true)}
+                      className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors ${
+                        isPaid
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                    >
+                      {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+                    </button>
+                    {isStripeActive && (
+                      <p className="mt-2 text-[10.5px] leading-relaxed text-slate-400">
+                        Only use this for cash, check, or other manual payments.
+                        Stripe payments are detected and recorded automatically.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

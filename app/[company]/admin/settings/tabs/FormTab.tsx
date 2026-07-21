@@ -659,6 +659,7 @@ function EditableFieldRow({
   onToggle,
   locked,
   companySlug,
+  planTier,
 }: {
   icon: React.ElementType;
   label: string;
@@ -667,6 +668,7 @@ function EditableFieldRow({
   onToggle?: () => void;
   locked?: boolean;
   companySlug?: string;
+  planTier?: string;
 }) {
   const active = enabled && !locked;
 
@@ -704,13 +706,20 @@ function EditableFieldRow({
         </span>
 
        {locked ? (
-          <a
-            href={`/${companySlug}/admin/settings`}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-white transition hover:bg-amber-700"
-          >
-            <Lock className="h-3 w-3" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Upgrade</span>
-          </a>
+          planTier === 'free' ? (
+            <a
+              href={`/${companySlug}/admin/settings`}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-white transition hover:bg-amber-700"
+            >
+              <Lock className="h-3 w-3" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Upgrade</span>
+            </a>
+          ) : (
+            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1.5 text-stone-400">
+              <Lock className="h-3 w-3" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Locked</span>
+            </span>
+          )
         ) : (
           <ToggleSwitch enabled={enabled} onToggle={onToggle!} ariaLabel={`Toggle ${label}`} />
         )}

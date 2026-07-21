@@ -16,11 +16,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const projects = await sql`
+   const projects = await sql`
       SELECT
         p.id,
         p.quote_token,
         p.quote_total,
+        p.quote_tax_rate,
         p.quote_data,
         p.quote_accepted_at,
         p.quote_declined_at,
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
         companyLogo: project.company_logo,
         brandColor,
         quoteTotal: parseFloat(project.quote_total),
+        taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
         quoteItems: project.quote_data || [],
         customerName: project.customer_name,
       }), { headers: { 'Content-Type': 'text/html' } });
@@ -107,13 +109,14 @@ export async function GET(request: NextRequest) {
       return new NextResponse(renderPage({
         title: 'Quote Accepted',
         message: `Thanks ${project.customer_name}! ${project.company_name} will be reaching out shortly to schedule your appointment.`,
-        state: 'success',
+       state: 'success',
         companyName: project.company_name,
         companyPhone: project.company_phone,
         companyWebsite: project.company_website,
         companyLogo: project.company_logo,
         brandColor,
         quoteTotal: parseFloat(project.quote_total),
+        taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
         quoteItems: project.quote_data || [],
         customerName: project.customer_name,
       }), { headers: { 'Content-Type': 'text/html' } });
@@ -163,6 +166,7 @@ function renderPage({
   companyLogo,
   brandColor = '#6366f1',
   quoteTotal,
+  taxRate,
   quoteItems = [],
   customerName,
 }: {
@@ -175,6 +179,7 @@ function renderPage({
   companyLogo?: string;
   brandColor?: string;
   quoteTotal?: number;
+  taxRate?: number;
   quoteItems?: any[];
   customerName?: string;
 }) {
@@ -188,6 +193,21 @@ function renderPage({
     : companyName
     ? `<div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:${brandColor};color:#fff;font-size:20px;font-weight:900;margin-bottom:16px;">${companyName.charAt(0).toUpperCase()}</div>`
     : '';
+
+  const hasTax = !!taxRate && taxRate > 0;
+  const itemsSubtotal = quoteItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const taxAmount = hasTax ? itemsSubtotal * (taxRate! / 100) : 0;
+
+  const taxRowsHtml = hasTax ? `
+          <tr style="background:#fff;border-top:1px solid #f1f5f9;">
+            <td colspan="2" style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">Subtotal</td>
+            <td style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">${fmt(itemsSubtotal)}</td>
+          </tr>
+          <tr style="background:#fff;">
+            <td colspan="2" style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">Tax (${taxRate}%)</td>
+            <td style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">${fmt(taxAmount)}</td>
+          </tr>
+  ` : '';
 
   const lineItemsHtml = quoteItems.length > 0 ? `
     <div style="margin-top:28px;">
@@ -208,6 +228,7 @@ function renderPage({
               <td style="padding:12px 14px;text-align:right;color:#334155;font-weight:600;font-size:14px;">${fmt(item.amount || 0)}</td>
             </tr>
           `).join('')}
+          ${taxRowsHtml}
         </tbody>
         <tfoot>
           <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
@@ -218,9 +239,26 @@ function renderPage({
       </table>
     </div>
   ` : quoteTotal ? `
-    <div style="margin-top:20px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Quote Total</span>
-      <span style="font-size:22px;font-weight:800;color:${brandColor};">${fmt(quoteTotal)}</span>
+    <div style="margin-top:20px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+      ${hasTax ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;color:#94a3b8;">Subtotal</span>
+          <span style="font-size:12px;color:#94a3b8;">${fmt(itemsSubtotal)}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;color:#94a3b8;">Tax (${taxRate}%)</span>
+          <span style="font-size:12px;color:#94a3b8;">${fmt(taxAmount)}</span>
+        </div>
+        <div style="border-top:1px solid #e2e8f0;padding-top:10px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Total</span>
+          <span style="font-size:22px;font-weight:800;color:${brandColor};">${fmt(quoteTotal)}</span>
+        </div>
+      ` : `
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Quote Total</span>
+          <span style="font-size:22px;font-weight:800;color:${brandColor};">${fmt(quoteTotal)}</span>
+        </div>
+      `}
     </div>
   ` : '';
 

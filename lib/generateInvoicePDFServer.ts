@@ -21,6 +21,7 @@ type InvoicePDFData = {
   customerAddress?: string;
   lineItems: LineItem[];
   total: number;
+  taxRate?: number;
   notes?: string;
   paymentLinkUrl?: string;
   paymentLinkType?: string;
@@ -277,10 +278,10 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
   y -= 24;
 
   // ── LINE ITEMS ──
-  for (let i = 0; i < data.lineItems.length; i++) {
+ for (let i = 0; i < data.lineItems.length; i++) {
     const item = data.lineItems[i];
     if (i % 2 === 1) {
-      page.drawRectangle({ x: margin, y: y - 6, width: contentW, height: 22, color: lightGray });
+      page.drawRectangle({ x: margin, y: y - 5, width: contentW, height: 17, color: lightGray });
     }
     page.drawRectangle({ x: margin, y: y - 7, width: contentW, height: 0.5, color: mutedGray });
 
@@ -288,37 +289,56 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
       ? item.description.substring(0, 49) + '...'
       : item.description;
 
-    page.drawText(desc,                          { x: colDesc,     y, size: 10, font: fontRegular, color: black    });
+   page.drawText(desc,                          { x: colDesc,     y, size: 10, font: fontRegular, color: black    });
     page.drawText(String(item.quantity ?? 1),    { x: colQty,      y, size: 10, font: fontRegular, color: gray     });
     page.drawText(item.unitPrice ? fmt(item.unitPrice) : '-', { x: colUnit, y, size: 10, font: fontRegular, color: gray });
     page.drawText(fmt(item.amount),              { x: colAmt - 42, y, size: 10, font: fontBold,    color: darkGray });
-    y -= 24;
+    y -= 19;
   }
 
-  y -= 6;
+y -= 6;
   page.drawRectangle({ x: margin, y, width: contentW, height: 0.5, color: mutedGray });
   y -= 20;
 
   // ── TOTALS ──
   const totalsX = margin + contentW * 0.55;
   const totalsW = contentW * 0.45;
+  const taxRate = data.taxRate ?? 0;
+  // Line item amounts are pre-tax, so their sum is the true subtotal —
+  // data.total (quote_total) already has tax baked in from when it was saved.
+  const subtotal = data.lineItems.reduce((s, i) => s + (i.amount || 0), 0);
+  const taxAmount = subtotal * (taxRate / 100);
 
   page.drawText('Subtotal', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-  page.drawText(fmt(data.total), {
-    x: totalsX + totalsW - 10 - (fmt(data.total).length * 5.5),
+  page.drawText(fmt(subtotal), {
+    x: totalsX + totalsW - 10 - (fmt(subtotal).length * 5.5),
     y, size: 9, font: fontRegular, color: gray,
   });
   y -= 14;
 
-  if (hasPartialPayment) {
+if (taxRate > 0) {
+    page.drawText(`Tax (${taxRate}%)`, { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+    page.drawText(fmt(taxAmount), {
+      x: totalsX + totalsW - 10 - (fmt(taxAmount).length * 5.5),
+      y, size: 9, font: fontRegular, color: gray,
+    });
+    y -= 14;
+  }
+
+// Extra clearance so the highlighted total/balance box below doesn't
+  // paint over the subtotal/tax rows just drawn above it.
+  y -= 38;
+
+if (hasPartialPayment) {
+    y -= 20;
     page.drawText('Amount Paid', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
     page.drawText(`- ${fmt(data.amountPaid ?? 0)}`, {
       x: totalsX + totalsW - 10 - (fmt(data.amountPaid ?? 0).length * 5.5 + 16),
       y, size: 9, font: fontRegular, color: gray,
     });
-    y -= 14;
+  y -= 14;
     page.drawRectangle({ x: totalsX, y, width: totalsW, height: 0.5, color: mutedGray });
-    y -= 16;
+    y -= 49;
 
     page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 48, color: offWhite });
     page.drawRectangle({ x: totalsX, y: y + 38, width: totalsW, height: 3, color: accentColor });

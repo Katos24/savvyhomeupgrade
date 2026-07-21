@@ -74,9 +74,10 @@ export async function GET(
         p.scheduled_time,
         p.assigned_to,
         p.estimated_hours,
-        p.invoice_number,
+       p.invoice_number,
 p.invoice_sent_at,
 p.quote_total,
+p.quote_tax_rate,
 p.quote_data,
 p.payment_status,
 p.payment_amount,
@@ -249,7 +250,7 @@ for (const lead of invoicedLeads) {
 ];
     csvRows.push(qbValues.join(','));
   } else {
-    // One row per line item
+  // One row per line item
     for (const item of lineItems) {
       const lineAmount = item.amount ? parseFloat(item.amount).toFixed(2) : '';
       const unitPrice = item.unitPrice ? parseFloat(item.unitPrice).toFixed(2) : '';
@@ -277,6 +278,36 @@ for (const lead of invoicedLeads) {
 ];
       csvRows.push(qbValues.join(','));
     }
+
+    // Separate tax line — QuickBooks imports typically expect tax as its
+    // own line item, not distributed across each product/service row.
+    const taxRate = parseFloat(lead.quote_tax_rate || '0');
+    if (taxRate > 0) {
+      const total = parseFloat(lead.quote_total || '0');
+      const subtotal = total / (1 + taxRate / 100);
+      const taxAmount = (total - subtotal).toFixed(2);
+      const taxValues = [
+        escape(lead.invoice_number || ''),
+        escape(lead.name || ''),
+        escape(invoiceDate),
+        escape(dueDate),
+        escape(`Sales Tax (${taxRate}%)`),
+        escape('tax'),
+        escape(''),
+        escape('1'),
+        escape(taxAmount),
+        escape(taxAmount),
+        escape(totalAmount),
+        escape(amountPaid),
+        escape(paymentStatus),
+        escape(paymentDate),
+        escape(paymentMethod),
+        escape(serviceAddress),
+        escape(city),
+        escape(zip),
+      ];
+      csvRows.push(taxValues.join(','));
+    }
   }
 }
 
@@ -302,6 +333,8 @@ for (const lead of invoicedLeads) {
         'Assigned To',
         'Estimated Hours',
         'Quote Total',
+        'Tax Rate',
+        'Tax Amount',
          'Payment Status',
         'Payment Amount',
         'Payment Method Detail',
@@ -346,6 +379,15 @@ escape(lead.name || ''),
           escape(lead.assigned_to || ''),
           escape(lead.estimated_hours || ''),
           escape(lead.quote_total ? `$${parseFloat(lead.quote_total).toFixed(2)}` : ''),
+          escape(lead.quote_tax_rate ? `${parseFloat(lead.quote_tax_rate)}%` : ''),
+          escape((() => {
+            const rate = parseFloat(lead.quote_tax_rate || '0');
+            const total = parseFloat(lead.quote_total || '0');
+            if (!rate || !total) return '';
+            const subtotal = total / (1 + rate / 100);
+            const taxAmount = total - subtotal;
+            return `$${taxAmount.toFixed(2)}`;
+          })()),
           escape(lead.payment_status || ''),
           escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
                   escape(getPaymentMethodLabel(lead)),

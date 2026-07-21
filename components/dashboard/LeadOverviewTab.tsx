@@ -106,7 +106,7 @@ export default function LeadOverviewTab({
     finally { setSaving(false); }
   };
 
-  const executeSaveDetails = async (overrideQuote?: any[] | null) => {
+  const executeSaveDetails = async (overrideQuote?: any[] | null, overrideTaxRate?: number) => {
     setSaving(true);
     try {
       const res = await fetch('/api/leads/update', {
@@ -122,13 +122,15 @@ export default function LeadOverviewTab({
       });
       if (!res.ok) { toast.error('Failed to update details'); return; }
       if (overrideQuote) {
-        const total = overrideQuote.reduce((s: number, i: any) => s + i.amount, 0);
+        const rate = overrideTaxRate ?? 0;
+        const subtotal = overrideQuote.reduce((s: number, i: any) => s + i.amount, 0);
+        const total = subtotal + subtotal * (rate / 100);
         await fetch('/api/leads/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: lead.id, action: 'save_quote',
-            quote_data: overrideQuote, quote_total: total,
+            quote_data: overrideQuote, quote_tax_rate: rate, quote_total: total,
             user_name: currentUser?.name || currentUser?.email,
             user_email: currentUser?.email,
           }),
@@ -141,7 +143,7 @@ export default function LeadOverviewTab({
     finally { setSaving(false); }
   };
 
-  const handleSaveDetails = async () => {
+ const handleSaveDetails = async () => {
     const categoryChanged = selectedCategory !== lead.category;
     if (categoryChanged) {
       const template = quoteTemplates.find((t: any) => t.category === selectedCategory) || null;
@@ -153,7 +155,7 @@ export default function LeadOverviewTab({
       }
       if (template && !hasExistingQuote) {
         const items = template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
-        await executeSaveDetails(items);
+        await executeSaveDetails(items, template.tax_rate ?? 0);
         return;
       }
     }
@@ -308,10 +310,15 @@ style={{ background: '#0f172a' }}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl transition text-sm">
                   {saving ? 'Saving...' : 'Save changes'}
                 </motion.button>
-                <motion.button whileTap={{ scale: 0.97 }}
-                  onClick={() => { setEditedDetails({ name: lead.name || '', email: lead.email || '', phone: lead.phone || '', address_line_1: lead.address_line_1 || '', address_line_2: lead.address_line_2 || '', city: lead.city || '' }); setSelectedCategory(lead.category || ''); setIsEditingDetails(false); }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition text-sm">
-                  Cancel
+               <motion.button whileTap={{ scale: 0.97 }}
+                  onClick={async () => {
+                    const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
+                    const rate = pendingCategoryChange?.template.tax_rate ?? 0;
+                    setPendingCategoryChange(null);
+                    await executeSaveDetails(items, rate);
+                  }}
+                  className="py-4 bg-blue-600 text-white font-medium rounded-2xl transition text-sm">
+                  Use template
                 </motion.button>
               </div>
             </motion.div>

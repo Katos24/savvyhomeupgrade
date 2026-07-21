@@ -187,6 +187,22 @@ case 'update-bcc': {
   `;
   return NextResponse.json({ success: true, company: result[0] });
 }
+
+// ── Default tax rate ──
+case 'update-tax-rate': {
+  const rate = parseFloat(data.default_tax_rate);
+  if (isNaN(rate) || rate < 0 || rate > 100) {
+    return NextResponse.json({ success: false, error: 'Tax rate must be between 0 and 100.' }, { status: 400 });
+  }
+  const result = await sql`
+    UPDATE companies
+    SET default_tax_rate = ${rate}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
       case 'update-pipeline':
         await sql`
           UPDATE companies

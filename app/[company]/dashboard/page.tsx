@@ -30,11 +30,16 @@ interface Company {
   form_categories?: any[];
   custom_questions?: any[];
   form_field_config?: any;
-  onboarding_completed?: boolean;
+ onboarding_completed?: boolean;
   onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
-  stripe_connect_account_id?: string | null;
+stripe_connect_account_id?: string | null;
+  stripe_connect_onboarded?: boolean;
+  stripe_payment_status?: string | null;
+  payment_link_url?: string | null;
+  payment_link_type?: string | null;
+  default_tax_rate?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,14 +69,15 @@ export async function generateMetadata(
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const rows = await sql`
-    SELECT
+SELECT
       id, name, slug, email, phone, website, logo_url, created_at,
       email_brand_color_1, email_brand_color_2,
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,
       form_field_config,
       onboarding_completed, onboarding_steps, cancel_at_period_end, subscription_cancel_at,
-      stripe_connect_account_id
+      stripe_connect_account_id, stripe_connect_onboarded, stripe_payment_status,
+      payment_link_url, payment_link_type, default_tax_rate
     FROM companies
     WHERE slug = ${slug}
     LIMIT 1

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
   AlertCircle, Lock, Tag, ClipboardList, Send, SlidersHorizontal, Check, Calculator,
+  Percent,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -13,7 +14,7 @@ import { can, type PlanTier } from '@/lib/permissions';
 
 type TaskTemplate = { id: string; label: string; order: number };
 type LineItem = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
-type QuoteTemplate = { id: string; category: string; items: LineItem[]; total: number };
+type QuoteTemplate = { id: string; category: string; items: LineItem[]; total: number; tax_rate?: number };
 type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -88,6 +89,55 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
   const [showQuotePreview, setShowQuotePreview] = useState(false);
+
+  const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
+  const [editingTaxRate, setEditingTaxRate] = useState(false);
+  const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
+  const [taxRateSaving, setTaxRateSaving] = useState(false);
+  const [showApplyToAll, setShowApplyToAll] = useState(false);
+  const [applyingToAll, setApplyingToAll] = useState(false);
+
+
+  const saveTaxRate = async () => {
+    const parsed = parseFloat(taxRateDraft);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) return;
+    setTaxRateSaving(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-tax-rate', data: { default_tax_rate: parsed } }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setTaxRate(parsed);
+        setEditingTaxRate(false);
+        if (quoteTemplates.length > 0) setShowApplyToAll(true);
+      }
+    } catch {}
+    finally { setTaxRateSaving(false); }
+  };
+
+  const applyRateToAllTemplates = async () => {
+    setApplyingToAll(true);
+    try {
+      const updated = await Promise.all(
+        quoteTemplates.map(async (t) => {
+          const subtotal = t.items.reduce((s, i) => s + i.amount, 0);
+          const newTemplate = { ...t, tax_rate: taxRate, total: subtotal + subtotal * (taxRate / 100) };
+          await fetch(`/api/company/${company.slug}/quote-templates`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', template: newTemplate }),
+          });
+          return newTemplate;
+        })
+      );
+      setQuoteTemplates(updated);
+      setShowApplyToAll(false);
+    } catch {}
+    finally { setApplyingToAll(false); }
+  };
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
@@ -178,6 +228,10 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       : [];
     setEditingLineItems(mapped);
     setEditingQuoteId(existing?.id || null);
+    // New templates inherit the company's current tax rate. Existing
+    // templates keep whatever rate they were saved with — changing the
+    // company default later doesn't retroactively touch saved templates.
+    setEditingTaxRateValue(existing ? (existing.tax_rate ?? 0) : taxRate);
     setNewDesc(''); setNewPrice(''); setNewQty('1');
     setAddingItem(false); setLineItemError(''); setQuoteError('');
     setQuoteEditorCatValue(catValue);
@@ -192,6 +246,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     setEditingLineItems(prev => [...prev, { id: `item_${Date.now()}`, description: newDesc.trim(), quantity: qty, unitPrice: price, amount: qty * price }]);
     setNewDesc(''); setNewPrice(''); setNewQty('1'); setLineItemError(''); setAddingItem(false);
   };
+
+    const [editingTaxRateValue, setEditingTaxRateValue] = useState<number>(0);
+
 
   const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
     setEditingLineItems(prev => prev.map(item => {
@@ -208,8 +265,15 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     if (newDesc.trim() || newPrice) { setLineItemError('Click + to add this item first.'); return; }
     if (editingLineItems.length === 0) { setQuoteError('Add at least one line item.'); return; }
     setQuoteSaving(true); setQuoteError('');
-    const total = editingLineItems.reduce((s, i) => s + i.amount, 0);
-    const templateData = { id: editingQuoteId || `custom_${Date.now()}`, category: quoteEditorCatValue, items: editingLineItems, total };
+    const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
+    const total = subtotal + subtotal * (editingTaxRateValue / 100);
+    const templateData = {
+      id: editingQuoteId || `custom_${Date.now()}`,
+      category: quoteEditorCatValue,
+      items: editingLineItems,
+      total,
+      tax_rate: editingTaxRateValue,
+    };
     try {
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
         method: 'POST',
@@ -241,7 +305,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   };
 
   const activeQuoteEditorCat = categories.find(c => c.value === quoteEditorCatValue);
-  const quoteEditorTotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
+  const quoteEditorSubtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
+  const quoteEditorTaxAmount = quoteEditorSubtotal * (editingTaxRateValue / 100);
+  const quoteEditorTotal = quoteEditorSubtotal + quoteEditorTaxAmount;
 
   // Plan gate lives after every hook above, so hook order never changes
   // between renders regardless of plan_tier.
@@ -253,7 +319,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-4xl pb-24">
       {/* ── TITLE + ACTIONS ── */}
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-stone-900">Service categories</h2>
             {isDirty && (
@@ -273,7 +339,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             </button>
           )}
         </div>
-        
+
 {/* ── HEADLINE ── */}
         <div className="mb-6">
           <h3 className="text-[18px] font-bold leading-snug text-stone-900">
@@ -291,6 +357,30 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </button>
         </div>
 
+        {/* ── APPLY TAX RATE TO EXISTING TEMPLATES ── */}
+        {showApplyToAll && (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-bold text-emerald-800">
+              Apply {taxRate}% to your {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={applyRateToAllTemplates}
+                disabled={applyingToAll}
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {applyingToAll ? 'Applying...' : 'Apply to all'}
+              </button>
+              <button
+                onClick={() => setShowApplyToAll(false)}
+                className="text-xs font-bold text-emerald-700 hover:underline"
+              >
+                No, just new ones
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── STATUS ── */}
         {saveSuccess && (
           <div className="mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
@@ -303,7 +393,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </div>
         )}
 
-        {/* ── ADD CATEGORY ── */}
+       {/* ── ADD CATEGORY + TAX RATE ── */}
         <div className="mb-6">
           <AnimatePresence mode="wait">
             {showAddForm ? (
@@ -338,14 +428,53 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 </div>
               </motion.div>
             ) : (
-              <motion.button
-                key="trigger"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 text-[12px] font-bold text-blue-700 transition-colors hover:bg-blue-100"
-              >
-                <Plus className="h-3.5 w-3.5" /> Add category
-              </motion.button>
+              <div className="flex flex-wrap items-center gap-2">
+                <motion.button
+                  key="trigger"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={() => setShowAddForm(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 text-[12px] font-bold text-blue-700 transition-colors hover:bg-blue-100"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add category
+                </motion.button>
+
+                {editingTaxRate ? (
+                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={taxRateDraft}
+                      onChange={(e) => setTaxRateDraft(e.target.value)}
+                      autoFocus
+                      className="w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none"
+                    />
+                    <span className="text-xs font-bold text-stone-500">%</span>
+                    <button
+                      onClick={saveTaxRate}
+                      disabled={taxRateSaving}
+                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800"
+                    >
+                      {taxRateSaving ? '...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
+                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingTaxRate(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
+                  >
+                    <Percent className="h-3.5 w-3.5" />
+                    Tax rate: {taxRate}%
+                  </button>
+                )}
+              </div>
             )}
           </AnimatePresence>
           {newCatError && (
@@ -688,9 +817,39 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   </div>
                 )}
 
-                <div className="mb-6 flex items-center justify-between px-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total Estimate</span>
-                  <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
+                <div className="mb-4 space-y-1.5 px-1">
+                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                    <span>Subtotal</span>
+                    <span>{fmt(quoteEditorSubtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                      <Percent className="h-3 w-3" />
+                      Tax rate
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={editingTaxRateValue}
+                        onChange={(e) => setEditingTaxRateValue(parseFloat(e.target.value) || 0)}
+                        className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <span className="text-xs font-bold text-gray-400">%</span>
+                    </div>
+                  </div>
+                  {editingTaxRateValue > 0 && (
+                    <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                      <span>Tax ({editingTaxRateValue}%)</span>
+                      <span>{fmt(quoteEditorTaxAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-white/10 pt-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total estimate</span>
+                    <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

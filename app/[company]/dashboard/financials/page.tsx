@@ -56,11 +56,12 @@ const [companyRows, projectRows] = await Promise.all([
       WHERE slug = ${companySlug}
       LIMIT 1
     `,
-    sql`
+   sql`
       SELECT
         p.id,
         p.invoice_number,
         p.quote_total,
+        p.quote_tax_rate,
         p.payment_status,
         p.payment_amount,
         p.payment_date,

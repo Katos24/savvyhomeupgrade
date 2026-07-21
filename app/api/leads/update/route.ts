@@ -41,7 +41,7 @@ if (!publicActions.includes(body.action)) {
       user_name,
       user_email,
       old_status,
-      // Project fields
+     // Project fields
       payment_status,
       payment_amount,
       scheduled_date,
@@ -51,6 +51,7 @@ if (!publicActions.includes(body.action)) {
       actual_hours,
       quote_data,
       quote_total,
+      quote_tax_rate,
       follow_up_date,  
       follow_up_notes,
       internal_notes,
@@ -465,6 +466,7 @@ await sql`
   SET 
 quote_data = ${JSON.stringify(quote_data)},
     quote_total = ${quote_total},
+    quote_tax_rate = ${quote_tax_rate ?? 0},
     payment_status = ${newPaymentStatus},
     updated_at = NOW()
   WHERE id = ${projectId}
@@ -987,13 +989,13 @@ else if (action === 'save_invoice') {
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 else if (action === 'send_invoice_to_customer') {
 const leadCheck = await sql`
-    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total,
-           p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
-           c.name as company_name, c.phone as company_phone,
-           c.email as company_email,
-           c.id as company_id, c.slug as company_slug, c.plan_tier,
-           c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status
-    FROM leads l
+   SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total, p.quote_tax_rate,
+         p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
+         c.name as company_name, c.phone as company_phone,
+         c.email as company_email,
+         c.id as company_id, c.slug as company_slug, c.plan_tier,
+         c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status
+  FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
     WHERE l.id = ${id}
@@ -1029,7 +1031,9 @@ const leadCheck = await sql`
     return NextResponse.json({ success: false, error: 'No line items found.' }, { status: 400 });
   }
 
-  const invoiceTotal = invoiceItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const invoiceSubtotal = invoiceItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const invoiceTaxRate = lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : 0;
+  const invoiceTotal = invoiceSubtotal + invoiceSubtotal * (invoiceTaxRate / 100);
   const invoiceNumber = body.invoice_number || lead.invoice_number || 'INV-001';
 
   // ── Generate or reuse a Stripe Connect payment link ──
@@ -1111,6 +1115,7 @@ const leadCheck = await sql`
       contractorEmail: lead.company_email,
   paymentLinkUrl,
   paymentLinkType,
+  taxRate: invoiceTaxRate > 0 ? invoiceTaxRate : undefined,
     });
 
     // Log to outbox

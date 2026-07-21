@@ -386,15 +386,18 @@ export default function LeadModal({
           </AnimatePresence>
         </div>
 
-        {/* ── FOOTER ── */}
-        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-600 transition"
-          >
-            Close
-          </button>
-        </div>
+    {/* ── FOOTER ── */}
+       {/* ── FOOTER ── */}
+<div className="flex-shrink-0 px-4 sm:px-6 pt-3 pb-3 sm:pb-4 bg-white/90 backdrop-blur-md border-t border-gray-200/60 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+  <button
+    type="button"
+    onClick={onClose}
+    className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm"
+  >
+    <X className="w-4 h-4 opacity-70" />
+    <span>Close</span>
+  </button>
+</div>
       </motion.div>
 
       {/* ── REPEAT CUSTOMER HISTORY DRAWER ── */}

@@ -11,6 +11,7 @@ export type QuoteTemplate = {
   items: QuoteLineItem[];
   total: number;
   notes?: string;
+    tax_rate?: number; // defaults from company.default_tax_rate when created, editable/removable per template
 };
 
 export const QUOTE_TEMPLATES: Record<string, QuoteTemplate[]> = {

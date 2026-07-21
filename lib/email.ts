@@ -479,6 +479,7 @@ export async function sendQuoteToCustomer({
   projectDescription,
   quoteToken,
   contractorEmail,
+  taxRate,
 }: {
   customerEmail: string;
   customerName: string;
@@ -490,6 +491,7 @@ export async function sendQuoteToCustomer({
   projectDescription?: string;
   quoteToken?: string;
   contractorEmail?: string;
+  taxRate?: number;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -537,6 +539,20 @@ export async function sendQuoteToCustomer({
             `).join('')}
           </tbody>
           <tfoot>
+            ${taxRate && taxRate > 0 ? (() => {
+              const subtotal = quoteItems.reduce((s, i) => s + (i.amount || 0), 0);
+              const taxAmount = subtotal * (taxRate / 100);
+              return `
+                <tr style="background-color: #ffffff; border-top: 1px solid #f1f5f9;">
+                  <td colspan="3" style="padding: 8px 14px; text-align: right; color: #94a3b8; font-size: 12px;">Subtotal</td>
+                  <td style="padding: 8px 14px; text-align: right; color: #94a3b8; font-size: 12px;">${fmt(subtotal)}</td>
+                </tr>
+                <tr style="background-color: #ffffff;">
+                  <td colspan="3" style="padding: 8px 14px; text-align: right; color: #94a3b8; font-size: 12px;">Tax (${taxRate}%)</td>
+                  <td style="padding: 8px 14px; text-align: right; color: #94a3b8; font-size: 12px;">${fmt(taxAmount)}</td>
+                </tr>
+              `;
+            })() : ''}
             <tr style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">
               <td colspan="3" style="padding: 14px; text-align: right; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
                 Total
@@ -622,6 +638,8 @@ export async function sendQuoteToCustomer({
   }
 }
 
+
+
 export async function sendInvoiceToCustomer({
   customerEmail,
   customerName,
@@ -637,6 +655,7 @@ export async function sendInvoiceToCustomer({
   amountPaid,
   paymentLinkUrl,
   paymentLinkType,
+  taxRate,
 }: {
   customerEmail: string;
   customerName: string;
@@ -652,6 +671,7 @@ export async function sendInvoiceToCustomer({
   amountPaid?: number;
   paymentLinkUrl?: string;
   paymentLinkType?: string;
+  taxRate?: number;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -668,7 +688,7 @@ export async function sendInvoiceToCustomer({
 
     // ── STEP 1: Generate PDF buffer ───────────────────────
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
-    const pdfBuffer = await generateInvoicePDFBuffer({
+  const pdfBuffer = await generateInvoicePDFBuffer({
       invoiceNumber,
       invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
       dueDate,
@@ -687,6 +707,7 @@ export async function sendInvoiceToCustomer({
         amount: item.amount ?? 0,
       })),
       total: invoiceTotal,
+      taxRate,
       notes,
       amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
       paymentLinkUrl: effectivePaymentUrl || undefined,
@@ -765,6 +786,32 @@ export async function sendInvoiceToCustomer({
       </div>
     ` : '';
 
+    // Subtotal/tax breakdown — only shown when there's tax to explain and no
+    // partial-payment table already covering the numbers (avoids showing
+    // two overlapping breakdown boxes on the same email).
+    const taxBreakdownHtml = (taxRate && taxRate > 0 && !(amountPaid && amountPaid > 0 && amountPaid < invoiceTotal)) ? (() => {
+      const subtotal = invoiceItems.reduce((s, i: any) => s + (i.amount || 0), 0);
+      const taxAmount = subtotal * (taxRate / 100);
+      return `
+      <div style="margin-bottom: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Subtotal</td>
+            <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(subtotal)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Tax (${taxRate}%)</td>
+            <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(taxAmount)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 8px 0 4px;">Total</td>
+            <td style="font-size: 15px; font-weight: 800; color: #0f172a; text-align: right; padding: 8px 0 4px;">${fmt(invoiceTotal)}</td>
+          </tr>
+        </table>
+      </div>
+    `;
+    })() : '';
+
     const notesHtml = notes ? `
       <div style="margin-bottom: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
         <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">Notes</p>
@@ -798,6 +845,7 @@ export async function sendInvoiceToCustomer({
         ${downloadButtonHtml}
         <p style="white-space: pre-line; margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">${templateBody}</p>
         ${dueDateHtml}
+        ${taxBreakdownHtml}
         ${partialPaymentHtml}
         ${notesHtml}
       `,
@@ -831,6 +879,8 @@ export async function sendInvoiceToCustomer({
     throw error;
   }
 }
+
+
 
 export async function sendScheduleConfirmation({
   customerEmail,

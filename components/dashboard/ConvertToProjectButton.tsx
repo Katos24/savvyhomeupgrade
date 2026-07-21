@@ -114,7 +114,9 @@ if (lead.project_id) return null;
                   amount: item.amount,
                 }));
 
-                const total = items.reduce((s: number, i: any) => s + i.amount, 0);
+                const rate = match.tax_rate ?? 0;
+                const subtotal = items.reduce((s: number, i: any) => s + i.amount, 0);
+                const total = subtotal + subtotal * (rate / 100);
 
                 await fetch('/api/leads/update', {
                   method: 'POST',
@@ -123,6 +125,7 @@ if (lead.project_id) return null;
                     id: lead.id,
                     action: 'save_quote',
                     quote_data: items,
+                    quote_tax_rate: rate,
                     quote_total: total,
                     user_name: currentUser?.name || 'Unknown',
                     user_email: currentUser?.email || '',

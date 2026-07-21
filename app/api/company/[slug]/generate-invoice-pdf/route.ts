@@ -51,9 +51,9 @@ export async function GET(
     }
 
     // Get project + lead data
-    const rows = await sql`
+   const rows = await sql`
       SELECT
-        p.id, p.invoice_number, p.quote_total, p.quote_data,
+        p.id, p.invoice_number, p.quote_total, p.quote_tax_rate, p.quote_data,
         p.payment_status, p.payment_amount, p.payment_due_date,
         p.invoice_sent_at, p.created_at, p.stripe_checkout_session_id,
         l.name as customer_name, l.email as customer_email,
@@ -170,7 +170,8 @@ if (company.stripe_payment_status === 'active' && project.payment_status !== 'pa
         unitPrice: item.unitPrice ?? undefined,
         amount: item.amount ?? 0,
       })),
-      total: parseFloat(project.quote_total || '0'),
+     total: parseFloat(project.quote_total || '0'),
+      taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
       amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
       paymentLinkUrl: paymentLinkUrl || undefined,
       paymentLinkType: paymentLinkType || undefined,

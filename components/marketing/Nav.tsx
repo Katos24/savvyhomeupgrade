@@ -214,9 +214,7 @@ export default function Nav() {
 
           {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/#how-it-works" className={navLinkClass}>
-              How it works
-            </Link>
+           
 
             {renderDesktopDropdown('features', 'Features', FEATURE_LINKS)}
             {renderDesktopDropdown('solutions', 'Industries', SOLUTION_LINKS)}
@@ -303,14 +301,7 @@ export default function Nav() {
 
         {/* Links */}
         <div className="flex flex-col px-4 gap-1 flex-1 overflow-y-auto">
-          <Link
-            href="/#how-it-works"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-between px-4 py-4 rounded-xl text-white font-black hover:bg-white/10 transition-colors"
-          >
-            How it works
-            <ChevronRight size={18} className="text-white/40" />
-          </Link>
+         
 
           {renderMobileAccordion('features', 'Features', FEATURE_LINKS)}
           {renderMobileAccordion('solutions', 'Industries', SOLUTION_LINKS)}

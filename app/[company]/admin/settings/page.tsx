@@ -74,10 +74,11 @@ export default async function SettingsPage({
       payment_link_type: company.payment_link_type ?? '',
       payment_link_url: company.payment_link_url ?? '',
       bcc_sender_on_email: company.bcc_sender_on_email ?? false,
-      stripe_connect_account_id: company.stripe_connect_account_id ?? null,
-      stripe_connect_onboarded: company.stripe_connect_onboarded ?? false,
-      stripe_payment_status: company.stripe_payment_status ?? null,
-      stripe_requirements_summary: company.stripe_requirements_summary ?? [],
+     stripe_connect_account_id: company.stripe_connect_account_id ?? null,
+stripe_connect_onboarded: company.stripe_connect_onboarded ?? false,
+stripe_payment_status: company.stripe_payment_status ?? null,
+stripe_requirements_summary: company.stripe_requirements_summary ?? [],
+default_tax_rate: company.default_tax_rate ?? 0,
     };
 
     return <CompanySettingsClient company={dto} currentUser={currentUser} />;

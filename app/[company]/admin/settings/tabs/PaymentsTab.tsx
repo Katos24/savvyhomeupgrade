@@ -10,7 +10,11 @@ import {
   Zap,
   X,
   Link2,
-  PenLine, Send
+  PenLine,
+  Send,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import StripePaymentInfo from '@/components/dashboard/StripePaymentInfo';
 import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
@@ -26,8 +30,6 @@ const PAYMENT_COLORS: Record<string, string> = {
 const CARD_NETWORKS = ['visa', 'mastercard', 'amex', 'discover', 'applepay', 'googlepay'];
 
 // Maps Stripe's requirement codes to plain copy a contractor can act on.
-// Add to this as you encounter new codes in production — fall back to the
-// generic message for anything unmapped rather than showing a raw Stripe code.
 function describeBlockingReasons(
   reasons: { capability: string; code: string }[] | null | undefined
 ): string {
@@ -46,10 +48,6 @@ function StripeWordmark() {
   );
 }
 
-// Small stylized network marks. These are simplified, generic
-// representations (not the official brand SVG assets — this environment
-// has no network access to pull the real logo files) but they read
-// clearly as "Visa", "Mastercard", etc. at badge size.
 function CardNetworkMark({ network, large }: { network: string; large?: boolean }) {
   const base = `flex ${large ? 'h-6 w-9' : 'h-5 w-7'} shrink-0 items-center justify-center rounded-[3px] bg-white`;
   const textSize = large ? 'text-[10px]' : 'text-[9px]';
@@ -130,7 +128,6 @@ function CardBadge({ network }: { network: string }) {
   );
 }
 
-/* ───────────────────────── Status stamp ───────────────────────── */
 function StatusStamp({ state }: { state: 'active' | 'pending' | 'restricted' | 'none' }) {
   const config = {
     active: { label: 'Active', pill: 'bg-emerald-600 text-white', dot: 'bg-white' },
@@ -149,70 +146,58 @@ function StatusStamp({ state }: { state: 'active' | 'pending' | 'restricted' | '
   );
 }
 
-/* ───────────────────────── How this works ─────────────────────────
-   Clean header (logo + badge), one bold subhead, then plain icon rows —
-   no colored callout boxes to parse, just crisp black text. */
+/* Collapsible "How this works" drawer to eliminate visual noise */
 function HowThisWorks() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div>
-      <div className="flex items-center gap-3">
-        <StripeWordmark />
-        <span className="rounded-full bg-stone-900 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-          Payments
+    <div className="rounded-xl border border-stone-200 bg-stone-50/80 transition">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between p-4 text-left font-semibold text-stone-800 hover:text-stone-900"
+      >
+        <span className="flex items-center gap-2 text-sm font-bold">
+          <HelpCircle className="h-4 w-4 text-stone-500" />
+          How do payment links work?
         </span>
-      </div>
+        {open ? <ChevronUp className="h-4 w-4 text-stone-500" /> : <ChevronDown className="h-4 w-4 text-stone-500" />}
+      </button>
 
-      <h3 className="mt-4 text-[20px] font-extrabold leading-snug text-stone-900">
-        Get paid without chasing customers down
-      </h3>
-
-      <div className="mt-5 space-y-4">
-        <div className="flex items-start gap-3.5">
-          <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-          <p className="text-[15px] leading-relaxed text-stone-800">
-            <span className="font-bold text-stone-900">Every invoice includes a payment link</span> —
-            in the email and on the invoice itself.
-          </p>
+      {open && (
+        <div className="space-y-4 border-t border-stone-200 p-4 pt-3 text-[14px]">
+          <h3 className="text-base font-extrabold text-stone-900">Get paid without chasing customers down</h3>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <p className="leading-relaxed text-stone-800">
+                <span className="font-bold text-stone-900">Every invoice includes a payment link</span> — in the email and on the invoice itself.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <p className="leading-relaxed text-stone-800">
+                <span className="font-bold text-stone-900">Connect Stripe and payments are tracked automatically.</span> The customer pays by card, and the invoice is marked paid on your dashboard the moment it happens — no follow-up required.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <p className="leading-relaxed text-stone-800">
+                <span className="font-bold text-stone-900">Prefer a manual link instead (Venmo, Zelle, Cash App, PayPal)?</span> The customer enters the amount themselves, and you&apos;ll need to check for the payment and mark the invoice paid yourself.
+              </p>
+            </div>
+          </div>
         </div>
-
-        <div className="flex items-start gap-3.5">
-          <Zap className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-          <p className="text-[15px] leading-relaxed text-stone-800">
-            <span className="font-bold text-stone-900">
-              Connect Stripe and payments are tracked automatically.
-            </span>{' '}
-            The customer pays by card, and the invoice is marked paid on your
-            dashboard the moment it happens — no follow-up required.
-          </p>
-        </div>
-
-        <div className="flex items-start gap-3.5">
-          <PenLine className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-          <p className="text-[15px] leading-relaxed text-stone-800">
-            <span className="font-bold text-stone-900">
-              Prefer a manual link instead (Venmo, Zelle, Cash App, PayPal)?
-            </span>{' '}
-            The customer enters the amount themselves, and you&apos;ll need to
-            check for the payment and mark the invoice paid yourself.
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-/* ───────────────────────── Stripe section (open by default) ───────────────────────── */
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
-  const [redirectStatus, setRedirectStatus] = useState<
-    'idle' | 'error' | 'denied' | 'already_linked'
-  >('idle');
+  const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  // Live status, overriding the (possibly stale) server-rendered prop.
-  // The DB only updates when Stripe's webhook fires, which can lag behind
-  // what the person just did on Stripe's side by several seconds — this
-  // closes that gap instead of making them guess-and-refresh.
   const [liveStatus, setLiveStatus] = useState<{
     isConnected: boolean;
     paymentStatus: 'active' | 'restricted' | 'pending' | null;
@@ -239,8 +224,7 @@ function StripeConnectSection({ company }: { company: any }) {
         });
       }
     } catch {
-      // Silent — worst case, the person still sees the last known status
-      // and can hit "Refresh status" again.
+      // Silent catch
     } finally {
       setCheckingStatus(false);
     }
@@ -253,10 +237,6 @@ function StripeConnectSection({ company }: { company: any }) {
       setRedirectStatus(sc as any);
     }
 
-    // Get the real current status whenever: (a) we just came back from
-    // Stripe at all (any stripe_connect param present), or (b) we're
-    // already in a not-fully-settled state, since that's exactly where a
-    // stale read causes confusion.
     const justReturnedFromStripe = sc !== null;
     const inUnsettledState =
       !!company.stripe_connect_onboarded && company.stripe_payment_status !== 'active';
@@ -313,6 +293,7 @@ function StripeConnectSection({ company }: { company: any }) {
 
       {isConnected && paymentStatus !== 'active' && !checkingStatus && (
         <button
+          type="button"
           onClick={refreshLiveStatus}
           className="mt-2 text-[12px] font-bold text-stone-500 underline hover:text-stone-800"
         >
@@ -359,8 +340,7 @@ function StripeConnectSection({ company }: { company: any }) {
       )}
       {redirectStatus === 'already_linked' && (
         <p className="mt-3 rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800">
-          That Stripe account is already connected to a different company. Use a
-          different account, or contact support if this looks wrong.
+          That Stripe account is already connected to a different company. Use a different account, or contact support if this looks wrong.
         </p>
       )}
       {connectError && (
@@ -387,13 +367,13 @@ function StripeConnectSection({ company }: { company: any }) {
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
               <p className="mt-2.5 text-[13px] font-semibold text-stone-600">
-                You&apos;re connected — card payments are live. Issue refunds,
-                see payouts, and view full account details on Stripe.
+                You&apos;re connected — card payments are live. Issue refunds, see payouts, and view full account details on Stripe.
               </p>
             </div>
           ) : (
             <div>
               <button
+                type="button"
                 onClick={handleConnect}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
@@ -415,22 +395,14 @@ function StripeConnectSection({ company }: { company: any }) {
           <div className="mb-4 space-y-3 rounded-lg border-2 border-stone-200 bg-stone-50 p-4 text-[13px] font-medium leading-relaxed text-stone-800">
             <p>
               <span className="font-bold text-stone-900">Already have a Stripe account? </span>
-              Log in and you&apos;re linked in under a minute — no new
-              paperwork needed.
+              Log in and you&apos;re linked in under a minute — no new paperwork needed.
             </p>
             <p>
               <span className="font-bold text-stone-900">Starting fresh? </span>
-              You&apos;ll complete Stripe&apos;s own signup: your legal name
-              and date of birth, the last 4 digits of your SSN (or an EIN if
-              you&apos;re a registered business), and a bank account and
-              routing number for payouts. It usually takes 5–10 minutes.
+              You&apos;ll complete Stripe&apos;s own signup: your legal name and date of birth, the last 4 digits of your SSN (or an EIN if you&apos;re a registered business), and a bank account and routing number for payouts. It usually takes 5–10 minutes.
             </p>
             <p className="text-stone-600">
-              This is Stripe&apos;s identity verification, required by law
-              for anyone accepting card payments — the same info you&apos;d
-              give any payment processor. We never see or store it; it goes
-              directly to Stripe. Once approved, every invoice gets a pay
-              now button, and standard card processing rates apply (
+              This is Stripe&apos;s identity verification, required by law for anyone accepting card payments — the same info you&apos;d give any payment processor. We never see or store it; it goes directly to Stripe. Once approved, every invoice gets a pay now button, and standard card processing rates apply (
               <a
                 href="https://stripe.com/pricing"
                 target="_blank"
@@ -444,6 +416,7 @@ function StripeConnectSection({ company }: { company: any }) {
           </div>
 
           <button
+            type="button"
             onClick={handleConnect}
             disabled={loading}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold text-white transition-colors disabled:opacity-60 sm:w-auto"
@@ -451,7 +424,7 @@ function StripeConnectSection({ company }: { company: any }) {
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? 'Redirecting' : 'Connect Stripe account'}
-            {!loading && <ArrowUpRight className="h-3.5 w-3.5" />}
+            {!loading && <ArrowUpRight className="h-4 w-4" />}
           </button>
         </div>
       )}
@@ -459,7 +432,6 @@ function StripeConnectSection({ company }: { company: any }) {
   );
 }
 
-/* ───────────────────────── Manual link (collapsed by default) ───────────────────────── */
 function ManualPaymentLinkSection({ company }: { company: any }) {
   const [type, setType] = useState(company.payment_link_type || '');
   const [url, setUrl] = useState(company.payment_link_url || '');
@@ -484,7 +456,7 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
         setTimeout(() => setSaved(false), 2000);
       }
     } catch {
-      // A failed save just doesn't confirm — nothing else to do here.
+      // Intentionally unhandled failure
     } finally {
       setSaving(false);
     }
@@ -495,9 +467,7 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
       <div className="flex items-start gap-2.5 rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
         <p className="text-[13px] font-semibold leading-relaxed text-amber-900">
-          Reminder: the customer types in the amount themselves, and there&apos;s
-          no automatic confirmation. Mark the invoice paid yourself once you see
-          it come through.
+          Reminder: the customer types in the amount themselves, and there&apos;s no automatic confirmation. Mark the invoice paid yourself once you see it come through.
         </p>
       </div>
 
@@ -536,6 +506,7 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
       )}
 
       <button
+        type="button"
         onClick={handleSave}
         disabled={saving}
         className="mt-5 inline-flex items-center gap-2 rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
@@ -548,7 +519,6 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
   );
 }
 
-/* ───────────────────────── Tab switch: Stripe vs manual link ───────────────────────── */
 function MethodTabs({
   method,
   onChange,
@@ -567,6 +537,7 @@ function MethodTabs({
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
           onClick={() => onChange(tab.id)}
           className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-colors ${
             method === tab.id ? 'text-stone-900' : 'text-stone-500 hover:text-stone-800'
@@ -585,22 +556,11 @@ function MethodTabs({
   );
 }
 
-// Matches the fixed sample data the real /preview-invoice endpoint renders,
-// so the email mock and the invoice preview agree with each other.
 const SAMPLE_INVOICE_NUMBER = 'SAMPLE-001';
 const SAMPLE_TOTAL = 505;
 const SAMPLE_CUSTOMER_NAME = 'Jane Customer';
 const SAMPLE_DUE_DATE = 'July 22, 2026';
 
-/* ───────────────────────── Mock email preview ─────────────────────────
-   Mirrors the real logic in sendInvoiceToCustomer: a pay button only shows
-   if Stripe is active or a manual link is set, its label matches
-   paymentMethodLabels, and it uses the company's actual brand color. Name,
-   amount, and due date match the sample /preview-invoice data so this
-   agrees with the invoice preview next to it.
-   Note: this approximates the structure visible in sendInvoiceToCustomer
-   (buttons, due-date box, footer) — it isn't a pixel copy of buildEmail,
-   since that helper's markup wasn't provided. */
 function MockEmailPreview({ company }: { company: any }) {
   const stripeActive =
     !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
@@ -682,8 +642,7 @@ function MockEmailPreview({ company }: { company: any }) {
 
             {!payLabel && (
               <p className="mt-4 rounded-lg border-2 border-stone-200 bg-stone-50 px-3 py-2 text-[12px] font-semibold text-stone-600">
-                No payment method connected yet — this email only includes the
-                PDF download until Stripe or a manual link is set up.
+                No payment method connected yet — this email only includes the PDF download until Stripe or a manual link is set up.
               </p>
             )}
           </div>
@@ -699,13 +658,6 @@ function MockEmailPreview({ company }: { company: any }) {
   );
 }
 
-/* ───────────────────────── Invoice preview, click to enlarge ─────────────────────────
-   This endpoint returns an actual PDF (not an HTML page), so it renders via
-   the browser's built-in PDF viewer. Native PDF viewers are unreliable
-   inside a CSS-transformed/scaled container — many browsers just render
-   blank rather than scaling down — so this sizes the iframe directly
-   instead of the earlier transform-scale approach, and lets the viewer's
-   own zoom fit the box. */
 function SampleInvoicePreview({ company }: { company: any }) {
   const [expanded, setExpanded] = useState(false);
   const [thumbLoaded, setThumbLoaded] = useState(false);
@@ -714,8 +666,6 @@ function SampleInvoicePreview({ company }: { company: any }) {
   const [modalTimedOut, setModalTimedOut] = useState(false);
   const previewUrl = `/api/company/${company.slug}/preview-invoice`;
 
-  // If the iframe hasn't fired onLoad within 8s, stop showing a spinner and
-  // tell the person plainly instead of leaving a silent blank box.
   useEffect(() => {
     const t = setTimeout(() => {
       if (!thumbLoaded) setThumbTimedOut(true);
@@ -834,7 +784,6 @@ function SampleInvoicePreview({ company }: { company: any }) {
   );
 }
 
-/* ───────────────────────── Main ───────────────────────── */
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   const [method, setMethod] = useState<'stripe' | 'manual'>('stripe');
   const hasManualLink = !!company.payment_link_url;
@@ -850,44 +799,8 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
         </div>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <div className="p-6 sm:p-10">
-            <HowThisWorks />
-          </div>
-
-          {/* ───────────────────────── Sending invoices ───────────────────────── */}
-          <div className="border-t-2 border-stone-100 p-6 sm:p-10">
-            <p className="mb-1 text-[13px] font-bold uppercase tracking-wide text-stone-700">
-              Sending invoices
-            </p>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
-              {/* Text column — filled card, centered, matches the image column's height */}
-              <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
-                  <Send className="h-6 w-6 text-emerald-700" />
-                </div>
-                <p className="text-xl leading-relaxed text-stone-800">
-                  When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button
-                  on the invoice card. The invoice will be emailed to your customer&apos;s primary
-                  email address, and they&apos;ll receive the invoice along with a secure payment
-                  link (if enabled).
-                </p>
-              </div>
-
-              {/* Image column */}
-              <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
-                {/* Replace with your screenshot */}
-                <img
-                  src="/images/invoice_send.webp"
-                  alt="Invoice send button"
-                  className="w-full object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ───────────────────────── Payment method ───────────────────────── */}
-          <div className="border-y-2 border-stone-200 bg-stone-50 p-6 sm:p-10">
+          {/* Main Action Block — Stripe / Manual config placed first */}
+          <div className="border-b-2 border-stone-200 bg-stone-50 p-6 sm:p-10">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
               <div>
                 <MethodTabs method={method} onChange={setMethod} hasManualLink={hasManualLink} />
@@ -900,12 +813,10 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
                 </div>
               </div>
 
-              {/* Thumbnail — shows where the pay button actually lands on the invoice */}
               <div className="lg:pt-1">
                 <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
-                  {/* Replace with your screenshot */}
                   <img
-                    src="/images/invoice_payment_thumbnail.webp"
+                    src="/images/invoice_thumbnail.webp"
                     alt="Pay now button on the invoice"
                     className="w-full object-contain"
                   />
@@ -913,6 +824,35 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
                 <p className="mt-2 text-center text-[11px] font-bold text-stone-500">
                   What your customer sees on the invoice
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Informational Blocks */}
+          <div className="p-6 sm:p-10 border-b-2 border-stone-100">
+            <HowThisWorks />
+          </div>
+
+          <div className="p-6 sm:p-10">
+            <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700">
+              Sending invoices
+            </p>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
+              <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
+                  <Send className="h-6 w-6 text-emerald-700" />
+                </div>
+                <p className="text-xl leading-relaxed text-stone-800">
+                  When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button on the invoice card. The invoice will be emailed to your customer&apos;s primary email address along with a payment link (if enabled).
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
+                <img
+                  src="/images/invoice_send.webp"
+                  alt="Invoice send button"
+                  className="w-full object-contain"
+                />
               </div>
             </div>
           </div>
