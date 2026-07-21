@@ -205,7 +205,7 @@ const PaidCardInPhone = () => {
 
           <span className="mb-2 sm:mb-3 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 sm:px-2.5 py-0.5 shadow-xs">
             <Lock className="text-[#635BFF] w-2 h-2" />
-            <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-widest text-slate-500">Instant Card & ACH</span>
+            <span className="text-[7px] sm:text-[7.5px] font-black uppercase tracking-widest text-slate-500">Instant Card</span>
           </span>
 
           <div className="mb-2 sm:mb-3 text-emerald-600">
@@ -386,8 +386,8 @@ export default function QuoteToPaidWorkflow() {
               <h3 className="text-base sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-1.5 sm:mb-2">
                 Collect deposits on the spot
               </h3>
-              <p className="text-xs sm:text-sm font-bold text-slate-500 leading-relaxed">
-                Accept instant credit card or ACH payments with built-in <StripeWordmark className="text-xs sm:text-sm" /> processing. No more driving across town to pick up paper checks.
+             <p className="text-xs sm:text-sm font-bold text-slate-500 leading-relaxed">
+                Accept credit cards with built-in <StripeWordmark className="text-xs sm:text-sm" /> processing, or link your Venmo, Zelle, or PayPal.
               </p>
             </div>
           </motion.div>
