@@ -83,15 +83,7 @@ export default function TruckSection() {
 
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-4"
-          >
-            <Zap size={14} className="text-emerald-400" />
-            <span>Instant QR Generator Included</span>
-          </motion.div>
+     
 
           <motion.div
             initial={{ opacity: 0, y: -8 }}
