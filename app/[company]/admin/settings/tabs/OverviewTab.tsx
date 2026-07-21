@@ -211,15 +211,19 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
   const canSendInvoices = can(planTier, 'send_invoice_email');
   const previewUrl = `/api/company/${company.slug}/preview-invoice?v=${refreshToken}`;
 
-  useEffect(() => {
-    if (!expanded) return;
-    setModalLoaded(false);
-    setModalTimedOut(false);
-    const t = setTimeout(() => {
-      if (!modalLoaded) setModalTimedOut(true);
-    }, 8000);
-    return () => clearTimeout(t);
-  }, [expanded, refreshToken, modalLoaded]);
+useEffect(() => {
+  if (!expanded) return;
+  setModalLoaded(false);
+  setModalTimedOut(false);
+  const t = setTimeout(() => {
+    setModalLoaded((loaded) => {
+      if (!loaded) setModalTimedOut(true);
+      return loaded;
+    });
+  }, 8000);
+  return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [expanded, refreshToken]);
 
   return (
     <>
