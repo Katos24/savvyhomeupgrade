@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
   ClipboardList, 
@@ -12,15 +13,20 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const font = "'Inter', sans-serif";
+const font = "'Nunito', sans-serif";
 
-// --- Custom Logo Components ---
-const StripeLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 60 25" className={className} fill="#6366F1">
-    <path d="M59.64 14.28h-8.06c.19 1.93 1.6 3.25 3.58 3.25 1.49 0 2.87-.68 3.49-2.53h3.36c-.79 3.32-3.69 5.38-6.9 5.38-4.5 0-7.39-3.23-7.39-7.46 0-4.32 2.76-7.53 6.97-7.53 4.26 0 6.95 3.33 6.95 7.64v1.25zm-6.9-5.11c-1.46 0-2.8.96-3.13 2.7h6.05c-.24-1.78-1.55-2.7-2.92-2.7zM43.08 19.98h3.81V5.55h-3.81v14.43zm-7.65.37c-3.03 0-4.73-1.63-4.73-4.82V8.92h-3.8V5.55h3.8V1.5l3.81-1.12v5.17h4.86v3.37h-4.86v5.77c0 1.56.71 2.31 2 2.31.96 0 1.9-.38 2.53-.94v3.3c-.92.65-2.29.99-3.61.99zM20.25 19.98h3.8V5.55h-3.8v14.43zM22.14 0c1.33 0 2.4.99 2.4 2.21 0 1.23-1.07 2.22-2.4 2.22-1.32 0-2.39-.99-2.39-2.22 0-1.22 1.07-2.21 2.39-2.21zm-10.45 20.35c-4.44 0-7.23-3.17-7.23-7.47 0-4.22 2.65-7.48 6.95-7.48 4.3 0 6.82 3.34 6.82 7.64v1.25H9.6c.19 1.93 1.6 3.25 3.58 3.25 1.5 0 2.88-.68 3.5-2.53h3.36c-.79 3.32-3.69 5.38-6.9 5.38zm-1.85-8.88c-.24-1.78-1.55-2.7-2.91-2.7-1.46 0-2.81.96-3.14 2.7h6.05zM5.59 13.91c0-1.4-.95-2.26-2.58-2.26-1.58 0-2.5.83-2.5 2.11 0 1.24 1.15 1.77 2.71 2.24 1.83.56 3.28 1.34 3.28 3.4 0 2.2-1.92 3.66-4.5 3.66-2.67 0-4.63-1.46-4.96-3.74h3.58c.24 1.25 1.21 1.67 2 1.67s1.77-.52 1.77-1.46c0-1.07-.94-1.53-2.61-2-1.95-.55-3.37-1.45-3.37-3.52 0-2.14 1.89-3.54 4.14-3.54 2.44 0 4.18 1.18 4.54 3.44H5.59z"/>
-  </svg>
-);
+const BRAND_NAVY = '#0B3C6D';
+const ACCENT_TEAL = '#0F766E';
 
+// --- Trade Background Images List ---
+const TRADE_IMAGES = [
+  { name: 'Roofing', src: '/images/roofing.webp' },
+  { name: 'HVAC', src: '/images/hvac.webp' },
+  { name: 'Plumbing', src: '/images/plumbing.webp' },
+  { name: 'Electrical', src: '/images/electrical.webp' },
+];
+
+// --- Custom Google Logo Component ---
 const GoogleLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -31,162 +37,202 @@ const GoogleLogo = ({ className }: { className?: string }) => (
 );
 
 const FEATURES = [
-  { label: 'Intake Form', desc: 'Custom Branding', icon: ClipboardList, bg: 'bg-blue-600', border: 'border-blue-800' },
-  { label: 'Faster Estimates', desc: 'Templates', icon: DollarSign, bg: 'bg-emerald-600', border: 'border-emerald-800' },
-  { label: 'Track Jobs', desc: 'Live Kanban', icon: Zap, bg: 'bg-amber-600', border: 'border-amber-800' },
-  { label: 'Invoices & Pay', desc: 'Via Stripe', icon: Send, bg: 'bg-teal-600', border: 'border-teal-800' },
-  { label: 'Google Reviews', desc: 'Auto Sync', customIcon: GoogleLogo, bg: 'bg-slate-700', border: 'border-slate-900' },
+  { label: 'Intake Form', desc: 'Custom Branding', icon: ClipboardList, accentColor: 'text-blue-400', bgGlow: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/30' },
+  { label: 'Faster Estimates', desc: 'Templates', icon: DollarSign, accentColor: 'text-emerald-400', bgGlow: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/30' },
+  { label: 'Track Jobs', desc: 'Live Kanban', icon: Zap, accentColor: 'text-amber-400', bgGlow: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/30' },
+  { label: 'Invoices & Pay', desc: 'Via Stripe', icon: Send, accentColor: 'text-teal-400', bgGlow: 'from-teal-500/20 to-teal-600/5', border: 'border-teal-500/30' },
+  { label: 'Google Reviews', desc: 'Auto Sync', customIcon: GoogleLogo, accentColor: 'text-slate-200', bgGlow: 'from-slate-500/20 to-slate-600/5', border: 'border-slate-500/30' },
 ];
 
-export default function GlassmorphismHero() {
+export default function CleanHeroWithInvoice() {
+  const [currentTradeIndex, setCurrentTradeIndex] = useState(0);
+
+  // Cycle background trade photo every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTradeIndex((prevIndex) => (prevIndex + 1) % TRADE_IMAGES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <section className="relative overflow-hidden bg-[#0a0d14] pt-28 pb-28 sm:pt-36 sm:pb-32 px-6 sm:px-8 border-b border-slate-800/80">
+    <section 
+      style={{ fontFamily: font }}
+      className="relative overflow-hidden bg-slate-950 pt-28 pb-20 sm:pt-36 sm:pb-28 px-4 sm:px-8 border-b border-slate-800 text-left"
+    >
       
-      {/* Background Glow */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[650px] h-[380px] bg-emerald-500/10 rounded-full blur-[130px] pointer-events-none" />
+      {/* --- VIVID BACKGROUND TRADE PHOTO --- */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentTradeIndex}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full"
+          >
+            <img
+              src={TRADE_IMAGES[currentTradeIndex].src}
+              alt={TRADE_IMAGES[currentTradeIndex].name}
+              className="w-full h-full object-cover filter brightness-105 saturate-110"
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Directional Vignette: Dark behind text on left, open to photo on right */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60" />
+      </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
 
-        {/* Hero Split Layout */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-20 lg:mb-24">
+        {/* Split Grid Layout */}
+        <div className="grid lg:grid-cols-12 gap-8 items-center mb-12 sm:mb-16">
           
-          {/* Left Column */}
-          <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-3.5 py-1 mb-6">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-semibold text-emerald-300 tracking-wide" style={{ fontFamily: font }}>
-                Built for Local Contractors
+          {/* Left Hero Text Column */}
+          <div className="lg:col-span-7">
+            
+            {/* Dynamic Trade Pill */}
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2.5 rounded-full border border-teal-500/30 bg-slate-950/70 px-3.5 py-1 mb-5 backdrop-blur-md shadow-xl"
+            >
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+              <span className="text-xs font-black text-teal-300 tracking-wide uppercase">
+                Built for {TRADE_IMAGES[currentTradeIndex].name} & Local Trades
               </span>
-            </div>
+            </motion.div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.05] mb-6" style={{ fontFamily: font }}>
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.08] mb-5 filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
               Everything you need for your trade in{' '}
-              <span className="text-emerald-400 relative inline-block">
+              <span className="text-teal-400 relative inline-block">
                 one simple dashboard.
               </span>
             </h1>
 
-            <p className="text-slate-400 font-medium text-base sm:text-lg mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0" style={{ fontFamily: font }}>
+            {/* Subtitle */}
+            <p className="text-slate-200 font-bold text-base sm:text-lg mb-8 leading-relaxed max-w-xl filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               The operating system for growing service crews. Capture leads via custom forms, track active bookings, and collect automated review payouts.
             </p>
 
-           <div className="flex flex-col items-center lg:items-start justify-center lg:justify-start gap-3">
-  <Link href="/signup" className="w-full sm:w-auto">
-    <button 
-      className="w-full sm:w-auto bg-emerald-500 text-slate-950 font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
-      style={{ fontFamily: font }}
-    >
-      Get Started Free
-      <ArrowRight size={16} strokeWidth={3} />
-    </button>
-  </Link>
-  
-  {/* No Credit Card Note */}
-  <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5" style={{ fontFamily: font }}>
-    <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-    No credit card required
-  </p>
-</div>
-          </div>
+            {/* CTA Group */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <Link href="/signup">
+                <button 
+                  style={{ backgroundColor: ACCENT_TEAL }}
+                  className="w-full sm:w-auto text-white font-black text-xs sm:text-sm uppercase tracking-wider px-7 py-3.5 rounded-xl shadow-xl shadow-teal-900/40 hover:brightness-110 transition-all flex items-center justify-center gap-2.5 group"
+                >
+                  Get Started Free
+                  <ArrowRight size={16} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
 
-          {/* Right Column: Hero Laptop + HEAVY FROSTED GLASS CONTAINER */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative sm:mb-0"
-          >
-            <div className="relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
-              <img
-                src="/images/heroimagefull.webp"
-                alt="Ridge Line Roofing dashboard on laptop and mobile"
-                className="w-full h-auto"
-              />
+              <div className="flex items-center justify-center sm:justify-start gap-2 text-slate-200 text-xs font-bold px-2 py-2 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                <CheckCircle2 size={16} className="text-teal-400 shrink-0" />
+                No credit card required
+              </div>
             </div>
 
-            {/* --- FROSTED GLASS CARD: in-flow on mobile (reserves real space,
-                 can't overlap anything below it), absolute-overlay from sm: up --- */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.92, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.5 }}
-              className="relative -mt-8 mx-auto sm:absolute sm:mt-0 sm:mx-0 sm:-bottom-8 sm:-left-8 sm:left-auto z-20 
-                         /* Responsive Widths */
-                         w-[92%] sm:w-auto max-w-[340px] sm:max-w-[390px]
-                         /* Frosted Effect Core */
-                         bg-slate-950/60 
-                         backdrop-blur-xl 
-                         backdrop-saturate-200 
-                         /* Glass Borders & Inner Shine */
-                         border border-white/20 
-                         shadow-[0_25px_50px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)]
-                         rounded-2xl p-4 sm:p-5"
-            
-            >
-              {/* Glass Top Highlight Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-emerald-500/5 to-transparent rounded-2xl pointer-events-none" />
+          </div>
 
-            
-              {/* Workflow Flow Elements */}
-              <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-3 bg-slate-900/60 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
-                
-                {/* 1. Invoice Document */}
-                <div className="flex items-center gap-2 bg-slate-900/90 p-2 rounded-lg border border-slate-700/80 shadow-md">
-                  <div className="w-8 h-10 bg-slate-800 rounded flex flex-col justify-between p-1 shrink-0 border border-slate-700">
-                    <FileText size={12} className="text-blue-400" />
-                    <div className="space-y-0.5">
-                      <div className="h-0.5 w-full bg-slate-600 rounded" />
-                      <div className="h-0.5 w-2/3 bg-slate-600 rounded" />
-                    </div>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-black text-slate-100">Invoice #1042</span>
-                    <span className="block text-[9px] font-semibold text-slate-400">$1,850.00</span>
-                  </div>
-                </div>
+       {/* Right Column: "Paid Invoice" Badge + Standalone Floating Product Showcase */}
+<div className="lg:col-span-5 flex flex-col gap-4 items-center lg:items-end mt-4 lg:mt-0">
+  
+  {/* 1. Transparent Automated Payment Badge */}
+  <motion.div 
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.15 }}
+    className="w-full max-w-sm 
+               bg-slate-900/40 
+               backdrop-blur-md 
+               border border-white/10 
+               shadow-lg
+               rounded-2xl p-3.5"
+  >
+    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 px-0.5 flex items-center justify-between">
+      <span>Automated Payment Workflow</span>
+      <span className="text-[8px] text-teal-400 font-bold bg-teal-500/10 border border-teal-500/20 px-1.5 py-0.5 rounded-md">
+        Live Sync
+      </span>
+    </div>
 
-                {/* 2. Glow Curved Arrow */}
-                <div className="flex items-center justify-center shrink-0">
-                  <svg 
-                    className="w-6 h-6 sm:w-9 sm:h-9 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]" 
-                    viewBox="0 0 50 50" 
-                    fill="none" 
-                  >
-                    <path 
-                      d="M8 30 C 16 12, 32 12, 40 22" 
-                      stroke="currentColor" 
-                      strokeWidth="4" 
-                      strokeLinecap="round" 
-                    />
-                    <path 
-                      d="M32 23 L 41 23 L 39 14" 
-                      stroke="currentColor" 
-                      strokeWidth="4" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                    />
-                  </svg>
-                </div>
+    <div className="flex items-center justify-between gap-2.5 bg-slate-950/50 p-2.5 rounded-xl border border-white/10 backdrop-blur-sm">
+      
+      {/* Invoice Draft Card */}
+      <div className="flex items-center gap-2 bg-slate-900/70 p-2 rounded-lg border border-slate-700/60 shadow-sm">
+        <div className="w-7 h-8 bg-slate-800/80 rounded flex flex-col justify-between p-1 shrink-0 border border-slate-700/50">
+          <FileText size={11} className="text-teal-400" />
+          <div className="space-y-0.5">
+            <div className="h-0.5 w-full bg-slate-600/80 rounded" />
+            <div className="h-0.5 w-2/3 bg-slate-600/80 rounded" />
+          </div>
+        </div>
+        <div>
+          <span className="block text-[11px] font-black text-slate-100 leading-tight">Invoice #019</span>
+          <span className="block text-[9px] font-bold text-slate-400">$9,290.00</span>
+        </div>
+      </div>
 
-                {/* 3. Paid Success Badge */}
-                <div className="flex flex-col items-end gap-1 bg-emerald-950/60 p-2 rounded-lg border border-emerald-500/40">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs">
-                    <CheckCircle2 size={14} strokeWidth={3} />
-                    <span>PAID</span>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-200">$1,850.00</span>
-                </div>
+      {/* Glow Arrow */}
+      <div className="shrink-0">
+        <svg 
+          className="w-5 h-5 text-teal-400 filter drop-shadow-[0_0_6px_rgba(20,184,166,0.6)]" 
+          viewBox="0 0 50 50" 
+          fill="none" 
+        >
+          <path 
+            d="M8 30 C 16 12, 32 12, 40 22" 
+            stroke="currentColor" 
+            strokeWidth="4" 
+            strokeLinecap="round" 
+          />
+          <path 
+            d="M32 23 L 41 23 L 39 14" 
+            stroke="currentColor" 
+            strokeWidth="4" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+          />
+        </svg>
+      </div>
 
-              </div>
-            </motion.div>
+      {/* Paid Badge */}
+      <div className="flex flex-col items-end gap-0.5 bg-emerald-950/50 p-2 rounded-lg border border-emerald-500/40 shadow-sm backdrop-blur-xs">
+        <div className="flex items-center gap-1 text-emerald-400 font-black text-[11px]">
+          <CheckCircle2 size={12} strokeWidth={3} />
+          <span>PAID</span>
+        </div>
+        <span className="text-[9px] font-bold text-slate-200">$9,290.00</span>
+      </div>
 
-          </motion.div>
+    </div>
+  </motion.div>
+
+  {/* 2. Seamless Floating Image (No Background Box) */}
+  <motion.div 
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.25 }}
+    className="w-full max-w-sm flex items-center justify-center pt-2"
+  >
+    <img 
+      src="/images/heroimagefull.webp" 
+      alt="Ridge Line Roofing Dashboard and Mobile Booking Form" 
+      className="w-full h-auto object-contain max-h-[340px] filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.75)]"
+    />
+  </motion.div>
+
+</div>
         </div>
 
-        {/* Features Row */}
-        <div className="max-w-4xl mx-auto">
-          <div className="relative p-5 pb-6 bg-slate-900/40 border border-slate-800/80 rounded-[2rem] shadow-2xl backdrop-blur-md">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 relative z-10">
+        {/* Bottom Feature Cards Row - Slim Transparent Glass */}
+        <div className="max-w-5xl mx-auto">
+          <div className="p-3 sm:p-4 bg-slate-900/40 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl backdrop-blur-md">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
               {FEATURES.map((item, index) => {
                 const IconComponent = item.icon;
                 const CustomIcon = item.customIcon;
@@ -194,20 +240,20 @@ export default function GlassmorphismHero() {
                   <motion.div
                     whileHover={{ scale: 1.02, y: -2 }}
                     key={index}
-                    className={`flex flex-col items-center justify-between text-center p-4 rounded-2xl text-white ${item.bg} border-b-[5px] ${item.border} shadow-lg transition-all`}
+                    className={`flex flex-col items-center justify-between text-center p-3.5 rounded-xl text-white bg-gradient-to-b ${item.bgGlow} border ${item.border} backdrop-blur-xs shadow-md transition-all`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/10 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 mb-2.5">
                       {CustomIcon ? (
-                        <CustomIcon className="h-4 w-auto max-w-[26px]" />
+                        <CustomIcon className="h-3.5 w-auto max-w-[22px]" />
                       ) : IconComponent ? (
-                        <IconComponent size={18} strokeWidth={2.5} />
+                        <IconComponent size={16} strokeWidth={2.5} className={item.accentColor} />
                       ) : null}
                     </div>
                     <div>
-                      <span className="block text-[10px] font-black uppercase tracking-wide leading-none" style={{ fontFamily: font }}>
+                      <span className="block text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-none text-slate-100">
                         {item.label}
                       </span>
-                      <span className="block mt-1.5 text-[8px] text-white/70 font-black leading-tight uppercase tracking-wider" style={{ fontFamily: font }}>
+                      <span className="block mt-1 text-[8px] sm:text-[9px] text-slate-400 font-bold leading-tight uppercase tracking-wider">
                         {item.desc}
                       </span>
                     </div>

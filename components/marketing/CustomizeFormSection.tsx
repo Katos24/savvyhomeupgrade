@@ -15,12 +15,12 @@ import {
   ChevronLeft,
   Calendar,
   Clock,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
-// Fixed brand navy stays constant; second gradient stop is the roofing
-// example's accent color — matches the treatment used in DashboardShowcase.
 const BRAND_NAVY = '#0B3C6D';
 const ACCENT = '#0F766E';
 const VERIFIED_GREEN = '#166534';
@@ -32,18 +32,13 @@ const inputClass =
 function CalloutTag({ icon: Icon, text, className = '' }: { icon: any; text: string; className?: string }) {
   return (
     <div
-      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:border-slate-300 ${className}`}
+      className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:border-teal-500/50 hover:shadow-md ${className}`}
     >
-      <Icon size={14} className="text-emerald-600" />
-      <span className="text-xs font-bold text-slate-700" style={{ fontFamily: font }}>{text}</span>
+      <Icon size={15} className="text-teal-700 shrink-0" />
+      <span className="text-xs font-bold text-slate-800" style={{ fontFamily: font }}>{text}</span>
     </div>
   );
 }
-
-// ==========================================
-// Real, static replica of the actual UploadFormStepOne styling — shows the
-// genuine roofing intake form a customer would fill out, not a fake demo.
-// ==========================================
 
 const MOCK_CUSTOM_QUESTIONS = [
   { id: 'q1', label: 'Do you have a copy of your last roof inspection?', type: 'text' as const, required: true },
@@ -60,7 +55,7 @@ function RealisticFormPreview() {
   const selected = 0;
 
   return (
-    <div className="w-full max-w-md mx-auto" style={{ fontFamily: font }}>
+    <div className="w-full max-w-md mx-auto relative z-10" style={{ fontFamily: font }}>
       <div className="flex items-center gap-3 justify-center mb-4">
         <div className={`flex items-center gap-2 ${step === 2 ? 'opacity-40' : ''}`}>
           <div
@@ -83,7 +78,7 @@ function RealisticFormPreview() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
         <div className="px-5 py-4 flex items-center gap-4" style={{ backgroundColor: color2 }}>
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white flex items-center justify-center shrink-0 p-2 shadow-sm">
             <img
@@ -315,33 +310,39 @@ function RealisticFormPreview() {
 }
 
 // ==========================================
-// Main Exported Component
+// Main Exported Component (Bright & Light Mode)
 // ==========================================
 export default function CustomizeFormSection() {
   return (
-    <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-slate-100">
+    <section className="relative overflow-hidden py-24 sm:py-28 lg:py-36 bg-slate-50 text-slate-900 border-t border-slate-200">
+      
+      {/* Subtle Light Pattern Background */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(#000 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />
 
+      {/* Vibrant Ambient Glow Orbs for Light Mode Flare */}
+      <div className="absolute top-1/2 left-10 -translate-y-1/2 w-[500px] h-[500px] bg-teal-200/50 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/3 right-10 w-[400px] h-[400px] bg-blue-200/40 rounded-full blur-[140px] pointer-events-none" />
+
       <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-12 lg:gap-16 items-center">
 
-          {/* LEFT */}
+          {/* LEFT CONTENT */}
           <div className="order-1 lg:order-last flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-5">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-black text-white"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-black text-white shadow-md shadow-teal-700/20"
                 style={{ backgroundColor: ACCENT }}
               >
                 1
               </span>
               <span
-                className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500"
+                className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-teal-800"
                 style={{ fontFamily: font }}
               >
                 Sign up and build your form
@@ -349,7 +350,7 @@ export default function CustomizeFormSection() {
             </div>
 
             <h2
-              className="text-4xl sm:text-5xl text-slate-950 font-black leading-[1.05] tracking-tight mb-0 lg:mb-5"
+              className="text-4xl sm:text-5xl text-slate-950 font-black leading-[1.05] tracking-tight mb-5"
               style={{ fontFamily: font }}
             >
               Sign up, then{' '}
@@ -360,7 +361,7 @@ export default function CustomizeFormSection() {
 
             <div className="hidden lg:block">
               <p
-                className="text-slate-600 font-bold text-base sm:text-lg mb-8 mt-5 max-w-sm leading-relaxed"
+                className="text-slate-600 font-bold text-base sm:text-lg mb-8 max-w-sm leading-relaxed"
                 style={{ fontFamily: font }}
               >
                 Add custom questions to capture exactly what your business needs from a lead. Customers can attach photos and short videos right on the form. No developer required.
@@ -374,10 +375,29 @@ export default function CustomizeFormSection() {
             </div>
           </div>
 
-          {/* RIGHT — the real form */}
-          <div className="order-2 lg:order-first flex flex-col items-center w-full">
-            <RealisticFormPreview />
+          {/* RIGHT — FORM WITH SLEEK LIGHT BACKING FRAME */}
+          <div className="order-2 lg:order-first flex flex-col items-center w-full relative">
+            
+            {/* Bright Glass Frame around the Form */}
+            <div className="w-full relative p-4 sm:p-7 bg-white/70 border border-slate-200/90 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
+              
+              {/* Floating Top Badge Flare */}
+              <div className="absolute -top-4 right-6 sm:right-8 bg-slate-900 text-teal-300 text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-20">
+                <Sparkles size={13} className="text-teal-400" />
+                <span>Live Form Preview</span>
+              </div>
 
+              {/* Form Component */}
+              <RealisticFormPreview />
+
+              {/* Bottom Trust Badge */}
+              <div className="mt-4 flex items-center justify-center gap-2 text-slate-500 text-xs font-bold" style={{ fontFamily: font }}>
+                <ShieldCheck size={15} className="text-teal-700" />
+                <span>Instant Mobile & Desktop Responsive Form</span>
+              </div>
+            </div>
+
+            {/* Mobile View Text */}
             <div className="block lg:hidden w-full mt-8">
               <p
                 className="text-slate-600 font-bold text-base leading-relaxed mb-6"
@@ -392,6 +412,7 @@ export default function CustomizeFormSection() {
                 <CalloutTag icon={Palette} text="Your branding & logo (Basic plan)" />
               </div>
             </div>
+
           </div>
 
         </div>

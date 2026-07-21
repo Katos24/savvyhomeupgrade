@@ -18,6 +18,9 @@ import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
 
+const BRAND_NAVY = '#0B3C6D';
+const ACCENT = '#0F766E';
+
 const STEP_HEIGHT = 'h-[440px] sm:h-[480px]';
 
 function StripeWordmark({ className = '' }: { className?: string }) {
@@ -38,11 +41,14 @@ const TEMPLATE_ITEMS = [
 ];
 
 const PricingTemplateCard = () => (
-  <div className={`relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900 shadow-lg overflow-hidden flex flex-col`}>
+  <div 
+    style={{ fontFamily: font }}
+    className={`relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900 shadow-lg overflow-hidden flex flex-col text-left`}
+  >
     <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
       <div>
         <h4 className="text-white font-black text-sm leading-none">Pricing Template</h4>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1.5">
+        <p className="text-teal-400 text-[10px] font-bold uppercase tracking-widest mt-1.5">
           Full Roof Replacement
         </p>
       </div>
@@ -51,7 +57,7 @@ const PricingTemplateCard = () => (
       </div>
     </div>
 
-    <div className="px-3 py-1.5 grid grid-cols-[1fr_60px_36px_70px] gap-2 text-[9px] font-black uppercase tracking-wider text-slate-500 border-b border-white/5 shrink-0">
+    <div className="px-3 py-1.5 grid grid-cols-[1fr_60px_36px_70px] gap-2 text-[9px] font-black uppercase tracking-wider text-slate-400 border-b border-white/5 shrink-0">
       <span>Item Description</span>
       <span className="text-right">Unit Price</span>
       <span className="text-right">Qty</span>
@@ -65,7 +71,7 @@ const PricingTemplateCard = () => (
           <span className="text-slate-400 text-xs font-semibold text-right">${item.price}</span>
           <span className="text-slate-400 text-xs font-semibold text-right">1</span>
           <div className="flex items-center justify-end gap-2">
-            <span className="text-emerald-400 text-xs font-black">${item.price.toFixed(2)}</span>
+            <span className="text-teal-400 text-xs font-black">${item.price.toFixed(2)}</span>
             <Trash2 className="w-3 h-3 text-slate-600 shrink-0" />
           </div>
         </div>
@@ -85,32 +91,33 @@ const INVOICE_ITEMS = [
 const InvoiceCard = ({ onOpen }: { onOpen: () => void }) => (
   <div
     onClick={onOpen}
-    className={`group relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300 overflow-hidden flex flex-col`}
+    style={{ fontFamily: font }}
+    className={`group relative w-full ${STEP_HEIGHT} rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg cursor-pointer transition-all duration-300 hover:border-slate-300 overflow-hidden flex flex-col text-left`}
   >
-    <div className="flex items-center justify-between px-5 py-4 bg-slate-900 shrink-0">
+    <div className="flex items-center justify-between px-5 py-4 bg-[#0B3C6D] shrink-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 p-1">
+        <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 p-1 shadow-sm">
           <img src="/images/ridgelinelogo.webp" alt="Ridge Line Roofing" className="w-full h-full object-contain" />
         </div>
         <div className="min-w-0">
           <p className="text-white font-black text-xs leading-tight truncate">RIDGE LINE ROOFING</p>
-          <p className="text-slate-400 text-[9px] font-semibold truncate">(555) 522-2444</p>
+          <p className="text-teal-200/80 text-[9px] font-semibold truncate">(555) 522-2444</p>
         </div>
       </div>
       <div className="text-right shrink-0">
         <p className="text-white font-black text-sm leading-none">INVOICE</p>
-        <p className="text-slate-500 text-[9px] font-semibold mt-1">INV-001</p>
+        <p className="text-teal-200/70 text-[9px] font-semibold mt-1">INV-019</p>
       </div>
     </div>
 
     <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 shrink-0">
       <div>
         <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Bill To</p>
-        <p className="text-slate-900 text-xs font-black mt-0.5">Kevin Smith</p>
+        <p className="text-slate-900 text-xs font-black mt-0.5">Jennifer L.</p>
       </div>
       <div className="text-right">
         <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Amount Due</p>
-        <p className="text-slate-900 text-lg font-black mt-0.5">$9,121.00</p>
+        <p className="text-[#0B3C6D] text-lg font-black mt-0.5">$9,290.00</p>
       </div>
     </div>
 
@@ -130,12 +137,12 @@ const InvoiceCard = ({ onOpen }: { onOpen: () => void }) => (
           <span className="text-slate-900 text-[11px] font-bold text-right">${item.total.toLocaleString()}</span>
         </div>
       ))}
-      <div className="px-5 py-2.5 text-[10px] font-bold text-slate-400">+ 5 more line items</div>
+      <div className="px-5 py-2.5 text-[10px] font-bold text-slate-400">+ 1 more line item</div>
     </div>
 
     <div className="absolute inset-0 bg-slate-950/0 transition-colors duration-300 group-hover:bg-slate-950/5 flex items-center justify-center pointer-events-none">
       <div className="translate-y-2 opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-900 shadow-xl transition-all">
-        <Maximize2 className="text-emerald-600 w-3.5 h-3.5" /> Preview Branding
+        <Maximize2 className="text-teal-700 w-3.5 h-3.5" /> Preview Branding
       </div>
     </div>
   </div>
@@ -145,8 +152,10 @@ const PaidCardInPhone = () => {
   const mockTime = "09:41";
 
   return (
-    <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px] h-[440px] sm:h-[480px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.2)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between">
-
+    <div 
+      style={{ fontFamily: font }}
+      className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px] h-[440px] sm:h-[480px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.2)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between"
+    >
       <div className="absolute top-3.5 left-1/2 -translate-x-1/2 h-4 w-20 bg-black rounded-full z-30 flex items-center justify-center">
         <span className="w-1.5 h-1.5 bg-slate-900/40 rounded-full ml-auto mr-2" />
       </div>
@@ -169,8 +178,8 @@ const PaidCardInPhone = () => {
           transition={{ type: 'spring', delay: 0.8, stiffness: 100 }}
           className="z-20 mt-2 mx-0.5"
         >
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-2.5 shadow-[0_8px_16px_rgba(0,0,0,0.06)] flex items-start gap-2.5 text-left">
-            <div className="h-7 w-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/20">
+          <div className="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-2.5 shadow-[0_8px_16px_rgba(0,0,0,0.06)] flex items-start gap-2.5 text-left">
+            <div className="h-7 w-7 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-sm shadow-teal-900/20">
               <Bell size={12} strokeWidth={2.5} className="animate-bounce" />
             </div>
             <div className="min-w-0 flex-1">
@@ -179,17 +188,17 @@ const PaidCardInPhone = () => {
                 <p className="text-[8px] font-bold text-slate-400 leading-none">now</p>
               </div>
               <p className="text-[10px] font-black text-slate-900 mt-1 leading-tight">
-                Kevin Smith Paid
+                Jennifer L. Paid
               </p>
               <p className="text-[9px] font-bold text-slate-500 leading-relaxed truncate">
-                $9,121.00 via Ridge Line Roofing
+                $9,290.00 via Ridge Line Roofing
               </p>
             </div>
           </div>
         </motion.div>
 
         <div className="relative flex-1 flex flex-col items-center justify-center text-center px-1">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08),transparent_65%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,118,110,0.08),transparent_65%)] pointer-events-none" />
 
           <span className="mb-3 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 shadow-sm">
             <Lock className="text-[#635BFF] w-2 h-2" />
@@ -216,9 +225,9 @@ const PaidCardInPhone = () => {
             transition={{ delay: 0.5 }}
             className="z-10"
           >
-            <p className="text-2xl sm:text-3xl font-black leading-none text-slate-900 tracking-tight">$9,121.00</p>
+            <p className="text-2xl sm:text-3xl font-black leading-none text-slate-900 tracking-tight">$9,290.00</p>
 
-            <p className="mt-1.5 inline-flex items-center justify-center gap-1 text-[8.5px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50/70 border border-emerald-100/60 px-2 py-0.5 rounded-full">
+            <p className="mt-1.5 inline-flex items-center justify-center gap-1 text-[8.5px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
               <ShieldCheck className="w-2.5 h-2.5" /> Paid & Logged
             </p>
 
@@ -238,7 +247,6 @@ const PaidCardInPhone = () => {
 const SendInvoicePhone = () => {
   return (
     <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px] h-[440px] sm:h-[480px] rounded-[42px] border-[8px] border-slate-900 bg-slate-950 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-white/10 overflow-hidden flex flex-col justify-between">
-
       <div className="absolute top-3.5 left-1/2 -translate-x-1/2 h-4 w-20 bg-black rounded-full z-30 flex items-center justify-center">
         <span className="w-1.5 h-1.5 bg-slate-900/40 rounded-full ml-auto mr-2" />
       </div>
@@ -260,9 +268,12 @@ export default function QuoteToPaidWorkflow() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <section className="relative overflow-hidden bg-[#fafafa] py-16 sm:py-24">
+    <section 
+      style={{ fontFamily: font }}
+      className="relative overflow-hidden bg-[#fafafa] py-16 sm:py-24 text-left border-t border-slate-200/80"
+    >
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.5]"
+        className="pointer-events-none absolute inset-0 opacity-[0.4]"
         style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}
       />
 
@@ -270,18 +281,22 @@ export default function QuoteToPaidWorkflow() {
 
        <div className="text-center mb-14 sm:mb-16">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-xl font-black text-white">
+            <span 
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-md shadow-teal-900/20"
+              style={{ backgroundColor: ACCENT }}
+            >
               5
             </span>
-            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-600 font-mono">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-teal-700 font-mono">
               Send the invoice
             </span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto" style={{ fontFamily: font }}>
-            From saved templates to 
-                        <span className="text-[#0A3A66] underline underline-offset-2"> secure payment</span> automatically
-
-            
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto">
+            From saved templates to{' '}
+            <span className="text-[#0B3C6D] underline underline-offset-4 decoration-teal-500/40">
+              secure payment
+            </span>{' '}
+            automatically
           </h2>
         </div>
 
@@ -297,7 +312,7 @@ export default function QuoteToPaidWorkflow() {
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-1.5">
                 Step 1: Reusable Templates
               </span>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2" style={{ fontFamily: font }}>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2">
                 Set up pricing templates ahead of time
               </h3>
               <p className="text-sm font-bold text-slate-500">
@@ -316,7 +331,7 @@ export default function QuoteToPaidWorkflow() {
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-mono block mb-1.5">
                 Step 2: Adjust & Generate
               </span>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2" style={{ fontFamily: font }}>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2">
                 Adjust quantities, generate the PDF
               </h3>
               <p className="text-sm font-bold text-slate-500">
@@ -334,10 +349,10 @@ export default function QuoteToPaidWorkflow() {
               <SendInvoicePhone />
             </div>
             <div className="mt-5">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-blue-500 font-mono block mb-1.5">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-teal-700 font-mono block mb-1.5">
                 Step 3: Send To Customer
               </span>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2" style={{ fontFamily: font }}>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2">
                 Straight to their phone, instantly
               </h3>
               <p className="text-sm font-bold text-slate-500">
@@ -355,10 +370,10 @@ export default function QuoteToPaidWorkflow() {
               <PaidCardInPhone />
             </div>
             <div className="mt-5">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-emerald-600 font-mono block mb-1.5">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-teal-700 font-mono block mb-1.5">
                 Step 4: Integrated Payouts
               </span>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2" style={{ fontFamily: font }}>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug mb-2">
                 Get paid without chasing
               </h3>
               <p className="text-sm font-bold text-slate-500">
@@ -396,12 +411,12 @@ export default function QuoteToPaidWorkflow() {
               </button>
 
               <div className="flex flex-col justify-center bg-slate-50 p-6 sm:p-10 md:p-12 md:col-span-5 border-b md:border-b-0 md:border-r border-slate-200/60 shrink-0 text-left">
-                <div className="mb-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <div className="mb-3.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700 border border-teal-100">
                   <Sparkles className="w-4 h-4" />
                 </div>
 
-                <h4 className="mb-3 text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-tight" style={{ fontFamily: font }}>
-                  Invoices tailored to <span className="text-emerald-600">your business identity</span>
+                <h4 className="mb-3 text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-tight">
+                  Invoices tailored to <span className="text-teal-700">your business identity</span>
                 </h4>
 
                 <p className="mb-4 text-xs sm:text-sm font-bold leading-relaxed text-slate-600">
@@ -416,7 +431,7 @@ export default function QuoteToPaidWorkflow() {
                     'Embedded secure processing gateways handle direct processing'
                   ].map((feature, i) => (
                     <div key={i} className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                      <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white">
                         <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>

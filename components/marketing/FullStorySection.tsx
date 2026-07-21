@@ -22,8 +22,16 @@ import {
   Download,
   Send,
   Upload,
-  Plus
+  Plus,
+  ShieldCheck
 } from 'lucide-react';
+
+const font = "'Nunito', sans-serif";
+
+const BRAND_NAVY = '#0B3C6D';
+const ACCENT = '#0F766E';
+const ACCENT_LIGHT = '#14B8A6';
+const VERIFIED_GREEN = '#166534';
 
 // --- Types & Configuration ---
 
@@ -92,7 +100,7 @@ const PhoneAppShell = ({
   activeTab: FeatureId; 
   onTabChange: (id: FeatureId) => void;
 }) => (
-  <div className="h-full bg-[#0a0f1d] flex flex-col text-left">
+  <div className="h-full bg-[#0a0f1d] flex flex-col text-left" style={{ fontFamily: font }}>
     {/* Global Header Bar Context */}
     <div className="bg-[#111827] px-4 pt-9 pb-2 border-b border-slate-800/60 shrink-0">
       <div className="flex justify-between items-center mb-2.5">
@@ -100,9 +108,9 @@ const PhoneAppShell = ({
           <div className="w-7 h-7 rounded-lg bg-slate-800/80 text-slate-400 flex items-center justify-center cursor-pointer">
             <ArrowLeft size={14} />
           </div>
-          <h2 className="text-[14px] font-black tracking-tight text-white">Thomas M.</h2>
-          <span className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-            <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Active <ChevronDown size={8} strokeWidth={3} />
+          <h2 className="text-[14px] font-black tracking-tight text-white">Jennifer L.</h2>
+          <span className="bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1 h-1 bg-teal-400 rounded-full"></span> Active <ChevronDown size={8} strokeWidth={3} />
           </span>
         </div>
         <div className="flex gap-1">
@@ -111,17 +119,19 @@ const PhoneAppShell = ({
         </div>
       </div>
       
-      <p className="text-[10px] font-bold text-slate-500 mb-2.5 tracking-normal">Roof Repair & Shingle Replacement · #19 · Jun 22</p>
+      <p className="text-[10px] font-bold text-slate-400 mb-2.5 tracking-normal">
+        Ridge Line Roofing · Repair & Shingles · #19
+      </p>
 
       {/* Metrics Row Block */}
       <div className="grid grid-cols-2 gap-4 pb-2 border-b border-slate-800/30">
         <div>
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Quote</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Quote</span>
           <span className="text-xs font-black text-white">$9,290.00</span>
-          <span className="text-[9px] font-black text-blue-400 block mt-0.5">Sent ✓</span>
+          <span className="text-[9px] font-black text-teal-400 block mt-0.5">Sent ✓</span>
         </div>
         <div>
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Payment</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Payment</span>
           <span className="text-xs font-black text-white">Unpaid</span>
           <span className="text-[9px] font-bold text-rose-400 block mt-0.5">$9,290.00 due</span>
         </div>
@@ -169,52 +179,52 @@ const PhoneAppShell = ({
 // --- Individual View Implementation Blueprints ---
 
 const OverviewView = () => (
-  <div className="p-3 space-y-3 flex-1 overflow-y-auto">
+  <div className="p-3 space-y-3 flex-1 overflow-y-auto" style={{ fontFamily: font }}>
     <div className="bg-white rounded-2xl border border-slate-200/60 p-3 shadow-xs text-left">
       <div className="flex justify-between items-center mb-2.5">
         <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-wider">
           <Users size={12} className="text-slate-400" /> Client info
         </div>
-        <button className="text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-0.5">
+        <button className="text-teal-700 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-0.5">
           Actions <ChevronDown size={10} strokeWidth={2.5} />
         </button>
       </div>
-      <h3 className="text-base font-black text-slate-900 leading-tight">Thomas Miller</h3>
-      <p className="text-[11px] font-bold text-slate-500 mt-0.5 mb-3">(631) 555-0144 • thomas@millerdocs.com</p>
+      <h3 className="text-base font-black text-slate-900 leading-tight">Jennifer L.</h3>
+      <p className="text-[11px] font-bold text-slate-500 mt-0.5 mb-3">(555) 382-9102 • jennifer@example.com</p>
       <div className="flex gap-2">
         <button className="flex-1 flex justify-center items-center gap-1 border border-slate-200 py-1.5 bg-white rounded-xl text-[11px] font-black text-slate-700 shadow-2xs">
-          <Mail size={12} className="text-blue-500" strokeWidth={2.5} /> Email
+          <Mail size={12} className="text-teal-600" strokeWidth={2.5} /> Email
         </button>
         <button className="flex-1 flex justify-center items-center gap-1 border border-slate-200 py-1.5 bg-white rounded-xl text-[11px] font-black text-slate-700 shadow-2xs">
-          <Phone size={12} className="text-emerald-500" strokeWidth={2.5} /> Call
+          <Phone size={12} className="text-emerald-600" strokeWidth={2.5} /> Call
         </button>
         <button className="flex-1 flex justify-center items-center gap-1 border border-slate-200 py-1.5 bg-white rounded-xl text-[11px] font-black text-slate-700 shadow-2xs">
-          <MessageSquare size={12} className="text-indigo-500" strokeWidth={2.5} /> Text
+          <MessageSquare size={12} className="text-indigo-600" strokeWidth={2.5} /> Text
         </button>
       </div>
     </div>
     <div className="bg-white rounded-2xl border border-slate-200/60 p-3 shadow-xs text-left">
       <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-wider mb-2">
-        <MessageSquare size={12} className="text-emerald-500" strokeWidth={2.5} /> Storm Damage Report
+        <MessageSquare size={12} className="text-teal-600" strokeWidth={2.5} /> Customer Request Message
       </div>
       <p className="text-xs font-medium text-slate-600 leading-relaxed">
-        "Hey, I need an urgent estimate on replacing a section of architectural shingles on my front gables. High winds tore a large chunk off last night and rain is coming."
+        "Looking for help with roof repair at my property. Please reach out to schedule a time to take a look at missing architectural shingles."
       </p>
     </div>
   </div>
 );
 
 const QuoteView = () => (
-  <div className="p-3 overflow-y-auto flex-1 space-y-3">
+  <div className="p-3 overflow-y-auto flex-1 space-y-3" style={{ fontFamily: font }}>
     <div className="bg-white rounded-2xl border border-slate-200/60 p-3 shadow-xs text-left">
       <div className="flex justify-between items-center mb-3">
         <div>
           <h3 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
-            <FileText size={14} className="text-indigo-500" /> Roofing Estimate #104
+            <FileText size={14} className="text-teal-600" /> Roofing Estimate #104
           </h3>
-          <p className="text-[9px] text-blue-500 font-black mt-0.5">Sent Jul 6</p>
+          <p className="text-[9px] text-teal-600 font-black mt-0.5">Sent Jul 6</p>
         </div>
-        <button className="text-indigo-600 bg-indigo-50 px-2 py-0.5 border border-indigo-100 rounded-md text-[10px] font-black flex items-center gap-0.5">
+        <button className="text-teal-700 bg-teal-50 px-2 py-0.5 border border-teal-100 rounded-md text-[10px] font-black flex items-center gap-0.5">
           <Sparkles size={10} /> AI assist
         </button>
       </div>
@@ -247,7 +257,7 @@ const QuoteView = () => (
 );
 
 const ScheduleView = () => (
-  <div className="flex-1 flex flex-col justify-between p-3 min-h-0 text-left">
+  <div className="flex-1 flex flex-col justify-between p-3 min-h-0 text-left" style={{ fontFamily: font }}>
     <div className="bg-white rounded-2xl border border-slate-200/70 shadow-xs p-3.5 space-y-3.5">
       <div className="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 className="text-[14px] font-black text-slate-900 tracking-tight">Crew Schedule</h3>
@@ -266,7 +276,7 @@ const ScheduleView = () => (
           👤 Assigned Foreman
         </label>
         <div className="w-full bg-slate-50/60 border border-slate-200/80 rounded-xl px-3 py-2.5 flex items-center justify-between text-slate-800 text-xs font-black shadow-2xs">
-          <span>Kevin</span>
+          <span>Kevin (Ridge Line Team)</span>
           <ChevronDown size={14} className="text-slate-400" strokeWidth={2.5} />
         </div>
       </div>
@@ -276,7 +286,7 @@ const ScheduleView = () => (
           Tear-off Date
         </label>
         <div className="w-full bg-slate-50/60 border border-slate-200/80 rounded-xl px-3 py-2.5 text-slate-800 text-xs font-black shadow-2xs">
-          Jul 15, 2026
+          Jul 22, 2026
         </div>
       </div>
 
@@ -286,7 +296,7 @@ const ScheduleView = () => (
         </label>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-slate-50/60 border border-slate-200/80 rounded-xl px-3 py-2.5 flex items-center justify-between text-slate-800 text-xs font-black shadow-2xs">
-            <span>7</span>
+            <span>8</span>
             <div className="flex flex-col text-[7px] text-slate-400 leading-none select-none">▲▼</div>
           </div>
           <span className="text-slate-400 font-black text-sm">:</span>
@@ -294,7 +304,7 @@ const ScheduleView = () => (
             <span>00</span>
             <div className="flex flex-col text-[7px] text-slate-400 leading-none select-none">▲▼</div>
           </div>
-          <div className="bg-blue-50 border border-blue-200 text-blue-600 rounded-xl px-3.5 py-2.5 text-xs font-black shadow-2xs">
+          <div className="bg-teal-50 border border-teal-200 text-teal-700 rounded-xl px-3.5 py-2.5 text-xs font-black shadow-2xs">
             AM
           </div>
         </div>
@@ -302,7 +312,7 @@ const ScheduleView = () => (
     </div>
 
     <div className="bg-[#111827] rounded-xl p-2.5 mt-4 flex items-center justify-between text-white shadow-md">
-      <span className="text-[11px] font-black text-slate-400 pl-1">Wed, Jul 15</span>
+      <span className="text-[11px] font-black text-slate-400 pl-1">Wed, Jul 22</span>
       <div className="flex items-center gap-1.5">
         <button className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-slate-700 shadow-2xs transition-colors">
           <Save size={12} strokeWidth={2.5} /> Save
@@ -316,26 +326,26 @@ const ScheduleView = () => (
 );
 
 const InvoiceView = () => (
-  <div className="flex-1 flex flex-col bg-[#f8fafc] text-left min-h-0">
+  <div className="flex-1 flex flex-col bg-[#f8fafc] text-left min-h-0" style={{ fontFamily: font }}>
     <div className="bg-[#111827] p-4 text-white shadow-inner shrink-0">
-      <span className="text-[9px] font-black tracking-wider text-slate-500 uppercase block mb-0.5">Outstanding Balance</span>
+      <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase block mb-0.5">Outstanding Balance</span>
       <h3 className="text-2xl font-black tracking-tight text-white">$9,290.00</h3>
       
       <div className="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-800/40">
         <div>
-          <span className="text-[9px] font-black text-slate-500 uppercase block tracking-wider">Collected</span>
-          <span className="text-xs font-black text-emerald-400">$0.00</span>
+          <span className="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Collected</span>
+          <span className="text-xs font-black text-teal-400">$0.00</span>
         </div>
         <div>
-          <span className="text-[9px] font-black text-slate-500 uppercase block tracking-wider">Status</span>
-          <span className="inline-block text-[9px] font-black bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700/60 mt-0.5">Unpaid</span>
+          <span className="text-[9px] font-black text-slate-400 uppercase block tracking-wider">Status</span>
+          <span className="inline-block text-[9px] font-black bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700/60 mt-0.5">Unpaid</span>
         </div>
       </div>
       
       <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-        <div className="bg-emerald-400 h-full w-0" />
+        <div className="bg-teal-400 h-full w-0" />
       </div>
-      <span className="text-[8px] text-slate-500 font-extrabold mt-1 block tracking-tight">0% collected</span>
+      <span className="text-[8px] text-slate-400 font-extrabold mt-1 block tracking-tight">0% collected</span>
     </div>
 
     <div className="p-3 flex-1 overflow-y-auto">
@@ -345,12 +355,12 @@ const InvoiceView = () => (
             <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Invoice Document</span>
             <h4 className="text-sm font-black text-slate-900 tracking-tight leading-tight">INV-019</h4>
           </div>
-          <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">Sent</span>
+          <span className="text-[9px] font-black bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full border border-teal-100">Sent</span>
         </div>
         
         <p className="text-[11px] font-bold text-slate-500">Due Jul 30, 2026</p>
-        <p className="text-[11px] font-black text-emerald-600 pt-1 flex items-center gap-1">✓ Sent Jul 6, 2026</p>
-        <p className="text-[10px] font-bold text-slate-400">Roofing Repair Work · $9,290.00</p>
+        <p className="text-[11px] font-black text-teal-600 pt-1 flex items-center gap-1">✓ Sent Jul 6, 2026</p>
+        <p className="text-[10px] font-bold text-slate-400">Ridge Line Roofing Repair · $9,290.00</p>
 
         <div className="grid grid-cols-2 gap-2 pt-3">
           <button className="border border-slate-200/80 hover:bg-slate-50 text-slate-700 text-[11px] font-black py-2 rounded-xl flex items-center justify-center gap-1 shadow-2xs transition-colors bg-white">
@@ -366,28 +376,28 @@ const InvoiceView = () => (
 );
 
 const MediaView = () => (
-  <div className="flex-1 flex flex-col p-3 min-h-0 text-left justify-between">
+  <div className="flex-1 flex flex-col p-3 min-h-0 text-left justify-between" style={{ fontFamily: font }}>
     <div className="bg-white rounded-2xl border border-slate-200/70 shadow-xs p-3.5 space-y-3 flex-1 flex flex-col min-h-0">
       
-      {/* Tab/Category Sub-header inside Media */}
+      {/* Sub-header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-2 shrink-0">
         <h3 className="text-[14px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-          <ImageIcon size={14} className="text-emerald-500" /> Project Photos
+          <ImageIcon size={14} className="text-teal-600" /> Project Photos
         </h3>
         <span className="text-[10px] bg-slate-100 font-extrabold text-slate-600 px-2 py-0.5 rounded-md">
-          3 Files
+          1 File Attached
         </span>
       </div>
 
       {/* Gallery Photo Grid Frame */}
       <div className="grid grid-cols-2 gap-2.5 overflow-y-auto pr-0.5 flex-1 content-start">
         
-        {/* Item 1: High Fidelity Render containing the referenced image input */}
+        {/* Item 1: Uploaded photo matching Step 1 preview */}
         <div className="group relative rounded-xl border border-slate-200/80 overflow-hidden bg-slate-50 shadow-2xs flex flex-col">
           <div className="w-full aspect-square relative bg-slate-200 overflow-hidden">
             <img 
               src="/images/roof-damage.webp" 
-              alt="Wind Damage Assessment" 
+              alt="Roof Damage Site Photo" 
               className="w-full h-full object-cover"
             />
             <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
@@ -395,12 +405,12 @@ const MediaView = () => (
             </span>
           </div>
           <div className="p-1.5 bg-white border-t border-slate-100">
-            <p className="text-[9px] font-black text-slate-800 truncate">roof-damage.png</p>
-            <p className="text-[8px] font-bold text-slate-400">Jul 6 · 1.4 MB</p>
+            <p className="text-[9px] font-black text-slate-800 truncate">roof-damage.webp</p>
+            <p className="text-[8px] font-bold text-slate-400">Attached on form</p>
           </div>
         </div>
 
-        {/* Item 2: Placeholder for ongoing roofing documentation asset */}
+        {/* Item 2: Add Photo Placeholder */}
         <div className="group relative rounded-xl border border-slate-200/40 overflow-hidden bg-slate-100/50 flex flex-col items-center justify-center aspect-square border-dashed border-2 text-slate-300">
           <Plus size={16} strokeWidth={2.5} />
           <span className="text-[8px] font-black uppercase tracking-wider mt-1">After Photo</span>
@@ -409,9 +419,12 @@ const MediaView = () => (
       </div>
     </div>
 
-    {/* Media Actions Sticky Operational Toolbar */}
+    {/* Media Actions Toolbar */}
     <div className="bg-[#111827] rounded-xl p-2 mt-3 flex items-center gap-2 text-white shadow-md shrink-0">
-      <button className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black py-2 rounded-lg flex items-center justify-center gap-1.5 shadow-2xs transition-colors">
+      <button 
+        className="flex-1 text-white text-xs font-black py-2 rounded-lg flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
+        style={{ backgroundColor: ACCENT }}
+      >
         <Upload size={12} strokeWidth={3} /> Upload Photo
       </button>
       <button className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black p-2 rounded-lg border border-slate-700 transition-colors">
@@ -421,12 +434,11 @@ const MediaView = () => (
   </div>
 );
 
-// --- Main Interactive Module Framework Engine Component ---
+// --- Main Component ---
 
 export default function InteractiveShowcase() {
   const [activeFeature, setActiveFeature] = useState<FeatureId>('overview');
 
-  // Restored renderPhoneContent function safely inside the component
   const renderPhoneContent = () => {
     switch (activeFeature) {
       case 'overview': return <OverviewView />;
@@ -439,47 +451,54 @@ export default function InteractiveShowcase() {
   };
 
   return (
-    <section className="bg-slate-950 py-16 md:py-24 lg:py-32 px-4 sm:px-6 overflow-hidden relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_50%)] pointer-events-none" />
+    <section 
+      style={{ fontFamily: font }}
+      className="bg-slate-950 py-20 sm:py-28 lg:py-36 px-4 sm:px-6 overflow-hidden relative border-t border-slate-800/80 text-white"
+    >
+      {/* Background Ambient Glows */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,118,110,0.12),transparent_60%)] pointer-events-none" />
+      <div className="absolute top-1/3 left-10 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-  <div className="max-w-7xl mx-auto">
-  {/* Header Section - Left Aligned & Compact */}
-  <div className="mb-8 sm:mb-12 text-left">
-    {/* Step Badge + Subtitle Tag */}
-    <div className="flex items-center gap-3 mb-4">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-lg font-black text-slate-950">
-        4
-      </span>
-      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-        The full story, tab by tab
-      </span>
-    </div>
+      <div className="max-w-7xl mx-auto relative z-10">
+        
+        {/* Header Section - Left Aligned */}
+        <div className="mb-10 sm:mb-14 text-left">
+          <div className="flex items-center gap-3 mb-4">
+            <span 
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-md shadow-teal-900/30"
+              style={{ backgroundColor: ACCENT }}
+            >
+              4
+            </span>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-teal-400">
+              The full story, tab by tab
+            </span>
+          </div>
 
-    {/* Title & Description */}
-    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
-      Manage your entire business <br className="hidden sm:block" />
-      <span className="text-[#7BC94F]">from one screen.</span>
-    </h2>
-    <p className="text-slate-400 text-sm sm:text-base font-medium max-w-xl">
-      Tap the modules below to look at how real-time operational control layouts update instantly inside the field app preview.
-    </p>
-  </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4 leading-[1.08]">
+            Manage your entire business <br className="hidden sm:block" />
+            <span className="text-teal-400">from one screen.</span>
+          </h2>
+          <p className="text-slate-400 text-base sm:text-lg font-bold max-w-xl">
+            Tap the modules to explore how real-time client data, quotes, schedules, and photos sync inside your field app.
+          </p>
+        </div>
 
-        {/* Mobile Viewports Top Horizontally Scrollable Selector Badges Row */}
-  <div className="lg:hidden flex gap-2 overflow-x-auto pb-5 pt-1 px-1 snap-x scrollbar-none justify-start min-w-full items-center">
+        {/* Mobile Viewports Selector Badges Row */}
+        <div className="lg:hidden flex gap-2 overflow-x-auto pb-6 pt-1 px-1 snap-x scrollbar-none justify-start min-w-full items-center">
           {FEATURES.map((feature) => {
             const isSelected = activeFeature === feature.id;
             return (
               <button
                 key={feature.id}
                 onClick={() => setActiveFeature(feature.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full border text-xs font-black transition-all whitespace-nowrap snap-center ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-xs font-black transition-all whitespace-nowrap snap-center ${
                   isSelected
-                    ? 'bg-emerald-500 border-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.25)] scale-105'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-teal-500 border-teal-400 text-slate-950 shadow-lg shadow-teal-500/20 scale-105'
+                    : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <feature.icon size={13} className={isSelected ? 'text-slate-950' : 'text-slate-500'} strokeWidth={2.5} />
+                <feature.icon size={14} className={isSelected ? 'text-slate-950' : 'text-slate-400'} strokeWidth={2.5} />
                 {feature.shortTitle}
               </button>
             );
@@ -489,7 +508,7 @@ export default function InteractiveShowcase() {
         {/* Responsive Grid Interface Wrapper */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
           
-          {/* Left Feature Selection Cards (Desktop only Column) */}
+          {/* Left Feature Cards (Desktop) */}
           <div className="hidden lg:flex lg:col-span-4 flex-col gap-5">
             {FEATURES.filter(f => f.side === 'left').map((feature) => {
               const isActive = activeFeature === feature.id;
@@ -497,24 +516,24 @@ export default function InteractiveShowcase() {
                 <button
                   key={feature.id}
                   onClick={() => setActiveFeature(feature.id)}
-                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
+                  className={`w-full text-left p-6 rounded-3xl border-2 transition-all duration-300 outline-none ${
                     isActive
-                      ? 'border-emerald-500 bg-white shadow-xl scale-[1.02]'
-                      : 'border-transparent bg-white/90 hover:bg-white hover:border-slate-350 shadow-md'
+                      ? 'border-teal-500 bg-white text-slate-950 shadow-2xl scale-[1.02]'
+                      : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
-                    isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                    isActive ? 'bg-teal-50 text-teal-700' : 'bg-white/10 text-slate-300'
                   }`}>
                     <feature.icon size={20} strokeWidth={2.5} />
                   </div>
                   <h3 className={`text-lg font-black mb-1.5 transition-colors ${
-                    isActive ? 'text-slate-950' : 'text-slate-800'
+                    isActive ? 'text-slate-950' : 'text-white'
                   }`}>
                     {feature.title}
                   </h3>
                   <p className={`text-xs leading-relaxed font-bold transition-colors ${
-                    isActive ? 'text-slate-600' : 'text-slate-500'
+                    isActive ? 'text-slate-600' : 'text-slate-400'
                   }`}>
                     {feature.description}
                   </p>
@@ -523,14 +542,13 @@ export default function InteractiveShowcase() {
             })}
           </div>
 
-          {/* Central Live Device Framework Sandbox Container */}
+          {/* Central Live Device Framework Sandbox */}
           <div className="col-span-1 lg:col-span-4 flex justify-center relative z-20">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none" />
             
             {/* Phone Outer Core Frame */}
             <div className="relative w-full max-w-[325px] sm:max-w-[340px] h-[640px] sm:h-[680px] bg-black rounded-[3rem] border-[9px] sm:border-[11px] border-slate-900 shadow-2xl overflow-hidden ring-1 ring-slate-800">
               
-              {/* Device Dynamic Island Notch Element Spacer */}
+              {/* Dynamic Island Notch Element */}
               <div className="absolute top-0 inset-x-0 h-6 bg-transparent z-50 flex justify-center pointer-events-none">
                 <div className="w-20 h-4 bg-black rounded-b-xl relative">
                   <div className="absolute right-3 top-1.5 w-1 h-1 rounded-full bg-slate-800/60"></div>
@@ -555,7 +573,7 @@ export default function InteractiveShowcase() {
             </div>
           </div>
 
-          {/* Right Feature Selection Cards (Desktop only Column) */}
+          {/* Right Feature Cards (Desktop) */}
           <div className="hidden lg:flex lg:col-span-4 flex-col gap-5">
             {FEATURES.filter(f => f.side === 'right').map((feature) => {
               const isActive = activeFeature === feature.id;
@@ -563,24 +581,24 @@ export default function InteractiveShowcase() {
                 <button
                   key={feature.id}
                   onClick={() => setActiveFeature(feature.id)}
-                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 outline-none ${
+                  className={`w-full text-left p-6 rounded-3xl border-2 transition-all duration-300 outline-none ${
                     isActive
-                      ? 'border-emerald-500 bg-white shadow-xl scale-[1.02]'
-                      : 'border-transparent bg-white/90 hover:bg-white hover:border-slate-350 shadow-md'
+                      ? 'border-teal-500 bg-white text-slate-950 shadow-2xl scale-[1.02]'
+                      : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 transition-colors ${
-                    isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                    isActive ? 'bg-teal-50 text-teal-700' : 'bg-white/10 text-slate-300'
                   }`}>
                     <feature.icon size={20} strokeWidth={2.5} />
                   </div>
                   <h3 className={`text-lg font-black mb-1.5 transition-colors ${
-                    isActive ? 'text-slate-950' : 'text-slate-800'
+                    isActive ? 'text-slate-950' : 'text-white'
                   }`}>
                     {feature.title}
                   </h3>
                   <p className={`text-xs leading-relaxed font-bold transition-colors ${
-                    isActive ? 'text-slate-600' : 'text-slate-500'
+                    isActive ? 'text-slate-600' : 'text-slate-400'
                   }`}>
                     {feature.description}
                   </p>
