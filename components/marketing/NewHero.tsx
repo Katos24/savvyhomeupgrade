@@ -125,7 +125,7 @@ export default function HumanDesignedHero() {
   return (
     <section 
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-slate-950 pt-20 pb-16 sm:pt-36 sm:pb-28 px-4 sm:px-8 border-b border-slate-800 text-left"
+      className="relative overflow-hidden bg-slate-950 pt-24 sm:pt-36 pb-16 sm:pb-28 px-4 sm:px-8 border-b border-slate-800 text-left"
     >
       {/* Background Image Layer with Lighter Overlay Filters */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -167,15 +167,15 @@ export default function HumanDesignedHero() {
             >
               <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
               <span className="text-[11px] sm:text-xs font-black text-teal-300 uppercase tracking-wide">
-                Built for {TRADE_IMAGES[currentTradeIndex].name} & Local Service Crews
+                Built for {TRADE_IMAGES[currentTradeIndex].name} and Local Service Crews
               </span>
             </motion.div>
 
             {/* Headline */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.08] mb-5">
-              Everything you need to run your trade in{' '}
-              <span className="text-teal-400 inline-block">
-                one simple dashboard.
+              Run your trade better.{' '}
+              <span className="text-teal-400 block sm:inline">
+                Never chase another invoice.
               </span>
             </h1>
 
